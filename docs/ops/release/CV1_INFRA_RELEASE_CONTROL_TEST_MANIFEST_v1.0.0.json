@@ -1,0 +1,238 @@
+{
+  "manifest_id": "CV1-INFRA-RELEASE-CONTROL",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "STAGING_RELEASE_PRODUCTION_AUTHORITY (docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json)",
+    "STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT (docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json)",
+    "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY (docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json)",
+    "FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY (docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json)",
+    "ODS_V1_AUTHORITY (docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+
+  "known_conditions": [
+    "AUTHORING ARM vs EXECUTION ARM. The controls below are split. An AUTHORING ARM control is assertable NOW against docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json at the frozen base, by re-deriving a property of the artifact. An EXECUTION ARM control is a pre-commitment binding on the FUTURE lane that performs a control-plane mutation; it is not assertable now and is marked test_file UNKNOWN deliberately, not by omission.",
+    "NO VITEST FILE IS WRITTEN BY THIS LANE. The write set is exactly two JSON documents. Writing a test would be code, which the lane's mode (AUTHORING_ONLY) forbids. Both immediate predecessors in docs/ops/release/ carry manifests of the same shape for the same reason.",
+    "HOSTED STATE IS MUTABLE. Every control that re-measures the control plane may legitimately return a value differing from the authority's MEASURED_PRESTATE. Under the authority's STALE_STATE_HANDLING a divergence is a STOP and a re-adjudication, and a control that reported PASS merely because the value changed in a convenient direction would be vacuous.",
+    "U-4 IS UNRESOLVED AND ONE CONTROL DEPENDS ON IT. N-6 exists precisely because the H adjudication is conditional on an unmeasured fact. It must not be reported PASS on the strength of the authority asserting the condition; it is satisfied only by the condition being MEASURED.",
+    "THE GATES ARE DOCS-ONLY GATES. postgres_disposable_probe, baseline_verify, journal_verify and targeted_tests are NOT exit gates for this node: the write set touches no SQL, no baseline, no journal and no test. Listing them would manufacture green from suites this diff cannot affect."
+  ],
+
+  "sentinels": [
+    {
+      "id": "SEN-1",
+      "purpose": "The frozen base identity. AS_OF_BASE 537487ac7b102d51f553fcb8f5cfe19614e113d8 and AS_OF_TREE 7228f833c57bfd37fe025546d939ecd46336159c must match origin/integration/commercial-v1 at the moment any consumer acts. A consumer that finds a different value has a stale artifact and must stop, not reconcile."
+    },
+    {
+      "id": "SEN-2",
+      "purpose": "The measured-absence sentinel. Branch protection ABSENT and rulesets EMPTY are the load-bearing negative measurements of this lane. If either becomes present, C-1 and the resolution of AT-U-03 change meaning, and every downstream adjudication that rests on them must be re-read."
+    },
+    {
+      "id": "SEN-3",
+      "purpose": "The production-identity sentinel. The live production SHA measured as 067e8c2f3ac9b5e843de3a35575182907b4365d4 equals main's head. If production later serves a different SHA, the measured rationale under PRODUCTION_BOUNDARY is stale and C-5 must be re-measured before it is cited."
+    },
+    {
+      "id": "SEN-4",
+      "purpose": "The grant-identity sentinel. PR201's one-deployment grant is identified by a deployment id frozen BEFORE creation. If any future evidence names a deployment id that was discovered after the fact, K-1 has been breached regardless of how well every other property matches."
+    }
+  ],
+
+  "positive_controls": [
+    {
+      "id": "P1",
+      "description": "AUTHORING ARM. MEASURED_PRESTATE IS REPRODUCIBLE. Re-executing the read-only observations the authority names — GET repos/{owner}/{repo}; GET branches/{branch} for the three branches; GET branches/{branch}/protection for each; GET rulesets; GET rules/branches/integration%2Fcommercial-v1; GET commits/{sha}/check-runs for 537487ac and for a certified candidate; GET deployments?sha=537487ac... — must reproduce the recorded values, or produce a divergence that is recorded and adjudicated as a STOP. A control that accepted 'close enough' would defeat the purpose of pinning exact values.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P2",
+      "description": "AUTHORING ARM. THE BRANCH-PROTECTION ABSENCE IS TRIPLE-SOURCED. The authority must record protection absence via three independent read paths — the protection endpoint's 404, the branches API's protected=false, and an empty effective rules-for-ref — rather than via one endpoint alone. Re-deriving it from the artifact must find all three present. A single 404 is consistent with an endpoint the token cannot see; three agreeing paths are not.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P3",
+      "description": "AUTHORING ARM. THE SUPERSESSION CHECK IS PRESENT AND SPECIFIC. CONTROLLING_AUTHORITY.supersession_check_performed must name the amendment, state that exactly two parent clauses are superseded, state their subject matter, and conclude that none of the clauses this artifact relies on is among them. A generic statement that the amendment 'was reviewed' fails this control, because it would pass equally against an artifact that had cited a superseded clause.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P4",
+      "description": "AUTHORING ARM. EVERY MISSION QUESTION A THROUGH Q IS ADJUDICATED. ADJUDICATIONS must contain an entry for each, and each entry must carry either a DERIVED verdict with its derivation, or an explicit routing to a named OWNER_DECISION_REQUIRED id. An entry that states a verdict with neither derivation nor routing is an undeclared semantic choice and fails.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P5",
+      "description": "AUTHORING ARM. THE MECHANICAL DISTINGUISHER IS DERIVED FROM PR201, NOT INVENTED. ADJUDICATIONS.H must ground its three-step distinguisher in PR201's own BUILD_TIME_INVALIDATION and PUBLIC_AUTH_URL_CONTRACT, and those clauses must be re-readable at AS_OF_TREE and say what the artifact reports. A distinguisher defined here rather than derived would be this lane legislating over a frozen grant.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P6",
+      "description": "AUTHORING ARM. EVERY FUTURE MUTATION CARRIES FOUR PARTS. Each entry in FUTURE_MUTATIONS must carry a prestate to capture, a verification, a rollback, and a confirmation requirement. Re-deriving the list must find no entry missing any of the four. A mutation missing its prestate has no rollback; a mutation missing its verification cannot be known to have worked.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P7",
+      "description": "AUTHORING ARM. THE WRITE SET IS EXACTLY TWO DOCUMENTS UNDER docs/ops/release/. git diff --name-only against AS_OF_BASE must list this manifest and its authority, and nothing else — no workflow, no code, no test, no ODS artifact, no db path.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P8",
+      "description": "AUTHORING ARM. THE THREE-SHA DISTINCTION IS STATED EXPLICITLY. RELATIONSHIP_TO_EXACT_SHA_CI must separately name the PR head SHA, refs/pull/N/merge, and the merge commit SHA, and say which role each plays. An artifact that said only 'the merge SHA lacks CI' would be true and would still leave the reader unable to check any specific claim.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P9",
+      "description": "EXECUTION ARM. PRESTATE CAPTURED BEFORE EVERY MUTATION. For each executed mutation, an evidence record must exist showing the live control-plane prestate read BEFORE the change, with a timestamp preceding the change's timestamp. A prestate recorded afterwards is not a prestate.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P10",
+      "description": "EXECUTION ARM. POSTSTATE RE-READ FROM THE CONTROL PLANE. For each executed mutation, the poststate must be obtained by re-reading the live control plane, never inferred from the mutating operation having returned success. The evidence must show the read, not the return value.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P11",
+      "description": "EXECUTION ARM. REQUIRED CHECKS MATCH THE ADJUDICATED SET EXACTLY. After M-1, the configured required-check set must equal the eight names in ADJUDICATIONS.D — no extra, none missing, compared by exact string. A superset would silently add a gate nobody adjudicated; a subset would silently drop one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P12",
+      "description": "EXECUTION ARM. GOVERNED DEPLOYMENT IDENTITY IS RECORDED BEFORE EXISTENCE. Any deployment cited as governed Commercial V1 staging evidence must have an act record whose timestamp precedes the deployment's creation timestamp and which already names the deployment id. This is K-1 made checkable.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "AN AUTOMATIC PREVIEW IS REFUSED AS STAGING EVIDENCE. Offering a deployment whose creator is vercel[bot] and for which no governed act record exists must be REFUSED as D-1, M11, S4, S6, STAGING_ALIGNED or environment-coherence evidence — even when its target is preview, its SHA is exact, its status is Ready and its environment appears coherent. Every one of those properties was MEASURED on an automatic Preview of the frozen base, so a control that checked them would admit the wrong deployment.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-2",
+      "description": "THE BRANCH ALIAS IS REFUSED AS AN EVIDENCE TARGET. Offering the integration branch alias — or any address that tracks 'the latest deployment of a branch' — as the target of any governed evidence must be REFUSED, and the refusal must not depend on knowing which deployment it currently serves, which the authority records as UNKNOWN (U-2).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-3",
+      "description": "'Vercel Preview Comments' IS REFUSED AS A VERIFICATION CHECK. Offering it as a required check, or as evidence that a SHA is verified, must be REFUSED. It was measured present on 537487ac, which carries zero governed checks, and on certified candidates alike; a check present on both verified and unverified SHAs discriminates nothing.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-4",
+      "description": "A CANDIDATE'S CHECKS ARE REFUSED AS THE MERGE SHA'S CHECKS. Offering the nine green check-runs on a PR head as evidence that the merge commit is verified must be REFUSED. They are reported on a different SHA and were produced against a merge-ref, which the frozen authority's TEST_EVIDENCE_MODEL forbids as a substitute.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-5",
+      "description": "TREE IDENTITY IS REFUSED AS SHA VERIFICATION. Offering a passing TREE_IDENTITY_CONTROL as proof that the merge SHA is verified must be REFUSED. It establishes content coverage only, and the authority requires that limitation be stated wherever the coverage is cited. A control that let tree-identity stand in for verification would convert a compensating control into the thing it compensates for.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-6",
+      "description": "THE H SAFE-HARBOUR IS REFUSED WHILE U-4 IS UNMEASURED. Offering ADJUDICATIONS.H as a present-tense guarantee that automatic Previews cannot consume the PR201 grant must be REFUSED until the environment-correction state has been MEASURED. The authority marks H conditional; a consumer that reads past the condition is relying on an inference about hosted state drawn from repository state.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-7",
+      "description": "A VISIBILITY CHANGE IS REFUSED AS SECRET REMEDIATION. Recording M-5 as closing secret-scanning alert 1, or closing OD-5 on the grounds that the repository was made private, must be REFUSED. The measurement is that the value is absent from the tree and still present in reachable history; making the repository private changes future access and retracts nothing.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-8",
+      "description": "AN UNKNOWN IS REFUSED AS A DEFAULT. Proceeding with M-4 or M-7 without U-1, with M-5 without U-3, or with M-6 without U-5, must be REFUSED. In each case the authority records the specific harm: an unseen production-branch coupling, a silently removed protection capability, and a mutation with no capturable prestate and therefore no rollback.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-9",
+      "description": "A SECRET VALUE IS REFUSED IN EVIDENCE. Any evidence packet or successor artifact that would contain a secret value — an environment variable value, a connection string, a token, or the value behind any secret-scanning alert — must be REFUSED and the citation reduced to name and location. An incomplete packet is the correct outcome, not a reason to include the value.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-10",
+      "description": "A DERIVED VERDICT IS REFUSED WHERE THE AUTHORITY ROUTES TO AN OWNER. Treating OD-1, OD-2, OD-3, OD-4 or OD-5 as settled by this artifact must be REFUSED. The final state is AUTHORED_AWAITING_OWNER_RATIFICATION precisely because they are open, and an executor acting on an unratified decision is acting without authority.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-11",
+      "description": "A PRODUCTION ACT IS REFUSED UNDER THIS AUTHORITY. Any deployment, promotion, alias change, domain change, production environment-variable change, or Supabase contact must be REFUSED as unauthorized by this artifact, whatever the justification offered and whatever a measurement appears to invite.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-12",
+      "description": "A DROPPED CHECK IS REFUSED AS A PATH TO A SUCCESSFUL CONFIGURATION. If M-1 cannot be configured because a required check does not report on the relevant SHA, removing that check to make the configuration succeed must be REFUSED. The frozen authority's RULE_NO_GATE_WEAKENING forbids narrowing a gate to obtain a pass, and the correct outcome is a STOP and an escalation to the lane implementing E.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "MUT-1",
+      "description": "Remove the triple-sourcing from P2 so the artifact records only the protection endpoint's 404. The control must REDDEN, naming the lost read paths. If it stays green, the control was only checking that SOME absence was recorded, and would pass against an artifact whose sole evidence was an endpoint the token may simply lack permission to see.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-2",
+      "description": "Rewrite ADJUDICATIONS.H to drop the expiry and assert flatly that automatic Previews can never consume the PR201 grant. The controls must REDDEN. This is the single most load-bearing mutation in the manifest: the flat claim is the intuitive one, it is what a reader expects, and it is exactly the error that would make a bounded one-deployment authority meaningless once the configuration is corrected.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-3",
+      "description": "Replace K-1 (identity before existence) with a classification rule — 'a governed deployment is one with target preview, the exact SHA and a coherent environment'. The controls must REDDEN, and N-1 in particular must fire, because every one of those properties was MEASURED on an automatic Preview of the frozen base.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-4",
+      "description": "Change the merge-tree comparand in TREE_IDENTITY_CONTROL from 'the head GitHub records as merged' to 'the head recorded by the certifying lane'. The control must REDDEN. This lane made that exact error against PR #197 — comparing against a pre-sync head and obtaining a false mismatch — so the mutation reproduces a measured failure rather than an imagined one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-5",
+      "description": "Promote OD-1 from an owner decision to a DERIVED verdict naming any one of its three options. The controls must REDDEN via N-10 and P4. A manifest that let this pass would let the artifact settle the branch role model silently, which is the specific failure the mission's OWNER_DECISION_REQUIRED section exists to prevent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-6",
+      "description": "Delete the prestate_to_capture field from M-6 or M-7. The control must REDDEN via P6. Both are the mutations whose prestate is UNMEASURED at authoring, so they are precisely the ones where a missing capture leaves no rollback at all.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-7",
+      "description": "Reorder EXECUTION_ORDERING so M-6 follows the PR201 environment correction. The control must REDDEN, naming the window in which an automatic Preview built with corrected configuration becomes indistinguishable from the governed deployment. An ordering whose rationale is not itself checked is decoration.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-8",
+      "description": "Reorder EXECUTION_ORDERING so M-5 (visibility) precedes the resolution of U-3 (plan tier). The control must REDDEN, naming the risk that protection established by M-1..M-3 is silently removed by the visibility change.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-9",
+      "description": "Add 'Vercel Preview Comments' to the required-check set in ADJUDICATIONS.D. The control must REDDEN via N-3, naming the measurement that it appears on unverified merge SHAs as well as on verified candidates.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-10",
+      "description": "Soften C-5 from a contradiction to an observation — for example by recording that production 'may' be deployed automatically rather than that it measurably was, from a commit with zero check-runs. The control must REDDEN. C-5 is the finding with a live public blast radius, and softening it is the most plausible way this artifact could be made comfortable and useless.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-11",
+      "description": "Record secret-scanning alert 1's value, line or commit in either document. The control must REDDEN via N-9 and the authority's NO_SECRET_POLICY. The mutation is tempting because it would make the finding more actionable-looking, which is exactly why it needs a control rather than a convention.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-12",
+      "description": "Replace an UNKNOWN entry with a plausible assumed value — for example asserting that the Vercel production branch is main, which the behavioural evidence strongly suggests. The control must REDDEN via N-8. The measured evidence is that production was built from main's head; that is not the same proposition as the production-branch setting being main today, and the gap between them is where a false control would live.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
