@@ -1,0 +1,289 @@
+{
+  "package_id": "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_RESIDUAL_SWEEP_CLOSING_A_FOCUSED_RECERT_BLOCKER_ON_A_DRAFT_NODE_AUTHORITY_NOT_IMPLEMENTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_SUPERSEDES_TWO_RESIDUAL_BASE_CLAUSES_AND_THREE_INTERNAL_v1_0_1_CLAUSES_NONE_OF_WHICH_CHANGE_THE_MINIMUM_PRIVILEGE_MODEL_ANY_OWNER_DECISION_SUBSTANCE_OR_THE_SSL_06_CONFIDENTIALITY_RATIONALE",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "amends_transitively": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "mission_id": "CV1-D1-AUDITOR-CAPABILITY-RESIDUAL-SWEEP-AMENDMENT-R3",
+  "lane": "CV1-D1-AUDITOR-CAPABILITY-RESIDUAL-SWEEP-AMENDMENT-R3",
+  "role": "APPEND_ONLY_RESIDUAL_SWEEP_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-capability-adjudication-aw-r1",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_PRE_AMENDMENT_HEAD": "b72112011e33a6ae02879b2e8638b08483202e3a",
+  "as_of_measurement_note": "This amendment is a TEXTUAL residual sweep of an already-frozen, already-checked-out three-file package (base authority v1.0.0, authority amendment v1.0.1, and their two companion manifests). It performs no new hosted measurement, no new engine-semantics measurement, and consumes no new repository fact beyond a recursive string-leaf walk of those four files and a direct structural re-read of v1.0.1’s own precedence, reaffirmation and token-totality machinery — both read-only, both against already-committed content, neither requiring a hosted connection.",
+  "EFFECTIVE_PACKAGE": {
+    "rule": "The effective authority is the ORDERED READ of all three authority files (and, for the manifest side, all three manifest files). Where a later file supersedes or qualifies an earlier one, the later file controls for that point only; everywhere else, silence means the earlier file controls verbatim.",
+    "read_order": [
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json (this file)"
+    ],
+    "all_prior_files_left_byte_unchanged": true
+  },
+  "FOCUSED_RECERT_CONSUMED": {
+    "result": "FOCUSED_RECERT_FAIL",
+    "lane": "CV1-D1-AUDITOR-CAPABILITY-FOCUSED-RECERT-R1",
+    "date": "2026-09-21",
+    "candidate_recertified": "b72112011e33a6ae02879b2e8638b08483202e3a (tree 434b4e4d)",
+    "what_was_found_sound": "The schema validator re-derivation (0 violations for the v1.0.1 manifest amendment against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, exactly 2 against the unamended base blob, confirming AN1 non-vacuous); both prose-count corrections in SECTION_A2 (four role-creating packages) and SECTION_A3 (eleven GRANT USAGE occurrences, ten SQL plus one prose); all seven OLD_verbatim strings in SECTION_A1 byte-exact against the frozen base blobs; the new STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE token itself (naming, disposition, grounding in the base’s own sibling tokens); and the SSL-06 and Windows wording corrections’ substance — the five conditions, the what_it_fails list and the engineering recommendation are byte-identical to the base text they carry forward. Base authority (blob eb77f095…) and base manifest (blob 2790f353…) confirmed byte-unchanged between 4eb302dd and b7211201.",
+    "what_failed": "ONE BLOCKING FINDING (B-1) and THREE NON-BLOCKING FINDINGS (NB-1, NB-2, NB-3), all four of the same species: v1.0.1 corrected a NORMATIVE clause by name but left an EFFECTIVE RESTATEMENT or an EFFECTIVE PRECEDENCE GAP standing elsewhere in the SAME package, uncorrected and still controlling.",
+    "B1_detail": "OWNER_DECISIONS.decisions[OD-2].sub_decisions[1] — the exact clause the OWNER RATIFIES at the next gate — survived v1.0.1 verbatim, still literally asking whether a Windows user-scope environment variable is accepted, the identical mechanism SECTION_A7 adjudicates NOT ACCEPTABLE, ABSOLUTE, AND NOT AN OWNER ELECTION. v1.0.1 SECTION_A8 item [9] reaffirmed OWNER_DECISIONS.decisions[OD-2] as unchanged \"in full\", and SECTION_A9’s own precedence rule gave every clause not named in SECTION_A1’s seven-id parenthetical verbatim control to the base — OD-2.sub_decisions[1] is not among those seven ids. SECTION_A9’s OWN conflict_rule (\"a reader who finds this amendment and the base in conflict on any clause NOT named in SECTION_A1 must treat that as a defect in THIS amendment and STOP\") therefore convicts v1.0.1 of its own defect, by its own rule, without any external argument needed.",
+    "NB1_detail": "OWNER_DECISIONS.decisions[OD-4].engineering_recommendation (\"Do NOT let it block D-1\") survived v1.0.1 unremarked. \"It\" is disambiguated by the clause’s own following sentence as the narrower-role successor question, not as OD-4’s own ratification — but the sentence sits inside a document whose central corrected rule (v1.0.1 SECTION_A4) is that OD-4 itself is NOT exempt from PHASE_P0_PREREQUISITE’s gate, and an unqualified \"do not let it block D-1\" is close enough to that exact ambiguity to be worth closing explicitly rather than left to a careful reader.",
+    "NB2_detail": "SECTION_A5’s new token STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE fires on PV-24..PV-28 red AND not attributable to MR-3, defined as EITHER MR-3 did not fire OR MR-3’s own verification already confirmed the row false. MUTATION_ROLLBACK_CONTRACT.MR_3_SCHEMA_USAGE_GRANT.verification asserts exactly THREE booleans (USAGE true, CREATE-on-uellix_stella_ops false, EXECUTE-on-either-literal false) — mapping to PV-24, PV-25 and PV-26 only. PV-27 (CREATE on public) and PV-28 (DML on uellix_bootstrap.staging_sentinel) are never asserted by MR-3’s verification at all, because MR-3’s mutation never touches either object. So if MR-3 FIRED (disjunct A fails) and PV-27 or PV-28 is ALSO found red for an unrelated, pre-existing reason, NEITHER disjunct of the token’s own written condition is satisfied by the letter of the text, even though the token plainly should fire.",
+    "NB3_detail": "SECTION_A9’s precedence rule names control for \"the loci named in SECTION_A1 (F-A2-1, …, F-A7) AND materialized in SECTION_A2 through SECTION_A7\" — SECTION_A2 and SECTION_A3 (the two prose-count corrections) carry no F-id of their own and are not inside the parenthetical. A restrictive reading of that sentence (control confined to the seven parenthesized ids) would leave the base’s own false \"five packages\" / \"eight statements\" text as the verbatim-controlling account, exactly the opposite of SECTION_A2/A3’s intent. The union reading (parenthetical PLUS \"materialized in A2–A7\") is what the amendment always meant, but the sentence does not say so unambiguously."
+  },
+  "RESIDUAL_SWEEP_METHOD": {
+    "rule": "Every string leaf of the base authority v1.0.0, the authority amendment v1.0.1, the base manifest v1.0.0 and the manifest amendment v1.0.1 was extracted by a RECURSIVE WALK of the parsed JSON — object keys, array indices, and every terminal string value — not a grep of clause ids. Each leaf was tested against eight patterns matching the family of Windows-delivery and OD-4-scope semantics named by the focused re-certification. Every hit was individually read in full context and classified as SUPERSEDED (the clause is corrected in this amendment), QUALIFIED (the clause is corrected in a narrower, disambiguating respect), or DEMONSTRATED_NOT_OBSOLETE (the text is either already the corrected/carried-forward form, an unrelated true statement the pattern matched incidentally, or a historical fact/adversarial-mutant description that was never itself the defect).",
+    "patterns": [
+      "P1 /user[- ]scope/i",
+      "P2 /\\bsetx\\b/i",
+      "P3 /accepted under the five binding conditions/i",
+      "P4 /whether a windows[^.]*environment variable/i",
+      "P5 /owner election/i",
+      "P6 /block D-1/i",
+      "P7 /HKCU/i",
+      "P8 /not an owner election/i"
+    ],
+    "files_swept": [
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+    ],
+    "raw_pattern_hits": 30,
+    "unique_loci_hit": 19,
+    "superseded_or_qualified_by_this_amendment_from_the_sweep": 2,
+    "demonstrated_not_obsolete_no_action_needed": 17,
+    "manifest_amendment_v101_hits": 0,
+    "what_the_sweep_alone_did_and_did_not_find": "The eight patterns caught every RESTATEMENT of the Windows-delivery defect’s own vocabulary, and found exactly two that were genuinely defective (both against the base authority: OD-2.sub_decisions[1], the B-1 blocker itself, and OD-4.engineering_recommendation, NB-1). It did NOT find, and by construction COULD NOT find, the three structural defects B-1’s downstream propagation into v1.0.1’s own machinery (SECTION_A8’s \"in full\" reaffirmation, SECTION_A9’s restrictive precedence parenthetical) and NB-2’s token-totality gap — none of those three clauses contains the words \"user-scope\", \"setx\" or any of the other seven patterns; they are PRECEDENCE and COMPLETENESS defects, not textual restatements. Those three were found by direct structural re-read of v1.0.1’s own control-flow (its precedence rule, its unchanged-list, and its new token’s own disjunction against MR-3’s actual verification scope) — exactly the distinction the focused re-certification itself drew between B-1 (found by reading the ratification-gate text a human would actually sign) and the sweep-shaped residuals of the PR #204 precedent this amendment’s method otherwise follows.",
+    "classified_hits_from_base_authority": [
+      {
+        "locus": "SECRET_DELIVERY_CONTRACT.WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION.question",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "A neutral interrogative (\"Is X acceptable?\"), not an assertion. v1.0.1 SECTION_A7 answers it by splitting into two mechanisms; the question itself asserts nothing that needed correcting."
+      },
+      {
+        "locus": "SECRET_DELIVERY_CONTRACT.WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION.what_it_does_NOT_satisfy[0]",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Accurate diagnosis of setx’s persistence property, carried forward verbatim into v1.0.1 SECTION_A7 MECHANISM_1.what_it_fails_carried_unchanged_from_the_base_text[0]. It is the evidence for the fix, not the defect."
+      },
+      {
+        "locus": "SECRET_DELIVERY_CONTRACT.WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION.CONDITIONS_UNDER_WHICH_IT_BECOMES_ACCEPTABLE.conditions[0]",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Accurate condition (\"PROCESS-SCOPED, NOT USER-SCOPED\"), carried forward verbatim into v1.0.1 SECTION_A7 MECHANISM_2’s conditions. This IS the rule the base text failed to apply consistently to its own verdict; the condition itself was always correct."
+      },
+      {
+        "locus": "FACT_VS_RECOMMENDATION_VS_DECISION.ENGINEERING_RECOMMENDATION",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "States the recommendation prefers \"a secret manager over a user-scope environment variable\". Still true, and if anything understated now that user-scope is absolutely prohibited rather than merely disfavoured — no contradiction, no correction required; not touched by this amendment."
+      },
+      {
+        "locus": "OWNER_DECISIONS.decisions[OD-2].sub_decisions[1]",
+        "classification": "SUPERSEDED",
+        "why": "THE B-1 BLOCKER. Fixed by SUPERSEDED_PARENT_CLAUSES_V102 SPC102-1."
+      },
+      {
+        "locus": "OWNER_DECISIONS.decisions[OD-4].engineering_recommendation",
+        "classification": "QUALIFIED",
+        "why": "NB-1. Fixed by SUPERSEDED_PARENT_CLAUSES_V102 SPC102-2."
+      }
+    ],
+    "classified_hits_from_authority_amendment_v101": [
+      {
+        "locus": "SECTION_A1_DEFECT_ADJUDICATION.FINDINGS[6].defect",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "F-A7’s own historical description of the BASE defect, in past tense, as the reason for the correction. Correct as written; describing a fixed defect is not itself a defect."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.two_mechanisms_not_one",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Correct framing text introducing the fix."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_1_USER_SCOPE_PERSISTENT.example",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Illustrative example of the prohibited mechanism, correctly labelled as prohibited by the same block."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_1_USER_SCOPE_PERSISTENT.NEW_verdict",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "This IS the corrected verdict (\"NOT ACCEPTABLE. ABSOLUTE, AND NOT AN OWNER ELECTION.\"). It must remain exactly as written; it is what B-1’s fix aligns OD-2 with, not something to change."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_1_USER_SCOPE_PERSISTENT.why_absolute_rather_than_an_OD_2_election",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Correct supporting reasoning for the verdict above."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_1_USER_SCOPE_PERSISTENT.what_it_fails_carried_unchanged_from_the_base_text[0]",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Carried-forward accurate diagnosis, duplicate of the base-authority hit above by design."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_2_PROCESS_SCOPED.NEW_verdict",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Correct current framing: process-scoped remains an OD-2 election under the five conditions. Remains accurate after this amendment’s narrowing of OD-2.sub_decisions[1], which confines that same election to exactly this mechanism."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_2_PROCESS_SCOPED.what_it_is",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Correct definition of the surviving candidate mechanism."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_2_PROCESS_SCOPED.conditions_carried_unchanged_from_the_base_text[0]",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Carried-forward accurate condition, duplicate of the base-authority hit above by design."
+      },
+      {
+        "locus": "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.why_this_artifact_still_refuses_to_simply_decide_carried_unchanged_from_the_base_text",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Already states \"MECHANISM_1 is no longer part of that choice\" — consistent with, not contradicting, this amendment."
+      },
+      {
+        "locus": "required_independent_review.adversarial_questions_the_certifier_should_press[5]",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "A genuine adversarial review question pressing whether the absolute verdict is calibrated correctly. Asserts nothing; presses the fix, does not restate the defect."
+      }
+    ],
+    "classified_hits_from_base_manifest_v100": [
+      {
+        "locus": "negative_controls (control naming OD-5, matched only on the generic phrase \"owner election\")",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "Unrelated false-positive match: this control concerns OD-5 (protected-surface allocation), not OD-2 or Windows delivery, and asserts nothing about either."
+      },
+      {
+        "locus": "mutation_controls (M26, \"or set a user-scope environment variable that survives reboot and never remove it\")",
+        "classification": "DEMONSTRATED_NOT_OBSOLETE",
+        "why": "An ADVERSARIAL MUTANT description — the bad behaviour this control exists to catch, not a normative permission. Still correct and, if anything, more clearly wrong-to-do now that MECHANISM_1 is absolutely prohibited."
+      }
+    ]
+  },
+  "SUPERSEDED_PARENT_CLAUSES_V102": {
+    "rule": "Each clause is superseded ONLY in the respect stated, in its ORIGINAL location in v1.0.0. The remainder of the parent artifact, including the rest of the enclosing block, continues to control verbatim.",
+    "clauses": [
+      {
+        "id": "SPC102-1",
+        "parent_path": "OWNER_DECISIONS.decisions[id=OD-2].sub_decisions[1]",
+        "parent_verbatim": "Which delivery mechanism places it in the process environment, and whether a Windows user-scope environment variable is accepted under the five binding conditions in SECRET_DELIVERY_CONTRACT.",
+        "respect_in_which_superseded": "Replaced by: \"Which PROCESS-SCOPED delivery mechanism places it in the process environment, evaluated against all five binding conditions in SECRET_DELIVERY_CONTRACT.MECHANISM_2_PROCESS_SCOPED (v1.0.1 SECTION_A7) — a dedicated secret manager or OS credential vault (SECTION_A7’s own engineering recommendation) being the two live candidates at AS_OF_TREE. A USER-SCOPE PERSISTENT Windows environment variable (setx or the equivalent System Properties UI action) is NOT a candidate this sub-decision may select: v1.0.1 SECTION_A7 adjudicates that mechanism NOT ACCEPTABLE, ABSOLUTE, AND NOT AN OWNER ELECTION, and that adjudication is CLOSED, not reopened, by this sub-decision.\" The other four sub_decisions ([0] custody mechanism, [2] SSL-06 inventory location, [3] rotation break-risk acceptance, [4] operator-prestate-read election) are UNCHANGED and continue to control verbatim.",
+        "grounds": "B-1, the sole blocking finding of CV1-D1-AUDITOR-CAPABILITY-FOCUSED-RECERT-R1. This is the exact clause the owner ratifies at the next gate; leaving it asking a question v1.0.1 itself had already answered NOT ACCEPTABLE would have the owner ratifying an option this package no longer offers."
+      },
+      {
+        "id": "SPC102-2",
+        "parent_path": "OWNER_DECISIONS.decisions[id=OD-4].engineering_recommendation",
+        "parent_verbatim": "Raise it as a SUCCESSOR question after D1-8 closes. Do NOT let it block D-1: a narrower role is a new identity, a new credential, a new grant chain and a new certification, and the marginal risk of one governed read-only session with the existing role is smaller than the risk of that whole chain being built in a hurry.",
+        "respect_in_which_superseded": "QUALIFIED, not replaced. Appended: \"Disambiguation (v1.0.2, NB-1): ‘it’ in ‘Do NOT let it block D-1’ refers to the SUCCESSOR QUESTION — whether to design and build a narrower catalog-observer role — not to OD-4’s own ratification under PHASE_P0_PREREQUISITE. OD-4 itself remains one of the six owner decisions that MUST be ratified before PHASE_P1 opens, exactly as OWNER_DECISIONS.rule, PHASE_P0_PREREQUISITE.gate and v1.0.1 SECTION_A4 already state; this recommendation advises only against deferring D-1 behind a new-role design-and-build project, never against ratifying OD-4 itself.\" The original sentence is otherwise unchanged.",
+        "grounds": "NB-1 of CV1-D1-AUDITOR-CAPABILITY-FOCUSED-RECERT-R1. Minor: the clause immediately following already disambiguates \"it\" correctly for a careful reader. Closed anyway because it sits one sentence away from v1.0.1 SECTION_A4’s central corrected rule (OD-4 is NOT exempt from the global gate) and an unqualified \"do not let it block D-1\" is close enough to that exact shape of ambiguity to be worth foreclosing rather than left to inference."
+      }
+    ]
+  },
+  "SUPERSEDED_V101_CLAUSES": {
+    "rule": "v1.0.1 is left BYTE-UNCHANGED. Each clause below is superseded ONLY in the respect stated; the rest of v1.0.1 continues to control verbatim, including every other item in the lists touched here.",
+    "clauses": [
+      {
+        "id": "SPC102-V101-1",
+        "parent_path": "SECTION_A8_NO_OTHER_SEMANTIC_CHANGE.unchanged[9]",
+        "parent_verbatim": "OWNER_DECISIONS.rule, OWNER_DECISIONS.decisions[OD-1], [OD-2], [OD-3], [OD-5] in full, and the OD-4/OD-6 QUESTION, repository_position, options/why_it_is_raised_anyway, and engineering_recommendation fields — only consequence_if_unratified changes for OD-4 and OD-6, per SECTION_A4.",
+        "respect_in_which_superseded": "Replaced by: \"OWNER_DECISIONS.rule, OWNER_DECISIONS.decisions[OD-1], [OD-3], [OD-5] in full, and the OD-4/OD-6 QUESTION, repository_position, options/why_it_is_raised_anyway, and engineering_recommendation fields — consequence_if_unratified changes for OD-4 and OD-6 per SECTION_A4, and engineering_recommendation is additionally qualified for OD-4 per v1.0.2 SPC102-2. OWNER_DECISIONS.decisions[OD-2] remains controlling EXCEPT sub_decisions[1], which is superseded by v1.0.2 SPC102-1; OD-2’s question, repository_position, sub_decisions[0], [2], [3], [4], and its engineering_recommendation and consequence_if_unratified fields are unchanged.\" The other sixteen items of this list are unchanged.",
+        "grounds": "B-1. This is the exact defect the focused re-certification flagged as the mechanism by which B-1 survived: a blanket \"OD-2 … in full\" reaffirmation, combined with SECTION_A9’s restrictive precedence rule, gave the base’s own defective sub_decisions[1] verbatim control despite SECTION_A7 having already adjudicated the mechanism it offers NOT ACCEPTABLE three sections earlier in the SAME document. This is why this amendment’s own residual sweep reads v1.0.1’s control-flow directly rather than trusting its own account of what it left standing — the identical caution the PR #204 residual-sweep precedent recorded."
+      },
+      {
+        "id": "SPC102-V101-2",
+        "parent_path": "SECTION_A9_PRECEDENCE.rule",
+        "parent_verbatim": "For the loci named in SECTION_A1 (F-A2-1, F-A2-2, F-A4, F-A4B, F-A5, F-A6, F-A7) and materialized in SECTION_A2 through SECTION_A7, THIS AMENDMENT CONTROLS. For everything else — including every clause named in SECTION_A8 as unchanged, and including all 80 controls of the base manifest — the frozen base authority v1.0.0 and its frozen base manifest v1.0.0 control verbatim.",
+        "respect_in_which_superseded": "Replaced by: \"For EVERY locus corrected in SECTION_A2 through SECTION_A7 of this amendment, THIS AMENDMENT CONTROLS — including the two prose-count corrections in SECTION_A2 and SECTION_A3, which are controlling by virtue of being materialized there even though neither carries an F-id of its own and neither is named in the SECTION_A1 parenthetical list. That parenthetical (F-A2-1, F-A2-2, F-A4, F-A4B, F-A5, F-A6, F-A7) enumerates the FINDINGS that motivated a correction; it is not an exhaustive index of every controlling locus. A restrictive reading confining control to only the seven parenthesized ids — which would leave SECTION_A2’s and SECTION_A3’s own corrected text without effect and the base’s false ‘five packages’/‘eight statements’ counts still verbatim-controlling — is REJECTED, and is the exact ambiguity v1.0.2 NB-3 identified. For everything else — including every clause named in SECTION_A8 as unchanged, as corrected by v1.0.2 SPC102-V101-1 and SPC102-V101-3 — the frozen base authority v1.0.0 and its frozen base manifest v1.0.0 control verbatim.\" The conflict_rule and relation_to_the_grandparent_authorities fields of SECTION_A9 are unchanged.",
+        "grounds": "NB-3. Recorded so a future reader cannot revive B-1’s failure mode by applying the SAME restrictive-parenthetical misreading to a DIFFERENT pair of un-ided loci; the precedence rule itself is now explicit that \"named in SECTION_A1\" and \"materialized in SECTION_A2 through SECTION_A7\" are a UNION, not one a subset of the other."
+      },
+      {
+        "id": "SPC102-V101-3",
+        "parent_path": "SECTION_A5_NEW_FAIL_CLOSED_TOKEN.ADDED_TOKEN.when",
+        "parent_verbatim": "PV-24, PV-25, PV-26, PV-27 or PV-28 is measured TRUE at PHASE_P3 or at any later re-observation (respectively: EXECUTE on the nine-argument canonical literal, EXECUTE on the seven-argument canonical literal, CREATE on uellix_stella_ops, CREATE on public, or any of INSERT/UPDATE/DELETE/TRUNCATE on uellix_bootstrap.staging_sentinel), AND that finding is not attributable to this artifact’s own MR-3 — i.e. MR-3 either did not fire (its trigger in MUTATION_ROLLBACK_CONTRACT.MR_3_SCHEMA_USAGE_GRANT was not met) or MR-3 fired and its own verification already separately confirmed the corresponding row false. In either case the prohibited privilege PRE-EXISTS on the hosted target and no mutation this artifact authorizes is its cause.",
+        "respect_in_which_superseded": "Replaced by: \"PV-24, PV-25, PV-26, PV-27 or PV-28 is measured TRUE at PHASE_P3 or at any later re-observation (respectively: EXECUTE on the nine-argument canonical literal, EXECUTE on the seven-argument canonical literal, CREATE on uellix_stella_ops, CREATE on public, or any of INSERT/UPDATE/DELETE/TRUNCATE on uellix_bootstrap.staging_sentinel), AND that finding is not attributable to this artifact’s own MR-3 — i.e. (a) MR-3 did not fire (its trigger in MUTATION_ROLLBACK_CONTRACT.MR_3_SCHEMA_USAGE_GRANT was not met); or (b) MR-3 fired and its own verification already separately confirmed the corresponding row false, which covers PV-24, PV-25 and PV-26, the three booleans MR_3_SCHEMA_USAGE_GRANT.verification actually asserts; or (c) the row is PV-27 or PV-28, neither of which MR-3’s mutation (GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_auditor, and nothing else) can ever cause or verify, because MR-3 touches no privilege on schema public and no privilege on uellix_bootstrap.staging_sentinel — so for those two rows non-attribution holds STRUCTURALLY and UNCONDITIONALLY, independent of whether MR-3 fired at all. In every case the prohibited privilege PRE-EXISTS on the hosted target and no mutation this artifact authorizes is its cause.\" The token’s name, its canonical_form_derivation, why_the_gap_existed, disposition_of_a_finding_under_this_token and closes fields are unchanged.",
+        "grounds": "NB-2. MUTATION_ROLLBACK_CONTRACT.MR_3_SCHEMA_USAGE_GRANT.verification (unchanged, re-read for this amendment) asserts exactly three booleans — USAGE true, CREATE-on-uellix_stella_ops false, EXECUTE-on-either-canonical-literal false — mapping onto PV-24, PV-25 and PV-26 only. It never touches public schema CREATE (PV-27) or the sentinel table’s DML privileges (PV-28), because MR-3’s mutation is confined to one GRANT statement on one schema. Disjunct (b) of the pre-amendment text therefore had no textual anchor for PV-27/PV-28, and if MR-3 had fired (defeating disjunct (a)) while one of those two rows was independently red, neither disjunct of the token’s own written condition would have been satisfied by the letter of the text."
+      }
+    ]
+  },
+  "UNCHANGED_AND_STILL_CONTROLLING_V102": {
+    "rule": "Recorded so a reader does not infer that this residual sweep reopened the package generally. Everything in v1.0.0, v1.0.1 and their two manifests not named in SUPERSEDED_PARENT_CLAUSES_V102 or SUPERSEDED_V101_CLAUSES above remains controlling exactly as those files state it, including v1.0.1’s own SECTION_A8 list except the one item corrected here, and v1.0.1’s own SECTION_A9 conflict_rule and relation_to_the_grandparent_authorities fields verbatim.",
+    "explicitly_unchanged": [
+      "The DELTA vs TOTAL privilege model, REQ-1 (unconditional credential) and conditional REQ-2 (USAGE grant), in full — this amendment authorizes no privilege and mints no credential.",
+      "The EXECUTE prohibition (USAGE_IS_NOT_EXECUTE) and every measurement E-1..E-11 grounding it, in full.",
+      "The SSL-06 ENGAGED verdict and its confidentiality rationale, exactly as v1.0.1 SECTION_A6 restated it — not touched, not re-touched, by this amendment.",
+      "GRANT_DELIVERY_CHANNEL_ADJUDICATION and the package-first default for MR-3, in full.",
+      "The entire HOSTED_STATE_UNKNOWN register (HU-1..HU-13) and MEASUREMENT_GAPS_RECORDED, in full — no entry is resolved by this amendment.",
+      "MR-1 and MR-2 of MUTATION_ROLLBACK_CONTRACT, in full, including MR-2’s declared-UNKNOWN prestate and its irreversibility disclosure. Only MR-3’s companion token’s when-clause is touched, per SPC102-V101-3, and MR-3 itself is untouched.",
+      "HUMAN_CONFIRMATION HC-1, HC-2, HC-3 and CAPABILITY_PREFLIGHT_CONTRACT KP-1..KP-6, in full.",
+      "TARGET_IDENTITY and PRODUCTION_VETO, in full — including the by-ref-never-by-name selection rule and the management-plane observation it rests on.",
+      "The GLOBAL OWNER-RATIFICATION GATE ITSELF: OWNER_DECISIONS.rule (\"all six BLOCK PHASE_P1\"), PHASE_P0_PREREQUISITE.gate, FAIL_CLOSED_TOKENS.STOP_OWNER_DECISION_UNRATIFIED, and base manifest control N16 — all four byte-unchanged by v1.0.1 and unchanged again here. This amendment RATIFIES NOTHING; OD-1 through OD-6 remain unratified after it lands, exactly as before.",
+      "v1.0.1 SECTION_A2 and SECTION_A3 (the two prose-count corrections) — their own text is UNCHANGED; only SECTION_A9’s precedence rule around them is clarified, per SPC102-V101-2.",
+      "v1.0.1 SECTION_A7 in its entirety, including MECHANISM_1’s absolute prohibition and MECHANISM_2’s five conditions — this amendment aligns OD-2 with SECTION_A7, it does not alter SECTION_A7 itself.",
+      "All 80 controls of the base manifest v1.0.0 and all 5 controls of the manifest amendment v1.0.1, none renamed, reworded or removed.",
+      "OPEN_FINDINGS OF-1 through OF-10 of the base authority and OF-A1 through OF-A4 of v1.0.1 — none is resolved, closed, or reworded by this amendment."
+    ],
+    "no_ods_surface": "This amendment creates no ODS surface, allocates no ODS lineage, claims no protected authority and touches no protected path. Its entire write set is under docs/ops/release/**."
+  },
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+    "method": "This amendment's write-set paths (two new files, both under docs/ops/release/**) were classified by IMPORTING AND EXECUTING scripts/ods-scope.ts classifyPaths against its own DEFAULT_PROTECTED_PATTERNS, and separately confirmed by pnpm ods:scope against the frozen base.",
+    "PROTECTED_AUTHORITY": "NONE",
+    "reversal_condition": "If a future measurement finds this write set requires any protected path, this verdict is void and the lane stops rather than widening an allowlist."
+  },
+  "self_check": {
+    "v100_authority_left_byte_unchanged": true,
+    "v101_authority_left_byte_unchanged": true,
+    "v100_manifest_left_byte_unchanged": true,
+    "v101_manifest_left_byte_unchanged": true,
+    "write_set_is_exactly_two_new_documents": true,
+    "sweep_was_a_full_string_leaf_walk_not_a_clause_id_grep": true,
+    "sweep_covered_all_four_effective_package_files": true,
+    "B1_closed_by_SPC102_1_and_SPC102_V101_1": true,
+    "NB1_closed_by_SPC102_2": true,
+    "NB2_closed_by_SPC102_V101_3": true,
+    "NB3_closed_by_SPC102_V101_2": true,
+    "no_hosted_postgresql_connection_was_opened": true,
+    "no_hosted_sql_was_issued": true,
+    "no_credential_was_created_rotated_resolved_read_printed_or_requested": true,
+    "no_secret_value_is_present_anywhere_in_this_amendment": true,
+    "no_grant_or_revoke_was_executed_anywhere": true,
+    "no_supabase_or_vercel_configuration_touched": true,
+    "no_production_project_contacted_in_any_way": true,
+    "no_code_written": true,
+    "no_test_written": true,
+    "no_ods_or_hpo_or_w2_lineage_allocated_or_implied": true,
+    "no_owner_decision_ratified_by_this_act": true,
+    "no_owner_decision_substance_changed_beyond_the_narrow_OD2_and_OD4_wording_fixes": true,
+    "delta_vs_total_privilege_model_unchanged": true,
+    "EXECUTE_prohibition_unchanged": true,
+    "SSL06_confidentiality_rationale_and_ENGAGED_verdict_unchanged": true,
+    "package_first_default_for_MR3_unchanged": true,
+    "hosted_state_unknown_register_unchanged": true,
+    "global_all_six_owner_ratification_gate_unchanged": true,
+    "all_five_new_OLD_verbatim_strings_reverified_byte_identical_against_live_files_pre_and_post_generation": true,
+    "MR3_verification_scope_reverified_by_direct_read_before_drafting_SPC102_V101_3": true
+  },
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment closes a blocking finding in a clause the owner literally ratifies (OWNER_DECISIONS), and closes a fail-closed token completeness gap in a security-relevant credential-privilege contract. A residual sweep written by the same programme whose prior amendment produced the residual deserves at least the same scrutiny the prior amendment received, not a lighter pass because the fix is \"only\" a residual sweep.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Is SPC102-1’s new OD-2.sub_decisions[1] text itself free of the SAME failure mode — does it name MECHANISM_2 precisely enough that a future v1.0.3 residual sweep would not need to correct IT in turn? Check whether \"a dedicated secret manager or OS credential vault … being the two live candidates\" could itself go stale if SECTION_A7’s own engineering_recommendation changes.",
+      "Does SPC102-V101-2’s \"union, not subset\" precedence reading actually resolve NB-3, or does it just move the ambiguity one level up — is there now a risk that EVERY future correction in this lineage is assumed control-bearing merely by appearing inside a SECTION_AN block, even one that was never a genuine correction?",
+      "Re-run the eight-pattern sweep independently, with at least two ADDITIONAL patterns the drafting session did not think of (e.g. /environment variable/i alone, /registry/i alone, /reboot/i alone) and confirm no NEW unique locus appears that this amendment’s classification tables do not already cover.",
+      "Verify SPC102-V101-3’s central factual claim directly: re-read MUTATION_ROLLBACK_CONTRACT.MR_3_SCHEMA_USAGE_GRANT.verification in the live v1.0.0 file and confirm it really does assert exactly three booleans, mapping only to PV-24/25/26, with no fourth or fifth boolean this amendment’s disjunct (c) has overlooked.",
+      "Press whether QUALIFYING (rather than fully superseding) OD-4’s engineering_recommendation in SPC102-2 is adequate, or whether the ambiguity is severe enough that OD-4’s recommendation should have been REPLACED outright rather than appended-to — the focused re-certification called this one non-blocking; confirm that classification still holds after reading the qualification in place.",
+      "Confirm the CANDIDATE this recertification would evaluate is a fresh commit carrying v1.0.0 + v1.0.1 + v1.0.2 all three, and that the scope is bounded to v1.0.2’s own five new clauses plus the write-set/schema/gate mechanics — not a full re-read of v1.0.0/v1.0.1, whose own prior certifications stand except where v1.0.2 names them."
+    ],
+    "what_a_certifier_may_NOT_do": "It may not certify by re-deriving the same conclusions from the same reading. Every OLD_verbatim in this amendment is a re-runnable path lookup against the frozen files; MR-3’s three-boolean scope is a re-runnable read of one field; the sweep is a re-runnable script. The certifier should re-run them, not re-read them."
+  },
+  "final_state": "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1_0_0_PLUS_v1_0_1_PLUS_v1_0_2_AUTHORED__AWAITING_FOCUSED_INDEPENDENT_RECERTIFICATION_AND_OWNER_RATIFICATION",
+  "next_gate": "FOCUSED_INDEPENDENT_RE_CERTIFICATION of ONLY v1.0.2’s five new clauses (SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3) and the residual-sweep method’s own completeness — not a full re-read of v1.0.0/v1.0.1, whose prior certifications stand except where named here. OWNER_RATIFICATION of OD-1 through OD-6 (all six) remains outstanding and is not opened by this amendment. No hosted PostgreSQL connection, no credential, no GRANT and no Supabase or Vercel mutation may occur under any of the three authority files until both gates are complete."
+}

@@ -1,0 +1,74 @@
+{
+  "manifest_id": "FIBDB053-D1-AUDITOR-CAPABILITY-PROVISIONING-AMENDMENT-v1.0.2",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json — the companion authority amendment, frozen by mission CV1-D1-AUDITOR-CAPABILITY-RESIDUAL-SWEEP-AMENDMENT-R3 at AS_OF_BASE 537487ac7b102d51f553fcb8f5cfe19614e113d8 / AS_OF_PRE_AMENDMENT_HEAD b72112011e33a6ae02879b2e8638b08483202e3a, closing CV1-D1-AUDITOR-CAPABILITY-FOCUSED-RECERT-R1’s FOCUSED_RECERT_FAIL (1 blocking finding B-1, 3 non-blocking NB-1/NB-2/NB-3). That amendment supersedes TWO clauses of the frozen base authority v1.0.0 (OWNER_DECISIONS[OD-2].sub_decisions[1], OWNER_DECISIONS[OD-4].engineering_recommendation) and THREE clauses internal to the frozen authority amendment v1.0.1 (SECTION_A8_NO_OTHER_SEMANTIC_CHANGE.unchanged[9], SECTION_A9_PRECEDENCE.rule, SECTION_A5_NEW_FAIL_CLOSED_TOKEN.ADDED_TOKEN.when). || FORM: a SEPARATE COMPANION MANIFEST AMENDMENT, following the repository-native precedent docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.2.json — a schema-valid test manifest in its own right, carrying only the DELTA controls this residual sweep adds. It is NOT a replacement manifest: docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json (80 controls) and its v1.0.1 amendment (5 controls) are left BYTE-UNCHANGED and remain controlling for all of their own controls. No FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.1.json or _v1.0.2.json replacement exists or is authorized. || WHAT THIS AMENDMENT SUPERSEDES: no BASE MANIFEST control is touched — the focused re-certification’s findings were all in the AUTHORITY side (OWNER_DECISIONS and the v1.0.1 amendment’s own SECTION_A5/A8/A9), not in any of the 80 base manifest controls or the 5 v1.0.1 manifest-amendment controls, all of which the focused re-certification independently re-confirmed sound. || WHAT THIS AMENDMENT ADDS: three positive delta controls (AP102-1 sweep reproducibility, AP102-2 OD-2’s corrected sub-decision no longer offers MECHANISM_1, AP102-3 the token’s corrected when-clause fires for a PV-27-red-with-MR-3-fired state), two negative delta controls (AN102-1 a dead pre-v1.0.2 OD-2 clause cited as controlling is refused, AN102-2 the restrictive SECTION_A9 parenthetical-only precedence reading is refused), two delta mutation controls (AMUT102-1 deleting SPC102-1 must redden AN102-1/AP102-2, AMUT102-2 deleting SPC102-V101-3’s disjunct (c) must redden AP102-3), and two sentinels (residual-sweep completeness, and a ratification-gate sentinel guarding against a NARROWER-scope OD-2 being misread as a NO-LONGER-BLOCKING OD-2). || ID DISJOINTNESS: the base manifest’s ids are P1..P18, N1..N22, M1..M40; the v1.0.1 manifest amendment’s ids are AP1/AP2, AN1/AN2, AM1. This amendment’s ids (AP102-*, AN102-*, AMUT102-*, ASEN102-*) are a disjoint prefix following the CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.2.json precedent’s own convention, chosen so a \"v1.0.2\" delta control is visually identifiable at a glance across every lane in this repository that has needed one. || STATUS: NO control here is PASS. All are STATUS=FUTURE_MATERIALIZATION; test_file is \"UNKNOWN\" throughout per the schema’s own sanctioned representation, matching every control of the base manifest and the v1.0.1 amendment. This amendment makes the authority’s ratification-gate text CORRECT; it does not make the node GREEN. || ANTI-VACUITY RULE (binding on every control below): a control must assert its comparands as ACTUAL RE-RUN RESULTS — an actual recursive string-leaf walk, an actual read of MUTATION_ROLLBACK_CONTRACT.MR_3_SCHEMA_USAGE_GRANT.verification’s three-boolean scope — never by citing this document’s own prose as if it were the measurement.",
+  "dependencies": [
+    "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0 — the root authority, blob eb77f0954495625d110be3791053a6850ba2b590. Controlling for every clause except the two named superseded by v1.0.2 SPC102-1/SPC102-2. NOT edited by this act.",
+    "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1 — the immediate parent authority amendment, blob b233bd1f947fd6c49e0416279a2f98a260a6d5de. Controlling for every clause except the three named superseded by v1.0.2 SPC102-V101-1/2/3. NOT edited by this act.",
+    "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2 — this manifest’s own controlling authority, added by the same act.",
+    "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0 — the root manifest, blob 2790f3530ce44fd77e12ecdf49430d93ec7a4a70. Controlling for all 80 of its own controls, none touched here. NOT edited by this act.",
+    "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1 — the immediate parent manifest amendment, blob f4a9956012c471044a6044efd9f3a79bedc77cee. Controlling for all 5 of its own controls, none touched here. NOT edited by this act.",
+    "CV1-D1-AUDITOR-CAPABILITY-FOCUSED-RECERT-R1 — the focused re-certification this amendment closes (result FOCUSED_RECERT_FAIL, 1 blocking, 3 non-blocking)."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "ASEN102-1",
+      "purpose": "Residual-sweep completeness sentinel. If a future read of the effective four-file package (base authority, authority amendment v1.0.1, and their two manifests) finds a string matching the eight patterns in v1.0.2's RESIDUAL_SWEEP_METHOD that is not listed in v1.0.2's classified_hits_from_* inventories, the sweep this manifest certifies is INCOMPLETE and must be re-run and re-published, not patched ad hoc. AP102-1 exercises this sentinel directly."
+    },
+    {
+      "id": "ASEN102-2",
+      "purpose": "Ratification-gate sentinel, guarding against a subtler recurrence of B-1's own failure mode. SPC102-1 NARROWS OD-2.sub_decisions[1]'s SCOPE (from 'is a user-scope variable acceptable' to 'which process-scoped mechanism is selected'); it does NOT narrow OD-2's STANDING as one of the six owner decisions that must be RATIFIED before PHASE_P1. A future reader who reasons 'OD-2 is now a smaller, easier question, so it barely needs ratifying' has reproduced B-1's exact error at one remove — mistaking a scope correction for a gate exemption. This sentinel exists to catch that specific misreading in review, not merely to catch a text drift."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "AP102-1",
+      "description": "AMENDMENT ARM. THE RESIDUAL SWEEP IS ACTUALLY RE-RUNNABLE AND ITS RESULT REPRODUCIBLE. Re-executing a recursive string-leaf walk of the base authority v1.0.0, the authority amendment v1.0.1, and their two companion manifests against v1.0.2 RESIDUAL_SWEEP_METHOD’s eight patterns must produce exactly 19 unique loci (30 raw pattern hits, since several loci match more than one pattern), every one of which appears in exactly one of v1.0.2’s three classification lists (classified_hits_from_base_authority, classified_hits_from_authority_amendment_v101, classified_hits_from_base_manifest_v100). A hit outside all three lists means the sweep this control certifies is incomplete and ASEN102-1 has fired.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-2",
+      "description": "AMENDMENT ARM. OD-2's CORRECTED SUB-DECISION NO LONGER OFFERS THE PROHIBITED MECHANISM. Reading OWNER_DECISIONS[OD-2].sub_decisions[1] AS CORRECTED by v1.0.2 SPC102-1 must find it asks ONLY which PROCESS-SCOPED mechanism is selected, evaluated against SECRET_DELIVERY_CONTRACT.MECHANISM_2_PROCESS_SCOPED's five conditions, and must find it explicitly states that a user-scope persistent variable is NOT a candidate the sub-decision may select and that v1.0.1 SECTION_A7's adjudication of that mechanism is CLOSED. A reading that still finds the corrected text asking whether a user-scope variable is acceptable fails this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-3",
+      "description": "AMENDMENT ARM. THE CORRECTED TOKEN FIRES FOR THE GAP NB-2 FOUND. Construct the specific state NB-2 identified: MR-3 has FIRED (its trigger was met and its mutation issued), AND PV-27 (CREATE on public) is independently found TRUE for a reason unconnected to MR-3. Evaluate FAIL_CLOSED_TOKENS.STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE.when AS CORRECTED by v1.0.2 SPC102-V101-3: disjunct (a) is false (MR-3 fired), disjunct (b) is false for PV-27 (MR_3_SCHEMA_USAGE_GRANT.verification never asserts PV-27), but disjunct (c) is TRUE (PV-27 is structurally outside MR-3’s causal reach regardless of firing) — so the token’s own written condition IS satisfied and STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE fires. Evaluated against the PRE-v1.0.2 text, this exact state satisfies NEITHER disjunct and the token would NOT fire by the letter of the text; this control must show the CORRECTED text closes that gap.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "AN102-1",
+      "description": "A DEAD CLAUSE OFFERED AS CONTROLLING IS REFUSED. Citing OWNER_DECISIONS[OD-2].sub_decisions[1] in its PRE-v1.0.2 verbatim form (\"...whether a Windows user-scope environment variable is accepted under the five binding conditions...\") as though it were still the effective owner-decision text — for instance, in a ratification record, a credential-delivery implementation, or a future re-certification’s own summary — must be REFUSED. This is the exact failure mode the focused re-certification found: a clause superseded elsewhere in the document (SECTION_A7’s verdict) was still being read literally at its own location (OWNER_DECISIONS), because nothing at that location said otherwise.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN102-2",
+      "description": "THE RESTRICTIVE PRECEDENCE READING IS REFUSED. Reading v1.0.1 SECTION_A9_PRECEDENCE.rule as confining amendment control to ONLY the seven ids parenthesized in SECTION_A1 (F-A2-1, F-A2-2, F-A4, F-A4B, F-A5, F-A6, F-A7) — and therefore treating SECTION_A2's and SECTION_A3's own corrected prose-counts (four role-creating packages; eleven GRANT USAGE occurrences) as NOT controlling, with the base's original 'five packages'/'eight statements' still verbatim-controlling — must be REFUSED once v1.0.2 SPC102-V101-2 is in effect. A citation of the base's original miscounts as the controlling account, made after this amendment lands, fails this control.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "AMUT102-1",
+      "description": "MUTANT — DELETE SPC102-1, leaving OWNER_DECISIONS[OD-2].sub_decisions[1] unsuperseded. Expected: AN102-1 and AP102-2 both go RED, and the mutant reproduces B-1 exactly — the owner-ratified clause once again asks whether a user-scope variable is accepted, in direct conflict with v1.0.1 SECTION_A7’s ABSOLUTE prohibition of that same mechanism three sections earlier in the same effective package.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT102-2",
+      "description": "MUTANT — DELETE SPC102-V101-3's disjunct (c), reverting FAIL_CLOSED_TOKENS.STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE.when to its two-disjunct pre-v1.0.2 form. Expected: AP102-3 goes RED for the exact state it constructs (MR-3 fired, PV-27 independently red), reproducing NB-2 — a hosted target in that state would carry a prohibited privilege with no fail-closed token whose own written condition is satisfied, even though every other prohibited-privilege token in the artifact (PV-6..10, PV-12..14, PV-15..19, PV-20, PV-31/32) correctly fires in the analogous state.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
