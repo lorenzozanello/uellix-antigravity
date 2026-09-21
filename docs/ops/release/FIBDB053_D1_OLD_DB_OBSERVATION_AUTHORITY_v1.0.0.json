@@ -1,0 +1,948 @@
+{
+  "package_id": "FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "document_class": "BOUNDED_READ_ONLY_HOSTED_CATALOG_OBSERVATION_GRANT",
+  "append_only": true,
+  "mission_id": "CV1-FIBDB053-D1-OLDDB-OBSERVATION-AUTHORITY-W",
+  "lane": "CV1-FIBDB053-D1-OLDDB-OBSERVATION-AUTHORITY-W",
+  "role": "HOSTED_READONLY_CATALOG_OBSERVATION_AUTHORITY_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/fibdb053-d1-olddb-observation-authority-r1",
+  "AS_OF_BASE": "e3f6f0758b96cd925208f26e156168eb800470a8",
+  "AS_OF_HEAD": "e3f6f0758b96cd925208f26e156168eb800470a8",
+  "AS_OF_TREE": "63ea28b3fccef2b85fc3de8b12334449ddfbf3e9",
+  "AS_OF_INTEGRATION_REF": "origin/integration/commercial-v1 = e3f6f0758b96cd925208f26e156168eb800470a8, tree 63ea28b3fccef2b85fc3de8b12334449ddfbf3e9, measured by git fetch origin --prune followed by git rev-parse at materialization. PR #201 measured MERGED with mergeCommit e3f6f0758b96cd925208f26e156168eb800470a8 — the parent of this artifact is integrated, not pending. PR #195 measured OPEN, isDraft true, headRefOid 09bc0d3e2ec9132374932dd34296dc99e3ce444b, untouched by this lane.",
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "The repository's stated convention, carried from FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json NAMING_DERIVATION, itself quoting docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json: an artifact is named for the NODE it governs and placed beside the domain authority it refines.",
+    "node": "FIBDB-053 criterion D1-8 — the independent, read-only observation that establishes whether the hosted staging PostgreSQL catalog is in the OLD_DB state the D-1 rehearsal presupposes.",
+    "placement_adjudication": {
+      "question": "docs/ops/release/** or docs/ops/staging/**?",
+      "verdict": "docs/ops/release/**",
+      "method": "Decided by authority domain and precedence, not by filename aesthetics and not by where the future EVIDENCE lands.",
+      "grounds": [
+        "Every clause this artifact refines lives in docs/ops/release/. The criterion itself is D1_PROOF_CONTRACT.criteria[D1-8] of FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json; the refusal it answers is that artifact's HOSTED_CATALOG_OBSERVATION_DISPOSITION; the freshness rule it consumes is FROZEN_RULES.RULE_OBSERVATION_FRESHNESS of STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json; the stop lines that bound it are that artifact's SECURITY_STOP_LINES.",
+        "The permission this artifact supplies was withheld by two RELEASE-domain artifacts. HC-1 of the parent quotes STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json EXPLICIT_NON_AUTHORIZATIONS — 'NO hosted access of any kind was performed or is authorized by this artifact.' A permission is authored where the permission was withheld.",
+        "The parent specified this successor's SHAPE inside a release-domain artifact (HOSTED_CATALOG_OBSERVATION_DISPOSITION.shape_a_successor_authority_would_need). Placing the successor elsewhere would separate the specification from the thing specified.",
+        "docs/ops/staging/** does hold JSON authorities — CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and its amendment — but those govern the APPLY of an ACL package, a data-definition act. This artifact governs no act against the database's contents at all. Domain proximity to a directory name is not domain proximity to an authority."
+      ],
+      "evidence_location_is_not_authority_location": "The future evidence artifact lands in docs/ops/staging/evidence/** (see EVIDENCE_MATERIALIZATION). That is where the repository keeps consumed hosted measurements; it is not where it keeps the grants that authorize them. The parent's own Vercel evidence does not live in docs/ops/release/ either.",
+      "flagged_for_the_certifier": "Recorded as OF-1 rather than left for a reader to rediscover. A certifier who concludes docs/ops/staging/** is correct should say so; the artifact is a new sibling in either case and no parent is edited."
+    },
+    "second_fibdb_prefixed_artifact_outside_wave3": "ACKNOWLEDGED. The parent recorded being the first (its OF-5). This is the second, under the same rule and for the same reason: the prefix names the node, the directory names the domain.",
+    "no_parent_is_edited": "Every artifact this one consumes carries append_only=true. None is opened. This is a NEW sibling, not an amendment, because it corrects no parent clause: it supplies a permission the parents deliberately withheld and, in one bounded place, QUALIFIES a parent's justification without changing its binding — see ENGINE_SEMANTICS_MEASURED.qualification_of_the_parent_totality_claim."
+  },
+
+  "PURPOSE": {
+    "statement": "To author the narrow, bounded, READ-ONLY execution authority required to observe the hosted staging PostgreSQL catalog and establish — or refute — the FIBDB-053 D-1 OLD_DB predicate, which criterion D1-8 requires and which the parent execution authority deliberately declined to absorb.",
+    "what_this_artifact_is_not": "It is not an observation, not a connection, not a query, not a deployment, not a configuration change and not a grant of any authority beyond the surfaces enumerated in AUTHORIZED_SQL_SURFACE. The presence of a detailed procedure here is not authority to execute it — the future execution lane is a separate lane with its own freshness gate and its own human confirmation.",
+    "why_it_is_needed": "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json records D1_DATABASE_STATE_PROBE = SEPARATE_AUTHORITY_REQUIRED and states four grounds for refusing to absorb the probe itself. It then specifies, explicitly as a specification and not as a grant, the shape a successor would need. This is that successor.",
+    "why_it_is_worth_authoring_even_though_it_may_STOP": "See READ_ONLY_CAPABILITY_CONTRACT. On repository evidence the most likely first outcome of the future execution is STOP_FOR_READONLY_CAPABILITY_ADJUDICATION, not a measurement. That is not a reason to widen the grant; it is the grant working. An authority whose stop branches are the likely ones is still the authority that makes the stop legible instead of leaving a lane to improvise a privilege."
+  },
+
+  "CONTROLLING_AUTHORITY": {
+    "precedence": "CLAUDE.md section 2. Nothing here supersedes a frozen artifact; where this artifact and a parent disagree, the parent controls and the execution lane STOPS.",
+    "consumed": [
+      {
+        "artifact": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+        "clauses": [
+          "D1_PROOF_CONTRACT.criteria[D1-8]",
+          "D1_PROOF_CONTRACT.same_deployment_rule",
+          "HOSTED_CATALOG_OBSERVATION_DISPOSITION (all four grounds and the successor shape)",
+          "FAILURE_ROLLBACK_CONTRACT.branches[FR-4]",
+          "SECRET_CUSTODY_CONTRACT.evidence_emission_allowlist",
+          "SECRET_CUSTODY_CONTRACT.local_inspection_protocol",
+          "M11_S6_BOUNDARY",
+          "EXPLICIT_NON_AUTHORIZATIONS"
+        ],
+        "disposition": "CONSUMED AS GIVEN. This artifact is the successor that clause HOSTED_CATALOG_OBSERVATION_DISPOSITION names and does not extend the parent in any other direction."
+      },
+      {
+        "artifact": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+        "clauses": [
+          "FROZEN_RULES.RULE_OBSERVATION_FRESHNESS",
+          "FROZEN_RULES.RULE_FAIL_CLOSED_ON_UNKNOWN",
+          "FROZEN_RULES.RULE_NO_GATE_WEAKENING",
+          "FROZEN_RULES.RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE",
+          "FROZEN_RULES.RULE_NO_APPLY_ON_DRIFT_ALONE",
+          "HOSTED_DDL_PRECONDITIONS.preconditions[HDP-1]",
+          "EVIDENCE_PACKETS.packets[STAGING_OBSERVATION_PACKET]",
+          "SECURITY_STOP_LINES (SSL-06, SSL-08, SSL-09)",
+          "EXPLICIT_NON_AUTHORIZATIONS"
+        ],
+        "disposition": "CONSUMED AS GIVEN. RULE_OBSERVATION_FRESHNESS is consumed verbatim rather than restated in a rival form — see OBSERVATION_FRESHNESS_CONTRACT."
+      },
+      {
+        "artifact": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "clauses": ["ENVIRONMENT_VARIABLE_CONTRACT", "PROVIDER_BOUNDARY"],
+        "disposition": "CONSUMED AS GIVEN. Neither is refined here: this artifact binds no environment variable on any platform and mutates no provider configuration."
+      },
+      {
+        "artifact": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+        "clauses": ["S1", "S4", "S6", "S9", "G12", "M11"],
+        "disposition": "CONSUMED AS GIVEN. No gate state is read forward, changed, advanced or declared by this artifact or by the execution it authorizes."
+      },
+      {
+        "artifact": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+        "clauses": ["CATALOG_PROBE_CONTRACT", "DEPLOYMENT_CONTRACT", "STAGE_A_INTERACTION", "G2_BOUNDARY_RESTATEMENT"],
+        "disposition": "CONSUMED AS GIVEN, as corrected by its amendments. DEPLOYMENT_CONTRACT supplies the D-1 cell this observation tests one half of."
+      },
+      {
+        "artifact": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "clauses": [
+          "SECTION_A3_SUPERSEDING_CATALOG_PROBE_CLAUSE.CANONICAL_PROBE_LITERAL",
+          "SECTION_A3_SUPERSEDING_CATALOG_PROBE_CLAUSE.RETAINED_UNCHANGED_AND_STILL_BINDING",
+          "SECTION_A9_NO_OTHER_SEMANTIC_CHANGE"
+        ],
+        "disposition": "CONSUMED AS GIVEN. A3 is the FROZEN source of both literals this artifact uses. They were re-derived from A3 at AS_OF_TREE and compared against the lane prompt rather than taken from it."
+      },
+      {
+        "artifact": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "clauses": ["SECTION_B12_NO_OTHER_SEMANTIC_CHANGE"],
+        "disposition": "CONSUMED AS GIVEN. B12 lists STAGE_A_INTERACTION and DEPLOYMENT_CONTRACT among the explicitly unchanged, so the D-1 cell this observation serves is the frozen one."
+      }
+    ]
+  },
+
+  "AUTHORITY_GAP_ADJUDICATED": {
+    "finding": "REAL_GAP_CONFIRMED, AND MECHANICALLY MEASURED RATHER THAN ASSERTED.",
+    "the_refusal_that_creates_it": {
+      "artifact": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+      "clause": "HOSTED_CATALOG_OBSERVATION_DISPOSITION",
+      "quoted_verdict": "NO.",
+      "quoted_disposition": "D1_DATABASE_STATE_PROBE: SEPARATE_AUTHORITY_REQUIRED",
+      "quoted_non_authorization": "NO connection to hosted PostgreSQL is authorized by this artifact, to any lane, for any purpose, including read-only observation.",
+      "reading": "The parent does not forbid a successor from granting it. It refuses to grant it ITSELF, states four grounds, and then specifies the successor's shape. That is an invitation to author this artifact, not a prohibition against it."
+    },
+    "duplicate_authority_check": {
+      "rule": "An authority is not authored where one already exists. This was MEASURED at AS_OF_TREE, not assumed.",
+      "measurements": [
+        {
+          "probe": "git grep -l UELLIX_AUDITOR_DATABASE_URL -- 'docs/ops/**/*.json'",
+          "result": "ZERO matches. No JSON authority in the repository names the auditor capability at all."
+        },
+        {
+          "probe": "git grep -n -i -E 'authoriz[a-z]* (a )?(read-only )?(hosted|catalog) (connection|observation|access)' -- 'docs/ops/**/*.json', with the negations excluded",
+          "result": "ZERO matches. No authority phrase-matches a grant of hosted or catalog connection or observation."
+        },
+        {
+          "probe": "git grep -ln STAGING_OBSERVATION_PACKET -- 'docs/ops/**'",
+          "result": "TWO files, both consumed above: STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json, which DEFINES the packet as an evidence class, and the parent, which QUOTES it. A packet class is a shape for evidence; it is not a permission to produce it, and nothing in the repository grants that permission."
+        }
+      ],
+      "verdict": "NO_DUPLICATE_AUTHORITY. The permission exists nowhere.",
+      "negative_claim_discipline": "These are three narrow LITERAL probes. A literal absence is not a capability absence, so the verdict is stated as 'no authority matched these three probes' and the certifier is invited to press it. It is recorded this way because a measured zero over names is blind to a capability expressed in other words — a failure mode this programme has already measured."
+    },
+    "conclusion": "A lane that connected to hosted PostgreSQL on the strength of any existing artifact would be inferring an authority every artifact denies. That is the silent authority expansion CLAUDE.md section 5 forbids.",
+    "what_this_artifact_therefore_does": "Creates the missing permission at the narrowest scope that makes D1-8 measurable: one hosted target, one least-privileged read-only capability, an explicitly read-only transaction, at most two observations, and a catalog surface of six facts.",
+    "what_this_artifact_therefore_must_not_be_read_as": "It is NOT a general hosted-access permission, NOT a standing permission, NOT transferable to another project, another capability, another role, another lane or another session, and NOT a permission to read anything outside AUTHORIZED_SQL_SURFACE. It is consumed by the single execution it describes."
+  },
+
+  "CANONICAL_SIGNATURE_CONTRACT": {
+    "rule": "Both literals are FIXED CONSTANTS of this contract, quoted from their frozen source so that no lane recomposes them. Neither is ever composed, interpolated, templated, concatenated, case-folded, normalized, or built from a variable holding a type name.",
+    "derivation_method": "Re-read at AS_OF_TREE from docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json SECTION_A3. The lane prompt also carried both strings; they were COMPARED against the frozen source rather than trusted, and they matched byte-for-byte. A prompt is not an authority.",
+    "NINE_ARGUMENT_CANONICAL_LITERAL": {
+      "value": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb,character varying,text[])",
+      "frozen_by": "SECTION_A3_SUPERSEDING_CATALOG_PROBE_CLAUSE.CANONICAL_PROBE_LITERAL.value",
+      "required_resolution_for_OLD_DB": "pg_catalog.to_regprocedure(<this literal>) resolves to NULL.",
+      "meaning_of_non_NULL": "The Stage-A nine-argument completion verb is INSTALLED. The database is not OLD_DB."
+    },
+    "SEVEN_ARGUMENT_PREDECESSOR_LITERAL": {
+      "value": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb)",
+      "frozen_by": "SECTION_A3_SUPERSEDING_CATALOG_PROBE_CLAUSE.RETAINED_UNCHANGED_AND_STILL_BINDING.predecessor_seven_argument_form_for_reference",
+      "source_claim_verified": "A3 records the form as 'measured at db/prepared/checkpoint-a1/corroboration.sql'. VERIFIED at AS_OF_TREE: the literal appears at db/prepared/checkpoint-a1/corroboration.sql:225 inside a live pg_catalog.to_regprocedure(...) IS NOT NULL probe. The claim was checked rather than carried, because a frozen 'measured at' claim about a generated file has already been found false once in this programme.",
+      "required_resolution_for_OLD_DB": "pg_catalog.to_regprocedure(<this literal>) resolves to a non-NULL regprocedure.",
+      "meaning_of_NULL": "The predecessor verb is absent. Whatever else is true, the database is not the OLD_DB the D-1 rehearsal presupposes."
+    },
+    "mechanism": {
+      "required": "pg_catalog.to_regprocedure(<FIXED LITERAL>), schema-qualified to pg_catalog so that a search_path cannot redirect the call.",
+      "forbidden_substitutes": [
+        "any interpolated or parameterised type list",
+        "any dynamically composed signature",
+        "any string built at runtime from CANONICAL_SIGNATURE_CONTRACT by concatenation",
+        "a broad pg_proc or information_schema.routines search filtered by function name, used as a substitute for the fixed probe",
+        "a count of matching rows in pg_proc used as a proxy for arity",
+        "regprocedure casting of an operator-supplied string"
+      ],
+      "why_a_broad_search_is_not_a_substitute": "A name search answers 'is there something called complete_operation_ticket', which is TRUE in both OLD_DB and NEW_DB. The whole question is arity and argument type identity. A search that has to be post-filtered to answer it has moved the fixed literal from the query into the filter, where nothing audits it against the Stage-A declaration.",
+      "correctness_criterion_carried_from_A3": "Correctness is SEMANTIC SIGNATURE IDENTITY — schema, function name, argument arity, argument order and argument type identity — and NOT textual alias spelling. to_regprocedure normalizes aliases and discards type modifiers before an exact type-identity lookup."
+    },
+    "a_broad_pg_proc_read_is_permitted_only_as_DIAGNOSTIC_CONTEXT": {
+      "disposition": "NOT AUTHORIZED BY THIS ARTIFACT.",
+      "reason": "It was considered, because an enumeration of the arities present would make an UNKNOWN classification easier to diagnose. It is refused because it widens the read surface beyond the two facts the predicate needs, and because a diagnostic that is available is a diagnostic that will be used to argue past a STOP. A lane that wants it must obtain it under a separate grant with its own adjudication."
+    }
+  },
+
+  "OLD_DB_DEFINITION": {
+    "rule": "OLD_DB is a CONJUNCTION of one negative and one positive observation. Either alone is insufficient and neither may be inferred from the other.",
+    "definition": {
+      "nine_argument_probe": "MUST resolve NULL (ABSENT)",
+      "seven_argument_probe": "MUST resolve non-NULL (PRESENT)",
+      "both_required": true
+    },
+    "state_machine_source": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json DEPLOYMENT_CONTRACT.matrix[D-1] — runtime NEW (carries the bridge), database OLD (seven-argument), state SUPPORTED — and CATALOG_PROBE_CONTRACT.rule: 'The probe asks the catalog whether the NINE-argument signature exists. Presence selects NEW_DB; absence selects OLD_DB.' This artifact observes the DATABASE half only. The runtime half is D1-2 and belongs to the parent.",
+    "why_the_positive_witness_is_MANDATORY_and_not_belt_and_braces": {
+      "carried_statement": "The parent already requires it: 'Asserting only the nine-argument absence would pass against a database where the function does not exist at all, or where the schema is missing. The seven-argument presence is what makes the absence meaningful.'",
+      "measured_corroboration": "MEASURED, not merely reasoned. On PostgreSQL 17 a to_regprocedure over an ENTIRELY ABSENT SCHEMA returns NULL without raising — indistinguishable at the query layer from a present schema whose function is absent. So a lane asserting only the nine-argument NULL would report OLD_DB against a database with no uellix_stella_ops schema at all, which is not OLD_DB but a broken or wrong database. The positive witness is the ONLY control that closes this hole. See ENGINE_SEMANTICS_MEASURED.M-3.",
+      "consequence": "A manifest control asserting only nine-argument absence is VACUOUS and this artifact forbids one."
+    },
+    "explicitly_insufficient_definitions_of_OLD_DB": [
+      "Stage-A absent from the repository. The repository proves what Stage-A WOULD install, never what the hosted catalog CURRENTLY holds — carried verbatim in force from D1-8.must_not_be_inferred.",
+      "The nine-argument probe alone resolving NULL.",
+      "A prior observation of this target, however recent. See OBSERVATION_FRESHNESS_CONTRACT.",
+      "The running bridge having selected OLD_DB. D1-8.must_not_be_inferred_from_the_bridge_either: the bridge's verdict is reached inside a governed Stella completion, which is a product mutation no part of any grant here authorizes. A probe result obtained by exercising the product is not a read-only observation.",
+      "Any figure computed over a prior observation. RULE_OBSERVATION_FRESHNESS.arithmetic_is_not_observation applies unchanged."
+    ]
+  },
+
+  "CLASSIFICATION_AND_SEQUENCE_STOPS": {
+    "rule": "The observation is TOTAL over its outcomes and fails closed on every one of them except the single affirmative case. There is no diagnosis branch, no retry ladder and no 'probably'.",
+    "classifications": [
+      {
+        "token": "OLD_DB_CONFIRMED",
+        "condition": "nine-argument probe NULL AND seven-argument probe non-NULL, both taken in the same read-only transaction against a target that passed TARGET_IDENTITY_CONTRACT.",
+        "meaning": "The D-1 OLD_DB predicate holds for this target at this timestamp.",
+        "next": "See PRE_DEPLOYMENT_OBSERVATION for which of the two observation roles this instance carries. A PRE instance permits the deployment sequence to CONTINUE subject to every other authority; it does not by itself satisfy D1-8."
+      },
+      {
+        "token": "NEW_DB_OR_STAGE_A_ALREADY_PRESENT",
+        "condition": "nine-argument probe non-NULL. The seven-argument result is recorded but does NOT change this classification.",
+        "meaning": "D-1 OLD_DB is FALSE. The hosted database already carries the Stage-A nine-argument verb.",
+        "action": "STOP_FOR_SEQUENCE_ADJUDICATION, immediately and before any Vercel staging-binding mutation, any deployment, and any further observation.",
+        "coexistence_is_not_adjudicated_here": "Whether the seven-argument predecessor coexists with the nine-argument form after Stage-A is NOT established by any effective authority read at AS_OF_TREE, and this artifact does not decide it. It does not need to: nine-argument PRESENCE is sufficient on its own to make D-1 OLD_DB false, so the classification is reached without the coexistence question being answered. A lane that finds itself needing the answer has already stopped.",
+        "binds_to": "The parent's FAILURE_ROLLBACK_CONTRACT.branches[FR-4], carried in full and unweakened: do NOT apply SQL, do NOT roll back SQL, do NOT attempt to restore a prior schema state, do NOT treat it as a happy accident that skips a step.",
+        "why_it_is_an_incident": "Carried from FR-4: an unexpected NEW_DB means the window between then and now was D-3, the single PROHIBITED cell of DEPLOYMENT_CONTRACT, described there as 'a total outage of the governed Stella completion path for every affected category'. That is an incident to adjudicate, not a state to build on."
+      },
+      {
+        "token": "UNKNOWN_OR_BROKEN_DB_STATE",
+        "condition": "nine-argument probe NULL AND seven-argument probe NULL.",
+        "meaning": "Neither verb is present. The database is not OLD_DB and not NEW_DB. Candidate causes include an absent uellix_stella_ops schema, an un-bootstrapped database, and a wrong database that passed the identity gate for a reason the gate cannot see.",
+        "action": "STOP. Record both NULLs verbatim. Do NOT diagnose further under this grant, do NOT widen the read surface to find out why, and do NOT deploy.",
+        "binds_to": "RULE_FAIL_CLOSED_ON_UNKNOWN: 'Where a required fact is UNKNOWN or two sources conflict, the release stops and escalates. It does not pick the more convenient source, and it does not proceed on the assumption that the discrepancy is benign.'"
+      },
+      {
+        "token": "STOP_UNOBSERVABLE_DB_STATE",
+        "condition": "EITHER to_regprocedure observation raises, at any SQLSTATE, including but not limited to 42501 insufficient_privilege.",
+        "meaning": "The catalog state was not observed. An error is not an absence.",
+        "action": "STOP. Record the SQLSTATE and the message, after passing it through db/hosted/target-identity.ts redactForHostedLog. Do NOT retry with a different role, do NOT retry with a wider privilege, do NOT convert the raise into a NULL, and do NOT treat a raise as evidence of absence.",
+        "measured_necessity": "This branch is NOT hypothetical. See ENGINE_SEMANTICS_MEASURED.M-1: to_regprocedure raises 42501 rather than returning NULL when the session role lacks USAGE on the named schema, and no package in this repository grants uellix_auditor USAGE on uellix_stella_ops.",
+        "the_conversion_that_is_forbidden": "Wrapping the probe in an exception handler that returns NULL on error would convert STOP_UNOBSERVABLE_DB_STATE into OLD_DB_CONFIRMED on a privilege failure. That is the single most dangerous line of code this node could contain and it is prohibited outright."
+      },
+      {
+        "token": "STOP_TARGET_IDENTITY_CONTRADICTION",
+        "condition": "Any refusal from the identity gate, or any disagreement among host, pooler-qualified login role, declared project ref, declared environment and in-database sentinel.",
+        "action": "STOP before any query. See TARGET_IDENTITY_CONTRACT."
+      },
+      {
+        "token": "STOP_FOR_READONLY_CAPABILITY_ADJUDICATION",
+        "condition": "The authorized capability cannot perform the authorized observation.",
+        "action": "STOP. See READ_ONLY_CAPABILITY_CONTRACT. Privilege is never widened to obtain the measurement."
+      }
+    ],
+    "totality_check": "The four probe-result cells (nine NULL / non-NULL × seven NULL / non-NULL) are covered: {NULL, non-NULL} is OLD_DB_CONFIRMED; {non-NULL, *} is NEW_DB_OR_STAGE_A_ALREADY_PRESENT for both values of the second; {NULL, NULL} is UNKNOWN_OR_BROKEN_DB_STATE. Every non-cell — a raise, an identity refusal, a capability refusal — has its own STOP. There is no unclassified outcome and no default."
+  },
+
+  "TARGET_IDENTITY_CONTRACT": {
+    "rule": "Target identity is established BEFORE any catalog query, by the repository's own identity logic, and a refusal is final.",
+    "AUTHORIZED_TARGET": {
+      "project_ref": "bvyzblhqymxruxdguaee",
+      "status": "THE ONLY PERMITTED HOSTED TARGET OF THIS GRANT.",
+      "source": "db/hosted/target-identity.ts KNOWN_STAGING_PROJECT_REF, read at AS_OF_TREE.",
+      "not_secret": "A Supabase project ref is public in every URL the project serves. The module records this explicitly and redactForHostedLog preserves it on purpose."
+    },
+    "PRODUCTION_VETO": {
+      "project_ref": "ctaxtgujyyprgynmnvtq",
+      "status": "UNCONDITIONAL VETO. No combination of declarations, hosts, login roles or sentinel rows overrides it, and this grant creates no exception to it under any circumstance.",
+      "source": "db/hosted/target-identity.ts KNOWN_PRODUCTION_IDENTIFIERS.projectRefs, read at AS_OF_TREE, together with hosts uellix-antigravity.vercel.app, app.uellix.com, uellix.com.",
+      "binds_to": "SECURITY_STOP_LINES SSL-09: 'The production-target veto in the hosted tooling may not be disabled, bypassed or worked around to satisfy any gate.' This grant does not weaken, parameterise, inject around or shorten the veto.",
+      "veto_runs_first": "verifyStagingTarget step (0) runs the veto over EVERY ref any source names — declared, sentinel, pooler login role and host — before any positive signal is evaluated. A production match is a refusal even when every other signal is internally consistent."
+    },
+    "required_derivation": {
+      "rule": "The project ref is DERIVED STRUCTURALLY from the connection information by repository-native logic and compared against the pin. An operator declaration is one signal, never the answer.",
+      "required_function": "db/hosted/target-identity.ts verifyStagingTarget, or its exact governed successor. No re-implementation, no inlined copy, no equivalent written for this node.",
+      "sentinel_policy": "required. The 'deferred' policy exists for provisioning dry runs and is NOT authorized here: this observation runs against a database that has been provisioned for over a year, so a missing sentinel is a finding, not a stage.",
+      "expected_verdict": "ok: true, projectRef bvyzblhqymxruxdguaee, signals exactly ['declared-environment', 'host-derived-project-ref', 'in-database-sentinel'], sentinelDeferred false.",
+      "required_assertions": [
+        "derived project ref === bvyzblhqymxruxdguaee",
+        "derived project ref !== ctaxtgujyyprgynmnvtq",
+        "signals contains all three; a two-signal ok verdict is a refusal under this grant even though the module returns it as ok for the deferred policy"
+      ],
+      "a_valid_url_is_not_a_target": "A syntactically valid Supabase URL for another project is NOT sufficient and the module says so at step (2b): 'A consistent identity for the wrong project is still the wrong project.'"
+    },
+    "CONNECTION_MECHANISM_ADJUDICATION": {
+      "question": "Direct host or session pooler?",
+      "verdict": "DIRECT HOST ONLY: db.bvyzblhqymxruxdguaee.supabase.co, classified 'direct-db'. The REST form <ref>.supabase.co is not a PostgreSQL endpoint and is not authorized. The SESSION POOLER is NOT AUTHORIZED for this observation.",
+      "measured_grounds": "db/hosted/target-identity.ts projectRefFromPoolerUser returns the ref ONLY when the qualified login role's role half equals OPERATOR_POOLER_ROLE = 'postgres'. Its own documentation states the scope explicitly: 'a runtime role such as uellix_app.<ref> still returns null here — the operator chain's contract is the operator login role'. A pooler connection made as uellix_auditor.<ref> therefore yields fromUser null, and deriveConnectionIdentity's pooler branch refuses with HOSTED_TARGET_POOLER_USER_INVALID because a regional pooler host names no project on its own.",
+      "the_consequence_stated_plainly": "Under the session pooler, the repository's native identity gate CANNOT corroborate a connection made by the authorized capability. The two ways to make it corroborate are both forbidden: widening projectRefFromPoolerUser is a code change this grant does not authorize, and connecting as postgres is the operator role READ_ONLY_CAPABILITY_CONTRACT forbids.",
+      "if_only_a_pooler_connection_is_available": "STOP_TARGET_IDENTITY_CONTRADICTION. The lane does not widen the parser, does not substitute the operator role, and does not declare the identity gate satisfied by the declaration plus the sentinel while signal 2 is absent. Two of three signals is not the contract.",
+      "why_this_is_recorded_rather_than_discovered": "An execution lane that reached for the pooler because a dashboard offered it would hit a refusal whose message is about a login role shape, and the obvious-looking repair is the forbidden one. Recording the adjudication here is what keeps the refusal from being read as a bug."
+    },
+    "contradiction_rule": "Any disagreement among host, pooler-qualified role, declared project ref, declared environment or in-database sentinel is STOP_TARGET_IDENTITY_CONTRADICTION. The module's own words are carried: 'Two identity sources disagree, and this runner will not silently prefer one.'"
+  },
+
+  "READ_ONLY_CAPABILITY_CONTRACT": {
+    "AUTHORIZED_DATABASE_CAPABILITY": "UELLIX_AUDITOR_DATABASE_URL",
+    "AUTHORIZED_DATABASE_ROLE": "uellix_auditor",
+    "required_resolver": {
+      "function": "db/safety/resolve-capability-database-url.ts resolveAuditorDatabaseUrl, or its exact governed successor.",
+      "behaviour_relied_on": "It reads only AUDITOR_DATABASE_URL_ENV_VAR, refuses DB_CAPABILITY_URL_MISSING with no fallback, and refuses DB_CAPABILITY_URL_WRONG_ROLE when the userinfo role half is not AUDITOR_DATABASE_ROLE. Its own comment records that the legacy shared variable is 'deliberately not consulted'.",
+      "no_re_implementation": "The resolver is called, not reproduced. A node that parsed the connection string itself would be a second answer to the capability question."
+    },
+    "explicitly_forbidden_substitutions": {
+      "rule": "None of the following may be used for this observation, for any reason, including 'the auditor could not read it'.",
+      "forbidden": [
+        "UELLIX_RUNTIME_DATABASE_URL",
+        "UELLIX_MIGRATOR_DATABASE_URL",
+        "DATABASE_URL",
+        "postgres",
+        "supabase_admin",
+        "service_role",
+        "authenticator",
+        "uellix_owner",
+        "uellix_migrator",
+        "any role reached by SET ROLE from any of the above"
+      ],
+      "why_the_runtime_role_is_forbidden_even_though_it_could_read_it": "uellix_app holds USAGE on uellix_stella_ops — GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_app, db/prepared/stella_0014_operation_tickets.sql:220 — so borrowing the runtime credential would almost certainly make the probe resolve. It is forbidden precisely because it would work. The runtime credential exists to serve application traffic; using it to take an audit measurement is the 'most privileged reading wins' failure the capability split was built to end, and the module that ends it says so in its own header.",
+      "ssl_06_tripwire": "SECURITY_STOP_LINES SSL-06 requires an inventory recording who and what holds a privileged credential. uellix_auditor is least-privileged by design, so SSL-06 is not engaged by this grant. If the lane finds itself holding an OPERATOR credential for any reason, SSL-06 IS engaged and the lane STOPS — carried from the parent's identical construction."
+    },
+    "MEASURED_CAPABILITY_RISK": {
+      "severity": "MATERIAL. Recorded before execution so that it is not discovered at the connection.",
+      "measurement_1": "NO PACKAGE IN THIS REPOSITORY GRANTS uellix_auditor USAGE ON SCHEMA uellix_stella_ops. Measured at AS_OF_TREE by git grep over db/** for uellix_stella_ops intersected with uellix_auditor: the only hit is a prose row in db/prepared/README.md describing a REVOKE. Every positive GRANT USAGE ON SCHEMA uellix_stella_ops names uellix_migrator, uellix_app, uellix_cap_stella_ticket or uellix_cap_stella_quota, and none names the auditor.",
+      "measurement_2": "A ROLE WITHOUT USAGE ON THE SCHEMA CANNOT RUN THE PROBE AT ALL. See ENGINE_SEMANTICS_MEASURED.M-1: to_regprocedure raises 42501 'permission denied for schema uellix_stella_ops' rather than returning NULL, for BOTH the present and the absent function.",
+      "consequence": "On repository evidence the EXPECTED first outcome of the future execution is STOP_UNOBSERVABLE_DB_STATE at the first probe, resolving to STOP_FOR_READONLY_CAPABILITY_ADJUDICATION.",
+      "what_is_NOT_authorized_in_response": [
+        "granting uellix_auditor USAGE on uellix_stella_ops — that is a hosted GRANT, a database mutation, prohibited absolutely by NO_DATABASE_MUTATION",
+        "authoring a package that would grant it — a db/prepared/** write, a protected surface, outside this write set",
+        "substituting any role from the forbidden list",
+        "connecting as the pooler operator role to 'just check'",
+        "declaring OLD_DB from repository state because the observation was unavailable"
+      ],
+      "what_IS_authorized_in_response": "Recording the refusal, its SQLSTATE and its message, and STOPPING with STOP_FOR_READONLY_CAPABILITY_ADJUDICATION so that a competent authority can decide whether the auditor's grant surface should be extended, whether a different least-privileged capability should exist for catalog observation, or whether D1-8 should be satisfied another way.",
+      "why_the_grant_is_still_worth_having": "A STOP that names the exact missing privilege, the exact role, the exact schema and the exact SQLSTATE is a finding a successor authority can act on in one step. An improvised lane would either have widened privilege or reported OLD_DB from the repository, and both are worse than the stop."
+    },
+    "MANDATORY_CAPABILITY_PREFLIGHT": {
+      "rule": "Before either literal is probed, the session asserts its own identity and its own schema access, in the same read-only transaction, so that a later refusal is attributable.",
+      "steps": [
+        "CP-1: assert current_user = 'uellix_auditor' AND session_user = 'uellix_auditor', from the SERVER, not from the connection string. The resolver's role check is a pre-check the module itself calls 'a pre-check, NOT the guarantee'.",
+        "CP-2: assert current_setting('transaction_read_only') = 'on'.",
+        "CP-3: record has_schema_privilege(current_user, 'uellix_stella_ops', 'USAGE') as a boolean. This is a pg_catalog access-check function; it returns false rather than raising when the privilege is absent, so it is the one surface that can distinguish 'no access' from 'no function' BEFORE the probe raises.",
+        "CP-4: if CP-3 is false, STOP_FOR_READONLY_CAPABILITY_ADJUDICATION immediately and DO NOT issue either probe. The probes would raise, and a raise carries less information than the boolean already in hand."
+      ],
+      "why_CP_3_is_not_a_widening_of_the_read_surface": "has_schema_privilege reads no schema contents, no rows and no object definitions. It answers one boolean about the session's own privilege. It is added because without it the lane's only way to learn the answer is to trigger the error it is trying to avoid, and an error path is a worse diagnostic than a designed one.",
+      "CP_3_does_not_authorize_the_probe": "A true CP-3 permits the probes to be ISSUED. It does not predict their result and is never recorded as evidence about the catalog's contents."
+    }
+  },
+
+  "READ_ONLY_TRANSACTION_CONTRACT": {
+    "rule": "Every authorized statement of this observation executes inside ONE explicitly read-only transaction, and the transaction's read-only property is OBSERVED rather than assumed.",
+    "required_form": {
+      "open": "BEGIN READ ONLY;",
+      "positive_observation": "SELECT current_setting('transaction_read_only') must return exactly 'on', asserted as CP-2 before any other statement.",
+      "close": "ROLLBACK, executed unconditionally after the observation, including on the success path and including when the transaction performed no write.",
+      "why_rollback_on_success": "A COMMIT of a read-only transaction is harmless and is still the wrong habit to encode: it makes the closing act depend on the outcome, so a lane reading the procedure cannot tell at a glance that no path can write. ROLLBACK unconditionally makes the read-only property structural rather than circumstantial."
+    },
+    "belt_and_braces_is_deliberate": {
+      "layer_1": "The role's own session default. db/baseline/stella_g2_roles.sql:182 and db/prepared/stella_0001_role_topology_bootstrap.sql:84 both set ALTER ROLE uellix_auditor SET default_transaction_read_only TO 'on'. MEASURED to take effect on connection without any explicit BEGIN READ ONLY — see ENGINE_SEMANTICS_MEASURED.M-4.",
+      "layer_2": "The explicit BEGIN READ ONLY of this contract.",
+      "layer_3": "The grant layer. stella_0021 refuses to build on a database where the auditor holds any write privilege, with its own words: 'stella_0001:84 sets default_transaction_read_only on that role, but a session default is not a grant; the auditor is SELECT-only on the grant layer too and this package refuses to build on a database where it is not.'",
+      "why_three": "A session default can be overridden by a connection option — db/safety/database-target.ts records that '?default_transaction_read_only=off' does it — so the session default alone is a setting, not a control. The explicit BEGIN READ ONLY is asserted rather than trusted, and the grant layer is what holds if both are subverted."
+    },
+    "PROHIBITED_IN_THE_SESSION": {
+      "rule": "None of the following may be issued by this observation, in or out of the transaction, at any privilege level.",
+      "prohibited": [
+        "any DDL",
+        "any DML",
+        "GRANT",
+        "REVOKE",
+        "SET ROLE",
+        "RESET ROLE",
+        "SET SESSION AUTHORIZATION",
+        "CREATE TEMP TABLE or any other temporary object",
+        "any advisory lock, session-scoped or transaction-scoped",
+        "any invocation of uellix_stella_ops.complete_operation_ticket at either arity",
+        "any invocation of any SECURITY DEFINER helper",
+        "any migration, prepared package, hosted package or baseline apply",
+        "any connection option that alters transaction_read_only",
+        "LISTEN, NOTIFY, COPY in either direction, and any server-side file access"
+      ],
+      "to_regprocedure_resolves_it_never_calls_it": "pg_catalog.to_regprocedure performs a CATALOG NAME RESOLUTION and returns an OID-typed value. It does not execute the function it names and must never be followed by a call, a CALL, a PERFORM or a cast that would invoke it. The observation asks whether a verb exists; it never utters the verb.",
+      "measured_enforcement": "MEASURED: inside BEGIN READ ONLY, CREATE TABLE and CREATE TEMP TABLE both fail with 'cannot execute CREATE TABLE in a read-only transaction', under the real uellix_auditor role carrying only its session default. See ENGINE_SEMANTICS_MEASURED.M-5. The prohibition is therefore enforced by the substrate and not only declared by this artifact."
+    }
+  },
+
+  "AUTHORIZED_SQL_SURFACE": {
+    "rule": "EXHAUSTIVE. Anything not listed is unauthorized, and the list is not a template to be extended at execution time.",
+    "authorized_reads": [
+      {
+        "id": "SQ-1",
+        "read": "current_user",
+        "purpose": "CP-1. Server-side proof of the authenticated identity."
+      },
+      {
+        "id": "SQ-2",
+        "read": "session_user",
+        "purpose": "CP-1. Proves no SET ROLE occurred between login and observation; current_user alone would not."
+      },
+      {
+        "id": "SQ-3",
+        "read": "current_setting('transaction_read_only')",
+        "purpose": "CP-2. Positive observation of the read-only transaction."
+      },
+      {
+        "id": "SQ-4",
+        "read": "current_setting('server_version_num')",
+        "purpose": "Evidence only. Records the engine the resolution semantics were exercised on, so that a future reader can tell whether ENGINE_SEMANTICS_MEASURED still applies. OPTIONAL: its absence does not invalidate the observation."
+      },
+      {
+        "id": "SQ-5",
+        "read": "has_schema_privilege(current_user, 'uellix_stella_ops', 'USAGE')",
+        "purpose": "CP-3. One boolean about the session's own privilege. Reads no schema contents."
+      },
+      {
+        "id": "SQ-6",
+        "read": "pg_catalog.to_regprocedure(<NINE_ARGUMENT_CANONICAL_LITERAL>)",
+        "purpose": "The negative half of the OLD_DB predicate."
+      },
+      {
+        "id": "SQ-7",
+        "read": "pg_catalog.to_regprocedure(<SEVEN_ARGUMENT_PREDECESSOR_LITERAL>)",
+        "purpose": "The positive witness."
+      },
+      {
+        "id": "SQ-8",
+        "read": "SELECT environment, project_ref FROM uellix_bootstrap.staging_sentinel",
+        "purpose": "Signal (3) of verifyStagingTarget. See SENTINEL_ADJUDICATION.",
+        "conditional": "Read BEFORE the probes, as part of the identity gate, never after."
+      }
+    ],
+    "SENTINEL_ADJUDICATION": {
+      "tension": "SQ-8 is the only authorized read that is not a pg_catalog or session fact. It reads two columns of a real table.",
+      "why_it_is_authorized": "Because verifyStagingTarget with sentinelPolicy 'required' DEMANDS it, and TARGET_IDENTITY_CONTRACT requires that function rather than a re-implementation. Omitting the sentinel to keep the surface purely catalog-shaped would produce an identity gate WEAKER than the repository's own — two signals where the contract names three. RULE_NO_GATE_WEAKENING forbids relaxing a gate to obtain a pass, and dropping a required signal to fit a prose list is exactly that.",
+      "why_it_is_not_an_application_read": "uellix_bootstrap.staging_sentinel is an infrastructure self-declaration created by db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql:424. It holds no tenant, customer, user or application data. Its whole purpose is stated in the refusal message the module raises when it is missing: 'A connection string can be pasted from the wrong tab; a sentinel row in the wrong database cannot.'",
+      "capability_is_granted": "MEASURED at AS_OF_TREE: GRANT SELECT ON uellix_bootstrap.staging_sentinel TO uellix_migrator, uellix_app, uellix_auditor (line 620), and GRANT USAGE ON SCHEMA uellix_bootstrap TO uellix_migrator, uellix_app, uellix_auditor (line 617). Unlike uellix_stella_ops, the auditor's access to the sentinel IS provisioned by a package in this repository.",
+      "bounded": "Exactly two columns of exactly one row-set. No count, no join, no other column, and no other table in uellix_bootstrap."
+    },
+    "EXPLICITLY_UNAUTHORIZED_READS": {
+      "rule": "Enumerated so that no successor reads the list above as a starting point.",
+      "unauthorized": [
+        "any tenant table",
+        "public.users, public.organizations, public.memberships or any identity table",
+        "auth.* — any Supabase Auth identity, session or factor",
+        "storage.* — any Storage object, bucket or policy row",
+        "public.stella_interactions, public.audit_logs, public.evidence_chunks or any application row",
+        "any COUNT, EXISTS, aggregate or sample over customer or application data, including a count of zero",
+        "any pg_proc, pg_class, pg_namespace or information_schema enumeration",
+        "pg_authid, pg_shadow, pg_user_mappings or any role attribute beyond the session's own",
+        "pg_stat_activity, pg_locks or any other session's state",
+        "any function definition, prosrc, view definition or policy expression",
+        "any second table in uellix_bootstrap"
+      ],
+      "why_even_a_count_of_zero_is_refused": "A count is a measurement of customer data whatever its value, and a surface that admits 'just a count' admits the predicate that produced it. The predicate is the part that carries the question."
+    }
+  },
+
+  "SECRET_CUSTODY_CONTRACT": {
+    "classification": "UELLIX_AUDITOR_DATABASE_URL IS SECRET-BEARING. It carries a database credential.",
+    "absolute_rule": "Its VALUE is not contained in this artifact, must not be added to it by any successor citing it, and must not be written into any repository authority, manifest, evidence artifact, commit message, PR body, log line, test fixture or terminal transcript that is retained.",
+    "binds_to": "SECURITY_STOP_LINES SSL-08: 'No secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever.' Carried without qualification.",
+    "provisioning": {
+      "rule": "The future execution lane obtains the value from an APPROVED SECURE SOURCE ONLY, and this artifact does not name, choose, create, rotate or compare one.",
+      "forbidden": [
+        "writing the value to any file inside the repository working tree, tracked or untracked, gitignored or not",
+        "writing it to .env, .env.local, .env.audit.local or any file under the repository root",
+        "passing it as a command-line argument, where a process table or a shell history would retain it",
+        "echoing, printing or including it in any command output that is retained",
+        "committing it, pasting it into a PR, or quoting it in a report"
+      ],
+      "why_the_working_tree_is_excluded_even_when_gitignored": "A scratch directory inside the worktree has been MEASURED in this programme to inflate ods:scope and redden the untracked arm. A gitignore is a filter on one tool, not a property of the file."
+    },
+    "evidence_emission_allowlist": {
+      "rule": "Evidence emits ONLY derived, non-reversing facts. The list is a CEILING, not a target: a field being permitted is not a reason to emit it.",
+      "permitted_fields": [
+        "capability NAME (UELLIX_AUDITOR_DATABASE_URL)",
+        "declared role (uellix_auditor)",
+        "server-observed current_user and session_user",
+        "derived project ref (public)",
+        "host class as the module's ConnectionMechanism enum ('direct-db'), NOT the host string",
+        "port",
+        "TLS posture",
+        "presence booleans",
+        "the signal names verifyStagingTarget returned",
+        "SQLSTATE values",
+        "the resolved regprocedure OID of the seven-argument function, as an integer"
+      ],
+      "forbidden_fields": [
+        "the credential",
+        "the full DSN",
+        "the userinfo in any form, redacted or not",
+        "any token",
+        "any key",
+        "any query string containing a credential",
+        "any driver error message that has not passed through redactForHostedLog"
+      ],
+      "precedent_is_stricter_than_the_ceiling": "docs/ops/staging/evidence/README.md records that the four promoted att_5878e6da documents carry NO connection block at all, because the SERVER-SIDE probe output was promoted rather than the assembled envelope: 'Host, usuario de pooler y puerto son hechos del lado del cliente que la base de datos no puede ver, así que aquí no aparecen en absoluto.' This artifact follows the precedent: the promoted evidence is the server-side output plus the identity VERDICT, and the client-side structural fields are emitted only where the verdict cannot be read without them.",
+      "why_these_are_safe": "Each permitted field is public (the project ref), a compile-time constant of this repository (the role name, per db/safety/database-role.ts), a server-side fact, an enum, or a boolean. None of them, alone or combined, reconstructs the credential."
+    },
+    "local_materialization_protocol": {
+      "when": "ONLY if the execution lane cannot otherwise supply the capability to the process, and never merely to inspect it.",
+      "rules": [
+        "a temporary location OUTSIDE the repository working tree",
+        "no logging of the value at any verbosity",
+        "no structural parse beyond what resolveAuditorDatabaseUrl performs internally",
+        "delete immediately after the process exits",
+        "POSITIVE ABSENCE VERIFICATION: after deletion, affirmatively verify the artifact no longer exists and record that verification. Absence is asserted from a check, never from the fact that a delete command was issued"
+      ],
+      "vercel_env_pull_is_not_authorized": "It writes real values to .env.local, inside the working tree. Carried unchanged from the parent: it is not an implied convenience.",
+      "on_any_doubt": "If the lane cannot satisfy every rule above, it does not materialize the value and it does not observe. A missed observation is a stop; a leaked credential is an incident."
+    }
+  },
+
+  "OBSERVATION_FRESHNESS_CONTRACT": {
+    "governing_rule": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json FROZEN_RULES.RULE_OBSERVATION_FRESHNESS, CONSUMED AS GIVEN and not restated in a rival form. Its five freshness criteria bind this observation unchanged.",
+    "required_record": {
+      "OBSERVED_DB_STATE_AT": "ISO-8601 UTC timestamp of the observation.",
+      "TARGET_PROJECT_REF": "bvyzblhqymxruxdguaee",
+      "TOOLING_SHA": "the exact Git commit SHA of the repository state the observing tool was run from.",
+      "AUTHORITY_SHA": "the exact SHA at which this authority was read, so a reader can tell which version of the contract the observation was taken under.",
+      "OBSERVATION_ROLE": "PRECHECK_OLD_DB or D1_OLD_DB_FINAL_WITNESS — see PRE_DEPLOYMENT_OBSERVATION."
+    },
+    "what_invalidates_it": {
+      "invalidates": "Any mutation of the hosted PostgreSQL catalog of project bvyzblhqymxruxdguaee after the observation timestamp. A Stage-A apply, any prepared or hosted package apply, any GRANT or REVOKE, and any DDL by any actor.",
+      "does_NOT_invalidate": "A Vercel environment-variable mutation and a code deployment. Neither has a DDL path to the database; they change which code runs, not what the catalog holds. This is stated affirmatively so that a lane does not discard a valid observation, and it is bounded immediately below so that it is not read as permission to reuse one.",
+      "arithmetic_is_not_observation": "Carried verbatim: deriving a current state by computing over a prior observation produces a PREDICTION, not an observation."
+    },
+    "POST_DEPLOYMENT_CONFIRMATION_DISPOSITION": {
+      "question": "Does D1-8 require a SECOND read-only observation taken after the deployment, or does a single pre-deployment observation suffice?",
+      "verdict": "A SECOND OBSERVATION IS REQUIRED. Exactly one pre-deployment observation and exactly one post-deployment observation are authorized. The POST observation is the only one citable as D1-8.",
+      "grounds": [
+        "D1_PROOF_CONTRACT.same_deployment_rule requires that every criterion cite the SAME deployment id and the SAME Git SHA, and that a measurement taken against the platform's configuration rather than the deployment's own behaviour does not contribute to D-1. A database observation taken before the deployment existed cannot cite a deployment id that did not yet exist.",
+        "D-1 is a JOINT assertion about a runtime and a database AT ONE MOMENT — DEPLOYMENT_CONTRACT.matrix[D-1] pairs 'runtime NEW' with 'database OLD'. A pre-deployment database reading and a post-deployment runtime reading are two facts about two moments, and the conjunction of them is not the joint state unless the window between is proven quiet.",
+        "RULE_OBSERVATION_FRESHNESS makes an observation valid only for the window it immediately precedes. The PRE observation immediately precedes the Vercel mutation, not the D-1 measurement."
+      ],
+      "why_the_no_DB_mutation_argument_does_not_collapse_the_two": "It is TRUE that the deployment cannot mutate the catalog, and that alone would let the PRE reading carry forward. It does not, because the deployment is not the only actor. Nothing observed by this lane excludes a mutation by another operator, another session or a scheduled job in the same window. The second observation is not there to catch the deployment; it is there to catch everyone else.",
+      "NO_INTERVENING_MUTATION_EVIDENCE": {
+        "rule": "The absence of an intervening mutation is EVIDENCED, not asserted. Three controls, all conjunctive.",
+        "controls": [
+          "NIM-1: the two observations return the IDENTICAL classification token.",
+          "NIM-2: the two observations return the IDENTICAL regprocedure OID for the seven-argument function. An OID that changed means the function was dropped and recreated even if its name and arity did not move — a change that a boolean presence check cannot see.",
+          "NIM-3: artifacts/hosted-chain-attempts.jsonl, artifacts/hosted-remediation-attempts.jsonl and artifacts/hosted-chain-posture-attempts.jsonl carry the SAME final entry before and after the window. These ledgers are tracked, append-only and never truncated, per docs/ops/staging/evidence/README.md. A governed hosted write opens an entry in one of them."
+        ],
+        "honest_limit": "NIM-3 covers mutations that went through the governed chain tooling. It does not cover a mutation made outside it — a dashboard SQL editor, a direct operator session. No observation this grant authorizes can exclude that, and the evidence artifact says so in its own words rather than implying a completeness it does not have. NIM-1 and NIM-2 are what bound the unobserved case: a mutation that left both the classification and the OID unchanged did not change the fact D1-8 asserts."
+      },
+      "NO_POLLING": {
+        "rule": "EXACTLY TWO observations are authorized for one execution. There is no third, no loop, no interval, no watch and no retry ladder.",
+        "a_failed_observation_is_not_a_retry_opportunity": "If either observation STOPS, the lane stops. It does not take a third reading to see whether the answer changes, because a fact that changes between readings is itself the finding.",
+        "a_second_execution_needs_a_new_confirmation": "A later session is a new execution: new freshness gate, new human confirmation, and its own two observations. Confirmation is not transferable."
+      }
+    }
+  },
+
+  "PRE_DEPLOYMENT_OBSERVATION": {
+    "rule": "The PRE-deployment observation is AUTHORIZED and its purpose is bounded.",
+    "PRE_DEPLOYMENT_PROBE_AUTHORIZED": "YES",
+    "purpose": "To avoid consuming the parent's single authorized deployment against a staging database that is already NEW_DB or broken. The parent grants exactly one deployment and DEPLOYMENT_AUTHORIZATION_BOUNDARY bounds any retry; spending it to discover a sequence violation the observation could have found first is a waste of a scarce, governed act.",
+    "PRECHECK_OLD_DB": {
+      "token": "PRECHECK_OLD_DB",
+      "when": "Before the parent's PMV checks and before its human confirmation, so that a STOP costs nothing.",
+      "meaning_on_OLD_DB_CONFIRMED": "The deployment sequence MAY continue, subject to every other authority — the parent's grant, its PMV-1..PMV-3, its SB-1 SHA freeze, its own human confirmation, and the M11 residual below. This token permits continuation; it authorizes nothing on its own.",
+      "action_on_NEW_DB_OR_STAGE_A_ALREADY_PRESENT": "STOP before any Vercel mutation. No environment variable is bound and no deployment is triggered.",
+      "action_on_UNKNOWN_OR_BROKEN_DB_STATE": "STOP before any Vercel mutation.",
+      "action_on_any_STOP_token": "STOP before any Vercel mutation.",
+      "what_it_explicitly_is_not": [
+        "It is NOT D1-8.",
+        "It is NOT citable as evidence for D-1.",
+        "It does NOT satisfy DEPLOYMENT_CONTRACT.forward_order step 2.",
+        "It does NOT advance any Stage-A precondition.",
+        "It does NOT satisfy S1, S4, S6, S9, G12 or M11."
+      ]
+    },
+    "D1_OLD_DB_FINAL_WITNESS": {
+      "token": "D1_OLD_DB_FINAL_WITNESS",
+      "when": "After the authorized deployment exists and its deployment id and platform-reported SHA are recorded under the parent's SB-4.",
+      "meaning": "The one observation citable as criterion D1-8, bound to the deployment id and the exact SHA per the parent's frozen_target_identity_form.",
+      "requires": "OLD_DB_CONFIRMED, plus NIM-1, NIM-2 and NIM-3 all satisfied against the PRECHECK observation."
+    },
+    "the_two_must_not_be_conflated": {
+      "rule": "The two observations carry DIFFERENT tokens, DIFFERENT evidence artifacts and DIFFERENT timestamps, and neither is ever relabelled as the other.",
+      "why": "They answer different questions. The PRE asks 'is it worth spending the deployment'. The POST asks 'what was the database state at the moment the authorized deployment was running'. A lane that took only the PRE and renamed it would be asserting a joint state it never observed — the precise shape of overclaim the parent's D1_RUNTIME_COHERENCE_VERIFIED token was invented to avoid."
+    }
+  },
+
+  "EVIDENCE_MATERIALIZATION": {
+    "required": true,
+    "rule": "Each authorized observation materializes ONE durable evidence artifact. Two observations, two artifacts, never one file written twice.",
+    "NAMESPACE_ADJUDICATION": {
+      "chosen": "docs/ops/staging/evidence/**",
+      "chosen_shape": "<YYYY-MM-DD>-<observation-id>-d1-old-db-observation.json, with distinct observation ids for the PRE and the POST instance.",
+      "rejected": "docs/ops/staging/evidence/FIBDB053_D1_OLD_DB_OBSERVATION_v1.0.0.json, or any single deterministic versioned path.",
+      "grounds_for_the_namespace": "docs/ops/staging/evidence/README.md defines the directory as 'Mediciones consumidas que ya no se pueden volver a tomar. Cada archivo es la salida verbatim de una sonda read-only, ligada al intento que la midió.' That is exactly what this observation is. The directory already holds hosted read-only catalog measurements that probe the SEVEN-ARGUMENT literal itself — the chain posture and pre-write observations. This is not a new evidence class; it is another member of an existing one.",
+      "grounds_for_rejecting_the_deterministic_path": [
+        "The README states the directory's founding reason: tools write to default paths under artifacts/, 'Dos intentos seguidos escriben el mismo archivo, y el segundo pisa al primero', and the witness of attempt att_34fd431f was lost exactly that way. 'Por eso todo lo que se conserva aquí lleva el intento en el nombre.'",
+        "This node takes TWO observations by design. A single deterministic path would have the FINAL witness overwrite the PRECHECK — reproducing, in a node whose whole subject is freshness, the defect the directory exists to close.",
+        "The README states it again as a principle: 'una línea base que un intento posterior pudiera pisar no es una línea base.'",
+        "The date-plus-attempt name is therefore NOT a convenience and NOT invented here. It is the measured contract of the namespace, and the versioned deterministic name is the shape the namespace was created to refuse."
+      ],
+      "working_output_is_separate": "The README is explicit that the working directory is artifacts/ and that per-attempt working files there are gitignored and overwritten each run. The probe's raw output lands there; PROMOTION to docs/ops/staging/evidence/** is a separate, deliberate, committed act. A working file is not evidence until it is promoted."
+    },
+    "REQUIRED_CONTENTS": [
+      "target project ref (bvyzblhqymxruxdguaee)",
+      "the identity verdict: ok, the three signal names, sentinelDeferred false, and the explicit assertion that the derived ref is not the production ref",
+      "connection mechanism as the enum value ('direct-db')",
+      "TOOLING_SHA",
+      "AUTHORITY_SHA",
+      "OBSERVED_DB_STATE_AT",
+      "OBSERVATION_ROLE (PRECHECK_OLD_DB or D1_OLD_DB_FINAL_WITNESS)",
+      "auditor role identity as observed server-side: current_user and session_user",
+      "transaction_read_only as observed",
+      "server_version_num if read",
+      "has_schema_privilege result for uellix_stella_ops USAGE",
+      "the two canonical literals BY REFERENCE to CANONICAL_SIGNATURE_CONTRACT, and verbatim, since they are public constants of this repository and carry no secret",
+      "nine_arg_present (boolean)",
+      "seven_arg_present (boolean)",
+      "seven_arg_oid (integer) when present",
+      "classification token",
+      "for the POST instance: the deployment id and the platform-reported SHA it is bound to, per the parent's frozen_target_identity_form",
+      "for the POST instance: the NIM-1, NIM-2 and NIM-3 results and the honest_limit statement verbatim",
+      "execution result: COMPLETED or the STOP token"
+    ],
+    "MUST_NEVER_CONTAIN": [
+      "the credential",
+      "the DSN in any form",
+      "any token or key",
+      "any query-string credential",
+      "the connection host string",
+      "the userinfo",
+      "any unredacted driver error message"
+    ],
+    "COMMIT_TOPOLOGY": {
+      "question": "Does the durable evidence require a repository commit, and may integration advance before the deployment SHA is frozen?",
+      "verdict": "YES to the commit; YES, integration may advance.",
+      "shape": "Each promoted evidence artifact is committed on its own branch and merged as an evidence-only PR whose write set is exactly the promoted file or files under docs/ops/staging/evidence/**. No authority is amended by the promotion and no gate is declared by it.",
+      "why_integration_may_advance": "The parent freezes its deployment SHA in its own future EXECUTION lane, at SB-1, immediately before its human confirmation, and re-derives it at SB-3 immediately before triggering the deployment. It does not freeze integration at authoring time. A preceding evidence-only merge therefore advances the line legitimately; the execution lane simply freezes the newer SHA. What is forbidden is the reverse: integration advancing BETWEEN SB-1 and SB-3, which the parent already handles with STOP_STALE at FR-6.",
+      "ordering_note": "If the PRECHECK evidence is promoted before the deployment, its merge changes the integration head and therefore the SHA the execution lane will freeze. That is expected and harmless. The evidence records the TOOLING_SHA it was taken at, not the SHA that was later deployed, and the two are not required to be equal for the PRECHECK. For the FINAL witness they are bound through the deployment id instead.",
+      "not_an_evidence_rewrite": "A promoted evidence artifact is never edited after merge. A later observation is a NEW file with a NEW name. CLAUDE.md section 5 forbids historical evidence rewriting and this topology makes the rewrite unnecessary rather than merely discouraged."
+    },
+    "NOT_A_STAGING_OBSERVATION_PACKET": {
+      "rule": "The artifact this grant produces is NOT a STAGING_OBSERVATION_PACKET and must never be cited as one.",
+      "why": "EVIDENCE_PACKETS defines that packet's contents as the applied journal prefix, the unit count and manifest digest against the certified corpus, hosted package states with provenance, and runtime identity from the runtime identity endpoint. This observation reads none of those and is not authorized to.",
+      "consequence": "It does NOT satisfy HOSTED_DDL_PRECONDITIONS HDP-1 and contributes to none of gates S1, S2, S6, S9 or G12. A lane that cited it for HDP-1 would be creating the second answer to an owned question that the parent's ground HC-3 warns against — the drift this repository refuses elsewhere."
+    }
+  },
+
+  "ENGINE_SEMANTICS_MEASURED": {
+    "classification": "ENGINE_SEMANTICS_MEASUREMENT. NOT hosted evidence, NOT a package rehearsal, NOT a claim about any hosted target.",
+    "binds_to": "FROZEN_RULES.RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE: 'No test, gate or evaluation that runs without touching a hosted target may be cited as evidence about a hosted target.' Consumed as given. Nothing in this section is, or may be cited as, evidence about project bvyzblhqymxruxdguaee.",
+    "what_these_measurements_ARE": "Properties of the PostgreSQL engine's catalog-resolution and read-only-transaction behaviour, which determine whether the procedure this artifact authorizes can work at all, and which the frozen parents state in a form that is true in their own context and not transferable to this one.",
+    "substrate": "A throwaway PostgreSQL 17.10 container, created for this measurement, loaded with a synthetic OLD_DB substrate (schema uellix_stella_ops, the seven-argument function only, a LOGIN role uellix_auditor carrying ALTER ROLE ... SET default_transaction_read_only TO 'on'), probed with the two canonical literals verbatim, and DESTROYED afterwards with positive absence verification. No hosted target was contacted, no repository SQL package was applied, and no Uellix migration ran.",
+    "measurements": [
+      {
+        "id": "M-1",
+        "measured": "pg_catalog.to_regprocedure('uellix_stella_ops.complete_operation_ticket(...)') RAISES SQLSTATE 42501, 'permission denied for schema uellix_stella_ops', when the session role lacks USAGE on that schema. It raises for the ABSENT nine-argument literal and for the PRESENT seven-argument literal alike. It does NOT return NULL.",
+        "consequence": "A privilege gap can never be mistaken for a function absence — which is a SAFETY property, because it means the OLD_DB negative half cannot be satisfied by a role that simply cannot see the schema. It is also why STOP_UNOBSERVABLE_DB_STATE is a first-class branch rather than an edge case, and why MANDATORY_CAPABILITY_PREFLIGHT CP-3 exists."
+      },
+      {
+        "id": "M-2",
+        "measured": "With USAGE granted on the same substrate, the nine-argument literal resolved to NULL and the seven-argument literal resolved to a non-NULL regprocedure whose text echoed back byte-identical to the canonical literal. After installing the nine-argument function, the nine-argument literal resolved non-NULL and echoed back byte-identical to CANONICAL_SIGNATURE_CONTRACT.NINE_ARGUMENT_CANONICAL_LITERAL.value.",
+        "consequence": "The OLD_DB predicate is non-vacuous in BOTH directions on a real engine, with these exact literals. It also independently corroborates amendment A3's grapheme claim: the substrate declared char(64) and varchar(100), and to_regprocedure normalized them to character and character varying before resolving."
+      },
+      {
+        "id": "M-3",
+        "measured": "to_regprocedure over an ENTIRELY ABSENT SCHEMA returns NULL without raising.",
+        "consequence": "This is the one silent hole in the negative half, and it is closed only by the positive witness: with the schema absent BOTH probes return NULL, which classifies as UNKNOWN_OR_BROKEN_DB_STATE and STOPS. OLD_DB_DEFINITION's insistence on the conjunction is therefore measured, not stylistic."
+      },
+      {
+        "id": "M-4",
+        "measured": "A role carrying only ALTER ROLE ... SET default_transaction_read_only TO 'on' connects with current_setting('transaction_read_only') = 'on' with no explicit BEGIN READ ONLY.",
+        "consequence": "Layer 1 of READ_ONLY_TRANSACTION_CONTRACT is real. It is still not relied on alone, because a connection option can override it."
+      },
+      {
+        "id": "M-5",
+        "measured": "Under that role, CREATE TABLE and CREATE TEMP TABLE both fail with 'cannot execute CREATE TABLE in a read-only transaction'.",
+        "consequence": "The CREATE TEMP prohibition is enforced by the substrate, not merely declared here."
+      },
+      {
+        "id": "M-6",
+        "measured": "BEGIN READ ONLY yields current_setting('transaction_read_only') = 'on'.",
+        "consequence": "CP-2 is a satisfiable positive observation rather than an aspiration."
+      }
+    ],
+    "qualification_of_the_parent_totality_claim": {
+      "parent_clause": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json CATALOG_PROBE_CONTRACT.why_to_regprocedure states that to_regprocedure 'is total: an absent function yields NULL instead of an error, so the probe itself can never be the thing that fails.'",
+      "disposition": "NOT CONTRADICTED IN ITS OWN DOMAIN, AND NOT AMENDED. The clause governs the RUNTIME probe, which runs as uellix_app, and uellix_app holds USAGE on uellix_stella_ops per db/prepared/stella_0014_operation_tickets.sql:220. Within that domain the totality claim holds and M-1 does not touch it.",
+      "the_boundary_this_artifact_records": "Totality over ABSENCE is not totality over PRIVILEGE. The property is conditional on the session holding USAGE on the named schema, and the observation lane — running as a different role that is NOT granted that USAGE — does not inherit it. Recorded here rather than left for the execution lane to discover as a surprise.",
+      "no_parent_is_edited": "The parent is append_only and is not opened. This is a qualification recorded in a successor about the successor's own context, which is the mechanism CLAUDE.md section 2 leaves available; it changes nothing the parent binds.",
+      "flagged": "Recorded as OF-2 for the independent certifier."
+    },
+    "local_stack_disclosure": {
+      "what_happened": "Before the throwaway substrate was built, the same engine question was probed against the canonical local Supabase development stack (container supabase_db_uellix-antigravity, PostgreSQL 17.6), using unrelated objects — schemas private, auth and public — inside transactions that were rolled back.",
+      "why_it_is_disclosed": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json G2_BOUNDARY_RESTATEMENT.permitted_before_G2 names the disposable-container path and says 'Never staging, never production, never the canonical local Supabase stack.' On its face that clause scopes the DISPOSABLE REAL-POSTGRESQL REHEARSAL of the Stage-A package, and no package was applied, no Uellix object was touched and nothing was committed. It is disclosed rather than argued away because a reader encountering the container name should not have to reconstruct whether it mattered.",
+      "residue": "POSITIVELY VERIFIED ABSENT. Zero relations named t_probe and zero pg_temp schemas after the probes; the one CREATE TEMP attempt failed inside a read-only transaction and was rolled back.",
+      "disposition": "The authority does not rest on it. Every measurement in this section was REPRODUCED on the throwaway substrate with the real literals and the real role name, and the throwaway reproduction is the citation. The local-stack run is redundant corroboration. Flagged as OF-3 for the certifier to confirm or reject."
+    }
+  },
+
+  "NO_DATABASE_MUTATION": {
+    "rule": "NO database mutation is authorized by this artifact, to any lane, for any purpose, REGARDLESS OF THE OBSERVATION RESULT.",
+    "restated_for_each_outcome": [
+      "OLD_DB_CONFIRMED does not authorize applying Stage-A.",
+      "NEW_DB_OR_STAGE_A_ALREADY_PRESENT does not authorize rolling anything back, restoring a prior schema state, or 'completing' a partial apply.",
+      "UNKNOWN_OR_BROKEN_DB_STATE does not authorize repairing, bootstrapping or provisioning anything.",
+      "STOP_UNOBSERVABLE_DB_STATE does not authorize granting the missing privilege."
+    ],
+    "binds_to": "STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json EXPLICIT_NON_AUTHORIZATIONS: 'NO database mutation, data-definition change, data change or grant change is authorized against any target.' Consumed as given and not narrowed."
+  },
+
+  "STAGE_A_AND_G2_BOUNDARY": {
+    "rule": "This artifact creates an OBSERVATION permission and creates NO permission for the database.",
+    "explicit_statements": [
+      "An OLD_DB observation does NOT authorize FIBDB-053 Stage-A IMPLEMENTATION.",
+      "An OLD_DB observation does NOT authorize FIBDB-053 Stage-A APPLY, anywhere, under any framing.",
+      "A NEW_DB observation does NOT retroactively authorize, legitimize, ratify or excuse an apply that has already happened. An unauthorized act is not made authorized by being observed.",
+      "G2 REMAINS UNRESOLVED. Nothing here resolves it, advances it, partially satisfies it, or shortens it.",
+      "No Stage-A precondition is satisfied. STAGE_A_INTERACTION.stage_a_apply_preconditions lists four; this artifact satisfies none and claims none."
+    ],
+    "carried_no_bypass_clause": "G2_BOUNDARY_RESTATEMENT.no_bypass_clause is carried in force: 'There is no condition under which this authority authorizes a hosted or remote apply. A future mission that believes it has found one has misread this section.' The same construction and the same reading apply to this artifact.",
+    "the_tempting_misreading_named": "The most likely misreading is that an OLD_DB confirmation, being the precondition Stage-A was waiting on, is therefore permission to proceed to Stage-A. It is not. RULE_NO_APPLY_ON_DRIFT_ALONE states the general form: 'Drift is an observation, never a permission.' A confirmed OLD_DB is drift confirmed, which is the strongest possible statement that the apply has not happened — and the weakest possible statement that it may."
+  },
+
+  "RELATIONSHIP_TO_PR201_AND_M11": {
+    "PR201_relationship": {
+      "status": "PR #201 is MERGED at e3f6f0758b96cd925208f26e156168eb800470a8. Its execution authority remains SEPARATELY GOVERNED and its future execution lane is not opened by this artifact.",
+      "this_artifact_does_not_mutate": [
+        "Vercel environment variables",
+        "deployment state",
+        "aliases",
+        "domains",
+        "any Vercel configuration of any kind"
+      ],
+      "what_it_supplies_to_PR201": "Exactly one thing: the observation that makes criterion D1-8 measurable. It supplies nothing toward D1-1 through D1-7.",
+      "the_parent_grant_is_not_extended": "The parent's single-deployment grant, its BOUNDED_RETRY_RULE and its EXPIRY are untouched. This artifact does not add a deployment, does not extend an expiry and does not create a second confirmation."
+    },
+    "M11_relationship": {
+      "residual_requirement": "D1-7 is BLOCKED_PENDING_ADJUDICATION. RELEASE_GATE_LEDGER GATES[M11].measured_at_base records a blocking_contract_conflict between a documented 200 and an observed 503 on the auth health endpoint, with automation: none.",
+      "this_artifact_does_nothing_about_it": "It performs no health-contract adjudication, authorizes none, and does not touch M11. Doing so would freeze the arbitrary choice M11 refuses to freeze — the parent's reasoning, carried.",
+      "the_conjunctive_consequence": "Even with D1-8 satisfied by this observation, D-1 is NOT declarable while D1-7 is blocked. D1_PROOF_CONTRACT.rule is explicit: all eight criteria are conjunctive and 'Seven of eight is not D-1.' Closing D1-8 moves the count from six to seven.",
+      "sequencing_statement": "If OLD_DB is proven, the future PR201 execution may proceed toward D-1 only after the other remaining gap — the M11 health-contract adjudication that unblocks D1-7 — is also closed by a competent authority. Until then the strongest token available remains the parent's D1_RUNTIME_COHERENCE_VERIFIED, now optionally accompanied by a separately-cited D1_OLD_DB_FINAL_WITNESS. The two together are still not D-1, and neither may be presented as if they were."
+    },
+    "S4_S6_S9_S1_G12_relationship": "UNCHANGED. This observation satisfies, advances and partially satisfies none of them, and no evidence produced under it may be cited for any of them. M11_S6_BOUNDARY's structural reason for S4 is untouched: in D-1 the corpus is by definition NOT applied."
+  },
+
+  "HUMAN_CONFIRMATION": {
+    "rule": "MANDATORY. The future execution lane MUST obtain explicit human confirmation IMMEDIATELY BEFORE the first hosted connection. No connection may be opened before an affirmative answer.",
+    "scope_of_one_confirmation": "ONE confirmation covers the PRECHECK and the FINAL WITNESS of a single execution, because they are two halves of one authorized sequence and splitting the confirmation would invite the second to be taken as routine.",
+    "placement": "After the capability is resolved and before any socket is opened. If the PRECHECK stops, the confirmation is spent and a later attempt needs a new one.",
+    "prompt_concept": "¿Confirmas abrir una conexión de SOLO LECTURA contra el proyecto de staging bvyzblhqymxruxdguaee, como rol uellix_auditor, para observar dos firmas de catálogo? No se escribe nada, no se toca producción, y se tomarán exactamente dos observaciones. Sí / No",
+    "prompt_requirements": [
+      "The target project ref bvyzblhqymxruxdguaee appears verbatim.",
+      "The prompt names the capability variable and the role.",
+      "The prompt states that the transaction is read only and that no write of any kind will be issued.",
+      "The prompt states that exactly two observations will be taken.",
+      "The prompt states that no production project is contacted.",
+      "No secret value appears in the prompt."
+    ],
+    "silence_is_not_consent": "An absent answer, an ambiguous answer, or an answer to a different question is NOT confirmation. The lane waits or stops.",
+    "confirmation_is_not_transferable": "It covers the ONE observation sequence it was asked about. It does not cover a third observation, a different target, a different capability, a later session or a different authority version.",
+    "why_a_read_needs_a_confirmation_at_all": "Because it is the first hosted database connection this programme has authorized outside the operator chain, and because the act that needs a human is opening the socket, not writing through it. A read against the wrong target is still a read against the wrong target."
+  },
+
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+    "method": "The two paths of this lane's write set were classified by EXECUTING scripts/ods-scope.ts's own classifyPaths against its own DEFAULT_PROTECTED_PATTERNS at AS_OF_TREE, with allowed pattern docs/ops/release/**. The classifier was RUN, not matched by eye, following the method the parent established.",
+    "result": {
+      "protectedViolations": 0,
+      "unauthorized": 0,
+      "nonCanonicalProtectedPaths": 0,
+      "grantAuthorized": 0,
+      "ok": "2 of 2",
+      "why": "docs/ops/release/** appears in none of the seven DEFAULT_PROTECTED_PATTERNS, measured as [docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json]."
+    },
+    "PROTECTED_AUTHORITY": "NONE",
+    "conclusion": "Both paths are ORDINARY. An ordinary --allow authorizes this diff in full. No protected-surface grant, no HPO-ODS grant, no ODS maintenance addendum and no Controller entry is required.",
+    "explicit_non_allocation": [
+      "NO ODS maintenance addendum ordinal is allocated, reserved or implied.",
+      "NO HPO-ODS grant id is allocated or reserved.",
+      "NO migration ordinal is allocated or reserved.",
+      "NO Controller entry is claimed.",
+      "NO program-state registry entry is added.",
+      "NO package script is registered.",
+      "NO evidence path is created by this lane — EVIDENCE_MATERIALIZATION specifies a FUTURE artifact and writes none."
+    ],
+    "reversal_condition": "If a future measurement finds this lane's write set requires ANY protected path, NEW_ODS_REQUIRED becomes YES and the lane STOPS with STOP_FOR_AUTHORITY_WRITE_SET_EXPANSION. It does not proceed under the ordinary allow and reconcile afterwards."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Enumerated so that a successor cannot read this artifact as conferring any of them. The presence of a detailed procedure for an action is NOT authority to take it.",
+    "non_authorizations": [
+      "NO hosted access of any kind was performed by the authoring lane. No connection was opened, no query was issued, no credential was resolved, materialized, read or requested.",
+      "NO database mutation of any kind is authorized, to any lane, for any purpose, regardless of the observation result.",
+      "NO GRANT, REVOKE, ALTER ROLE or privilege change is authorized, including the uellix_stella_ops USAGE grant whose absence is the most likely cause of a stop.",
+      "NO read outside AUTHORIZED_SQL_SURFACE is authorized, including a read that would merely explain a stop.",
+      "NO role other than uellix_auditor is authorized, and no SET ROLE is authorized from it.",
+      "NO connection to the production project ctaxtgujyyprgynmnvtq is authorized in any circumstance, including to verify that the veto works.",
+      "NO Vercel mutation, deployment, promotion, alias or domain change is authorized.",
+      "NO Supabase configuration is read, chosen, recorded or mutated.",
+      "NO secret value is chosen, recorded, rotated, materialized, printed or compared.",
+      "NO FIBDB-053 Stage-A authority is created, blessed, advanced or implied; Stage-A is neither applied nor authorized to be applied.",
+      "NO G2 condition is resolved, advanced or partially satisfied.",
+      "NO gate state is changed. S1, S4, S6, S9, G12 and M11 are read and left exactly as the ledger records them.",
+      "NO stage is declared. STAGING_ALIGNED is not entered.",
+      "NO health-contract adjudication is performed. M11's blocking_contract_conflict is left open.",
+      "NO STAGING_OBSERVATION_PACKET is produced, and no HOSTED_DDL_PRECONDITION is satisfied.",
+      "NO PR195 synchronization, rebase, merge or modification is performed or authorized.",
+      "NO code, test, script, SQL file, probe, migration, prepared SQL or baseline artifact is written or modified by this lane.",
+      "NO evidence artifact is written by this lane; the future shape is specified, not materialized.",
+      "NO existing gate, stop line or fail-closed test is weakened, narrowed or made conditional.",
+      "NO historical evidence is rewritten and no stale observation is refreshed by computation.",
+      "NO frozen parent is edited. Every consumed artifact remains append_only and untouched.",
+      "NO standing or transferable observation permission is created. The grant is single-use, covers at most two observations, and expires with the execution it describes."
+    ]
+  },
+
+  "MEASUREMENT_GAPS_RECORDED": {
+    "rule": "Recorded so the execution lane does not discover them at the connection. Each is measured in this tree at AS_OF_TREE, or explicitly marked UNKNOWN where it was not measured. None is repaired here.",
+    "gaps": [
+      {
+        "id": "MG-1",
+        "gap": "uellix_auditor is not granted USAGE on uellix_stella_ops by any package in this repository.",
+        "measured": "git grep over db/** for uellix_stella_ops intersected with uellix_auditor at AS_OF_TREE returns one prose row in db/prepared/README.md and no GRANT.",
+        "consequence": "The authorized capability most likely cannot run the authorized probe. See READ_ONLY_CAPABILITY_CONTRACT.MEASURED_CAPABILITY_RISK.",
+        "disposition": "RECORDED, NOT REPAIRED. Repairing it is a hosted GRANT and a protected-surface package write, both outside this grant."
+      },
+      {
+        "id": "MG-2",
+        "gap": "Whether the hosted database's ACTUAL grant state matches the repository's packages is UNKNOWN.",
+        "measured": "NOT MEASURED. This lane performs no hosted observation, so MG-1 is a fact about the REPOSITORY, not about project bvyzblhqymxruxdguaee. The hosted database may hold a grant no package in this repository explains.",
+        "consequence": "MG-1 makes the stop LIKELY, not certain. CP-3 is what turns the question into a measured boolean instead of a prediction.",
+        "disposition": "RECORDED AS UNKNOWN. The execution lane measures it rather than assuming either answer. RULE_FAIL_CLOSED_ON_UNKNOWN governs if it cannot."
+      },
+      {
+        "id": "MG-3",
+        "gap": "The repository's native identity gate cannot corroborate a session-pooler connection made by a non-operator role.",
+        "measured": "db/hosted/target-identity.ts projectRefFromPoolerUser returns null unless the role half is 'postgres'; deriveConnectionIdentity's pooler branch then refuses HOSTED_TARGET_POOLER_USER_INVALID because a regional pooler host names no project.",
+        "consequence": "The direct host form is the only authorized mechanism. See TARGET_IDENTITY_CONTRACT.CONNECTION_MECHANISM_ADJUDICATION.",
+        "disposition": "RECORDED, NOT REPAIRED. Widening the parser is a code change this grant does not authorize."
+      },
+      {
+        "id": "MG-4",
+        "gap": "Whether the direct host db.bvyzblhqymxruxdguaee.supabase.co is reachable from the execution environment is UNKNOWN.",
+        "measured": "NOT MEASURED — a hosted network property, and this lane performs no hosted observation. Recorded as an UNKNOWN, not as a fact.",
+        "consequence": "If only the pooler is reachable, the lane STOPS per MG-3 rather than substituting a mechanism.",
+        "disposition": "RECORDED AS UNKNOWN."
+      },
+      {
+        "id": "MG-5",
+        "gap": "No control this grant authorizes can exclude a hosted mutation made outside the governed chain tooling.",
+        "measured": "The three attempt ledgers are tracked and append-only, but they record only attempts opened through that tooling.",
+        "consequence": "NIM-3 is a real but incomplete control, bounded by NIM-1 and NIM-2. Stated in the evidence artifact rather than implied.",
+        "disposition": "RECORDED. Widening it would require a hosted audit surface this grant does not authorize."
+      },
+      {
+        "id": "MG-6",
+        "gap": "Whether the seven-argument predecessor coexists with the nine-argument form after Stage-A is not established by any effective authority read at AS_OF_TREE.",
+        "measured": "Read for, and not found, in DEPLOYMENT_CONTRACT, CATALOG_PROBE_CONTRACT, STAGE_A_INTERACTION and amendments A3 and B12.",
+        "consequence": "None for this artifact: nine-argument presence alone decides NEW_DB_OR_STAGE_A_ALREADY_PRESENT, so the classification never needs the answer.",
+        "disposition": "RECORDED as a boundary of what this artifact declines to decide."
+      }
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-1",
+      "severity": "NON_BLOCKING",
+      "finding": "Domain placement. This is the second FIBDB-prefixed artifact outside docs/ops/wave3/**, and docs/ops/staging/** — where the future evidence lands and where sibling hosted authorities live — was a live alternative.",
+      "disposition": "Adjudicated under NAMING_DERIVATION.placement_adjudication on the grounds that every clause refined is release-domain. Flagged for the independent certifier to confirm or reject."
+    },
+    {
+      "id": "OF-2",
+      "severity": "NON_BLOCKING",
+      "finding": "A frozen parent clause states that to_regprocedure 'can never be the thing that fails'. Measured on PostgreSQL 17, that is conditional on the session holding USAGE on the named schema.",
+      "disposition": "Not contradicted in its own domain — the runtime probe runs as uellix_app, which holds the USAGE. Recorded as a boundary for THIS artifact's different role. No parent is edited. Flagged so a certifier can decide whether the parent warrants an amendment of its own."
+    },
+    {
+      "id": "OF-3",
+      "severity": "NON_BLOCKING",
+      "finding": "Part of the engine-semantics measurement was first taken against the canonical local Supabase development stack, which a frozen clause names in a prohibition scoped to disposable Stage-A rehearsals.",
+      "disposition": "Disclosed in full under ENGINE_SEMANTICS_MEASURED.local_stack_disclosure. No package applied, no Uellix object touched, residue positively verified absent, and every measurement reproduced on a throwaway container that is the actual citation. Flagged for the certifier."
+    },
+    {
+      "id": "OF-4",
+      "severity": "NON_BLOCKING",
+      "finding": "On repository evidence the expected outcome of the future execution is a capability STOP rather than a measurement (MG-1).",
+      "disposition": "Deliberate. The grant is authored anyway because a stop that names the exact missing privilege is actionable in one step, and because MG-2 records that the hosted grant state is not actually known."
+    },
+    {
+      "id": "OF-5",
+      "severity": "BLOCKING_FOR_D1_ONLY",
+      "finding": "Even with D1-8 satisfied, D-1 remains undeclarable while D1-7 is blocked on the unadjudicated M11 health contract.",
+      "disposition": "Recorded. This artifact closes one of the two remaining gaps the parent named and does not pretend to close the other."
+    },
+    {
+      "id": "OF-6",
+      "severity": "NON_BLOCKING",
+      "finding": "The duplicate-authority verdict rests on three literal probes, and a literal absence is not a capability absence.",
+      "disposition": "Stated as such under AUTHORITY_GAP_ADJUDICATED.duplicate_authority_check.negative_claim_discipline rather than asserted as a proven absence. The certifier is invited to press it."
+    }
+  ],
+
+  "self_check": {
+    "write_set_is_exactly_two_documents": true,
+    "no_hosted_connection_was_opened": true,
+    "no_hosted_query_was_issued": true,
+    "no_credential_was_resolved_read_or_materialized": true,
+    "no_vercel_configuration_touched": true,
+    "no_supabase_configuration_touched": true,
+    "no_deployment_triggered": true,
+    "no_code_written": true,
+    "no_test_written": true,
+    "no_sql_file_written": true,
+    "no_script_written": true,
+    "no_evidence_artifact_written": true,
+    "no_db_path_touched": true,
+    "no_ods_artifact_touched": true,
+    "no_protected_path_touched": true,
+    "no_pr195_interaction": true,
+    "no_secret_value_present": true,
+    "no_secret_value_recorded_anywhere_in_this_lane": true,
+    "project_refs_present_are_public_and_already_in_tracked_code": true,
+    "both_literals_re_derived_from_the_frozen_amendment_not_from_the_prompt": true,
+    "seven_argument_source_claim_verified_by_direct_read_at_AS_OF_TREE": true,
+    "every_quoted_clause_re_read_at_AS_OF_TREE_not_recalled": true,
+    "ods_classification_executed_not_eyeballed": true,
+    "engine_semantics_reproduced_on_a_throwaway_substrate_and_destroyed": true,
+    "throwaway_substrate_absence_positively_verified": true,
+    "local_stack_measurement_disclosed_not_omitted": true,
+    "no_frozen_parent_edited": true,
+    "no_gate_state_changed": true,
+    "no_stage_declared": true,
+    "D1_not_declared": true,
+    "OLD_DB_not_declared": true,
+    "G2_not_resolved": true
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This artifact creates a hosted database access permission that two frozen authorities withheld. A permission authored by the same lane that identified the gap must be certified by a lane that did not.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Is the docs/ops/release/** placement right, or does the fact that the evidence lands in docs/ops/staging/evidence/** and that sibling hosted authorities live in docs/ops/staging/** make that the correct domain?",
+      "Is the duplicate-authority verdict sound, or does some authority outside the three literal probes already confer a hosted read permission in different words?",
+      "Is the sentinel read (SQ-8) a justified consequence of using verifyStagingTarget, or is it a widening of a catalog-only surface that should have been met by the deferred sentinel policy instead?",
+      "Does the CP-3 has_schema_privilege read genuinely narrow the failure mode, or is it a read that will be used to argue past a stop?",
+      "Is the two-observation design correct, or does the fact that a deployment cannot mutate the catalog make the second observation ceremonial — and if it is required, are NIM-1..NIM-3 strong enough given MG-5's admitted hole?",
+      "Is the refusal to authorize any broad pg_proc enumeration over-cautious in a way that makes UNKNOWN_OR_BROKEN_DB_STATE undiagnosable and therefore permanently stuck?",
+      "Does OF-2's qualification of the parent's totality claim stay inside the boundary of a successor, or does it amount to an amendment of a frozen parent that should have been authored as one?",
+      "Is the local-stack measurement disclosed at OF-3 a real breach of G2_BOUNDARY_RESTATEMENT.permitted_before_G2, or is that clause correctly read as scoping Stage-A package rehearsals only?"
+    ]
+  },
+
+  "final_state": "FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_AUTHORED__NOT_EXECUTED",
+  "next_gate": "INDEPENDENT_CERTIFICATION_OF_THIS_PAIR. No hosted connection, no query, no credential resolution and no evidence materialization is authorized until that certification returns PASS and a future execution lane opens with its own freshness gate and its own human confirmation."
+}
