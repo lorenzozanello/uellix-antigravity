@@ -1,0 +1,1105 @@
+{
+  "package_id": "M11_HEALTH_CONTRACT_ADJUDICATION",
+  "version": "1.0.0",
+  "artifact_id": "M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0",
+  "authority_class": "CONTRACT_ADJUDICATION_RECORD_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "HEALTH_CONTRACT_ADJUDICATION__NO_IMPLEMENTATION__NO_DEPLOYMENT__NO_HOSTED_EXECUTION__NO_DATABASE_MUTATION__NO_GATE_STATE_CHANGE__NO_OWNER_RATIFICATION",
+  "append_only": true,
+  "mission_id": "CV1-M11-HEALTH-CONTRACT-ADJUDICATION-R1",
+  "lane": "codex/cv1-m11-health-contract-adjudication-r1",
+  "role": "COMMERCIAL_V1_M11_HEALTH_CONTRACT_ADJUDICATOR",
+  "mode": "READ_FIRST__CONTRACT_ADJUDICATION_ONLY",
+  "adjudication_date": "2026-09-21",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "adjudicated_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "remote_assertion": "origin/integration/commercial-v1 was fetched and measured EQUAL to BASE_SHA and BASE_TREE before any work began.",
+    "worktree_state": "CLEAN at adjudication (git status --porcelain --untracked-files=all empty).",
+    "prestate_gate": "ODS_PRESTATE=PASS (branch, head, tree, clean all PASS).",
+    "authority_seal": "AUTHORITY_SEAL_VERIFY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS."
+  },
+  "placement_rationale": "Placed under docs/ops/release/** because the contested decision is owned there and nowhere else: RELEASE_GATE_LEDGER_v1.0.0.json carries GATES[M11], GATES[P6], DUPLICATE_GATE_RESOLUTION DGR-07 and OPEN_FINDINGS AT-F-01, and every one of those records the conflict this artifact adjudicates. No ODS or W2 lineage identifier is invented, because this lane was allocated none.",
+  "companion_manifest_disposition": {
+    "decision": "NO_COMPANION_TEST_MANIFEST_AT_THIS_STAGE",
+    "precedent": "Repository precedent separates the two artifact kinds by whether the lane authorizes an EXECUTABLE act. The execution authorities in docs/ops/release/ (FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json, FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json) each carry a companion test manifest because each opens an act. The decision records in docs/ops/owner-ratifications/ and docs/ops/public-verification/ (FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json, HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json, ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json, PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0.json) carry NONE, measured by directory listing at BASE.",
+    "why_it_would_be_wrong_here": "UELLIX_TEST_MANIFEST_SCHEMA freezes a test contract BEFORE implementation code is written. This lane writes no implementation and authorizes none. A manifest authored now would have to declare controls for a route shape that OD-1 has not yet chosen, which is precisely the arbitrary freeze DGR-07 refuses. The manifest is a deliverable of the implementation lane that opens AFTER ratification."
+  },
+  "why_this_record_exists": {
+    "problem": "M11 (deployment smoke) is ABSENT and cannot be automated, because the contract its smoke would encode is not adjudicated. Three downstream artifacts each declined to adjudicate it and deferred to a competent authority.",
+    "who_deferred": [
+      "RELEASE_GATE_LEDGER_v1.0.0.json DGR-07: disposition AWAITING_ADJUDICATION, binding 'This artifact does NOT choose.'",
+      "RELEASE_GATE_LEDGER_v1.0.0.json OPEN_FINDINGS AT-F-01: disposition AWAITING_OWNER_ADJUDICATION.",
+      "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json: what_this_authority_does_about_it = 'NOTHING'."
+    ],
+    "what_this_lane_does": "It re-derives the conflict from the code and the pinned dependency set rather than inheriting either side of it, separates the half that measurement settles from the half that only the owner can settle, and freezes an endpoint-by-caller matrix precise enough that a future implementation lane has no semantic discretion left once the owner ratifies OD-1 through OD-4."
+  },
+  "MEASUREMENT_METHOD": {
+    "hosted_execution": "NONE. No deployment, no Vercel mutation, no Supabase mutation, no PostgreSQL connection, no environment change.",
+    "how_the_responses_were_obtained": "Each route handler was imported and invoked IN PROCESS under the repository's own vitest configuration, with the REAL @supabase/ssr createServerClient constructed over an empty cookie jar. Only the module seam @/lib/supabase/server was substituted, so the route's own branch logic was executed rather than re-expressed. The probe files were transient: created, run, deleted, and the worktree re-measured CLEAN (git status --porcelain --untracked-files=all empty) after each run. NO probe file is part of this write set.",
+    "dependency_pin_under_which_the_measurements_hold": {
+      "supabase_ssr": "0.12.0",
+      "supabase_js": "2.108.2",
+      "auth_js": "2.108.2",
+      "source": "pnpm-lock.yaml at BASE_TREE; package.json declares the caret ranges 0.12.0 and 2.108.2.",
+      "why_the_pin_matters": "F-M11-03 and F-M11-04 are properties of the auth-js missing-session behaviour. A future auth-js that returned no error for an absent session would silently change the anonymous response of /api/health/auth from 503 to 200. Any ratified contract must therefore be enforced by a test, not by the library's current behaviour."
+    },
+    "historical_hosted_evidence": "Read as evidence, never as normative. The production 503 recorded in RELEASE_GATE_LEDGER GATES[M11].measured_at_base is CORROBORATED by F-M11-01 below, which reproduces it locally and explains it. It is not adopted as the intended contract merely because it happened."
+  },
+  "MEASURED_FACTS": [
+    {
+      "id": "F-M11-01",
+      "claim": "An anonymous caller of /api/health/auth receives HTTP 503.",
+      "measured_status": 503,
+      "measured_body": {
+        "status": "degraded",
+        "authenticated": false,
+        "message": "Authentication service unavailable",
+        "timestamp": "ISO-8601 instant, varies per call"
+      },
+      "method": "Real route handler invoked in process over a real cookie-less @supabase/ssr client.",
+      "site": "app/api/health/auth/route.ts:15 (the userError branch) returning at :16-21.",
+      "consequence": "The hosted 503 was not an outage artefact. It is the deterministic implemented behaviour."
+    },
+    {
+      "id": "F-M11-02",
+      "claim": "A getUser call with no cookie returns an error and contacts the Auth provider ZERO times.",
+      "measured_user": null,
+      "measured_error_name": "AuthSessionMissingError",
+      "measured_error_message": "Auth session missing!",
+      "measured_error_status": 400,
+      "measured_fetch_calls_attempted": 0,
+      "method": "Direct invocation of the real server client getUser with an instrumented global fetch.",
+      "consequence": "auth-js short-circuits on a missing session BEFORE any network call. The health of the Auth provider therefore cannot influence the response given to an anonymous caller."
+    },
+    {
+      "id": "F-M11-03",
+      "claim": "For an anonymous caller, a HEALTHY Auth provider and a COMPLETELY UNREACHABLE Auth provider produce the IDENTICAL response: 503 with the identical body.",
+      "derivation": "Follows from F-M11-02 with no intermediate step: the provider is never contacted, so no property of the provider can appear in the answer. Both worlds traverse app/api/health/auth/route.ts:15 identically.",
+      "consequence": "The 503 that /api/health/auth returns to an anonymous caller carries ZERO information about auth-dependency health. This is the single most consequential fact in this adjudication: encoding the status quo into M11 would freeze a gate that can never fail for the reason M11 exists."
+    },
+    {
+      "id": "F-M11-04",
+      "claim": "HTTP 200 together with an unauthenticated body is UNREACHABLE for an anonymous caller at the pinned dependency set.",
+      "derivation": "The 200 branch at app/api/health/auth/route.ts:24-28 is reached only when userError is falsy. By F-M11-02 an absent session always yields a non-null error. A non-null user co-occurs only with a present session, which reports authenticated true. No input produces 200 together with an unauthenticated body.",
+      "consequence": "The documented-200 side of DGR-07 does not describe an alternative implemented behaviour. It describes a state this code cannot produce. The conflict is NOT symmetric."
+    },
+    {
+      "id": "F-M11-05",
+      "claim": "The only repository witness for the documented-200 contract is an unsourced comment citing an artifact that does not exist.",
+      "measured": "The SMK-02 literal occurs exactly ONCE in the entire repository, at app/api/health/runtime-identity/route.ts:22, inside a prose comment asserting that the staging SMK-02 verified exactly that contract. No SMK-02 evidence artifact, smoke log or manifest exists at BASE_TREE. No other SMK identifier exists at all.",
+      "method": "A whole-tree git grep for the SMK identifier pattern, deduplicated.",
+      "consequence": "The DGR-07 legacy source named 'the documented endpoint contract' resolves to a single uncorroborated comment. This does NOT make the comment's intent wrong, and it is not treated as wrong here: that intent is exactly what OD-1 asks the owner to settle. It does mean the comment carries no evidentiary weight against a measurement."
+    },
+    {
+      "id": "F-M11-06",
+      "claim": "An anonymous caller of /api/health/runtime-identity and /api/health/stella-preconditions receives HTTP 401.",
+      "measured_runtime_identity": {
+        "status": 401,
+        "body": {
+          "error": "Unauthorized"
+        }
+      },
+      "measured_stella_preconditions": {
+        "status": 401,
+        "body": {
+          "error": "Unauthorized"
+        }
+      },
+      "method": "Both real route handlers invoked in process over a real cookie-less client.",
+      "consequence": "These two endpoints already refuse anonymously in a single consistent way. They are not in conflict."
+    },
+    {
+      "id": "F-M11-07",
+      "claim": "The comment at lib/auth/identity.ts:121-123 is FALSIFIED. A cookie-less caller is classified SESSION_REJECTED, not NO_SESSION.",
+      "measured_identity": null,
+      "measured_failure": "SESSION_REJECTED",
+      "site": "lib/auth/identity.ts:124, which selects on the error being truthy; by F-M11-02 it always is.",
+      "the_false_sentence": "An absent session produces no error while a rejected one does - the two cases it claims to distinguish are indistinguishable at this seam.",
+      "consequence": "NO_SESSION is unreachable in production for the cookie-less case. No route status changes, because SESSION_REJECTED and NO_SESSION both map to 401 at every call site. The defect is in the EVIDENCE, not the behaviour: tests/runtime-identity-observability.test.ts:1036 pins the anonymous case by mocking a failure code the real helper never emits, so that control is vacuous with respect to the caller it names.",
+      "severity": "NON_BLOCKING_FOR_M11__RECORDED_FOR_THE_IMPLEMENTATION_LANE"
+    },
+    {
+      "id": "F-M11-08",
+      "claim": "The contested cell is covered by NO test, and the suite is green anyway.",
+      "measured": "tests/health-auth-route.test.ts contains exactly two cases: an authenticated user at :18-28 expecting 200, and an error-bearing result at :30-46 expecting 503 by way of an INJECTED error object. Neither case exercises an anonymous caller against the real client. Running tests/health-auth-route.test.ts, tests/runtime-identity-observability.test.ts and tests/database-runtime-entrypoints.test.ts at BASE gives 305 passed of 305.",
+      "consequence": "The green suite is not evidence for either side of DGR-07. The only test that touches a 503 supplies the error itself, so it would keep passing under either ratified contract. M11 therefore has no existing control to inherit for this cell."
+    },
+    {
+      "id": "F-M11-09",
+      "claim": "The /api/health/stella-preconditions route handler has ZERO direct test coverage.",
+      "measured": "No test file imports app/api/health/stella-preconditions/route. The only references to that path outside the route itself are a prose comment in lib/stella/rate-limit.ts:39 and a comment in tests/database-runtime-entrypoints.test.ts:718. Neither invokes the handler.",
+      "consequence": "RELEASE_GATE_LEDGER names this file as one of the three M11 sources of truth, yet neither its auth branch nor its ready-to-status mapping is frozen by any control. Any M11 implementation lane must add them."
+    },
+    {
+      "id": "F-M11-10",
+      "claim": "HTTP 429 is reachable on all three health endpoints, and no health path is exempt.",
+      "measured": "proxy.ts:48-51 declares a matcher that excludes only Next.js internals and static image extensions, so /api/health/* is matched. proxy.ts:12-39 applies a global sliding-window limit of 60 requests per minute keyed on the client IP to every path beginning with /api/, whenever the KV REST url and token are both present, and returns 429 on refusal. lib/supabase/proxy.ts:78-94 redirects only the /app and /admin prefixes, so health requests pass through to their handlers.",
+      "consequence": "A monitor or smoke runner polling faster than the shared per-IP budget, or sharing an egress IP with other traffic, can be throttled. 429 is a transport-layer refusal that says nothing about deployment health, so it must never be recorded as a health verdict. This is unowned at BASE and is raised as OD-4."
+    },
+    {
+      "id": "F-M11-11",
+      "claim": "One misconfiguration produces DIFFERENT status codes across the three endpoints.",
+      "measured": "lib/supabase/project-coherence.ts:180 throws when the Auth project and the runtime database project cannot be proven coherent. In /api/health/auth that throw is raised inside the try at app/api/health/auth/route.ts:10 and lands in the catch at :29, producing 500. In the other two routes the same throw is caught inside getVerifiedAuthIdentityResult at lib/auth/identity.ts:103-109, which maps it to AUTH_UNAVAILABLE and therefore to 503.",
+      "consequence": "For a single root cause a smoke runner sees 500 on one endpoint and 503 on two others. Any ratified contract must say which code means what, or the smoke log will be read as three unrelated incidents."
+    },
+    {
+      "id": "F-M11-12",
+      "claim": "The health endpoint inventory is exhaustive at BASE, and M11 automation is absent.",
+      "measured": "Twelve route handlers exist under app/**, of which exactly three sit under app/api/health/. No other liveness, readiness, ping or status surface exists. The nine workflows under .github/workflows/ contain no deployment smoke job, and no smoke script exists under scripts/.",
+      "corroboration": "Independently matches the twelve-route-handler census recorded in TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json ROUTE_HANDLERS_ESCAPE_LAYOUTS, and matches GATES[M11].measured_at_base which records endpoints_present 3 and automation none."
+    },
+    {
+      "id": "F-M11-13",
+      "claim": "No endpoint provides an unauthenticated liveness signal capable of failing.",
+      "derivation": "EP-2 and EP-3 answer 401 to every anonymous caller (F-M11-06), so their anonymous answer is constant and cannot report a fault. EP-1's anonymous answer is 503 in every world (F-M11-03), so it too is constant. Three endpoints, and for an anonymous caller each one returns the same status whether the deployment is healthy or broken.",
+      "consequence": "An unauthenticated M11 smoke can today verify only that the deployment ROUTES and RESPONDS - which is real but is strictly weaker than the pass criteria language 'answers in conformance with an ADJUDICATED contract'. Whether that is sufficient for M11 is OD-2."
+    }
+  ],
+  "ENDPOINT_INVENTORY": {
+    "completeness_statement": "Derived by enumerating every route handler under app/** and then searching for any other liveness, readiness, ping or status surface. Twelve handlers exist; exactly three are health surfaces. See F-M11-12.",
+    "endpoints": [
+      {
+        "id": "EP-1",
+        "path": "/api/health/auth",
+        "file": "app/api/health/auth/route.ts",
+        "semantic_purpose_as_written": "Verify Supabase auth connectivity (route docstring at :4-8).",
+        "semantic_purpose_as_measured": "For an AUTHENTICATED caller it proves a GoTrue round trip succeeded. For an ANONYMOUS caller it proves only that the Next.js runtime executed and the Supabase client constructed - by F-M11-02 the provider is never contacted. The stated purpose and the measured purpose diverge exactly on the contested caller class.",
+        "role": "DISPUTED. Named as a liveness surface, implemented as an auth-dependency diagnostic. OD-1 settles this.",
+        "auth_requirement_today": "NONE. No session is required to reach the handler.",
+        "authorization_requirement_today": "NONE.",
+        "dependency_failure_affects_status": "Only for an authenticated caller. Never for an anonymous one (F-M11-03).",
+        "deliberately_dark_subsystem": "NOT_APPLICABLE. This endpoint reads no feature flag and no subsystem state.",
+        "body_fields_exposed_today": [
+          "status",
+          "authenticated",
+          "message",
+          "timestamp"
+        ],
+        "details_that_must_never_be_exposed": "Any user identifier, email, provider name, token, cookie or upstream error text. The repository already enforces the last of these: tests/health-auth-route.test.ts:45 asserts the upstream error string is absent from the body, and the route docstring at :6-7 states the PII rule.",
+        "suitable_for_unauthenticated_platform_smoke_today": "NO. By F-M11-03 its anonymous answer is identical whether the Auth provider is healthy or unreachable, so an unauthenticated smoke of this endpoint cannot distinguish a working deployment from a broken one.",
+        "participates_in_M11": "YES - named in GATES[M11].source_of_truth.",
+        "observability_only": "NO - it is a named release-gate source of truth, not merely an observability surface."
+      },
+      {
+        "id": "EP-2",
+        "path": "/api/health/runtime-identity",
+        "file": "app/api/health/runtime-identity/route.ts",
+        "semantic_purpose_as_written": "Observe, from inside the deployment's own process and over the very pool that serves requests, that the PostgreSQL session identity is the least-privileged runtime role and does not bypass RLS (:3-16).",
+        "semantic_purpose_as_measured": "Matches the written purpose. No divergence found.",
+        "role": "DIAGNOSTIC, and a READINESS signal for the database identity. Explicitly NOT liveness.",
+        "auth_requirement_today": "A verified GoTrue session, resolved through getVerifiedAuthIdentityResult (:49).",
+        "authorization_requirement_today": "NONE beyond a verified session. No organisation and no profile, deliberately - the route prose at :28-37 records that a stricter gate would remove the diagnostic exactly when the failure it observes occurs.",
+        "dependency_failure_affects_status": "YES. An unobservable session degrades to 503 (:71-78).",
+        "deliberately_dark_subsystem": "NOT_APPLICABLE.",
+        "body_fields_exposed_today": [
+          "status",
+          "verified",
+          "runtime",
+          "target",
+          "failures",
+          "observedAt"
+        ],
+        "details_that_must_never_be_exposed": "Connection strings, host, port, driver text, SQLSTATE, credentials, or the subject. The route discards the caught error entirely at :71-77 for this reason, and the shape is frozen by tests/runtime-identity-observability.test.ts:1068 onward.",
+        "suitable_for_unauthenticated_platform_smoke_today": "NO - it answers 401 anonymously by design (F-M11-06).",
+        "participates_in_M11": "YES - named in GATES[M11].source_of_truth.",
+        "observability_only": "NO."
+      },
+      {
+        "id": "EP-3",
+        "path": "/api/health/stella-preconditions",
+        "file": "app/api/health/stella-preconditions/route.ts",
+        "semantic_purpose_as_written": "Report the CONFIGURATION PRECONDITIONS of the Stella subsystem read from this process's own environment, so that an operator can see before spending real provider budget whether the deployment is configured the way a certification assumes (:5-25).",
+        "semantic_purpose_as_measured": "Matches the written purpose. It makes no network call and no database query.",
+        "role": "READINESS of configuration only. The route itself refuses the word health for its own ready field at :108-116: ready true IS A PRECONDITION, NOT A HEALTH VERDICT.",
+        "auth_requirement_today": "A verified GoTrue session (:67). Same boundary as EP-2, for the reason given at :53-58.",
+        "authorization_requirement_today": "NONE beyond a verified session.",
+        "dependency_failure_affects_status": "NO, and deliberately. It cannot observe a dependency at all: present-but-invalid KV credentials report ready true here and fail closed later at the real call site (:108-116).",
+        "deliberately_dark_subsystem": "THIS IS THE ENDPOINT WHERE THE QUESTION BITES. A deployment with Stella deliberately disabled reports ready false and therefore 503 today, because ready is the conjunction of canUseStella and the rate-limit attestation (:117, :123). A deliberately dark subsystem is currently indistinguishable from a misconfigured one. Unowned at BASE and raised as OD-3.",
+        "body_fields_exposed_today": [
+          "schema",
+          "environment",
+          "master",
+          "model",
+          "capabilities",
+          "rateLimit",
+          "ready"
+        ],
+        "details_that_must_never_be_exposed": "No secret VALUE, ever - not truncated, not fingerprinted, not hashed. Only presence booleans, variable names, feature flags and the model target (:28-38). The route reports the PRESENCE of the provider key at :88 and never its value.",
+        "suitable_for_unauthenticated_platform_smoke_today": "NO - it answers 401 anonymously by design (F-M11-06).",
+        "participates_in_M11": "YES - named in GATES[M11].source_of_truth.",
+        "observability_only": "NO."
+      }
+    ],
+    "distinctions_preserved": {
+      "rule": "A shared /api/health/ prefix is a routing fact, not a semantic one. These five concepts are kept separate and are NOT collapsed.",
+      "liveness": "Is this deployment executing at all. NO endpoint measures this today for an anonymous caller in a way that can fail: EP-1's anonymous 503 is information-free (F-M11-03) and EP-2 and EP-3 refuse anonymously. This is a GAP, recorded as F-M11-13.",
+      "readiness": "Is this deployment fit to serve. EP-2 covers the database identity half; EP-3 covers the Stella configuration half.",
+      "auth_health": "Is the Auth provider reachable and answering. EP-1 measures this ONLY for an authenticated caller.",
+      "runtime_identity": "Which PostgreSQL principal this deployment's pool actually is. EP-2, and nothing else.",
+      "stella_preconditions": "Whether the Stella configuration preconditions hold. EP-3, and nothing else."
+    }
+  },
+  "CALLER_TAXONOMY": {
+    "derivation_statement": "Derived from the repository, not adopted from the mission brief. Each class below is justified by a seam the code actually distinguishes, or by an observer role an existing authority actually names. Classes the codebase cannot tell apart are recorded as collapsing, rather than being listed as if they were distinguishable.",
+    "classes": [
+      {
+        "id": "CC-1",
+        "name": "ANONYMOUS_PUBLIC",
+        "definition": "No session cookie at all.",
+        "repository_provenance": "TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json census entry E13 records the auth probe as reachable_by_unverified_today true with guard_today none."
+      },
+      {
+        "id": "CC-2",
+        "name": "SESSION_PRESENT_BUT_REJECTED",
+        "definition": "A cookie exists but GoTrue does not accept it - expired, revoked, or issued by another project.",
+        "repository_provenance": "lib/auth/identity.ts:66-74 enumerates SESSION_REJECTED as a distinct failure.",
+        "collapses_with": "CC-1, MEASURED. By F-M11-07 a cookie-less caller is ALSO classified SESSION_REJECTED, so the code cannot distinguish CC-1 from CC-2 at this seam. They are listed separately because they differ in what an operator should conclude, not because the deployment can tell them apart."
+      },
+      {
+        "id": "CC-3",
+        "name": "AUTHENTICATED_EMAIL_UNVERIFIED",
+        "definition": "A GoTrue-verified subject whose email is not confirmed.",
+        "repository_provenance": "lib/auth/identity.ts:139 derives emailVerified; PACKET_B treats it as a first-class distinction.",
+        "measured_effect_on_health_surfaces": "NONE. No health route branches on emailVerified. PACKET_B classified E13, E18 and E19 OUT_OF_SCOPE for the verification dimension, recording the residual posture disclosure as F-IA-10. CC-3 and CC-4 therefore receive identical responses on all three endpoints."
+      },
+      {
+        "id": "CC-4",
+        "name": "AUTHENTICATED_EMAIL_VERIFIED",
+        "definition": "A GoTrue-verified subject whose email is confirmed.",
+        "repository_provenance": "lib/auth/identity.ts:61-64."
+      },
+      {
+        "id": "CC-5",
+        "name": "DEPLOYMENT_SMOKE_RUNNER_UNAUTHENTICATED",
+        "definition": "An automated post-deploy prober holding no session.",
+        "repository_provenance": "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json AUTH-3 authorizes read-only smoke observation of one deployment, unbounded because it mutates nothing.",
+        "exists_today": "NO. Automation is absent (F-M11-12).",
+        "transport_equivalence": "Receives exactly what CC-1 receives. It is a separate CLASS because M11 consumption and blocking semantics differ, not because the response differs."
+      },
+      {
+        "id": "CC-6",
+        "name": "OPERATOR_AUTHENTICATED",
+        "definition": "A human or automated prober holding a verified staging test principal.",
+        "repository_provenance": "The same authority's AUTH-4 authorizes authenticated health observation where the endpoint's own boundary requires a verified session, constrained to a staging test principal.",
+        "blocking_constraint": "MEASUREMENT_GAPS_RECORDED MG-4 records the circularity: proving the Auth binding requires authenticating against the very project under test, and creating, promoting or elevating a principal is NOT authorized. If no suitable principal exists the lane STOPS. MG-4 also forbids lowering the endpoints' boundary to make measurement convenient."
+      },
+      {
+        "id": "CC-7",
+        "name": "EXTERNAL_MONITOR_UNAUTHENTICATED",
+        "definition": "A continuous third-party prober outside the deployment.",
+        "repository_provenance": "GATES[P6].evidence_class ADJUDICATED_DECISION_PLUS_MONITOR; its measured_at_base records external_monitor absent.",
+        "exists_today": "NO.",
+        "distinguishing_property": "Unlike CC-5 it polls continuously rather than once per deploy, which is what makes the shared per-IP rate limit of F-M11-10 a live concern for this class specifically."
+      }
+    ],
+    "classes_deliberately_not_created": {
+      "PLATFORM_PROTECTION_BLOCKED_CALLER": "Deployment Protection can answer 302 to an anonymous GET before any handler runs. This is a PLATFORM state that applies to CC-1, CC-5 and CC-7 alike, not a caller class of its own. It is carried in the matrix as a cross-cutting pre-handler condition instead. MG-5 records that this was NOT measured by any repository lane."
+    }
+  },
+  "CONFLICT_RE_DERIVATION": {
+    "instruction_followed": "Neither side was frozen merely because it already appears in an artifact. Both were re-derived from the code and the pinned dependency set.",
+    "the_two_sources": [
+      {
+        "side": "DOCUMENTED",
+        "claim": "An anonymous caller receives 200 with an unauthenticated body.",
+        "where_it_lives": "app/api/health/runtime-identity/route.ts:21-24, a prose comment, citing SMK-02.",
+        "authority_level": "CODE COMMENT. Not an authority artifact, not a test, not an evidence record. The SMK-02 it cites does not exist anywhere in the repository (F-M11-05).",
+        "chronology": "Written when the runtime-identity route was authored, to justify NOT extending EP-1.",
+        "status_after_re_derivation": "FALSIFIED AS A DESCRIPTION OF BEHAVIOUR by F-M11-04: the state it describes is unreachable. PRESERVED AS A STATEMENT OF INTENT: it is evidence that an author believed EP-1 was a public surface, which is precisely the intent OD-1 must settle."
+      },
+      {
+        "side": "OBSERVED",
+        "claim": "Production answered 503.",
+        "where_it_lives": "RELEASE_GATE_LEDGER_v1.0.0.json GATES[M11].measured_at_base.blocking_contract_conflict.",
+        "authority_level": "LEDGER-RECORDED HOSTED OBSERVATION. An authority artifact, but recording a measurement, not a decision.",
+        "chronology": "Recorded at the ledger's own base, after the code above was written.",
+        "status_after_re_derivation": "CORROBORATED AND EXPLAINED by F-M11-01 and F-M11-02. It is not merely what happened once; it is what the code does deterministically, for a reason now identified."
+      }
+    ],
+    "supersession_analysis": {
+      "question": "Does either source supersede the other?",
+      "answer": "NEITHER, and the question is the wrong one. A comment describing intent and a measurement describing behaviour are not competing authorities over the same proposition. They are answers to two different questions that were mistaken for one.",
+      "what_measurement_settles": "The FACTUAL half. There is no dispute about what the deployment does: an anonymous caller gets 503, deterministically, and the documented 200 is unreachable. DGR-07's framing that 'either behaviour could legitimately be the intended one' presupposed two implementable behaviours competing for the smoke. Only one of them is implemented; the other is a design that was never built.",
+      "what_measurement_cannot_settle": "The NORMATIVE half. Whether /api/health/auth OUGHT to be a public liveness surface or a private diagnostic is a product and security choice about who the endpoint serves. No measurement can decide it, and this lane does not. It is OD-1.",
+      "why_the_status_quo_is_not_the_default_answer": "Because the status quo fails BOTH candidate readings, independently of which one the owner picks. As a public liveness surface, 503 announces a dependency outage when the only established fact is that the caller has no session. As a private diagnostic, 503 is the wrong refusal - 401 is - and it additionally discloses a degraded posture claim to an anonymous caller. And under either reading it is information-free (F-M11-03). Ratifying the status quo is therefore an available choice but NOT a neutral one, and this artifact declines to present it as the safe default."
+    },
+    "disposition_of_the_prior_records": {
+      "DGR-07": "Its factual premise is SUPERSEDED BY MEASUREMENT; its disposition AWAITING_ADJUDICATION remains CORRECT and is not disturbed. This artifact supplies the adjudication input DGR-07 asked for; it does not amend the ledger.",
+      "AT-F-01": "Remains AWAITING_OWNER_ADJUDICATION until OD-1 is ratified. This artifact does not close it.",
+      "GATES_M11_measured_at_base": "Its blocking_contract_conflict text remains an accurate record of what was known then. The ledger is NOT edited by this lane - editing it would be authority expansion, and the ledger is the artifact that asked for this adjudication rather than one this lane governs."
+    }
+  },
+  "OWNERSHIP_MAP": {
+    "rule": "Each question is answered in exactly ONE place. Where an existing artifact already governs a question, this artifact CITES it and does not restate an answer, so that no second answer can drift from the first.",
+    "entries": [
+      {
+        "question": "Which gates exist, their pass criteria, evidence classes and stage placement",
+        "owner": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+        "this_artifact": "CITES ONLY. M11's pass criteria and evidence class are inherited verbatim, never redefined."
+      },
+      {
+        "question": "Whether the anonymous health contract is adjudicated",
+        "owner": "THIS ARTIFACT, by explicit delegation from DGR-07 and AT-F-01",
+        "this_artifact": "ANSWERS the factual half and MATERIALIZES the normative half as OD-1."
+      },
+      {
+        "question": "Who may reach each health endpoint with respect to email verification",
+        "owner": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json (E13, E18, E19; residual F-IA-10)",
+        "this_artifact": "CITES ONLY. It does not reclassify any census entry and does not reopen the OUT_OF_SCOPE ruling."
+      },
+      {
+        "question": "What a deployment observation lane may do, and the staging principal circularity",
+        "owner": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json (AUTH-1..AUTH-4, MG-4, MG-5)",
+        "this_artifact": "CITES ONLY. It authorizes no observation and relaxes no boundary."
+      },
+      {
+        "question": "Whether D-1 closes M11",
+        "owner": "the same authority's M11_S6_BOUNDARY block, which answers NO",
+        "this_artifact": "CITES ONLY. The answer is not re-derived."
+      },
+      {
+        "question": "The runtime-identity payload shape and its status mapping",
+        "owner": "app/api/health/runtime-identity/route.ts plus tests/runtime-identity-observability.test.ts",
+        "this_artifact": "RECORDS the existing contract as already adjudicated. It proposes no change."
+      },
+      {
+        "question": "What the Stella ready field does and does not assert",
+        "owner": "app/api/health/stella-preconditions/route.ts:108-116",
+        "this_artifact": "CITES ONLY, and relies on it to keep readiness separate from health."
+      },
+      {
+        "question": "Whether an external monitor exists and what P6 requires",
+        "owner": "RELEASE_GATE_LEDGER GATES[P6]",
+        "this_artifact": "CITES ONLY. P6 is downstream of M11 and is not adjudicated here."
+      },
+      {
+        "question": "Whether health paths are exempt from the global API rate limit",
+        "owner": "UNOWNED AT BASE",
+        "this_artifact": "RAISES it as OD-4 rather than answering it."
+      },
+      {
+        "question": "Whether a deliberately disabled Stella subsystem is unhealthy",
+        "owner": "UNOWNED AT BASE",
+        "this_artifact": "RAISES it as OD-3 rather than answering it."
+      }
+    ]
+  },
+  "ENDPOINT_BY_CALLER_MATRIX": {
+    "completeness": "3 endpoints x 7 caller classes = 21 cells. Every cell is present.",
+    "how_to_read_a_cell": "measured_status_at_BASE is a FROZEN FACT, established without hosted execution. required_* is the CONTRACT. Where a cell carries required_status it is settled and an implementation lane has no discretion. Where it carries required_status_if_* it is NOT settled, and the named OD must be ratified before any implementation lane may choose among the branches.",
+    "cross_cutting_pre_handler_conditions": [
+      {
+        "condition": "PLATFORM_DEPLOYMENT_PROTECTION",
+        "status": 302,
+        "applies_to": "Every anonymous cell - CC-1, CC-2, CC-5, CC-7 - on a protected Preview deployment.",
+        "semantic": "PLATFORM_GATED__NO_HANDLER_EXECUTED",
+        "binding_rule": "A 302 is NOT a health verdict and MUST NOT be followed by a smoke runner. Following the redirect would record the status of a login page as the status of the deployment. A smoke that receives 302 has FAILED TO OBSERVE and must be recorded as INCONCLUSIVE, never as PASS and never as FAIL.",
+        "provenance": "MG-5 records this as NOT MEASURED by any repository lane - an UNKNOWN, not a fact."
+      },
+      {
+        "condition": "GLOBAL_API_RATE_LIMIT",
+        "status": 429,
+        "applies_to": "Every cell of all three endpoints when the KV credentials are present (F-M11-10).",
+        "semantic": "THROTTLED__NO_HANDLER_VERDICT",
+        "binding_rule": "429 is a transport refusal and MUST be recorded as INCONCLUSIVE, never as a health verdict.",
+        "owner_decision": "OD-4 decides whether health paths are exempted."
+      },
+      {
+        "condition": "SUPABASE_PROJECT_INCOHERENCE",
+        "status": "500 on EP-1, 503 on EP-2 and EP-3",
+        "applies_to": "All caller classes, for one single root cause (F-M11-11).",
+        "semantic": "DEPLOYMENT_MISCONFIGURED__PROJECT_COHERENCE_UNPROVEN",
+        "binding_rule": "A smoke runner MUST treat the 500/503 divergence as ONE incident. Any ratified contract must state this, or three endpoints will be read as three unrelated faults."
+      }
+    ],
+    "cells": [
+      {
+        "endpoint": "EP-1",
+        "caller_class": "CC-1",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 503,
+        "measured_semantic_at_BASE": "AUTH_DEPENDENCY_UNAVAILABLE - ASSERTED BUT NOT MEASURED (F-M11-03)",
+        "measured_body_at_BASE": "Exactly status, authenticated, message, timestamp. No identifier, no email, no provider name, no upstream error text.",
+        "contract_state": "OWNER_DECISION_REQUIRED__OD-1",
+        "required_status_if_OD1_PUBLIC_LIVENESS": 200,
+        "required_semantic_if_OD1_PUBLIC_LIVENESS": "RUNTIME_LIVE__NO_SESSION_PRESENTED",
+        "required_status_if_OD1_PRIVATE_DIAGNOSTIC": 401,
+        "required_semantic_if_OD1_PRIVATE_DIAGNOSTIC": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "required_status_if_OD1_RATIFY_STATUS_QUO": 503,
+        "required_semantic_if_OD1_RATIFY_STATUS_QUO": "CONSTANT_REFUSAL__CARRIES_NO_HEALTH_INFORMATION",
+        "response_may_be_public": "YES under every option - the body carries no protected data. What differs is what the STATUS asserts.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-2. Note that under the status-quo option this cell can never fail, so it could not block anything (F-M11-03)."
+      },
+      {
+        "endpoint": "EP-1",
+        "caller_class": "CC-2",
+        "auth_state": "COOKIE_PRESENT_REJECTED_BY_PROVIDER",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 503,
+        "measured_semantic_at_BASE": "AUTH_DEPENDENCY_UNAVAILABLE - ASSERTED BUT NOT MEASURED (F-M11-03)",
+        "measured_body_at_BASE": "Exactly status, authenticated, message, timestamp. No identifier, no email, no provider name, no upstream error text.",
+        "contract_state": "OWNER_DECISION_REQUIRED__OD-1",
+        "required_status_if_OD1_PUBLIC_LIVENESS": 200,
+        "required_semantic_if_OD1_PUBLIC_LIVENESS": "RUNTIME_LIVE__NO_SESSION_PRESENTED",
+        "required_status_if_OD1_PRIVATE_DIAGNOSTIC": 401,
+        "required_semantic_if_OD1_PRIVATE_DIAGNOSTIC": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "required_status_if_OD1_RATIFY_STATUS_QUO": 503,
+        "required_semantic_if_OD1_RATIFY_STATUS_QUO": "CONSTANT_REFUSAL__CARRIES_NO_HEALTH_INFORMATION",
+        "response_may_be_public": "YES under every option - the body carries no protected data. What differs is what the STATUS asserts.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-2. Note that under the status-quo option this cell can never fail, so it could not block anything (F-M11-03)."
+      },
+      {
+        "endpoint": "EP-1",
+        "caller_class": "CC-3",
+        "auth_state": "VERIFIED_SUBJECT_EMAIL_UNCONFIRMED",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 200,
+        "measured_semantic_at_BASE": "AUTH_DEPENDENCY_REACHABLE__SUBJECT_VERIFIED",
+        "measured_body_at_BASE": "Exactly status, authenticated, timestamp. The subject is never echoed - frozen by tests/health-auth-route.test.ts:26.",
+        "contract_state": "ADJUDICATED__NO_OWNER_DECISION_REQUIRED",
+        "required_status": 200,
+        "required_semantic": "AUTH_DEPENDENCY_REACHABLE__SUBJECT_VERIFIED",
+        "note": "This is the ONLY cell of EP-1 in which a genuine GoTrue round trip occurred, and therefore the only cell whose 200 carries auth-dependency information. Unaffected by OD-1.",
+        "response_may_be_public": "NO - it is a response to an authenticated caller and confirms a session exists.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-2, and only reachable by CC-6 under AUTH-4."
+      },
+      {
+        "endpoint": "EP-1",
+        "caller_class": "CC-4",
+        "auth_state": "VERIFIED_SUBJECT_EMAIL_CONFIRMED",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 200,
+        "measured_semantic_at_BASE": "AUTH_DEPENDENCY_REACHABLE__SUBJECT_VERIFIED",
+        "measured_body_at_BASE": "Exactly status, authenticated, timestamp. The subject is never echoed - frozen by tests/health-auth-route.test.ts:26.",
+        "contract_state": "ADJUDICATED__NO_OWNER_DECISION_REQUIRED",
+        "required_status": 200,
+        "required_semantic": "AUTH_DEPENDENCY_REACHABLE__SUBJECT_VERIFIED",
+        "note": "This is the ONLY cell of EP-1 in which a genuine GoTrue round trip occurred, and therefore the only cell whose 200 carries auth-dependency information. Unaffected by OD-1.",
+        "response_may_be_public": "NO - it is a response to an authenticated caller and confirms a session exists.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-2, and only reachable by CC-6 under AUTH-4."
+      },
+      {
+        "endpoint": "EP-1",
+        "caller_class": "CC-5",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": true,
+        "measured_status_at_BASE": 503,
+        "measured_semantic_at_BASE": "AUTH_DEPENDENCY_UNAVAILABLE - ASSERTED BUT NOT MEASURED (F-M11-03)",
+        "measured_body_at_BASE": "Exactly status, authenticated, message, timestamp. No identifier, no email, no provider name, no upstream error text.",
+        "contract_state": "OWNER_DECISION_REQUIRED__OD-1",
+        "required_status_if_OD1_PUBLIC_LIVENESS": 200,
+        "required_semantic_if_OD1_PUBLIC_LIVENESS": "RUNTIME_LIVE__NO_SESSION_PRESENTED",
+        "required_status_if_OD1_PRIVATE_DIAGNOSTIC": 401,
+        "required_semantic_if_OD1_PRIVATE_DIAGNOSTIC": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "required_status_if_OD1_RATIFY_STATUS_QUO": 503,
+        "required_semantic_if_OD1_RATIFY_STATUS_QUO": "CONSTANT_REFUSAL__CARRIES_NO_HEALTH_INFORMATION",
+        "response_may_be_public": "YES under every option - the body carries no protected data. What differs is what the STATUS asserts.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-2. Note that under the status-quo option this cell can never fail, so it could not block anything (F-M11-03)."
+      },
+      {
+        "endpoint": "EP-1",
+        "caller_class": "CC-6",
+        "auth_state": "VERIFIED_SUBJECT_STAGING_TEST_PRINCIPAL",
+        "m11_consumes_this_cell": true,
+        "measured_status_at_BASE": 200,
+        "measured_semantic_at_BASE": "AUTH_DEPENDENCY_REACHABLE__SUBJECT_VERIFIED",
+        "measured_body_at_BASE": "Exactly status, authenticated, timestamp. The subject is never echoed - frozen by tests/health-auth-route.test.ts:26.",
+        "contract_state": "ADJUDICATED__NO_OWNER_DECISION_REQUIRED",
+        "required_status": 200,
+        "required_semantic": "AUTH_DEPENDENCY_REACHABLE__SUBJECT_VERIFIED",
+        "note": "This is the ONLY cell of EP-1 in which a genuine GoTrue round trip occurred, and therefore the only cell whose 200 carries auth-dependency information. Unaffected by OD-1.",
+        "response_may_be_public": "NO - it is a response to an authenticated caller and confirms a session exists.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-2, and only reachable by CC-6 under AUTH-4."
+      },
+      {
+        "endpoint": "EP-1",
+        "caller_class": "CC-7",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 503,
+        "measured_semantic_at_BASE": "AUTH_DEPENDENCY_UNAVAILABLE - ASSERTED BUT NOT MEASURED (F-M11-03)",
+        "measured_body_at_BASE": "Exactly status, authenticated, message, timestamp. No identifier, no email, no provider name, no upstream error text.",
+        "contract_state": "OWNER_DECISION_REQUIRED__OD-1",
+        "required_status_if_OD1_PUBLIC_LIVENESS": 200,
+        "required_semantic_if_OD1_PUBLIC_LIVENESS": "RUNTIME_LIVE__NO_SESSION_PRESENTED",
+        "required_status_if_OD1_PRIVATE_DIAGNOSTIC": 401,
+        "required_semantic_if_OD1_PRIVATE_DIAGNOSTIC": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "required_status_if_OD1_RATIFY_STATUS_QUO": 503,
+        "required_semantic_if_OD1_RATIFY_STATUS_QUO": "CONSTANT_REFUSAL__CARRIES_NO_HEALTH_INFORMATION",
+        "response_may_be_public": "YES under every option - the body carries no protected data. What differs is what the STATUS asserts.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-2. Note that under the status-quo option this cell can never fail, so it could not block anything (F-M11-03)."
+      },
+      {
+        "endpoint": "EP-2",
+        "caller_class": "CC-1",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      },
+      {
+        "endpoint": "EP-2",
+        "caller_class": "CC-2",
+        "auth_state": "COOKIE_PRESENT_REJECTED_BY_PROVIDER",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      },
+      {
+        "endpoint": "EP-2",
+        "caller_class": "CC-3",
+        "auth_state": "VERIFIED_SUBJECT_EMAIL_UNCONFIRMED",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": "200 when verified; 503 when any observed property diverges or the observation throws",
+        "measured_semantic_at_BASE": "RUNTIME_IDENTITY_VERIFIED / RUNTIME_IDENTITY_DIVERGENT_OR_UNOBSERVABLE",
+        "measured_body_at_BASE": "Exactly status, verified, runtime, target, failures, observedAt, with runtime carrying exactly its seven privilege booleans and identifiers. No connection string, host, port, SQLSTATE or driver text.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": "200 verified, 503 otherwise",
+        "required_semantic": "RUNTIME_IDENTITY_VERIFIED / RUNTIME_IDENTITY_DIVERGENT_OR_UNOBSERVABLE",
+        "dependency_failure_affects_status": "YES, and it must: a deployment whose runtime role can bypass RLS is not healthy.",
+        "response_may_be_public": "NO - it discloses deployment posture. PACKET_B records this residual as F-IA-10.",
+        "failed_response_blocks_deployment": "RECOMMENDED YES, subject to OD-2. This is the strongest readiness signal the deployment has, and a wrong runtime identity is a data-access defect no policy can catch.",
+        "reachable_by_M11_only_if": "OD-3 provides a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable."
+      },
+      {
+        "endpoint": "EP-2",
+        "caller_class": "CC-4",
+        "auth_state": "VERIFIED_SUBJECT_EMAIL_CONFIRMED",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": "200 when verified; 503 when any observed property diverges or the observation throws",
+        "measured_semantic_at_BASE": "RUNTIME_IDENTITY_VERIFIED / RUNTIME_IDENTITY_DIVERGENT_OR_UNOBSERVABLE",
+        "measured_body_at_BASE": "Exactly status, verified, runtime, target, failures, observedAt, with runtime carrying exactly its seven privilege booleans and identifiers. No connection string, host, port, SQLSTATE or driver text.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": "200 verified, 503 otherwise",
+        "required_semantic": "RUNTIME_IDENTITY_VERIFIED / RUNTIME_IDENTITY_DIVERGENT_OR_UNOBSERVABLE",
+        "dependency_failure_affects_status": "YES, and it must: a deployment whose runtime role can bypass RLS is not healthy.",
+        "response_may_be_public": "NO - it discloses deployment posture. PACKET_B records this residual as F-IA-10.",
+        "failed_response_blocks_deployment": "RECOMMENDED YES, subject to OD-2. This is the strongest readiness signal the deployment has, and a wrong runtime identity is a data-access defect no policy can catch.",
+        "reachable_by_M11_only_if": "OD-3 provides a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable."
+      },
+      {
+        "endpoint": "EP-2",
+        "caller_class": "CC-5",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": true,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      },
+      {
+        "endpoint": "EP-2",
+        "caller_class": "CC-6",
+        "auth_state": "VERIFIED_SUBJECT_STAGING_TEST_PRINCIPAL",
+        "m11_consumes_this_cell": true,
+        "measured_status_at_BASE": "200 when verified; 503 when any observed property diverges or the observation throws",
+        "measured_semantic_at_BASE": "RUNTIME_IDENTITY_VERIFIED / RUNTIME_IDENTITY_DIVERGENT_OR_UNOBSERVABLE",
+        "measured_body_at_BASE": "Exactly status, verified, runtime, target, failures, observedAt, with runtime carrying exactly its seven privilege booleans and identifiers. No connection string, host, port, SQLSTATE or driver text.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": "200 verified, 503 otherwise",
+        "required_semantic": "RUNTIME_IDENTITY_VERIFIED / RUNTIME_IDENTITY_DIVERGENT_OR_UNOBSERVABLE",
+        "dependency_failure_affects_status": "YES, and it must: a deployment whose runtime role can bypass RLS is not healthy.",
+        "response_may_be_public": "NO - it discloses deployment posture. PACKET_B records this residual as F-IA-10.",
+        "failed_response_blocks_deployment": "RECOMMENDED YES, subject to OD-2. This is the strongest readiness signal the deployment has, and a wrong runtime identity is a data-access defect no policy can catch.",
+        "reachable_by_M11_only_if": "OD-3 provides a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable."
+      },
+      {
+        "endpoint": "EP-2",
+        "caller_class": "CC-7",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      },
+      {
+        "endpoint": "EP-3",
+        "caller_class": "CC-1",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      },
+      {
+        "endpoint": "EP-3",
+        "caller_class": "CC-2",
+        "auth_state": "COOKIE_PRESENT_REJECTED_BY_PROVIDER",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      },
+      {
+        "endpoint": "EP-3",
+        "caller_class": "CC-3",
+        "auth_state": "VERIFIED_SUBJECT_EMAIL_UNCONFIRMED",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": "200 when ready; 503 when any precondition is unmet",
+        "measured_semantic_at_BASE": "STELLA_PRECONDITIONS_READY / STELLA_PRECONDITIONS_UNMET",
+        "measured_body_at_BASE": "Exactly schema, environment, master, model, capabilities, rateLimit, ready. Secret PRESENCE booleans only - never a value, truncated, fingerprinted or hashed.",
+        "contract_state": "PARTIALLY_ADJUDICATED__OD-3_REQUIRED_FOR_THE_DARK_SUBSYSTEM_CASE",
+        "required_status": "200 ready, 503 unmet - EXCEPT for a deliberately disabled subsystem, which OD-3 must classify",
+        "required_semantic": "STELLA_PRECONDITIONS_READY / STELLA_PRECONDITIONS_UNMET / STELLA_DELIBERATELY_DISABLED (pending OD-3)",
+        "dependency_failure_affects_status": "NO, and deliberately. The route makes no network call, so invalid-but-present credentials report ready and fail closed later. ready true is a PRECONDITION, never a health verdict.",
+        "response_may_be_public": "NO - it discloses configuration posture. F-IA-10.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-3. Blocking on 503 would block every deployment that has Stella switched off on purpose.",
+        "reachable_by_M11_only_if": "OD-3 provides a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable."
+      },
+      {
+        "endpoint": "EP-3",
+        "caller_class": "CC-4",
+        "auth_state": "VERIFIED_SUBJECT_EMAIL_CONFIRMED",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": "200 when ready; 503 when any precondition is unmet",
+        "measured_semantic_at_BASE": "STELLA_PRECONDITIONS_READY / STELLA_PRECONDITIONS_UNMET",
+        "measured_body_at_BASE": "Exactly schema, environment, master, model, capabilities, rateLimit, ready. Secret PRESENCE booleans only - never a value, truncated, fingerprinted or hashed.",
+        "contract_state": "PARTIALLY_ADJUDICATED__OD-3_REQUIRED_FOR_THE_DARK_SUBSYSTEM_CASE",
+        "required_status": "200 ready, 503 unmet - EXCEPT for a deliberately disabled subsystem, which OD-3 must classify",
+        "required_semantic": "STELLA_PRECONDITIONS_READY / STELLA_PRECONDITIONS_UNMET / STELLA_DELIBERATELY_DISABLED (pending OD-3)",
+        "dependency_failure_affects_status": "NO, and deliberately. The route makes no network call, so invalid-but-present credentials report ready and fail closed later. ready true is a PRECONDITION, never a health verdict.",
+        "response_may_be_public": "NO - it discloses configuration posture. F-IA-10.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-3. Blocking on 503 would block every deployment that has Stella switched off on purpose.",
+        "reachable_by_M11_only_if": "OD-3 provides a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable."
+      },
+      {
+        "endpoint": "EP-3",
+        "caller_class": "CC-5",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": true,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      },
+      {
+        "endpoint": "EP-3",
+        "caller_class": "CC-6",
+        "auth_state": "VERIFIED_SUBJECT_STAGING_TEST_PRINCIPAL",
+        "m11_consumes_this_cell": true,
+        "measured_status_at_BASE": "200 when ready; 503 when any precondition is unmet",
+        "measured_semantic_at_BASE": "STELLA_PRECONDITIONS_READY / STELLA_PRECONDITIONS_UNMET",
+        "measured_body_at_BASE": "Exactly schema, environment, master, model, capabilities, rateLimit, ready. Secret PRESENCE booleans only - never a value, truncated, fingerprinted or hashed.",
+        "contract_state": "PARTIALLY_ADJUDICATED__OD-3_REQUIRED_FOR_THE_DARK_SUBSYSTEM_CASE",
+        "required_status": "200 ready, 503 unmet - EXCEPT for a deliberately disabled subsystem, which OD-3 must classify",
+        "required_semantic": "STELLA_PRECONDITIONS_READY / STELLA_PRECONDITIONS_UNMET / STELLA_DELIBERATELY_DISABLED (pending OD-3)",
+        "dependency_failure_affects_status": "NO, and deliberately. The route makes no network call, so invalid-but-present credentials report ready and fail closed later. ready true is a PRECONDITION, never a health verdict.",
+        "response_may_be_public": "NO - it discloses configuration posture. F-IA-10.",
+        "failed_response_blocks_deployment": "OWNER_DECISION_REQUIRED__OD-3. Blocking on 503 would block every deployment that has Stella switched off on purpose.",
+        "reachable_by_M11_only_if": "OD-3 provides a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable."
+      },
+      {
+        "endpoint": "EP-3",
+        "caller_class": "CC-7",
+        "auth_state": "NO_SESSION_COOKIE",
+        "m11_consumes_this_cell": false,
+        "measured_status_at_BASE": 401,
+        "measured_semantic_at_BASE": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "measured_body_at_BASE": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "contract_state": "ALREADY_ADJUDICATED__RATIFICATION_CONFIRMS_NO_CHANGE",
+        "required_status": 401,
+        "required_semantic": "REFUSED__NOT_A_PUBLIC_SURFACE",
+        "basis": "The route prose states the boundary and its reason, and for EP-2 the boundary is frozen by test. MG-4 forbids lowering it for measurement convenience.",
+        "response_may_be_public": "YES - a bare refusal discloses nothing.",
+        "failed_response_blocks_deployment": "A 401 here is CONFORMANT, not a failure. An anonymous smoke that recorded 401 as a failure would be encoding the wrong contract. Only a NON-401 answer to an anonymous caller is a deviation."
+      }
+    ]
+  },
+  "M11_SUCCESS_CONTRACT": {
+    "inherited_verbatim_from_the_ledger": {
+      "pass_criteria": "After every deployment each health endpoint answers in conformance with an ADJUDICATED contract, recorded against the deployment identifier and the exact SHA deployed.",
+      "evidence_class": "SMOKE_LOG_BOUND_TO_DEPLOYMENT_ID_AND_SHA",
+      "enforcement": "MACHINE",
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every deploy",
+      "owner_field_at_BASE": "unassigned",
+      "source": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES[M11]. Quoted, not redefined."
+    },
+    "explicit_rejection_of_the_reduced_form": {
+      "the_reduction": "M11 passes if each endpoint returned 200.",
+      "verdict": "INSUFFICIENT, AND WRONG IN BOTH DIRECTIONS.",
+      "why_200_is_not_necessary": "For an unauthenticated runner, 401 from EP-2 and EP-3 is the CONFORMANT answer (F-M11-06). A gate demanding 200 there would fail a correct deployment, and the only ways to make it pass would be to lower the auth boundary - which MG-4 forbids - or to hold a principal the grant does not authorize.",
+      "why_200_is_not_sufficient": [
+        "EP-3 returns 200 only when ready is true, and the route states in its own words that ready is a PRECONDITION, NOT A HEALTH VERDICT: present-but-invalid KV credentials report 200 and then refuse on the first real call.",
+        "EP-1 returns 200 to an authenticated caller even if every other subsystem is broken - it observes only GoTrue.",
+        "A 302 from Deployment Protection followed by a redirect can yield a 200 from a page that is not the endpoint.",
+        "Under the status-quo option EP-1 never returns 200 anonymously at all, so a 200-based gate would be permanently red for a reason unrelated to deployment health."
+      ]
+    },
+    "conditions_that_must_ALL_hold_for_a_future_M11_PASS": [
+      {
+        "id": "M11-SC-1",
+        "condition": "A RATIFIED contract exists - OD-1 through OD-4 answered by the owner.",
+        "state_at_BASE": "ABSENT. This artifact supplies the input; it is not the ratification.",
+        "derivation": "Directly from the pass criteria phrase 'an ADJUDICATED contract'."
+      },
+      {
+        "id": "M11-SC-2",
+        "condition": "An automated runner exists and runs on every deployment.",
+        "state_at_BASE": "ABSENT. No smoke script and no deploy-smoke workflow exist (F-M11-12).",
+        "derivation": "From enforcement MACHINE and retest_after every deploy. A manual observation cannot satisfy a MACHINE gate."
+      },
+      {
+        "id": "M11-SC-3",
+        "condition": "All three endpoints are observed on each run. A skipped endpoint is a FAIL, not a partial PASS.",
+        "state_at_BASE": "ABSENT.",
+        "derivation": "From the pass criteria phrase 'each health endpoint'."
+      },
+      {
+        "id": "M11-SC-4",
+        "condition": "Every observation is compared against THE CELL FOR THE RUNNER'S OWN CALLER CLASS in the ratified matrix - not against a single global expectation.",
+        "state_at_BASE": "ABSENT.",
+        "derivation": "From 'in conformance with'. Conformance is relative to the caller, because the same endpoint legitimately answers 401 to one class and 200 to another."
+      },
+      {
+        "id": "M11-SC-5",
+        "condition": "The evidence log binds each observation to the deployment identifier AND the exact SHA deployed, and the SHA is the one actually served rather than the one requested.",
+        "state_at_BASE": "ABSENT.",
+        "derivation": "From evidence_class SMOKE_LOG_BOUND_TO_DEPLOYMENT_ID_AND_SHA, which this artifact inherits and does not restate in different words."
+      },
+      {
+        "id": "M11-SC-6",
+        "condition": "INCONCLUSIVE outcomes are recorded as INCONCLUSIVE and never collapsed into PASS or FAIL. At minimum: 302 from Deployment Protection, 429 from the global rate limit, and any transport error.",
+        "state_at_BASE": "ABSENT.",
+        "derivation": "Required so that the gate cannot be satisfied by an observation that never reached a handler. Without it a protected Preview would make M11 green by never being measured."
+      },
+      {
+        "id": "M11-SC-7",
+        "condition": "GATES[M11].owner is assigned to a named owner.",
+        "state_at_BASE": "unassigned.",
+        "derivation": "A MACHINE gate with no owner has nobody to answer for a red result. Assignment is an owner act, not an adjudication act."
+      },
+      {
+        "id": "M11-SC-8",
+        "condition": "At least ONE observed cell must be capable of FAILING for a genuine deployment fault. A gate composed entirely of constant-answer cells is vacuous.",
+        "state_at_BASE": "NOT SATISFIED for an unauthenticated runner. By F-M11-13 every anonymous cell of all three endpoints returns the same status whether the deployment is healthy or broken.",
+        "derivation": "This condition is NOT inherited from the ledger text - it is DERIVED from the gate's purpose, and it is the single most important thing this adjudication contributes. Without it, an unauthenticated M11 over the current endpoints would be green by construction and would satisfy the letter of the pass criteria while proving nothing. It is why OD-1 and OD-2 cannot be deferred by choosing the status quo."
+      }
+    ],
+    "what_M11_does_NOT_require": [
+      "It does not require P6. P6 depends on M11, not the reverse.",
+      "It does not require an external monitor - that is P6's evidence class.",
+      "It is NOT closed by D-1. The FIBDB053 staging binding authority's M11_S6_BOUNDARY already answers this: a smoke observation against an unadjudicated contract is a recording, not a conformance result, and the evidence SHAPE is not the gate. That answer is cited, not re-derived."
+    ]
+  },
+  "OWNER_DECISIONS_REQUIRED": [
+    {
+      "id": "OD-1",
+      "question": "Is /api/health/auth a PUBLIC liveness surface or a PRIVATE diagnostic?",
+      "why_only_the_owner_can_decide": "It is a product and security question about who the endpoint serves. Measurement establishes what the code does (F-M11-01) and that the documented alternative is unreachable (F-M11-04), but not what it ought to be.",
+      "invariants_that_constrain_every_option": [
+        "The body must never expose an identifier, email, provider name, token or upstream error text. This is already enforced and is not reopened.",
+        "EP-2 and EP-3 keep their verified-session boundary. MG-4 forbids lowering it for measurement convenience.",
+        "Whatever is chosen must be frozen by a test, because the current behaviour is a property of a caret-ranged dependency (MEASUREMENT_METHOD.dependency_pin_under_which_the_measurements_hold)."
+      ],
+      "options": [
+        {
+          "option": "A. PUBLIC_LIVENESS",
+          "contract": "Anonymous receives 200 with an unauthenticated body. 503 is reserved for a MEASURED auth-dependency failure.",
+          "what_must_change": "The handler must distinguish AuthSessionMissingError from a transport or 5xx failure - exactly the distinction lib/auth/identity.ts already draws between SESSION_REJECTED and AUTH_UNAVAILABLE. The same module is the natural source for it, so no new auth machinery is required.",
+          "honest_consequence": "By F-M11-02 the provider is never contacted for an anonymous caller. So option A alone yields a 200 that proves the runtime executed and the client constructed - NOT that GoTrue is reachable. The endpoint's NAME would then overstate what it measures unless A2 is also taken.",
+          "security_consequence": "Discloses only that a deployment exists and is serving. No posture claim, no protected data.",
+          "release_consequence": "Makes EP-1 usable for unauthenticated platform smoke and gives M11 one cell that can genuinely fail."
+        },
+        {
+          "option": "A2. PUBLIC_LIVENESS_WITH_A_REAL_UPSTREAM_TOUCH",
+          "contract": "As A, plus an explicit provider reachability check so that 503 is earned rather than asserted.",
+          "what_must_change": "A deliberate call that reaches GoTrue even with no session.",
+          "honest_consequence": "Restores information content to both 200 and 503 and makes the endpoint's name true. Costs one upstream round trip per probe and makes the endpoint a potential amplification vector, which is why OD-4 and the rate limit matter more under this option.",
+          "security_consequence": "An anonymous caller can induce load on the Auth provider. Mitigated by the existing rate limit if OD-4 keeps it.",
+          "release_consequence": "Strongest option for M11: one cell that fails for a real, named dependency fault."
+        },
+        {
+          "option": "B. PRIVATE_DIAGNOSTIC",
+          "contract": "Anonymous receives 401 with a bare error body, aligning EP-1 with EP-2 and EP-3.",
+          "what_must_change": "The userError branch must map a missing session to 401 rather than 503.",
+          "honest_consequence": "Consistent and simple, and it removes the false outage claim. But it leaves the platform with NO unauthenticated liveness surface at all (F-M11-13), so M11 would have to be authenticated, which inherits the MG-4 circularity in full.",
+          "security_consequence": "Strictly tighter than today: stops disclosing a degraded posture claim to anonymous callers.",
+          "release_consequence": "M11 becomes dependent on a durable staging test principal - see OD-3."
+        },
+        {
+          "option": "C. RATIFY_THE_STATUS_QUO",
+          "contract": "Anonymous receives 503 degraded, as today.",
+          "what_must_change": "Nothing in the code. A test would be added to freeze it.",
+          "honest_consequence": "Available, but NOT neutral. It ratifies a response that announces a dependency outage on the strength of a fact about the CALLER, and that is constant across healthy and broken deployments (F-M11-03). M11-SC-8 would then be unsatisfiable for an unauthenticated runner.",
+          "security_consequence": "Unchanged from today, including the standing posture disclosure.",
+          "release_consequence": "M11 could be automated but would be vacuous for the anonymous caller class."
+        }
+      ],
+      "this_lane_does_not_choose": true
+    },
+    {
+      "id": "OD-2",
+      "question": "Which health observations BLOCK a deployment, and which are observability only?",
+      "why_only_the_owner_can_decide": "GATES[M11].owner is unassigned and the ledger assigns no blocking semantics per endpoint. Deciding what stops a release is an owner prerogative.",
+      "sub_questions": [
+        "Does a failed EP-1 block, or only record?",
+        "Does a divergent EP-2 - a runtime role that can bypass RLS - block? This artifact notes it is the strongest readiness signal available, but does not decide.",
+        "Does an unmet EP-3 block, given OD-3?"
+      ],
+      "constraint_from_measurement": "Under OD-1 option C, EP-1 cannot block anything meaningfully, because its anonymous cell cannot fail. OD-2 is therefore not independent of OD-1.",
+      "this_lane_does_not_choose": true
+    },
+    {
+      "id": "OD-3",
+      "question": "Is a deliberately disabled subsystem UNHEALTHY, and may M11 depend on an authenticated probe?",
+      "two_halves": {
+        "half_a": "EP-3 returns 503 whenever ready is false, and ready is false for a deployment with Stella switched off on purpose. A deliberately dark subsystem is today indistinguishable from a misconfigured one. The owner must say whether intentional-off is healthy - which requires a third semantic state, not just a status code.",
+        "half_b": "EP-2 and EP-3 are only observable by CC-6. MG-4 records that this needs a staging test principal that ALREADY EXISTS, and that creating, promoting or elevating one is NOT authorized. If M11 is to consume these endpoints, the owner must authorize a durable test principal under a separate authority. If not, M11's scope must be explicitly limited to what an unauthenticated runner can observe - which by F-M11-13 is nearly nothing until OD-1 is settled."
+      },
+      "this_lane_does_not_choose": true
+    },
+    {
+      "id": "OD-4",
+      "question": "Are /api/health/* paths exempt from the global API rate limit?",
+      "measured_basis": "F-M11-10. The limit is 60 per minute per client IP across all of /api/, and health is not excluded.",
+      "consequence_of_each_answer": {
+        "exempt": "A monitor cannot be throttled, but the endpoints lose the shared abuse protection - which matters most under OD-1 option A2.",
+        "not_exempt": "A continuous monitor (CC-7) or a shared egress IP can produce 429s that must be recorded as INCONCLUSIVE under M11-SC-6, weakening the signal."
+      },
+      "this_lane_does_not_choose": true
+    }
+  ],
+  "RECOMMENDATION": {
+    "status": "RECOMMENDATION_NOT_RATIFICATION",
+    "binding_force": "NONE. This is engineering and security input for the owner. It is not owner approval and must never be cited as one.",
+    "recommended_contract": {
+      "OD-1": "Option A2 - PUBLIC_LIVENESS_WITH_A_REAL_UPSTREAM_TOUCH, with option A as the acceptable lesser form.",
+      "OD-2": "EP-2 divergence BLOCKS. EP-1 liveness failure BLOCKS. EP-3 records but does not block until OD-3 half A is settled.",
+      "OD-3": "Introduce an explicit third state so that intentional-off is reported as healthy-and-disabled rather than unmet; authorize a durable staging test principal under a separate authority.",
+      "OD-4": "Keep health paths subject to the limit, and give the smoke runner a fixed low-frequency budget rather than exempting the path."
+    },
+    "evidence_supporting_it": [
+      "F-M11-03 is decisive: the current anonymous 503 is identical in a healthy and an unreachable world, so it cannot serve a gate whose purpose is to detect a broken deployment.",
+      "F-M11-13 shows the platform has NO unauthenticated liveness signal capable of failing. Option A2 creates exactly one, at the endpoint already named as an M11 source of truth.",
+      "Option A2 reuses a distinction the codebase already makes and tests - SESSION_REJECTED versus AUTH_UNAVAILABLE at lib/auth/identity.ts:66-74 - so it adds a semantic the repository already owns rather than a new mechanism.",
+      "It leaves EP-2 and EP-3 untouched, so MG-4's prohibition on lowering their boundary is respected and no already adjudicated contract is reopened.",
+      "It is the only option under which M11-SC-8 is satisfiable without first resolving the MG-4 principal circularity."
+    ],
+    "arguments_against_the_recommendation_recorded_honestly": [
+      "Option A2 makes an anonymous caller able to induce upstream load. If OD-4 exempts health paths from the rate limit, this becomes an amplification vector. The two decisions must be taken together.",
+      "Option B is defensible on a strict least-disclosure reading, and a reviewer who weighs disclosure above smoke capability should prefer it. This artifact does not claim B is wrong - only that it moves the whole cost onto OD-3 half B.",
+      "Option C is the cheapest and changes no code. A reviewer who believes the smoke's only job is to confirm the deployment routes and responds could legitimately choose it. The objection recorded here is that it makes the gate vacuous, not that it is unreasonable to want no code change."
+    ]
+  },
+  "OPEN_FINDINGS": [
+    {
+      "id": "AF-M11-01",
+      "finding": "The documented-200 contract is unreachable code at the pinned dependency set, and its only witness is a comment citing a non-existent SMK-02.",
+      "evidence": [
+        "F-M11-04",
+        "F-M11-05"
+      ],
+      "disposition": "RESOLVED_AS_A_FACT__NORMATIVE_HALF_MOVED_TO_OD-1"
+    },
+    {
+      "id": "AF-M11-02",
+      "finding": "The anonymous 503 of /api/health/auth is information-free: identical whether the Auth provider is healthy or unreachable.",
+      "evidence": [
+        "F-M11-02",
+        "F-M11-03"
+      ],
+      "disposition": "BLOCKING_FOR_M11_AUTOMATION__DRIVES_OD-1_AND_M11-SC-8"
+    },
+    {
+      "id": "AF-M11-03",
+      "finding": "The platform has no unauthenticated liveness signal capable of failing.",
+      "evidence": [
+        "F-M11-13"
+      ],
+      "disposition": "BLOCKING_FOR_AN_UNAUTHENTICATED_M11__DRIVES_OD-1_AND_OD-3"
+    },
+    {
+      "id": "AF-M11-04",
+      "finding": "The comment at lib/auth/identity.ts:121-123 is false, and the anonymous control at tests/runtime-identity-observability.test.ts:1036 mocks a failure code the real helper never emits.",
+      "evidence": [
+        "F-M11-07"
+      ],
+      "disposition": "NON_BLOCKING__CARRIED_TO_THE_IMPLEMENTATION_LANE",
+      "note": "No behaviour changes, because both failure codes map to 401. Recorded so that a future lane does not build on a false premise, and so the vacuous control is replaced rather than trusted."
+    },
+    {
+      "id": "AF-M11-05",
+      "finding": "/api/health/stella-preconditions has zero direct test coverage although the ledger names it an M11 source of truth.",
+      "evidence": [
+        "F-M11-09"
+      ],
+      "disposition": "BLOCKING_FOR_M11_IMPLEMENTATION__NOT_FOR_THIS_ADJUDICATION"
+    },
+    {
+      "id": "AF-M11-06",
+      "finding": "The contested cell is covered by no test, and the suite is green regardless of which contract is ratified.",
+      "evidence": [
+        "F-M11-08"
+      ],
+      "disposition": "EXPLAINS_WHY_GREEN_CI_IS_NOT_EVIDENCE_HERE"
+    },
+    {
+      "id": "AF-M11-07",
+      "finding": "429 is reachable on every health endpoint and no health path is exempt from the global API rate limit.",
+      "evidence": [
+        "F-M11-10"
+      ],
+      "disposition": "UNOWNED_AT_BASE__RAISED_AS_OD-4"
+    },
+    {
+      "id": "AF-M11-08",
+      "finding": "A single project-coherence misconfiguration yields 500 on one endpoint and 503 on the other two.",
+      "evidence": [
+        "F-M11-11"
+      ],
+      "disposition": "MUST_BE_STATED_IN_THE_RATIFIED_CONTRACT__OTHERWISE_ONE_FAULT_READS_AS_THREE"
+    },
+    {
+      "id": "AF-M11-09",
+      "finding": "A deliberately disabled Stella subsystem is indistinguishable from a misconfigured one - both report 503.",
+      "evidence": [
+        "ENDPOINT_INVENTORY EP-3 deliberately_dark_subsystem"
+      ],
+      "disposition": "UNOWNED_AT_BASE__RAISED_AS_OD-3_HALF_A"
+    },
+    {
+      "id": "AF-M11-10",
+      "finding": "Whether Deployment Protection gates anonymous access to a Preview was never measured by any repository lane.",
+      "evidence": [
+        "MG-5, cited not re-derived"
+      ],
+      "disposition": "UNKNOWN_REQUIRES_HOSTED_OBSERVATION__OUT_OF_SCOPE_FOR_THIS_LANE",
+      "note": "Carried into the matrix as a cross-cutting pre-handler condition with a binding INCONCLUSIVE rule, so that the unknown cannot silently become a PASS."
+    }
+  ],
+  "explicit_non_authorizations": [
+    "This lane does NOT satisfy M11. GATES[M11].current_state remains ABSENT.",
+    "This lane does NOT ratify anything. It is adjudication input; OD-1 through OD-4 remain unanswered.",
+    "This lane does NOT deploy, and performed no deployment.",
+    "This lane does NOT execute hosted smoke, and performed none.",
+    "This lane does NOT change any endpoint's behaviour. No route, middleware or runtime file is modified.",
+    "This lane does NOT change auth policy, and lowers no boundary. MG-4's prohibition is respected.",
+    "This lane does NOT change release state, and edits no gate field. RELEASE_GATE_LEDGER is read only.",
+    "This lane does NOT close DGR-07 or AT-F-01. Both remain as the ledger records them.",
+    "This lane does NOT authorize Stage-A.",
+    "This lane does NOT authorize G2.",
+    "This lane does NOT authorize production, nor any production deployment or migration.",
+    "This lane does NOT modify Vercel, Supabase, environment variables, or any hosted state. External hosted mutations performed: NONE.",
+    "This lane does NOT open a PostgreSQL connection.",
+    "This lane does NOT modify or weaken any test. The transient probes were deleted and the worktree re-measured clean.",
+    "This lane does NOT invent an ODS or W2 lineage identifier, because none was allocated to it.",
+    "This lane does NOT amend RELEASE_GATE_LEDGER, PACKET_B, or the FIBDB053 authorities. It cites them."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check, verifiable by inspection of this file alone. Not a script.",
+    "expected_measured_fact_count": 13,
+    "expected_measured_fact_ids": [
+      "F-M11-01",
+      "F-M11-02",
+      "F-M11-03",
+      "F-M11-04",
+      "F-M11-05",
+      "F-M11-06",
+      "F-M11-07",
+      "F-M11-08",
+      "F-M11-09",
+      "F-M11-10",
+      "F-M11-11",
+      "F-M11-12",
+      "F-M11-13"
+    ],
+    "expected_endpoint_count": 3,
+    "expected_endpoint_ids": [
+      "EP-1",
+      "EP-2",
+      "EP-3"
+    ],
+    "expected_caller_class_count": 7,
+    "expected_caller_class_ids": [
+      "CC-1",
+      "CC-2",
+      "CC-3",
+      "CC-4",
+      "CC-5",
+      "CC-6",
+      "CC-7"
+    ],
+    "expected_matrix_cell_count": 21,
+    "expected_owner_decision_count": 4,
+    "expected_owner_decision_ids": [
+      "OD-1",
+      "OD-2",
+      "OD-3",
+      "OD-4"
+    ],
+    "expected_success_condition_count": 8,
+    "expected_success_condition_ids": [
+      "M11-SC-1",
+      "M11-SC-2",
+      "M11-SC-3",
+      "M11-SC-4",
+      "M11-SC-5",
+      "M11-SC-6",
+      "M11-SC-7",
+      "M11-SC-8"
+    ],
+    "expected_open_finding_count": 10,
+    "expected_non_authorization_count": 16,
+    "checks": [
+      "Every matrix cell names an endpoint in expected_endpoint_ids and a caller class in expected_caller_class_ids.",
+      "The matrix contains exactly one cell per endpoint-caller pair: 3 x 7 = 21, with no duplicate and no omission.",
+      "Every cell carries either a settled required_status or at least one required_status_if_ branch naming an OD.",
+      "Every cell carries an auth_state, a measured status at BASE, a safe body contract, an m11_consumes_this_cell boolean, a blocking disposition and a public-disclosure disposition.",
+      "Every OWNER_DECISIONS_REQUIRED entry carries this_lane_does_not_choose set to true.",
+      "RECOMMENDATION.status is exactly RECOMMENDATION_NOT_RATIFICATION and its binding_force is NONE.",
+      "No measured fact asserts a hosted observation performed by this lane; every measurement is local and in process.",
+      "No secret, credential, token, connection string, project reference, email address or user identifier appears anywhere in this artifact.",
+      "Every gate, finding and clause identifier belonging to another artifact is CITED with its owning path and is never redefined here.",
+      "final_state is ADJUDICATED_AWAITING_OWNER_RATIFICATION, consistent with four unanswered owner decisions."
+    ]
+  },
+  "required_independent_review": "This adjudication requires INDEPENDENT certification before any implementation lane opens, and owner ratification of OD-1 through OD-4 before any contract is frozen into code or into a smoke runner. The writer of this artifact must not certify it.",
+  "final_state": "ADJUDICATED_AWAITING_OWNER_RATIFICATION",
+  "next_gate": "M11_HEALTH_CONTRACT_ADJUDICATION_READY_FOR_INDEPENDENT_CERTIFICATION__THEN_OWNER_RATIFICATION_OF_OD1_TO_OD4. No implementation lane, no smoke automation and no gate-state change may open before both."
+}
