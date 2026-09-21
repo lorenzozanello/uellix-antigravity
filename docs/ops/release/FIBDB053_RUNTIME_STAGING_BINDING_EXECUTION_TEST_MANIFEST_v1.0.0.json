@@ -1,0 +1,233 @@
+{
+  "manifest_id": "FIBDB053-RUNTIME-STAGING-BINDING",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "FIBDB053-RUNTIME-COMPANION",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+    "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json",
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+
+  "positive_controls": [
+    {
+      "id": "P1",
+      "description": "AUTHORING ARM (this lane, assertable now). TARGET EXACT-SHA BINDING RULE IS PRESENT AND TOTAL. The authority's AUTHORIZED_SHA_BINDING_RULE declares all four steps SB-1..SB-4, states that SHA_FROZEN is re-verified immediately before the deployment is triggered, and states that a deployment authorized by branch name rather than by SHA is VOID. Re-deriving the rule from the artifact must find no step that admits a branch name in place of a commit id. A manifest that asserted only that a SHA is recorded somewhere would pass against an authority that froze a SHA at authoring time and never re-checked it — which is exactly the stale-endpoint defect this programme has measured before.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P2",
+      "description": "FUTURE (execution lane). BRANCH-SCOPED VARIABLE PRESENCE. After AUTH-1, each of UELLIX_APP_ENV, NEXT_PUBLIC_SUPABASE_URL and UELLIX_RUNTIME_DATABASE_URL is present as a Preview binding scoped to the Git branch integration/commercial-v1. Evidence emits NAME, TARGET SCOPE, GIT BRANCH SCOPE and PRESENCE only, per SECRET_CUSTODY_CONTRACT.evidence_emission_allowlist. A presence check that did not assert the GIT BRANCH SCOPE would pass against an unscoped Preview row, which is the wider binding the correction exists to avoid creating.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P3",
+      "description": "FUTURE (execution lane). EXPLICIT STAGING DECLARATION. UELLIX_APP_ENV carries the literal staging as a DECLARED branch-scoped value, and the deployment's resolved environment is staging. Per D1-3 and MEASUREMENT_GAPS_RECORDED.MG-1 this is the CONJUNCTION of a configuration-side presence proof and a runtime-side resolved value: no endpoint reports provenance, so neither half alone establishes that staging was declared rather than inferred. A control satisfied by the runtime value alone is VACUOUS for ENV-10, because db/safety/database-access.ts infers staging for a Vercel preview deployment even with the variable absent — the exact state the prior audit measured.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P4",
+      "description": "FUTURE (execution lane). AUTH PROJECT-REF EQUALITY. The project ref structurally derived from the NEXT_PUBLIC_SUPABASE_URL the DEPLOYMENT carries equals bvyzblhqymxruxdguaee. Derivation uses lib/supabase/project-identity.ts deriveSupabaseApiIdentity — the repository's single parser for a Supabase API URL — and not a second parser and not a whole-string comparison. The value judged is the one the deployment carries, not the platform's current configuration, because the variable is build-time inlined.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P5",
+      "description": "FUTURE (execution lane). RUNTIME DB PROJECT-REF EQUALITY. The project identity proven by UELLIX_RUNTIME_DATABASE_URL equals the same staging project. Measured from the deployment's own /api/health/runtime-identity response: verified true together with target.projectRefProven true. Per D1-5 the ref is deliberately not echoed by db/runtime-identity-report.ts, so the equality is transitive — verified true requires targetFailures to be empty, which requires the proven identity to equal the expectation resolved from the environment, which P3 fixes to staging. A control that demanded the literal ref in the payload would be demanding a disclosure the safety layer deliberately refuses.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P6",
+      "description": "FUTURE (execution lane). LEAST-PRIVILEGED ROLE IDENTITY. The /api/health/runtime-identity payload reports the intended application role in runtime.currentUser and runtime.sessionUser, with isSuperuser false and bypassesRls false. Both negatives are asserted, not just the role name: a role that can bypass row-level security is not least-privileged however it is named, and RELEASE_GATE_LEDGER GATES[S6].pass_criteria names the bypass attribute explicitly.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P7",
+      "description": "FUTURE (execution lane). BUILD-TIME RE-MATERIALIZATION. A NEW build was produced after the configuration correction, and the corrected NEXT_PUBLIC_SUPABASE_URL is observable in the NEW deployment's own served output. Asserts the positive half of BUILD_TIME_INVALIDATION: configuration change alone does not rehabilitate a prior build, so evidence must come from output the new build produced. A control that read the platform's configuration state instead would pass without any rebuild having occurred.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P8",
+      "description": "FUTURE (execution lane). NEW DEPLOYMENT ID DIFFERS FROM THE FAILED ONE. The deployment id under measurement is not dpl_96J3t4LxRYArRqAKWGxmBHE6gMNi. Required because the failed deployment carries the SAME Git SHA as the authorized one, so SHA equality alone cannot distinguish them, and because a cache-reusing redeploy would carry the same inlined constant that produced SUPABASE_AUTH_PROJECT_MISMATCH.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P9",
+      "description": "FUTURE (execution lane). RUNTIME COHERENCE SUCCESS. No SupabaseProjectCoherenceError is raised on the request path of the authorized deployment. Since assertSupabaseProjectCoherence throws before any Supabase client is constructed and before any socket is opened, any endpoint that serves a Supabase-backed response at all has passed it. This is the direct inverse of the prior audit's SUPABASE_AUTH_PROJECT_MISMATCH.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P10",
+      "description": "FUTURE (SEPARATE AUTHORITY REQUIRED — NOT AUTHORIZED BY THIS PAIR). OLD_DB CATALOG STATE. The hosted staging catalog shows the nine-argument completion signature ABSENT and the seven-argument signature PRESENT, both via pg_catalog.to_regprocedure against the FIXED LITERALS frozen in FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 SECTION_A3. Both directions are required: asserting only the nine-argument absence would pass against a database where the function, or the schema, does not exist at all. Per HOSTED_CATALOG_OBSERVATION_DISPOSITION this control CANNOT be executed under this authority and its disposition is SEPARATE_AUTHORITY_REQUIRED. It is recorded, and left unexecutable, rather than dropped.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P11",
+      "description": "FUTURE (JOINT — requires this pair PLUS a health-contract adjudication PLUS a hosted-observation authority). D-1 SUCCESS. All eight D1_PROOF_CONTRACT criteria measured green on ONE named deployment, cited by deployment id AND exact Git SHA together. This control is NOT satisfiable by the execution lane acting alone: D1-7 is blocked on M11's unadjudicated health contract and D1-8 is P10. The lane's own maximum verdict is D1_RUNTIME_COHERENCE_VERIFIED, which covers D1-1..D1-6 and explicitly does not claim D-1.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N1",
+      "description": "AUTHORING ARM (this lane, assertable now) AND FUTURE (execution lane). PRODUCTION ROW NON-MUTATION. The authority must FORBID editing the existing shared Production+Preview NEXT_PUBLIC_SUPABASE_URL row in place, and the execution lane must leave the production-resolved value UNCHANGED. The forward assertion is made without reading or recording the production value, by comparing the row's identity and last-modified state before and after. A control that only checked that the staging value became correct would pass on an execution that achieved it by editing the shared row — the single most damaging way to reach a correct-looking staging binding.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N2",
+      "description": "AUTHORING ARM AND FUTURE. DATABASE_URL NON-USE. DATABASE_URL is not created, not edited, not deleted and not relied upon for runtime connectivity, per ENV-11.2 and ENV-11.3. Its continued PRESENCE in an environment is a detected legacy residue and must not be read as a partial binding, a contract, or a reason to skip provisioning UELLIX_RUNTIME_DATABASE_URL.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N3",
+      "description": "AUTHORING ARM AND FUTURE. PRODUCTION-SCOPE MUTATION REFUSAL. No Production-scoped environment row is created, edited or deleted under any circumstance, INCLUDING AS ROLLBACK. FAILURE_ROLLBACK_CONTRACT.configuration_rollback names this in its absolutely_forbidden list. The rollback clause is the arm that matters: a rollback that touches production has a strictly larger blast radius than the change it undoes, and 'rollback' is the word under which such a change would most plausibly be attempted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N4",
+      "description": "AUTHORING ARM AND FUTURE. STAGE-A NON-AUTHORIZATION. Nothing in this pair authorizes, blesses, advances, prepares or partially satisfies FIBDB-053 Stage-A, and nothing resolves or advances G2. Re-deriving from the artifact must find no clause under which Stage-A could be applied. STAGE_A_INTERACTION.this_authority_does_not_authorize_apply of the parent is carried, not softened: a future lane that believes it has found such a reading has misread.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N5",
+      "description": "AUTHORING ARM AND FUTURE. NO ALIAS OR CUSTOM DOMAIN. No alias or domain is created, assigned, changed or removed, and none is required. GOVERNED_STAGING_TARGET_ADJUDICATION freezes the target as a Preview deployment identified by deployment id plus exact SHA. If a future lane concludes a stable address is needed, it STOPS with STOP_FOR_OWNER_STAGING_TARGET_DECISION rather than inventing one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N6",
+      "description": "AUTHORING ARM AND FUTURE. NO SECRET VALUE ANYWHERE. Neither artifact in this pair contains the UELLIX_RUNTIME_DATABASE_URL value, any password, any full DSN, any token or any key, and no successor citing this pair may add one. Evidence emits only the eight allowlisted derived fields. The control is asserted by pnpm secrets:scan over the write set and by re-derivation of the allowlist from the authority.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N7",
+      "description": "AUTHORING ARM. THE CURRENT INCORRECT AUTH VALUE IS NOT FROZEN OR PRESERVED. The authority must NOT record the current incorrect NEXT_PUBLIC_SUPABASE_URL value, not even for comparison. Re-deriving must find the comparison stated against the PIN. Recording a wrong value gives a successor something to restore and creates a second, stale answer to a question that has exactly one correct answer.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N8",
+      "description": "AUTHORING ARM. THE PRODUCTION REF IS EXPLICITLY EXCLUDED, NOT MERELY UNMENTIONED. PUBLIC_AUTH_URL_CONTRACT must require proof that the derived ref is NOT ctaxtgujyyprgynmnvtq, in addition to proving it equals bvyzblhqymxruxdguaee. The positive alone is insufficient as a control because it would pass on a tree where the PIN itself had been mis-set, and db/hosted/target-identity.ts records that these two refs have been confused in this programme before.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N9",
+      "description": "FUTURE (execution lane). NO UNBOUNDED REDEPLOYMENT. Exactly one deployment is produced. A second requires fresh adjudication unless all five BOUNDED_RETRY_RULE conditions BR-1..BR-5 hold conjunctively. A coherence refusal, a missing-variable build failure, a runtime 503, and any deployment that reached READY are all explicitly NOT transient and admit no retry.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N10",
+      "description": "FUTURE (execution lane). NO OPPORTUNISTIC VARIABLE EDITING ON FAILURE. On any FAILURE_ROLLBACK_CONTRACT branch the lane STOPS and does not edit another variable to see whether it helps. The correct configuration is fully specified by ENVIRONMENT_VARIABLE_CONTRACT, so a failure is re-read against the specification rather than probed against production infrastructure.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N11",
+      "description": "FUTURE (execution lane). NO MUTATION BEFORE HUMAN CONFIRMATION. No Vercel mutation occurs before an affirmative human answer to the prompt of HUMAN_CONFIRMATION, which must state the exact SHA verbatim. Silence, ambiguity, or an answer to a different question is not confirmation, and confirmation does not transfer to a retry, a second deployment, a later session or a different SHA.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N12",
+      "description": "AUTHORING ARM AND FUTURE. NO HOSTED POSTGRESQL CONNECTION UNDER THIS AUTHORITY. Neither the authoring lane nor the execution lane connects to hosted PostgreSQL, including read-only. HOSTED_CATALOG_OBSERVATION_DISPOSITION records D1_DATABASE_STATE_PROBE = SEPARATE_AUTHORITY_REQUIRED on four independent grounds. A lane that performs the probe under this authority has expanded it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N13",
+      "description": "AUTHORING ARM AND FUTURE. NO GATE ADVANCED AND NO STAGE DECLARED. S4, S6 and M11 are read and left exactly as RELEASE_GATE_LEDGER records them (NOT_SATISFIED, PARTIAL, ABSENT). STAGING_ALIGNED is not entered and no evidence produced under this grant is cited as S4 evidence. M11_S6_BOUNDARY must state the residual requirement for each gate rather than merely noting that D-1 is different.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N14",
+      "description": "AUTHORING ARM. NO PARENT EDITED AND NO WRITE-SET EXPANSION. The write set is exactly two new documents under docs/ops/release/**. No code, no test, no Vercel configuration, no ODS artifact and no db/** path is touched, and both append_only parents remain unedited. Any other tracked path required would have been STOP_FOR_AUTHORITY_WRITE_SET_EXPANSION.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "M1",
+      "description": "SECURITY-STOP MUTANT — WRONG AUTH PROJECT REF. Mutate the bound NEXT_PUBLIC_SUPABASE_URL to carry ctaxtgujyyprgynmnvtq (or any ref other than bvyzblhqymxruxdguaee) and confirm the system STOPS rather than serving. Expected: lib/supabase/project-coherence.ts step 4 raises SUPABASE_AUTH_PROJECT_MISMATCH before any Supabase client is constructed, and FAILURE_ROLLBACK_CONTRACT FR-1 fires. The control proves P4 and P9 are not vacuous: a P4 that merely read a value without the refusal path being live would pass on a deployment that served the wrong project anyway. Exercised OFFLINE against the coherence module with an injected authUrl — assertSupabaseProjectCoherence accepts an injectable env and authUrl for exactly this purpose — NEVER by binding a wrong ref to a real deployment.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M2",
+      "description": "SECURITY-STOP MUTANT — WRONG RUNTIME DB PROJECT REF. Mutate the runtime DSN so its structurally proven project identity is a different project and confirm the system STOPS. Expected: SUPABASE_DB_PROJECT_MISMATCH from step 5, or SUPABASE_AUTH_DB_PROJECT_DIVERGENCE from step 6 if both sides self-consistently name different projects, and FAILURE_ROLLBACK_CONTRACT FR-2 or FR-3 fires as a SECURITY STOP. Proves P5 is not vacuous and proves the divergence branch is reachable rather than decorative. Exercised OFFLINE with a synthetic, non-routable DSN carrying no real credential; never against a real project.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M3",
+      "description": "MUTANT — BRANCH SCOPE REMOVED. Restate the ENVIRONMENT_SCOPE_CORRECTION grant with the git-branch qualifier deleted, so the three variables bind to ALL Preview deployments. The manifest's P2 must go RED. If P2 stays green, P2 is asserting presence without asserting scope and the narrowing that keeps other branches untouched is uncontrolled. This is the measured failure mode in which a grant's SHAPE is left unchecked because only its EXISTENCE was asserted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M4",
+      "description": "MUTANT — PRODUCTION ROW EDITED IN PLACE. Restate the grant so the correction is achieved by editing the shared Production+Preview NEXT_PUBLIC_SUPABASE_URL row instead of adding a branch-scoped override. N1 must go RED. If N1 stays green while every positive control also stays green, the manifest is proving that staging became correct and proving nothing about how — which is the exact substitution this contract forbids, because the in-place edit is the convenient path.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M5",
+      "description": "MUTANT — SHA BINDING REPLACED BY BRANCH NAME. Restate AUTHORIZED_SHA_BINDING_RULE so the deployment is authorized by the branch integration/commercial-v1 rather than by SHA_FROZEN. P1 must go RED. Guards the release authority's own rule that an authorization which cannot name the SHA it authorizes is void, and guards against the drift in which a lane deploys whatever the branch happens to point at when it gets around to it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M6",
+      "description": "MUTANT — SB-3 RE-VERIFICATION DELETED. Restate AUTHORIZED_SHA_BINDING_RULE keeping SB-1 (freeze) and SB-4 (post-hoc compare) but deleting SB-3 (re-derive immediately before triggering). P1 must go RED. Without SB-3 the frozen SHA is a stale endpoint: the lane could freeze a SHA, spend time on PMV and confirmation, and deploy a line that has since advanced — and SB-4 would then discover the divergence only AFTER the single authorized deployment had been spent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M7",
+      "description": "MUTANT — RETRY RULE WIDENED TO CONFIGURATION FAILURES. Restate BOUNDED_RETRY_RULE so BR-2 admits a build failure caused by a missing or malformed environment variable. N9 must go RED. A retry rule that admits configuration failures is a licence to iterate on production infrastructure until something works, which is the unbounded redeployment DEPLOYMENT_AUTHORIZATION_BOUNDARY forbids in its own not_authorized list.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M8",
+      "description": "MUTANT — D1-8 QUIETLY ABSORBED. Restate HOSTED_CATALOG_OBSERVATION_DISPOSITION to authorize the read-only catalog probe under this same authority. N12 must go RED and P10's disposition must cease to read SEPARATE_AUTHORITY_REQUIRED. Guards the specific failure mode Phase 11 names: absorbing a hosted-observation authority SILENTLY, which would be indistinguishable from having had it all along once the artifact is frozen.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M9",
+      "description": "MUTANT — D-1 DECLARED FROM SIX CRITERIA. Restate D1_PROOF_CONTRACT so the execution lane may declare D-1 on D1-1..D1-6, dropping D1-7 and D1-8 or marking them satisfied-by-default. P11 must go RED and N13 must go RED. This is the gate-weakening mutant: the naive resolution of 'the lane cannot finish D-1' is to redefine D-1, which CLAUDE.md section 5 forbids. The authorized resolution is the narrower token D1_RUNTIME_COHERENCE_VERIFIED, which leaves all eight criteria intact.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M10",
+      "description": "MUTANT — OLD_DB INFERRED FROM REPOSITORY STATE. Restate D1-8 so OLD_DB may be established by showing that the Stage-A package has not been applied according to repository records. P10 must go RED. The repository proves what Stage-A WOULD install, not what the hosted catalog CURRENTLY holds; treating the two as the same proposition is what would let an already-NEW_DB target pass undetected, and an undetected NEW_DB means the D-3 window — the single PROHIBITED cell — has already been open.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M11",
+      "description": "MUTANT — HUMAN CONFIRMATION MOVED AFTER THE FIRST MUTATION. Restate HUMAN_CONFIRMATION so the prompt is issued after the variables are bound and before the deployment only. N11 must go RED. The first Vercel mutation is the variable binding, not the deployment; a confirmation placed after it has already conceded the hosted state change it exists to authorize.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M12",
+      "description": "MUTANT — CONFIRMATION PROMPT NAMES THE BRANCH INSTEAD OF THE SHA. Restate the prompt concept to say 'del branch integration/commercial-v1' in place of 'del SHA <exact-sha>'. N11 must go RED. A human confirming a branch has not confirmed a commit, and the confirmation would silently cover whatever the branch later pointed at.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M13",
+      "description": "MUTANT — PRODUCTION PERMITTED AS A ROLLBACK SURFACE. Restate FAILURE_ROLLBACK_CONTRACT.configuration_rollback to allow restoring or adjusting a Production-scoped row when the branch-scoped correction fails. N3 must go RED. A forward act that never touched production cannot need production to undo it; the mutant is included because 'rollback' is the word under which the widest change is most plausibly argued for.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M14",
+      "description": "MUTANT — FAILED DEPLOYMENT PROMOTED OR REDEPLOYED FROM CACHE. Restate BUILD_TIME_INVALIDATION so dpl_96J3t4LxRYArRqAKWGxmBHE6gMNi may be promoted, aliased, or redeployed reusing its existing build. P7 and P8 must both go RED. Reusing the build reuses the inlined NEXT_PUBLIC_SUPABASE_URL constant that produced SUPABASE_AUTH_PROJECT_MISMATCH, so a cache-reusing redeploy would present a new deployment id carrying the old defect — the one shape that defeats P8 alone.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M15",
+      "description": "MUTANT — P3 REDUCED TO THE RUNTIME VALUE. Restate P3 so it is satisfied by the deployment's resolved environment alone. P3 must go RED against the state the prior audit measured, in which UELLIX_APP_ENV was ABSENT and db/safety/database-access.ts nevertheless inferred staging from the Vercel preview platform variables. This is the vacuity that makes a green control compatible with the exact defect it was written to catch, and it is why MEASUREMENT_GAPS_RECORDED.MG-1 is recorded rather than glossed.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
