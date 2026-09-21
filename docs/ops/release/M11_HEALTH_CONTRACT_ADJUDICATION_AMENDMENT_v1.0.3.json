@@ -1,0 +1,362 @@
+{
+  "package_id": "M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT",
+  "version": "1.0.3",
+  "artifact_id": "M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3",
+  "authority_class": "APPEND_ONLY_CONTRACT_ADJUDICATION_ERRATA_AMENDMENT_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "HEALTH_CONTRACT_ADJUDICATION_ERRATA_AMENDMENT__NO_IMPLEMENTATION__NO_DEPLOYMENT__NO_HOSTED_EXECUTION__NO_DATABASE_MUTATION__NO_GATE_STATE_CHANGE__NO_OWNER_RATIFICATION__NO_REOPENING_OF_B1_OR_B2",
+  "append_only": true,
+  "mission_id": "CV1-M11-HEALTH-CONTRACT-ERRATA-AMENDMENT-R4",
+  "lane": "codex/cv1-m11-health-contract-adjudication-r1",
+  "role": "COMMERCIAL_V1_M11_HEALTH_CONTRACT_ADJUDICATOR__ERRATA_AUTHOR",
+  "mode": "DOCS_ONLY_APPEND_ONLY_ERRATA_AMENDMENT",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "amends": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+  "predecessor_amendments": [
+    {
+      "order": 1,
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+      "expected_blob_sha1": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+      "expected_size_bytes": 58625
+    },
+    {
+      "order": 2,
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+      "expected_blob_sha1": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b",
+      "expected_size_bytes": 32009
+    }
+  ],
+  "companion_ledger": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+  "AS_OF_BRANCH": "codex/cv1-m11-health-contract-adjudication-r1",
+  "AS_OF_HEAD": "67bfae7b71cd0ec9b047b914d5fa83a0f4d5e6b8",
+  "AS_OF_TREE": "b334ebdb505d173a76cb8f54afa7442495d9c5fb",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_PRESTATE": "Branch, HEAD and tree measured and worktree CLEAN at prestate; origin/integration/commercial-v1 re-fetched and measured EQUAL to AS_OF_BASE before any work. Gate output recorded in the pull request.",
+  "as_of_measurement_note": "Every correction in this document was re-derived directly from the live content of all three prior artifacts at AS_OF_TREE - by reading their committed JSON with a fresh structural walk and, where a source-code claim was involved, by re-reading the cited source file at the cited line - never by restating the independent delta review's report from memory. This lane wrote no runtime code, ran no migration, opened no PostgreSQL connection and performed no hosted access. External hosted mutations: NONE.",
+  "LINEAGE": {
+    "rule": "Four generations. The EFFECTIVE CONTRACT is v1.0.0, AS AMENDED BY v1.0.1, AS AMENDED BY v1.0.2, AS FURTHER AMENDED BY this document, v1.0.3. `amends` continues to name the ORIGINAL v1.0.0 grandparent, matching the three-generation precedent this lane already established at v1.0.2 (itself following docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json). `predecessor_amendments` is now a plural, ORDERED list naming both intermediate amendments, each with its own blob pin, extending that same precedent to a fourth generation rather than inventing a new scheme.",
+    "no_earlier_blob_changes": "v1.0.0, v1.0.1 and v1.0.2 are each BYTE-UNCHANGED by this document. All three blobs are pinned in self_check and independently re-verified by the validator via git object reads before any check runs.",
+    "which_generation_each_correction_targets": "Corrections are grouped by which generation's TEXT they correct, not by which generation FIRST introduced the underlying defect. A correction to text that v1.0.1 wrote and v1.0.2 left standing is grouped under v1.0.1; a correction to text that v1.0.2 itself wrote is grouped under v1.0.2; a correction to text that has stood unamended in v1.0.0 since the beginning is grouped under the parent."
+  },
+  "CONSUMED_DELTA_REVIEW": {
+    "result": "DELTA_REVIEW_FAIL",
+    "subject": "the effective package (v1.0.0 + v1.0.1 + v1.0.2) at v1.0.2's AS_OF_HEAD",
+    "what_this_means": "Five of seven review axes passed. Exactly two residual defects were found to be genuinely BLOCKING for ratification-readiness, plus a small set of nonblocking referential findings. B-1 and B-2 remain independently CLOSED across every generation and are NOT reopened, re-measured, or revisited by this document.",
+    "b1_b2_status": "CLOSED since v1.0.1, CONFIRMED CLOSED by the v1.0.2 focused recertification, and NOT reopened here.",
+    "findings_this_amendment_closes": [
+      {
+        "mission_label": "B-D1",
+        "subject": "S-7 / P-2 internal contradiction and false F-M11-09 attribution",
+        "targets": "v1.0.1 (S-7 text) and v1.0.2 (P-2's re-blessing of that text)"
+      },
+      {
+        "mission_label": "B-D2",
+        "subject": "OD-3 half B structural alias missed by the vocabulary-only sweep",
+        "targets": "v1.0.0 (parent RECOMMENDATION clause) and v1.0.2 (the sweep-completeness claim)"
+      },
+      {
+        "mission_label": "AF-M11-03 disposition",
+        "subject": "stale 'DRIVES_OD-1_AND_OD-3' routing after the OD-3/OD-5 split",
+        "targets": "v1.0.0 (parent OPEN_FINDINGS entry)"
+      },
+      {
+        "mission_label": "NB-1",
+        "subject": "AMENDMENT_SEMANTICS references to nonexistent ERRATA_* keys",
+        "targets": "v1.0.2"
+      },
+      {
+        "mission_label": "NB-2",
+        "subject": "S-11's claim that sentences 2-4 are unchanged, when sentence 2 was modified",
+        "targets": "v1.0.2 (its own S-11 entry)"
+      },
+      {
+        "mission_label": "optional cleanup",
+        "subject": "'zero coverage' drops F-M11-09's 'direct' qualifier",
+        "targets": "v1.0.1 (MATRIX_PROVENANCE_CORRECTION evidence row)"
+      },
+      {
+        "mission_label": "optional cleanup",
+        "subject": "imprecise EP-2 test citation range 1050-1052",
+        "targets": "v1.0.2 (one freestanding restatement, not the parent's frozen matrix-cell strings)"
+      }
+    ]
+  },
+  "what_is_unchanged": {
+    "grandparent": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+      "expected_blob_sha1": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+      "expected_size_bytes": 86815,
+      "status": "BYTE-UNCHANGED."
+    },
+    "v1_0_1": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+      "expected_blob_sha1": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+      "expected_size_bytes": 58625,
+      "status": "BYTE-UNCHANGED."
+    },
+    "v1_0_2": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+      "expected_blob_sha1": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b",
+      "expected_size_bytes": 32009,
+      "status": "BYTE-UNCHANGED."
+    },
+    "B1_and_B2_corrections": "UNCHANGED and NOT reopened. See CONSUMED_DELTA_REVIEW.b1_b2_status.",
+    "OD_1_through_OD_5_substance": "UNCHANGED. This document corrects REFERENCES to OD-3/OD-5, one disposition routing, two internally contradictory prose claims, and two citation precisions. It does not alter any owner decision's question, options, costs, or the RECOMMENDATION_REEVALUATED text.",
+    "v1_0_2s_own_genuine_corrections_not_disturbed": "v1.0.2's actual work product is preserved: the corrected 12/6/3 provenance arithmetic, the widened EP-3 freeze scope to four cells, the six-cell and one-option OD-3->OD-5 redirection, and the two mechanical line-reference fixes. This document narrows or extends specific PROSE CLAIMS v1.0.2 made about its own completeness and correctness; it does not undo any of v1.0.2's substantive reclassifications."
+  },
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. None of the three prior artifacts is edited; all three are byte-pinned above. This document supersedes clauses in SUPERSEDED_PARENT_CLAUSES (targeting v1.0.0), SUPERSEDED_V101_CLAUSES (targeting v1.0.1) and SUPERSEDED_V102_CLAUSES (targeting v1.0.2), each in exactly the respect stated - never a whole document, never a whole block, only the named field or sentence.",
+    "how_to_read_all_four_together": "The EFFECTIVE CONTRACT is v1.0.0, as modified by v1.0.1, as modified by v1.0.2, as modified by this document. Where this document is silent, the prior three control exactly as v1.0.2 already established. Where this document names a clause of any of the three, this document controls for that clause alone.",
+    "what_this_amendment_does": "Resolves one internal contradiction between two amendments' own prose (B-D1), closes one structural-alias gap the vocabulary-only sweep could not see (B-D2), corrects one stale owner-decision routing left over from the OD-3/OD-5 split (AF-M11-03), fixes two self-referential defects in v1.0.2's own text (phantom block names, an overstated 'unchanged' claim), and applies two precise mechanical wording corrections.",
+    "what_this_amendment_is_not": [
+      "It is NOT a ratification. OD-1 through OD-5 remain open and unanswered.",
+      "It does NOT reopen B-1 or B-2. Both remain CLOSED.",
+      "It is NOT an implementation, and authorizes none.",
+      "It does NOT enlarge M11 and does NOT change any owner decision's substance.",
+      "It does NOT edit v1.0.0, v1.0.1, or v1.0.2. All three are byte-pinned.",
+      "It does NOT claim any hosted observation. Every correction is a re-reading of already-committed text or a re-verification of an already-cited source line."
+    ]
+  },
+  "SUPERSEDED_PARENT_CLAUSES": {
+    "rule": "Continues the numbering v1.0.1 and v1.0.2 established (S-1..S-12). Each entry names ONE v1.0.0 (grandparent) clause by its path, quotes it VERBATIM, and states the single respect in which it no longer controls.",
+    "entries": [
+      {
+        "id": "S-13",
+        "parent_path": "RECOMMENDATION.arguments_against_the_recommendation_recorded_honestly[1]",
+        "verbatim": "Option B is defensible on a strict least-disclosure reading, and a reviewer who weighs disclosure above smoke capability should prefer it. This artifact does not claim B is wrong - only that it moves the whole cost onto OD-3 half B.",
+        "superseded_in_this_respect": "Only the final clause, 'OD-3 half B'. v1.0.0 itself defines the two halves at OWNER_DECISIONS_REQUIRED[OD-3].two_halves: half_a is the disabled-subsystem SEMANTIC question, half_b is 'EP-2 and EP-3 are only observable by CC-6... the owner must authorize a durable test principal under a separate authority' - the PROVISIONING question v1.0.1 split out as OD-5. 'OD-3 half B' is a STRUCTURAL ALIAS for that same provisioning dependency: it names no literal 'durable staging test principal' or 'OD-3 provides' text, which is exactly why v1.0.2's vocabulary-only sweep (OD3_OD5_REFERENCE_SWEEP_SUMMARY.method) did not find it. The substantive claim - that choosing option B moves the disclosure cost onto the provisioning question - is UNCHANGED and correct; only the identifier it names is corrected from OD-3 to OD-5.",
+        "replaced_by": "CORRECTED_OD1_ARGUMENT_AGAINST_OPTION_B"
+      },
+      {
+        "id": "S-14",
+        "parent_path": "OPEN_FINDINGS[AF-M11-03].disposition",
+        "verbatim": "BLOCKING_FOR_AN_UNAUTHENTICATED_M11__DRIVES_OD-1_AND_OD-3",
+        "superseded_in_this_respect": "The 'OD-3' half of the routing. AF-M11-03's evidence, F-M11-13, is traced through every one of its citations in v1.0.0: it argues AGAINST OD-1 option B ('leaves the platform with NO unauthenticated liveness surface... so M11 would have to be authenticated, which inherits the MG-4 circularity') and FOR the OD-1 recommendation (RECOMMENDATION.evidence_supporting_it[1]). The MG-4 circularity it invokes is the PROVISIONING question - now OD-5 - not OD-3's semantic half_a question of whether a deliberately disabled subsystem is unhealthy, which F-M11-13 never touches: a missing liveness signal has no bearing on whether intentional-off should report healthy. The disposition is corrected to name the decision this finding actually drives.",
+        "replaced_by": "CORRECTED_AF_M11_03_DISPOSITION"
+      }
+    ]
+  },
+  "SUPERSEDED_V101_CLAUSES": {
+    "rule": "Each entry names ONE clause of v1.0.1 (the first amendment, not v1.0.2) by its path, quotes it VERBATIM, and states the single respect in which it no longer controls. v1.0.1's bytes are unchanged; only these named clauses are read down. Distinct from v1.0.2's own SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES (P-1..P-3), which also targeted v1.0.1 but for different sentences.",
+    "entries": [
+      {
+        "id": "Q-1",
+        "v101_path": "SUPERSEDED_PARENT_CLAUSES.entries[S-7].superseded_in_this_respect",
+        "verbatim": "EP-3 has NO test at all, as the parent's own F-M11-09 records.",
+        "superseded_in_this_respect": "This ONE sentence only, quoted out of S-7's larger superseded_in_this_respect text - the rest of that text (the citation-carries-EP-2's-freeze-into-EP-3's-cells point, and the DERIVED_FROM_SOURCE provenance conclusion) is UNCHANGED and correct. The sentence is doubly wrong: (1) it is a FALSE ATTRIBUTION - F-M11-09's actual claim is 'ZERO DIRECT test coverage', and F-M11-09's own measured field states that tests/database-runtime-entrypoints.test.ts:718 DOES reference the route, so F-M11-09 never asserts 'no test at all'; (2) it is the IDENTICAL overstatement that v1.0.2's own P-1 entry, in the SAME document generation, explicitly corrects for the NEW_OPEN_FINDINGS[AF-M11-14] wording - so S-7 and the (pre-P-1) AF-M11-14 made the same overstatement, P-1 fixed it in one place, and this entry fixes the other.",
+        "replaced_by": "CORRECTED_S7_REASONING_TEXT"
+      },
+      {
+        "id": "Q-2",
+        "v101_path": "MATRIX_PROVENANCE_CORRECTION.assignments[EP-3 x CC-3, CC-4, CC-6].evidence",
+        "verbatim": "NONE. Parent F-M11-09 records zero coverage. Established by reading route.ts:117 and :123 only.",
+        "superseded_in_this_respect": "Only the phrase 'zero coverage', which drops F-M11-09's own qualifier 'direct'. Same overstatement class as Q-1 and as v1.0.2's P-1, in the same MATRIX_PROVENANCE_CORRECTION block but a different row. The 'NONE' classification, the DERIVED_FROM_SOURCE class, and the route.ts:117/:123 citation are UNCHANGED and correct.",
+        "replaced_by": "CORRECTED_MATRIX_PROVENANCE_EVIDENCE_ROW"
+      }
+    ]
+  },
+  "SUPERSEDED_V102_CLAUSES": {
+    "rule": "Each entry names ONE clause of v1.0.2 (the second amendment) by its path, quotes it VERBATIM, and states the single respect in which it no longer controls. v1.0.2's bytes are unchanged; only these named clauses are read down.",
+    "entries": [
+      {
+        "id": "R-1",
+        "v102_path": "SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES.entries[P-2].superseded_in_this_respect",
+        "verbatim": "S-7's superseded_in_this_respect text and replaced_by pointer are UNCHANGED and remain correct; only the parent_path's cell enumeration was too narrow.",
+        "superseded_in_this_respect": "Only the claim that S-7's text is fully 'UNCHANGED and remain correct'. By Q-1, one sentence within that text is now corrected - it was NOT correct, and P-2's own act of leaving it standing re-blessed the exact overstatement v1.0.2's own P-1 entry, elsewhere in the same document, says overstates EP-3's coverage gap. P-2's ACTUAL contribution - widening the cell enumeration from one to four - is UNCHANGED and remains correct; only its side-claim about S-7's prose being entirely correct is withdrawn.",
+        "replaced_by": "CORRECTED_S7_REASONING_TEXT (shared with Q-1) and P-2's scope-widening, which stands unmodified"
+      },
+      {
+        "id": "R-2",
+        "v102_path": "OD3_OD5_REFERENCE_SWEEP_SUMMARY",
+        "verbatim_method": "Full-text search of the parent for every literal occurrence of 'OD-3 provides a durable staging test principal' and 'see OD-3', cross-checked against a structural walk of every string value in the parent mentioning 'staging test principal', 'durable', or 'MG-4'. No occurrence outside these eight was found in either the parent or the predecessor amendment.",
+        "verbatim_total_corrected_field": 8,
+        "superseded_in_this_respect": "The completeness claim was FALSE: S-13 (this document) closes a ninth occurrence, 'RECOMMENDATION.arguments_against_the_recommendation_recorded_honestly[1]', which the vocabulary-only search could not find because it reads 'OD-3 half B' - a STRUCTURAL ALIAS naming the same provisioning dependency through v1.0.0's own two_halves.half_b definition, with none of the searched literal tokens present. The method is corrected to include a structural-alias walk (every OD-3 mention cross-checked against whether it falls under two_halves.half_a or two_halves.half_b), and the total is corrected from eight to nine. The eight prior findings (S-8, S-9, S-10) are UNCHANGED and correct.",
+        "replaced_by": "CORRECTED_OD3_OD5_REFERENCE_SWEEP_SUMMARY"
+      },
+      {
+        "id": "R-3",
+        "v102_path": "CORRECTED_EP3_FREEZE_SCOPE.explicitly_unaffected",
+        "verbatim": "EP-2's cells retain their genuine citation of tests/runtime-identity-observability.test.ts:1050-1052.",
+        "superseded_in_this_respect": "MECHANICAL, no substantive change. Re-verified against the live test file: the 'exactly one field: error' assertion is at line 1046 (expect(body).toEqual({ error: 'Unauthorized' })), and the 'no role name, no boolean, no failure code' assertions are at lines 1049-1051, not 1050-1052. Line 1052 is not a body-shape assertion. This corrects only this ONE freestanding restatement in v1.0.2's own prose; the eight occurrences of ':1050-1052' inside v1.0.0's own frozen matrix-cell measured_body_at_BASE strings are QUOTED TEXT describing what those cells already say and are out of scope for this narrow, mechanical correction - correcting all eight would be a substantially larger sweep than this nonblocking finding warrants.",
+        "replaced_by": "CORRECTED_EP2_TEST_CITATION"
+      },
+      {
+        "id": "R-4",
+        "v102_path": "AMENDMENT_SEMANTICS.rule",
+        "verbatim": "This errata amendment supersedes only the clauses named in ERRATA_2_..., ERRATA_4_... and ERRATA_5_... (targeting the parent) and SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES (targeting the predecessor amendment), each in exactly the respect stated.",
+        "superseded_in_this_respect": "'ERRATA_2_...', 'ERRATA_4_...' and 'ERRATA_5_...' are not top-level keys of v1.0.2 - they were labels from the authoring mission brief that leaked into this sentence. v1.0.2's ACTUAL top-level keys carrying its parent-targeting corrections are SUPERSEDED_PARENT_CLAUSES (S-8..S-12); no other corrections in v1.0.2 target the parent under a different name. The sentence is corrected to name the real block.",
+        "replaced_by": "CORRECTED_V102_AMENDMENT_SEMANTICS_RULE"
+      },
+      {
+        "id": "R-5",
+        "v102_path": "SUPERSEDED_PARENT_CLAUSES.entries[S-11].superseded_in_this_respect",
+        "verbatim": "The second, third and fourth sentences (required_status / required_status_if_* semantics) are UNCHANGED and not disturbed.",
+        "superseded_in_this_respect": "Only as to the SECOND sentence. v1.0.0's original sentence 2 reads 'required_* is the CONTRACT.' v1.0.2's own CORRECTED_HOW_TO_READ_A_CELL.corrected_text restates it as 'required_* is the CONTRACT regardless of a cell's provenance class.' - a genuine extension, not a byte-identical restatement. Sentences 3 and 4 ('Where a cell carries required_status...' and 'Where it carries required_status_if_*...') ARE reproduced byte-for-byte in v1.0.2's corrected_text and remain correctly described as unchanged. The substantive point S-11 was making - that only the FIRST sentence's provenance-confidence claim needed correcting - stands; only the specific claim that sentence 2 was left untouched is corrected.",
+        "replaced_by": "CORRECTED_S11_SCOPE_STATEMENT"
+      }
+    ]
+  },
+  "CORRECTED_S7_REASONING_TEXT": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes B-D1 (Q-1 and R-1 together).",
+    "corrected_sentence": "EP-3 has no DIRECT test freezing its response contract. tests/database-runtime-entrypoints.test.ts:718 references app/api/health/stella-preconditions/route.ts structurally, in its entry-point inventory, and confirms the route opens no database connection - it does NOT exercise or freeze EP-3's status code, body shape, or auth branch. Per F-M11-09, the accurate description is ZERO DIRECT test coverage, not the unqualified 'no test at all'.",
+    "rest_of_s7_unchanged": "Every other sentence of S-7's superseded_in_this_respect - the citation-carries-EP-2's-freeze-into-EP-3's-cells point, and the conclusion that EP-3's contract is DERIVED_FROM_SOURCE and frozen by nothing - is UNCHANGED and remains correct.",
+    "p2_scope_widening_unchanged": "v1.0.2's P-2 correction - that the false test-freeze citation appears in FOUR parent cells (EP-3 x CC-1/CC-2/CC-5/CC-7), not the one S-7's parent_path named - stands UNCHANGED. Only P-2's side-claim that S-7's prose was entirely correct is withdrawn by R-1; the four-cell scope widening itself is untouched."
+  },
+  "CORRECTED_MATRIX_PROVENANCE_EVIDENCE_ROW": {
+    "status": "NORMATIVE. Closes the optional cleanup for Q-2.",
+    "corrected_text": "NONE. Parent F-M11-09 records zero DIRECT test coverage. Established by reading route.ts:117 and :123 only."
+  },
+  "CORRECTED_OD1_ARGUMENT_AGAINST_OPTION_B": {
+    "status": "NORMATIVE. Closes S-13 (B-D2, half of it).",
+    "corrected_text": "Option B is defensible on a strict least-disclosure reading, and a reviewer who weighs disclosure above smoke capability should prefer it. This artifact does not claim B is wrong - only that it moves the whole cost onto OD-5."
+  },
+  "CORRECTED_AF_M11_03_DISPOSITION": {
+    "status": "NORMATIVE. Closes S-14 (AF-M11-03 disposition).",
+    "corrected_disposition": "BLOCKING_FOR_AN_UNAUTHENTICATED_M11__DRIVES_OD-1_AND_OD-5",
+    "why_not_OD-3": "Traced through every citation of F-M11-13 in v1.0.0: it argues against OD-1 option B and for the OD-1 recommendation, both times via the MG-4 provisioning circularity - now OD-5's substance. OD-3's semantic half (is a deliberately disabled subsystem unhealthy) is never implicated by a finding about the ABSENCE of an unauthenticated liveness signal; the two questions are independent."
+  },
+  "CORRECTED_OD3_OD5_REFERENCE_SWEEP_SUMMARY": {
+    "status": "NORMATIVE. Closes B-D2 in full (S-13 and R-2 together) and supersedes v1.0.2's OD3_OD5_REFERENCE_SWEEP_SUMMARY.",
+    "certifier_measured_count": 7,
+    "v1_0_2_additional_found": 1,
+    "v1_0_3_additional_found": 1,
+    "total_corrected_across_the_lineage": 9,
+    "the_ninth_reference": "S-13: RECOMMENDATION.arguments_against_the_recommendation_recorded_honestly[1], 'OD-3 half B' (structural alias).",
+    "corrected_method": "Two independent search techniques, not one. FIRST, a literal-text search for every occurrence of 'OD-3 provides a durable staging test principal', 'see OD-3', 'staging test principal', 'durable', and 'MG-4' - this is the method v1.0.2 used, and it correctly found eight of the nine. SECOND, a STRUCTURAL-ALIAS walk: every string mentioning 'OD-3' anywhere in v1.0.0 is individually classified against OWNER_DECISIONS_REQUIRED[OD-3].two_halves as either a half_a (semantic, stays OD-3) or half_b (provisioning, now OD-5) reference, or neither. This second technique is what a purely literal or vocabulary-based search cannot perform, because a structural alias like 'OD-3 half B' need not share any token with 'durable staging test principal'. No occurrence outside these nine was found by either technique in v1.0.0, v1.0.1, or v1.0.2.",
+    "full_classification_of_every_OD-3_mention_in_the_parent": {
+      "half_b_provisioning__now_OD-5__corrected": [
+        "S-8 (6 cells' reachable_by_M11_only_if) - closed in v1.0.2",
+        "S-9 (OD-1 option C release_consequence) - closed in v1.0.2",
+        "S-10 (RECOMMENDATION.recommended_contract.OD-3) - closed in v1.0.2",
+        "S-13 (RECOMMENDATION.arguments_against[1], 'OD-3 half B') - closed in this document"
+      ],
+      "half_a_semantic__correctly_remains_OD-3__not_corrected": [
+        "ENDPOINT_INVENTORY.endpoints[EP-3].deliberately_dark_subsystem ('A deliberately dark subsystem is currently indistinguishable from a misconfigured one. Unowned at BASE and raised as OD-3.')",
+        "OWNERSHIP_MAP.entries[9] ('Whether a deliberately disabled Stella subsystem is unhealthy... RAISES it as OD-3')",
+        "ENDPOINT_BY_CALLER_MATRIX.cells[16,17,19].contract_state, .required_status, .required_semantic, .failed_response_blocks_deployment (12 sites across three cells - all about the intentional-off collapse)",
+        "RECOMMENDATION.recommended_contract.OD-2 ('EP-3 records but does not block until OD-3 half A is settled')",
+        "OWNER_DECISIONS_REQUIRED[OD-2].sub_questions[2] ('Does an unmet EP-3 block, given OD-3?')",
+        "OPEN_FINDINGS[AF-M11-09].disposition 'UNOWNED_AT_BASE__RAISED_AS_OD-3_HALF_A' (explicitly labelled half_a already)",
+        "OWNER_DECISIONS_REQUIRED[OD-3].id itself"
+      ],
+      "corrected_by_this_document_for_a_different_reason__not_a_half_b_reference": [
+        "S-14 / AF-M11-03's disposition - corrected because its DRIVING relationship is to OD-5 (via the MG-4 circularity F-M11-13 invokes), not because 'OD-3' in its text is itself a half_b alias."
+      ],
+      "left_alone_as_historical_and_not_still_effective": [
+        "v1.0.0.self_check.expected_owner_decision_ids[2] = 'OD-3' - this is the parent's OWN internal self-verification of ITS OWN four-owner-decision count, recorded before the OD-3/OD-5 split existed. It is not a claim about the current effective decision count and is not read by anything downstream as one; left unamended rather than superseded, matching the precedent that a document's own point-in-time self_check is not amended by a later document's split of an identifier it names."
+      ]
+    },
+    "what_this_does_not_do": "Does NOT authorize provisioning a staging test principal. OD-5 remains open, unranked among the owner decisions this lane does not choose, and MG-4's prohibition on lowering the endpoint boundary is inherited unchanged."
+  },
+  "CORRECTED_EP2_TEST_CITATION": {
+    "status": "NORMATIVE. Closes R-3 (optional cleanup).",
+    "corrected_text": "EP-2's cells retain their genuine citation of tests/runtime-identity-observability.test.ts:1046 (the exact body match) and :1049-1051 (the absence of a role name, boolean, or failure code).",
+    "re_verified_against_live_source": {
+      "line_1046": "expect(body).toEqual({ error: 'Unauthorized' })",
+      "line_1049": "expect(JSON.stringify(body)).not.toContain(RUNTIME_DATABASE_ROLE)",
+      "line_1050": "expect(body).not.toHaveProperty('runtime')",
+      "line_1051": "expect(body).not.toHaveProperty('verified')"
+    },
+    "scope_of_this_correction": "Applies only to v1.0.2's freestanding restatement corrected by R-3. It does NOT alter the eight occurrences of ':1050-1052' inside v1.0.0's own frozen measured_body_at_BASE cell strings, which remain quoted text describing what the parent already says and were out of proportion to correct in this narrow errata pass."
+  },
+  "CORRECTED_V102_AMENDMENT_SEMANTICS_RULE": {
+    "status": "NORMATIVE. Closes R-4 (NB-1).",
+    "corrected_text": "This errata amendment supersedes only the clauses named in SUPERSEDED_PARENT_CLAUSES (targeting the parent) and SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES (targeting the predecessor amendment), each in exactly the respect stated."
+  },
+  "CORRECTED_S11_SCOPE_STATEMENT": {
+    "status": "NORMATIVE. Closes R-5 (NB-2).",
+    "corrected_text": "Sentence 1 is superseded in full; CORRECTED_HOW_TO_READ_A_CELL replaces it with a provenance-class-aware explanation. Sentence 2, 'required_* is the CONTRACT.', is EXTENDED (not left byte-identical) to 'required_* is the CONTRACT regardless of a cell's provenance class.' - a clarification, not a reversal, made necessary by sentence 1's correction. Sentences 3 and 4 (required_status / required_status_if_* semantics) ARE reproduced byte-for-byte in CORRECTED_HOW_TO_READ_A_CELL.corrected_text and are genuinely unchanged."
+  },
+  "explicit_non_authorizations": [
+    "This errata amendment does NOT satisfy M11. GATES[M11].current_state remains ABSENT.",
+    "This errata amendment does NOT ratify anything. OD-1 through OD-5 remain open and unanswered.",
+    "This errata amendment does NOT reopen B-1 or B-2. Both remain CLOSED.",
+    "This errata amendment does NOT change any owner decision's question, options, or recommended contract.",
+    "This errata amendment does NOT enlarge M11. No endpoint, caller class, gate or blocking semantic is added.",
+    "This errata amendment does NOT deploy, and performed no deployment.",
+    "This errata amendment does NOT execute hosted smoke, and performed none.",
+    "This errata amendment does NOT change any endpoint's behaviour. No route, middleware, test or runtime file is modified.",
+    "This errata amendment does NOT change auth policy and lowers no boundary. MG-4 is inherited unchanged.",
+    "This errata amendment does NOT authorize a staging principal, a bypass credential, or any credential provisioning.",
+    "This errata amendment does NOT change release state and edits no gate field. RELEASE_GATE_LEDGER is read only.",
+    "This errata amendment does NOT edit v1.0.0, v1.0.1, or v1.0.2. All three bytes are unchanged.",
+    "This errata amendment does NOT authorize Stage-A, G2, or production.",
+    "This errata amendment does NOT modify Vercel, Supabase, environment variables or any hosted state. External hosted mutations: NONE.",
+    "This errata amendment does NOT open a PostgreSQL connection.",
+    "This errata amendment does NOT modify or weaken any test.",
+    "This errata amendment does NOT invent an ODS or W2 lineage identifier."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check, verifiable by inspection of this file plus three git object reads. Not a script.",
+    "grandparent_byte_unchanged": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+      "expected_blob_sha1": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+      "expected_size_bytes": 86815
+    },
+    "v1_0_1_byte_unchanged": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+      "expected_blob_sha1": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+      "expected_size_bytes": 58625
+    },
+    "v1_0_2_byte_unchanged": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+      "expected_blob_sha1": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b",
+      "expected_size_bytes": 32009
+    },
+    "expected_parent_clause_count": 2,
+    "expected_parent_clause_ids": [
+      "S-13",
+      "S-14"
+    ],
+    "expected_v101_clause_count": 2,
+    "expected_v101_clause_ids": [
+      "Q-1",
+      "Q-2"
+    ],
+    "expected_v102_clause_count": 5,
+    "expected_v102_clause_ids": [
+      "R-1",
+      "R-2",
+      "R-3",
+      "R-4",
+      "R-5"
+    ],
+    "expected_total_correction_count": 9,
+    "expected_od3_od5_lineage_total": 9,
+    "expected_od3_od5_certifier_count": 7,
+    "expected_od3_od5_v102_additional": 1,
+    "expected_od3_od5_v103_additional": 1,
+    "expected_ep2_citation_lines": {
+      "exact_body_match": 1046,
+      "absence_checks_start": 1049,
+      "absence_checks_end": 1051
+    },
+    "checks": [
+      "Every SUPERSEDED_PARENT_CLAUSES entry (S-13, S-14) carries a parent_path, a verbatim quotation and exactly one superseded_in_this_respect statement, and continues the numbering v1.0.1/v1.0.2 established without reusing S-1..S-12.",
+      "Every SUPERSEDED_V101_CLAUSES entry (Q-1, Q-2) carries a v101_path, a verbatim quotation and exactly one superseded_in_this_respect statement.",
+      "Every SUPERSEDED_V102_CLAUSES entry (R-1..R-5) carries a v102_path, a verbatim quotation and exactly one superseded_in_this_respect statement.",
+      "S-13's verbatim quote is found byte-for-byte inside v1.0.0's RECOMMENDATION.arguments_against_the_recommendation_recorded_honestly[1].",
+      "S-14's verbatim quote equals v1.0.0's OPEN_FINDINGS entry whose id is AF-M11-03, at its disposition field.",
+      "Q-1's verbatim quote is found byte-for-byte inside v1.0.1's S-7 entry's superseded_in_this_respect field.",
+      "Q-2's verbatim quote equals v1.0.1's MATRIX_PROVENANCE_CORRECTION.assignments row whose cells value contains 'CC-3, CC-4, CC-6', at its evidence field.",
+      "R-1's verbatim quote is found byte-for-byte inside v1.0.2's P-2 entry's superseded_in_this_respect field.",
+      "R-2's total_corrected figure of 8 and its method sentence are found inside v1.0.2's OD3_OD5_REFERENCE_SWEEP_SUMMARY.",
+      "R-3's verbatim quote equals v1.0.2's CORRECTED_EP3_FREEZE_SCOPE.explicitly_unaffected field exactly.",
+      "R-4's verbatim quote equals v1.0.2's AMENDMENT_SEMANTICS.rule field exactly, and contains the literal substring 'ERRATA_2_'.",
+      "R-5's verbatim quote equals v1.0.2's S-11 entry's superseded_in_this_respect field exactly.",
+      "CORRECTED_OD3_OD5_REFERENCE_SWEEP_SUMMARY.total_corrected_across_the_lineage equals 7 (certifier) + 1 (v1.0.2) + 1 (this document) = 9.",
+      "CORRECTED_OD3_OD5_REFERENCE_SWEEP_SUMMARY.full_classification_of_every_OD-3_mention_in_the_parent's four sublists, concatenated, account for every string in v1.0.0 matching the literal token 'OD-3', with no occurrence left unclassified.",
+      "CORRECTED_EP2_TEST_CITATION's four cited line numbers (1046, 1049, 1050, 1051) are independently re-verified against the live content of tests/runtime-identity-observability.test.ts at those exact lines.",
+      "No new owner decision is created and no existing owner decision's question or options text is altered - only references, one disposition routing, and two self-referential prose defects are corrected.",
+      "B-1 and B-2 are stated CLOSED and not reopened, with no new measured fact reopening either.",
+      "No secret, credential, token, connection string, project reference, email address or user identifier appears anywhere in this artifact.",
+      "No gate identifier is created, and no gate field is asserted to change.",
+      "final_state is ADJUDICATED_AWAITING_OWNER_RATIFICATION, consistent with five unanswered owner decisions (unchanged count from v1.0.1)."
+    ],
+    "validation_method": "JSON parse, structural self-check executed against this document, byte-identity verification of all three prior artifacts via git object reads, exact-substring verification of every verbatim quotation against the live content of the artifact it claims to quote, independent re-derivation of the OD-3-mention classification and the EP-2 test line numbers from source, secret scan, repository-native authority gates, and re-execution of the three health-related test suites this document's CORRECTED_HOW_TO_READ_A_CELL reasoning relies on ('currently-passing') to confirm that claim still holds in this lane rather than citing an earlier lane's result."
+  },
+  "required_independent_review": "The EFFECTIVE PACKAGE - v1.0.0, amended by v1.0.1, amended by v1.0.2, amended by this document v1.0.3 - is ready for a BOUNDED delta re-review of v1.0.3 only, followed by owner ratification of OD-1 through OD-5. The author of all four documents in this lineage authored this correction too and must not certify any of them.",
+  "final_state": "ADJUDICATED_AWAITING_OWNER_RATIFICATION__V1_0_0_AMENDED_BY_V1_0_1_V1_0_2_AND_V1_0_3",
+  "next_gate": "M11_HEALTH_CONTRACT_PACKAGE_READY_FOR_BOUNDED_V1_0_3_DELTA_REVIEW: a review bounded to the two S-clauses, two Q-clauses, and five R-clauses this document introduces, and to their nine corrected-content blocks. Everything the v1.0.2 focused recertification already passed, and B-1/B-2's closure, are not to be recomputed. Owner ratification of OD-1..OD-5 follows a PASS on this bounded review. No implementation lane, no smoke automation and no gate-state change may open before both."
+}
