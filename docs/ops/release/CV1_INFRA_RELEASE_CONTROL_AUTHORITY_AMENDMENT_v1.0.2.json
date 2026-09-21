@@ -1,0 +1,313 @@
+{
+  "package_id": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "authority_class": "EXECUTION_AUTHORITY_AMENDMENT",
+  "document_class": "BOUNDED_CONTROL_PLANE_CONFIGURATION_GRANT_AMENDMENT",
+  "append_only": true,
+  "amends": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "amends_transitively": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "mission_id": "CV1-INFRA-RELEASE-CONTROL-RESIDUAL-SWEEP-AMENDMENT-R3",
+  "lane": "CV1-INFRA-RELEASE-CONTROL-RESIDUAL-SWEEP-AMENDMENT-R3",
+  "role": "COMMERCIAL_V1_INFRASTRUCTURE_RELEASE_CONTROL_AUTHORITY_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+
+  "AS_OF_BRANCH": "codex/cv1-infra-release-control-authority-r1",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_PRE_AMENDMENT_HEAD": "11e137c731b1cd048d90dc5a82b3f9965e7ce66d",
+  "as_of_measurement_note": "This amendment is a TEXTUAL residual sweep and one additive retry-identity contract. It performs no new hosted measurement of its own except the two facts verified below via git grep of already-frozen, checked-out repository content (the SEC5 gate identifier and the PR201 BOUNDED_RETRY_RULE text) — both read-only, both against already-committed frozen authorities, neither requiring network access.",
+
+  "EFFECTIVE_PACKAGE": {
+    "rule": "The effective authority is the ORDERED READ of all three files. Where a later file supersedes or qualifies an earlier one, the later file controls for that point only; everywhere else, silence means the earlier file controls verbatim.",
+    "read_order": [
+      "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+      "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json (this file)"
+    ],
+    "all_prior_files_left_byte_unchanged": true
+  },
+
+  "FOCUSED_RECERT_CONSUMED": {
+    "result": "FOCUSED_RECERT_FAIL",
+    "what_was_found_sound": "ACT_IDENTITY_CONTRACT (AIC-1..AIC-7) itself, and every path v1.0.1's SUPERSEDED_PARENT_CLAUSES named by id, close correctly. K-1, the first bullet of I.distinguishing_properties, K-2, and the parent manifest's P12/SEN-4/N-1/MUT-3 are all properly superseded and do not reassert the impossible identity model.",
+    "what_failed": "Four residual restatements of the impossible identity model, and a plane-blind creator assumption, remained EFFECTIVE in blocks v1.0.1 did not touch by name — three of them in EVIDENCE_REQUIREMENTS, INTENDED_POSTSTATE and RELATIONSHIP_TO_AUTOMATIC_PREVIEW_DEPLOYMENTS, none of which appear in v1.0.1's SUPERSEDED_PARENT_CLAUSES list. A fourth appeared inside v1.0.1's own UNCHANGED_AND_STILL_CONTROLLING block, which blanket-reaffirmed EVIDENCE_REQUIREMENTS as controlling in full, including the very entries the amendment's own contract makes impossible.",
+    "root_cause": "v1.0.1 superseded by NAMING THE CLAUSE ID (K-1, K-2, I.distinguishing_properties[0]). The old semantic content was not confined to those three named locations — it was independently RESTATED, in different words, in at least seven other places across MEASURED_PRESTATE, ADJUDICATIONS.I, ADJUDICATIONS.F_G, INTENDED_POSTSTATE, EVIDENCE_REQUIREMENTS and RELATIONSHIP_TO_AUTOMATIC_PREVIEW_DEPLOYMENTS. Superseding a clause by id does not sweep its restatements; only a search for the SEMANTIC pattern does."
+  },
+
+  "RESIDUAL_SWEEP_METHOD": {
+    "rule": "AP5 in v1.0.1 promised a semantic residual sweep and was not executed. This amendment executes it.",
+    "method": "Every string leaf of v1.0.0, v1.0.1, and both companion manifests was extracted by a recursive walk (not a grep of clause ids), then tested against six patterns matching the family of obsolete semantics: (1) 'before the deployment exist(ed)/was created', (2) 'frozen before ... creation/deployment', (3) 'pre-recorded deployment id', (4) 'recorded ... BEFORE the deployment', (5) 'id ... before ... exist/creat', (6) the literal 'vercel[bot]'. Every hit was individually read in full context and classified below as SUPERSEDED (new text replaces old), QUALIFIED (old text is accurate on its own plane but was unqualified and is now plane-labelled), or DEMONSTRATED_NOT_OBSOLETE (already closed by v1.0.1, or historically accurate and not asserted as a controlling rule).",
+    "total_hits": 19,
+    "superseded_or_qualified_by_this_amendment": 9,
+    "already_closed_by_v101": 8,
+    "demonstrated_not_obsolete_no_action_needed": 2
+  },
+
+  "SUPERSEDED_PARENT_CLAUSES_V102": {
+    "rule": "Each clause is superseded ONLY in the respect stated, in its ORIGINAL location in v1.0.0. The remainder of the parent artifact, including the rest of the enclosing block, continues to control verbatim.",
+    "clauses": [
+      {
+        "id": "SPC102-1",
+        "parent_path": "EVIDENCE_REQUIREMENTS.for_any_deployment_cited_as_governed_staging_evidence[0]",
+        "parent_verbatim": "The deployment id, recorded BEFORE the deployment existed (K-1).",
+        "respect_in_which_superseded": "Replaced by: 'The act nonce, recorded BEFORE the deployment existed, per ACT_IDENTITY_CONTRACT AIC-1 (v1.0.1) — with the server-generated deployment id bound to that nonce immediately after creation, per AIC-3.' The requirement that identity precede the deployment is PRESERVED; the object required to pre-exist is the nonce, never the id.",
+        "grounds": "This is one of the four residuals the focused re-certification named directly. It restates the exact impossible form v1.0.1 SPC-1 already superseded, in a different location v1.0.1 did not touch."
+      },
+      {
+        "id": "SPC102-2",
+        "parent_path": "EVIDENCE_REQUIREMENTS.for_any_deployment_cited_as_governed_staging_evidence[2]",
+        "parent_verbatim": "The creating act and actor, demonstrating it was not vercel[bot] acting on a Git event (K-2).",
+        "respect_in_which_superseded": "Replaced by: 'The creating act and actor: a deployment is INELIGIBLE if its GITHUB DEPLOYMENT OBJECT names creator vercel[bot], OR if its VERCEL deployment record carries meta.githubDeployment, and no governed act record exists for it (K-2 as superseded by v1.0.1 SPC-3).'",
+        "grounds": "Named directly by the focused re-certification. MEASURED (v1.0.1 SPC-3): the same automatic deployment reports creator=vercel[bot] on the GitHub plane and creator.username=<the human account> on the Vercel plane. An unqualified 'not vercel[bot]' test, read against the Vercel record, would fail to exclude the very deployments it exists to exclude."
+      },
+      {
+        "id": "SPC102-3",
+        "parent_path": "INTENDED_POSTSTATE.vercel[2]",
+        "parent_verbatim": "The governed Commercial V1 staging deployment, when it is created under PR201, is identified by a deployment id frozen before its creation, and is never addressed through the branch alias.",
+        "respect_in_which_superseded": "Replaced by: 'The governed Commercial V1 staging deployment, when it is created under PR201, is identified by an act nonce recorded before its creation and bound to its server-generated deployment id immediately after, per ACT_IDENTITY_CONTRACT, and is never addressed through the branch alias.'",
+        "grounds": "Named directly by the focused re-certification."
+      },
+      {
+        "id": "SPC102-4",
+        "parent_path": "ADJUDICATIONS.I_mechanical_distinction_between_the_three_layers.governed_cv1_staging_deployment.the_honest_weakness",
+        "parent_verbatim": "target=preview does NOT distinguish this from an ordinary Preview. Nor does the SHA, nor the environment, nor Ready status. ONLY the pre-recorded deployment id and the act record distinguish them. Any control that leans on classification instead of identity will admit the wrong deployment, and this artifact says so rather than implying a cleaner separation than the platform provides.",
+        "respect_in_which_superseded": "The sentence 'ONLY the pre-recorded deployment id and the act record distinguish them' is replaced by: 'ONLY the pre-recorded act nonce, its binding to the server-generated deployment id, and the act record distinguish them.' The surrounding honesty about the absence of any cleaner platform-native separation is PRESERVED verbatim and is, if anything, reinforced by this amendment's finding (RETRY_IDENTITY_CONTRACT) that even the retry path needed an explicit chaining rule to avoid an ambiguity the platform does not resolve on its own.",
+        "grounds": "Named directly by the focused re-certification."
+      },
+      {
+        "id": "SPC102-5",
+        "parent_path": "RELATIONSHIP_TO_AUTOMATIC_PREVIEW_DEPLOYMENTS.the_remedy_chosen",
+        "parent_verbatim": "Identity, not classification. A governed deployment is the one whose id was written down before it existed. Every other property an observer would check — target, SHA, environment, Ready status — is one an automatic Preview can also have.",
+        "respect_in_which_superseded": "The second sentence is replaced by: 'Identity, not classification. A governed deployment is the one whose ACT NONCE was written down before it existed, with the server-generated id bound to that nonce immediately after creation. Every other property an observer would check — target, SHA, environment, Ready status, and even the deployment id itself once it exists — is one an automatic Preview can also have or come to have.'",
+        "grounds": "Found by the semantic sweep, not named by the focused re-certification's four examples but matching the identical pattern. This block frames the WHOLE remedy in the impossible form and is the single most load-bearing restatement to have survived v1.0.1, since it is the section most likely to be read as the amendment's own summary of its fix."
+      },
+      {
+        "id": "SPC102-6",
+        "parent_path": "ADJUDICATIONS.I_mechanical_distinction_between_the_three_layers.ordinary_preview.creator",
+        "parent_verbatim": "vercel[bot]",
+        "respect_in_which_superseded": "QUALIFIED rather than replaced: this value is correct ONLY as a GitHub Deployments API observation. A reader testing the Vercel deployment record's own creator field will find the human account, per v1.0.1 SPC-3's measurement, for the exact deployment this table entry describes. The field is retitled in effect to 'creator (GitHub Deployments API plane)', and the corroborating fact that the Vercel-plane creator differs is added.",
+        "grounds": "Found by the semantic sweep. This is the property TABLE an implementer is most likely to consult mechanically when distinguishing deployment layers; an unqualified 'creator: vercel[bot]' tested against the Vercel API — which is what ACT_IDENTITY_CONTRACT is built on — would read as false for a genuinely ordinary automatic Preview, including the exact frozen-base example this whole artifact uses as its running illustration."
+      },
+      {
+        "id": "SPC102-7",
+        "parent_path": "ADJUDICATIONS.F_G_semantic_status_of_an_automatic_preview.grounds[0]",
+        "parent_verbatim": "It is created by vercel[bot] as a consequence of a Git event, with no governed deployment act, no human confirmation, and no record binding it to any authority.",
+        "respect_in_which_superseded": "QUALIFIED: 'It is created by vercel[bot] AS OBSERVED ON THE GITHUB DEPLOYMENTS API as a consequence of a Git event — its Vercel-plane deployment record instead names the human account as creator, per v1.0.1 SPC-3 — with no governed deployment act, no human confirmation, and no record binding it to any authority.' The verdict this grounds-bullet supports (BUILD_EVIDENCE_ONLY, not governed staging evidence) is UNCHANGED and does not depend on which plane's creator field is read; only the field-level claim needed qualifying.",
+        "grounds": "Found by the semantic sweep. The underlying verdict F/G reaches survives fully — it rests on the ABSENCE of a governed act record, which is plane-independent — but the supporting sentence, read alone, would mislead a reader who checked the Vercel record instead of the GitHub one."
+      },
+      {
+        "id": "SPC102-8",
+        "parent_path": "ADJUDICATIONS.I_mechanical_distinction_between_the_three_layers.production_deployment.measured_cause",
+        "parent_verbatim": "automatic Git integration by vercel[bot], NOT manual promotion, on every production deployment this lane observed",
+        "respect_in_which_superseded": "Replaced by: 'automatic Git integration from productionBranch=main (v1.0.1 U-1) for the CURRENT production deployment, which is source=\"git\"; MEASURED (v1.0.1 CM-2, CM-3): of the nineteen production deployments observed, most carry source=\"redeploy\" — a manual act — and only the most recent is source=\"git\". The GitHub Deployment object names creator=vercel[bot] for both mechanisms, per SPC-3, so creator alone does not distinguish them. What is unchanged is that the CURRENT live production deployment is source=\"git\" from productionBranch=main, so an ordinary push to main today would auto-deploy production without any governed act — the specific claim PRODUCTION_BOUNDARY and C-5 depend on.'",
+        "grounds": "Found by the semantic sweep. v1.0.1's own corrections (CM-2, CM-3) already falsify the parent's blanket 'every production deployment ... NOT manual promotion' — most were redeploys, which v1.0.1 itself calls a MANUAL act — but no clause formally closed this specific parent sentence, leaving it standing in direct tension with the amendment that disproved it."
+      },
+      {
+        "id": "SPC102-9",
+        "parent_path": "MEASURED_PRESTATE.VERCEL.production.all_production_deployments_measured_were_created_by_vercel_bot",
+        "parent_verbatim": "Six production deployments were listed; every one names vercel[bot] as creator, which is the signature of automatic Git-integration deployment rather than manual promotion.",
+        "respect_in_which_superseded": "Replaced by: 'MEASURED (v1.0.1 CM-3, full pagination checked): nineteen production deployments exist, not six. Every one names creator=vercel[bot] on the GitHub Deployments API, because that field names the INTEGRATION that created the GitHub Deployment record, not the Vercel-side mechanism (v1.0.1 SPC-3) — it is therefore NOT a signature that distinguishes automatic Git-integration deployment from manual promotion, since MOST of the nineteen are source=\"redeploy\" (v1.0.1 CM-2), a manual act, and still show creator=vercel[bot] on that plane.'",
+        "grounds": "Found by the semantic sweep. The count was already corrected by CM-3; the interpretive tail asserting creator=vercel[bot] as a mechanism signature was not, and CM-2 elsewhere in the SAME amendment already shows that exact inference to be wrong for at least one deployment."
+      }
+    ]
+  },
+
+  "SUPERSEDED_V101_CLAUSES": {
+    "rule": "v1.0.1 is left BYTE-UNCHANGED. Each clause below is superseded ONLY in the respect stated; the rest of v1.0.1 continues to control verbatim, including every other item in the two lists touched here.",
+    "clauses": [
+      {
+        "id": "SPC102-V101-1",
+        "parent_path": "UNCHANGED_AND_STILL_CONTROLLING.items[7]",
+        "parent_verbatim": "NO_SECRET_POLICY, EVIDENCE_REQUIREMENTS, FAIL_CLOSED_BEHAVIOR and STALE_STATE_HANDLING.",
+        "respect_in_which_superseded": "Replaced by: 'NO_SECRET_POLICY, FAIL_CLOSED_BEHAVIOR and STALE_STATE_HANDLING in full. EVIDENCE_REQUIREMENTS.for_any_deployment_cited_as_governed_staging_evidence remains controlling EXCEPT entries [0] and [2], which are superseded by v1.0.2 SPC102-1 and SPC102-2; its other three entries (SHA re-verification, timestamp-after-correction, immutable address never the alias) are unchanged.'",
+        "grounds": "This is the exact defect the focused re-certification flagged as most concerning: a blanket 'unchanged and still controlling' declaration reaffirmed a block that, on inspection, carried the impossible identity semantics ACT_IDENTITY_CONTRACT existed to remove. This is why the sweep in this amendment reads the WHOLE effective package rather than trusting either parent's own account of what it left standing."
+      },
+      {
+        "id": "SPC102-V101-2",
+        "parent_path": "UNCHANGED_AND_STILL_CONTROLLING.items[3]",
+        "parent_verbatim": "ADJUDICATIONS A, C, D, E, F/G, J, L, M, N, P and Q.",
+        "respect_in_which_superseded": "Replaced by: 'ADJUDICATIONS A, C, D, E, J, L, M, N, P and Q in full. F/G's VERDICT (BUILD_EVIDENCE_ONLY, explicitly not governed staging evidence) is unchanged; its supporting grounds[0] is plane-qualified by v1.0.2 SPC102-7.'",
+        "grounds": "F/G was listed as wholly unchanged while one of its four grounds-bullets carried the unqualified 'vercel[bot]' pattern this amendment closes."
+      },
+      {
+        "id": "SPC102-V101-3",
+        "parent_path": "SUPERSEDED_PARENT_CLAUSES.clauses[5] (SPC-6, id-namespaced within v1.0.1)",
+        "parent_verbatim": "note_on_the_certifier_s_identifier: \"The certification referred to 'SEC5'. The frozen authority contains no such identifier; its stop lines are SSL-01 through SSL-09. The anchor is therefore recorded against the id that actually exists rather than the one proposed.\"",
+        "respect_in_which_superseded": "This sub-field is WITHDRAWN as a factual error and replaced by: 'SEC5 DOES exist as a named gate, distinct from the SSL-* stop-line namespace. MEASURED by direct read of the already-frozen, checked-out repository content: docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json defines {\"id\": \"SEC5\", \"name\": \"secret custody and hygiene\", \"category\": \"SECURITY\", ...}, and docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json explicitly assigns \"gate\": \"SEC5\" to BOTH SSL-06 and SSL-08. The v1.0.1 anchor to SSL-06 was and remains CORRECT; only the claim that SEC5 itself does not exist was wrong.'",
+        "grounds": "This session's own directive named the correction and it was verified independently before being accepted: `git grep -n SEC5` against the frozen, checked-out release authorities returns the SEC5 gate definition and its two SSL-* attachments. v1.0.1 conflated 'stop line id' (SSL-*) with 'gate id' (SEC1..SEC12, M1..M11, PV1..PV6, etc. — a separate namespace the frozen ledger uses throughout) and asserted the wrong one was exhaustive.",
+        "what_is_unchanged": "OD-5's substantive anchor to SSL-06 is UNCHANGED and remains the correct anchor for the credential-inventory obligation; only the parenthetical claim about SEC5's existence is corrected. PR #206, taking up the alert-1 adjudication in its own lane, remains the correct venue and is unaffected by this correction."
+      }
+    ]
+  },
+
+  "RETRY_IDENTITY_CONTRACT": {
+    "status": "ADDITIVE to ACT_IDENTITY_CONTRACT (v1.0.1). Does not supersede AIC-1..AIC-7; resolves a case they did not address.",
+    "the_gap": "PR201's DEPLOYMENT_AUTHORIZATION_BOUNDARY.BOUNDED_RETRY_RULE authorizes AT MOST ONE retry when five conjunctive conditions hold (BR-1..BR-5: the first attempt never reached READY; the failure was platform infrastructure, not application/configuration/coherence; no environment variable changed between attempts; the exact SHA is byte-identical between attempts; human confirmation is re-obtained). AIC-1..AIC-7 as written do not say whether the retry reuses the first attempt's act nonce or mints a new one, and AIC-5's one-to-one first-bound-wins rule, read literally, would treat a SECOND deployment bearing the SAME nonce as an inadmissible governance incident — which would wrongly flag a PR201-authorized retry as a violation of this artifact's own identity contract. This gap is resolved here rather than left for an execution lane to guess at.",
+
+    "AIC-8_retry_mints_a_distinct_chained_nonce": {
+      "rule": "A retry authorized under PR201 BOUNDED_RETRY_RULE MUST mint a NEW act nonce, distinct from the first attempt's. The retry's act record MUST additionally carry a field naming the first attempt's nonce as its predecessor, and MUST record, with evidence, that each of BR-1 through BR-5 was satisfied.",
+      "platform_carriage": "The retry deployment's metadata carries BOTH meta.uellix_governed_act_nonce (its own, new nonce) AND meta.uellix_governed_act_supersedes_nonce (the first attempt's nonce), so the chain is verifiable by re-reading the platform record alone, independent of the local act record.",
+      "why_a_new_nonce_and_not_reuse": "Reusing the first attempt's nonce would make the retry deployment a SECOND deployment bearing an EXISTING nonce, which AIC-5 correctly refuses as a governance incident when the second deployment appears WITHOUT authorization. A distinct, explicitly-chained nonce keeps AIC-5's one-to-one rule intact — it continues to catch an unauthorized redeploy or duplicate exactly as designed — while making the ONE PR201-authorized retry a legitimate, separately-identified act rather than a collision.",
+      "the_first_attempt_s_binding_is_untouched": "The first attempt's nonce remains bound to its own deployment id, which reached a terminal ERROR state and never READY. That binding is not erased, reused, or reassigned; it stands as the historical record of the failed attempt, and per PR201 and AIC-7 a deployment that never reached READY was never admissible as governed evidence regardless of this contract."
+    },
+
+    "AIC-9_retry_count_ceiling_independent_of_nonce_mechanics": {
+      "rule": "This grant authorizes AT MOST TWO total deployment-creation acts under one governed sequence: the first attempt, and the one PR201-authorized retry. A THIRD nonce chained to the same sequence — whether directly to the first attempt's nonce or transitively through the retry's — is REFUSED, regardless of whether BR-1 through BR-5 would otherwise appear satisfied, because PR201's BOUNDED_RETRY_RULE caps retries at one and a nonce mechanism cannot expand a count ceiling a frozen authority fixed.",
+      "how_the_ceiling_is_checked": "An act record whose predecessor field is itself populated (i.e., a retry-of-a-retry) is, by construction, a request for a second retry. It is refused at the act-record stage, before any deployment is triggered, without needing to re-evaluate BR-1..BR-5.",
+      "fail_closed_on_broken_chain": "If a retry's act record cannot establish an unbroken, single-hop chain to a first attempt that itself terminated in ERROR without ever reaching READY, the lane STOPS and does not create a retry deployment under this mechanism. A further act, if one is ever needed, requires a successor authority — exactly as PR201's own EXPIRY clause already requires once its single execution is consumed."
+    },
+
+    "clarification_of_AIC5_scope": {
+      "rule": "AIC-5's one-to-one, first-bound-wins prohibition is UNCHANGED and governs any deployment sharing an EXISTING nonce with a prior deployment. It does not, and was never intended to, prohibit a retry that mints its OWN distinct nonce under AIC-8. This is a scoping clarification, not a supersession: AIC-5's text is correct as written and needs no amendment; only its application to the retry case needed spelling out."
+    }
+  },
+
+  "CONFIRMATION_AND_SHA_REVERIFICATION_ORDER_CORRECTION": {
+    "status": "CORRECTS the ordering prose in v1.0.1 AIC-1 and AIC-3, which compressed PR201's actual two-stage sequence into one step. Does not change any substantive obligation; both stages were already independently required by PR201 and by AIC-1(b)/(e) — this corrects only the SEQUENCE in which the amendment described them.",
+    "the_imprecision": "v1.0.1 ACT_IDENTITY_CONTRACT.AIC-3.ordering read: 'nonce recorded -> human confirmation -> deployment created -> id returned -> id bound to nonce.' This implies the human confirmation happens immediately before deployment creation. It does not: per PR201 HUMAN_CONFIRMATION.placement, the confirmation is obtained ONCE, before AUTH-1 (the environment-variable binding mutation) — a step that happens BEFORE the deployment is triggered under AUTH-2, and PR201 SB-3 requires a SEPARATE, second SHA re-verification immediately before the deployment trigger, which the v1.0.1 ordering did not mention at all.",
+    "the_corrected_sequence": [
+      "1. SB-1: git fetch and freeze SHA_FROZEN from origin/integration/commercial-v1.",
+      "2. The governed act record is opened: act nonce minted, SHA_FROZEN and the intended mechanism recorded, timestamped.",
+      "3. HUMAN_CONFIRMATION is obtained ONCE, per PR201's prompt_requirements, covering the whole sequence including 'exactly one deployment will be produced' — SB-2 states SHA_FROZEN verbatim in this same prompt.",
+      "4. AUTH-1 executes: the three branch-scoped Preview environment variables are bound.",
+      "5. SB-3: immediately before triggering the deployment, origin/integration/commercial-v1 is re-derived. If it differs from SHA_FROZEN, STOP_STALE — no deployment is triggered, and this contract's act record is closed as ABANDONED, not as a failed attempt eligible for AIC-8/AIC-9's retry chain, because BR-4 (byte-identical SHA) was never reached.",
+      "6. AUTH-2 executes: the deployment is created, carrying meta.uellix_governed_act_nonce (AIC-2).",
+      "7. SB-4 / AIC-3: the returned deployment id is captured and bound to the nonce within the same act.",
+      "8. AIC-4: the deployment record is re-read and the nonce is verified to have round-tripped exactly."
+    ],
+    "why_this_matters_to_retry": "The retry path (AIC-8/AIC-9) begins at step 2 with a NEW nonce and its own human reconfirmation (BR-5) at step 3 — it does not re-run AUTH-1, because BR-3 requires no environment variable to have changed between attempts. Without this corrected sequence, it would not be clear whether a retry needs a second AUTH-1; it does not, and the corrected ordering makes that explicit by separating AUTH-1 (once) from AUTH-2 (the act that can be retried once)."
+  },
+
+  "AP5_RESIDUAL_SWEEP_RESULT": {
+    "rule": "Every hit the sweep produced, classified. This is the AP5 control's actual output, not a promise of one.",
+    "superseded_or_qualified_this_amendment": [
+      "SPC102-1 through SPC102-9 (see SUPERSEDED_PARENT_CLAUSES_V102).",
+      "SPC102-V101-1 through SPC102-V101-3 (see SUPERSEDED_V101_CLAUSES)."
+    ],
+    "already_closed_by_v101_no_action_needed": [
+      "ADJUDICATIONS.K.assertions[0] (K-1 full text) — superseded by v1.0.1 SPC-1.",
+      "ADJUDICATIONS.K.assertions[1] (K-2 full text) — superseded by v1.0.1 SPC-3.",
+      "ADJUDICATIONS.I.governed_cv1_staging_deployment.distinguishing_properties[0] — superseded by v1.0.1 SPC-2.",
+      "ADJUDICATIONS.I.governed_cv1_staging_deployment.vercel_target — corrected by v1.0.1 SPC-2's additional_correction.",
+      "manifest v1.0.0 positive_controls[11] (P12) — superseded by v1.0.1 manifest AP1/AP2/AP3, per its known_conditions[1].",
+      "manifest v1.0.0 sentinels[3] (SEN-4) — superseded by v1.0.1 manifest ASEN-1.",
+      "manifest v1.0.0 negative_controls[0] (N-1) — superseded by v1.0.1 manifest AN-1.",
+      "manifest v1.0.0 mutation_controls[2] (MUT-3) — superseded by v1.0.1 manifest AMUT-1."
+    ],
+    "demonstrated_not_obsolete_no_action_needed": [
+      {
+        "path": "MEASURED_PRESTATE.VERCEL.automatic_preview_behavior.measured, .frozen_base_deployment.creator, .production.latest_production_deployment.creator, .production.an_earlier_production_deployment_came_from_the_default_branch.creator, UNKNOWNS.unknowns[0].what_IS_measured_instead",
+        "why_not_obsolete": "Each of these is a historical MEASURED fact sourced from the GitHub Deployments API specifically, in a block whose surrounding text already identifies that API as the source. 'creator = vercel[bot]' is literally true on that plane for every deployment this lane observed. These are records of what was measured and where, not unqualified controlling assertions, and do not need plane-labelling because the plane is already established by the enclosing MEASURED_PRESTATE.VERCEL context, which this lane's own sweep read in full before classifying them as safe."
+      },
+      {
+        "path": "CONTRADICTIONS.contradictions[4] (C-5), title and measured_fact",
+        "why_not_obsolete": "C-5's measured_fact cites GitHub Deployment IDs (5579926317, 5921830419) and their GitHub-plane creator, which is accurately vercel[bot] on that plane for both. Its title's word 'automatic' is narrowed by v1.0.1 CM-2's narrative correction, which explicitly states 'C-5's severity is UNCHANGED at HIGHEST' and supplies the corrected mechanism (productionBranch=main, current deployment source=git). No further supersession is needed: CM-2 already performs the correction this sweep would otherwise have flagged, and re-superseding C-5 itself would duplicate work already done without changing the outcome.",
+        "residual_gap_closed_separately": "SPC102-8 above closes the ONE place (I.production_deployment.measured_cause) where the same underlying imprecision survived as a standing, uncorrected clause rather than a narratively-corrected one."
+      }
+    ],
+    "redirected_not_superseded": [
+      {
+        "path": "required_independent_review.adversarial_questions_the_certifier_should_press[4]",
+        "content": "Test whether K-1 is actually sufficient. Is there a path by which an automatic Preview's id could be recorded 'before it existed' — for example by predicting or pre-registering an id — that would defeat identity-before-existence?",
+        "disposition": "NOT superseded, because it is a review PROMPT addressed to a certifier of the ORIGINAL v1.0.0 artifact, not a controlling requirement — asking whether K-1 (now dead) was sufficient is simply moot rather than actively misleading. This amendment's own required_independent_review below adds a replacement question aimed at the CURRENT mechanism instead, so a certifier reading only the latest file is not left without the equivalent adversarial prompt."
+      }
+    ]
+  },
+
+  "PR201_COMPATIBILITY_V102": {
+    "rule": "PR201 remains controlling for its own act. Nothing in this amendment alters its semantics; this section extends v1.0.1's compatibility claim to cover the retry path v1.0.1 did not address.",
+    "retry_compatibility": "PR201 authorizes at most one retry under BR-1..BR-5. AIC-8/AIC-9 add nothing PR201 does not already require (a second human confirmation per BR-5, the same SHA per BR-4, no environment change per BR-3) and prohibit nothing PR201 authorizes: a lane executing PR201's retry exactly as written — mint nothing extra, just redo AUTH-2 under the five conditions — satisfies AIC-8/AIC-9 by minting one new nonce and recording one predecessor link, which adds a record-keeping step but blocks no PR201-authorized act.",
+    "the_compatibility_test_applied_again": "For each PR201 retry clause, the question asked was whether a lane executing BR-1..BR-5 exactly as written could also satisfy AIC-8/AIC-9 without PR201 needing reinterpretation. It can, and the ordering correction above confirms the two artifacts describe the same eight-step sequence without conflict."
+  },
+
+  "OPTIONAL_NONBLOCKING_CLEANUPS": {
+    "rule": "Applied only where the correction was cheap and mechanically unambiguous. Where a cleanup's correct value was not unambiguous, it was left alone rather than guessed at.",
+    "applied": [
+      {
+        "id": "CLEAN-1",
+        "what": "v1.0.1 CERTIFICATION_CONSUMED.nonblocking_findings_incorporated recorded 10.",
+        "corrected_count": "v1.0.1 actually incorporated 14 distinct nonblocking corrections: 9 in CORRECTED_MEASUREMENTS (CM-1..CM-9) plus 5 in SUPERSEDED_PARENT_CLAUSES beyond the B-1 blocker fix itself (SPC-2 through SPC-6; SPC-1 is the blocker resolution, not a nonblocking finding). This is recorded here as a correction to the SUMMARY FIGURE only; it does not reopen or alter any of the 14 items it counts, which remain exactly as v1.0.1 stated them.",
+        "why_this_one_was_unambiguous": "Both source lists (CORRECTED_MEASUREMENTS and SUPERSEDED_PARENT_CLAUSES) are enumerated arrays in v1.0.1 itself; the count is a direct sum of their lengths, minus the one blocker-fix entry, with no interpretive step."
+      },
+      {
+        "id": "CLEAN-2",
+        "what": "The confirmation-order and SHA-reverification prose in v1.0.1 AIC-1/AIC-3.",
+        "resolution": "See CONFIRMATION_AND_SHA_REVERIFICATION_ORDER_CORRECTION above — treated as a full correction rather than a footnote, because it is load-bearing for the retry contract this amendment adds."
+      }
+    ],
+    "left_alone": [
+      "No other prose-level cleanup was found to be both cheap and unambiguous enough to include without risking a new imprecision of its own."
+    ]
+  },
+
+  "UNCHANGED_AND_STILL_CONTROLLING_V102": {
+    "rule": "Recorded so a reader does not infer that this residual sweep reopened the package generally. Everything in v1.0.0 and v1.0.1 not named in SUPERSEDED_PARENT_CLAUSES_V102, SUPERSEDED_V101_CLAUSES, or qualified above remains controlling exactly as those two files state it, including v1.0.1's own UNCHANGED_AND_STILL_CONTROLLING list except for the two items corrected here.",
+    "explicitly_unchanged": [
+      "Every EXPLICIT_NON_AUTHORIZATION in v1.0.0, verbatim and in full.",
+      "PRODUCTION_BOUNDARY in full.",
+      "ACT_IDENTITY_CONTRACT AIC-1 through AIC-7 in substance (only their ordering PROSE is corrected above; no obligation is added, removed, or reweighted).",
+      "All six FUTURE_MUTATIONS clauses not touched here, and EXECUTION_ORDERING including both load-bearing orderings.",
+      "OWNER_DECISION_REQUIRED OD-1 through OD-5, exactly as v1.0.0 and v1.0.1 left them — this amendment ratifies none of them.",
+      "MEASURED_VERCEL_DEPLOYMENT_SEMANTICS in full — this amendment adds no new hosted measurement."
+    ]
+  },
+
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+    "method": "This amendment's write-set paths were classified by EXECUTING pnpm ods:scope against the frozen base.",
+    "PROTECTED_AUTHORITY": "NONE",
+    "reversal_condition": "If a future measurement finds this write set requires any protected path, this verdict is void and the lane stops rather than widening an allowlist."
+  },
+
+  "self_check": {
+    "v100_left_byte_unchanged": true,
+    "v101_left_byte_unchanged": true,
+    "v100_manifest_left_byte_unchanged": true,
+    "v101_manifest_left_byte_unchanged": true,
+    "write_set_is_exactly_two_new_documents": true,
+    "no_code_written": true,
+    "no_test_written": true,
+    "no_workflow_file_touched": true,
+    "no_github_setting_changed": true,
+    "no_vercel_setting_changed": true,
+    "no_deployment_created_promoted_or_redeployed": true,
+    "no_environment_variable_value_read_or_recorded": true,
+    "no_alias_or_domain_touched": true,
+    "no_supabase_contact_of_any_kind": true,
+    "no_frozen_authority_edited": true,
+    "no_pr201_semantics_altered": true,
+    "no_ods_or_w2_lineage_allocated_or_implied": true,
+    "no_secret_value_present_anywhere_in_this_amendment": true,
+    "sweep_was_a_full_string_leaf_walk_not_a_clause_id_grep": true,
+    "all_four_named_residuals_closed": true,
+    "five_additional_residuals_found_and_closed_beyond_the_four_named": true,
+    "retry_path_resolved_without_prohibiting_anything_pr201_authorizes": true,
+    "retry_count_ceiling_enforced_independent_of_nonce_mechanics": true,
+    "sec5_correction_verified_by_direct_read_of_frozen_authorities_before_being_accepted": true,
+    "no_gate_state_changed": true,
+    "no_stage_declared": true,
+    "D1_not_declared": true
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment closes a class of defect a prior focused re-certification found, adds a new additive contract (retry identity), and corrects a factual error in the amendment that preceded it (SEC5). Each deserves independent adversarial pressure.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Re-run the sweep independently, ideally with a different method (a different regex set, or a manual read) than the recursive string-walk used here. Does it find a tenth residual this amendment missed?",
+      "Test AIC-8/AIC-9 against the exact BR-1..BR-5 sequence. Does chaining via meta.uellix_governed_act_supersedes_nonce actually survive a redeploy of the RETRY itself — i.e., does THE_REDEPLOY_COPY_HAZARD (v1.0.1) reappear one level down, where redeploying the retry copies its meta including the supersedes-link, manufacturing a THIRD apparent link in the chain?",
+      "Is the AIC-9 count-ceiling check ('a populated predecessor field is by construction a second retry') actually sufficient, or could an attacker (or a confused human operator) construct a first act record with a pre-populated but fabricated predecessor field to make an ORIGINAL attempt masquerade as an already-authorized retry?",
+      "Verify the SEC5 correction independently: re-run git grep for SEC5 against the frozen authorities and confirm the gate definition and its two SSL-06/SSL-08 attachments are exactly as quoted, not paraphrased.",
+      "Confirm CLEAN-1's arithmetic: recount CORRECTED_MEASUREMENTS and SUPERSEDED_PARENT_CLAUSES in v1.0.1 independently and verify 9 + 5 = 14 is the right way to characterise 'nonblocking findings incorporated', rather than some other defensible count this amendment did not consider.",
+      "Ask whether SPC102-4's and SPC102-5's replacement text for 'the_honest_weakness' and 'the_remedy_chosen' introduces any NEW asymmetry — for example, does describing the deployment id as something 'even an automatic Preview can come to have' understate how the nonce mechanism actually prevents that from mattering?"
+    ]
+  },
+
+  "final_state": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1_0_0_PLUS_v1_0_1_PLUS_v1_0_2_AUTHORED__AWAITING_OWNER_RATIFICATION",
+  "next_gate": "FOCUSED_INDEPENDENT_RE_CERTIFICATION of ONLY the v1.0.2 residual sweep and the additive RETRY_IDENTITY_CONTRACT — not a full re-read of v1.0.0/v1.0.1, whose prior certifications stand except where named here. OWNER_RATIFICATION of OD-1 through OD-5 remains outstanding and untouched by this amendment. No GitHub setting, no Vercel setting, no deployment and no environment variable may be touched under any of the three files until both gates are complete."
+}
