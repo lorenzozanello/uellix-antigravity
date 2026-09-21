@@ -1,0 +1,922 @@
+{
+  "package_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "document_class": "BOUNDED_STAGING_RECOVERY_CAPABILITY_AND_PRE_DDL_RECOVERY_POINT_GRANT",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-RECOVERY-AUTHORITY-R1",
+  "lane": "CV1-STAGING-RECOVERY-AUTHORITY-R1",
+  "role": "COMMERCIAL_V1_STAGING_BACKUP_RESTORE_RECOVERY_AUTHORITY_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Code Desktop (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/cv1-staging-recovery-authority-r1",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_HEAD": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+  "AS_OF_INTEGRATION_REF": "origin/integration/commercial-v1 = 537487ac7b102d51f553fcb8f5cfe19614e113d8, tree 7228f833c57bfd37fe025546d939ecd46336159c, asserted by git fetch at lane open. Branch and base are the same commit: this lane opens directly on the frozen integration head and adds one docs-only commit.",
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "The repository convention carried from FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json NAMING_DERIVATION: an artifact is named for the NODE it governs and placed beside the domain authority it refines.",
+    "node": "Release-gate ledger gates D1 (backup and restore capability) and S8 (verified backup immediately before any staging DDL), together with the hosted precondition HDP-2 that consumes them.",
+    "placement_adjudication": {
+      "question": "docs/ops/release/** or docs/ops/staging/**?",
+      "verdict": "docs/ops/release/**",
+      "grounds": [
+        "D1 and S8 are defined in docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES, not anywhere under docs/ops/staging/**.",
+        "The precondition this authority serves, HDP-2, is defined in docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json HOSTED_DDL_PRECONDITIONS.",
+        "The packet shapes it must emit, BACKUP_PACKET and RESTORE_PROOF, are defined in that same artifact's EVIDENCE_PACKETS.",
+        "The owner requirement that later extends its scope, ENV-07, is given normative form in docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json BACKUP_RESTORE_SCOPE_REQUIREMENT.",
+        "A permission is authored where the permission was withheld. STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json records BACKUP_PACKET current_state as 'There is no backup or restore script in the repository, so this packet cannot be produced today. It is the first blocking item on the critical path.' That refusal is a release-domain refusal."
+      ]
+    },
+    "name_is_subject_form_not_node_prefix_form": {
+      "acknowledged": "The two immediately preceding siblings use a node-prefix form (FIBDB053_...). This artifact uses the subject form used by its direct parent, STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json, because the node it governs is a LEDGER GATE PAIR (D1, S8) rather than a single FIB criterion, and 'D1_S8_' would name the gates without naming the subject.",
+      "flagged_for_the_certifier": "Recorded as OF-1. A certifier who concludes the node-prefix form is required should say so; the artifact is a new sibling under either name and no parent is edited."
+    },
+    "no_parent_is_edited": "Every artifact consumed here carries append_only=true. None is opened. This is a NEW sibling. It corrects no parent clause and amends none: it supplies a capability the parents recorded as ABSENT."
+  },
+
+  "PURPOSE": {
+    "statement": "To close the AUTHORITY and PREPARATION gap behind Commercial V1 staging recovery, so that a future execution lane can produce governed, verifiable evidence that a known staging state can be recovered after an authorized database mutation.",
+    "the_requirement_restated": "The question this artifact answers is NOT 'does the provider offer backups?'. It is: can Uellix produce evidence, verifiable by an independent lane, that a known staging state is RECOVERABLE? A provider feature is a precondition for that evidence. It is not that evidence.",
+    "what_this_artifact_is_not": "It is not a backup, not a restore, not a rehearsal, not a database mutation, not a provider configuration change, and not authority to perform any of them. The presence of a detailed procedure here is not authority to execute it: the future execution lane is a separate lane with its own freshness gate and its own human confirmation.",
+    "overclaim_prohibition": "No clause of this artifact may be cited as evidence that a backup exists, that retention is sufficient, that a point is restorable, that Uellix knows how to perform a restore, that a restore preserves application invariants, or that any procedure has been rehearsed. Every one of those is a MEASUREMENT a future lane must take."
+  },
+
+  "CONTROLLING_AUTHORITY": {
+    "rule": "Cited by exact path and exact clause. Where a parent and an amendment disagree, the amendment governs only to the extent it declares supersession, and the unsuperseded remainder of the parent continues to bind.",
+    "parents": [
+      {
+        "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+        "clauses_consumed": ["GATES.D1", "GATES.D2", "GATES.D3", "GATES.D4", "GATES.D5", "GATES.S8", "GATES.P5", "DUPLICATE_GATE_RESOLUTION.DGR-06", "FUTURE_IMPLEMENTATION_SURFACE.items.FIS-10"],
+        "binding": "Defines the gates this authority serves, their current states, their pass criteria, their evidence classes and their first_required_at_stage. This artifact changes none of them."
+      },
+      {
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+        "clauses_consumed": ["HOSTED_DDL_PRECONDITIONS.HDP-2", "EVIDENCE_PACKETS.BACKUP_PACKET", "EVIDENCE_PACKETS.MIGRATION_CORPUS_PACKET.why_row_transformations_must_be_listed", "FROZEN_RULES.RULE_OBSERVATION_FRESHNESS", "FROZEN_RULES.RULE_FAIL_CLOSED_ON_UNKNOWN", "FROZEN_RULES.RULE_NO_GATE_WEAKENING", "FROZEN_RULES.RULE_PREPARATION_IS_NOT_READINESS", "FROZEN_RULES.RULE_AUTHORITY_CLOSED_IS_NOT_CAPABILITY_BUILT", "SECURITY_STOP_LINES.SSL-06", "SECURITY_STOP_LINES.SSL-08", "SECURITY_STOP_LINES.SSL-09"],
+        "binding": "Defines the precondition, the packet shapes, the freshness rule and the stop lines that bound this authority."
+      },
+      {
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "clauses_consumed": ["RECOVERY_RULE_PRESERVED", "BACKUP_RESTORE_SCOPE_REQUIREMENT", "DEFINITIONS.STAGING_FIXTURE_MANIFEST", "DEFINITIONS.CLASSIFICATION_RUN", "DEFINITIONS.LAB_FIXTURE_DATA"],
+        "binding": "RECOVERY_RULE_PRESERVED keeps RESTORE_REQUIRED binding for any target holding DURABLE_UAT_DATA or CUSTOMER_DATA. BACKUP_RESTORE_SCOPE_REQUIREMENT defines the LATER, ADDITIVE ENV-07 scope and explicitly declares NO_GATE_MUTATION for D1 and S8.",
+        "why_reading_the_parent_alone_would_be_an_error": "DGR-06 in the ledger states the frozen correction 'For any non-empty target, recovery is RESTORE_REQUIRED. Destroy and reprovision is NOT an acceptable recovery posture for a target holding data.' The amendment SUPERSEDES the parent clause that gave 'a target holding data' its meaning, replacing it with DEFINITIONS.RESET_INELIGIBLE_STAGING and carving exactly one CONSTRUCTION exception. An authority written against the parent text alone would state a rule the amendment has already qualified."
+      },
+      {
+        "path": "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json",
+        "clauses_consumed": ["ratifications.ENV-07", "ENV-07.1", "ENV-07.2", "ENV-07.3", "ENV-07.canonical_binding"],
+        "binding": "The ratified owner requirement for a three-surface recovery proof plus tombstone reapplication, with its own two-event deadline, explicitly NOT an enlargement of D1 or S8."
+      },
+      {
+        "path": "docs/ops/staging/STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md",
+        "clauses_consumed": ["section 1 operations A, B, C, D"],
+        "binding": "Defines REPLAY_CHAIN_ON_FRESH_TARGET (operation C) as AUTHORIZED and REAPPLY_INSTALLED_PACKAGE (operation B) as PROHIBITED. A restore-then-roll-forward is operation C on the restored target, never operation B on staging."
+      },
+      {
+        "path": "db/hosted/target-identity.ts",
+        "clauses_consumed": ["KNOWN_STAGING_PROJECT_REF", "KNOWN_PRODUCTION_IDENTIFIERS", "verifyStagingTarget"],
+        "binding": "The repository-native target identity logic. Not re-implemented here."
+      }
+    ]
+  },
+
+  "AUTHORITY_GAP_ADJUDICATED": {
+    "gap": "The repository requires a backup-and-restore capability in order to apply hosted DDL, and simultaneously records that no such capability exists and that no artifact authorizes building one.",
+    "measured_at_AS_OF_TREE": [
+      "RELEASE_GATE_LEDGER_v1.0.0.json GATES.D1.current_state = ABSENT, with measured_at_base backup_scripts 0 and restore_scripts 0.",
+      "GATES.S8.current_state = NOT_SATISFIED, state_basis 'zero backup or restore scripts exist in the repository and no backup record exists'.",
+      "STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json EVIDENCE_PACKETS.BACKUP_PACKET.current_state records the packet 'cannot be produced today' and calls it 'the first blocking item on the critical path'.",
+      "FUTURE_IMPLEMENTATION_SURFACE.items.FIS-10 names the missing surface as 'backup and restore scripts, an evidence class for a backup identifier and a restore rehearsal, and declared recovery objectives' for gates D1, D2, D5 — i.e. the ledger itself classifies this as UNBUILT SURFACE, not as an authorized act."
+    ],
+    "independent_re_derivation_at_this_tree": {
+      "rule": "The ledger's counts are frozen against ITS tree. They are re-derived here against AS_OF_TREE rather than copied, because a stale frozen count is a known failure mode in this programme.",
+      "method": "Directory listing of scripts/ filtered on backup|restore|pitr|recover; package.json scripts keys filtered on the same; git grep for pg_dump|pg_restore restricted to scripts, db, lib, src.",
+      "result": {
+        "scripts_with_backup_or_restore_in_name": 0,
+        "package_scripts_named_backup_or_restore": 0,
+        "pg_dump_or_pg_restore_referencing_paths": ["db/baseline/README.md", "db/baseline/stella_g2_post_restore.sql", "db/baseline/stella_g2_schema.sql", "db/hosted/baseline-manifest.ts", "db/prepared/grounding_0001_evidence_chunks.sql", "scripts/capability-dry-run.sh"],
+        "verdict": "D1's ABSENT state is CONFIRMED at AS_OF_TREE, not inherited. None of the six paths above is a backup or restore RUNNER: they are a baseline corpus, its manifest logic, a prepared package and a dry-run harness."
+      }
+    },
+    "why_a_new_authority_rather_than_an_amendment": "No parent clause is wrong. The parents correctly record an ABSENCE. An absence is closed by supplying the missing thing under a new grant, not by amending the record of the absence.",
+    "scope_of_the_grant": "This artifact grants the SHAPE of two future executions and the evidence contract that binds them. It grants no execution."
+  },
+
+  "PRESTATE": {
+    "rule": "The future execution lane opens ONLY if every assertion below holds at ITS head, re-measured, never inherited from this artifact.",
+    "assertions": [
+      {"id": "PS-1", "assertion": "Branch, HEAD and tree are asserted and the worktree is clean before any act.", "gate": "pnpm ods:prestate -- --branch <b> --head <sha> --tree <sha> --clean"},
+      {"id": "PS-2", "assertion": "This authority and its companion manifest are MERGED into the integration line and independently CERTIFIED PASS.", "fail_closed": "An authority still in DRAFT authorizes nothing."},
+      {"id": "PS-3", "assertion": "A fresh STAGING_OBSERVATION_PACKET satisfying RULE_OBSERVATION_FRESHNESS exists for the authorized target, taken after the last completed mutation.", "why": "HDP-1. A recovery point whose target state was never observed cannot be shown to be the state that was recovered."},
+      {"id": "PS-4", "assertion": "The human confirmations of HUMAN_CONFIRMATION are recorded IN WRITING before the act they gate.", "fail_closed": "Silence is not acceptance (SECURITY_STOP_LINES.rule)."},
+      {"id": "PS-5", "assertion": "OWNER_DECISIONS items marked BLOCKING are ratified. Items marked NON_BLOCKING_FOR_STAGE_A may remain open.", "fail_closed": "RULE_FAIL_CLOSED_ON_UNKNOWN."},
+      {"id": "PS-6", "assertion": "The executing capability satisfies CAPABILITY and is recorded in the credential inventory required by SSL-06.", "fail_closed": "No privileged credential may be held without an inventory recording who and what holds it."}
+    ],
+    "prestate_is_not_inherited": "This artifact's own AS_OF_* fields describe when it was WRITTEN. They are not a prestate for any execution and may not be cited as one."
+  },
+
+  "TARGET": {
+    "AUTHORIZED_TARGET": {
+      "project_ref": "bvyzblhqymxruxdguaee",
+      "status": "THE ONLY PERMITTED HOSTED SOURCE OF A BACKUP UNDER THIS GRANT.",
+      "repository_source": "db/hosted/target-identity.ts KNOWN_STAGING_PROJECT_REF, read at AS_OF_TREE.",
+      "live_re_measurement": "RE-MEASURED under LIVE_MANAGEMENT_PLANE_OBSERVATION. The prior observation ('Uellix Staging', ACTIVE_HEALTHY) is CONFIRMED rather than assumed.",
+      "not_secret": "A Supabase project ref is public in every URL the project serves. redactForHostedLog preserves it on purpose."
+    },
+    "PRODUCTION_VETO": {
+      "project_ref": "ctaxtgujyyprgynmnvtq",
+      "status": "UNCONDITIONAL VETO. This grant creates no exception to it under any circumstance.",
+      "prohibited_acts": ["contacting its database", "activating it", "mutating it", "using it as a restore target", "using it as a restore SOURCE", "altering its configuration", "listing, reading or copying its backups"],
+      "repository_source": "db/hosted/target-identity.ts KNOWN_PRODUCTION_IDENTIFIERS.projectRefs, together with hosts uellix-antigravity.vercel.app, app.uellix.com, uellix.com.",
+      "binds_to": "SSL-09: 'The production-target veto in the hosted tooling may not be disabled, bypassed or worked around to satisfy any gate.' This grant does not weaken, parameterise, inject around or shorten the veto."
+    },
+    "TARGET_IDENTITY_ESTABLISHMENT": {
+      "rule": "Target identity is established BEFORE any backup or restore act, by the repository's own identity logic, and a refusal is final.",
+      "required_function": "db/hosted/target-identity.ts verifyStagingTarget, or its exact governed successor. No re-implementation, no inlined copy, no equivalent written for this node.",
+      "veto_runs_first": "The veto is evaluated over EVERY ref any source names before any positive signal is considered. A production match is a refusal even when every other signal is internally consistent.",
+      "PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER": {
+        "rule": "A target is NEVER selected, confirmed or disambiguated by its provider-side project NAME, in any tool invocation, script, runbook step or human confirmation prompt. Only the project ref, structurally derived and compared against the pin, identifies a target.",
+        "why_this_is_not_pedantry": "MEASURED LIVE on 2026-09-21: the production-vetoed ref ctaxtgujyyprgynmnvtq carries the provider-side name 'uellix-staging', while the AUTHORIZED staging target bvyzblhqymxruxdguaee carries the name 'Uellix Staging'. The two names differ only by case and a hyphen, and the VETOED one is the one that reads as a staging slug. An operator or script selecting a restore target by name is therefore more likely to select the vetoed production project than the authorized one.",
+        "repository_corroboration": "db/hosted/target-identity.ts records the same hazard historically: the ref was described as 'full production database' by one audit and as the remote Supabase staging environment by another, and the comment states 'Guessing between them is exactly the mistake this list exists to prevent.' The live name measured here shows the hazard is still PRESENT today, not merely historical.",
+        "consequence": "Any future backup or restore tooling that accepts a project NAME as a target selector is NON-CONFORMANT with this authority regardless of how it behaves in testing."
+      }
+    }
+  },
+
+  "LIVE_MANAGEMENT_PLANE_OBSERVATION": {
+    "rule": "This block records a LIVE, READ-ONLY management-plane measurement taken while authoring. It is a FACT ABOUT 2026-09-21 and it EXPIRES: it is history for any future lane, never a prestate, and never a substitute for that lane's own observation.",
+    "fact_class": "LIVE_MANAGEMENT_PLANE_FACT",
+    "method": {
+      "tool": "Supabase CLI 2.109.1, present as a devDependency of this repository at AS_OF_TREE, executed from node_modules/.bin/supabase.",
+      "authentication": "The CLI was found ALREADY AUTHENTICATED in this environment. No credential was created, entered, printed or written by this lane.",
+      "commands": [
+        "supabase projects list (read-only; contacts the management API, contacts no database)",
+        "supabase backups list --project-ref bvyzblhqymxruxdguaee --output-format json (read-only; the backups subcommand exposes ONLY 'list' in this CLI version, so no restore path was reachable from it)"
+      ],
+      "no_database_connection": "NO PostgreSQL connection was opened by this lane, in conformance with the lane's own prohibition.",
+      "production_was_not_contacted": "The backups command was issued against the staging ref ONLY. No command was issued against ctaxtgujyyprgynmnvtq. Its row below is incidental output of the account-wide projects listing, which is read-only and contacts no database."
+    },
+    "AUTHORIZED_TARGET_OBSERVED": {
+      "ref": "bvyzblhqymxruxdguaee",
+      "provider_name": "Uellix Staging",
+      "status": "ACTIVE_HEALTHY",
+      "region": "us-east-2",
+      "postgres_version": "17.6.1.155",
+      "postgres_engine": "17",
+      "host": "db.bvyzblhqymxruxdguaee.supabase.co",
+      "created_at": "2026-08-06T20:45:44.482417Z",
+      "linked": false,
+      "disposition": "The prior management-plane observation named in the lane brief is CONFIRMED by re-measurement."
+    },
+    "PRODUCTION_REF_NAME_TRAP_OBSERVED": {
+      "ref": "ctaxtgujyyprgynmnvtq",
+      "provider_name": "uellix-staging",
+      "status": "INACTIVE",
+      "disposition": "RECORDED AS A SAFETY FINDING, NOT AS A TARGET. See TARGET.TARGET_IDENTITY_ESTABLISHMENT.PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER. Nothing about this ref is authorized by its appearance here."
+    },
+    "RECOVERY_POSTURE_OBSERVED": {
+      "scope": "project bvyzblhqymxruxdguaee only",
+      "walg_enabled": true,
+      "pitr_enabled": false,
+      "physical_backups_listed": 8,
+      "all_status": "COMPLETED",
+      "all_is_physical_backup": true,
+      "newest": {"id": 1739577635, "inserted_at": "2026-09-21T05:22:54.021Z"},
+      "oldest": {"id": 1670972959, "inserted_at": "2026-09-14T05:29:01.778Z"},
+      "retention_span_hours_observed": 167.9,
+      "inter_backup_interval_hours_observed": {"min": 23.89, "max": 24.12, "shape": "DAILY"},
+      "derived_facts": [
+        "The provider recovery granularity for this target is ONE POINT PER DAY, at approximately 05:2x UTC.",
+        "PITR IS NOT ENABLED. There is no provider mechanism, at this target and at this observation, to recover to an arbitrary instant between two daily backups.",
+        "The listed window is approximately seven days of daily physical backups. Whether that window is a plan-level retention guarantee or merely what happens to be listed today was NOT measured and is UNKNOWN."
+      ],
+      "explicitly_not_derived": [
+        "No plan or tier name was observed or is claimed. This artifact makes NO claim about which Supabase plan this project is on.",
+        "Whether PITR COULD be enabled, at what retention, and at what cost, was NOT measured. Enabling it is prohibited by this lane.",
+        "Whether these physical backups are restorable IN FACT was NOT measured and CANNOT be measured by listing them."
+      ]
+    }
+  },
+
+  "FACT_CLASSIFICATION": {
+    "rule": "Every load-bearing statement in this artifact carries one of the classes below. No undocumented assumption may become a gate.",
+    "classes": {
+      "REPOSITORY_DERIVED_FACT": "Measured from this repository at AS_OF_TREE by a stated method.",
+      "LIVE_MANAGEMENT_PLANE_FACT": "Measured on 2026-09-21 by the read-only commands in LIVE_MANAGEMENT_PLANE_OBSERVATION. Expires.",
+      "PROVIDER_DOCUMENTATION_FACT": "NOT USED. No provider documentation was consulted or relied upon by this artifact; every provider-side statement here is a LIVE_MANAGEMENT_PLANE_FACT or is marked UNKNOWN.",
+      "INFERENCE": "A conclusion derived from stated facts by stated reasoning. Marked as such and never presented as measurement.",
+      "UNKNOWN": "Not measured. Fails closed."
+    },
+    "why_no_provider_documentation_was_used": "The lane permitted provider documentation where capability could not be proven from the environment. It could be proven from the environment: the authenticated CLI returned the posture directly. Citing documentation alongside a direct measurement would add a weaker source without adding a fact, and would invite a future reader to treat a documented default as a measured property of this project."
+  },
+
+  "ADJUDICATIONS": {
+    "rule": "The lane's questions A through Z, answered from the facts above. Each answer names its class.",
+    "A_valid_pre_DDL_recovery_point": {
+      "answer": "A valid pre-DDL recovery point for staging is a LOGICAL backup artifact of the authorized target, produced by the governed procedure, whose capture began after the last completed mutation of that target and completed before the DDL, with NO intervening mutation, and which is bound to the target ref, a backup identifier, a timestamp, the method and the scope.",
+      "class": "INFERENCE from S8.pass_criteria, HDP-2.criterion and RULE_OBSERVATION_FRESHNESS.",
+      "why_not_the_provider_backup": "See E."
+    },
+    "B_evidence_that_it_exists": {
+      "answer": "A BACKUP_PACKET carrying exactly the six frozen contents of EVIDENCE_PACKETS.BACKUP_PACKET: target identifier, backup identifier, backup timestamp, the method used, the scope covered, and confirmation that no mutation occurred between the backup and the change it precedes.",
+      "class": "REPOSITORY_DERIVED_FACT. The packet shape is frozen and is REUSED here, not redefined.",
+      "prohibition": "This authority does NOT add, remove or reorder any field of BACKUP_PACKET. RULE_NO_GATE_WEAKENING forbids weakening it and NO_GATE_MUTATION forbids enlarging it."
+    },
+    "C_what_VERIFIED_RESTORABLE_means": {
+      "answer": "VERIFIED RESTORABLE means all four of: (1) the backup artifact exists and its integrity is checkable independently of the tool that wrote it; (2) a restore FROM AN ARTIFACT PRODUCED BY THE SAME PROCEDURE has actually been executed into an isolated target; (3) that restored target passes POST_RESTORE_INVARIANTS in full; (4) the restore was performed by a party other than, or verifiable independently of, the assertion of the executor.",
+      "class": "INFERENCE, anchored in HDP-2's frozen sentence: 'A backup that has never been restored from is an untested assumption, not a capability.'",
+      "explicitly_excluded": [
+        "A zero exit status from a dump or restore command.",
+        "The provider listing a backup as COMPLETED.",
+        "A plan feature that offers restore.",
+        "A successful restore of a DIFFERENT artifact produced by a DIFFERENT procedure."
+      ]
+    },
+    "D_is_a_logical_backup_sufficient": {
+      "answer": "For gates D1 and S8 at STAGING_ALIGNED: a logical backup is the REQUIRED instrument and is sufficient for the PostgreSQL scope those gates carry, PROVIDED it is verified restorable per C and passes POST_RESTORE_INVARIANTS. It is NOT sufficient for ENV-07, which binds later and adds Auth and Storage and tombstone reapplication.",
+      "class": "INFERENCE from D1.pass_criteria, ENV-07.canonical_binding NO_GATE_MUTATION, and the measured storage limitation below.",
+      "measured_limitation_of_a_logical_dump": "A PostgreSQL logical dump captures the storage OBJECT METADATA rows (the storage schema relations) but CANNOT capture the storage OBJECT BYTES, which do not live in PostgreSQL. A restore from a PostgreSQL-only dump therefore yields a database whose storage metadata references objects that were not restored. This is the precise technical reason ENV-07.1 requires three surfaces conjunctively and states that a PostgreSQL-only restore proof does not satisfy it.",
+      "not_a_stage_A_blocker": "ENV-07 binds at its own two-event deadline, not at Stage-A. Requiring the three-surface proof for Stage-A would be an unauthorized enlargement of D1 and S8, which ENV-07.canonical_binding expressly forbids."
+    },
+    "E_is_a_provider_managed_backup_sufficient": {
+      "answer": "NO, for S8, and NOT ALONE for D1.",
+      "class": "INFERENCE from LIVE_MANAGEMENT_PLANE_FACT.",
+      "grounds": [
+        "TEMPORAL: the provider backups for this target are DAILY, measured at intervals of 23.89 to 24.12 hours, at approximately 05:2x UTC. S8 requires a backup taken 'within the window immediately preceding the DDL'. A DDL applied at any hour other than shortly after 05:2x UTC is therefore protected, at best, by a backup that is up to almost twenty-four hours old. That is not 'immediately preceding'.",
+        "NO INTERVENING MUTATION: RULE_OBSERVATION_FRESHNESS requires no intervening mutation. A daily backup taken at a fixed clock time cannot satisfy a no-intervening-mutation predicate for a DDL scheduled independently of it.",
+        "UNVERIFIABLE WITHOUT DESTRUCTION: see the restore-path measurement in F. The provider physical backup cannot be shown VERIFIED RESTORABLE per C without restoring it, and the only restore path observed for it is in-place."
+      ],
+      "what_the_provider_backup_IS": "It is a RECOVERY FLOOR: an independently-held, provider-managed last resort that survives the loss of every artifact Uellix holds. It is recorded as such in the recovery model and is NOT discarded. It is simply not the instrument S8 names."
+    },
+    "F_is_PITR_sufficient": {
+      "answer": "MOOT AT THIS TARGET. PITR is NOT AVAILABLE: pitr_enabled is measured FALSE for bvyzblhqymxruxdguaee on 2026-09-21. A mechanism that is not enabled cannot be sufficient for anything.",
+      "class": "LIVE_MANAGEMENT_PLANE_FACT.",
+      "consequence": "Any plan, runbook or authority that assumes an arbitrary-instant recovery point for staging is assuming a capability this target does not have. If PITR is later enabled, that is a CONFIGURATION CHANGE which this lane is forbidden to make and which would require its own authority and a re-measurement; it would not retroactively validate any evidence produced before it.",
+      "explicitly_not_claimed": "This artifact does not claim PITR is unavailable on the plan, unavailable in the region, or impossible to enable. It claims, and only claims, that it is NOT ENABLED at this target at this observation."
+    },
+    "G_does_commercial_v1_require_a_combination": {
+      "answer": "YES. Two instruments are required and neither substitutes for the other.",
+      "class": "INFERENCE from E and F.",
+      "combination": [
+        "PROVIDER FLOOR: the daily WAL-G physical backup, retained by the provider, independent of any Uellix artifact or credential. Covers catastrophic loss of Uellix-held artifacts. Cannot satisfy S8.",
+        "GOVERNED LOGICAL RECOVERY POINT: an on-demand logical backup taken immediately before the DDL, verified restorable by rehearsal into an isolated target. Satisfies S8's immediacy and D1's proven restore. Does not survive loss of the artifact store, which is why the floor is retained."
+      ],
+      "ceremony_check": "Neither instrument is required for ceremony. Removing the floor would leave recovery dependent on a single Uellix-held artifact. Removing the logical point would leave S8 unsatisfiable, as measured in E."
+    },
+    "H_exact_recovery_object_to_capture": {
+      "answer": "The BACKUP_PACKET's six frozen fields, instantiated as: target identifier = the project ref as STRUCTURALLY DERIVED by verifyStagingTarget (never a name, never an operator declaration); backup identifier = a content digest of the backup artifact plus the artifact's storage locator; backup timestamp = capture start and capture end, both UTC, because a dump is an interval and a single instant misstates it; method = the exact tool, its version, and the exact invocation with every secret-bearing element redacted by NAME; scope = the enumerated schema list and the enumerated excluded relations; no-intervening-mutation confirmation = per FRESHNESS.",
+      "class": "INFERENCE constrained by the frozen packet shape. No field is added to the packet: each of these instantiates one of the six.",
+      "additionally_bound": "The packet must cite the release SHA and the MIGRATION_CORPUS_PACKET of the DDL it protects, so that an independent lane can determine which units were to be applied and, per why_row_transformations_must_be_listed, which of them transform existing rows and are therefore not replayable after a restore."
+    },
+    "I_maximum_permitted_age": {
+      "answer": "NOT A CLOCK DURATION. This programme's freshness model is EVENT-BASED. RULE_OBSERVATION_FRESHNESS states validity holds 'ONLY for the mutation window it immediately precedes' and 'expires the moment anything mutates that target'. The maximum permitted age of a recovery point is therefore: it must be the LAST state-capturing event before the DDL, with zero intervening mutations of the target.",
+      "class": "REPOSITORY_DERIVED_FACT for the rule; INFERENCE for its application to a backup.",
+      "why_no_number_is_invented_here": "Inventing a duration (24 hours, 1 hour, 15 minutes) would substitute an engineering guess for a ratified rule and would WEAKEN the event-based rule, since any nonzero duration permits an intervening mutation the rule forbids. If the owner wishes to declare a clock-bounded tolerance, that is OD-3, an owner decision, not an authoring decision.",
+      "THE_LIVE_RUNTIME_COMPLICATION": {
+        "finding": "Zero intervening mutations is NOT a property this target has by default. PR #201 authored the runtime staging binding, and a bound runtime issues application writes. For a live staging target with a bound runtime, the interval between the backup and the DDL is a window in which application writes CAN occur.",
+        "class": "INFERENCE from the existence of FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json. Whether the runtime was actually writing during any particular window is UNKNOWN and is measurable only at execution time.",
+        "consequence": "The execution lane MUST establish the no-intervening-mutation predicate POSITIVELY rather than assume it. Two postures are possible and the choice is an OWNER decision (OD-3): QUIESCE, in which the runtime is made non-writing for the window and that is evidenced; or ACCEPT, in which writes in the window are accepted as lost on restore and that acceptance is recorded in writing with a bounded rationale.",
+        "fail_closed": "If neither posture is established, S8 is NOT satisfied. An unproven no-mutation claim is not a confirmation."
+      }
+    },
+    "J_events_that_invalidate_backup_evidence": {
+      "class": "INFERENCE from RULE_OBSERVATION_FRESHNESS and the measured posture.",
+      "invalidating_events": [
+        "ANY mutation of the authorized target after the capture completes, whether by DDL, DML, application write, provider maintenance or manual console action.",
+        "The DDL the packet protects not being applied in the window the packet names: the packet is bound to ONE mutation window and is not reusable for a later one.",
+        "Any change to the target's identity resolution, including a project ref change or a restore performed on the target itself.",
+        "Expiry or rotation of the artifact's integrity binding, or any loss of custody of the artifact such that its digest can no longer be checked.",
+        "A change to the corpus SHA the packet cites, since the packet must bind to the exact corpus it protects.",
+        "Any modification of the backup artifact after its digest was taken.",
+        "A failed or partially-completed capture: a dump that did not complete is not a recovery point regardless of its file size."
+      ],
+      "explicitly_NOT_invalidating": [
+        "The passage of clock time alone, absent a mutation. The rule is event-based, and adding a clock expiry here would invent a rule the parents do not carry."
+      ]
+    },
+    "K_how_target_identity_is_established": {
+      "answer": "See TARGET.TARGET_IDENTITY_ESTABLISHMENT. Structurally, by verifyStagingTarget, with the production veto evaluated first, and NEVER by provider project name.",
+      "class": "REPOSITORY_DERIVED_FACT for the mechanism; LIVE_MANAGEMENT_PLANE_FACT for the name trap that makes the name prohibition load-bearing."
+    },
+    "L_where_a_restore_rehearsal_may_occur": {
+      "answer": "On a LOCAL, ISOLATED, DISPOSABLE PostgreSQL container that the rehearsal itself starts and destroys, with no network egress. It may NOT occur on the staging target, on any shared cluster, or on any hosted project.",
+      "class": "REPOSITORY_DERIVED_FACT. This is existing governed precedent, not a new mechanism.",
+      "precedent": "scripts/baseline-rehearsal-local.ts, governed by HPO-ODS-W2-03, already starts its own container from public.ecr.aws/supabase/postgres:17.6.1.143 with --network none, asserts the cluster is role-pristine, and destroys it at the end. scripts/db-audit-disposable.ts provides the same disposable-substrate pattern under pnpm db:audit:disposable.",
+      "why_not_on_staging": "A restore into staging would OVERWRITE the state the backup was taken to protect. Rehearsing recovery by destroying the thing being protected is not a rehearsal.",
+      "MEASURED_SUBSTRATE_SKEW": {
+        "finding": "The governed rehearsal image is pinned at postgres 17.6.1.143. The authorized staging target was measured LIVE at postgres 17.6.1.155. The rehearsal substrate is therefore NOT engine-identical to the target.",
+        "class": "REPOSITORY_DERIVED_FACT for the pin; LIVE_MANAGEMENT_PLANE_FACT for the target version.",
+        "disposition": "RECORDED, NOT REPAIRED. For a LOGICAL restore this skew is tolerable in principle because a logical dump is engine-portable across patch releases, but 'tolerable in principle' is not a measurement. The execution lane must RECORD both versions in the RESTORE_PROOF so that an independent lane can judge the skew rather than discover it. Changing the pin is outside this grant."
+      }
+    },
+    "M_is_an_isolated_temporary_supabase_project_necessary": {
+      "answer": "NO, not for D1 and S8 at STAGING_ALIGNED. A local disposable container is sufficient and is the SAFER instrument.",
+      "class": "INFERENCE from L.",
+      "grounds": [
+        "The local container has NO network egress (--network none), which satisfies the outbound-call prohibition in SECURITY by construction rather than by configuration.",
+        "A hosted project has network egress, provider auth, provider webhooks and a billing identity, every one of which is an additional surface on which restored customer-shaped data could escape.",
+        "Creating a Supabase project is an EXPLICIT NON_AUTHORIZATION of this lane and of the grant it writes.",
+        "D1's pass criteria require a restore to have been performed, recorded with target identifier, backup identifier and timestamps. They do not require the restore target to be hosted."
+      ],
+      "where_a_hosted_target_WOULD_become_necessary": "D5 (restore rehearsal) requires a PRODUCTION-LIKE target and is first_required_at_stage PRODUCTION_READY, not STAGING_ALIGNED. ENV-07's Auth and Storage surfaces may likewise not be fully exercisable on a bare PostgreSQL container, because Storage object bytes are not a PostgreSQL object. Both are LATER questions. Neither is adjudicated here and neither is authorized here.",
+      "flagged": "OF-4."
+    },
+    "N_who_authorizes_a_disposable_restore_target": {
+      "answer": "For the local disposable container: the execution lane itself, under this authority, because the container is created and destroyed within a single governed run and holds no identity. For any HOSTED disposable target: NOT AUTHORIZED by this artifact at all. It would require a separate owner-ratified authority naming the creator, the destroyer, the maximum lifetime and the data-handling posture.",
+      "class": "INFERENCE.",
+      "cleanup_is_part_of_the_authorization": "Authorization to create a disposable target is conditional on its destruction being evidenced. See CLEANUP."
+    },
+    "O_what_may_be_automated": {
+      "class": "INFERENCE.",
+      "automatable": [
+        "Target identity verification via verifyStagingTarget, including the production veto.",
+        "Capture of the logical backup artifact and computation of its digest.",
+        "Emission of the BACKUP_PACKET fields other than the human confirmations.",
+        "Start, role-pristine assertion, restore into, verification of, and destruction of the local disposable container.",
+        "Execution of every POST_RESTORE_INVARIANTS check and emission of their results.",
+        "The secret-scan of every emitted artifact.",
+        "Freshness comparison between the backup and the observation it is bound to."
+      ],
+      "rationale": "Every item above is deterministic and is exactly the class of work the operating model routes to a machine gate rather than to a model."
+    },
+    "P_what_requires_human_confirmation": {
+      "class": "INFERENCE, aligned to the enforcement field the ledger already assigns: D1, S8, D2, D4 and D5 are all enforcement HUMAN.",
+      "requires_human": [
+        "HC-1 authorization to take a backup of the authorized target at all.",
+        "HC-2 the no-intervening-mutation posture: QUIESCE or ACCEPT, per I.",
+        "HC-3 authorization to apply the DDL that the backup protects. This authority does NOT grant it and cannot.",
+        "HC-4 acceptance of any residual risk arising from an UNKNOWN in this artifact.",
+        "HC-5 authorization to destroy or retain the backup artifact, per RETENTION_AND_DISPOSAL."
+      ],
+      "why_these_and_not_others": "Each is a decision whose cost is borne by the owner and whose correctness cannot be established by measurement: the others are measurements."
+    },
+    "Q_credentials_and_capabilities": {
+      "class": "INFERENCE constrained by SSL-06 and the parent's least-privilege posture.",
+      "answer": "See CAPABILITY."
+    },
+    "R_how_secrets_are_kept_out_of_evidence": {
+      "class": "REPOSITORY_DERIVED_FACT for the rule; INFERENCE for the measured hazard.",
+      "answer": "See SECRET_CUSTODY_CONTRACT. The binding rule is SSL-08: no secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever."
+    },
+    "S_post_restore_invariants": {
+      "class": "REPOSITORY_DERIVED_FACT. See POST_RESTORE_INVARIANTS, which is anchored in a measured defect the repository already documents."
+    },
+    "T_successful_rehearsal": {
+      "class": "INFERENCE. See SUCCESS_CONDITIONS."
+    },
+    "U_failed_rehearsal": {
+      "class": "INFERENCE. See FAILURE_CONDITIONS."
+    },
+    "V_stop_behavior_after_failure": {
+      "class": "INFERENCE. See ROLLBACK."
+    },
+    "W_RPO_RTO_measurable_now": {
+      "class": "LIVE_MANAGEMENT_PLANE_FACT plus INFERENCE.",
+      "measurable_now": [
+        "Provider recovery-point GRANULARITY for this target: one point per day, measured at 23.89 to 24.12 hour intervals.",
+        "Provider recovery-point WINDOW as listed: approximately 167.9 hours, eight points.",
+        "Provider arbitrary-instant recovery: NOT AVAILABLE, pitr_enabled false.",
+        "Therefore the provider-only worst-case data-loss exposure for this target is bounded BELOW by approximately 24 hours minus the age of the newest backup at the moment of loss. This is a measured PROPERTY OF THE CONFIGURATION, not a declared objective."
+      ],
+      "measurable_only_by_executing": [
+        "Time to capture a logical backup of this target (depends on data volume, unmeasured because no connection was opened).",
+        "Time to restore into the disposable substrate and pass POST_RESTORE_INVARIANTS.",
+        "Therefore any RTO figure whatsoever. NO RTO IS MEASURABLE FROM THIS LANE."
+      ],
+      "explicit_non_claim": "The ~24 hour figure above is the exposure the PROVIDER configuration currently implies. It is NOT an RPO. An RPO is a declared business tolerance, and declaring one is X."
+    },
+    "X_RPO_RTO_requiring_owner_ratification": {
+      "class": "REPOSITORY_DERIVED_FACT. D2 is ABSENT with word_boundary_literals_found 0, re-derived at AS_OF_TREE as 1 file, which is the ledger's own record of the absence.",
+      "answer": "BOTH the recovery point objective and the recovery time objective, per environment, require owner ratification. They are OD-1 and OD-2. This artifact declares neither and proposes neither figure.",
+      "why_no_figure_is_proposed": "The lane brief forbids inventing business RPO/RTO targets. A proposed figure in an authority becomes the figure that is ratified by inertia. The measured configuration exposure in W is offered as an INPUT to that decision and is labelled as not being the decision."
+    },
+    "Y_how_this_supports_stage_A": {
+      "class": "REPOSITORY_DERIVED_FACT, from first_required_at_stage on each gate.",
+      "answer": "See STAGE_A_CONSUMPTION. Precisely two gates in this domain are STAGING_ALIGNED: D1 and S8. D2, D3, D4, D5 and P5 are all first_required_at_stage PRODUCTION_READY and are therefore NOT Stage-A prerequisites.",
+      "anti_overrequire": "Requiring D2, D3, D4, D5 or ENV-07 before Stage-A would be a gate enlargement that no authority permits and that ENV-07.canonical_binding expressly forbids. This artifact does not do it."
+    },
+    "Z_generalization_to_production": {
+      "class": "INFERENCE.",
+      "answer": "See PRODUCTION_BOUNDARY. The model generalizes by SHAPE and authorizes nothing by EXTENSION."
+    }
+  },
+
+  "RECOVERY_MODEL": {
+    "rule": "The minimum robust Commercial V1 staging model. Seven components, each justified by a measured need. A component present only for ceremony would be removed; a component removed only for convenience would be a gate weakening.",
+    "components": [
+      {
+        "id": "RM-1",
+        "name": "provider-managed recovery floor",
+        "status": "EXISTS, MEASURED",
+        "content": "Daily WAL-G physical backups, eight listed, pitr_enabled false.",
+        "role": "Last resort independent of Uellix-held artifacts and credentials.",
+        "cannot": "Cannot satisfy S8 (temporal, per E). Cannot be shown VERIFIED RESTORABLE without an in-place restore that would destroy the target.",
+        "required": true,
+        "action_required_of_uellix": "NONE beyond observing and recording it. It is not built, enabled or changed by anyone under this authority."
+      },
+      {
+        "id": "RM-2",
+        "name": "governed logical backup",
+        "status": "ABSENT, TO BE BUILT",
+        "content": "An on-demand logical capture of the authorized target's PostgreSQL scope, digest-bound, produced by a repeatable named procedure.",
+        "role": "The instrument that makes S8 satisfiable and D1 provable.",
+        "required": true,
+        "why_not_optional": "Without it S8 is unsatisfiable, as measured in E, and Stage-A cannot open."
+      },
+      {
+        "id": "RM-3",
+        "name": "immediate pre-write recovery point",
+        "status": "ABSENT, TO BE BUILT",
+        "content": "The binding of an RM-2 artifact to exactly one mutation window, with the no-intervening-mutation predicate established positively per I.",
+        "role": "Satisfies the word 'immediately' in S8.",
+        "required": true
+      },
+      {
+        "id": "RM-4",
+        "name": "isolated restore rehearsal",
+        "status": "PATTERN EXISTS, APPLICATION ABSENT",
+        "content": "Restore of an RM-2 artifact into a self-started, role-pristine, --network none disposable container, destroyed at the end.",
+        "role": "Converts an untested assumption into a capability. This is the whole of the difference between a provider feature and a proven recovery.",
+        "required": true,
+        "reuses": "The governed pattern of scripts/baseline-rehearsal-local.ts (HPO-ODS-W2-03) and scripts/db-audit-disposable.ts."
+      },
+      {
+        "id": "RM-5",
+        "name": "post-restore verification",
+        "status": "PARTIALLY EXISTS",
+        "content": "POST_RESTORE_INVARIANTS, below.",
+        "role": "Distinguishes a restore that ran from a restore that WORKED.",
+        "required": true,
+        "measured_justification": "The repository already carries a documented case in which a restore that appears to succeed produces a database where every capability call fails. See POST_RESTORE_INVARIANTS.PRI-2."
+      },
+      {
+        "id": "RM-6",
+        "name": "evidence preservation",
+        "status": "SHAPES EXIST, INSTANCES ABSENT",
+        "content": "BACKUP_PACKET and RESTORE_PROOF, reused unchanged.",
+        "role": "Lets an independent lane verify recovery without relying on the executor's assertion.",
+        "required": true
+      },
+      {
+        "id": "RM-7",
+        "name": "disposal of the rehearsal target and the backup artifact",
+        "status": "ABSENT",
+        "content": "CLEANUP and RETENTION_AND_DISPOSAL, below.",
+        "role": "A restored copy of staging data is a second copy of that data. Its existence is a security liability that the rehearsal creates and must therefore end.",
+        "required": true,
+        "why_not_ceremony": "This is the only component whose omission creates a NEW risk rather than leaving an old one: a rehearsal without disposal leaves customer-shaped data on a developer machine indefinitely."
+      }
+    ],
+    "components_considered_and_NOT_required": [
+      {
+        "candidate": "enabling PITR",
+        "disposition": "NOT REQUIRED FOR STAGE-A and NOT AUTHORIZED. It is a configuration change and a probable cost change. Recorded as OD-4 for the owner. Its absence is compensated by RM-3, which gives an exact pre-DDL point without needing arbitrary-instant recovery."
+      },
+      {
+        "candidate": "a dedicated hosted rehearsal project",
+        "disposition": "NOT REQUIRED FOR STAGE-A, per M. Weaker isolation than RM-4 and forbidden by this lane."
+      },
+      {
+        "candidate": "continuous logical replication to a standby",
+        "disposition": "NOT REQUIRED. It would lower the theoretical RPO, but no RPO has been declared (D2 ABSENT), so it would be engineering against an objective nobody has set."
+      }
+    ]
+  },
+
+  "CAPABILITY": {
+    "rule": "Minimum capability. A capability larger than the act is a finding, not a convenience.",
+    "MANAGEMENT_PLANE": {
+      "required": "A management-plane token able to READ project metadata and LIST physical backups for the authorized ref.",
+      "sufficient_for": "Observing and recording RM-1.",
+      "must_not": "Must not be used to create a project, delete a project, enable or disable PITR, change a plan, restore a backup, rotate a database password, or issue any command against ctaxtgujyyprgynmnvtq.",
+      "measured_note": "The CLI subcommand surface observed at version 2.109.1 exposes ONLY 'backups list', so no restore is reachable through that path with this tool. This is a measured property of the TOOL, not a guarantee about the TOKEN: the same token against the management API or the dashboard may well be able to restore. The prohibition is therefore stated on the ACT, not on the tool."
+    },
+    "DATABASE_PLANE": {
+      "required_for_capture": "A PostgreSQL role on the authorized target with sufficient read privilege to produce the declared scope, and NO write privilege that the capture does not need.",
+      "prohibited_credentials": [
+        "Any production credential, for any purpose, at any time.",
+        "Any credential whose target cannot be structurally verified by verifyStagingTarget.",
+        "The runtime application credential, because reusing it conflates the runtime's least-privileged identity with an operator act and would make the runtime's own ACL sweep meaningless.",
+        "Any shared or unattributed credential, because SSL-06 requires an inventory recording who and what holds it."
+      ],
+      "restore_plane": "The restore capability is exercised ONLY against the local disposable container. It is a throwaway superuser on a throwaway cluster and MUST NOT be a credential that exists anywhere else.",
+      "UNKNOWN": "Whether an existing role on the authorized target already has exactly the privilege needed for the declared scope is UNKNOWN: no connection was opened by this lane. The execution lane measures it. If it must be created, that is a hosted GRANT and therefore a protected-surface act OUTSIDE this grant, requiring its own authority."
+    },
+    "SSL_06_INVENTORY": {
+      "requirement": "Every credential used under this authority is recorded in the credential inventory BEFORE use, naming who holds it and what it is for.",
+      "fail_closed": "An uninventoried credential is a stop, not a warning."
+    }
+  },
+
+  "AUTHORIZED_OPERATIONS": {
+    "rule": "CONJUNCTIVE AND EXHAUSTIVE. An operation not named here is not authorized by implication, by necessity, or by convenience.",
+    "operations": [
+      {"id": "AO-1", "operation": "Verify target identity via verifyStagingTarget, production veto first.", "plane": "local", "mutating": false},
+      {"id": "AO-2", "operation": "Read project metadata and LIST physical backups for the authorized ref only.", "plane": "management", "mutating": false},
+      {"id": "AO-3", "operation": "Capture a logical backup of the authorized target within the declared scope.", "plane": "database, read-only", "mutating": false, "note": "A capture READS the target. It must not take any lock that blocks the runtime, and must not write to the target."},
+      {"id": "AO-4", "operation": "Compute and record the artifact digest.", "plane": "local", "mutating": false},
+      {"id": "AO-5", "operation": "Start a disposable, role-pristine, --network none PostgreSQL container.", "plane": "local", "mutating": false, "note": "Mutating with respect to the local machine only."},
+      {"id": "AO-6", "operation": "Restore the captured artifact into that container ONLY.", "plane": "local disposable", "mutating": "YES, against the disposable container and nothing else."},
+      {"id": "AO-7", "operation": "Execute POST_RESTORE_INVARIANTS against the restored container.", "plane": "local disposable", "mutating": false},
+      {"id": "AO-8", "operation": "Emit BACKUP_PACKET and RESTORE_PROOF, secret-scanned.", "plane": "local", "mutating": false},
+      {"id": "AO-9", "operation": "Destroy the disposable container and dispose of the artifact per RETENTION_AND_DISPOSAL.", "plane": "local", "mutating": false}
+    ],
+    "NOT_AUTHORIZED_EVEN_THOUGH_ADJACENT": [
+      "Restoring anything into the authorized staging target.",
+      "Restoring a PROVIDER physical backup anywhere, by any mechanism, including the dashboard.",
+      "Applying the DDL that the backup protects.",
+      "Rolling the corpus forward on the restored container beyond what POST_RESTORE_INVARIANTS requires. D3 is PRODUCTION_READY and is not exercised here.",
+      "Any GRANT, on any hosted target."
+    ]
+  },
+
+  "FRESHNESS": {
+    "rule_consumed": "STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json FROZEN_RULES.RULE_OBSERVATION_FRESHNESS, applied to a backup rather than to an observation.",
+    "criteria": [
+      "The capture began AFTER the last completed mutation of the authorized target.",
+      "The capture completed BEFORE the mutation now being authorized, with NO intervening mutation.",
+      "It names the exact target identifier, structurally derived.",
+      "It names the exact SHA of the tooling and of the corpus it protects.",
+      "It carries capture-start and capture-end timestamps.",
+      "The no-intervening-mutation predicate is established POSITIVELY under HC-2, never assumed."
+    ],
+    "arithmetic_is_not_a_backup": "A recovery point cannot be computed. A statement of the form 'the nightly backup plus the changes since' describes a PREDICTION of a recoverable state, not a recovery point, and carries no evidentiary weight.",
+    "one_window_only": "A BACKUP_PACKET is bound to exactly ONE mutation window. It is not reusable for a later DDL, and a second DDL requires a second backup."
+  },
+
+  "EVIDENCE": {
+    "rule": "Designed so an INDEPENDENT lane can verify that recovery truly worked without relying on the author's or executor's assertion.",
+    "packets_reused_unchanged": ["BACKUP_PACKET", "RESTORE_PROOF"],
+    "independent_verifiability_contract": {
+      "principle": "Every claim in the evidence must be checkable by a party who did not run the procedure and does not trust the runner.",
+      "requirements": [
+        "The artifact digest must be recomputable by the verifier from the artifact, so the packet's identity claim is checkable rather than asserted.",
+        "Every POST_RESTORE_INVARIANTS result must be emitted as the RAW output of the check plus its verdict, never as a verdict alone. A verdict without its output is the executor's assertion.",
+        "Each check must name the exact predicate it evaluated, so a verifier can re-run it.",
+        "The restored container's identity (image, digest, engine version, creation and destruction timestamps) must be recorded, so the verifier knows WHAT was restored into.",
+        "Counts must be emitted per relation, not as a total, so that a compensating pair of errors cannot present as a match.",
+        "Any check that could not be run must be emitted as UNKNOWN with the reason, never omitted. An omitted check reads as a passed check."
+      ],
+      "negative_evidence_requirement": "The evidence must include at least one check that would have FAILED had the restore not worked. A suite of checks that all pass trivially on an empty database proves nothing about a restore, and an empty restored database is exactly the failure mode most likely to pass a naive check."
+    },
+    "explicit_exclusions": [
+      "Any value of any secret.",
+      "Any row of customer or personal data, in any form, including as a sample, an example or a diff.",
+      "Any figure computed from a prior observation rather than measured.",
+      "Any connection string, in whole or in part."
+    ]
+  },
+
+  "POST_RESTORE_INVARIANTS": {
+    "rule": "A restore is not verified by its exit status. These are the invariants that distinguish a restore that RAN from a restore that WORKED. Each names how it is checked.",
+    "invariants": [
+      {
+        "id": "PRI-1",
+        "invariant": "The restored database is non-empty and its relation inventory matches the captured scope, per relation.",
+        "check": "Closed-world catalog census of the restored container compared against the scope declared in the BACKUP_PACKET.",
+        "why": "Catches the single most likely silent failure: a restore that produced an empty or partial database and exited zero."
+      },
+      {
+        "id": "PRI-2",
+        "invariant": "Schema-level ACL and ownership that pg_dump does NOT emit are present.",
+        "check": "Assert ALTER SCHEMA public OWNER TO pg_database_owner and GRANT USAGE ON SCHEMA public TO PUBLIC (the =U/... entry) are in effect, then assert a SECURITY DEFINER capability call succeeds.",
+        "why": "MEASURED, NOT HYPOTHETICAL. db/baseline/stella_g2_post_restore.sql documents that pg_dump --schema-only treats schema public as preexisting and emits NEITHER of these two entries. The comment records the consequence in terms: without the GRANT to PUBLIC, every capability role loses USAGE on public, SECURITY DEFINER functions cannot even name public.users, and every capability call fails with 42501. The file records this as RR-CAP-7 and states it is not cosmetic.",
+        "class": "REPOSITORY_DERIVED_FACT",
+        "operational_consequence": "A logical restore procedure that does not apply db/baseline/stella_g2_post_restore.sql, or an equivalent that supplies these two entries, is INCOMPLETE BY CONSTRUCTION even when every command in it exits zero. The documented application order is stella_g2_roles.sql, then stella_g2_schema.sql, then stella_g2_post_restore.sql, and the file is idempotent.",
+        "and_this_is_why_the_negative_check_matters": "This invariant is the clearest case for EVIDENCE.negative_evidence_requirement: a restore missing RR-CAP-7 passes a naive 'did it restore?' check and fails only when a capability is exercised."
+      },
+      {
+        "id": "PRI-3",
+        "invariant": "Roles are present and are the expected roles, and the cluster carries no role the capture did not contain.",
+        "check": "Role census of the restored container against the roles corpus.",
+        "why": "PostgreSQL roles are CLUSTER-scoped, not database-scoped. scripts/baseline-rehearsal-local.ts records a measured incident in which a borrowed cluster already carried a uellix_app from unrelated history, so policy statements referencing it appeared to pass and MASKED the real first failure. A role-pristine assertion before the restore is therefore part of this invariant, not a precondition of it."
+      },
+      {
+        "id": "PRI-4",
+        "invariant": "The provisioning journal in the restored database reports the same contiguous applied prefix as the source observation.",
+        "check": "Journal parity between the restored container and the STAGING_OBSERVATION_PACKET the backup is bound to.",
+        "why": "Establishes WHICH STATE was recovered. A restore to a different point is a successful restore of the wrong thing."
+      },
+      {
+        "id": "PRI-5",
+        "invariant": "Row counts per relation match the source observation, per relation and not in total.",
+        "check": "Per-relation counts compared against the bound observation.",
+        "why": "A total can match while two relations are individually wrong in opposite directions.",
+        "UNKNOWN": "Whether the bound observation carries per-relation counts is UNKNOWN at AS_OF_TREE. If it does not, this invariant degrades to counts-at-restore-time recorded for a future comparison, and that degradation must be stated in the RESTORE_PROOF rather than silently accepted."
+      },
+      {
+        "id": "PRI-6",
+        "invariant": "Row-level security is enabled on every relation where the source has it enabled, and policy definitions match.",
+        "check": "RLS and policy census compared against the source observation.",
+        "why": "A restore that silently drops RLS produces a database that works and leaks. This is the highest-severity silent failure available here, because the restored copy is exactly the artifact most likely to be treated as disposable and least likely to be re-audited."
+      },
+      {
+        "id": "PRI-7",
+        "invariant": "Storage object metadata was restored, AND the restore evidence states explicitly that storage object BYTES were NOT in scope.",
+        "check": "Assert the storage metadata relations restored, and assert the RESTORE_PROOF carries the explicit out-of-scope declaration.",
+        "why": "Per D, a PostgreSQL logical dump cannot carry storage object bytes. The danger is not the limitation; it is a future reader concluding from a green RESTORE_PROOF that storage was covered. The declaration is therefore part of the invariant.",
+        "binds_to": "ENV-07.1."
+      }
+    ],
+    "completeness_disclaimer": "This list is the MINIMUM. It is derived from defects this repository has already measured, plus the scope limits measured in this lane. It is not a claim that no other invariant exists, and the execution lane must record any invariant it finds necessary rather than treating this list as closed."
+  },
+
+  "SUCCESS_CONDITIONS": {
+    "backup_execution": {
+      "verdict_name": "STAGING_RECOVERY_POINT_ESTABLISHED",
+      "conjunctive_criteria": [
+        "Target identity verified structurally, production veto evaluated and not matched.",
+        "Capture completed without error, within the declared scope.",
+        "Artifact digest computed and recorded.",
+        "FRESHNESS satisfied, including the positively-established no-intervening-mutation predicate.",
+        "BACKUP_PACKET emitted with all six frozen fields populated, and secret-scanned clean.",
+        "HC-1 and HC-2 recorded in writing before the acts they gate."
+      ]
+    },
+    "rehearsal_execution": {
+      "verdict_name": "STAGING_RESTORE_VERIFIED",
+      "conjunctive_criteria": [
+        "A disposable container was started, asserted role-pristine, and its identity recorded.",
+        "The restore completed into that container and into nothing else.",
+        "EVERY invariant in POST_RESTORE_INVARIANTS returned PASS, or returned UNKNOWN with a stated reason that the owner accepted in writing.",
+        "At least one negative check demonstrably capable of failing returned PASS, per EVIDENCE.negative_evidence_requirement.",
+        "RESTORE_PROOF emitted with raw outputs, secret-scanned clean.",
+        "The container was destroyed and the destruction evidenced.",
+        "Artifact disposal completed or its retention authorized under HC-5."
+      ]
+    },
+    "what_success_does_NOT_establish": [
+      "It does not satisfy ENV-07: Auth and Storage surfaces and tombstone reapplication are out of this scope.",
+      "It does not satisfy D5: the rehearsal target is not production-like.",
+      "It does not satisfy D2: no objective is declared by executing anything.",
+      "It does not satisfy D3: no roll-forward is exercised.",
+      "It does not authorize the DDL. It makes one precondition of the DDL satisfiable.",
+      "It does not make staging recoverable IN THE FUTURE: a capability proven once is a capability, and each DDL still requires its own S8 backup."
+    ]
+  },
+
+  "FAILURE_CONDITIONS": {
+    "rule": "Any one of these is a FAILED rehearsal or a FAILED backup. There is no partial credit.",
+    "conditions": [
+      "Target identity refused, or matched the production veto, at any point.",
+      "The capture errored, was interrupted, or completed outside the declared scope.",
+      "A mutation of the authorized target is detected between capture and the protected DDL.",
+      "The restore errored, or restored into anything other than the disposable container.",
+      "ANY invariant in POST_RESTORE_INVARIANTS returned FAIL.",
+      "An invariant returned UNKNOWN and that UNKNOWN was not accepted in writing.",
+      "No negative check capable of failing was run, which makes a green suite unevidenced.",
+      "A secret value, or any customer or personal data row, was found in any emitted artifact.",
+      "The disposable container could not be destroyed, or its destruction could not be evidenced.",
+      "The executing capability was not in the SSL-06 inventory before use."
+    ],
+    "a_failed_rehearsal_is_a_result": "A failed rehearsal that is fully evidenced is a SUCCESSFUL LANE and a FAILED GATE. It is recorded, not retried until green. Retrying a rehearsal until it passes, without adjudicating why it failed, converts evidence into noise."
+  },
+
+  "ROLLBACK": {
+    "rule": "What is rolled back, and what is deliberately NOT.",
+    "on_backup_failure": {
+      "action": "STOP. Do not apply the DDL. Delete the partial artifact. Record the failure.",
+      "target_state": "UNCHANGED. A capture is read-only, so a failed capture leaves the authorized target exactly as it was. There is nothing to roll back ON THE TARGET, and any procedure that believes it must 'undo' a capture is doing something a capture should not do."
+    },
+    "on_rehearsal_failure": {
+      "action": "STOP. Destroy the disposable container regardless of the failure. Record the failure and its raw output.",
+      "explicitly_not": "Do NOT attempt a corrective restore into the authorized target. Do NOT apply the DDL on the theory that the backup is probably fine.",
+      "gate_consequence": "D1 remains ABSENT and S8 remains NOT_SATISFIED. The ledger is not updated toward green by an attempt."
+    },
+    "on_failure_after_the_DDL": {
+      "scope_note": "The DDL is NOT authorized by this artifact, so this clause is a CONTRACT FOR A FUTURE LANE, not a procedure this lane enables.",
+      "contract": "Recovery is RESTORE_REQUIRED per RECOVERY_RULE_PRESERVED. Destroy-and-reprovision is NOT a recovery posture for this target unless and until a CLASSIFICATION_RUN under a STAGING_FIXTURE_MANIFEST proves it RESET_ELIGIBLE_STAGING, which is a separate governed lane that has not been authored.",
+      "forward_only": "After a restore, the corpus is re-applied FORWARD (operation C, REPLAY_CHAIN_ON_FRESH_TARGET). Re-running an already-installed package on the restored target (operation B) is PROHIBITED by the forward-only contract.",
+      "row_transformations": "Units classified as transforming existing rows may NOT be replayable. The MIGRATION_CORPUS_PACKET carries that classification precisely so the recovery plan can differ per unit."
+    }
+  },
+
+  "CLEANUP": {
+    "rule": "Cleanup is part of the authorization, not an afterthought. Authorization to create the disposable target is CONDITIONAL on evidencing its destruction.",
+    "steps": [
+      {"id": "CL-1", "step": "Destroy the disposable container and its anonymous volume.", "evidence": "Destruction timestamp plus a post-destruction check that the container and volume are absent.", "why_the_volume": "scripts/db-audit-disposable.ts records that the image declares VOLUME /var/lib/postgresql/data, so an anonymous volume would OUTLIVE the container unless removed explicitly. Destroying the container alone leaves the restored data on disk."},
+      {"id": "CL-2", "step": "Dispose of the backup artifact per RETENTION_AND_DISPOSAL, or record its authorized retention.", "evidence": "Disposal record or HC-5."},
+      {"id": "CL-3", "step": "Assert no artifact, dump, extract or restored fragment remains inside the repository working tree, tracked or untracked.", "evidence": "git status --untracked-files=all plus an explicit scan.", "why": "An untracked directory collapses to a single git status line unless --untracked-files=all is passed, so a naive status check can miss an entire restored corpus."},
+      {"id": "CL-4", "step": "Confirm no credential was written to any file in the working tree.", "evidence": "Secret scan."}
+    ],
+    "failure_to_clean_up_is_a_failure": "CL-1 and CL-3 appear in FAILURE_CONDITIONS. A rehearsal that proves recovery and leaves a copy of staging data on a developer machine has traded one risk for another."
+  },
+
+  "SECRET_CUSTODY_CONTRACT": {
+    "binding_rule": "SSL-08: no secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever.",
+    "secret_bearing_items": ["the database connection string for the authorized target, which carries a password", "the management-plane access token", "the disposable container's throwaway password"],
+    "forbidden": [
+      "Writing any secret value into this artifact, its companion manifest, any evidence artifact, any commit message, any pull-request body, any log line or any test fixture.",
+      "Passing a password as a shell argument. MEASURED HAZARD: the Supabase CLI db dump surface exposes both --password and --db-url, and either would place a secret in the process table and in shell history. Neither may be used with an inline secret value.",
+      "Using vercel env pull or any equivalent that writes real values to a file in the working tree.",
+      "Echoing or printing any secret in retained command output."
+    ],
+    "permitted_emission_allowlist": ["variable NAME", "presence as a boolean", "derived project ref", "database role name", "host class", "port", "TLS posture", "artifact digest"],
+    "the_artifact_itself_is_not_a_secret_but_is_sensitive": "A logical backup of staging is not a credential, but it may contain personal or customer-shaped data. It is governed by RETENTION_AND_DISPOSAL, not by this clause, and the distinction matters: SSL-08 would be satisfied by an artifact that is nonetheless a privacy liability."
+  },
+
+  "DATA_PROTECTION_IN_A_REHEARSAL_RESTORE": {
+    "rule": "A rehearsal restore CREATES A SECOND COPY of whatever the source target holds. The security question is therefore not only 'can we restore?' but 'what did we just duplicate, and where is it now?'.",
+    "what_staging_holds": {
+      "status": "UNKNOWN AT AS_OF_TREE, AND DELIBERATELY SO.",
+      "measured": "RELEASE_GATE_LEDGER_v1.0.0.json DGR-06 records that staging 'is no longer empty'. The amendment's DEFINITIONS make the classification of its rows the output of a CLASSIFICATION_RUN under a STAGING_FIXTURE_MANIFEST, and that manifest's 'path and schema [are] to be authored by a future governed lane; not authored here'.",
+      "consequence": "Whether staging currently holds LAB_FIXTURE_DATA only, or also DURABLE_UAT_DATA or CUSTOMER_DATA, CANNOT be determined at AS_OF_TREE, because the instrument that determines it does not exist yet.",
+      "fail_closed_posture": "Per the amendment's own rule that every predicate fails closed, the rehearsal MUST treat the restored copy as if it contains CUSTOMER_DATA until a CLASSIFICATION_RUN proves otherwise. This authority does not authorize authoring that manifest and does not wait for it: it simply refuses the permissive assumption."
+    },
+    "mandatory_postures": [
+      {"id": "DP-1", "posture": "The rehearsal substrate MUST have NO network egress.", "mechanism": "--network none, as the governed precedent already does.", "answers": "The lane's question of whether a restored isolated environment must block outbound and provider calls: YES, and by construction rather than by configuration."},
+      {"id": "DP-2", "posture": "User authentication MUST be dark in a rehearsal restore.", "mechanism": "No auth service is started against the restored data, no API gateway is attached, and no token issuer is pointed at it. The restored artifact is a bare PostgreSQL cluster reachable only from the local host.", "answers": "The lane's question of whether authentication must be disabled during rehearsal: YES. A restored copy with a live auth surface is a second, unmonitored login endpoint over real user rows.", "note": "This is satisfied by construction under RM-4: a bare container is not an auth surface. The posture is stated explicitly so that a future lane which adds Auth to the scope, for ENV-07, does NOT silently acquire a live auth endpoint along with it."},
+      {"id": "DP-3", "posture": "No outbound provider call may originate from restored data.", "mechanism": "DP-1 makes this structural. Additionally, no worker, cron, webhook or queue consumer may be pointed at the restored database.", "why": "Restored rows can contain provider identifiers. A worker started against restored data could issue real provider calls referencing real customers, which is the S10 zero-real-provider-calls concern reappearing on a copy."},
+      {"id": "DP-4", "posture": "The restored copy is single-host, non-shared and non-persistent.", "mechanism": "Destroyed under CL-1 including its volume."},
+      {"id": "DP-5", "posture": "No personal data is extracted from the restored copy into evidence.", "mechanism": "Evidence carries COUNTS, DIGESTS and PREDICATE VERDICTS only. Never rows.", "binds_to": "EVIDENCE.explicit_exclusions."}
+    ],
+    "explicit_privacy_adjudication": {
+      "question": "If personal or customer data would be replicated by this rehearsal, what follows?",
+      "answer": "Three things follow, and they are stated rather than left implied. FIRST, the duplication is a PROCESSING ACT over that data and the copy inherits every obligation the original carries; the rehearsal does not create a privacy-free zone because the data is 'only a test copy'. SECOND, the copy must be minimised in time: this is why destruction is a success condition and not a tidiness step. THIRD, tombstone reapplication becomes relevant the moment any governed erasure has been performed on the source, because a restore can RESURRECT lawfully erased data.",
+      "tombstone_scope_note": "ENV-07.2 requires tombstone reapplication to be PROVEN, and it binds at the ENV-07 deadline, not at Stage-A. This artifact therefore does NOT require tombstone reapplication for D1 and S8. It does require that the RESTORE_PROOF state explicitly whether any governed erasure exists on the source that a restore would resurrect, and record UNKNOWN if that cannot be determined. Recording the question is not the same as satisfying the later gate, and satisfying it early is not required.",
+      "residual_risk_is_an_owner_decision": "OD-5."
+    }
+  },
+
+  "RETENTION_AND_DISPOSAL": {
+    "artifact_class": "A logical backup of the authorized target is SENSITIVE, potentially personal-data-bearing, and NOT a repository artifact.",
+    "rules": [
+      "It is NEVER committed to the repository, tracked or untracked, in whole or in part, compressed or otherwise.",
+      "It is NEVER attached to a pull request, an issue, or any evidence artifact.",
+      "It is stored only where the owner has authorized under HC-5, and its LOCATION is recorded by class rather than by a path that itself discloses anything.",
+      "Its default disposition after a rehearsal is DESTRUCTION. Retention requires HC-5 and a stated purpose and duration.",
+      "A backup retained to protect a DDL is disposed of once the DDL is complete and the target is observed healthy, or once it is superseded by a later recovery point.",
+      "Disposal is EVIDENCED, because an undisposed copy and a disposed copy look identical in a report that merely claims disposal."
+    ],
+    "audit_evidence": "Every creation, retention decision and disposal of a backup artifact is recorded with the acting identity, the timestamp and the artifact digest. The digest is what lets a later audit distinguish 'the artifact was destroyed' from 'an artifact was destroyed'."
+  },
+
+  "HUMAN_CONFIRMATION": {
+    "rule": "Recorded IN WRITING before the act it gates. Silence is not acceptance.",
+    "confirmations": [
+      {"id": "HC-1", "gates": "AO-3", "text": "Authorization to capture a logical backup of project bvyzblhqymxruxdguaee."},
+      {"id": "HC-2", "gates": "FRESHNESS", "text": "Selection of the no-intervening-mutation posture, QUIESCE or ACCEPT, with the accepted data-loss exposure stated if ACCEPT."},
+      {"id": "HC-3", "gates": "the protected DDL", "text": "NOT GRANTED BY THIS ARTIFACT. Recorded here only to make explicit that satisfying S8 does not authorize the apply."},
+      {"id": "HC-4", "gates": "SUCCESS_CONDITIONS", "text": "Acceptance of any invariant that returned UNKNOWN, with a bounded rationale."},
+      {"id": "HC-5", "gates": "RETENTION_AND_DISPOSAL", "text": "Authorization to retain, rather than destroy, a backup artifact, with purpose and duration."}
+    ]
+  },
+
+  "STAGE_A_CONSUMPTION": {
+    "rule": "Derives WHICH recovery evidence must exist BEFORE any future Stage-A hosted DDL apply. Derives it. Does not authorize it.",
+    "NOT_AUTHORIZED_HERE": ["Stage-A is NOT authorized.", "G2 is NOT authorized.", "No hosted DDL is authorized.", "No migration ordinal is allocated, reserved or implied."],
+    "measured_derivation": {
+      "method": "Read first_required_at_stage from every DATA-category gate and from the hosted precondition that consumes them, at AS_OF_TREE.",
+      "STAGING_ALIGNED_and_therefore_required_before_Stage_A": [
+        {"gate": "D1", "name": "backup and restore capability", "current_state": "ABSENT", "required_evidence": "BACKUP_PACKET_PLUS_RESTORE_PROOF", "supplied_by": "RM-2 plus RM-4 plus RM-5 plus RM-6"},
+        {"gate": "S8", "name": "verified backup immediately before any staging DDL", "current_state": "NOT_SATISFIED", "required_evidence": "BACKUP_PACKET", "supplied_by": "RM-3", "retest_after": "before every apply"}
+      ],
+      "PRODUCTION_READY_and_therefore_NOT_required_before_Stage_A": [
+        {"gate": "D2", "name": "declared recovery objectives", "why_not_now": "first_required_at_stage PRODUCTION_READY"},
+        {"gate": "D3", "name": "roll-forward after restore", "why_not_now": "first_required_at_stage PRODUCTION_READY"},
+        {"gate": "D4", "name": "point-in-time recovery posture", "why_not_now": "first_required_at_stage PRODUCTION_READY", "note": "Its evidence class HOSTED_PLAN_OBSERVATION is nonetheless PARTIALLY SUPPLIED as a side effect of this lane's live observation: pitr_enabled false, daily cadence, eight points. Recorded as an input for whoever closes D4, NOT claimed as closing it, because a single observation by an authoring lane is not the gate's evidence and expires."},
+        {"gate": "D5", "name": "restore rehearsal", "why_not_now": "first_required_at_stage PRODUCTION_READY, and it requires a production-like target that RM-4 is not"},
+        {"gate": "P5", "name": "production rollback and recovery runbook", "why_not_now": "PRODUCTION category"}
+      ],
+      "ENV-07_disposition": {
+        "required_before_Stage_A": false,
+        "authority": "ENV-07.canonical_binding: 'D1 and S8 keep their parent criteria, their parent scope and their existing first_required_at_stage, and inherit no ENV-07 scope merely because they fall due earlier.'",
+        "binds_at": "The earlier of: before the first DURABLE_UAT_DATA row on any hosted target, or before RELEASE_CANDIDATE.",
+        "reuse_permitted": "Evidence produced here MAY be reused toward ENV-07 if it already satisfies it. It will not, on PostgreSQL-only scope, because ENV-07.1 requires three surfaces conjunctively.",
+        "warning_to_a_future_lane": "If a DURABLE_UAT_DATA row is created on staging, the ENV-07 deadline binds IMMEDIATELY and the three-surface proof becomes due even though Stage-A did not need it. The cheap-looking act of creating durable UAT data is therefore the act that triggers the expensive recovery requirement."
+      }
+    },
+    "the_minimum_Stage_A_recovery_precondition": "Stated once, plainly: before any Stage-A hosted DDL apply, there must exist (1) a RESTORE_PROOF showing that an artifact produced by the governed procedure was restored into an isolated target and passed POST_RESTORE_INVARIANTS, satisfying D1; and (2) a BACKUP_PACKET for THAT specific apply, satisfying S8 and bound to that one mutation window. Neither substitutes for the other, and (2) is required again before every subsequent apply."
+  },
+
+  "PRODUCTION_BOUNDARY": {
+    "rule": "This artifact generalizes to production by SHAPE and authorizes nothing there by EXTENSION.",
+    "what_generalizes": ["The packet shapes.", "The invariant list as a MINIMUM.", "The independent-verifiability contract.", "The no-name-as-identifier rule, which is if anything more critical for production.", "The isolation and data-protection postures."],
+    "what_does_NOT_generalize": [
+      "The TARGET. Nothing here names, authorizes or contemplates an operation against ctaxtgujyyprgynmnvtq.",
+      "The rehearsal substrate. D5 requires a PRODUCTION-LIKE target; a bare local container is not one.",
+      "The measured posture. pitr_enabled false was measured for STAGING ONLY. Production's posture is UNKNOWN and was deliberately not measured.",
+      "The sufficiency conclusions. E and F are conclusions about a DAILY, NO-PITR target. A production target with a different posture would need them re-derived, not inherited."
+    ],
+    "explicit_non_extension": "A future production recovery authority must be WRITTEN, ratified and certified. It may cite this artifact for shape. It may NOT cite it for permission, and no clause here may be read as pre-authorizing any production act. PROD-MIG-AUTH remains ABSENT and SSL-09 remains untouched."
+  },
+
+  "OWNER_DECISIONS": {
+    "rule": "Business and security policy choices that engineering may not invent. Each states what is being asked, why it is not an engineering call, and whether it blocks Stage-A.",
+    "decisions": [
+      {"id": "OD-1", "decision": "Declare the recovery POINT objective per environment.", "blocking_for_stage_A": false, "blocks": "D2, first required at PRODUCTION_READY.", "why_not_engineering": "An RPO states how much data the business accepts losing. That is a business tolerance, not a technical property.", "measured_input_offered": "The current provider configuration for staging implies an exposure of up to approximately 24 hours, because backups are daily and PITR is not enabled. This is an INPUT, not a proposal."},
+      {"id": "OD-2", "decision": "Declare the recovery TIME objective per environment.", "blocking_for_stage_A": false, "blocks": "D2.", "why_not_engineering": "An RTO states how long the business accepts being down.", "measured_input_offered": "NONE. No RTO figure is measurable from this lane, because no restore has been executed. Any number offered here would be invention."},
+      {"id": "OD-3", "decision": "Choose the no-intervening-mutation posture for a pre-DDL backup: QUIESCE the bound runtime for the window, or ACCEPT the loss of writes in the window.", "blocking_for_stage_A": true, "blocks": "S8.", "why_not_engineering": "QUIESCE imposes a staging outage; ACCEPT imposes data loss on restore. Both are costs the owner bears.", "fail_closed": "If neither is chosen, S8 cannot be satisfied, because the no-intervening-mutation predicate cannot be established."},
+      {"id": "OD-4", "decision": "Whether to enable PITR on staging.", "blocking_for_stage_A": false, "why_not_engineering": "It is a configuration and probable cost change.", "note": "NOT required for Stage-A: RM-3 supplies an exact pre-DDL point without it. Recorded because a reader who sees pitr_enabled false should see the decision acknowledged rather than assume it was overlooked.", "prohibited_here": "This lane may not enable it."},
+      {"id": "OD-5", "decision": "Accept the residual privacy risk of duplicating staging data into a rehearsal substrate, under the DP-1 to DP-5 postures.", "blocking_for_stage_A": true, "blocks": "The rehearsal that D1 requires.", "why_not_engineering": "The engineering postures reduce the risk; they do not eliminate the fact that a second copy exists for the duration of the rehearsal."},
+      {"id": "OD-6", "decision": "Authorize the retention location and duration for backup artifacts, or confirm destroy-by-default.", "blocking_for_stage_A": true, "blocks": "HC-5 and therefore CL-2.", "why_not_engineering": "It is a data-custody decision."}
+    ],
+    "consequence_for_final_state": "OD-3, OD-5 and OD-6 are BLOCKING for Stage-A. Because at least one blocking owner decision is open, this artifact's final state is AUTHORED_AWAITING_OWNER_RATIFICATION rather than AUTHORED_NOT_EXECUTED."
+  },
+
+  "MEASUREMENT_GAPS_RECORDED": {
+    "rule": "Recorded so the execution lane does not discover them at the connection. None is repaired here.",
+    "gaps": [
+      {"id": "MG-1", "gap": "The DATA VOLUME of the authorized target is UNKNOWN.", "measured": "NOT MEASURED. No database connection was opened by this lane.", "consequence": "Capture duration, artifact size, storage requirement and therefore every RTO input are unknown. This is the principal reason no RTO figure appears anywhere in this artifact."},
+      {"id": "MG-2", "gap": "Whether any existing role on the target has exactly the privilege needed for the declared scope is UNKNOWN.", "measured": "NOT MEASURED.", "consequence": "The execution lane may discover it must request a GRANT, which is a protected-surface act outside this grant and would require its own authority."},
+      {"id": "MG-3", "gap": "Whether the ~7 day physical backup window is a plan-level retention GUARANTEE or merely what is listed today is UNKNOWN.", "measured": "The listing was measured; the policy behind it was not.", "consequence": "The floor RM-1 must not be described to anyone as a seven-day guarantee. It is seven days OBSERVED."},
+      {"id": "MG-4", "gap": "Whether the provider physical backup can be restored to a SEPARATE project rather than in place is UNKNOWN.", "measured": "The CLI exposes only 'backups list', so no restore path was observable from the tool. Whether the dashboard or API offers an out-of-place restore was NOT measured.", "consequence": "E's third ground (unverifiable without destruction) is stated as an INFERENCE from the observed tool surface, not as a measured property of the provider. If an out-of-place restore exists, RM-1 could become independently verifiable, which would STRENGTHEN the model without changing any gate. Flagged as OF-3 so a certifier tests it rather than accepting it."},
+      {"id": "MG-5", "gap": "Whether staging currently holds DURABLE_UAT_DATA or CUSTOMER_DATA is UNKNOWN and is UNMEASURABLE at AS_OF_TREE.", "measured": "The instrument that would measure it, a CLASSIFICATION_RUN under a STAGING_FIXTURE_MANIFEST, is declared by the amendment to be authored by a future lane and does not exist.", "consequence": "The fail-closed posture in DATA_PROTECTION_IN_A_REHEARSAL_RESTORE governs: treat the copy as customer-bearing."},
+      {"id": "MG-6", "gap": "Whether the bound STAGING_OBSERVATION_PACKET carries per-relation row counts is UNKNOWN.", "measured": "NOT MEASURED against a real packet instance; no such packet was produced by this lane.", "consequence": "PRI-5 may degrade. The degradation must be stated in the RESTORE_PROOF."},
+      {"id": "MG-7", "gap": "The engine version skew between the rehearsal image (17.6.1.143) and the live target (17.6.1.155) is MEASURED, but its practical consequence for a logical restore is UNKNOWN.", "measured": "Both versions measured; no restore executed.", "consequence": "Recorded in the RESTORE_PROOF for independent judgement rather than dismissed."}
+    ]
+  },
+
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "TO_BE_MECHANICALLY_MEASURED_BY_THIS_LANE_BEFORE_COMMIT",
+    "method": "The two paths of this lane's write set are classified by executing scripts/ods-scope.ts against its own DEFAULT_PROTECTED_PATTERNS at AS_OF_TREE, with allowed pattern docs/ops/release/**, following the method the parent established. The classifier is RUN, not matched by eye. The measured result is recorded in the lane report.",
+    "expected_basis": "docs/ops/release/** appears in none of the seven DEFAULT_PROTECTED_PATTERNS measured by the immediately preceding sibling as [docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json].",
+    "PROTECTED_AUTHORITY": "NONE",
+    "explicit_non_allocation": [
+      "NO ODS maintenance addendum ordinal is allocated, reserved or implied.",
+      "NO HPO-ODS grant id is allocated or reserved.",
+      "NO W2 identifier is invented, allocated or reserved.",
+      "NO migration ordinal is allocated or reserved.",
+      "NO Controller entry is claimed.",
+      "NO program-state registry entry is added.",
+      "NO package script is registered. RM-2 and RM-4 describe scripts that a FUTURE lane will write; this lane registers none.",
+      "NO evidence path is created by this lane."
+    ],
+    "reversal_condition": "If a future measurement finds this lane's write set requires ANY protected path, NEW_ODS_REQUIRED becomes YES and this artifact's commit is not authorized under an ordinary allow."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Enumerated so that no future reader infers a permission from the detail of a procedure.",
+    "this_artifact_does_not_authorize": [
+      "Taking a backup.",
+      "Triggering a restore, of any artifact, by any mechanism, anywhere.",
+      "Mutating PostgreSQL on any hosted target.",
+      "Executing DDL.",
+      "Executing DML.",
+      "Creating or deleting a Supabase project.",
+      "Enabling or disabling PITR.",
+      "Changing any database password.",
+      "Revealing any connection string.",
+      "Any access whatsoever to ctaxtgujyyprgynmnvtq.",
+      "Stage-A.",
+      "G2.",
+      "The production migration.",
+      "Implementing application recovery code.",
+      "Modifying any current migration package.",
+      "Authoring the STAGING_FIXTURE_MANIFEST or running a CLASSIFICATION_RUN.",
+      "Declaring any RPO or RTO value.",
+      "Closing D1, D2, D3, D4, D5, S8 or P5. An authority that describes how a gate will be satisfied does not satisfy it: RULE_AUTHORITY_CLOSED_IS_NOT_CAPABILITY_BUILT."
+    ],
+    "what_this_lane_DID_perform": [
+      "Read-only repository measurement at AS_OF_TREE.",
+      "Two read-only management-plane commands, scoped to the authorized ref and to account-level project metadata, contacting NO database, as recorded in LIVE_MANAGEMENT_PLANE_OBSERVATION.",
+      "Authoring of this artifact and its companion manifest."
+    ],
+    "external_hosted_mutations_performed": "NONE"
+  },
+
+  "OPEN_FINDINGS": [
+    {"id": "OF-1", "finding": "This artifact uses the subject-form name rather than the node-prefix form used by the two immediately preceding siblings.", "disposition": "FLAGGED FOR THE CERTIFIER. See NAMING_DERIVATION.name_is_subject_form_not_node_prefix_form.", "blocking": false},
+    {"id": "OF-2", "finding": "This lane performed live management-plane reads while its mode is AUTHORING_ONLY.", "disposition": "The lane brief expressly permitted read-only management-plane inspection where tooling safely allows it. The reads contacted no database, used an already-authenticated CLI, and were scoped to a subcommand surface exposing only 'list'. Recorded rather than buried, because a certifier should confirm the reads were within the permission rather than discover them.", "blocking": false},
+    {"id": "OF-3", "finding": "E's third ground rests on MG-4, an inference from the observed CLI surface rather than a measured provider property.", "disposition": "E does not depend on it: the TEMPORAL ground alone is sufficient and is directly measured. Flagged so a certifier can test the weaker ground without disturbing the conclusion.", "blocking": false},
+    {"id": "OF-4", "finding": "Whether ENV-07's Auth and Storage surfaces are exercisable at all on a bare PostgreSQL container is not adjudicated here.", "disposition": "OUT OF SCOPE. ENV-07 binds later and this artifact expressly declines to enlarge D1/S8. Recorded so the ENV-07 lane does not assume RM-4 will serve it unchanged.", "blocking": false},
+    {"id": "OF-5", "finding": "The provider-vetoed production ref carries the provider-side name 'uellix-staging'.", "disposition": "MEASURED LIVE and converted into a binding rule (PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER). Flagged at finding level because it has consequences beyond this artifact: any existing or future tooling, runbook or dashboard procedure that selects a target by name is exposed to it.", "blocking": false, "severity_note": "This is the highest-consequence finding in this lane."},
+    {"id": "OF-6", "finding": "Three owner decisions (OD-3, OD-5, OD-6) are BLOCKING for Stage-A and are open.", "disposition": "Drives final_state to AUTHORED_AWAITING_OWNER_RATIFICATION.", "blocking": true}
+  ],
+
+  "self_check": {
+    "authored_not_executed": "PASS. No backup, restore, database connection, DDL, DML, project creation, PITR change or password change was performed.",
+    "production_untouched": "PASS. No command was issued against ctaxtgujyyprgynmnvtq. Its appearance in this artifact is as a VETO and as a name-trap finding.",
+    "no_secret_values": "PASS. No password, token, connection string or DSN appears. Project refs are public identifiers and are preserved deliberately.",
+    "no_invented_identifiers": "PASS. No ODS, HPO, W2, migration ordinal or Controller entry is allocated or reserved.",
+    "no_gate_mutation": "PASS. D1, S8, D2, D3, D4, D5 and P5 retain their parent criteria, scope, owner, enforcement and first_required_at_stage. BACKUP_PACKET and RESTORE_PROOF are reused unchanged.",
+    "no_gate_weakening": "PASS. No criterion is relaxed. Where this artifact is stricter than a parent (for example the name-as-identifier prohibition) it ADDS a constraint on a future execution rather than relaxing one.",
+    "no_business_objectives_invented": "PASS. No RPO or RTO value is declared or proposed. The measured configuration exposure is labelled an input and explicitly not an objective.",
+    "unknowns_are_explicit": "PASS. Seven measurement gaps are recorded as UNKNOWN with their consequences, rather than omitted.",
+    "fact_classes_stated": "PASS. Repository-derived, live management-plane, inference and UNKNOWN are distinguished throughout; provider documentation was not used and the reason is stated.",
+    "stage_A_not_authorized": "PASS. Stage-A and G2 are explicit non-authorizations, and the Stage-A relationship is a DERIVATION of what must pre-exist.",
+    "append_only": "PASS. No parent artifact is edited. This is a new sibling."
+  },
+
+  "required_independent_review": {
+    "requirement": "INDEPENDENT ADVERSARIAL CERTIFICATION, in a clean lane, after any required owner ratification.",
+    "the_certifier_should_specifically_test": [
+      "That E's temporal ground genuinely follows from the measured cadence, and is not an artifact of the observation window.",
+      "That the Stage-A derivation did not OVER-require: specifically, that D2, D3, D4, D5 and ENV-07 are correctly excluded.",
+      "That the Stage-A derivation did not UNDER-require: that D1 and S8 are genuinely the only STAGING_ALIGNED gates in this domain.",
+      "That no clause enlarges BACKUP_PACKET, RESTORE_PROOF, D1 or S8.",
+      "That PRI-2's claim about pg_dump is correctly read from db/baseline/stella_g2_post_restore.sql.",
+      "OF-1, OF-3 and OF-4.",
+      "That the live observation is correctly labelled as expiring history and is nowhere treated as a prestate."
+    ]
+  },
+
+  "final_state": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AUTHORED__AWAITING_OWNER_RATIFICATION",
+  "next_gate": "OWNER RATIFICATION of OD-3, OD-5 and OD-6, then INDEPENDENT ADVERSARIAL CERTIFICATION OF THIS PAIR. No backup, no restore, no rehearsal, no database connection and no evidence materialization is authorized until that certification returns PASS and a future execution lane opens with its own prestate, its own freshness gate and its own human confirmations."
+}
