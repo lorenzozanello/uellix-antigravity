@@ -1,0 +1,280 @@
+{
+  "manifest_id": "FIBDB053-D1-OLD-DB-OBSERVATION",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "FIBDB053-RUNTIME-STAGING-BINDING",
+    "FIBDB053-RUNTIME-COMPANION",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P1",
+      "description": "AUTHORING ARM (this lane, assertable now). BOTH CANONICAL LITERALS ARE FROZEN CONSTANTS RE-DERIVED FROM THEIR SOURCE. CANONICAL_SIGNATURE_CONTRACT must carry the nine-argument literal byte-identical to FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json SECTION_A3.CANONICAL_PROBE_LITERAL.value, and the seven-argument literal byte-identical to that amendment's predecessor_seven_argument_form_for_reference with the trailing provenance prose stripped. Re-deriving them must find no place where the authority composes, interpolates or normalizes either string. A control that merely asserted the strings are present would pass against an authority that copied them from a lane prompt; the assertion is against the FROZEN AMENDMENT, because a prompt is not an authority.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P2",
+      "description": "AUTHORING ARM. THE SEVEN-ARGUMENT SOURCE CLAIM IS VERIFIED AT BASE, NOT CARRIED. Amendment A3 states the predecessor form was 'measured at db/prepared/checkpoint-a1/corroboration.sql'. The control re-reads that file at AS_OF_TREE and requires the literal to appear inside a live pg_catalog.to_regprocedure(...) IS NOT NULL probe. It exists because this programme has already measured a frozen 'MEASURED ... ' claim about a generated file turning out to be false; a citation that nobody re-opens is a citation nobody checked.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P3",
+      "description": "AUTHORING ARM. OLD_DB IS DEFINED AS A CONJUNCTION AND THE POSITIVE WITNESS IS LOAD-BEARING. OLD_DB_DEFINITION must require BOTH the nine-argument NULL and the seven-argument non-NULL, and CLASSIFICATION_AND_SEQUENCE_STOPS must route {NULL, NULL} to UNKNOWN_OR_BROKEN_DB_STATE rather than to OLD_DB. Re-deriving the classification table must find no path on which a nine-argument NULL alone yields OLD_DB_CONFIRMED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P4",
+      "description": "AUTHORING ARM. THE CLASSIFICATION TABLE IS TOTAL. The four probe-result cells plus the raise, identity-refusal and capability-refusal cases must each have exactly one classification and exactly one action, with no default branch and no unclassified outcome. A manifest that checked only the happy path would pass against a table with a silent fall-through, which is how an error becomes an absence.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P5",
+      "description": "AUTHORING ARM. THE TARGET GATE IS THE REPOSITORY'S OWN AND IS NOT RE-IMPLEMENTED. TARGET_IDENTITY_CONTRACT must require db/hosted/target-identity.ts verifyStagingTarget (or its exact governed successor), with sentinelPolicy 'required', and must require all three signal names in the verdict. An authority that described the three signals in prose while permitting a local re-implementation would create a second identity contract — the precise divergence the module's own header records as already having happened once.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P6",
+      "description": "AUTHORING ARM. THE PRODUCTION VETO IS UNCONDITIONAL AND RUNS FIRST. TARGET_IDENTITY_CONTRACT must name ctaxtgujyyprgynmnvtq as an unconditional veto, must state that the veto runs over EVERY ref any source names before any positive signal, and must bind to SSL-09. Re-deriving must find no parameter, injection point or circumstance under which the veto is skipped, including verifying that it works.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P7",
+      "description": "AUTHORING ARM. THE CAPABILITY IS THE LEAST-PRIVILEGED ONE AND IS RESOLVED BY THE NATIVE RESOLVER. READ_ONLY_CAPABILITY_CONTRACT must name UELLIX_AUDITOR_DATABASE_URL, role uellix_auditor, and db/safety/resolve-capability-database-url.ts resolveAuditorDatabaseUrl, and must forbid the runtime, migrator, legacy shared and administrative identities by name.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P8",
+      "description": "AUTHORING ARM. THE READ-ONLY TRANSACTION IS OBSERVED, NOT ASSUMED. READ_ONLY_TRANSACTION_CONTRACT must require BEGIN READ ONLY, a positive observation that current_setting('transaction_read_only') = 'on' BEFORE any other statement, and an unconditional ROLLBACK. A contract that only declared the transaction read-only would pass on a session where a connection option had turned it off — a form db/safety/database-target.ts records as reachable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P9",
+      "description": "AUTHORING ARM. THE SQL SURFACE IS EXHAUSTIVE AND CLOSED. AUTHORIZED_SQL_SURFACE must enumerate every authorized read, state that anything unlisted is unauthorized, and carry an explicit unauthorized list naming tenant tables, identity tables, auth, storage, application rows, catalog enumerations and any count over customer data. An allowlist without a closing statement is a starting point, not a boundary.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P10",
+      "description": "AUTHORING ARM. THE TWO OBSERVATION ROLES ARE DISTINCT AND THE PRE ONE IS EXPLICITLY NOT D1-8. PRE_DEPLOYMENT_OBSERVATION must carry two separate tokens, must state that PRECHECK_OLD_DB is not citable for D-1 and satisfies no gate, and must require the two to produce two separate evidence artifacts.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P11",
+      "description": "AUTHORING ARM. THE ENGINE-SEMANTICS MEASUREMENTS ARE CITED TO A THROWAWAY SUBSTRATE AND ARE MARKED AS NOT HOSTED EVIDENCE. ENGINE_SEMANTICS_MEASURED must classify itself as ENGINE_SEMANTICS_MEASUREMENT, bind to RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE, name the throwaway substrate, and record its destruction with positive absence verification. A measurement section that read as hosted evidence would breach the rule it is meant to respect.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P12",
+      "description": "AUTHORING ARM. THE ODS CLASSIFICATION WAS EXECUTED, NOT EYEBALLED. NEW_ODS_REQUIRED must record that classifyPaths was RUN against DEFAULT_PROTECTED_PATTERNS at AS_OF_TREE, and must quote the seven measured patterns. A verdict reached by reading the pattern list would pass against a list that had changed since the reader last looked.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P13",
+      "description": "FUTURE (execution lane). CP-1..CP-4 RUN BEFORE EITHER PROBE. The execution must assert server-side current_user and session_user, assert transaction_read_only = 'on', record has_schema_privilege for uellix_stella_ops USAGE, and STOP on a false result WITHOUT issuing either probe. Proving the identity from the connection string instead of from the server would pass on a session the server authenticated as someone else — the module itself calls the string-side check 'a pre-check, NOT the guarantee'.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P14",
+      "description": "FUTURE (execution lane). THE EVIDENCE ARTIFACT CARRIES EVERY REQUIRED FIELD AND IS PROMOTED, NOT WRITTEN IN PLACE. Each observation must produce one file under docs/ops/staging/evidence/** whose name carries the date and the observation id, containing every field of EVIDENCE_MATERIALIZATION.REQUIRED_CONTENTS. The probe's raw output lands in artifacts/ first; promotion is a separate committed act.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N1",
+      "description": "WRONG PROJECT REF => STOP. A target whose every signal agrees on a Supabase project ref other than bvyzblhqymxruxdguaee must be REFUSED at verifyStagingTarget step (2b) with HOSTED_TARGET_NOT_EXPECTED_PROJECT, before any query. A control that only checked internal consistency would pass on a perfectly self-consistent identity for the wrong database — the module's own words: 'A consistent identity for the wrong project is still the wrong project.'",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N2",
+      "description": "KNOWN PRODUCTION REF => STOP. ctaxtgujyyprgynmnvtq named by ANY source — declaration, host, pooler login role or sentinel — must be REFUSED with HOSTED_TARGET_IS_PRODUCTION at step (0), before the positive signals are evaluated. The control asserts the veto fires on each of the four sources independently, because a veto that only reads the declaration is defeated by a declaration that lies.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N3",
+      "description": "WRONG DATABASE ROLE => STOP. A capability URL whose userinfo role half is not uellix_auditor must be REFUSED by resolveAuditorDatabaseUrl with DB_CAPABILITY_URL_WRONG_ROLE before a socket is opened, AND the server-side CP-1 must independently refuse a session whose current_user or session_user is not uellix_auditor. Both arms are required: the first catches the misconfiguration, the second catches a server that authenticated someone else.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N4",
+      "description": "RUNTIME, MIGRATOR OR ADMINISTRATIVE CREDENTIAL SUBSTITUTED => STOP. Supplying UELLIX_RUNTIME_DATABASE_URL, UELLIX_MIGRATOR_DATABASE_URL, DATABASE_URL, or a URL declaring postgres, supabase_admin, service_role, authenticator, uellix_owner or uellix_migrator must be REFUSED. The control is written specifically for the case where the auditor STOPS at CP-4 and the runtime credential would make the probe work: it asserts that the refusal holds when substitution is the convenient repair, not only when it is an accident.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N5",
+      "description": "transaction_read_only != 'on' => STOP. A session in which CP-2 observes anything other than 'on' — including one reached through a connection option such as '?default_transaction_read_only=off' — must STOP before any probe. Asserting only that BEGIN READ ONLY was issued would pass on a session where the setting was overridden, which is the reachable form the repository records.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N6",
+      "description": "NINE-ARGUMENT PRESENT => D-1 OLD_DB IS FALSE AND THE LANE STOPS. A non-NULL nine-argument resolution must classify NEW_DB_OR_STAGE_A_ALREADY_PRESENT and STOP before any Vercel staging-binding mutation and any deployment, with FR-4's four prohibitions in force: no apply, no rollback, no restore, no treating it as a shortcut. The control asserts the STOP holds for BOTH values of the seven-argument result, so a lane cannot argue that a coexisting predecessor makes the state acceptable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N7",
+      "description": "NINE ABSENT AND SEVEN ABSENT => UNKNOWN AND STOP. Both NULLs must classify UNKNOWN_OR_BROKEN_DB_STATE and STOP, and must NOT classify OLD_DB. This is the control that closes the measured hole at ENGINE_SEMANTICS_MEASURED.M-3: an entirely absent uellix_stella_ops schema returns NULL without raising, so a one-sided predicate would report OLD_DB against a database that has no Stella operations schema at all.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N8",
+      "description": "EITHER PROBE RAISES => STOP_UNOBSERVABLE_DB_STATE, NEVER AN ABSENCE. A raise at any SQLSTATE — 42501 insufficient_privilege above all — must STOP and must never be recorded as a NULL, a false, or an absent function. The control asserts specifically that no exception handler converts a raise into a NULL. That single line of code would turn a privilege failure into OLD_DB_CONFIRMED and is the most dangerous thing this node could contain.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N9",
+      "description": "DYNAMIC SIGNATURE CONSTRUCTION => REFUSAL. A probe argument built by interpolation, concatenation, templating, parameter binding or any composition from a variable holding a type name must be REFUSED, even when the composed string is byte-identical to the canonical literal. The refusal is on the SHAPE, not the value: a composed literal that happens to be right today is a literal nothing audits against the Stage-A declaration tomorrow, and amendment A3 keeps the fixed-literal rule for exactly that reason.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N10",
+      "description": "APPLICATION-ROW QUERY ADDED => REFUSAL. Any read of a tenant table, public.users, public.organizations, auth.*, storage.*, public.stella_interactions, public.audit_logs or public.evidence_chunks must be REFUSED, INCLUDING a bare COUNT or EXISTS returning zero. The control asserts the zero case explicitly, because 'just a count' is the form in which an application read gets argued into a catalog-only surface, and the predicate that produced the count is the part that carries the question.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N11",
+      "description": "WRITE STATEMENT ADDED => REFUSAL. Any DDL, DML, GRANT, REVOKE, SET ROLE, SET SESSION AUTHORIZATION, temporary object, advisory lock, COPY, or invocation of complete_operation_ticket at either arity must be REFUSED. The control asserts the invocation case separately from the DDL case: to_regprocedure RESOLVES a name and must never be followed by a call, a CALL, a PERFORM or an invoking cast. The observation asks whether a verb exists; it never utters it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N12",
+      "description": "DB MUTATION AFTER OBSERVATION => EVIDENCE STALE. A catalog mutation of the target after OBSERVED_DB_STATE_AT invalidates the observation, and no computation over it restores validity. The control asserts BOTH directions: a Vercel environment mutation or a code deployment alone does NOT invalidate it, and a Stage-A apply, any package apply, any GRANT or REVOKE and any DDL does. A control that only tested invalidation would license discarding a valid observation; a control that only tested non-invalidation would license carrying a stale one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N13",
+      "description": "SECRET APPEARS IN EVIDENCE => REFUSAL. Any credential, full DSN, token, key, query-string credential, userinfo, connection host string, or unredacted driver error message in a promoted evidence artifact, a commit message, a PR body or a retained log must be REFUSED. The control asserts the host string and the userinfo cases specifically, because they are the two fields an author would consider structural rather than sensitive, and docs/ops/staging/evidence/README.md records that the promoted precedent carries no connection block at all.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N14",
+      "description": "SESSION POOLER MECHANISM => STOP. A connection through aws-<n>-<region>.pooler.supabase.com as uellix_auditor.<ref> must STOP with STOP_TARGET_IDENTITY_CONTRADICTION, and must NOT be repaired by widening projectRefFromPoolerUser, by substituting the postgres operator login role, or by declaring the identity gate satisfied on two signals. Measured basis: projectRefFromPoolerUser returns null unless the role half is 'postgres', so signal 2 is unavailable and a regional pooler host names no project.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N15",
+      "description": "SENTINEL MISSING OR DISAGREEING => STOP. A missing uellix_bootstrap.staging_sentinel row must STOP under sentinelPolicy 'required' rather than fall back to the deferred policy, and a sentinel whose environment or project_ref disagrees with the declaration must STOP unconditionally. The control asserts that the deferred policy is not selectable by this grant: absence is the only thing the policy can excuse, and this target has been provisioned for over a year, so absence is a finding rather than a stage.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N16",
+      "description": "PRECHECK CITED AS D1-8 => REFUSAL. An evidence artifact carrying OBSERVATION_ROLE PRECHECK_OLD_DB must be REFUSED as D1-8 evidence, as D-1 evidence, and as evidence for S1, S4, S6, S9, G12 or M11. The control also refuses a POST artifact produced by relabelling a PRE one: the two must carry different timestamps and different file names, because a relabelled PRE observation asserts a joint runtime-and-database state that was never observed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N17",
+      "description": "MORE THAN TWO OBSERVATIONS => REFUSAL. A third observation, a polling loop, an interval, a watch, or a retry after a STOP must be REFUSED. The control asserts the retry case specifically: if a fact changes between readings, the change IS the finding, and a lane that reads again until it gets a usable answer has replaced an observation with a search.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N18",
+      "description": "OBSERVATION CITED AS A STAGING_OBSERVATION_PACKET => REFUSAL. The artifact must be refused as evidence for HOSTED_DDL_PRECONDITIONS HDP-1 and for gates S1, S2, S6, S9 and G12. It reads none of that packet's contents — no journal prefix, no unit count, no manifest digest, no package provenance, no runtime identity endpoint — and citing it there would create the second answer to an owned question that ground HC-3 of the parent warns against.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N19",
+      "description": "OLD_DB READ AS PERMISSION => REFUSAL. An OLD_DB_CONFIRMED result must be refused as authority to implement Stage-A, to apply Stage-A, to resolve G2, or to satisfy any Stage-A precondition; and a NEW_DB result must be refused as retroactive legitimation of an apply that already happened. The control names the tempting inference directly: a confirmed OLD_DB is the strongest possible statement that the apply has NOT happened and the weakest possible statement that it MAY, per RULE_NO_APPLY_ON_DRIFT_ALONE — 'Drift is an observation, never a permission.'",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N20",
+      "description": "MISSING PRIVILEGE REPAIRED BY GRANTING IT => REFUSAL. On a false CP-3, issuing GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_auditor against the hosted target, or authoring a package that would, must be REFUSED. The control exists because this is the single most likely improvisation: the missing privilege is known, the grant is one line, and the measurement is blocked without it. It is a hosted mutation and a protected-surface write, and neither is in this grant.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M1",
+      "description": "MUTANT — DROP THE POSITIVE WITNESS. Remove the seven-argument requirement from OLD_DB_DEFINITION so OLD_DB is 'nine-argument absent'. Expected: P3 and N7 both go RED. If either stays green the predicate is one-sided and would report OLD_DB against a database with no uellix_stella_ops schema, which ENGINE_SEMANTICS_MEASURED.M-3 measured as returning NULL without raising.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M2",
+      "description": "MUTANT — CONVERT THE RAISE INTO AN ABSENCE. Wrap the probe so that a raise yields NULL. Expected: N8 goes RED. This is the mutant that matters most: on a privilege failure the mutation silently converts STOP_UNOBSERVABLE_DB_STATE into OLD_DB_CONFIRMED, and ENGINE_SEMANTICS_MEASURED.M-1 measured that a privilege failure is the LIKELY case for the authorized capability.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M3",
+      "description": "MUTANT — INVERT ONE CHARACTER OF A CANONICAL LITERAL. Change 'text[]' to 'text', or 'character varying' to 'varchar', in the nine-argument literal. Expected: P1 goes RED against the frozen amendment. A control that compared the literal against another copy inside this same manifest would stay green — which is why P1 asserts against SECTION_A3 and not against a sibling field.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M4",
+      "description": "MUTANT — REPLACE THE FIXED LITERAL WITH A COMPOSED ONE THAT IS BYTE-IDENTICAL. Build the probe argument by concatenation from parts that produce exactly the canonical string. Expected: N9 goes RED. A control asserting only the VALUE would stay green, proving it never tested the rule A3 actually froze, which is about the shape being auditable rather than the string being right today.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M5",
+      "description": "MUTANT — DOWNGRADE THE SENTINEL POLICY. Change sentinelPolicy from 'required' to 'deferred'. Expected: P5 and N15 go RED. The module returns ok:true with two signals under the deferred policy, so a control that only asserted verdict.ok would stay green while the identity gate had quietly lost a third of its evidence.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M6",
+      "description": "MUTANT — WIDEN projectRefFromPoolerUser TO ACCEPT ANY ROLE. Expected: N14 goes RED. The mutation is the natural-looking repair for a pooler refusal and it removes the reason the operator-role restriction exists, so a manifest that did not name it would leave the most plausible code change uncontrolled.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M7",
+      "description": "MUTANT — REMOVE THE PRODUCTION REF FROM THE DENYLIST. Empty KNOWN_PRODUCTION_IDENTIFIERS.projectRefs. Expected: N2 goes RED on every one of its four source arms. The module documents that an empty denylist 'removes a VETO, it does not remove a gate', so the positive signals stay green and only a control that asserts the VETO specifically will catch this.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M8",
+      "description": "MUTANT — ADD THE STAGING REF TO THE PRODUCTION DENYLIST. Expected: the observation refuses every target forever, and a control asserting only 'production is refused' stays green. The paired mutant to M7: it proves N2 is not satisfied by a veto that refuses everything, which db/hosted/target-identity.ts records as the failure mode a test already guards against.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M9",
+      "description": "MUTANT — DROP THE EXPLICIT BEGIN READ ONLY AND RELY ON THE ROLE DEFAULT. Expected: P8 and N5 go RED. ENGINE_SEMANTICS_MEASURED.M-4 measured that the role default alone DOES produce transaction_read_only = 'on', so this mutant is green on a well-behaved connection and red only where the control asserts the explicit form — which is exactly the connection-option override case the repository records as reachable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M10",
+      "description": "MUTANT — COLLAPSE THE TWO OBSERVATIONS INTO ONE. Remove D1_OLD_DB_FINAL_WITNESS and cite the PRECHECK as D1-8. Expected: P10 and N16 go RED. A control asserting only that an observation exists and classifies OLD_DB would stay green, which is precisely the overclaim the parent invented D1_RUNTIME_COHERENCE_VERIFIED to avoid.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M11",
+      "description": "MUTANT — DROP NIM-2, THE OID EQUALITY CHECK. Keep NIM-1 and NIM-3. Expected: the no-intervening-mutation evidence goes silent on a drop-and-recreate that preserved name and arity, and the control asserting NIM-2 goes RED. A boolean presence check cannot see an OID change, so a manifest without this control would credit a window in which the function was replaced.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M12",
+      "description": "MUTANT — ADD A pg_proc ENUMERATION AS A DIAGNOSTIC. Add a read listing all arities of complete_operation_ticket 'to make UNKNOWN diagnosable'. Expected: P9 and N10 go RED. The mutant is deliberately sympathetic: it improves diagnosis and widens the read surface, and a manifest whose only surface control was 'no tenant tables' would let it through.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M13",
+      "description": "MUTANT — EMIT THE CONNECTION HOST IN THE EVIDENCE ARTIFACT. Add the host string alongside the derived project ref. Expected: N13 goes RED. The host is not a credential and looks structural, which is why it is named explicitly: the promoted precedent in docs/ops/staging/evidence/README.md carries no connection block at all, and a control that only refused tokens and DSNs would stay green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M14",
+      "description": "MUTANT — MAKE THE EVIDENCE PATH DETERMINISTIC. Replace the date-and-observation-id filename with a single versioned path. Expected: P14 and N16 go RED because the FINAL witness overwrites the PRECHECK. This mutant reproduces, inside a node about freshness, the exact defect docs/ops/staging/evidence/README.md records as having destroyed the att_34fd431f witness.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M15",
+      "description": "MUTANT — SUBSTITUTE THE RUNTIME CAPABILITY ON A CAPABILITY STOP. On a false CP-3, fall back to UELLIX_RUNTIME_DATABASE_URL. Expected: N4 goes RED. uellix_app HOLDS USAGE on uellix_stella_ops, so this mutant PRODUCES A CORRECT-LOOKING MEASUREMENT. It is the one mutation whose output is indistinguishable from success, and a manifest that judged only the result would rate it green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M16",
+      "description": "MUTANT — DELETE CP-4, THE PRE-PROBE CAPABILITY STOP. Keep CP-3 as a recorded boolean but issue the probes regardless. Expected: P13 goes RED. The observation still fails closed, via N8, so the outcome is unchanged and only a control asserting the ORDER catches it — the point being that the designed diagnostic is replaced by an error path that carries less information.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M17",
+      "description": "MUTANT — RELABEL THE ENGINE-SEMANTICS SECTION AS HOSTED EVIDENCE. Remove the ENGINE_SEMANTICS_MEASUREMENT classification and the RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE binding. Expected: P11 goes RED. The measurements are unchanged and still true; what changes is what they are cited FOR, which is the whole content of that frozen rule.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate"]
+}
