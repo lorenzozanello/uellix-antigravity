@@ -1,0 +1,257 @@
+{
+  "package_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_TOOL_CAPABILITY_FACTUAL_CORRECTION_TO_A_FROZEN_EXECUTION_AUTHORITY_NOT_EXECUTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_SUPERSEDES_EXACTLY_FOUR_DEFECTIVE_CLAUSES_OF_ITS_FROZEN_PARENT_PLUS_TWO_CLARIFYING_CLAUSES__NO_GATE_WEAKENED__NO_GATE_ENLARGED",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-RECOVERY-AUTHORITY-AMENDMENT-R2",
+  "lane": "codex/cv1-staging-recovery-authority-r1",
+  "role": "STAGING_RECOVERY_AUTHORITY_CORRECTION_WRITER",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Sonnet 5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "GRANT_ID": null,
+
+  "SECTION_A0_FRESHNESS": {
+    "BASE_REF": "origin/codex/cv1-staging-recovery-authority-r1",
+    "BASE_SHA": "334deb691389b8306ed4b81a9d793c30bf0f94a3",
+    "BASE_TREE": "b269ae62b64e188ee30f9f6e85921e72e9d30b4e",
+    "BRANCH": "codex/cv1-staging-recovery-authority-r1",
+    "WORKTREE_MODE": "ATTACHED_WRITER_PUSHING_FAST_FORWARD_TO_PR_BRANCH",
+    "INTEGRATION_AT_THIS_BASE_FOR_FRESHNESS_ONLY": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "integration_sync_disposition": "NOT PERFORMED AND NOT AUTHORIZED. This lane is correction-only. The base of this amendment is PR #205 head 334deb69, not integration. Integration is recorded here solely so a reader can see which integration state this correction was authored against; it is byte-identical to the base the original authoring lane opened against.",
+    "worktree_clean_before_mutation": true,
+    "drift_rule": "If origin/codex/cv1-staging-recovery-authority-r1 is not 334deb691389b8306ed4b81a9d793c30bf0f94a3 immediately before commit, the mission STOPS with BASE_DRIFT and this artifact is not committed. Never silently reconciled.",
+    "IMPLEMENTATION_PERFORMED": "NONE. This artifact is not executable. No backup, no restore, no PITR mutation, no PostgreSQL connection, no Supabase configuration change and no quiesce act is created or performed by it."
+  },
+
+  "BASE_AUTHORITY": {
+    "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+    "blob_sha_at_this_base": "154c3d1d396784ae7189b8088669b0ef8231de67",
+    "disposition": "HISTORICALLY_FROZEN_BYTE_FOR_BYTE_NOT_EDITED_BY_THIS_ACT",
+    "form": "This document is a SEPARATE COMPANION AUTHORITY AMENDMENT, following the repository-native precedent docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json and docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. It is NOT a replacement authority. No STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.1.json exists or is authorized. The parent remains controlling for every clause this amendment does not name.",
+    "why_no_parent_edit": "The parent is a frozen artifact already read by independent certification, and its defect is part of the evidentiary record that produced finding F-IC-1. Rewriting it would destroy the history of the defect and would be a prohibited historical-evidence rewrite (CLAUDE.md section 5). The defect is therefore adjudicated in place, in the open, by an append-only successor clause.",
+    "naming_derivation": "Derived mechanically from repository precedent, not from the mission prompt. Every append-only authority correction in this repository is named <BASE_PACKAGE_ID>_AMENDMENT_v<next>.json and is placed in the SAME directory as its base, paired with a <BASE_MANIFEST_ID>_AMENDMENT_v<next>.json. The base is STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0 under docs/ops/release/, so this artifact is STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json under docs/ops/release/."
+  },
+
+  "COMPANION_MANIFEST_AMENDMENT": {
+    "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "base_manifest_path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+    "base_manifest_blob_sha_at_this_base": "4dfe95774529e65287e51456842f89a2f0a498f9",
+    "base_manifest_disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT_REMAINS_CONTROLLING_FOR_ITS_OWN_56_CONTROLS (17 positive, 22 negative, 17 mutation)"
+  },
+
+  "OWNER_RATIFICATION": {
+    "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+    "blob_sha_at_this_base": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+    "disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT. OD-3 (QUIESCE), OD-5 (conditional ACCEPT) and OD-6 (DESTROY_BY_DEFAULT) are untouched. This amendment asks the owner for nothing and grants itself nothing. It corrects tool-capability FACTS the ratification never depended on: none of OD-3, OD-5 or OD-6 cites the backups CLI surface."
+  },
+
+  "SECTION_A1_DEFECT_ADJUDICATION": {
+    "FINDING_ID": "F-IC-1",
+    "SOURCE": "Independent certification of PR #205's effective package, lane CV1-STAGING-RECOVERY-IC-R1, 2026-09-21. That certification returned CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS and re-ran the identical measurement this correction re-verifies.",
+    "DEFECT_SUMMARY": "The frozen parent asserts, in four places, that the Supabase CLI 2.109.1 `backups` subcommand exposes ONLY `list`. That assertion is false. Re-running `./node_modules/.bin/supabase backups --help` at the SAME pinned version measured by the parent (2.109.1, no `--experimental` flag) shows SUBCOMMANDS = `list` (\"Lists available physical backups\") AND `restore` (\"Restore to a specific timestamp using PITR\"). `supabase backups restore --help` shows exactly two flags: `--project-ref` and `--timestamp`/`-t` (epoch seconds); there is no destination or target-override flag of any kind.",
+    "WHY_THE_CONCLUSION_IS_NOT_WEAKENED": "The parent's operative prohibition was never conditioned on the tool lacking a restore command. EXPLICIT_NON_AUTHORIZATIONS already bars 'Triggering a restore, of any artifact, by any mechanism, anywhere', and CAPABILITY.MANAGEMENT_PLANE.must_not already bars using the management-plane token to 'restore a backup'. Both rest on AUTHORITY, not on alleged tool incapability, and neither is touched by this amendment. What changes is only the FACTUAL PREMISE offered in support of adjudication E's third ground and gap MG-4 -- and the corrected premise is STRONGER than the false one: `backups restore` is confirmed, by directly reading its flag surface, to take only a project ref and a timestamp with NO separate-target parameter, so the restore act it exposes is CONFIRMED IN-PLACE rather than merely presumed in-place by the absence of any restore command at all.",
+    "DEFECTIVE_CLAUSES": [
+      {
+        "id": "DC-1",
+        "locus": "AUTHORITY docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json :: LIVE_MANAGEMENT_PLANE_OBSERVATION.method.commands[1]",
+        "OLD_verbatim": "supabase backups list --project-ref bvyzblhqymxruxdguaee --output-format json (read-only; the backups subcommand exposes ONLY 'list' in this CLI version, so no restore path was reachable from it)",
+        "defect": "FALSE PREMISE. `backups restore` exists in the same CLI version. The command actually run (`backups list`) is still correctly the ONLY hosted call this lane issued -- that fact is unaffected -- but the parenthetical's justification for why no restore was reachable is wrong.",
+        "disposition": "SUPERSEDED by SECTION_A2.CORRECTED_COMMANDS_ANNOTATION below."
+      },
+      {
+        "id": "DC-2",
+        "locus": "AUTHORITY docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json :: CAPABILITY.MANAGEMENT_PLANE.measured_note",
+        "OLD_verbatim": "The CLI subcommand surface observed at version 2.109.1 exposes ONLY 'backups list', so no restore is reachable through that path with this tool. This is a measured property of the TOOL, not a guarantee about the TOKEN: the same token against the management API or the dashboard may well be able to restore. The prohibition is therefore stated on the ACT, not on the tool.",
+        "defect": "FALSE PREMISE in the first sentence. The second sentence's framing (prohibition stated on the ACT, not the tool) is CORRECT and is exactly the reasoning this amendment preserves and reinforces.",
+        "disposition": "SUPERSEDED by SECTION_A3.CORRECTED_MEASURED_NOTE below. The must_not list this note is attached to is UNCHANGED."
+      },
+      {
+        "id": "DC-3",
+        "locus": "AUTHORITY docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json :: MEASUREMENT_GAPS_RECORDED.gaps[MG-4].measured",
+        "OLD_verbatim": "The CLI exposes only 'backups list', so no restore path was observable from the tool. Whether the dashboard or API offers an out-of-place restore was NOT measured.",
+        "defect": "FALSE PREMISE in the first sentence. The second sentence remains TRUE and is preserved: the dashboard/API surface, as distinct from the CLI, was still not measured by either the original lane or this correction.",
+        "disposition": "SUPERSEDED by SECTION_A4.CORRECTED_MG_4 below. MG-4's gap and consequence fields are narrowed, not removed -- see SECTION_A4."
+      },
+      {
+        "id": "DC-4",
+        "locus": "AUTHORITY docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json :: OPEN_FINDINGS[OF-2].disposition",
+        "OLD_verbatim": "The lane brief expressly permitted read-only management-plane inspection where tooling safely allows it. The reads contacted no database, used an already-authenticated CLI, and were scoped to a subcommand surface exposing only 'list'. Recorded rather than buried, because a certifier should confirm the reads were within the permission rather than discover them.",
+        "defect": "FALSE PREMISE in the clause 'scoped to a subcommand surface exposing only list'. What was actually scoped was the COMMAND INVOKED (`backups list` only), not the surface available. The reads still contacted no database and used an already-authenticated CLI -- both remain true.",
+        "disposition": "SUPERSEDED by SECTION_A5.CORRECTED_OF_2 below."
+      }
+    ]
+  },
+
+  "SECTION_A2_CORRECTED_COMMANDS_ANNOTATION": {
+    "supersedes": "DC-1",
+    "NEW_verbatim": "supabase backups list --project-ref bvyzblhqymxruxdguaee --output-format json (read-only; this is the ONLY command this lane actually issued against the authorized ref. The `backups` subcommand ALSO exposes `restore` in this CLI version -- see SECTION_A2.MEASURED_RESTORE_SURFACE below -- but `restore` was never invoked. The prohibition on triggering a restore rests on EXPLICIT_NON_AUTHORIZATIONS and CAPABILITY.MANAGEMENT_PLANE.must_not, not on the false premise that the command was unreachable.)",
+    "MEASURED_RESTORE_SURFACE": {
+      "method": "`./node_modules/.bin/supabase backups --help` and `./node_modules/.bin/supabase backups restore --help`, same pinned CLI version 2.109.1, no `--experimental` flag, re-run identically to the original observation method.",
+      "result": {
+        "backups_subcommands": ["list (\"Lists available physical backups\")", "restore (\"Restore to a specific timestamp using PITR\")"],
+        "restore_flags": ["--project-ref string", "--timestamp, -t integer (\"The recovery time target in seconds since epoch\")"],
+        "restore_destination_flag": "NONE. No flag names a destination project, a target database, a clone, or any form of out-of-place restore."
+      },
+      "class": "LIVE_MANAGEMENT_PLANE_FACT, re-measured on 2026-09-21 by the correction lane and independently corroborated by the certification lane's own re-measurement on the same date.",
+      "act_still_not_performed": "`backups restore` was NOT invoked by any lane against any project. This is an observation of the command's FLAG SURFACE via `--help`, which contacts no database and no management API."
+    },
+    "consequence_for_the_recovery_model": "None. RM-1 (provider-managed recovery floor) was already correctly described as an in-place, provider-managed instrument that cannot satisfy S8. Confirming that its own CLI restore path is in-place strengthens that description; it does not change which instrument RM-2 through RM-7 still need to supply."
+  },
+
+  "SECTION_A3_CORRECTED_MEASURED_NOTE": {
+    "supersedes": "DC-2",
+    "NEW_verbatim": "The CLI subcommand surface observed at version 2.109.1 exposes BOTH 'backups list' and 'backups restore' -- see the companion authority amendment SECTION_A2.MEASURED_RESTORE_SURFACE for the exact flags. `backups restore` takes only a project ref and an epoch timestamp; it names no destination, so the restore act it exposes is CONFIRMED IN-PLACE by direct measurement of its flag surface, not merely presumed in-place by the prior (false) belief that no restore command existed. This remains a measured property of the TOOL, not a guarantee about the TOKEN: the same token against the management API or the dashboard may offer a different restore shape, and that surface remains UNMEASURED -- see MG-4 as corrected by SECTION_A4. The prohibition is stated on the ACT, not on the tool, and is therefore UNCHANGED by this correction: this lane's capability MUST NOT be used to restore a backup, exactly as the parent's must_not list already required.",
+    "must_not_list_unchanged": "CAPABILITY.MANAGEMENT_PLANE.must_not, which lists 'restore a backup' among the prohibited acts, is NOT edited by this amendment. It required no correction because it was never conditioned on tool capability."
+  },
+
+  "SECTION_A4_CORRECTED_MG_4": {
+    "supersedes": "DC-3",
+    "NEW_MG_4": {
+      "id": "MG-4",
+      "gap": "Whether the provider physical backup can be restored to a SEPARATE project, rather than in place, via the DASHBOARD or the management API (as distinct from the CLI) is UNKNOWN.",
+      "measured": "The CLI's `backups restore` subcommand is CONFIRMED, by direct inspection of its flag surface (--project-ref, --timestamp only, no destination flag), to expose an IN-PLACE restore act and nothing else. This is now a direct measurement of the CLI path, not an inference from the prior false premise that no restore command existed. Whether the dashboard or the management API offers a differently-shaped, out-of-place restore remains NOT MEASURED by any lane in this chain.",
+      "consequence": "E's third ground (unverifiable without destruction) is STRENGTHENED for the CLI path: it is now a direct measurement rather than an inference from tool absence. It remains an INFERENCE only insofar as it generalizes from the CLI surface to the provider's full capability, since the dashboard/API path is still unmeasured. If an out-of-place restore exists via the dashboard or API, RM-1 could become independently verifiable through that channel, which would STRENGTHEN the model without changing any gate. This narrower gap is flagged as OF-3, corrected by SECTION_A6 below, so a certifier tests the narrower claim rather than accepting it."
+    },
+    "narrowing_is_not_a_gate_change": "MG-4 continues to record an UNKNOWN and continues to feed no gate. Narrowing its scope from 'the CLI' to 'the dashboard and the API' is a factual correction to what was actually measured, not a relaxation of any criterion."
+  },
+
+  "SECTION_A5_CORRECTED_OF_2": {
+    "supersedes": "DC-4",
+    "NEW_OF_2": {
+      "id": "OF-2",
+      "finding": "This lane performed live management-plane reads while its mode is AUTHORING_ONLY.",
+      "disposition": "The lane brief expressly permitted read-only management-plane inspection where tooling safely allows it. The reads contacted no database, used an already-authenticated CLI, and were scoped to the SINGLE COMMAND `backups list` -- not to a subcommand surface that only exposed `list`, which was a false premise corrected by this amendment's SECTION_A1..A5. The narrower, correct claim is: only `list` was INVOKED, even though `restore` was also AVAILABLE. Recorded rather than buried, because a certifier should confirm the reads were within the permission rather than discover them.",
+      "blocking": false
+    }
+  },
+
+  "SECTION_A6_OF_3_CLARIFICATION": {
+    "ANCHOR_CORRECTION_ONLY": false,
+    "scope": "Clarifying, not superseding a false claim. OF-3's finding statement described MG-4's premise correctly as an inference at v1.0.0's own time of writing; it is refined here to reflect the stronger v1.0.1 measurement without asserting OF-3 itself was defective.",
+    "locus": "AUTHORITY docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json :: OPEN_FINDINGS[OF-3]",
+    "OLD_verbatim": {
+      "finding": "E's third ground rests on MG-4, an inference from the observed CLI surface rather than a measured provider property.",
+      "disposition": "E does not depend on it: the TEMPORAL ground alone is sufficient and is directly measured. Flagged so a certifier can test the weaker ground without disturbing the conclusion."
+    },
+    "precision_added_not_a_defect": "OF-3's finding was accurate as far as it went: at v1.0.0, E's third ground WAS an inference, because it rested on the absence of a restore command. It remains true that E does not depend on it and that the TEMPORAL ground alone is sufficient -- SECTION_A9 below reconfirms this reasoning is unchanged. What has changed is that the ground E's third bullet states ('the only restore path observed for it is in-place') is now ALSO directly measured for the CLI, in addition to being inferable, which makes OF-3's own framing ('an inference... rather than a measured provider property') incomplete without this amendment.",
+    "NEW_OF_3": {
+      "id": "OF-3",
+      "finding": "E's third ground, restated in ADJUDICATIONS.E as 'the only restore path observed for it is in-place', is now DIRECTLY MEASURED for the CLI surface (SECTION_A2.MEASURED_RESTORE_SURFACE), and remains an INFERENCE only in the sense that it generalizes from the CLI to the provider's full capability, since the dashboard/API path is unmeasured (MG-4 as corrected by SECTION_A4).",
+      "disposition": "E does not depend on this ground at all: the TEMPORAL ground alone is sufficient and is directly measured, independent of anything in this section. This finding is therefore STRENGTHENED rather than resolved: the certifier's re-measurement corroborated the ground this amendment narrows, and a future lane can test the remaining generalization (CLI-to-provider) without disturbing E's conclusion, which does not depend on it either way.",
+      "blocking": false
+    }
+  },
+
+  "SECTION_A7_F_IC_3_RESTORE_PROOF_CLARIFICATION": {
+    "FINDING_ID": "F-IC-3",
+    "tension_as_measured": "The companion manifest's NC-10 states 'BACKUP_PACKET and RESTORE_PROOF are reused with no field added, removed or reordered'. The authority separately requires RESTORE_PROOF evidence to carry container identity, engine versions, an explicit storage-byte out-of-scope declaration (PRI-7), and an explicit statement of whether a governed erasure exists that a restore would resurrect. Read without cross-reference, these can appear to be NEW fields NC-10 forbids.",
+    "resolution": "Not a contradiction. The frozen parent RESTORE_PROOF packet, defined at docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json EVIDENCE_PACKETS.packets[RESTORE_PROOF].contents, has exactly FIVE frozen fields: (1) the backup identifier restored from, (2) the target restored into, (3) timestamps for start and completion, (4) post-restore verification results, (5) the roll-forward performed afterwards and to which point. Every item the authority additionally requires is a CONSTRAINED INSTANTIATION of one of these five, never a sixth field.",
+    "explicit_mapping": [
+      {"required_content": "container identity (image, digest, engine version, creation/destruction timestamps)", "instantiates": "field (2) 'the target restored into' -- a disposable container IS the target restored into, and its identity is what makes that field meaningful when the target is not a hosted project."},
+      {"required_content": "engine version skew recorded (rehearsal image 17.6.1.143 vs measured live target 17.6.1.155)", "instantiates": "field (2), as part of the same target-identity content: a verifier cannot judge 'what was restored into' without knowing which engine build it was."},
+      {"required_content": "PRI-7's explicit storage-object-bytes-out-of-scope declaration", "instantiates": "field (4) 'post-restore verification results' -- PRI-7 IS a post-restore verification check, and its explicit-declaration requirement is part of stating that check's result honestly rather than by omission."},
+      {"required_content": "the explicit statement of whether a governed erasure exists that a restore would resurrect", "instantiates": "field (4) 'post-restore verification results' -- it is a verification result about the restored data's relationship to prior lawful erasures, required so the evidence does not silently omit a check the authority elsewhere flags as relevant to ENV-07 but does not itself perform."}
+    ],
+    "no_field_added": "CONFIRMED. Every additional item the authority requires is content WITHIN one of the five frozen fields. The amendment adds no sixth field, and NC-10 in the companion manifest remains CORRECT as originally written -- it required no supersession, only this explicit cross-reference, which SECTION_A8 of the companion manifest amendment turns into an auditable control.",
+    "does_not_enlarge_ENV_07": "CONFIRMED. This clarification is entirely internal to the frozen five-field RESTORE_PROOF shape and to invariants the authority already declared (PRI-7, the tombstone-scope note). It adds no new surface requirement, does not require Auth or Storage evidence for D1/S8, and does not advance ENV-07's own binding deadline. ENV-07.canonical_binding NO_GATE_MUTATION, cited in the parent authority's CONTROLLING_AUTHORITY, is untouched."
+  },
+
+  "SECTION_A8_F_IC_2_EFFECTIVE_PACKAGE_CLARIFICATION": {
+    "FINDING_ID": "F-IC-2",
+    "tension_as_measured": "The companion manifest's PC-17 and NC-7 describe the write set as 'exactly two paths' / 'exactly two ADDED paths'. That was TRUE of the original authoring lane's commit (afbf0616): it added exactly the authority and the manifest. It is not a false claim about that commit. It is a SCOPE GAP relative to the now-effective three-artifact package, which also includes docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json, added by a later commit (334deb69) on the same branch.",
+    "not_a_defect": "PC-17 and NC-7 are NOT superseded by this amendment. They remain byte-unchanged and remain TRUE statements about the ORIGINAL AUTHORING LANE's own write set. Marking them defective would misdescribe what actually happened at that commit.",
+    "the_actual_gap": "No control in the base manifest asserts anything about the OWNER-RATIFICATION commit's write-set purity, or about the ratification's blob-binding integrity, or about the THREE-artifact EFFECTIVE PACKAGE as a whole. That coverage is added, not corrected, by the companion manifest amendment's delta controls -- see its own T-series and N-series additions.",
+    "terminology_fixed_going_forward": "ORIGINAL_AUTHORING_LANE_WRITE_SET = {STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json, STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json}, introduced at commit afbf0616, exactly what PC-17/NC-7 describe. EFFECTIVE_PACKAGE = ORIGINAL_AUTHORING_LANE_WRITE_SET plus STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json, introduced at commit 334deb69, which is what an execution lane or a certifier must read as the operative whole. This amendment and its own companion manifest amendment are a THIRD addition on top of the effective package, introduced at the commit this amendment is committed in."
+  },
+
+  "SECTION_A9_NO_OTHER_SEMANTIC_CHANGE": {
+    "disposition": "BINDING. Every item below is carried from the frozen parent UNCHANGED. This amendment names them explicitly so a certifier can check the negative claim by comparison rather than by reading the whole parent.",
+    "unchanged": [
+      "QUIESCE as the ratified OD-3 posture, and the fact that no quiesce mechanism is authorized anywhere in this chain (IG-1 from the owner ratification, untouched).",
+      "DP-1 through DP-5, the rehearsal data-protection postures, and the fail-closed CUSTOMER_DATA treatment of restored staging data.",
+      "DESTROY_BY_DEFAULT as OD-6's ratified default, and the withholding of HC-5 by default.",
+      "D1 and S8 as the only ledger gates this authority makes Stage-A preconditions; D2, D3, D4, D5, P5 and ENV-07 remain first required LATER exactly as adjudicated.",
+      "The event-based freshness rule (FRESHNESS, RULE_OBSERVATION_FRESHNESS) -- no clock duration is introduced by this amendment.",
+      "The logical-backup-plus-isolated-rehearsal recovery model (RM-1 through RM-7) and its components.",
+      "POST_RESTORE_INVARIANTS PRI-1 through PRI-7, unedited.",
+      "AUTHORIZED_OPERATIONS AO-1 through AO-9, unedited and still CONJUNCTIVE AND EXHAUSTIVE -- this amendment adds no AO-10 and authorizes no restore act.",
+      "EXPLICIT_NON_AUTHORIZATIONS, unedited -- 'Triggering a restore, of any artifact, by any mechanism, anywhere' still stands and now rests, more visibly than before, on authority rather than on tool incapability.",
+      "ADJUDICATIONS.E's answer ('NO, for S8, and NOT ALONE for D1') and its TEMPORAL ground, unedited and unaffected by anything in this amendment.",
+      "The requirement for a separate QUIESCE mechanism authority before S8 can be satisfied under the QUIESCE posture, per the owner ratification's IG-1.",
+      "TARGET.PRODUCTION_VETO and TARGET.TARGET_IDENTITY_ESTABLISHMENT.PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER, unedited."
+    ]
+  },
+
+  "SECTION_A10_PRECEDENCE": {
+    "rule": "For the four clauses named in SECTION_A1 (DC-1 through DC-4), THIS AMENDMENT CONTROLS via SECTION_A2 through SECTION_A5. For OF-3, this amendment controls via SECTION_A6 as a clarification, not as a correction of a defect. For the RESTORE_PROOF field mapping in SECTION_A7 and the effective-package terminology in SECTION_A8, this amendment controls as an explicit clarification of content the parent already implied but did not spell out. For everything else, the frozen parent v1.0.0 and its frozen manifest v1.0.0 control verbatim.",
+    "conflict_rule": "A reader who finds this amendment and the parent in conflict on any clause NOT named above must treat that as a defect in this amendment and STOP, not choose. Under CLAUDE.md section 5 an unresolved conflict fails closed.",
+    "relation_to_the_domain_authority": "Unchanged. The parent refines docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json, docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json and its amendment v1.0.1, and docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json. This amendment does not amend any of those, does not amend the owner ratification for THIS authority, and does not amend PR #205's other artifacts."
+  },
+
+  "SECTION_A11_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "basis": "Re-derived for THIS write set by executing scripts/ods-scope.ts's classifyPaths against DEFAULT_PROTECTED_PATTERNS at this base. This amendment writes two files, both under docs/ops/release/**, which is not a DEFAULT_PROTECTED_PATTERN. It authorizes no implementation, no apply, no deployment, no certification and no allocation.",
+    "ods_scope_expectation": "ods:scope over the full branch write set (now five files: authority, manifest, owner ratification, authority amendment, manifest amendment) must report 0 protected violations, 0 non-canonical protected paths and 0 unauthorized paths under --allow docs/ops/release/** --allow docs/ops/owner-ratifications/**.",
+    "what_this_amendment_does_not_do": [
+      "It does not enable Stage-A or S8 to be satisfied.",
+      "It does not authorize a quiesce mechanism -- IG-1 remains open.",
+      "It does not merge PR #205, which remains DRAFT.",
+      "It does not allocate an ODS grant, an HPO id, a W2 identifier or a migration ordinal.",
+      "It does not certify itself. Independent review is still required, and now has a smaller, more precisely measured surface to re-derive.",
+      "It does not open the QUIESCE mechanism authority (CV1-STAGING-QUIESCE-MECHANISM-AUTHORITY-R1) -- that remains a separate future lane."
+    ]
+  },
+
+  "SECTION_A12_SELF_CHECK": {
+    "note": "Deterministic, test-free self-check for THIS amendment. It does not restate and does not replace the frozen parent's own self_check, which remains true of the unedited parent file.",
+    "expected_defective_clause_count": 4,
+    "expected_defective_clause_ids": ["DC-1", "DC-2", "DC-3", "DC-4"],
+    "expected_clarification_count": 3,
+    "expected_clarification_ids": ["SECTION_A6_OF_3_CLARIFICATION", "SECTION_A7_F_IC_3_RESTORE_PROOF_CLARIFICATION", "SECTION_A8_F_IC_2_EFFECTIVE_PACKAGE_CLARIFICATION"],
+    "expected_write_set_size": 2,
+    "checks": [
+      "SECTION_A1_DEFECT_ADJUDICATION.DEFECTIVE_CLAUSES.length == 4 and every OLD_verbatim is byte-identical to the string at its stated locus in the frozen parent file at blob 154c3d1d396784ae7189b8088669b0ef8231de67.",
+      "SECTION_A2.MEASURED_RESTORE_SURFACE.result.backups_subcommands has exactly 2 entries and includes both list and restore.",
+      "SECTION_A2.MEASURED_RESTORE_SURFACE.result.restore_destination_flag == 'NONE...' -- if a destination flag is ever found, this amendment is void and must itself be superseded.",
+      "every DEFECTIVE_CLAUSES entry has a disposition naming a SECTION_A2..A5 clause that actually exists in this document.",
+      "PC-17 and NC-7 of the base manifest are NOT listed as defective anywhere in this amendment -- SECTION_A8 explicitly confirms they remain true of their own original scope.",
+      "NC-10 of the base manifest is NOT listed as defective anywhere in this amendment -- SECTION_A7 explicitly confirms it required no supersession.",
+      "AUTHORIZED_OPERATIONS AO-1..AO-9 of the base authority are not mentioned as edited or superseded anywhere in this amendment.",
+      "the string 'AO-10' does not appear anywhere in this amendment.",
+      "EXPLICIT_NON_AUTHORIZATIONS of the base authority is not mentioned as edited or superseded anywhere in this amendment.",
+      "SECTION_A13_WRITE_SET.length == 2, and both entries are ADDED, not modified.",
+      "no numeric RPO or RTO value is declared or proposed anywhere in this amendment.",
+      "the production ref ctaxtgujyyprgynmnvtq, if it appears at all, appears only inside a quoted OLD_verbatim or in a veto/finding context, never as a target."
+    ]
+  },
+
+  "SECTION_A13_WRITE_SET": [
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (this file, ADDED)",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json (ADDED)"
+  ],
+
+  "RISKS_AND_OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "F-AM-1",
+        "finding": "This amendment confirms the CLI restore path is in-place by reading its flag surface, but does not and cannot confirm the same for the Supabase management API or dashboard, which may expose a differently-shaped restore (for example, to a newly created project) that the CLI does not surface.",
+        "mitigation": "MG-4 as corrected by SECTION_A4 states this narrowing precisely rather than claiming more than was measured. If an out-of-place path is later found via the API or dashboard, it would STRENGTHEN RM-1's independent verifiability without changing any gate criterion -- consistent with the parent's own framing at MG-4.consequence."
+      },
+      {
+        "id": "F-AM-2",
+        "finding": "This amendment does not close IG-1 (no quiesce mechanism is authorized) or IG-2 (no quiesce-attestation evidence shape is defined), because closing either would require authorizing a new act in a domain (runtime/deployment) this authority does not govern.",
+        "mitigation": "Recorded as the explicit next gate. CV1-STAGING-QUIESCE-MECHANISM-AUTHORITY-R1 is the successor lane named for this purpose."
+      }
+    ]
+  },
+
+  "required_independent_review": "INDEPENDENT certification is still required before any implementation or execution lane opens, and this amendment does not certify itself or its parent. A certifier should RE-MEASURE rather than re-read: re-run `supabase backups --help` and `supabase backups restore --help` at the pinned version and confirm the flag surface stated in SECTION_A2, and confirm every OLD_verbatim in SECTION_A1 against the frozen parent blob.",
+
+  "final_state": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1_0_1_FROZEN_F_IC_1_CORRECTED_AWAITING_INDEPENDENT_CERTIFICATION",
+  "next_gate": "OPUS_FOCUSED_REVIEW_OF_THIS_AMENDMENT__THEN__CV1_STAGING_QUIESCE_MECHANISM_AUTHORITY_R1"
+}

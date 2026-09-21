@@ -1,0 +1,83 @@
+{
+  "manifest_id": "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json -- the companion authority amendment frozen by mission CV1-STAGING-RECOVERY-AUTHORITY-AMENDMENT-R2 at BASE_SHA 334deb691389b8306ed4b81a9d793c30bf0f94a3 / tree b269ae62b64e188ee30f9f6e85921e72e9d30b4e / ref origin/codex/cv1-staging-recovery-authority-r1. That amendment supersedes exactly four defective clauses of the frozen parent docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json (LIVE_MANAGEMENT_PLANE_OBSERVATION.method.commands[1], CAPABILITY.MANAGEMENT_PLANE.measured_note, MEASUREMENT_GAPS_RECORDED.gaps[MG-4].measured, OPEN_FINDINGS[OF-2].disposition) plus one clarification of OPEN_FINDINGS[OF-3] that is not a defect correction, plus two further clarifications (F-IC-3 RESTORE_PROOF field mapping, F-IC-2 effective-package terminology) that supersede nothing. || FORM: this document is a SEPARATE COMPANION MANIFEST AMENDMENT, following the repository-native precedent docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json -- a schema-valid test manifest in its own right that carries ONLY the DELTA controls. It is NOT a replacement manifest: docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json is left BYTE-UNCHANGED at blob 4dfe95774529e65287e51456842f89a2f0a498f9, is NOT edited by this act, and remains controlling for all 56 of its own controls (17 positive, 22 negative, 17 mutation). No STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.1.json exists or is authorized. || WHAT THIS AMENDMENT DOES NOT SUPERSEDE: the base manifest's PC-17 and NC-7, which describe the ORIGINAL AUTHORING LANE's write set (exactly two paths, added at commit afbf061659b4613ae6988a573ba35863a9d74e93) and remain TRUE statements about that scope; and NC-10, which asserts BACKUP_PACKET and RESTORE_PROOF are reused with no field added, and which the authority amendment's SECTION_A7 confirms required no correction, only an explicit cross-reference. Marking any of PC-17, NC-7 or NC-10 as defective would misdescribe what those controls actually assert. || WHAT THIS AMENDMENT ADDS: five DELTA controls -- PC-18 (defective-clause byte-fidelity), PC-19 (RESTORE_PROOF field-mapping completeness), PC-20 (owner-ratification blob-binding integrity, closing the coverage gap F-IC-2 identified: no base control covers the ratification file or the three-artifact EFFECTIVE_PACKAGE as a whole), NC-23 (refusal: no quiesce operation added, no restore prohibition weakened) and NC-24 (refusal: PC-17/NC-7/NC-10 not marked defective) plus NC-25 (refusal: no RPO/RTO value, no ENV-07 enlargement), and two mutation controls MUT-AM-1 and MUT-AM-2 proving the corrected claims and the field mapping are each falsifiable. || ID DISJOINTNESS: the base manifest's 56 ids are PC-1..PC-17, NC-1..NC-22 and MC-1..MC-17. The five new ids (PC-18..PC-20, NC-23..NC-25, MUT-AM-1..MUT-AM-2) were derived mechanically as max+1 per series (MUT-AM- is a new short prefix because the base series MC- already reached MC-17 and this amendment's two mutation controls are about the AMENDMENT's own claims, not about the original authority's recovery model) and intersect the base set in the EMPTY SET. || STATUS: every control below is executable NOW, unlike the FIBDB-053 precedent's FUTURE_MATERIALIZATION controls -- this is a docs-only correction about artifacts that already exist at this base, not a control waiting on unbuilt code. test_file is UNKNOWN throughout per the schema's own sanctioned representation, because no dedicated test harness exists yet for JSON-authority cross-reference checking; each control is runnable today as a one-off script exactly as this correction lane ran it. || ANTI-VACUITY RULE (binding on every control below): a control must assert its comparands as FROZEN STRINGS or FROZEN BYTE-DIGESTS read from the actual files at their stated blob SHAs, never by re-deriving them from prose paraphrase.",
+
+  "dependencies": [
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0 -- the frozen parent authority, blob 154c3d1d396784ae7189b8088669b0ef8231de67. Controlling for every clause except the four superseded by SECTION_A2..A5 of the authority amendment. NOT edited by this act.",
+    "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0 -- the frozen base manifest, blob 4dfe95774529e65287e51456842f89a2f0a498f9. Controlling for its own 56 controls. NOT edited by this act.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 -- this manifest's own controlling authority, added by the same act.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0 -- blob 876fc76cedc3e83f44b7c76221f0bc812d35ee5d. OD-3/OD-5/OD-6 untouched. NOT edited by this act. Its own blob-binding fields (AUTHORITY_BLOB_SHA, MANIFEST_BLOB_SHA) are the subject of PC-20."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+
+  "sentinels": [
+    {
+      "id": "SENT-NO-SECRET-VALUE",
+      "purpose": "Proves that no password, access token, DSN or connection string value appears anywhere in the amendment pair, matching the sentinel already run over the original three artifacts."
+    },
+    {
+      "id": "SENT-DEFECTIVE-CLAUSE-COUNT-EXACT",
+      "purpose": "Proves the amendment corrects EXACTLY the four clauses it names and no more, no fewer -- a correction that silently drifts in scope is as dangerous as one that misses a clause."
+    }
+  ],
+
+  "positive_controls": [
+    {
+      "id": "PC-18",
+      "description": "Every OLD_verbatim string in the authority amendment's SECTION_A1_DEFECT_ADJUDICATION.DEFECTIVE_CLAUSES (DC-1 through DC-4) is byte-identical to the string at its stated locus in the frozen parent authority at blob 154c3d1d396784ae7189b8088669b0ef8231de67, and the OLD_verbatim quoted in SECTION_A6_OF_3_CLARIFICATION is byte-identical to OPEN_FINDINGS[OF-3].finding and .disposition at the same blob. A mismatch means the amendment is citing a clause that does not exist as quoted, which voids the correction it claims to make.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-19",
+      "description": "The authority amendment's SECTION_A7_F_IC_3_RESTORE_PROOF_CLARIFICATION.explicit_mapping accounts for every additional RESTORE_PROOF content item the base authority requires (container identity, engine versions, PRI-7's storage-byte declaration, the governed-erasure question), and each is mapped to exactly one of the five frozen fields in docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json EVIDENCE_PACKETS.packets[RESTORE_PROOF].contents, with no item left unmapped and no field invented beyond those five.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-20",
+      "description": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json's authority_binding.AUTHORITY_BLOB_SHA and .MANIFEST_BLOB_SHA equal `git rev-parse <AUTHORITY_INTRODUCING_COMMIT>:<companion_authority path>` and `...:<companion_manifest path>` respectively, re-derived mechanically rather than trusted from the ratification's own prose. This is the coverage F-IC-2 found missing: no base manifest control names the ratification file at all.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "NC-23",
+      "description": "REFUSAL: the authority amendment adds no operation to AUTHORIZED_OPERATIONS (no AO-10 or any other new id appears anywhere in the amendment pair), does not weaken EXPLICIT_NON_AUTHORIZATIONS' prohibition on triggering a restore by any mechanism, and does not weaken CAPABILITY.MANAGEMENT_PLANE.must_not's prohibition on using the management-plane token to restore a backup. Confirming that `backups restore` EXISTS in the tool must not be read, anywhere in this pair, as authorizing its use.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-24",
+      "description": "REFUSAL: neither PC-17 nor NC-7 nor NC-10 of the base manifest is listed among the superseded or defective clauses anywhere in the authority amendment or this manifest amendment. SECTION_A8 of the authority amendment explicitly states PC-17 and NC-7 remain true of the original authoring lane's own scope, and SECTION_A7 explicitly states NC-10 required no supersession.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-25",
+      "description": "REFUSAL: no numeric RPO or RTO value is declared or proposed anywhere in the amendment pair, and the RESTORE_PROOF field-mapping clarification (SECTION_A7) does not advance ENV-07's binding deadline, does not require Auth or Storage evidence for D1/S8, and does not cause D1 or S8 to inherit any ENV-07 scope. ENV-07.canonical_binding NO_GATE_MUTATION remains untouched by every clause in this pair.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "MUT-AM-1",
+      "description": "If SECTION_A2.MEASURED_RESTORE_SURFACE.result.restore_destination_flag were altered from 'NONE' to claim a destination flag exists, or if the two measured flags (--project-ref, --timestamp) were altered to add a third, the amendment's central claim -- that CLI restore is CONFIRMED in-place -- would no longer follow from its own stated evidence. A certifier must reproduce the exact two-flag surface by running `supabase backups restore --help` at the pinned version 2.109.1 and observe the mismatch if this mutation were applied.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-AM-2",
+      "description": "If SECTION_A7's explicit_mapping array were deleted from the authority amendment while NC-10 of the base manifest were left as originally written ('no field added, removed or reordered'), a reader comparing NC-10 against the authority's own RESTORE_PROOF-adjacent requirements (container identity, engine version, PRI-7, the governed-erasure statement) would again see the apparent contradiction F-IC-3 identified, because nothing would explain how those four items fit inside the five frozen fields. Deletion must be detectable by re-reading NC-10 alongside the base authority's H, EVIDENCE and POST_RESTORE_INVARIANTS blocks without SECTION_A7's mapping present.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
