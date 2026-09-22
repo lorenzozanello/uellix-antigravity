@@ -1,0 +1,152 @@
+{
+  "ARTIFACT": "FIBDB053_D1_AUDITOR_N06_CUSTODY_INVENTORY_AUTHORITY_v1.0.0",
+  "TITLE": "Governing act record: the SSL-06 pre-mint custody inventory skeleton, DAG node N06",
+  "LANE": "CV1-D1-AUDITOR-N06-CUSTODY-INVENTORY-AUTHORITY-R1",
+  "MODE": "DOCS_ONLY. No secret creation. No custody-store write. No hosted act of any kind.",
+  "PARENT": {
+    "commit": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+    "tree": "66cbcee0d7a849c4ac7305f7f40f02b4aa058988",
+    "branch_at_parent": "codex/cv1-d1-auditor-provisioning-dag-authority-r1",
+    "measured_by": "git rev-parse HEAD and git rev-parse HEAD^{tree} at this lane's own worktree base, re-derived rather than assumed."
+  },
+
+  "WHY_THIS_ARTIFACT_EXISTS": {
+    "the_gap_it_closes": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json SSL06_INVENTORY_PREREQUISITE.WHAT_AUTHORIZES_THE_WRITE states plainly: 'The WRITE ITSELF is performed by the future execution lane as part of its own governed act. It is not authorized by this DAG artifact and it is not authorized by the ratification record, both of which say so explicitly.' docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json OD-2.execution_not_authorized_by_this_ratification says the same: 'Populating the custody inventory's structure (even empty) is explicitly NOT authorized by this record ... That remains a separate governed act, gated behind its own prestate/poststate discipline.' This artifact IS that separate governed act.",
+    "what_it_is_not": "It is not an amendment to the DAG authority, the capability authority, or the owner-ratification record. None of those three artifacts is edited, superseded, or reinterpreted here. This artifact stands beside them and exercises the write-authorization gap they each name and each decline to close themselves."
+  },
+
+  "AUTHORITY_CHAIN_CONSUMED": [
+    {
+      "artifact": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+      "clause": "SECRET_CUSTODY_CONTRACT.SSL_06_ADJUDICATION.CONSEQUENT_BINDING_REQUIREMENT",
+      "what_is_taken": "The eight-field list (capability name, role, target project ref, human custodian, every process or environment that will hold it, mint date, expiry if OD-3 sets one, planned removal date) and the mandatory rule that the entry exist BEFORE THE CREDENTIAL IS MINTED. Consumed verbatim, not restated in a rival form.",
+      "relationship": "DIRECT GOVERNING CLAUSE."
+    },
+    {
+      "artifact": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+      "clause": "OD-2 (ratified), and OD-1, OD-3 as cross-referenced by OD-2",
+      "what_is_taken": "The canonical inventory PATH (docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json), the ratified custody mechanism (Windows Credential Manager, a DPAPI-backed OS credential vault), the ratified delivery posture (process-scoped from that vault, per MECHANISM_2_PROCESS_SCOPED as corrected by v1.0.2 SPC102-1), HU-4 acceptance, and OD-3's policy offset (VALID_UNTIL = planned FINAL WITNESS + 24 hours, a POLICY and not yet a computable UTC value).",
+      "relationship": "OWNER-SUPPLIED SPECIFICITY, CONSUMED AS GIVEN. Not re-adjudicated here."
+    },
+    {
+      "artifact": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+      "clause": "SSL06_INVENTORY_PREREQUISITE (CANONICAL_PATH, EXACTLY_WHEN_THE_RECORD_MUST_EXIST.BEAT_1_PRE_MINT_CREATION, NEVER_A_SECRET_VALUE), and DAG_NODES N06, N05, N09, N12",
+      "what_is_taken": "The BEAT_1/BEAT_2/BEAT_3 lifecycle (pre-mint creation at N06, post-mint UPDATE at N12, closure at N28), the seven-knowable/one-not-yet-knowable field partition, the derived vault-handle prohibition (OF-DAG-6), and N06's own precondition list (N03, N05, N09).",
+      "relationship": "DIRECT GOVERNING CLAUSE, structural."
+    },
+    {
+      "artifact": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "clause": "DOWNSTREAM_REACHABILITY_RECOMPUTATION.NODES_STILL_BLOCKING_N10_UNCHANGED_BY_THIS_AMENDMENT.still_open",
+      "what_is_taken": "The re-confirmed, current measured state of N05 (NOT SATISFIED), N06 (NOT SATISFIED, file absent) and N09 (NOT SATISFIED, blocked on N08), as of the reconciled HEAD this lane's own parent commit represents.",
+      "relationship": "CURRENT-STATE EVIDENCE, re-verified independently below rather than merely cited."
+    },
+    {
+      "artifact": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+      "clause": "SECURITY_STOP_LINES SSL-06, SSL-08; FROZEN_RULES.RULE_FAIL_CLOSED_ON_UNKNOWN, RULE_NO_GATE_WEAKENING",
+      "what_is_taken": "SSL-08's absolute rule that no secret value appears in any evidence packet, gate record or stage declaration, at any stage, ever; and the fail-closed posture applied below to every field this artifact cannot yet populate.",
+      "relationship": "GOVERNING RELEASE AUTHORITY, CONSUMED AS GIVEN."
+    }
+  ],
+
+  "N06_STATUS_DETERMINATION": {
+    "question": "Does materializing a pre-mint skeleton at the OD-2 path SATISFY DAG node N06?",
+    "N06_preconditions_per_the_DAG": ["N03", "N05", "N09"],
+    "independent_re_derivation_at_this_lane_s_own_base": [
+      { "node": "N03", "state": "SATISFIED. All six OD-1..OD-6 ratified in bee14e0a, unamended in substance by 2ff84822 or 173fabce, both ancestors of this lane's parent." },
+      { "node": "N05", "state": "NOT SATISFIED. No WCM process-scoped delivery mechanism has been demonstrated against WCM-C1..WCM-C5. This lane performs no such demonstration; it is out of scope for a docs-only structural lane and remains a separate governed act." },
+      { "node": "N09", "state": "NOT SATISFIED. Its own precondition N08 (a concrete owner-supplied planned FINAL WITNESS timestamp) remains unsupplied. This lane does not invent, estimate or default one." }
+    ],
+    "VERDICT": "NO. N06, as the DAG defines it, is NOT satisfied by this artifact or by the file it creates. Two of N06's own three preconditions (N05, N09) remain open, and this artifact closes neither. N10 (HC-1) therefore remains unreachable exactly as FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json's CONCLUSION states, unchanged by anything below.",
+    "WHAT_IS_CLOSED_INSTEAD": "The STRUCTURAL readiness requirement this lane was scoped to: the custody-inventory file's ABSENCE, and the absence of any schema for it. FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json's own measured fact ('docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json is ABSENT at AS_OF_TREE') stops being true as of this artifact's companion write. That is a narrower claim than 'N06 is satisfied', and this artifact does not conflate the two.",
+    "why_a_partial_close_is_authorized_now": "SSL06_INVENTORY_PREREQUISITE.CANONICAL_PATH.not_protected confirms docs/ops/staging/** carries no protected-surface gate (independently re-verified against scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS at this lane's own base: the pattern list names docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, and one named file under docs/ops/ods/ — docs/ops/staging/** and docs/ops/release/** appear in none of them). No secret is written. Creating the file with the fields presently knowable, and explicit holes for the fields that are not, is the write CONSEQUENT_BINDING_REQUIREMENT makes mandatory before the mint — performing it now, rather than leaving it for the execution lane to improvise under HC-1 time pressure, is squarely what OD-2's 'gated behind its own prestate/poststate discipline' clause contemplates."
+  },
+
+  "FIELD_DISPOSITION": {
+    "rule": "The CONSEQUENT_BINDING_REQUIREMENT names eight fields. This lane populates only what is presently MEASURED or RATIFIED. Everything else is an explicit hole with a stated reason, never a guess, never a default.",
+    "populated_now": [
+      { "field": "capability_name", "value": "UELLIX_AUDITOR_DATABASE_URL", "basis": "SECRET_CUSTODY_CONTRACT.classification, capability authority line 452/469." },
+      { "field": "role", "value": "uellix_auditor", "basis": "Constant across every consuming artifact; db/safety/database-role.ts." },
+      { "field": "target_project_ref", "value": "bvyzblhqymxruxdguaee", "basis": "DAG N11 act and SSL06_INVENTORY_PREREQUISITE.fields_that_can_be_known_before_the_mint." },
+      { "field": "custody_mechanism", "value": "WINDOWS_CREDENTIAL_MANAGER (DPAPI-backed OS credential vault)", "basis": "OD-2.owner_selected_decision, ratified." },
+      { "field": "delivery_mechanism", "value": "PROCESS_SCOPED_FROM_VAULT, per SECRET_DELIVERY_CONTRACT MECHANISM_2_PROCESS_SCOPED as corrected by v1.0.2 SPC102-1. Never user-scope persistent; never setx.", "basis": "OD-2.owner_selected_decision, ratified.", "caveat": "The MECHANISM_2 five-condition conformance DEMONSTRATION (WCM-C1..WCM-C5) is DAG node N05 and is NOT yet performed. Recording the ratified mechanism choice is not a claim that N05 has closed." },
+      { "field": "expiry_policy", "value": "VALID_UNTIL = planned FINAL WITNESS time + 24 hours (an owner policy OFFSET, not yet a computable UTC instant)", "basis": "OD-3.owner_selected_decision, ratified." },
+      { "field": "removal_policy", "value": "MANDATORY rotation/removal after the FINAL WITNESS", "basis": "OD-1.owner_selected_decision, ratified." },
+      { "field": "lifecycle_state", "value": "PLANNED_NOT_PROVISIONED", "basis": "This artifact. No credential has been generated, minted or rotated; MR-2 (DAG N11) has not fired." }
+    ],
+    "explicit_holes": [
+      {
+        "field": "human_custodian",
+        "reason": "NEVER NAMED by any artifact in this repository at any point measured. OD-2 selects a MECHANISM (Windows Credential Manager) and a DELIVERY POSTURE, not a person. Inventing a name here would be exactly the silent authority expansion CLAUDE.md section 5 forbids.",
+        "closure_path": "A separately governed owner act must supply this name before N06's own exit_condition (all seven pre-mint fields present) can be met, and therefore before HC-1 (N10, whose HC1-S5 statement requires this record to be complete)."
+      },
+      {
+        "field": "processes_or_environments (concrete list)",
+        "reason": "The delivery MECHANISM is ratified (see above), but the concrete list of processes/environments that will hold the value in memory depends on N05's own conformance demonstration, which states the child-process topology as part of its exit_condition. That demonstration has not occurred.",
+        "closure_path": "DAG node N05, a separate governed act this lane does not perform."
+      },
+      {
+        "field": "expiry_exact_utc",
+        "reason": "DAG node N09 computes this as planned-FINAL-WITNESS-plus-24-hours, EXACT UTC. N09's own precondition N08 (a concrete owner-supplied planned FINAL WITNESS timestamp) is unsupplied. EXEC-NOTE-1, verbatim, carried from the DAG authority: 'the execution lane does not substitute a default, an estimate, or an open-ended VALID UNTIL.'",
+        "closure_path": "Owner supplies a concrete planned FINAL WITNESS timestamp (N08); DAG node N09 computes the exact UTC instant; that value is shown to the owner at HC-1 (N10) and recorded here only then."
+      },
+      {
+        "field": "planned_removal_date",
+        "reason": "Tied to the same FINAL WITNESS timestamp N08 supplies (removal follows the mandatory post-witness rotation, OD-1). Not knowable while N08 remains unsupplied.",
+        "closure_path": "Same as expiry_exact_utc."
+      },
+      {
+        "field": "mint_date",
+        "reason": "The mint (DAG N11, MR-2) has not occurred. Its absence here is the EXPECTED and CORRECT state, per N06's own exit_condition: 'The mint date is absent and is expected to be, because the mint has not occurred.'",
+        "closure_path": "DAG node N12, UPDATING this same entry after MR-2 verifies. NOT a second entry — SECRET_ROTATION_CONTRACT.rotation_mechanics forbids appending twice for one credential."
+      }
+    ]
+  },
+
+  "GOVERNED_ACT_RECORD": {
+    "prestate": {
+      "measured": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json is ABSENT at this lane's own parent tree (66cbcee0d7a849c4ac7305f7f40f02b4aa058988), re-confirmed by direct filesystem check rather than assumed from the DAG amendment's own prior measurement.",
+      "declared_not_guessed": "Consistent with MR2_CONTRACT's prestate posture elsewhere in this authority chain: nothing about a hosted credential is asserted here, because nothing hosted is touched."
+    },
+    "act": "Create ONE file, docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json, at the OD-2-fixed canonical path, containing the fields in FIELD_DISPOSITION.populated_now as concrete values and the fields in FIELD_DISPOSITION.explicit_holes as present-but-null with a stated reason. No other file at any hosted, vault, or credential-adjacent path is touched.",
+    "poststate_expected": "The file EXISTS, is valid JSON, contains every one of the eight CONSEQUENT_BINDING_REQUIREMENT fields as an explicit key (present value or present hole, never a silent absence), contains no credential, no DSN, no userinfo, no password hash, no vault handle or lookup token, and asserts lifecycle_state = PLANNED_NOT_PROVISIONED.",
+    "no_hosted_act_occurred": "Independently affirmed: this lane opened no database connection, called no Supabase or Vercel management-plane endpoint, wrote nothing to Windows Credential Manager or any other OS credential vault, and generated no credential material of any kind."
+  },
+
+  "WHAT_THIS_AUTHORITY_DOES_NOT_DO": [
+    "Does not demonstrate WCM-C1..WCM-C5 (DAG N05).",
+    "Does not compute, invent, estimate or default any UTC timestamp (DAG N08/N09), matching OD3_TIME_MATERIALIZATION.rule verbatim.",
+    "Does not ask, wait for, or record HC-1 (DAG N10).",
+    "Does not mint, rotate, or otherwise mutate any credential (DAG N11, MR-2).",
+    "Does not write to Windows Credential Manager or any other custody store, secret manager, or OS vault.",
+    "Does not declare DAG node N06 SATISFIED, and does not declare N10 or any downstream node reachable.",
+    "Does not amend or reinterpret the DAG authority, the capability authority, the owner-ratification record, or any of their existing amendments.",
+    "Does not name, guess or infer a human custodian."
+  ],
+
+  "PROHIBITED_CONTENT_COMPLIANCE": {
+    "rule": "Mirrors SSL06_INVENTORY_PREREQUISITE.NEVER_A_SECRET_VALUE, applied to this artifact and to its companion canonical-inventory write.",
+    "confirmed_absent_from_both_files": [
+      "the credential, in any form, redacted or not",
+      "the full DSN, or the userinfo in any form",
+      "any password hash or rolpassword value",
+      "the direct host string, as distinct from the ConnectionMechanism enum value",
+      "any vault handle, entry key, or lookup token that would itself retrieve the value",
+      "any connection string",
+      "any secret digest that could aid recovery of the value"
+    ]
+  },
+
+  "NEXT_GOVERNED_ACTS_NOT_PERFORMED_HERE": [
+    { "act": "DAG N05 — WCM process-scoped delivery mechanism readiness demonstration.", "gate": "Separate governed act." },
+    { "act": "DAG N08/N09 — owner supplies a concrete planned FINAL WITNESS timestamp; the exact UTC VALID UNTIL is computed from it.", "gate": "Owner input, then a separate governed act." },
+    { "act": "DAG N12 — UPDATE (not append) this same custody entry with the mint date, immediately after N11 (MR-2) verifies.", "gate": "Separate governed act, post-MR2, explicitly anticipated by this artifact's FIELD_DISPOSITION.explicit_holes.mint_date." },
+    { "act": "DAG N28 — closure: record rotation-out and positive absence verification, after the mandatory post-FINAL-WITNESS rotation.", "gate": "Separate governed act." }
+  ],
+
+  "REPORT_CONTRACT": {
+    "RESULT": "N06's STRUCTURAL readiness requirement (the inventory file's existence and schema) is CLOSED by this artifact and its companion canonical-inventory write. DAG node N06 ITSELF remains NOT SATISFIED, because two of its own three preconditions (N05, N09) are open and out of this lane's scope.",
+    "EVIDENCE": "PARENT commit 173fabce180b71fe49f65e5c7290ca9f20d85572, tree 66cbcee0d7a849c4ac7305f7f40f02b4aa058988; docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json created at this same lane; scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS re-derived directly, confirming docs/ops/staging/** and docs/ops/release/** are both unprotected.",
+    "RISKS_OPEN_FINDINGS": "human_custodian remains unnamed by any artifact in this repository and blocks N06's own exit_condition until an owner act supplies it. N05 and N09 remain open exactly as FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json states, unchanged.",
+    "NEXT_AUTHORIZED_ACTION": "Independent certification of this artifact and its companion inventory file, then a separately governed act to supply the human_custodian name and to open DAG node N05 (WCM demonstration). Owner supply of a concrete planned FINAL WITNESS timestamp (N08) remains outstanding and is not requested by this artifact, consistent with EXEC-NOTE-1."
+  }
+}
