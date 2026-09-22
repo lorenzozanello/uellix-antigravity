@@ -1,0 +1,60 @@
+{
+  "manifest_id": "FIBDB053-D1-AUDITOR-N07-EVIDENCE-SKELETON",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "FIBDB053-D1-AUDITOR-PROVISIONING-DAG",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.0.json",
+    "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [],
+  "known_conditions": [
+    "DAG node N07 is NOT_SATISFIED at AS_OF_TREE per the DAG amendment v1.0.1's own DOWNSTREAM_REACHABILITY_RECOMPUTATION.still_open entry for N07, re-derived fresh at this lane's own base and matching.",
+    "This artifact does not close N07 in the DAG package's own append-only lineage. It offers a candidate discharge for independent certification only.",
+    "N05 (WCM delivery-mechanism readiness), N06 (custody inventory pre-mint entry) and N08 (planned FINAL WITNESS timestamp) remain open, unsatisfied nodes untouched by this lane, each independently blocking N10.",
+    "The repository has no JSON Schema draft-07 validator wired into any existing gate (confirmed: no ajv/jsonschema dependency in package.json, no validator script under scripts/). Schema validation for this manifest's DP1/DP2 controls was performed via `npx ajv-cli@5` against the working tree, not via a standing repository gate.",
+    "The DAG's own companion manifest control DM38 (docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json) already rules that no derivation lane in this lineage has a better claim than any other to fix the POPULATED evidence artifact's real filename; this artifact's template is therefore published as a versioned, non-dated governance file, never as a dated attempt record."
+  ],
+  "positive_controls": [
+    { "id": "DP1", "description": "THE SCHEMA COMPILES AS A VALID JSON SCHEMA DRAFT-07 DOCUMENT. `npx ajv-cli@5 validate -s <schema> -d <template> --spec=draft7` must load the schema without a compile error. Re-derive by running the exact command against the two files.", "test_file": "UNKNOWN" },
+    { "id": "DP2", "description": "THE TEMPLATE VALIDATES AGAINST ITS OWN SCHEMA, BY A REAL VALIDATOR, NOT BY INSPECTION. The same ajv-cli invocation must report the template file valid. Measured PASS at authoring time: `docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.0.json valid`.", "test_file": "UNKNOWN" },
+    { "id": "DP3", "description": "ALL FIFTEEN REQUIRED_CONTENTS ITEMS ARE ALLOCATED TO EXACTLY ONE SCHEMA HOME. Cross-reference the schema authority's FIELD_ALLOCATION_TABLE against EVIDENCE_MATERIALIZATION.REQUIRED_CONTENTS in the capability authority: every item present, none duplicated as a separate hole, none silently dropped. A field claimed present that the schema does not actually define is a finding against DP3.", "test_file": "UNKNOWN" },
+    { "id": "DP4", "description": "THE HOSTED_STATE_UNKNOWN REGISTER IS FIXED AT EXACTLY THIRTEEN ENTRIES, HU-1..HU-13, MATCHING THE CAPABILITY AUTHORITY'S OWN REGISTER. Re-derive by counting HOSTED_STATE_UNKNOWN_REGISTER.entries in the capability authority (thirteen) and comparing ids one-to-one against the schema's array and the template's thirteen rows.", "test_file": "UNKNOWN" },
+    { "id": "DP5", "description": "THE POSTSTATE TABLE IS FIXED AT EXACTLY THIRTY-FOUR ROWS, PV-1..PV-34, SEQUENTIAL AND NON-DUPLICATE. Re-derive by extracting every pv_id from the template's n22_full_poststate_table and asserting the set equals {PV-1..PV-34} with no gap and no repeat.", "test_file": "UNKNOWN" },
+    { "id": "DP6", "description": "THE THREE PRE-WRITTEN ROLLBACK STATEMENTS MATCH N07's OWN ACT TEXT BYTE-FOR-BYTE. Compare, by programmatic string comparison, DAG_NODES.N07.act's three quoted statements against rollback_statements_pre_written in both the schema (as const values) and the template (as the instance values). This repository has already measured a restatement lane producing incomplete quotations on a first attempt (DP7/DP8/DM28 in the DAG's own companion manifest); this control exists for the same reason.", "test_file": "UNKNOWN" },
+    { "id": "DP7", "description": "THE MUST_NEVER_CONTAIN PROHIBITED-CONTENT LIST HAS EXACTLY EIGHT ITEMS, BYTE-IDENTICAL TO EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN IN THE CAPABILITY AUTHORITY. Compare the template's must_never_contain_attestation.prohibited array entry-by-entry against the source.", "test_file": "UNKNOWN" },
+    { "id": "DP8", "description": "ADDITIONALPROPERTIES:FALSE HOLDS AT EVERY OBJECT LEVEL OF THE SCHEMA. Grep the schema file for every `\"type\": \"object\"` occurrence and confirm a sibling `\"additionalProperties\": false` is present at the same level, OR the object is entirely defined by `$ref`/`oneOf`/`const` with no open property surface. A level without this leaves the schema's own DN1-equivalent claim (no unanticipated field can pass) unsupported at that level.", "test_file": "UNKNOWN" },
+    { "id": "DP9", "description": "THE WRITE SET IS EXACTLY FOUR NEW FILES, ALL UNDER docs/ops/release/, AND pnpm ods:scope REPORTS ZERO PROTECTED VIOLATIONS AND ZERO UNAUTHORIZED PATHS with --allow docs/ops/release/**. Measured at authoring time against base 173fabce180b71fe49f65e5c7290ca9f20d85572: CHANGED_FILE_COUNT=3 (before this manifest existed), PROTECTED_PATH_VIOLATIONS=0, UNAUTHORIZED_PATHS=0, ODS_SCOPE=PASS. Re-derive with CHANGED_FILE_COUNT=4 once this manifest is included.", "test_file": "UNKNOWN" },
+    { "id": "DP10", "description": "EVERY FILE OF THE FULL ELEVEN-ARTIFACT EFFECTIVE LINEAGE IS BYTE-UNCHANGED. Re-derive all eleven blob hashes at the candidate head via git ls-tree and compare against FRESHNESS_RE_DERIVATION in the companion authority. Any difference means this lane edited an append-only artifact upstream of it, which is a hard failure regardless of intent.", "test_file": "UNKNOWN" },
+    { "id": "DP11", "description": "pnpm secrets:scan AND pnpm authority:seal:verify BOTH PASS ON THE CANDIDATE TREE. Measured at authoring time: secrets:scan reported '✅ CURRENT_TREE: no credential material found.'; authority:seal:verify reported AUTHORITY_SEAL_VERIFY=PASS with PROTECTED_CORPUS_INTEGRITY=PASS. Re-derive by re-running both commands.", "test_file": "UNKNOWN" }
+  ],
+  "negative_controls": [
+    { "id": "DN1", "description": "NO SECRET VALUE ANYWHERE. Grep all four new files for: a postgres connection-scheme prefix; a URL userinfo segment carrying a colon-separated secret before an at-sign; and a base64url-shaped run of 32+ bytes that is not a git object id and not an UPPER_SNAKE/kebab identifier. Any hit is RED. Measured PASS at authoring time via pnpm secrets:scan against the full working tree.", "test_file": "UNKNOWN" },
+    { "id": "DN2", "description": "NO UTC TIMESTAMP IMPLEMENTING OD-3 ANYWHERE. Grep all four files for any ISO-8601 instant or Z-suffixed time presented as a VALID UNTIL value. Only the materialization_date literal 2026-09-22 may appear, and never as a computed expiry.", "test_file": "UNKNOWN" },
+    { "id": "DN3", "description": "NEITHER CANONICAL LITERAL (SQ-6, SQ-7) APPEARS, in whole or composed from parts, in any of the four files.", "test_file": "UNKNOWN" },
+    { "id": "DN4", "description": "AN UNANTICIPATED FIELD IS REJECTED, NOT SILENTLY ACCEPTED. Injecting an extra key (e.g. a vault-handle-shaped field) into execution_context and re-validating with ajv-cli must FAIL with an additionalProperties violation. Measured at authoring time: mutant with execution_context.vaultHandle injected reported 'must NOT have additional properties'.", "test_file": "UNKNOWN" },
+    { "id": "DN5", "description": "A BLANK STRING IS REJECTED, NOT TREATED AS A VALID HOLE. Setting any hole_string field (e.g. execution_context.lane_identifier) to an empty string and re-validating must FAIL on minLength. Measured at authoring time: reported 'must NOT have fewer than 1 characters'. This is the schema's own enforcement of the lane mandate's 'never blanks interpreted as PASS'.", "test_file": "UNKNOWN" },
+    { "id": "DN6", "description": "THIS ARTIFACT DOES NOT DECLARE N07 CLOSED IN THE DAG PACKAGE'S OWN LINEAGE. Grep the DAG authority, its v1.0.1 amendment and their companion manifest — none of the three files this lane's write set touches — for any edit. git diff against base 173fabce for those three paths must be EMPTY.", "test_file": "UNKNOWN" },
+    { "id": "DN7", "description": "THE TEMPLATE'S FILENAME IS NOT A DATED docs/ops/staging/evidence/ ATTEMPT NAME. It must not match the directory's own YYYY-MM-DD-att_<hex>-<slug>.json convention, and it must not be written into docs/ops/staging/evidence/ at all. A template that adopted that convention would misrepresent itself as a dated attempt record no attempt produced.", "test_file": "UNKNOWN" }
+  ],
+  "mutation_controls": [
+    { "id": "DM1", "description": "MUTANT — DELETE A REQUIRED HOLE (n24_removal_and_positive_absence.absence_verified_by_check). Expected: RED, schema 'required' violation. Measured at authoring time: confirmed RED — 'must have required property absence_verified_by_check'. This is the direct analogue of the DAG manifest's own DM37, applied one level down: the field's absence must be a hole the schema itself can detect, not a silence.", "test_file": "UNKNOWN" },
+    { "id": "DM2", "description": "MUTANT — REPLACE A ROLLBACK CONST STATEMENT WITH A ONE-CHARACTER VARIANT (trailing semicolon added to the MR-3 REVOKE statement). Expected: RED, const violation. Measured at authoring time: confirmed RED.", "test_file": "UNKNOWN" },
+    { "id": "DM3", "description": "MUTANT — SHORTEN THE HU REGISTER TO TWELVE ENTRIES. Expected: RED, minItems violation. Measured at authoring time: confirmed RED.", "test_file": "UNKNOWN" },
+    { "id": "DM4", "description": "MUTANT — SHORTEN THE PV TABLE TO THIRTY-THREE ROWS. Expected: RED, minItems violation. Measured at authoring time: confirmed RED.", "test_file": "UNKNOWN" },
+    { "id": "DM5", "description": "MUTANT — PRE-POPULATE A PV ROW'S expected_source_ref WITH A ONE-WORD VARIANT INSTEAD OF THE FIXED POINTER TEXT. Expected: RED, const violation. Measured at authoring time (an earlier authoring-time slip on PV-31/PV-32 before this manifest was written): confirmed RED, then corrected in the template and re-verified GREEN. Recorded here because it is the one mutation this lane actually produced and caught during its own authoring, not merely a hypothetical.", "test_file": "UNKNOWN" },
+    { "id": "DM6", "description": "MUTANT — SET template_status TO POPULATED_INSTANCE WITHOUT FILLING ANY HOLE. Expected: the document would still schema-validate, because the schema cannot see that a NOT_EXECUTED string is semantically stale for a claimed-populated instance — this is a DELIBERATE, NAMED SCHEMA LIMIT, not a defect this control catches. Disposition: the authority's DISPOSITION_STATE_MODEL relies on the execution lane's own honesty at the template_status boundary; a stronger check would require cross-field conditional validation this schema does not attempt. Flagged as a residual gap for a certifier to weigh, not silently assumed away.", "test_file": "UNKNOWN" }
+  ],
+  "exit_gates": [
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
