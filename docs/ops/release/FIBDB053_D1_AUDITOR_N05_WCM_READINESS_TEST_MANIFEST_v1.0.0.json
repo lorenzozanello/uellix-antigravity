@@ -1,0 +1,241 @@
+{
+  "manifest_id": "FIBDB053-D1-AUDITOR-N05-WCM-READINESS",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "FIBDB053-D1-AUDITOR-PROVISIONING-DAG",
+    "FIBDB053-D1-AUDITOR-CAPABILITY-PROVISIONING",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json",
+    "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "SENT-DAG-1",
+      "purpose": "CARRIED, NOT CREATED. This is the sentinel the certified DAG's companion manifest already declares for the N05 demonstration: a fabricated, non-functional, credential-SHAPED string that is NOT a real credential and resolves to nothing, freshly generated per demonstration run so a later match cannot be confused with a stale leak. This manifest BINDS TO it and adds three DERIVED properties recorded at SENTINEL_CONTRACT of the authority: SP-1 it must be shaped like the real value, which is a connection string carrying userinfo, so the command-line search and the absence check hunt a pattern the real value actually has; SP-2 it never appears in any authority artifact, because a correctly shaped sentinel trips the repository secret scanner by design; SP-3 the demonstration runs outside the repository working tree so it can never land there even transiently. It is NOT planted by this authoring act, which plants nothing."
+    },
+    {
+      "id": "SENT-N05-1",
+      "purpose": "A canary used by the redaction controls of THIS write set only. A fabricated, non-functional, connection-string-shaped value that resolves to nothing and is never a real credential. It is planted into a SCRATCH COPY of this write set, outside the repository working tree, so that control NN1's grep can be proven to FIRE on it; the real write set is then grepped and must be clean. Without that positive exercise, a redaction control that is silently broken and a write set that is genuinely clean are indistinguishable, which is the failure mode a pass-path-only validation always hides."
+    },
+    {
+      "id": "SENT-N05-2",
+      "purpose": "A canary proving the REPOSITORY SECRET SCANNER itself fires on a correctly shaped sentinel. Planted into a scratch file outside the working tree and fed to the scanner; the scanner must report it. This is the positive exercise behind ES-5 of the authority, and it is what converts the claim that a correctly shaped sentinel would trip the scanner from an inference about a regular expression into a measured fact. Never a real credential, never committed."
+    }
+  ],
+  "known_conditions": [
+    "N05 is OPEN. No vault-read mechanism has been selected, built or demonstrated. The absence is independently re-derived in this lane at tree 66cbcee0d7a849c4ac7305f7f40f02b4aa058988 under a strictly wider alternation than the certified DAG used, and the DAG's own verdict stands.",
+    "The DAG's recorded absence measurement returned TWO files at its AS_OF_TREE cf3a77d26608f08d6bde4a8c88e5072362909f2b and returns SIX at this lane's tree under the identical alternation. The divergence is entirely the governance artifacts written between the two trees; zero of the six is a mechanism. Reconciled at OF-N05-8, NOT a contradiction of a certified measurement.",
+    "OF-N05-1 and OF-N05-2 are BLOCKING findings recorded against the graph, not against this write set. The act that selects and builds the mechanism is not a node of the certified DAG, and no node deposits the minted credential into the custody store. Neither is repaired here, and neither may be treated as closed by the existence of this manifest.",
+    "NO CI RUNNER IN THE REPOSITORY IS WINDOWS. All nine runs-on values across all nine workflow files are ubuntu-latest, with no matrix. Every control below marked PLATFORM_DEPENDENT is therefore, at this tree, WORKSTATION-RECORDED AND NOT CI-GATED, and that is a declared limitation of this contract rather than a silence in it.",
+    "The DAG frontier remains BLOCKED_AT_N05_N06_N07_N09. This write set does not move it.",
+    "No test FILE is written by the authoring lane this manifest belongs to. Every test_file below is UNKNOWN, which the schema permits while a manifest is still a pre-implementation commitment. The controls become files in the derived selection-and-implementation lane, not here."
+  ],
+  "positive_controls": [
+    {
+      "id": "NP1",
+      "description": "PLATFORM_INDEPENDENT. THE FIVE CONDITIONS ARE CARRIED BYTE-IDENTICALLY, NOT PARAPHRASED. REQUIREMENTS_AS_READ.conditions of the authority must be deep-equal, field for field, to WCM_READINESS_PREREQUISITE.THE_FIVE_CONDITIONS_THE_MECHANISM_MUST_DEMONSTRATE.conditions of the certified DAG at blob 7223279f2dbb46ed6e252cd3aa1469ff0b4419d5: same order, same five ids, same verbatim strings, same mandate_phrasing_cross_check values. Compare the parsed objects field for field, NEVER a serialized form against a serialized form, because a condensation and a copy serialize differently while being equally faithful, and a whitespace difference would fail a byte comparison that has nothing to do with meaning.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP2",
+      "description": "PLATFORM_INDEPENDENT. THE PROVENANCE CHAIN RESOLVES AT EVERY HOP. Each of the four hops named at REQUIREMENTS_AS_READ.provenance_chain_verified_in_this_lane must resolve to a real JSON path in the file it names: the conditions array in the base authority's SECRET_DELIVERY_CONTRACT, the conditions array in v1.0.1 SECTION_A7 MECHANISM_2, the SPC102-1 entry in v1.0.2, and the DAG's own carried array. A chain that cites an amendment as the LOCUS of a clause it only carries by reference is a citation that cannot be followed, so each hop must be resolved to its actual path rather than to the document that mentions it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP3",
+      "description": "PLATFORM_INDEPENDENT. EVERY BLOB PIN IS RE-DERIVABLE AND NAMES A COMMITTED OBJECT. Each entry of CONTROLLING_AUTHORITY.pins and each entry of MEASURED_EXECUTION_SURFACE facts ES-1 and ES-4 must satisfy: git ls-tree -r against the named path at tree 66cbcee0d7a849c4ac7305f7f40f02b4aa058988 returns exactly the recorded hash. Additionally, NO pin may name a file belonging to this write set, which is the failure mode where an artifact pins the pre-commit draft of its own base under a mandatory-and-verified label and the external pins all pass while only the self-pin is wrong.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP4",
+      "description": "PLATFORM_INDEPENDENT. THE MECHANISM-ABSENCE MEASUREMENT IS REPRODUCIBLE AND EVERY HIT IS CLASSIFIED INDIVIDUALLY. Re-run both alternations at the recorded tree. Method 1 must return exactly the six paths listed, and method 2 exactly seventeen, being those six plus the eleven listed. Then check that EVERY path carries its own classification, not a group count: a sweep that finds six loci and classifies five has not measured six. The nine in-database-schema hits, the one commented configuration stanza and the one colour-palette label must each be individually attributable, summing to eleven.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP5",
+      "description": "PLATFORM_INDEPENDENT. THE CI RUNNER MEASUREMENT IS EXACT. Enumerate .github/workflows/, count the files, and read every runs-on value. The count must be nine files and nine runs-on values, every one ubuntu-latest, and a case-insensitive search of the directory for windows, macos and matrix must return zero lines. This is the load-bearing fact behind OF-N05-7, behind the platform split of this whole manifest, and behind NM1. If a Windows runner is ever added, this control goes RED and the split must be re-derived rather than silently kept.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP6",
+      "description": "PLATFORM_INDEPENDENT. NO NODE OF THE CERTIFIED DAG DEPOSITS THE CREDENTIAL INTO THE CUSTODY STORE. Enumerate all twenty-eight node objects of the DAG. Exactly two may mention a vault: N05, naming a vault-READ mechanism, and N06, naming the inventory. Search every node's act and exit_condition for deposit, store-the-credential and place-into-the-vault phrasings; all must be empty. If ANY node performs the deposit, OF-N05-2 is FALSE and must be withdrawn from the authority, which is why this control is written to be capable of killing its own finding.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP7",
+      "description": "PLATFORM_INDEPENDENT. THE EVIDENCE CONTRACT KEEPS THE TWO REMOVAL PATHS AND THE TWO ABSENCE-CHECK RESULTS SEPARATE. EVIDENCE_CONTRACT_FOR_THE_N05_DEMONSTRATION.required_fields must contain wcm_c4_success_path_removed and wcm_c4_failure_path_removed as TWO fields, and wcm_c5_check_returned_present_when_present and wcm_c5_check_returned_absent_after_removal as TWO fields. A single combined boolean for either pair is RED: it is a hole wearing a value, and it makes the negative exercise of the check unrecordable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP8",
+      "description": "PLATFORM_INDEPENDENT. EVERY RC ITEM CARRIES ALL THREE FIELDS. Each of RC-1 through RC-8 must have must_be_proven, standard_of_proof and what_does_NOT_count, all three non-empty. The third is the load-bearing one: an RC item without it states a requirement and supplies no way to tell a discharge from a gesture, which is the exact shape that lets a cheap demonstration pass.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP9",
+      "description": "PLATFORM_DEPENDENT, WINDOWS-ONLY, WORKSTATION-RECORDED. THE FRESH-SHELL ABSENCE OBSERVATION OF RC-2 RETURNS ABSENT. After a demonstration run, a freshly launched shell, started from the ordinary user session and NOT from the demonstration's process tree, reports the variable name absent. Runs only on the workstation; see NM1 for why it may never be reported as a pass when it did not run.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP10",
+      "description": "PLATFORM_DEPENDENT, WINDOWS-ONLY, WORKSTATION-RECORDED. THE EXTERNAL COMMAND-LINE OBSERVATION OF RC-3 IS CLEAN ACROSS THE WHOLE PROCESS TREE. Every process in the demonstration's tree is observed FROM OUTSIDE while running, and none carries the sentinel on its command line. The enumeration of which processes were observed is recorded alongside the boolean, because a clean result over one process and a clean result over the whole tree are different facts wearing the same word.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP11",
+      "description": "PLATFORM_DEPENDENT, WINDOWS-ONLY, WORKSTATION-RECORDED. BOTH REMOVAL PATHS OF RC-5 ARE EXERCISED BY REAL RUNS. The demonstration runs at least twice, once with the consuming process exiting successfully and once with it exiting in failure, where the failure is a REAL failure of the consumer and not an injection placed after removal. Removal is verified after each, and the two booleans are recorded separately.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NP12",
+      "description": "PLATFORM_DEPENDENT, WINDOWS-ONLY, WORKSTATION-RECORDED. THE ABSENCE CHECK OF RC-6 IS PROVEN CAPABLE OF RETURNING FALSE. The same check is run once while the sentinel is deliberately still present and must report PRESENT, then after removal and must report ABSENT. Both results are recorded. This is the single most important positive control in the contract, because WCM-C5 is the only condition whose whole content is that an assertion must come from a check rather than from an issued command, and a check exercised only where it is expected to pass has proven nothing about itself.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NN1",
+      "description": "NO SECRET VALUE ANYWHERE IN THE WRITE SET. Grep the authority, this manifest, the commit message and the PR body for three families: a base64url-shaped run of thirty-two bytes or more that is not a git object id and not an UPPER_SNAKE or kebab identifier; a postgres or postgresql connection-scheme prefix; and a URL userinfo segment carrying a colon-separated secret before an at-sign. Any hit is RED. THE GREP MUST EXCLUDE THE CONTROL DESCRIPTIONS IN THIS MANIFEST, which necessarily describe the patterns they hunt: a control whose own text matches its own pattern fires RED on a clean write set and is therefore useless. Exercised positively by SENT-N05-1 against a scratch copy outside the working tree, so the grep is proven to fire on a real planted value rather than passing because it never matches anything.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN2",
+      "description": "NO SENTINEL VALUE AND NO SENTINEL SHAPE EXAMPLE. Beyond NN1, neither file may contain an EXAMPLE of the sentinel's shape, a template for constructing one, or a placeholder a reader could fill in to obtain one. SP-2 of the authority states the rule; this control enforces it. The distinction from NN1 is that NN1 hunts a value and NN2 hunts a recipe.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN3",
+      "description": "NO MECHANISM IS IMPLEMENTED, NAMED, DESIGNED, SKETCHED OR RECOMMENDED. Neither file may contain a command, a cmdlet, an API name, a library name, a package name, a code fragment or a step sequence that would read a credential from a custody store. The certified DAG's own prohibition is absolute and this write set is subordinate to it. A section that states WHAT MUST BE PROVEN is permitted and required; a section from which a reader could build the reader is RED. This control must be run with the widened alternation of the authority's method 2, not the narrow one, so that a Win32 API name or a PowerShell custody idiom cannot slip through a search that was never looking for it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN4",
+      "description": "NO NEW FAIL-CLOSED TOKEN. The only token appearing anywhere in this write set is STOP_SECRET_DELIVERY_NONCOMPLIANT, spelled byte-identically to its spelling in the certified DAG's FAIL_CLOSED_TOKEN_PLACEMENT and mapped only to N05, where the DAG already places it. Any second token name, any variant spelling and any renaming is RED. The DAG's own control DP5 asserts the token set is TOTAL over the outcomes the graph can produce; a subordinate artifact that invented one would be amending that set without anyone deciding to.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN5",
+      "description": "NO SIXTH CONDITION. REQUIREMENTS_AS_READ.conditions must contain exactly five entries. DO-1 and DO-2 must each carry a status_in_the_DAG field stating they are DERIVED OBLIGATIONS and expressly not a sixth condition, and RC-7 and RC-8 must each carry a binding_status stating they are DISCHARGED BY STATEMENT. An RC item that binds a derived obligation as a pass criterion is RED, because it would attach an obligation the authority's own condition list does not contain, which is the precise error OF-DAG-3 exists to flag.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN6",
+      "description": "NO DAG NODE, EDGE, TOKEN, PHASE, CONDITION OR OPEN FINDING IS MUTATED. Diff the certified DAG authority, its amendment and both DAG manifests between the parent commit 173fabce180b71fe49f65e5c7290ca9f20d85572 and this write set's head. All four must be UNCHANGED, by blob equality. This write set is SUBORDINATE and adds two new files; a single byte changed in any of the four is RED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN7",
+      "description": "NO UTC TIMESTAMP IMPLEMENTING OD-3. Grep both files for any ISO-8601 instant, any Z-suffixed time and any expression of the form plus twenty-four hours applied to a concrete date. Only the materialization date 2026-09-22 may be present, and it may not be presented as a VALID UNTIL. A computed expiry in an authoring artifact is an invented operand wearing a policy's name.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN8",
+      "description": "NO PROTECTED SURFACE IS TOUCHED AND NO PROTECTED-AUTHORITY ID IS CLAIMED. pnpm ods:scope against the parent must classify both new paths as ok, with an empty protectedViolations and an empty grantAuthorized. Re-derive DEFAULT_PROTECTED_PATTERNS from scripts/ods-scope.ts rather than trusting the authority's restatement of it, and confirm docs/ops/release/ is absent from all seven patterns.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN9",
+      "description": "NO DAG NODE IS DECLARED CLOSED. Neither file may assert that N05, N06, N07, N08 or N09 is satisfied, discharged, closed or resolved. The DAG frontier state BLOCKED_AT_N05_N06_N07_N09 must appear as UNCHANGED. A readiness contract that reads as a discharge of the node it governs is the most plausible misreading available here and it must be caught by a control rather than by a reader's care.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN10",
+      "description": "NO ODS, HPO OR W2 IDENTIFIER IS INVENTED, RESERVED OR IMPLIED. The proposed lane label at THE_SUBSEQUENT_IMPLEMENTATION_LANE must carry its id_status field marking it PROPOSED ONLY and unallocated. Grep both files for any string matching the HPO, ODS or W2 identifier shapes; any hit that is not a CITATION of an existing allocated id is RED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN11",
+      "description": "THE SECRET SCANNER FIRES ON A CORRECTLY SHAPED SENTINEL, AND THE SENTINEL IS NOT SUPPRESSED. Feed SENT-N05-2, in a scratch file outside the working tree, to pnpm secrets:scan. The scanner MUST report it. Then run pnpm secrets:scan over the real write set; it must be clean. Without the first half, ES-5 of the authority is an inference about a regular expression rather than a measured fact, and the derived obligation that the demonstration must run outside the working tree would rest on an unverified premise. THE SENTINEL MUST BE CONSTRUCTED PER SP-4: no fixture marker in its own body and a password component of at least six characters. This is the trap in the control, and it is why the control exists in this form: the scanner's isUnmistakablePlaceholder suppresses any value containing not-a-real, placeholder, example, sample, fake, synthetic, dummy, fixture or redacted, which is exactly what an implementer would embed to make a sentinel visibly non-real. A marker-bearing sentinel makes this control go RED for a reason that looks like a broken scanner and is in fact a sentinel that diverges from the value it stands in for. Run the replication over all SEVEN detector families named at ES-5, not over the PG family alone.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NN12",
+      "description": "THE IN-TREE ENV-FILE DELIVERY PATTERN IS NOT REUSED FOR THE HOSTED CREDENTIAL. Neither file may recommend, template or authorize writing the hosted auditor credential to the dot-env audit-local path or to any path under the repository working tree, and the derived lane's prohibition list must name that refusal explicitly. ES-4 measured that a working, gitignored, in-tree pattern exists at exactly that filename for the local disposable harness, which makes it the nearest thing an implementer would reach for and the likeliest breach that looks like conformity.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "NM1",
+      "description": "MUTANT — REPORT A SKIPPED PLATFORM CONTROL AS A PASS. Run the PLATFORM_DEPENDENT controls NP9 through NP12 on a non-Windows runner, which is the only kind the repository has, and let the platform guard skip them. Expected: the run reports NOT_RUN, never PASSED, and any aggregate that counts them as satisfied goes RED. THIS IS THE MOST IMPORTANT MUTATION CONTROL IN THE MANIFEST. The repository's established skipIf idiom would make a silently-skipped control and a genuinely passing control indistinguishable in a summary line, on the only runner that exists, for the only conditions whose behaviour actually matters. A contract that did not catch this would be green forever and would have proven nothing about the delivery mechanism at all. If this mutant survives, the platform split of this manifest is decoration and the contract must be re-derived.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM2",
+      "description": "MUTANT — REPLACE THE FIVE CONDITIONS WITH THE LANE MANDATE'S OWN PHRASING. Substitute the mandate_phrasing_cross_check strings for the verbatim ones. Expected: NP1 goes RED. The mandate's phrasing is recorded in the DAG as a CROSS-CHECK and never as a substitute for the authority's own words, and the two differ materially: the mandate's phrasing of WCM-C3 reads not written to persistent user env, which is a statement about the environment block, while the condition itself is about SHELL HISTORY. A contract that silently adopted the cross-check would be enforcing a different condition under the same id.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM3",
+      "description": "MUTANT — PROMOTE DO-1 OR DO-2 TO A SIXTH BINDING CONDITION. Make RC-7 or RC-8 fire STOP_SECRET_DELIVERY_NONCOMPLIANT on its own. Expected: NN5 goes RED. The DAG carries both as DERIVED OBLIGATIONS precisely so that a certifier may rule the five conditions do not reach them, and binding them here would pre-empt that ruling while looking like rigour. This mutant matters because tightening a control is the error a careful reader is least likely to notice.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM4",
+      "description": "MUTANT — DISCHARGE WCM-C5 WITH A SINGLE TRUE BOOLEAN AND NO NEGATIVE EXERCISE. Remove the present-when-present half of RC-6 and keep only the absent-after-removal half. Expected: NP7 and NP12 both go RED. A check that has never been observed returning false is indistinguishable from a check that cannot return false, and WCM-C5's entire content is that absence must be asserted from a check rather than from an issued command. This is the same defect as a validation that exercises only its pass path, applied to the one condition that exists to prevent it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM5",
+      "description": "MUTANT — VERIFY RC-2's FRESH-SHELL ABSENCE IN THE SAME SHELL THAT RAN THE DEMONSTRATION. Expected: NP9 goes RED. The same shell cannot distinguish process scope from session scope, so it returns absent for a mechanism that is merely session-scoped, which is a mechanism WCM-C1 does not permit. This mutant is the cheapest possible false pass for the first condition and it looks exactly like a correct check.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM6",
+      "description": "MUTANT — SATISFY RC-3 BY HAVING EACH PROCESS REPORT ITS OWN COMMAND LINE. Expected: NP10 goes RED. A self-report by the party under examination is not an observation, and a mechanism that carried the value as an argument could report itself clean without lying about anything it chose to look at.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM7",
+      "description": "MUTANT — RUN THE RC-5 FAILURE PATH BY INJECTING THE FAILURE AFTER REMOVAL. Expected: NP11 goes RED. The run then exercises the success path wearing a failure label, and a mechanism whose teardown only fires on success would pass both runs. The control must require the failure to be a real failure OF THE CONSUMER, before removal, or it proves the success path twice.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM8",
+      "description": "MUTANT — CARRY THE DAG'S TWO-FILE ABSENCE RESULT FORWARD INSTEAD OF RE-DERIVING IT. Expected: NP4 goes RED against this tree, where the identical alternation returns six. The finding survives and the COUNT does not, which is the whole lesson: an authority freezes a count against ITS tree, and a lane that copies the count rather than the method reports a measurement it never made. The symmetric mutant is also RED: declaring the DAG's verdict now false because the count changed, when the four new matches are the governance artifacts that did not exist when it measured.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM9",
+      "description": "MUTANT — TREAT THE EIGHT RC ITEMS AS SEVERABLE AND RECORD SEVEN OF EIGHT AS A PARTIAL PASS. Expected: RED against THE_CONJUNCTION_IS_TOTAL. WHAT_N05_MUST_PRODUCE's last line requires an explicit stop if ANY SINGLE condition cannot be demonstrated, and a missed observation is preferable to a leaked credential. A partial pass on a delivery contract is the shape in which a credential leaks while a report reads green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM10",
+      "description": "MUTANT — CLOSE OF-N05-2 BY ASSERTING THAT N23 SUBSUMES THE CUSTODY DEPOSIT. Expected: NP6 goes RED, because N23's own act reads place the credential into the consuming process's environment BY THE N05-DEMONSTRATED MECHANISM, which is a READ from the store and presupposes the value is already in it. This mutant matters because it is the reading that makes the gap disappear without anyone deciding it should, and it is the one a lane under time pressure would reach for.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM11",
+      "description": "MUTANT — LET THIS ARTIFACT PIN A BLOB OF ITS OWN WRITE SET. Add a pin naming this manifest or its authority. Expected: NP3 goes RED. A self-pin computed before the commit names the pre-commit working-copy draft rather than the committed object, and it fails while every external pin passes, which is the hardest single-pin failure to notice in a table that otherwise reconciles perfectly.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM12",
+      "description": "MUTANT — BUILD THE SENTINEL WITH A FIXTURE MARKER IN ITS OWN BODY, which is the obvious way to honour SENT-DAG-1's fabricated and non-functional wording. Expected: NN11 goes RED, because the repository scanner's isUnmistakablePlaceholder suppresses the finding and the scanner appears not to fire. The RED must be attributed to the SENTINEL, not to the scanner. This mutant matters because the misdiagnosis is the likely one: a reader sees a scanner that did not fire on a credential-shaped string and concludes the gate is broken, when the gate is working exactly as written and the sentinel has quietly stopped being a faithful stand-in for the value it represents. A sentinel invisible to the programme's own leak gate is the one divergence from the real value that runs in the unsafe direction.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NM13",
+      "description": "MUTANT — DECLARE N05 SATISFIED ON THE STRENGTH OF THIS CONTRACT EXISTING. Expected: NN9 goes RED. Authoring the standard a node must meet is not meeting it, exactly as merging an authority is not exercising it. This write set moves the DAG frontier by nothing, and the mutant is the most consequential misreading available because it would let an execution lane proceed to an irreversible mint with an undemonstrated delivery path, which is the precise failure the hoist of N05 exists to prevent.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

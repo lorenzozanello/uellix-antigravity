@@ -1,0 +1,104 @@
+{
+  "manifest_id": "FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_AMENDMENT_v1.0.1",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_AMENDMENT_v1.0.1.json — the companion authority errata, correcting the single artifact blocker (AB-1) the independent certification of v1.0.0 found: method_2's widened-alternation sweep declared 17 files against the exact pinned parent tree where the identical method returns 24, and that wrong number was frozen as NP4's expected value and restated in self_check. This document is a SEPARATE, SCHEMA-VALID COMPANION MANIFEST AMENDMENT, following the repository-native precedent of docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json — it carries only the DELTA controls this errata's own new claims require, and does NOT replace docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_v1.0.0.json, whose 12 positive / 12 negative / 13 mutation controls all stand UNCHANGED except NP4, corrected in place below at ANP1 rather than edited in the frozen v1.0.0 file.",
+  "dependencies": [
+    "FIBDB053-D1-AUDITOR-N05-WCM-READINESS",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+    "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [
+    "v1.0.0's NP4 asserted method_2 returns exactly 17 files, classified in three groups summing to eleven additional matches beyond method_1's six. Independent certification (2026-09-22) found the true count is 24 at the identical pinned tree and alternation. This is AB-1, the sole artifact blocker of the IC_FAIL verdict.",
+    "OF-N05-1 and OF-N05-2 were independently re-derived by the certifier and CONFIRMED as correctly classified PROGRAM_EXECUTION_BLOCKERs. Neither is touched by this errata or by ANP1 below; both remain OPEN.",
+    "The seven files v1.0.0's classification dropped are, individually: two UI/UX design-catalogue rows (colors.csv, products.csv, both the same Password Manager template entry), one additional setX lexical false positive (react.csv, the React hooks useState idiom already named for _sync_all.py), one in-database-schema DDL source that should have been the tenth member of the already-classified nine-file group (db/baseline/stella_g2_schema.sql), and three governance artifacts naming the vault to govern it, already pinned elsewhere in the authority as the source text of WCM-C1..C5 (the base capability authority and its two amendments).",
+    "This manifest amendment does not touch the 12 positive / 12 negative / 13 mutation controls of v1.0.0's companion manifest except NP4, which ANP1 below corrects in place at this new locus without editing the frozen v1.0.0 file."
+  ],
+  "positive_controls": [
+    {
+      "id": "ANP1",
+      "description": "SUPERSEDES NP4. THE MECHANISM-ABSENCE MEASUREMENT'S method_2 COUNT IS 24, NOT 17, AND EVERY MATCHED PATH IS CLASSIFIED INDIVIDUALLY. Re-run git grep -l -i -E over the pinned parent commit 173fabce180b71fe49f65e5c7290ca9f20d85572 (tree 66cbcee0d7a849c4ac7305f7f40f02b4aa058988) with the widened alternation named in the authority. The result MUST be exactly 24 paths, alphabetically identical to SECTION_B1_METHOD_2_RECOUNT.FULL_ENUMERATION of the v1.0.1 authority amendment. Then check that EVERY one of the 24 carries an individual classification somewhere across v1.0.0's original 11-item classification plus v1.0.1's SECTION_B2 7-item classification — a sweep that finds 24 loci and classifies 17 has not measured 24, which is the exact defect this control exists to catch a recurrence of.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANP2",
+      "description": "THE ARITHMETIC IDENTITY 6 + 18 = 24 HOLDS AGAINST THE ENUMERATED LISTS, NOT AGAINST PROSE ALONE. method_1's six-file list (docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json's own method_1_exact_replication.classification_of_each_match) and the eighteen non-method_1 files of ANP1's 24 must be DISJOINT sets whose union, alphabetically sorted, equals SECTION_B1's FULL_ENUMERATION exactly. A control that checks only the SUM (6+18=24) without checking DISJOINTNESS and UNION would pass a recount that double-counted one file and dropped another, netting the same total by coincidence.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANP3",
+      "description": "V1.0.0's TWO FILES ARE BYTE-UNCHANGED BY THIS ERRATA. git diff --stat f10187aab4d9eca81a5ecfb5b8d26023039826e9 -- docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_v1.0.0.json docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_v1.0.0.json must be EMPTY, where f10187aa is the commit that CREATED v1.0.0, not the PARENT commit 173fabce that precedes v1.0.0's own existence. Diffing against the parent would always show these two files as newly added, since they did not exist there, and would prove nothing about whether v1.0.0 changed after it was authored. This is the append-only guarantee: an errata that corrects AB-1 by editing the frozen v1.0.0 pair in place has not appended, it has silently rewritten a certified-against artifact out from under its own certification.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANP4",
+      "description": "THE THIRD .env.audit.local WRITER IS VERIFIED AND SCOPED TO THE LOCAL ROLE ONLY. Read scripts/rotate-local-role-credentials.ts at blob 69b162fec03bf060a7b49e41823080f0ab88adaa and confirm: it imports AUDITOR_DATABASE_URL_ENV_VAR and writes it to the literal path .env.audit.local; its own ROLE_TARGETS array names this the AUDITOR_DATABASE_ROLE entry; and the script's connection target is 127.0.0.1 at LOCAL_DB_PORT via LOCAL_PROJECT_ID, never the hosted project ref bvyzblhqymxruxdguaee. All three must hold for ES-4's NOT A VIOLATION adjudication to survive the strengthened collision-hazard finding.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "ANN1",
+      "description": "NO SUBSTANTIVE N05 ADJUDICATION IS ALTERED BY THIS ERRATA. Diff v1.0.0's REQUIREMENTS_AS_READ.conditions, READINESS_CONTRACT.items (RC-1 through RC-8), FAIL_CLOSED_TOKENS, SENTINEL_CONTRACT and THE_SUBSEQUENT_IMPLEMENTATION_LANE against the same loci as read by this errata's SUPERSEDED_PARENT_CLAUSES list. None of those five sections may appear as a locus anywhere in SUPERSEDED_PARENT_CLAUSES. An errata whose stated purpose is a narrow artifact-count correction that also touches the demonstration standard has scope-crept past AB-1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANN2",
+      "description": "NEITHER OF_N05_1 NOR OF_N05_2 IS MARKED RESOLVED, CLOSED OR SUPERSEDED. Grep the errata for both finding ids; every occurrence must appear only under PRESERVED_NOT_SUPERSEDED, IC_VERDICT_CONSUMED or an equivalent explicitly-unchanged context, and neither id may appear inside SUPERSEDED_PARENT_CLAUSES or OPEN_FINDINGS_ADDED with a disposition other than UNCHANGED/CONFIRMED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANN3",
+      "description": "NO WCM MECHANISM IS NAMED, DESIGNED, SKETCHED OR RECOMMENDED, AND NO DAG NODE IS INSERTED. Neither the errata nor this manifest amendment may contain a command, a cmdlet, an API name, a library name, or a package name for a credential-vault reader; and neither may add a node id (N-prefixed) to the certified DAG's DAG_NODES or DAG_EDGES structures, which this write set does not touch at all.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANN4",
+      "description": "NO SECRET VALUE ANYWHERE, EXERCISED BY THE SAME SENTINEL DISCIPLINE AS THE PARENT MANIFEST. Re-run the parent manifest's NN1 and NN11 controls (secret-shaped material and scanner-suppression respectively) against this errata's two files. Zero findings required, and the must-fail probes from the parent manifest must still fire against a synthetic value, proving the replication itself still works rather than passing because it stopped matching anything.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANN5",
+      "description": "THE PINNED PARENT TREE FOR THE RECOUNT IS THE SAME TREE V1.0.0 DECLARED, NOT A LATER ONE. AS_OF_TREE and PARENT_TREE_MEASURED_AGAINST.tree in the errata must both equal 66cbcee0d7a849c4ac7305f7f40f02b4aa058988, and PARENT_TREE_MEASURED_AGAINST.commit must equal 173fabce180b71fe49f65e5c7290ca9f20d85572. Re-running the recount against AS_OF_HEAD (which includes v1.0.0's own two files, whose text itself matches vault/credential/keychain repeatedly) would inflate the count with the authority's own vocabulary rather than measuring the repository it describes, which is exactly the trap the errata's PARENT_TREE_MEASURED_AGAINST.note names and refuses.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "ANM1",
+      "description": "MUTANT — RE-RUN THE RECOUNT AGAINST AS_OF_HEAD (f10187aa) INSTEAD OF THE PINNED PARENT TREE. Expected: the count changes from 24, because v1.0.0's own two authority files (already containing the words vault, credential, keychain, DPAPI, dozens of times each in their own prose) now match the same alternation and inflate the result. ANN5 must catch this: a recount that measures the wrong tree is not a correction of AB-1, it is a new and different miscount layered on top of the errata meant to fix the first one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANM2",
+      "description": "MUTANT — CLASSIFY THE SEVEN NEWLY FOUND FILES AS A SINGLE GROUP (\"seven miscellaneous files\") RATHER THAN INDIVIDUALLY. Expected: ANP1 goes RED. A group classification cannot show that stella_g2_schema.sql belongs with the ALREADY-EXISTING nine-file in-database-schema group rather than being an eighth distinct category, which is the exact granularity failure this errata exists to correct a recurrence of.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANM3",
+      "description": "MUTANT — EDIT v1.0.0's method_2 raw_result FIELD IN PLACE FROM 17 TO 24, RATHER THAN APPENDING THIS ERRATA. Expected: ANP3 goes RED (v1.0.0's blob would differ from the parent commit's blob at that path), and the artifact's own append_only: true declaration would be violated. This is the most tempting shortcut for a one-line numeric fix, and it is exactly the one the append-only discipline exists to forbid: a certified-against artifact whose text changed after its own certification.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANM4",
+      "description": "MUTANT — USE THIS ERRATA'S NARROW ARTIFACT-BLOCKER MANDATE AS COVER TO ALSO SOFTEN OF-N05-1 OR OF-N05-2's SEVERITY FROM BLOCKING TO NON-BLOCKING. Expected: ANN2 goes RED. The lane mandate is explicit that both remain OPEN; an errata that quietly downgrades a program blocker while fixing an unrelated count defect is scope expansion riding on a narrow, already-approved change.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "ANM5",
+      "description": "MUTANT — RESOLVE THE WCM-C3 CROSS-CHECK MISMATCH BY REWORDING WCM-C3's VERBATIM CONDITION IN v1.0.0 TO MATCH ITS CROSS-CHECK PHRASING, INSTEAD OF RECORDING THE MISMATCH AS AN OBSERVATION. Expected: ANN1 goes RED, because REQUIREMENTS_AS_READ.conditions would then appear as a supersession locus, and byte-identity to the certified DAG (v1.0.0's own self_check claim, unchanged by this errata) would break. The correct move, which the errata takes, is to record the mismatch and press the certifier on whether the DAG itself needs a successor amendment — never to quietly re-word a condition this artifact is only authorized to carry verbatim.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

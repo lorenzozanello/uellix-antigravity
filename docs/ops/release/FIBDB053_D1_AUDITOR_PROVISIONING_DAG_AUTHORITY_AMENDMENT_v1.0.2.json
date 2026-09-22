@@ -1,0 +1,254 @@
+{
+  "package_id": "FIBDB053-D1-AUDITOR-PROVISIONING-DAG",
+  "version": "1.0.2",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "DERIVED_EXECUTION_AUTHORITY",
+  "document_class": "APPEND_ONLY_AMENDMENT",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "v1.0.0 and v1.0.1 are PRESERVED BYTE-INTACT and are not edited by this amendment. Every node object and every edge object v1.0.0 declares remains exactly as declared. This amendment ADDS three nodes and seven HARD edges and states, for the three previously-declared nodes whose precondition sets the new edges widen, what those sets now are. It removes nothing, renumbers nothing and weakens no exit condition.",
+  "mission_id": "CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1",
+  "lane": "CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1",
+  "role": "CLOSURE-FIRST AUTHORITY AUTHORING",
+  "mode": "DOCS_ONLY_NO_EXECUTION",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5, under the CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1 lane mandate",
+  "repository": "uellix",
+
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-consolidated-closure-r1",
+  "AS_OF_BASE_SHA": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+  "AS_OF_MERGE_HEAD": "00b7efc8970e38354555b39e2aae5cc2874daa69",
+  "AS_OF_MERGE_TREE": "6e8723261a198eaa496ab7bf89ed458a8712b854",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the merge head; this amendment is authored on top of it.",
+  "AS_OF_BASE_BRANCH_FOR_THE_STACKED_PR": "codex/cv1-d1-auditor-provisioning-dag-authority-r1",
+
+  "WHY_THIS_AMENDMENT_EXISTS": {
+    "rule": "Three independent certifications of the N05, N06 and N07 child packages each recorded a gap that is not a defect of the child artifact but a HOLE IN THE CERTIFIED GRAPH ITSELF. A finding recorded in a child package that the graph never absorbs is a finding the execution lane will meet as a surprise. This amendment absorbs three of them as nodes.",
+    "the_three_gaps": [
+      {
+        "gap": "DAG_GAP_A",
+        "source_finding": "OF-N05-1, docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_v1.0.0.json",
+        "severity_as_recorded": "BLOCKING_FOR_N05_REACHABILITY",
+        "finding_verbatim_fragment": "THE ACT THAT CHOOSES AND BUILDS THE VAULT-READ MECHANISM IS NOT A NODE OF THE CERTIFIED DAG.",
+        "independently_re_derived_here": "CONFIRMED. All twenty-eight v1.0.0 node objects were enumerated at this lane's own base. N05's act reads 'DEMONSTRATE that the CHOSEN vault-read mechanism satisfies all five MECHANISM_2 conditions'; its sole precondition is N03, the OD-1..OD-6 ratification gate, which ratifies a custody STORE and a delivery CLASS and selects no mechanism. No node produces one.",
+        "closed_by": "N29"
+      },
+      {
+        "gap": "DAG_GAP_B",
+        "source_finding": "OF-N05-2, same artifact",
+        "severity_as_recorded": "BLOCKING_FOR_THE_DELIVERY_CHAIN",
+        "finding_verbatim_fragment": "NO NODE OF THE CERTIFIED DAG DEPOSITS THE MINTED CREDENTIAL INTO THE CUSTODY STORE.",
+        "independently_re_derived_here": "CONFIRMED. N11 sets a fresh credential on the hosted management plane. N23 places it into the consuming process's environment BY THE N05-DEMONSTRATED MECHANISM, which is a vault READ. N12 updates the custody INVENTORY, which SSL-08 makes a names-and-roles record that may never hold a value. The value's path from the management plane into the Windows Credential Manager is performed by no node of v1.0.0.",
+        "closed_by": "N30"
+      },
+      {
+        "gap": "DAG_GAP_C",
+        "source_finding": "Independent certification of the N06 custody-inventory package; the field is required by SECRET_CUSTODY_CONTRACT.CONSEQUENT_BINDING_REQUIREMENT and by N06's own exit_condition.",
+        "severity_as_recorded": "BLOCKING_FOR_N06_EXIT",
+        "finding_restated": "planned_removal_date has NO PRODUCER NODE in the certified graph.",
+        "independently_re_derived_here": "CONFIRMED, and the confirmation is sharper than the finding. v1.0.0's SSL06_INVENTORY_PREREQUISITE lists 'the planned removal date' among the seven fields knowable before the mint, but unlike 'the expiry' — which it sources to N09 explicitly — it gives the removal date no source at all. HC1_CONTRACT's own statement HC1-S6 ('when it will be removed') carries DAG_source 'N06 planned removal date, discharged at N24 and N28'. That sources the field to the very node that consumes it, and names as its 'discharge' two nodes that PERFORM a removal rather than PLAN a date. N24 and N28 are both strictly downstream of N06, so neither could produce a value N06 must already hold. The N06 package's own FIELD_DISPOSITION gives the field closure_path 'Same as expiry_exact_utc', which resolves to N09 — a node whose act computes VALID UNTIL and not a removal date.",
+        "closed_by": "N31"
+      }
+    ],
+    "what_this_amendment_does_NOT_absorb": "The remaining non-blocking findings of the three child packages (OF-N05-3..OF-N05-8, OF-N07-1, OF-N07-3) are NOT converted into nodes. None of them names an act the graph is missing; each is a question about a standard, a count or a reading, and the consolidated closure authority carries them forward as open findings rather than inventing graph structure to retire them."
+  },
+
+  "THE_NUMBERING_IS_NOT_THE_ORDERING": {
+    "rule": "N29, N30 and N31 are the next three unused ids. Their NUMBERS carry no ordering meaning and must not be read as 'after N28'. In this graph the EDGES are the order and the numbers are only names — DAG_EDGES.rule of v1.0.0 says so in terms: 'Every edge is a PRECONDITION RELATION, not a suggestion of order.'",
+    "why_ids_were_appended_rather_than_inserted": "Inserting them in execution position would require renumbering nodes v1.0.0 declares, and v1.0.0 is append-only. A renumbering would also silently invalidate every external citation of a node id, of which the three child packages alone contain many.",
+    "their_actual_execution_positions": "Machine-derived by topological sort over the amended forward edge set and recorded at RECOMPUTED_GRAPH.TOPOLOGICAL_ORDER. N29 falls between N03 and N05; N31 between N08/N09 and N06; N30 between N11 and N23."
+  },
+
+  "NEW_NODES": [
+    {
+      "id": "N29",
+      "name": "WCM VAULT-READ MECHANISM SELECTION AND BUILD",
+      "plane": "WORKSTATION",
+      "canonical_phase": "Derived prerequisite of N05. Introduced by v1.0.2 to close DAG_GAP_A (OF-N05-1).",
+      "act": "SELECT the concrete vault-read mechanism from WITHIN the class OD-2 already ratified — process-scoped delivery from a DPAPI-backed OS credential vault, namely Windows Credential Manager — and BUILD or CONFIGURE it to the minimum extent that makes it demonstrable. CARRY an invocation contract that enforces the session property at EVERY invocation rather than holding it once. PRODUCE the NAMED description N05's readiness contract requires. STATE the child-process topology the mechanism creates. STOP at the boundary of the demonstration.",
+      "preconditions": ["N03"],
+      "exit_condition": "A NAMED, built, invocable vault-read mechanism exists; its invocation contract is enforced at every invocation rather than asserted once; and its child-process topology is stated. The mechanism is NOT demonstrated here.",
+      "tokens": ["STOP_SECRET_DELIVERY_NONCOMPLIANT"],
+      "THE_BUILDER_MUST_NOT_SELF_CERTIFY_N05": "Demonstrating that the mechanism satisfies WCM-C1..WCM-C5 is N05 and belongs to the execution lane under this DAG. A builder who also certifies the build has produced a self-report, and a self-report is the failure mode an empty node invites: it gets marked satisfied by default rather than failed honestly. N29's exit condition is deliberately written so that it CANNOT be read as discharging N05.",
+      "NO_INSECURE_IMPLEMENTATION_IS_CHOSEN_HERE_TO_CLOSE_THE_NODE": "This amendment names no reader, wrapper, script, command, API or library, exactly as v1.0.0's N05 declines to. It authorizes a FUTURE technical lane to make that choice under the constraints below. Naming a mechanism here to make the node look closed would be choosing an implementation without measurement, which is the error the node exists to prevent.",
+      "ABSOLUTE_CONSTRAINTS_ON_THE_AUTHORIZED_FUTURE_CHOICE": [
+        "NO secret on any command line, in argv, or in any process-table-visible form.",
+        "NO secret in any log, transcript, console echo, shell history or error message.",
+        "NO secret written anywhere inside the repository working tree, at any path, gitignored or not. The dot-env audit-local pattern measured at OF-N05-5 is the nearest existing in-tree pattern and is expressly NOT reusable for the hosted auditor credential.",
+        "NO persistent user-scope environment variable, and never setx. OD-2 as corrected by v1.0.2 SPC102-1 leaves process-scoped delivery as the only selectable mechanism.",
+        "NO invented secret. No credential is generated, read, written or handled by N29 at all; its only permissible vault interaction is with a NON-SECRET SENTINEL.",
+        "NO hosted PostgreSQL connection, no GRANT, no REVOKE, no role mutation, no VALID UNTIL computation.",
+        "NO custody-inventory file is created or populated. That is N06."
+      ],
+      "no_owner_policy_is_invented_here": "OD-2 already ratified the custody store and the delivery class. N29 selects WITHIN that ratified class and may not widen it. A selection that stepped outside MECHANISM_2_PROCESS_SCOPED would be a new owner decision wearing a technical costume."
+    },
+    {
+      "id": "N30",
+      "name": "CREDENTIAL DEPOSIT INTO THE RATIFIED CUSTODY STORE",
+      "plane": "WORKSTATION",
+      "canonical_phase": "Between PHASE_P2's MR-2 and PHASE_P4's secret delivery. Introduced by v1.0.2 to close DAG_GAP_B (OF-N05-2).",
+      "act": "DEPOSIT the credential minted at N11 into the Windows Credential Manager entry that the N29 mechanism reads, so that N23's vault READ has a value to read.",
+      "preconditions": ["N11", "N29"],
+      "exit_condition": "The value is present in EXACTLY ONE custody-store entry; that entry is the one the N29-built mechanism reads; and the value exists in no other store, file, variable or transcript. The custody inventory is NOT touched by this node.",
+      "tokens": ["STOP_SECRET_DELIVERY_NONCOMPLIANT"],
+      "WHY_IT_IS_A_SEPARATE_ACT_FROM_N29": "N29 produces a READER. N30 performs a WRITE. Fusing them would let a single lane both place a secret into a store and certify the mechanism that reads it, and it would make the deposit's authorization ride on the mechanism lane's gate rather than on the mint's. The two semantics are kept apart deliberately and this amendment declines to merge them.",
+      "WHY_IT_IS_A_SEPARATE_ACT_FROM_N12": "N12 updates the custody INVENTORY, a repository record at the OD-2-fixed path. SSL-08 makes that record NAMES, ROLES AND CUSTODY METADATA ONLY. N30 writes a VALUE into an OS credential vault. An inventory update is not a deposit and a deposit is never an inventory update; v1.0.0 has a node for the first and had none for the second.",
+      "WHY_IT_DEPENDS_ON_N29_AND_NOT_ONLY_ON_N11": "A deposit made under an entry name the built reader does not read is a deposit into a store nobody reads. The depositor and the reader must agree on the entry identity, and the reader's identity is fixed at N29. This edge is what prevents a value being placed somewhere N23 cannot find it — the mirror image of the gap this node closes.",
+      "NEVER_A_VALUE_IN_THE_INVENTORY": "The deposit does not add, and never may add, the credential, a DSN, userinfo, a hash, a host string, or any vault handle, entry key or lookup token to docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json or to any evidence artifact. The vault-handle prohibition is OF-DAG-6's derived addition and is carried here unweakened: a retrievable handle recorded beside a named custodian is materially closer to the value than a role name is.",
+      "THE_CONCRETE_DEPOSIT_COMMAND_OR_API_IS_NOT_CHOSEN_HERE": {
+        "why_not": "Current authority fixes the custody STORE (OD-2: Windows Credential Manager) but no artifact in this repository measures a deposit path into it, and no ratified clause names one. A concrete command or API is therefore NOT yet a purely technical implementation detail: choosing one would require a feasibility measurement this docs-only lane does not perform.",
+        "what_is_authorized_instead": "The FUTURE technical choice is authorized under the constraints below. No owner policy is invented: OD-2's store and delivery class are not widened, and the choice is bounded to how a value already ratified to live in that store gets into it.",
+        "constraints_binding_that_future_choice": [
+          "NO secret on any command line, in argv, or in any process-table-visible form. A deposit performed by passing the credential as a command argument is prohibited outright, however convenient the tooling makes it.",
+          "NO secret in any log, transcript, console echo or shell history.",
+          "NO secret written anywhere inside the repository working tree.",
+          "NO persistent user-scope environment variable as a staging hop, and never setx.",
+          "NO secret evidence: the deposit is recorded in the evidence artifact BY MECHANISM NAME ONLY, exactly as REQUIRED_CONTENTS item 9 requires of the delivery mechanism.",
+          "The entry is written ONCE and its identity matches the N29 reader's."
+        ]
+      }
+    },
+    {
+      "id": "N31",
+      "name": "PLANNED REMOVAL DATE INTAKE",
+      "plane": "OWNER",
+      "canonical_phase": "Derived prerequisite of N06, at the same owner intake beat as N08. Introduced by v1.0.2 to close DAG_GAP_C.",
+      "act": "OBTAIN the planned removal date for the auditor credential as a NON-SECRET, owner-supplied execution datum, expressed as an exact UTC instant, and carry it to N06 so the custody inventory's planned_removal_date field holds a value rather than a hole before N10 is asked.",
+      "preconditions": ["N08"],
+      "exit_condition": "One planned removal date, supplied by the owner, expressed in UTC and not in a local Windows time zone, and not earlier than the planned FINAL WITNESS instant N08 supplied. If no such datum is supplied, N06 cannot meet its own exit condition and MR-2 stays BLOCKED, exactly as it does when N08 is unsupplied.",
+      "tokens": [],
+      "CLASSIFICATION_OF_THE_FUTURE_VALUE": {
+        "verdict": "HUMAN_SUPPLIED_EXECUTION_DATUM, not a mechanically derived schedule datum.",
+        "why_not_mechanically_derived": "A mechanical derivation would need a ratified offset from some already-known instant. None exists. OD-1 ratifies that rotation after the FINAL WITNESS is MANDATORY, which fixes that removal is POST-WITNESS but fixes no interval. OD-3 ratifies an offset of twenty-four hours, but it ratifies it for VALID UNTIL, which is the credential's EXPIRY and a different quantity. Deriving a removal date from OD-3's offset would be borrowing a numeral ratified for another purpose.",
+        "why_it_is_NOT_a_new_policy_decision": "The POLICY is already ratified: OD-1 makes post-witness removal mandatory, and this amendment neither widens nor narrows it. What is missing is only the concrete planned instant implementing a policy the owner has already selected — the same relationship N08 bears to OD-3, where the policy is ratified and only the instant is awaited. Treating it as a fresh policy question would reopen a decision the owner has already made.",
+        "why_it_is_an_OWNER_plane_node": "The datum is supplied by the owner, like N08's planned FINAL WITNESS timestamp, and for the same reason: no measurement in the repository can produce it and no lane may estimate it."
+      },
+      "NO_DATE_IS_INVENTED_BY_THIS_AMENDMENT": "No UTC timestamp is calculated, defaulted, estimated or recorded anywhere in this document, consistent with OD3_TIME_MATERIALIZATION.rule of v1.0.0: 'NO UTC TIMESTAMP IS CALCULATED BY THIS ARTIFACT. None appears anywhere in it, and none may be added by a successor citing it.' This amendment is such a successor and honours that clause.",
+      "IT_IS_NOT_SILENTLY_EQUATED_TO_expiry_exact_utc": {
+        "rule": "planned_removal_date and expiry_exact_utc are DISTINCT FIELDS with distinct meanings and this amendment does not collapse them. No controlling authority requires equality, and the N06 inventory instance carries them as two fields with two separate hole reasons.",
+        "what_they_mean_differently": "expiry_exact_utc is the instant at which the credential STOPS WORKING BY ITSELF, under a VALID UNTIL the hosted plane enforces. planned_removal_date is the instant at which custody is planned to END by an ACT — the mandatory post-witness rotation and its removal verification. A credential that expires unattended has not been removed, and an inventory whose last state is a live credential that is no longer live is, in v1.0.0's own words, an inventory that is wrong.",
+        "the_one_bound_that_IS_derivable_and_binding": "NOT EARLIER THAN the planned FINAL WITNESS instant. OD-1's 'rotation after the FINAL WITNESS' is explicit, and a removal planned before the witness would plan to destroy the capability the witness needs.",
+        "a_bound_that_is_NOT_asserted_here": "Whether the planned removal must also fall at or before expiry_exact_utc is NOT decided by this amendment. It is arguable from OD-1's mandatory-rotation posture and it is arguable against, since a rotation performed after an unattended expiry still discharges OD-1. No ratified clause settles it, so it is carried as an open owner input rather than resolved by inference.",
+        "if_the_owner_elects_equality": "That is an owner act and would be recorded as one. It is not this amendment's to assume, and an execution lane may not adopt it as a default."
+      }
+    }
+  ],
+
+  "NEW_EDGES": [
+    { "id": "E-03-29", "from": "N03", "to": "N29", "kind": "HARD", "why": "The mechanism may only be selected from within the class the owner ratified, so the ratification gate must have closed first." },
+    { "id": "E-29-05", "from": "N29", "to": "N05", "kind": "HARD", "why": "DAG_GAP_A. N05 demonstrates a CHOSEN mechanism; N29 is what makes one exist. Without this edge N05 has no subject." },
+    { "id": "E-11-30", "from": "N11", "to": "N30", "kind": "HARD", "why": "DAG_GAP_B. There is nothing to deposit until MR-2 has minted it." },
+    { "id": "E-29-30", "from": "N29", "to": "N30", "kind": "HARD", "why": "The deposit must target the entry the built reader reads. The reader's entry identity is fixed at N29." },
+    { "id": "E-30-23", "from": "N30", "to": "N23", "kind": "HARD", "why": "DAG_GAP_B. N23 is a vault READ. A read of an entry nothing has written returns nothing, and would present as an ordinary delivery failure after MR-2 has already killed the prior credential." },
+    { "id": "E-08-31", "from": "N08", "to": "N31", "kind": "HARD", "why": "DAG_GAP_C. The planned removal date is bounded below by the planned FINAL WITNESS instant, which N08 supplies." },
+    { "id": "E-31-06", "from": "N31", "to": "N06", "kind": "HARD", "why": "DAG_GAP_C. N06's exit condition requires all seven pre-mint fields present, and planned_removal_date is one of the seven." }
+  ],
+
+  "PRECONDITION_SETS_WIDENED_BY_THESE_EDGES": {
+    "rule": "Three nodes v1.0.0 declares now have additional incoming HARD edges. Their v1.0.0 objects are NOT edited. This section states, for the record, what each node's precondition set becomes under the amended graph, machine-derived from the amended edge set rather than transcribed.",
+    "N05": { "v1_0_0": ["N03"], "amended": ["N03", "N29"] },
+    "N06": { "v1_0_0": ["N03", "N05", "N09"], "amended": ["N03", "N05", "N09", "N31"] },
+    "N23": { "v1_0_0": ["N22"], "amended": ["N22", "N30"] },
+    "nothing_is_weakened": "No precondition is removed from any node and no exit condition is relaxed. Every change is a WIDENING, which can only make a node harder to reach, never easier."
+  },
+
+  "RECOMPUTED_GRAPH": {
+    "method": "Kahn topological sort plus a forward reachability sweep from N01, computed over the union of v1.0.0's thirty-five forward edges and this amendment's seven, with node and edge identity taken from the artifacts rather than from prose. Every numeral below is machine-derived.",
+    "NODE_COUNT_BASE": 28,
+    "NODE_COUNT_NEW": 3,
+    "NODE_COUNT_TOTAL": 31,
+    "EDGE_COUNT_BASE": 35,
+    "EDGE_COUNT_NEW": 7,
+    "EDGE_COUNT_TOTAL": 42,
+    "HARD_EDGE_COUNT": 34,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "DUPLICATE_NODE_IDS": [],
+    "DUPLICATE_EDGE_IDS": [],
+    "DUPLICATE_EDGE_PAIRS": [],
+    "EDGE_ENDPOINTS_NOT_DECLARED": [],
+    "ACYCLIC": true,
+    "TOPOLOGICAL_ORDER_LENGTH": 31,
+    "NODES_IN_A_CYCLE": [],
+    "TOPOLOGICAL_ORDER": "N01 N28 N02 N03 N04 N07 N08 N29 N09 N31 N05 N06 N10 N11 N12 N13 N30 N14 N15 N16 N17 N18 N19 N20 N21 N22 N23 N24 N25 N26 N27",
+    "SINK_NODES": ["N12", "N16", "N27", "N28"],
+    "NEW_EDGE_ORDER_RESPECTED": true,
+    "GAP_A_N05_NOW_HAS_A_PRODUCER": true,
+    "GAP_B_DEPOSIT_IS_REACHABLE_FROM_N11_AND_REACHES_N23": true,
+    "GAP_B_METHOD_NOTE": "Tested by REACHABILITY over the edge set — N30 reachable from N11, and N23 reachable from N30 — and NOT by comparing positions in a topological order. A topological order is not unique, so a node appearing earlier in one linearization is compatible with there being no dependency on it at all. The first computation of this fact was positional; it was caught by the deposit-displacement mutation control, which reported a passing shape against a graph that had lost the property, and both the control and this fact were recomputed by reachability.",
+    "GAP_C_N06_NOW_HAS_A_REMOVAL_DATE_PRODUCER": true,
+    "N06_BEFORE_N10_HARD_PRESERVED": true,
+    "ORPHAN_AND_UNREACHABLE_DISCLOSURE": {
+      "ORPHAN_NODES_AFTER": ["N28"],
+      "UNREACHABLE_FROM_N01_AFTER": ["N28"],
+      "ORPHAN_NODES_BEFORE": ["N28"],
+      "UNREACHABLE_FROM_N01_BEFORE": ["N28"],
+      "DELTA_INTRODUCED_BY_THIS_AMENDMENT": "NONE. Zero new orphans, zero new unreachable nodes.",
+      "why_N28_is_not_a_defect": "N28's disconnection is DECLARED AND DELIBERATE in v1.0.0. DAG_EDGES.EXTERNAL_SEGMENT_BETWEEN_N27_AND_N28 states that two macro-chain nodes lie between N27 and N28 and are OUTSIDE this DAG, 'so the graph terminates honestly rather than appearing to run from provisioning straight to rotation'. It is a declared discontinuity, not an accidental orphan.",
+      "why_it_is_disclosed_anyway": "A recomputation that reported 'no orphan nodes' would be false against its own method, and a future lane re-running that method would find the discrepancy and be unable to tell a declared discontinuity from a regression. The measured result is reported and then explained, in that order."
+    }
+  },
+
+  "WHAT_REMAINS_OPEN_AFTER_THIS_AMENDMENT": {
+    "rule": "This amendment makes three previously structureless gaps EXECUTABLE. It closes no node. Every node named below is OPEN and this document may not be cited as satisfying any of them.",
+    "N05": "OPEN. Its subject now exists as a node (N29) rather than as an absence, but neither N29 nor N05 has been executed and no mechanism has been selected, built or demonstrated.",
+    "N06": "OPEN. Its planned_removal_date producer now exists as a node (N31), but N05, N09 and N31 are all unexecuted, and human_custodian remains an unresolved hole no node of this graph produces.",
+    "N07": "OPEN. Its schema gaps are corrected in the consolidated closure authority's companion schema, but the evidence artifact is not filled and its execution-time filename is still derived at the execution lane's own base.",
+    "N29": "OPEN. Newly declared, never executed.",
+    "N30": "OPEN. Newly declared, never executed.",
+    "N31": "OPEN. Newly declared, never executed; its datum is unsupplied.",
+    "N08": "OPEN, unchanged. No concrete planned FINAL WITNESS timestamp has been supplied, and the terminal state BLOCKED_AT_N08 remains live.",
+    "every_hosted_node": "UNREACHABLE, unchanged. N10 remains gated on seven preconditions of which several are open, and N11 is the first hosted act in the graph."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO implementation of any WCM reader, DPAPI wrapper or vault integration is invented, named, designed, sketched or recommended by this amendment. v1.0.0's prohibition is carried forward unweakened and N29 restates it.",
+    "NO credential is generated, minted, rotated, read, written, deposited or handled. No value of any kind is touched.",
+    "NO hosted act is authorized, scheduled or opened. No PostgreSQL connection, no GRANT, no REVOKE, no role mutation.",
+    "NO UTC timestamp is computed, defaulted or recorded.",
+    "NO owner policy is created, widened or reinterpreted. OD-1..OD-6 are consumed as ratified and none is reopened.",
+    "NO node of v1.0.0 is edited, renumbered, deleted or weakened, and no exit condition is relaxed.",
+    "NO node is declared satisfied. This amendment adds structure; it discharges nothing.",
+    "NO custody-inventory file is created, and the existing one's metadata-only semantics are preserved.",
+    "This amendment does NOT open, authorize or schedule the custody-realization implementation lane it makes describable, and does not open PRECHECK-R2."
+  ],
+
+  "OPEN_FINDINGS_ADDED": [
+    {
+      "id": "OF-DAG-7",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "HC1-S6's DAG_source in v1.0.0 sources 'when it will be removed' to 'N06 planned removal date', which sources a field to the node that consumes it. N31 now produces it, so the execution lane has a real source; but v1.0.0's HC1_CONTRACT text still reads as it did and is append-only.",
+      "disposition": "Recorded rather than edited. The amended precondition set at PRECONDITION_SETS_WIDENED_BY_THESE_EDGES.N06 is the operative statement of where the value comes from, and this finding exists so a certifier reading v1.0.0's HC1_CONTRACT in isolation is not misled by it.",
+      "what_a_certifier_should_press": "Whether a self-referential DAG_source elsewhere in HC1_CONTRACT has gone unnoticed for the same reason this one did, namely that a field-to-node pointer reads as provenance without being checked as one."
+    },
+    {
+      "id": "OF-DAG-8",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "human_custodian, one of the seven pre-mint fields N06's exit condition requires, has NO PRODUCER NODE in the amended graph either. The N06 package records it as a hole closable only by 'a separately governed owner act', and no such act is a node.",
+      "why_it_is_not_closed_here": "It is the same CLASS of gap as DAG_GAP_C and the lane mandate named three gaps, not four. Adding a fourth node on this lane's own initiative would be scope expansion; leaving it unnamed would repeat exactly the omission DAG_GAP_C records. It is therefore surfaced as a finding with a named remedy rather than silently absorbed or silently dropped.",
+      "the_named_remedy": "Either an owner intake node alongside N31, or an explicit statement that the custodian is supplied at the same owner beat as N08 and N31. A successor amendment or the independent certification of this package should settle which.",
+      "consequence_if_left": "N06 cannot meet its exit condition, so N10 cannot be asked and MR-2 stays BLOCKED — the same terminal posture as BLOCKED_AT_N08, reached by a different missing datum."
+    },
+    {
+      "id": "OF-DAG-9",
+      "severity": "NON_BLOCKING",
+      "finding": "N30's concrete deposit command or API is left to a future technical choice under constraints, because no artifact in this repository measures a deposit path into Windows Credential Manager. The constraint list is therefore doing load-bearing work that a measured, named mechanism would otherwise do.",
+      "disposition": "Accepted deliberately. The lane mandate permits fixing the concrete mechanism only where current authority and measured local feasibility make it a purely technical detail, and neither condition holds. A mechanism named without measurement would be an invented implementation wearing an authority's signature.",
+      "what_a_certifier_should_press": "Whether the six constraints are jointly sufficient to exclude every deposit path that would leak the value, or whether a path exists that satisfies all six and still exposes it — for instance through a tooling layer that logs its own inputs."
+    }
+  ],
+
+  "self_check": {
+    "v1_0_0_and_v1_0_1_byte_unchanged": "ASSERTED AND MACHINE-CHECKED. Neither file appears in this lane's write set; the check is a git diff of both paths against the merge head, required to be empty.",
+    "no_node_edited": "No object under DAG_NODES.nodes is modified. Widened precondition sets are stated in this amendment, not written back into v1.0.0.",
+    "every_numeral_derived": "Every count, order and boolean under RECOMPUTED_GRAPH is produced by the recomputation described at RECOMPUTED_GRAPH.method, not hand-counted.",
+    "no_secret_value": "No credential, DSN, userinfo, hash, host string, vault handle, entry key or lookup token appears anywhere in this document.",
+    "no_utc_timestamp": "No computed UTC instant appears. The only date in this document is the materialization_date literal 2026-09-22, which is not a VALID UNTIL and not a removal date.",
+    "orphan_disclosure_is_honest": "The recomputation's orphan result is reported as measured (N28) and then explained, rather than explained away before being reported."
+  },
+
+  "required_independent_review": "MANDATORY. This amendment adds three nodes and seven HARD edges to a certified graph and widens three precondition sets. It has not been independently certified and may not be cited as satisfying any node until it has been.",
+
+  "final_state": "DAG_AMENDED_TO_v1_0_2_THREE_GAPS_MADE_EXECUTABLE_NO_NODE_CLOSED",
+
+  "next_gate": "ONE independent adversarial certification of the consolidated closure package of which this amendment is a part. This amendment does not arm, open or schedule any execution lane, and a PASS on it authorizes no provisioning."
+}

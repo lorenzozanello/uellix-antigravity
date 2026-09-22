@@ -1,0 +1,128 @@
+{
+  "package_id": "FIBDB053-D1-AUDITOR-CERTIFICATION-OCCURRENCE-REGISTRY",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0",
+  "authority_class": "CERTIFICATION_VERDICT_EVIDENCE",
+  "document_class": "APPEND_ONLY_REGISTRY",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1",
+  "lane": "CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1",
+  "mode": "DOCS_ONLY_NO_EXECUTION",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5, under the CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1 lane mandate",
+  "repository": "uellix",
+
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-consolidated-closure-r1",
+  "AS_OF_MERGE_HEAD": "00b7efc8970e38354555b39e2aae5cc2874daa69",
+  "AS_OF_MERGE_TREE": "6e8723261a198eaa496ab7bf89ed458a8712b854",
+
+  "WHAT_THIS_REGISTRY_IS": {
+    "rule": "It records THAT three independent certifications OCCURRED, on which artifacts, at which blobs, and with what verdict string. It is occurrence materialization. It is NOT a reconstruction of the certifications themselves.",
+    "authorizing_decision": "OD-6, ratified (RATIFIED_MATERIALIZE_GOING_FORWARD): 'Independent-certification VERDICTS must be materialized as tracked repository evidence for future certifications.'",
+    "why_these_three_fall_on_the_GOING_FORWARD_side": "OD-6 was ratified in commit bee14e0a17fca6c6557b8e5e931fc32af789b49b, dated 2026-09-21. All three certifications recorded below occurred on 2026-09-22, strictly after it, and bee14e0a is an ancestor of this lane's merge head. They are therefore future certifications in OD-6's sense, for which materialization is REQUIRED rather than forbidden. This is the opposite posture to the v1.0.2 recertification recorded at the DAG amendment v1.0.1's N02_RESOLUTION, which predated OD-6 and is permanently non-materializable.",
+    "scope_limit": "VERDICT ARTIFACTS ONLY, per OD-6's own scope clause. No conversation transcript, session log or reviewer narrative is stored here, and no secret material may ever be."
+  },
+
+  "WHAT_IS_NOT_FABRICATED_HERE": {
+    "rule": "Three classes of content that a registry like this invites, and that this one refuses to invent.",
+    "reviewer_identity": "NOT SUPPLIED. No artifact in this repository names a reviewer for any of the three certifications. A reviewer name is recorded as an explicit hole, never as a plausible attribution.",
+    "exact_timestamps": "NOT SUPPLIED. The certification DATE is recorded where the lane mandate states it; no hour, minute or UTC instant is invented to make the record look more precise than the evidence is.",
+    "historical_verdict_documents": "NOT RECONSTRUCTED. No prior verdict file is written, backdated or reconstructed as prose. The verdict STRING is recorded because the lane mandate supplies it verbatim; the verdict DOCUMENT is not manufactured around it.",
+    "why_this_matters": "OD-6's own reasoning is that reconstructing a past verdict as a document would be writing history rather than recording it. A registry that filled its holes with reasonable-looking values would commit exactly that error while appearing to comply."
+  },
+
+  "OCCURRENCES": [
+    {
+      "occurrence_id": "CERT-OCC-N05",
+      "subject_node": "N05",
+      "subject_package": "FIBDB053-D1-AUDITOR-N05-WCM-READINESS",
+      "certified_artifacts": [
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_v1.0.0.json", "blob_sha": "96b02233264a0c32652c00704d44a5f434bf6ec0" },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_AMENDMENT_v1.0.1.json", "blob_sha": "eb6326c74322d11b894c5600c2735063bb3a532e" },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_v1.0.0.json", "blob_sha": "d01b676dbc8a8ad51e021415c5084a67ade6e02b" },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob_sha": "6b5d0b82d6280118d00e96587958c7c6ca3ccdee" }
+      ],
+      "certified_at_commit": "36b87dc420a971e919c0855f319b66d52a56f233",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "SHORT INDEPENDENT RECERTIFICATION of the v1.0.1 errata",
+      "VERDICT": "N05_WCM_READINESS_V101_RECERT_PASS_WITH_PROGRAM_BLOCKERS",
+      "certification_date": "2026-09-22",
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate prior verdict document exists and none is reconstructed.",
+      "what_the_verdict_string_itself_discloses": "PASS on the ARTIFACT, with PROGRAM BLOCKERS outstanding. The two halves are not interchangeable: the package was certified sound, and the programme it serves was found blocked. The blockers are OF-N05-1 and OF-N05-2, which this lane's DAG amendment v1.0.2 absorbs as nodes N29 and N30.",
+      "node_status_unchanged_by_this_record": "N05 remains OPEN and NOT SATISFIED. Certifying a readiness authority is not demonstrating a mechanism."
+    },
+    {
+      "occurrence_id": "CERT-OCC-N06",
+      "subject_node": "N06",
+      "subject_package": "FIBDB053-D1-AUDITOR-N06-CUSTODY-INVENTORY",
+      "certified_artifacts": [
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N06_CUSTODY_INVENTORY_AUTHORITY_v1.0.0.json", "blob_sha": "5408cc7cc00cceb3816e5c43ad09678fddc81aa1" },
+        { "path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json", "blob_sha": "28c2379fa1d4918c259d3f0b92ea3939f23022d0" }
+      ],
+      "certified_at_commit": "d4a71cad0e568d81b752fe97251407bbb6ebcd44",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT CERTIFICATION",
+      "VERDICT": "N06_CUSTODY_INVENTORY_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-22",
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate prior verdict document exists and none is reconstructed.",
+      "IMPORTANT_BLOB_NOTE": "The custody inventory blob pinned above, 28c2379f, is the blob AS CERTIFIED. This lane's consolidated closure authority CORRECTS that file and therefore changes its blob. The pin above is deliberately the certified one: a registry that re-pinned itself to the corrected blob would report that the corrected file is what was certified, which is false. The correction and its new blob are recorded in the consolidated closure authority, not here.",
+      "node_status_unchanged_by_this_record": "N06 remains OPEN and NOT SATISFIED. The package's own verdict was that a STRUCTURAL prerequisite closed while N06 itself did not, because N05 and N09 remain open."
+    },
+    {
+      "occurrence_id": "CERT-OCC-N07",
+      "subject_node": "N07",
+      "subject_package": "FIBDB053-D1-AUDITOR-N07-EVIDENCE-SKELETON",
+      "certified_artifacts": [
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_AUTHORITY_v1.0.0.json", "blob_sha": "14f2187082aed11507d7dc35ea64af6343f2ef72" },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.0.json", "blob_sha": "0a8b5566ca786bd12dc28ec141e03545d9ef00f3" },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.0.json", "blob_sha": "0edca0108f8202021b015e3f8c14e78e9bf113cc" },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEST_MANIFEST_v1.0.0.json", "blob_sha": "57d405581a55046d62d9d711a72ed7dbd20dac1b" }
+      ],
+      "certified_at_commit": "e50be7778dc42fe13fe8a67b9a34e3c0ccc50b53",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT CERTIFICATION",
+      "VERDICT": "N07_EVIDENCE_SKELETON_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-22",
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate prior verdict document exists and none is reconstructed.",
+      "IMPORTANT_SUCCESSOR_NOTE": "The schema and template blobs pinned above are the v1.0.0 files AS CERTIFIED, and they remain byte-intact in the tree. This lane adds SUCCESSOR files at v1.0.1 rather than editing them, so these pins stay true.",
+      "node_status_unchanged_by_this_record": "N07 remains OPEN and NOT SATISFIED. A certified skeleton is not a filled evidence artifact, and the execution-time filename is still derived at the execution lane's own base."
+    }
+  ],
+
+  "DERIVED_FACTS": {
+    "OCCURRENCE_COUNT": 3,
+    "CERTIFIED_ARTIFACT_COUNT": 10,
+    "VERDICTS_RECORDING_A_PASS": 3,
+    "VERDICTS_RECORDING_A_FAIL": 0,
+    "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 0,
+    "why_the_last_number_is_zero": "Every one of the three verdicts certifies an AUTHORITY PACKAGE. None of the three demonstrates a mechanism, supplies an owner datum, or fills an evidence artifact, which is what closing N05, N06 or N07 respectively would require. A registry that let three PASS strings read as three closed nodes would be the most expensive error it could make.",
+    "derivation_note": "OCCURRENCE_COUNT and CERTIFIED_ARTIFACT_COUNT are derived by counting this document's own OCCURRENCES array and the union of its certified_artifacts entries, and are re-derivable by any reader from the arrays above."
+  },
+
+  "self_check": {
+    "no_reviewer_fabricated": "Three of three reviewer_identity fields are explicit nulls with stated hole reasons.",
+    "no_timestamp_fabricated": "Three of three exact_timestamp_utc fields are explicit nulls with stated hole reasons. No UTC instant appears anywhere in this document.",
+    "no_historical_verdict_file_reconstructed": "No prior verdict document is written, cited as existing, or implied to exist. Each entry states in terms that none exists.",
+    "every_blob_pin_re_derivable": "Every blob_sha above is re-derivable with git ls-tree against the pinned commit, and every certified_at_commit is an ancestor of the merge head.",
+    "no_secret_value": "No credential, DSN, userinfo, hash, host string, vault handle, entry key or lookup token appears anywhere in this document.",
+    "no_node_declared_closed": "DERIVED_FACTS.NODES_CLOSED_BY_THESE_CERTIFICATIONS is zero and every occurrence carries its own node_status_unchanged_by_this_record clause."
+  },
+
+  "required_independent_review": "MANDATORY, as part of the consolidated closure package this registry belongs to.",
+
+  "final_state": "THREE_CERTIFICATION_OCCURRENCES_MATERIALIZED_ZERO_NODES_CLOSED",
+
+  "next_gate": "ONE independent adversarial certification of the consolidated closure package."
+}

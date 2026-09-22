@@ -1,0 +1,491 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.0",
+  "title": "D-1 auditor provisioning — N07 evidence skeleton",
+  "description": "Structural schema for the non-secret evidence skeleton required by DAG node N07 (docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json, DAG_NODES.N07) and by EVIDENCE_MATERIALIZATION.REQUIRED_CONTENTS in the effective capability package. A document validating against this schema in template_status UNPOPULATED_TEMPLATE has every REQUIRED_CONTENTS field present as an explicit hole; one in POPULATED_INSTANCE has every hole either resolved to a measured fact or carried forward as an explicit NOT_EXECUTED/UNKNOWN/SKIPPED disposition. A blank, an omitted key, or a null value is never a valid way to represent 'not yet known' under this schema — additionalProperties is false everywhere so an omission is a schema violation, not a silent pass.",
+  "type": "object",
+  "required": [
+    "schema_ref",
+    "artifact_kind",
+    "template_status",
+    "must_never_contain_attestation",
+    "execution_context",
+    "hosted_state_unknown_register",
+    "rollback_statements_pre_written",
+    "sections",
+    "refusals_and_sqlstate_log",
+    "canonical_literal_non_resolution_statement"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_ref": { "const": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.0.json" },
+    "artifact_kind": { "const": "N07_EVIDENCE_SKELETON" },
+    "template_status": {
+      "type": "string",
+      "enum": ["UNPOPULATED_TEMPLATE", "POPULATED_INSTANCE"],
+      "description": "UNPOPULATED_TEMPLATE is this schema's own docs/ops/release/*_TEMPLATE_v1.0.0.json instance. POPULATED_INSTANCE is what the execution lane produces at DAG node N25, under its own filename derived from the docs/ops/staging/evidence/ dated-attempt precedent at ITS OWN base — this schema does not fix that filename, matching EVIDENCE_MATERIALIZATION's own refusal to fix it."
+    },
+    "must_never_contain_attestation": {
+      "type": "object",
+      "required": ["source", "prohibited", "self_check_no_prohibited_pattern_present"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "const": "EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN, docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json" },
+        "prohibited": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 8,
+          "maxItems": 8,
+          "description": "The eight prohibited content classes, carried verbatim. No property anywhere in a document validating against this schema may hold a value of any of these classes; the schema's own leaf types (string/boolean/enum) are chosen so that a credential-shaped value would be a type violation as well as a policy violation."
+        },
+        "self_check_no_prohibited_pattern_present": {
+          "type": "boolean",
+          "description": "true only after a grep of the fully rendered document for a postgres connection-scheme prefix, a URL userinfo segment, and a base64url run of 32+ bytes that is not a git object id, found zero hits."
+        }
+      }
+    },
+    "execution_context": {
+      "type": "object",
+      "required": [
+        "lane_identifier", "base_sha", "base_tree",
+        "target_project_ref", "target_selected_by_ref_not_name",
+        "connection_mechanism", "engine_version_observed",
+        "wcm_delivery_mechanism_readiness_ref", "custody_pre_mint_entry_ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "lane_identifier": { "$ref": "#/definitions/hole_string" },
+        "base_sha": { "$ref": "#/definitions/hole_string" },
+        "base_tree": { "$ref": "#/definitions/hole_string" },
+        "target_project_ref": {
+          "type": "string",
+          "description": "Populated only with the literal ref, never the human-readable name. bvyzblhqymxruxdguaee is the sole authorized value; any other value is itself a finding.",
+          "enum": ["NOT_EXECUTED", "bvyzblhqymxruxdguaee"]
+        },
+        "target_selected_by_ref_not_name": {
+          "const": "Selection was by ref, per TARGET_IDENTITY.SELECTION_IS_BY_REF_AND_NEVER_BY_NAME. The management-plane display name is never a selector.",
+          "description": "Fixed attestation string, not a hole — the RULE is invariant; only the ref value above is measured."
+        },
+        "connection_mechanism": {
+          "type": "string",
+          "enum": ["NOT_EXECUTED", "direct-db"],
+          "description": "The ConnectionMechanism enum value only. The host string itself must never appear anywhere in this document (MUST_NEVER_CONTAIN)."
+        },
+        "engine_version_observed": { "$ref": "#/definitions/hole_string" },
+        "wcm_delivery_mechanism_readiness_ref": {
+          "type": "object",
+          "required": ["dag_node", "demonstrated"],
+          "additionalProperties": false,
+          "properties": {
+            "dag_node": { "const": "N05" },
+            "demonstrated": { "$ref": "#/definitions/disposition" }
+          }
+        },
+        "custody_pre_mint_entry_ref": {
+          "type": "object",
+          "required": ["dag_node", "path", "entry_exists_by_name_only"],
+          "additionalProperties": false,
+          "properties": {
+            "dag_node": { "const": "N06" },
+            "path": { "const": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json" },
+            "entry_exists_by_name_only": { "$ref": "#/definitions/disposition" }
+          }
+        }
+      }
+    },
+    "hosted_state_unknown_register": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 13,
+      "description": "Fixed at exactly HU-1..HU-13, per HOSTED_STATE_UNKNOWN_REGISTER in the effective capability package. FRESHNESS_CARRYOVER binds: an entry not re-measured stays UNKNOWN rather than being dropped.",
+      "items": {
+        "type": "object",
+        "required": ["id", "disposition_after_this_phase"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^HU-(1[0-3]|[1-9])$" },
+          "disposition_after_this_phase": { "$ref": "#/definitions/disposition" }
+        }
+      }
+    },
+    "rollback_statements_pre_written": {
+      "type": "object",
+      "description": "N07's own act: pre-write and review the exact rollback/compensating statements before MR-2 is reachable (MR2-PRE-7). The statement text is CONST — byte-fixed by this schema — because a rollback statement composed under failure, after the fact, is exactly the risk N07 exists to remove. Only whether each was ISSUED is a hole.",
+      "required": ["mr1_rollback", "mr2_compensating_action", "mr3_rollback"],
+      "additionalProperties": false,
+      "properties": {
+        "mr1_rollback": {
+          "type": "object",
+          "required": ["statement", "applicable", "issued"],
+          "additionalProperties": false,
+          "properties": {
+            "statement": { "const": "ALTER ROLE uellix_auditor NOLOGIN" },
+            "applicable": { "const": "MR-1 is DECLARED_UNREACHABLE under the ratified OD-2 (DAG_NODES.N16). This statement is pre-written and retained per MUTATION_ROLLBACK_CONTRACT.rule regardless, because the node is retained, not deleted." },
+            "issued": { "$ref": "#/definitions/disposition" }
+          }
+        },
+        "mr2_compensating_action": {
+          "type": "object",
+          "required": ["rollback_possible", "statement_options", "action_taken"],
+          "additionalProperties": false,
+          "properties": {
+            "rollback_possible": { "const": false },
+            "statement_options": {
+              "type": "array",
+              "items": { "type": "string" },
+              "const": ["ROTATE AGAIN", "ALTER ROLE uellix_auditor PASSWORD NULL"]
+            },
+            "action_taken": { "$ref": "#/definitions/hole_string" }
+          }
+        },
+        "mr3_rollback": {
+          "type": "object",
+          "required": ["statement", "condition", "issued"],
+          "additionalProperties": false,
+          "properties": {
+            "statement": { "const": "REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor" },
+            "condition": { "const": "Issued ONLY if the recorded prestate (has_schema_privilege for USAGE, KP-5) was false. Never issued against a measured true prestate." },
+            "issued": { "$ref": "#/definitions/disposition" }
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "object",
+      "description": "The ten sections the lane mandate requires separated, ordered by DAG precondition order (N08/N09 before N10, N14 after N11/N13) rather than by the mandate's own listed word order. See the companion authority's SECTION_ORDERING_DERIVATION, flagged OF-N07-1.",
+      "required": [
+        "valid_until_computation", "hc_1", "mr_2", "post_mr2_verification",
+        "prestate", "mr_3_conditional", "post_mr3_verification",
+        "credential_delivery_confirmation", "precheck_r2", "final_rotation_cleanup"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "valid_until_computation": { "$ref": "#/definitions/section_valid_until" },
+        "hc_1": { "$ref": "#/definitions/section_hc1" },
+        "mr_2": { "$ref": "#/definitions/section_mr2" },
+        "post_mr2_verification": { "$ref": "#/definitions/section_post_mr2" },
+        "prestate": { "$ref": "#/definitions/section_prestate" },
+        "mr_3_conditional": { "$ref": "#/definitions/section_mr3" },
+        "post_mr3_verification": { "$ref": "#/definitions/section_post_mr3" },
+        "credential_delivery_confirmation": { "$ref": "#/definitions/section_delivery" },
+        "precheck_r2": { "$ref": "#/definitions/section_precheck_r2" },
+        "final_rotation_cleanup": { "$ref": "#/definitions/section_final_rotation" }
+      }
+    },
+    "refusals_and_sqlstate_log": {
+      "type": "array",
+      "description": "Cross-cutting. Appended at ANY node where a refusal occurs. Empty array is the valid, explicit 'no refusal yet' state — never omit the key.",
+      "items": {
+        "type": "object",
+        "required": ["dag_node", "sqlstate", "token_fired", "notes"],
+        "additionalProperties": false,
+        "properties": {
+          "dag_node": { "type": "string", "pattern": "^N([1-9]|1[0-9]|2[0-8])$" },
+          "sqlstate": { "type": "string" },
+          "token_fired": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "canonical_literal_non_resolution_statement": {
+      "type": "object",
+      "required": ["required_statement", "attested"],
+      "additionalProperties": false,
+      "properties": {
+        "required_statement": { "const": "Neither canonical literal (SQ-6 nor SQ-7) was resolved in this lane. Resolving either is mutant M20 and is reserved to the PRECHECK it names." },
+        "attested": { "$ref": "#/definitions/disposition" }
+      }
+    }
+  },
+  "definitions": {
+    "disposition": {
+      "description": "Never a blank, never a bare null. A field with no measured fact yet is the literal string NOT_EXECUTED; a field the identity this lane holds cannot measure at all is the literal string UNKNOWN; a boolean/PASS/FAIL/etc. appears only once the corresponding DAG node has actually run.",
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["NOT_EXECUTED", "UNKNOWN", "PASS", "FAIL", "SKIPPED_BY_MEASURED_TRIGGER", "DECLARED_UNREACHABLE", "BLOCKED"] }
+      ]
+    },
+    "hole_string": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Free-text field. minLength 1 makes an empty string a schema violation, so a blank can never be mistaken for a populated value. Valid pre-population values are the literals NOT_EXECUTED or UNKNOWN; any other non-empty value is a measured fact and must contain no prohibited content class."
+    },
+    "hc_statement_record": {
+      "type": "object",
+      "required": ["id", "source_ref", "stated"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "source_ref": { "type": "string" },
+        "stated": { "$ref": "#/definitions/disposition" }
+      }
+    },
+    "human_confirmation": {
+      "type": "object",
+      "required": ["dag_node", "act_covered", "mandatory_statements", "given", "timestamp_utc", "not_transferable"],
+      "additionalProperties": false,
+      "properties": {
+        "dag_node": { "type": "string" },
+        "act_covered": { "type": "string" },
+        "mandatory_statements": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/hc_statement_record" }
+        },
+        "given": { "$ref": "#/definitions/disposition" },
+        "timestamp_utc": { "$ref": "#/definitions/hole_string" },
+        "not_transferable": {
+          "const": "Spent when its act completes or its lane stops. Silence is not consent. A different act, including a re-rotation, requires a FRESH confirmation."
+        }
+      }
+    },
+    "pv_row": {
+      "type": "object",
+      "required": ["pv_id", "expected_source_ref", "actual", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "pv_id": { "type": "string", "pattern": "^PV-(3[0-4]|[12][0-9]|[1-9])$" },
+        "expected_source_ref": {
+          "const": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here."
+        },
+        "actual": { "$ref": "#/definitions/hole_string" },
+        "status": { "type": "string", "enum": ["NOT_EXECUTED", "PASS", "FAIL"] }
+      }
+    },
+    "mutation_record": {
+      "type": "object",
+      "required": ["dag_node", "fired", "prestate", "mutation_statement_ref", "poststate", "verification", "token_fired"],
+      "additionalProperties": false,
+      "properties": {
+        "dag_node": { "type": "string" },
+        "fired": { "$ref": "#/definitions/disposition" },
+        "prestate": { "$ref": "#/definitions/hole_string" },
+        "mutation_statement_ref": { "type": "string" },
+        "poststate": { "$ref": "#/definitions/hole_string" },
+        "verification": { "$ref": "#/definitions/disposition" },
+        "token_fired": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "section_valid_until": {
+      "type": "object",
+      "required": ["n08_planned_final_witness_intake", "n09_computed_valid_until_utc"],
+      "additionalProperties": false,
+      "properties": {
+        "n08_planned_final_witness_intake": {
+          "type": "object",
+          "required": ["supplied", "if_absent"],
+          "additionalProperties": false,
+          "properties": {
+            "supplied": { "$ref": "#/definitions/disposition" },
+            "if_absent": { "const": "MR-2 remains BLOCKED. No default, estimate or open-ended VALID UNTIL is substituted (EXEC-NOTE-1)." }
+          }
+        },
+        "n09_computed_valid_until_utc": {
+          "type": "object",
+          "required": ["value_utc", "constraint"],
+          "additionalProperties": false,
+          "properties": {
+            "value_utc": { "$ref": "#/definitions/hole_string" },
+            "constraint": { "const": "UTC only, never a local Windows time zone. Computed as planned FINAL WITNESS + 24 hours, never invented, estimated or defaulted." }
+          }
+        }
+      }
+    },
+    "section_hc1": {
+      "type": "object",
+      "required": ["confirmation"],
+      "additionalProperties": false,
+      "properties": {
+        "confirmation": { "$ref": "#/definitions/human_confirmation" }
+      }
+    },
+    "section_mr2": {
+      "type": "object",
+      "required": ["mutation", "rollback_or_compensating_action_ref"],
+      "additionalProperties": false,
+      "properties": {
+        "mutation": { "$ref": "#/definitions/mutation_record" },
+        "rollback_or_compensating_action_ref": { "const": "sections/rollback_statements_pre_written/mr2_compensating_action" }
+      }
+    },
+    "section_post_mr2": {
+      "type": "object",
+      "required": ["n12_custody_post_mint_update", "n13_first_authenticated_session"],
+      "additionalProperties": false,
+      "properties": {
+        "n12_custody_post_mint_update": {
+          "type": "object",
+          "required": ["updated_not_appended", "mint_date_recorded"],
+          "additionalProperties": false,
+          "properties": {
+            "updated_not_appended": { "$ref": "#/definitions/disposition" },
+            "mint_date_recorded": { "$ref": "#/definitions/hole_string" }
+          }
+        },
+        "n13_first_authenticated_session": {
+          "type": "object",
+          "required": ["kp1_current_user", "kp1_session_user", "kp2_transaction_read_only", "target_identity_arm_b_sentinel_verdict"],
+          "additionalProperties": false,
+          "properties": {
+            "kp1_current_user": { "$ref": "#/definitions/hole_string" },
+            "kp1_session_user": { "$ref": "#/definitions/hole_string" },
+            "kp2_transaction_read_only": { "$ref": "#/definitions/disposition" },
+            "target_identity_arm_b_sentinel_verdict": { "$ref": "#/definitions/disposition" }
+          }
+        }
+      }
+    },
+    "section_prestate": {
+      "type": "object",
+      "description": "DAG_NODES.N14, PHASE P1 PRESTATE OBSERVATION — prestate for MR-1/MR-3, not for MR-2 (MR-2's own prestate is declared UNKNOWN and lives in sections/mr_2/mutation/prestate).",
+      "required": ["kp3_schema_exists", "kp5_usage_privilege_prestate", "transaction_shape", "full_prestate_measured"],
+      "additionalProperties": false,
+      "properties": {
+        "kp3_schema_exists": { "$ref": "#/definitions/disposition" },
+        "kp5_usage_privilege_prestate": { "$ref": "#/definitions/disposition" },
+        "transaction_shape": { "const": "ONE BEGIN READ ONLY transaction, closed by an unconditional ROLLBACK." },
+        "full_prestate_measured": { "$ref": "#/definitions/disposition" }
+      }
+    },
+    "section_mr3": {
+      "type": "object",
+      "required": ["n15_trigger_evaluation", "n16_mr1_record", "n17_protected_surface_allocation", "n18_package_authored", "n19_hc2_confirmation", "n20_mutation"],
+      "additionalProperties": false,
+      "properties": {
+        "n15_trigger_evaluation": {
+          "type": "object",
+          "required": ["mr3_t1", "mr3_t2", "mr3_t3", "decision"],
+          "additionalProperties": false,
+          "properties": {
+            "mr3_t1": { "$ref": "#/definitions/disposition" },
+            "mr3_t2": { "$ref": "#/definitions/disposition" },
+            "mr3_t3": { "$ref": "#/definitions/disposition" },
+            "decision": { "type": "string", "enum": ["NOT_EXECUTED", "FIRE", "SKIP"] }
+          }
+        },
+        "n16_mr1_record": {
+          "type": "object",
+          "required": ["status", "hc_3", "rollback_ref"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "const": "DECLARED_UNREACHABLE under the ratified OD-2. See MR1_REACHABILITY_DERIVATION." },
+            "hc_3": { "$ref": "#/definitions/human_confirmation" },
+            "rollback_ref": { "const": "sections/rollback_statements_pre_written/mr1_rollback" }
+          }
+        },
+        "n17_protected_surface_allocation": { "$ref": "#/definitions/disposition" },
+        "n18_package_authored": { "$ref": "#/definitions/disposition" },
+        "n19_hc2_confirmation": { "$ref": "#/definitions/human_confirmation" },
+        "n20_mutation": { "$ref": "#/definitions/mutation_record" }
+      }
+    },
+    "section_post_mr3": {
+      "type": "object",
+      "required": ["n21_three_boolean_assertion", "n22_full_poststate_table", "n22_read_only_proof"],
+      "additionalProperties": false,
+      "properties": {
+        "n21_three_boolean_assertion": {
+          "description": "Conditional on N20 firing. NOT_APPLICABLE recorded explicitly, not omitted, when N15 decided SKIP.",
+          "type": "object",
+          "required": ["usage_true", "create_false", "execute_false"],
+          "additionalProperties": false,
+          "properties": {
+            "usage_true": { "$ref": "#/definitions/disposition" },
+            "create_false": { "$ref": "#/definitions/disposition" },
+            "execute_false": { "$ref": "#/definitions/disposition" }
+          }
+        },
+        "n22_full_poststate_table": {
+          "description": "Runs UNCONDITIONALLY once N15 decided SKIP or N21 passed. Exactly PV-1..PV-34.",
+          "type": "array",
+          "minItems": 34,
+          "maxItems": 34,
+          "items": { "$ref": "#/definitions/pv_row" }
+        },
+        "n22_read_only_proof": { "$ref": "#/definitions/disposition" }
+      }
+    },
+    "section_delivery": {
+      "type": "object",
+      "required": ["n23_delivery", "n24_removal_and_positive_absence"],
+      "additionalProperties": false,
+      "properties": {
+        "n23_delivery": {
+          "type": "object",
+          "required": ["variable_name", "mechanism_by_name_only", "single_process_only"],
+          "additionalProperties": false,
+          "properties": {
+            "variable_name": { "const": "UELLIX_AUDITOR_DATABASE_URL" },
+            "mechanism_by_name_only": { "$ref": "#/definitions/hole_string" },
+            "single_process_only": { "$ref": "#/definitions/disposition" }
+          }
+        },
+        "n24_removal_and_positive_absence": {
+          "type": "object",
+          "required": ["removed", "absence_verified_by_check"],
+          "additionalProperties": false,
+          "properties": {
+            "removed": { "$ref": "#/definitions/disposition" },
+            "absence_verified_by_check": {
+              "description": "Never asserted from the fact that a removal command was issued (mutant M26 / manifest control DN26/DM37).",
+              "$ref": "#/definitions/disposition"
+            }
+          }
+        }
+      }
+    },
+    "section_precheck_r2": {
+      "type": "object",
+      "required": ["n26_independent_poststate_certification", "n27_entry_conditions", "freshness_loops"],
+      "additionalProperties": false,
+      "properties": {
+        "n26_independent_poststate_certification": {
+          "type": "object",
+          "required": ["performed_by_a_different_lane", "verdict", "materialized_per_od6"],
+          "additionalProperties": false,
+          "properties": {
+            "performed_by_a_different_lane": { "$ref": "#/definitions/disposition" },
+            "verdict": { "$ref": "#/definitions/hole_string" },
+            "materialized_per_od6": { "$ref": "#/definitions/disposition" }
+          }
+        },
+        "n27_entry_conditions": {
+          "type": "object",
+          "required": ["all_upstream_n01_through_n26_satisfied", "no_hc_carried_forward"],
+          "additionalProperties": false,
+          "properties": {
+            "all_upstream_n01_through_n26_satisfied": { "$ref": "#/definitions/disposition" },
+            "no_hc_carried_forward": { "const": "None of HC-1, HC-2 or HC-3 is offered to PRECHECK-R2. It obtains its own under the parent's HUMAN_CONFIRMATION." }
+          }
+        },
+        "freshness_loops": {
+          "type": "object",
+          "required": ["e_slip_taken", "e_fresh_taken"],
+          "additionalProperties": false,
+          "properties": {
+            "e_slip_taken": { "description": "N27 -> N08. Re-enters the mutation arm with a FRESH HC-1.", "$ref": "#/definitions/disposition" },
+            "e_fresh_taken": { "description": "N27 -> N22. Re-verifies poststate only, no mutation arm re-entry.", "$ref": "#/definitions/disposition" }
+          }
+        }
+      }
+    },
+    "section_final_rotation": {
+      "type": "object",
+      "required": ["precondition", "mandatory_rotation", "removal_and_positive_absence", "custody_entry_closed"],
+      "additionalProperties": false,
+      "properties": {
+        "precondition": { "const": "The FINAL WITNESS is recorded (macro-chain node 9, outside this DAG)." },
+        "mandatory_rotation": { "$ref": "#/definitions/mutation_record" },
+        "removal_and_positive_absence": {
+          "type": "object",
+          "required": ["removed", "absence_verified_by_check"],
+          "additionalProperties": false,
+          "properties": {
+            "removed": { "$ref": "#/definitions/disposition" },
+            "absence_verified_by_check": { "$ref": "#/definitions/disposition" }
+          }
+        },
+        "custody_entry_closed": { "$ref": "#/definitions/disposition" }
+      }
+    }
+  }
+}
