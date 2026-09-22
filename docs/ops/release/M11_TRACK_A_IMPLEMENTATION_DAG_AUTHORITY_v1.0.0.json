@@ -1,0 +1,1241 @@
+{
+  "package_id": "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0",
+  "authority_class": "IMPLEMENTATION_DAG_DERIVATION_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "IMPLEMENTATION_DAG_DERIVATION__NO_IMPLEMENTATION__NO_CODE_MODIFICATION__NO_DEPLOYMENT__NO_HOSTED_SMOKE__NO_PROVIDER_CALL__NO_DATABASE_MUTATION__NO_CREDENTIAL_PROVISIONING__NO_DESTRUCTIVE_AUTHORIZATION",
+  "append_only": true,
+  "mission_id": "CV1-M11-TRACK-A-IMPLEMENTATION-DAG-AUTHORITY-R1",
+  "lane": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "role": "COMMERCIAL_V1_M11_TRACK_A_IMPLEMENTATION_DAG_DERIVER",
+  "mode": "AUTHORITY_AUTHORING_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "materialized_at": {
+    "BRANCH": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+    "PARENT_HEAD": "26bc0f0c3c7e9e65f965920d23584d1df75b418e",
+    "HEAD_AT_DERIVATION": "26bc0f0c3c7e9e65f965920d23584d1df75b418e",
+    "TREE_AT_DERIVATION": "03fe382430e4ff8dfba9a2934f93a14f5658f7fc",
+    "WORKTREE_STATE": "CLEAN (git status --porcelain=v1 --untracked-files=all: empty)",
+    "BASE_BRANCH_FOR_STACKED_PR": "codex/cv1-m11-health-contract-adjudication-r1",
+    "base_branch_resolution": "codex/cv1-m11-health-contract-adjudication-r1 resolves to 26bc0f0c3c7e9e65f965920d23584d1df75b418e - identical to PARENT, so this lane stacks on the ratification chain with no intervening commit."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "Every authority this derivation consumes is bound by exact git blob hash read at HEAD, not by title. A blob that differs at consumption time invalidates the binding and the DAG must be re-derived.",
+    "bindings": [
+      {
+        "role": "OWNER_RATIFICATION_CONTROLLING",
+        "path": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json",
+        "blob": "62c6db45b3dc9609f7a4020aa5820a754fb99123"
+      },
+      {
+        "role": "ORIGINAL_ADJUDICATION",
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+        "blob": "1b267e4a6cc76cc643dc868baec24a506ee25a30"
+      },
+      {
+        "role": "AMENDMENT_1",
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+        "blob": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7"
+      },
+      {
+        "role": "AMENDMENT_2",
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+        "blob": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b"
+      },
+      {
+        "role": "AMENDMENT_3",
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3.json",
+        "blob": "8f340096615dbaecaa790af8c926bfeceb3c61cf"
+      },
+      {
+        "role": "GATE_LEDGER_READ_ONLY",
+        "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+        "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608"
+      }
+    ],
+    "independent_confirmation": "The four M11 companion blobs measured at this HEAD are byte-identical to the four blob values docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json records in companion_authorities. The ratified package is unchanged; this was measured by git rev-parse HEAD:<path>, not assumed from the record's own claim."
+  },
+  "purpose": "Derive the exact code and test implementation nodes, and the dependencies between them, that Track A of the M11 health-contract implementation DAG consists of - against the INDEPENDENTLY MEASURED repository surface at TREE 03fe382430e4ff8dfba9a2934f93a14f5658f7fc, not against any prior prose description of that surface. This artifact names work; it performs none of it and authorizes none of it.",
+  "precedence_note": "This derivation is subordinate to the ratified package in every respect. Where this artifact and the ratified package differ, the ratified package controls. It does NOT amend, reopen, reinterpret or weaken OD-1..OD-5, the M11-SC-7 rider, the AS-1..AS-4 taxonomy, PLATFORM_PRE_HANDLER_FAILURE_RULE, the endpoint-by-caller matrix, MG-4's prohibition on lowering the endpoints' authentication boundary, RELEASE_GATE_LEDGER's gate definitions, or any FIB/PC-01B/IM-01B frozen authority.",
+  "DERIVATION_PRECONDITIONS": {
+    "rule": "The ratification's own next_gate conditions the DERIVABILITY of this DAG. Its status is recorded as measured, separating OCCURRED from MATERIALIZED rather than collapsing them.",
+    "preconditions": [
+      {
+        "id": "PRE-1",
+        "name": "INDEPENDENT_BOUNDED_VERIFICATION_OF_THE_OWNER_RATIFICATION",
+        "required_by": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json next_gate: 'Only after that verification may TRACK_A ... be opened.' and IMPLEMENTATION_DAG_EFFECT.status: 'DERIVABLE AFTER INDEPENDENT VERIFICATION OF THIS RECORD.'",
+        "occurrence": "OCCURRED - affirmed by the product owner, who carried its three nonblocking residues (N-1, N-2, N-3) forward into this lane's mission brief as accepted residue. An owner-affirmed certification is not a non-occurrence.",
+        "materialization": "NOT_MATERIALIZED_IN_TREE. Measured: docs/ops/owner-ratifications/ contains four records and no verification artifact; grep -rln 'M11_HEALTH_CONTRACT_OWNER_DECISIONS' docs/ returns exactly one path - the record itself. No committed verdict artifact for PRE-1 exists at this HEAD.",
+        "disposition": "RECORDED_NONBLOCKING_FOR_THIS_DOCS_ONLY_DERIVATION. The owner directed this derivation explicitly and it mutates no code, no gate and no hosted state. PRE-1's materialization status is carried forward as an open provenance fact for the certification named in next_gate, NOT silently treated as closed.",
+        "what_this_does_not_do": "Does NOT declare PRE-1 satisfied. Does NOT substitute this artifact for PRE-1. Does NOT open Track A."
+      },
+      {
+        "id": "PRE-2",
+        "name": "INDEPENDENT_CERTIFICATION_OF_THIS_DERIVATION",
+        "required_by": "This artifact's own next_gate.",
+        "occurrence": "NOT_OCCURRED at authorship.",
+        "disposition": "BLOCKING for every TA-* node below. No node in this DAG may be implemented before PRE-2 passes."
+      }
+    ]
+  },
+  "CURRENT_IMPLEMENTATION_SURFACE": {
+    "measurement_method": "Every item below was read from the working tree at TREE 03fe382430e4ff8dfba9a2934f93a14f5658f7fc in this authoring turn: the three route files, lib/auth/identity.ts, lib/supabase/server.ts, proxy.ts, lib/supabase/proxy.ts, the health test files, the entry-point inventory test, the vitest configuration and the network guard, plus a git ls-files enumeration of health/liveness/readiness/status surfaces and a .github/workflows listing. No filename, line number or behaviour below is inherited from prior prose.",
+    "blob_bindings": [
+      {
+        "path": "app/api/health/auth/route.ts",
+        "blob": "bf62cb4f0445a35f73e63ee2a12375da58b08530",
+        "lines": 36
+      },
+      {
+        "path": "app/api/health/runtime-identity/route.ts",
+        "blob": "998acbd283f2a5934f0960354ea2aca1b2b56c83",
+        "lines": 79
+      },
+      {
+        "path": "app/api/health/stella-preconditions/route.ts",
+        "blob": "37e07d691db4c294508070816717dd578545cf9c",
+        "lines": 124
+      },
+      {
+        "path": "lib/auth/identity.ts",
+        "blob": "9549eafb7bda0e90645e71b3c4191d17c66e296a",
+        "lines": 153
+      },
+      {
+        "path": "proxy.ts",
+        "blob": "4296e2c2bd85f071c2b248c109396c4f0b133183",
+        "lines": 52
+      },
+      {
+        "path": "lib/supabase/proxy.ts",
+        "blob": "1a2dde01f655c67204788594397d64b11e54e601",
+        "lines": 102
+      },
+      {
+        "path": "tests/health-auth-route.test.ts",
+        "blob": "bf39320bb071d9415dccf34b57b4453e2ebe32bc",
+        "lines": 47
+      },
+      {
+        "path": "tests/database-runtime-entrypoints.test.ts",
+        "blob": "d079d432caa276e58960d5e9ae401febd69d9385"
+      },
+      {
+        "path": "vitest.setup.network-guard.ts",
+        "blob": "e28eee5f095857dd85543298df8bf6baba308cbe"
+      }
+    ],
+    "facts": [
+      {
+        "id": "S-1",
+        "subject": "EP-1 /api/health/auth",
+        "measured": "GET (:9) calls createClient() then supabase.auth.getUser() (:13) and branches on userError ALONE (:15). Any returned error - whatever its cause - yields 503 with {status:'degraded', authenticated:false, message:'Authentication service unavailable'} (:16-21). Success yields 200 {status:'ok', authenticated:!!user} (:24-28). A throw yields 500 (:29-35).",
+        "consequence": "An ANONYMOUS caller receives 503. @supabase/ssr returns AuthSessionMissingError in `error` for a cookieless request, so AS-1 takes the 503 branch. This is the state the ratified taxonomy records as AS-1 answered_today: 'EP-1 503', and it is the behaviour docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES[M11].measured_at_base.blocking_contract_conflict records production as exhibiting.",
+        "absent": "No AS-1..AS-4 discriminator. No provider-health touch. No cache. No TTL. No budget. No unauthenticated body distinguishing reachable from unreachable."
+      },
+      {
+        "id": "S-2",
+        "subject": "EP-2 /api/health/runtime-identity",
+        "measured": "Session-gated at :49 via getVerifiedAuthIdentityResult(). No identity -> 503 when failure === 'AUTH_UNAVAILABLE', else 401 (:57-60). With identity: 200 when payload.verified, else 503 (:70). Catch -> 503 with unobservableRuntimeIdentityPayload() (:77).",
+        "consequence": "Anonymous answer is 401, which the ratified matrix records as the CONFORMANT anonymous cell. Track A must not change it - MG-4."
+      },
+      {
+        "id": "S-3",
+        "subject": "EP-3 /api/health/stella-preconditions",
+        "measured": "Session-gated at :67 with the same 503/401 shape (:70-73). Payload (:82-118) already publishes master.stellaEnabled (:86), master.geminiApiKeyPresent (:88), master.canUseStella (:89), model.*, capabilities (:102), rateLimit (:103) and ready (:117). Status is exactly `payload.ready ? 200 : 503` (:123).",
+        "consequence": "The status collapses intentional-off with misconfigured; the BODY already distinguishes them. This is precisely the state OD-3 ratifies as SPLIT_STATUS_200_FOR_INTENTIONAL_OFF, and confirms the ratification's 'No new body field is required'."
+      },
+      {
+        "id": "S-4",
+        "subject": "The auth-failure discriminator - FIS-M11-01's site",
+        "measured": "lib/auth/identity.ts declares AuthIdentityFailure = NO_SESSION | SESSION_REJECTED | MALFORMED_SUBJECT | AUTH_UNAVAILABLE (:66-74). AUTH_UNAVAILABLE is produced in exactly two places, BOTH catch blocks around a THROW: createClient (:105-109) and getUser (:114-116). When getUser RETURNS an error object with no user, the code takes :124 and yields SESSION_REJECTED.",
+        "consequence": "AS-2 (provider refused the session) and AS-3 (provider unreachable or 5xx) are INDISTINGUISHABLE today, because @supabase/ssr reports a transport failure as a RETURNED AuthRetryableFetchError rather than a throw. The enumeration names four states the module does not derive. This is defect B-1 exactly, and it confirms the ratified package's implementation_consequence_stated_plainly: any implementation lane 'must NOT assume the existing AUTH_UNAVAILABLE branch already provides one'."
+      },
+      {
+        "id": "S-5",
+        "subject": "AS-4 / pre-handler platform failure",
+        "measured": "lib/supabase/server.ts createClient() calls assertSupabaseProjectCoherence() (:22) BEFORE constructing the client. lib/supabase/proxy.ts updateSession() calls it at :39, first, ahead of the session refresh and any redirect. proxy.ts invokes updateSession() at :10 as its first statement.",
+        "consequence": "A coherence failure is raised in middleware before any health handler executes, identically for all three matched paths. Confirms PLATFORM_PRE_HANDLER_FAILURE_RULE from the code rather than from the rule's own restatement. The wire status for a middleware throw remains UNMEASURED here - this lane executed nothing over HTTP."
+      },
+      {
+        "id": "S-6",
+        "subject": "OD-4 global rate limit",
+        "measured": "proxy.ts:12-16 applies the limiter only when pathname startsWith('/api/') AND both KV_REST_API_URL and KV_REST_API_TOKEN are set. Ratelimit.slidingWindow(60, '1 m') (:28), key `global_api_${extractClientIp(request)}` (:31-33), 429 on !success (:35-39). The catch at :40-42 logs and CONTINUES - fail-open. config.matcher (:48-51) excludes only _next/static, _next/image, favicon.ico and image extensions, so /api/health/* IS matched.",
+        "consequence": "Health paths are already NOT_EXEMPT exactly as OD-4 ratifies, with no code change required. The limiter's environment-dependence and fail-open failure mode are confirmed in source, matching F-M11-20 as the ratification's rate_limiter_security_posture cites it. 429 is a live reachable outcome on every health path wherever KV is bound."
+      },
+      {
+        "id": "S-7",
+        "subject": "Existing per-request upstream behaviour in middleware",
+        "measured": "lib/supabase/proxy.ts:74-76 calls supabase.auth.getUser() on every matched request, including every /api/health/* request.",
+        "consequence": "For an ANONYMOUS request this makes no outbound provider call (cookieless getUser errors locally), so it supplies no provider-reachability evidence and cannot be repurposed as the A2 touch. It is recorded so no implementation lane mistakes it for one, and so the OD-1 rider's budget is not assumed to be already satisfied by it."
+      },
+      {
+        "id": "S-8",
+        "subject": "EP-1 existing test coverage",
+        "measured": "tests/health-auth-route.test.ts is 47 lines and contains exactly two cases: an authenticated 200 with a PII-absence assertion (:18-28) and a returned-error 503 with an upstream-text-absence assertion (:30-46). @/lib/supabase/server is fully mocked (:5-9), so real @supabase/ssr semantics are never exercised.",
+        "absent": "No anonymous/cookieless case. No AS-1 vs AS-2 vs AS-3 case. No provider-touch case. No cache or budget case. The suite cannot currently distinguish a healthy deployment from a broken one at EP-1, which is F-M11-13's fact expressed as a test-suite property."
+      },
+      {
+        "id": "S-9",
+        "subject": "EP-3 EFFECTIVE test coverage - the N-3 precision",
+        "measured": "A repository-wide grep for 'stella-preconditions' across .ts/.tsx/.yml/.yaml outside docs/ returns exactly three hits: the route's own header comment, a cross-reference comment in lib/stella/rate-limit.ts:39, and tests/database-runtime-entrypoints.test.ts:718. No test file imports the route's GET.",
+        "effective_semantics": "EP-3's coverage is ONE STRUCTURAL CONTROL, not zero tests. tests/database-runtime-entrypoints.test.ts builds ENTRY_POINTS = walk(APP).filter(isEntryPoint) (:221), filters them through the reachesDatabaseClient static analysis (:655), and asserts the four-way count at :851 as {inventoried: 147, reaching: 122, contextualized: 105, allowlisted: 17}. The comment at :718 records EP-3's specific contribution: it moved `inventoried` without moving `reaching`, which IS the assertion that the route opens no connection.",
+        "what_is_absent_precisely": "What EP-3 has no control for is BEHAVIOURAL: its auth branch (401/503), its ready-to-status mapping (:123), and its body shape. That - and only that - is what FIS-M11-03 owes. Stating EP-3 as having 'no test at all' would be false, and this artifact does not state it."
+      },
+      {
+        "id": "S-10",
+        "subject": "M11-SC-2 runner",
+        "measured": ".github/workflows contains nine workflows: ce3-entitlement-grants-real-pg-gate.yml, ci.yml, cl1-legal-acceptance-real-pg-gate.yml, golden-journey.yml, l1-organization-commercial-acceptance-real-pg-gate.yml, m2-real-pg-gate.yml, p1a-bootstrap-gate.yml, p1a-validation.yml, s3-refusal-real-pg-gate.yml. None is a deploy-smoke workflow. grep for 'health' in golden-journey.yml returns nothing. git ls-files matching smoke|m11 outside docs/ returns nothing.",
+        "consequence": "M11-SC-2 is ABSENT at this HEAD, re-measured rather than inherited. The Golden Journey does not observe any health endpoint, so extending it is NOT the runner FIS-M11-04 names; the runner is a new surface."
+      },
+      {
+        "id": "S-11",
+        "subject": "M11-SC-7 ledger field",
+        "measured": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES is a 78-element list; the element with id 'M11' carries owner: 'unassigned' and current_state: 'ABSENT', with source_of_truth naming exactly the three route files.",
+        "consequence": "The M11-SC-7 rider's owner assignment (Lorenzo Zanello) is NOT applied to the ledger text. M11-SC-7 remains textually open as a ledger-verifiable fact and requires a separate governed act - see LEDGER_OWNER_UPDATE_REQUIREMENT."
+      },
+      {
+        "id": "S-12",
+        "subject": "Test-harness egress control - a measured ABSENCE relevant to the A2 touch",
+        "measured": "vitest.setup.network-guard.ts installs a transport guard that is deliberately NARROW: BLOCKED_GEMINI_HOSTNAMES contains exactly generativelanguage.googleapis.com, aiplatform.googleapis.com and vertexai.googleapis.com, and the file states the narrowness is on purpose because the suite legitimately talks to localhost.",
+        "consequence": "There is NO harness control preventing a unit test of the new provider-health touch from issuing a real outbound request to a Supabase Auth host. The A2 touch is the first surface in this repository whose unit tests could reach a non-Gemini external provider. TA-19 exists for this reason. Recorded as an absence of control, measured, not inferred."
+      },
+      {
+        "id": "S-13",
+        "subject": "Test harness shape",
+        "measured": "vitest.config.ts: environment jsdom, globals true, alias '@' -> repository root, setupFiles [./vitest.setup.network-guard.ts, ./vitest.setup.ts] with the network guard FIRST, excluding BASE_EXCLUDE plus the integration and e2e globs. Separate vitest.integration.config.ts and vitest.e2e.config.ts exist.",
+        "consequence": "Every Track A unit control lands in the default project and inherits the network guard. Any control needing a real deployment is an e2e/hosted concern and is OUT of Track A's landable scope."
+      }
+    ]
+  },
+  "OWNER_CLARIFICATIONS_IN_LANE": {
+    "rule": "Two derivation questions were put to the product owner in this authoring turn because their answers change the DAG's node shape and one of them turns on a compression in the mission brief. Both are recorded as CLARIFICATIONS of the already-ratified package, not as new owner decisions and not as amendments to docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json.",
+    "clarifications": [
+      {
+        "id": "OC-1",
+        "subject": "The scope of the 503 prohibition on EP-1",
+        "why_asked": "The mission brief states '503 prohibited' without qualification. The ratified authority scopes the prohibition to AS-2 specifically: docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-1].NB-3_rejected_session_semantics.constraint - 'Whatever is chosen must NOT be 503, because AS-2 proves the provider is reachable' - restated in docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.AS-2_503_prohibition_preserved. Reading the prohibition globally would leave EP-1 with no failing status, which would make M11-SC-8 vacuous and contradict docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-5].owner_selected_decision.sequencing, which relies on A2 'giving EP-1 a genuinely failable anonymous cell'.",
+        "owner_answer": "503_FOR_AS-3_ONLY. 503 remains PROHIBITED for AS-2. 503 is the EP-1 answer for AS-3 (provider unreachable or 5xx), which the ratified taxonomy calls 'the only one of the four that is a health fact'.",
+        "effective_contract": "AS-1 -> 200 unauthenticated body; AS-2 -> 200 unauthenticated body; AS-3 -> 503 degraded body; AS-4 -> not an EP-1 verdict at all (pre-handler platform failure, S-5).",
+        "status": "OWNER_CLARIFICATION_CONSISTENT_WITH_THE_RATIFIED_SCOPE. It relaxes nothing: the AS-2 prohibition is preserved verbatim. Independent certification should confirm this reading against the brief's flat wording."
+      },
+      {
+        "id": "OC-2",
+        "subject": "The substrate of the OD-1 rider's cache",
+        "why_asked": "The rider fixes the PROPERTIES (short TTL, own bounded budget, not every anonymous request forcing a fresh call) but not the substrate, and the two candidate substrates have materially different failure modes.",
+        "owner_answer": "IN_PROCESS_MODULE_CACHE. A module-scope cache with a declared TTL inside the touch module, with at most one in-flight upstream call coalesced.",
+        "owner_selected_parameters": {
+          "TTL_MS": 15000,
+          "in_flight_policy": "SINGLE_FLIGHT_COALESCED"
+        },
+        "rejected_and_why": "A KV-backed shared cache was rejected. It would make the public liveness surface depend on the same substrate F-M11-20 measured as ENVIRONMENT-DEPENDENT and FAIL-OPEN, and which docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-4].owner_selected_decision.rate_limiter_security_posture records as 'NOT a security control M11 may rely upon'.",
+        "accepted_consequence": "The cache is PER-INSTANCE. With N warm serverless instances the upstream call rate is bounded by N per TTL window, not by 1. This is a bounded, declared property, not an unbounded one, and TA-04 records it as such rather than claiming a global bound the substrate cannot provide.",
+        "status": "OWNER_CLARIFICATION_WITHIN_THE_RATIFIED_RIDER. Adds no constraint the rider did not already impose and removes none."
+      }
+    ]
+  },
+  "DAG_NODES": {
+    "count": 20,
+    "kinds": {
+      "CODE": 10,
+      "CODE_GUARD": 3,
+      "GOVERNED_ACT_OUTSIDE_CODE": 1,
+      "TEST": 5,
+      "TEST_INFRA": 1
+    },
+    "executed_by_this_lane": 0,
+    "nodes": [
+      {
+        "id": "TA-01",
+        "name": "AUTH_FAILURE_DISCRIMINATOR",
+        "kind": "CODE",
+        "surface": [
+          "lib/auth/identity.ts"
+        ],
+        "derives_from": [
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json AUTH_FAILURE_TAXONOMY.states[AS-1..AS-4]",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json FUTURE_IMPLEMENTATION_SURFACE.items[FIS-M11-01]",
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1]"
+        ],
+        "contract": [
+          "Derive AS-1, AS-2, AS-3 and AS-4 from the ACTUAL error value, not from whether it was thrown. The taxonomy's measured discriminators are: AS-1 error.name AuthSessionMissingError, status 400, zero outbound attempts; AS-2 error.name AuthApiError carrying the provider's own 4xx; AS-3 error.name AuthRetryableFetchError, status 0 for transport and the provider's 5xx otherwise; AS-4 a THROW of SupabaseProjectCoherenceError.",
+          "Expose the derived state as a NEW named field on the existing result shape. The existing AuthIdentityFailure union and every existing consumer's behaviour are FROZEN by TA-02 - this node adds information, it does not re-route any existing branch.",
+          "Never echo the error message, the token, the cookie or the subject. S-1 and S-2 both already enforce upstream-text absence and this node must not regress it."
+        ],
+        "done_when": [
+          "A named exported discriminator exists and is unit-tested against a constructed instance of each of the four error shapes.",
+          "AS-2 and AS-3 produce DIFFERENT derived states from inputs that both arrive as a returned error with no user - the specific conflation S-4 measured.",
+          "No existing call site's status code changes (proved by TA-02)."
+        ],
+        "notes": "S-4 is the whole reason this node exists: the module already NAMES four states and derives two. This node closes the gap between the enumeration and the derivation."
+      },
+      {
+        "id": "TA-02",
+        "name": "DISCRIMINATOR_NON_REGRESSION_AT_EP2_EP3",
+        "kind": "CODE_GUARD",
+        "surface": [
+          "app/api/health/runtime-identity/route.ts",
+          "app/api/health/stella-preconditions/route.ts"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json precedence_note (MG-4 not overridden)",
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-5].owner_selected_decision.hard_constraint_preserved"
+        ],
+        "contract": [
+          "EP-2 and EP-3 keep their session gate and their anonymous 401 EXACTLY as S-2 and S-3 measured them. TA-01 must not become a reason to change either route's authentication boundary or its status mapping.",
+          "The only EP-3 status change authorized anywhere in this DAG is TA-07, and it is an OD-3 status split, not a boundary change."
+        ],
+        "done_when": [
+          "A control asserts EP-2 answers 401 anonymously and EP-3 answers 401 anonymously, after TA-01 lands."
+        ],
+        "notes": "MG-4 forbids lowering the boundary to make measurement convenient. This node is the standing guard that TA-01's new information does not leak into the boundary."
+      },
+      {
+        "id": "TA-03",
+        "name": "PROVIDER_HEALTH_TOUCH_MODULE",
+        "kind": "CODE",
+        "surface": [
+          "lib/health/provider-touch.ts (NEW - a lib module, NOT an app/** route)"
+        ],
+        "derives_from": [
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json FUTURE_IMPLEMENTATION_SURFACE.items[FIS-M11-02]",
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision (A2)",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json AUTH_FAILURE_TAXONOMY.provider_health_touch_consequence"
+        ],
+        "contract": [
+          "A sessionless probe of the Auth provider's reachability, returning a three-valued verdict: REACHABLE, UNREACHABLE, UNKNOWN. UNKNOWN is a first-class value for 'budget exhausted or not yet probed', never coerced to REACHABLE.",
+          "It MUST be a lib module and MUST NOT be a new route under app/**. Two independent reasons: (a) docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES[M11].source_of_truth enumerates exactly three files and M11-SC-3 requires all three to be observed on every run - a fourth health endpoint would be a surface the gate does not name, and adding it would require a ledger edit this DAG does not authorize; (b) a new app/** entry point moves the tests/database-runtime-entrypoints.test.ts:851 inventory count, which TA-18 holds frozen.",
+          "It MUST NOT open a database connection and MUST NOT read tenant data, so that EP-1's `reaching` classification in the entry-point inventory is unchanged.",
+          "The probe target and transport must be injectable, so that TA-16 can exercise it with no real egress (S-12).",
+          "It must never expose the provider URL, a key, a token or upstream error text in any value it returns."
+        ],
+        "done_when": [
+          "The module exists, is imported by EP-1 only, and its verdict type has three inhabitants.",
+          "A unit control proves UNKNOWN is never reported as REACHABLE.",
+          "tests/database-runtime-entrypoints.test.ts:851 is unchanged (TA-18)."
+        ],
+        "notes": "The taxonomy is explicit that a discriminator ALONE cannot give an anonymous caller provider-health information, because for an anonymous caller getUser makes no outbound call. TA-01 and TA-03 are two separate pieces of work and neither substitutes for the other."
+      },
+      {
+        "id": "TA-04",
+        "name": "TOUCH_CACHE_AND_TTL",
+        "kind": "CODE",
+        "surface": [
+          "lib/health/provider-touch.ts"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.owner_approved_implementation_rider.constraints[0] and [2]",
+          "OC-2"
+        ],
+        "contract": [
+          "A module-scope cache with a DECLARED TTL of 15000 ms (OC-2), exported as a named constant so a test can assert the bound rather than infer it.",
+          "At most one in-flight upstream probe at a time; concurrent callers coalesce onto it (SINGLE_FLIGHT_COALESCED).",
+          "The invariant the rider states: no implementation may make every single anonymous health request necessarily cause a fresh upstream provider call. A control must prove that N requests inside one TTL window produce exactly ONE upstream call.",
+          "DECLARED STALENESS. Within one TTL window EP-1 may answer 200 from cache after the provider has actually failed. This is inherent to the rider, is bounded by TTL_MS, and is recorded here as a property of the contract rather than discovered later as a defect.",
+          "DECLARED SCOPE. The cache is PER-INSTANCE (OC-2). With N warm instances the bound is N upstream calls per TTL window, not 1. No node in this DAG may claim a global bound."
+        ],
+        "done_when": [
+          "TTL_MS is an exported constant equal to 15000.",
+          "A fake-timer control proves: many requests inside the window -> one upstream call; one request after expiry -> a second upstream call.",
+          "A control proves concurrent callers coalesce rather than each probing."
+        ]
+      },
+      {
+        "id": "TA-05",
+        "name": "TOUCH_INDEPENDENT_REQUEST_BUDGET",
+        "kind": "CODE",
+        "surface": [
+          "lib/health/provider-touch.ts"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.owner_approved_implementation_rider.constraints[1]"
+        ],
+        "contract": [
+          "A bounded request budget OWNED BY THE TOUCH, distinct from and not assumed to be covered by the OD-4 global rate limit. The rider states this explicitly.",
+          "It MUST NOT be implemented on top of the proxy.ts limiter, and MUST NOT depend on KV_REST_API_URL / KV_REST_API_TOKEN. S-6 measured that limiter as environment-dependent and fail-open, and the ratification records it as not a control M11 may rely upon.",
+          "FAIL-CLOSED DIRECTION. When the budget is exhausted the touch returns UNKNOWN - never REACHABLE. An exhausted budget must never be able to manufacture a healthy verdict.",
+          "How EP-1 renders UNKNOWN is fixed by TA-06, not here."
+        ],
+        "done_when": [
+          "A named budget bound exists as an exported constant.",
+          "A control proves budget exhaustion yields UNKNOWN and never REACHABLE.",
+          "A control proves the touch reads neither KV environment variable."
+        ],
+        "notes": "This is the single node most likely to be quietly skipped, because a cache alone already 'feels' like a budget. The rider names them as two constraints and this DAG keeps them as two nodes."
+      },
+      {
+        "id": "TA-06",
+        "name": "EP1_PUBLIC_LIVENESS_RESPONSE_CONTRACT",
+        "kind": "CODE",
+        "surface": [
+          "app/api/health/auth/route.ts"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.AS-2_disposition (200_UNAUTHENTICATED_BODY)",
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.AS-2_503_prohibition_preserved",
+          "OC-1",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json M11_SUCCESS_CONTRACT.conditions[M11-SC-8]"
+        ],
+        "contract": [
+          "AS-1 -> 200 with an unauthenticated body. AS-2 -> 200 with an unauthenticated body; a rejected session is treated as simply not-authenticated. 503 is PROHIBITED for AS-2 - unconditionally, and this DAG does not relax it.",
+          "AS-3 -> 503 with a degraded body (OC-1). AS-3 is the only one of the four that is a health fact, and it is the state that makes the anonymous EP-1 cell genuinely failable, which is what M11-SC-8 requires and what OD-5's sequencing relies on.",
+          "AS-4 -> NOT an EP-1 verdict. By S-5 it is raised in middleware before the handler runs and is recorded once per deployment under PLATFORM_PRE_HANDLER_FAILURE_RULE.",
+          "An authenticated caller keeps 200 and authenticated:true. The PII rule is unchanged: no user identifier, email, provider name, token, cookie or upstream error text, ever.",
+          "The body must carry the upstream verdict as an explicit field so the runner can compare a cell rather than a bare numeral (M11-SC-4)."
+        ],
+        "done_when": [
+          "A control per AS state fixes the exact status AND the exact body discriminator.",
+          "A MUST-FAIL control proves AS-2 can never produce 503.",
+          "A control proves an anonymous request against an unreachable provider produces a DIFFERENT observable answer than against a reachable one - the property F-M11-13 records as absent today and M11-SC-8 requires."
+        ],
+        "notes": "This node is what converts EP-1 from a constant-answer cell into a failable one. Everything upstream of it (TA-01, TA-03, TA-04, TA-05) exists to make this node's AS-3 branch derivable at all."
+      },
+      {
+        "id": "TA-07",
+        "name": "EP3_INTENTIONAL_OFF_STATUS_SPLIT",
+        "kind": "CODE",
+        "surface": [
+          "app/api/health/stella-preconditions/route.ts"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-3].owner_selected_decision (SPLIT_STATUS_200_FOR_INTENTIONAL_OFF)"
+        ],
+        "contract": [
+          "Intentional-off - master.stellaEnabled false - answers 200. A subsystem expected to be on whose precondition is unmet answers 503, as today.",
+          "NO NEW BODY FIELD. S-3 confirms the body at :82-118 already distinguishes the two cases via master.stellaEnabled, master.geminiApiKeyPresent, master.canUseStella and rateLimit. Only the status mapping at :123 changes.",
+          "PRECEDENCE MUST BE EXPLICIT. When stellaEnabled is false AND rateLimit.satisfied is false, intentional-off DOMINATES and the answer is 200. A deliberately dark subsystem is not made unhealthy by a precondition of the thing that is switched off.",
+          "DECLARED CONSEQUENCE: after this node, status 200 on EP-3 NO LONGER IMPLIES ready:true. `ready` remains false for an intentionally-off deployment while the status is 200. Any caller that branches on status alone will read intentional-off as ready. This is the direct cost of the owner's selection and it is recorded here, not discovered later.",
+          "The auth boundary is untouched (TA-02)."
+        ],
+        "done_when": [
+          "A control per quadrant of (stellaEnabled, ready) fixes the status.",
+          "A MUST-FAIL control proves a 200 with ready:false is reachable and is NOT treated as a ready deployment - the specific hazard the status split introduces.",
+          "A control fixes the precedence case (off AND unsatisfied -> 200)."
+        ],
+        "notes": "OD-3 carries NO provisioning cost and does not depend on OD-5, so this node is landable in the first slice."
+      },
+      {
+        "id": "TA-08",
+        "name": "OD4_PROXY_FREEZE",
+        "kind": "CODE_GUARD",
+        "surface": [
+          "proxy.ts"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-4].owner_selected_decision.effective_meaning",
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-4].owner_selected_decision.no_code_change_in_this_lane"
+        ],
+        "contract": [
+          "NOT_EXEMPT is satisfied by the CURRENT code. S-6 measured that /api/health/* is already matched and already rate-limited wherever KV is bound. The ratification states no code change to proxy.ts is authorized or required.",
+          "This node is therefore a NEGATIVE node: it authorizes NO change to proxy.ts, and exists so that the OD-4 obligation is visibly discharged rather than silently assumed.",
+          "No implementation in this DAG may add a health-path exemption, change the window, change the key, or change the fail-open catch."
+        ],
+        "done_when": [
+          "proxy.ts blob is unchanged at 4296e2c2bd85f071c2b248c109396c4f0b133183 when the Track A slice lands.",
+          "A control asserts /api/health/* is within config.matcher and is not special-cased."
+        ],
+        "notes": "Recorded as a node precisely because 'no change required' is the kind of obligation an implementation lane forgets to prove."
+      },
+      {
+        "id": "TA-09",
+        "name": "M11_RUNNER_CORE",
+        "kind": "CODE",
+        "surface": [
+          "scripts/ or tests/ runner surface (NEW) plus a deploy-smoke workflow (NEW)"
+        ],
+        "derives_from": [
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json FUTURE_IMPLEMENTATION_SURFACE.items[FIS-M11-04]",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json M11_SUCCESS_CONTRACT.conditions[M11-SC-2,3,4,5]"
+        ],
+        "contract": [
+          "An automated runner that observes ALL THREE endpoints on every deployment (M11-SC-3 - a skipped endpoint is a FAIL, not a partial PASS).",
+          "Each observation is compared against THE CELL FOR THE RUNNER'S OWN CALLER CLASS (M11-SC-4), never against a single global expectation. For an unauthenticated runner, 401 from EP-2 and EP-3 is the CONFORMANT answer.",
+          "Every observation is bound to the deployment identifier AND the exact SHA SERVED - not the SHA requested (M11-SC-5).",
+          "S-10 measured that no runner and no deploy-smoke workflow exist, and that the Golden Journey observes no health endpoint. This is a new surface, not an extension of golden-journey.yml."
+        ],
+        "done_when": [
+          "The runner exists, runs on every deployment, and emits a cell-by-cell record bound to deployment id and served SHA."
+        ],
+        "notes": "FIS-M11-05 (hosted-smoke ACCESS to a protected deployment) is a RECORDED DEPENDENCY of any hosted run, not part of Track A's landable scope, and is not authorized here."
+      },
+      {
+        "id": "TA-10",
+        "name": "RUNNER_INCONCLUSIVE_SEMANTICS",
+        "kind": "CODE",
+        "surface": [
+          "the runner surface"
+        ],
+        "derives_from": [
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json M11_SUCCESS_CONTRACT.conditions[M11-SC-6]",
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-4].owner_selected_decision.M11-SC-6_disposition",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json PLATFORM_PRE_HANDLER_FAILURE_RULE"
+        ],
+        "contract": [
+          "429 from the global rate limit is ALWAYS recorded INCONCLUSIVE. Never a PASS, never a health FAIL - unconditionally, regardless of environment, deployment or caller class. OD-4's NOT_EXEMPT makes 429 a live reachable outcome on every health path, which is exactly why the disposition is unconditional.",
+          "302 from Deployment Protection and any transport error are likewise INCONCLUSIVE.",
+          "PLATFORM FAILURE IS ONE INCIDENT, NOT THREE VERDICTS. If every matched health path returns the same platform-level failure in one run, the runner MUST record ONE platform incident bound to the deployment identifier and SHA, and record the run INCONCLUSIVE for every endpoint. It must NOT record three FAILs.",
+          "THE WIRE NUMERAL FOR A MIDDLEWARE THROW IS UNMEASURED. The ratified rule is written on the SHAPE of the failure - identical across all matched paths, before any handler - and explicitly not on a numeral. An implementation lane MUST measure the numeral against a real deployment before encoding it. This DAG does not supply it and does not authorize measuring it."
+        ],
+        "done_when": [
+          "A control proves 429 maps to INCONCLUSIVE and can reach neither PASS nor FAIL.",
+          "A control proves three identical platform-level failures in one run produce ONE incident record, not three FAILs.",
+          "A MUST-FAIL control proves an INCONCLUSIVE run cannot satisfy the gate."
+        ],
+        "notes": "Without M11-SC-6 a protected Preview would make M11 green by never being measured. The INCONCLUSIVE path is the one an implementation is most tempted to collapse."
+      },
+      {
+        "id": "TA-11",
+        "name": "RUNNER_BLOCKING_SEMANTICS",
+        "kind": "CODE",
+        "surface": [
+          "the runner surface"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-2].owner_selected_decision"
+        ],
+        "contract": [
+          "EP-1 BLOCKING. EP-2 BLOCKING (final target). EP-3 NON_BLOCKING_RECORDED.",
+          "OBSERVABILITY_ONLY means OBSERVED AND RECORDED BUT NON-BLOCKING. It may NEVER mean NOT OBSERVED. EP-3 is observed and logged on EVERY run under M11-SC-3; what OD-2 chooses is only whether a non-conformant answer STOPS the release.",
+          "A non-conformant EP-3 answer never stops a deployment on its own, and is never silently dropped from the record either."
+        ],
+        "done_when": [
+          "A control proves a non-conformant EP-3 observation is PRESENT in the record and does NOT block.",
+          "A MUST-FAIL control proves EP-3 is never omitted from a run (the NOT-OBSERVED reading is unreachable).",
+          "A control proves a non-conformant EP-1 observation BLOCKS."
+        ]
+      },
+      {
+        "id": "TA-12",
+        "name": "RUNNER_PENDING_AUTHENTICATED_CELL",
+        "kind": "CODE",
+        "surface": [
+          "the runner surface"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-2].owner_selected_decision.EP-2_conditional_executability.interim_recording_rule",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json CORRECTED_MATRIX_CELL_REACHABILITY"
+        ],
+        "contract": [
+          "The authenticated EP-2 cell is recorded as UNAVAILABLE/PENDING - a cell whose reachable_by_M11_only_if precondition (OD-5) is UNMET. Never as a passing observation and never as a failing one.",
+          "The interim rule, applied literally: do NOT silently treat the authenticated EP-2 cell as PASS in its absence; do NOT represent authenticated evidence as existing when it does not.",
+          "BLOCKING is PRESERVED as the target semantics for when the precondition IS met. This is sequencing, not a change to the owner's EP-2 = BLOCKING selection.",
+          "EP-2 MAY NOT SILENTLY PASS BEFORE TRACK B EXISTS. This is a hard invariant of Track A and is proved by a must-fail control, not by review."
+        ],
+        "done_when": [
+          "A MUST-FAIL control proves that with no authenticated principal configured, the runner's authenticated EP-2 cell is UNAVAILABLE_PENDING_OD5 and that no code path can emit PASS for it.",
+          "A control proves the pending cell does not silently satisfy the gate.",
+          "A control proves the target BLOCKING semantics activate once the Track B interface (TB-IF) reports a principal as present."
+        ],
+        "notes": "This is the single node the TRACK B BOUNDARY in the mission brief most directly constrains."
+      },
+      {
+        "id": "TA-13",
+        "name": "CONTROLS_EP1",
+        "kind": "TEST",
+        "surface": [
+          "tests/health-auth-route.test.ts (EXTEND, do not replace)"
+        ],
+        "derives_from": [
+          "TA-06",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json ENDPOINT_INVENTORY.endpoints[EP-1].details_that_must_never_be_exposed"
+        ],
+        "contract": [
+          "EXTEND the existing 47-line file measured as S-8. Its two existing cases - the authenticated 200 with PII absence, and the upstream-text absence assertion - are RETAINED, not rewritten.",
+          "Add one control per AS state fixing status and body discriminator, the MUST-FAIL AS-2-never-503 control, and the healthy-vs-unreachable distinguishability control.",
+          "The existing full mock of @/lib/supabase/server is retained; the new touch is injected, never reached (S-12, TA-19)."
+        ],
+        "done_when": [
+          "Every AS branch of TA-06 has a committed control, including the two must-fail ones."
+        ]
+      },
+      {
+        "id": "TA-14",
+        "name": "CONTROLS_EP3",
+        "kind": "TEST",
+        "surface": [
+          "tests/stella-preconditions-route.test.ts (NEW)"
+        ],
+        "derives_from": [
+          "TA-07",
+          "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json FUTURE_IMPLEMENTATION_SURFACE.items[FIS-M11-03]"
+        ],
+        "contract": [
+          "FIS-M11-03 owes controls for EP-3's AUTH BRANCH and its READY-TO-STATUS MAPPING. Per S-9, EP-3's existing coverage is exactly one STRUCTURAL control (the entry-point inventory count at tests/database-runtime-entrypoints.test.ts:851) and zero behavioural controls. This node adds the behavioural ones and does not disturb the structural one.",
+          "The N-3 discipline applies to how this node is described anywhere downstream: EP-3's prior state is ONE STRUCTURAL CONTROL AND NO BEHAVIOURAL CONTROL, never 'no test at all'."
+        ],
+        "done_when": [
+          "Controls exist for: anonymous 401; the four (stellaEnabled, ready) quadrants; the off-AND-unsatisfied precedence case; and the must-fail 200-with-ready-false hazard."
+        ]
+      },
+      {
+        "id": "TA-15",
+        "name": "CONTROLS_DISCRIMINATOR",
+        "kind": "TEST",
+        "surface": [
+          "tests/auth-identity-discriminator.test.ts (NEW)"
+        ],
+        "derives_from": [
+          "TA-01",
+          "TA-02"
+        ],
+        "contract": [
+          "One control per AS state, each constructed from the error SHAPE the taxonomy names, not from a hand-rolled sentinel.",
+          "The decisive control is AS-2 vs AS-3: two inputs that both arrive as a returned error with no user must produce different derived states. That is the exact conflation S-4 measured and B-1 named.",
+          "A control proves no error message, token, cookie or subject is echoed."
+        ],
+        "done_when": [
+          "All four states are covered and the AS-2/AS-3 separation control exists."
+        ]
+      },
+      {
+        "id": "TA-16",
+        "name": "CONTROLS_TOUCH_CACHE_BUDGET",
+        "kind": "TEST",
+        "surface": [
+          "tests/provider-health-touch.test.ts (NEW)"
+        ],
+        "derives_from": [
+          "TA-03",
+          "TA-04",
+          "TA-05",
+          "TA-19"
+        ],
+        "contract": [
+          "Fake-timer controls for the TTL bound, the single-flight coalescing, and the one-call-per-window invariant.",
+          "Budget-exhaustion control proving UNKNOWN, never REACHABLE.",
+          "An egress control (TA-19) proving the suite issues no real outbound request to the provider host."
+        ],
+        "done_when": [
+          "Every rider constraint has a committed control that would fail if the constraint were removed."
+        ]
+      },
+      {
+        "id": "TA-17",
+        "name": "CONTROLS_RUNNER",
+        "kind": "TEST",
+        "surface": [
+          "tests for the runner surface (NEW)"
+        ],
+        "derives_from": [
+          "TA-09",
+          "TA-10",
+          "TA-11",
+          "TA-12"
+        ],
+        "contract": [
+          "Controls for the INCONCLUSIVE mapping, the one-platform-incident rule, the OD-2 blocking assignments, and the pending authenticated cell.",
+          "At least one MUST-FAIL control per semantic: an INCONCLUSIVE run cannot pass the gate; EP-2 cannot emit PASS without a principal; EP-3 cannot be omitted from a run."
+        ],
+        "done_when": [
+          "Every runner semantic has both a pass-path and a must-fail control. A semantic with only a pass-path control is not done."
+        ],
+        "notes": "A validation that only exercises the expected-PASS path proves nothing. Each runner semantic needs a case that MUST fail."
+      },
+      {
+        "id": "TA-18",
+        "name": "ENTRYPOINT_INVENTORY_COLLISION_GUARD",
+        "kind": "CODE_GUARD",
+        "surface": [
+          "tests/database-runtime-entrypoints.test.ts"
+        ],
+        "derives_from": [
+          "S-9",
+          "S-3"
+        ],
+        "contract": [
+          "The live assertion at :851 is {inventoried: 147, reaching: 122, contextualized: 105, allowlisted: 17}, measured at this TREE.",
+          "Track A as derived here adds NO new app/** entry point, so this assertion MUST NOT MOVE. TA-03 is a lib module precisely so that it does not.",
+          "If an implementation finds itself needing to change these numbers, the node is mis-scoped and must stop and escalate rather than update the counts. Updating them would silently add a health surface the M11 gate's source_of_truth does not name."
+        ],
+        "done_when": [
+          "The assertion at :851 is byte-identical after the Track A slice lands."
+        ],
+        "notes": "Recorded as an explicit guard because this assertion is the repository's tripwire for an unannounced new entry point, and an implementation lane's natural instinct on a red count is to update the number."
+      },
+      {
+        "id": "TA-19",
+        "name": "TEST_EGRESS_CONTROL_FOR_THE_TOUCH",
+        "kind": "TEST_INFRA",
+        "surface": [
+          "vitest.setup.network-guard.ts (EXTEND) or an equivalent injected-transport discipline in TA-03"
+        ],
+        "derives_from": [
+          "S-12"
+        ],
+        "contract": [
+          "S-12 measured that the existing guard blocks only the three Gemini/Vertex hostnames and is deliberately narrow, because the suite legitimately talks to localhost. NOTHING today prevents a unit test of the new touch from reaching a real Supabase Auth host.",
+          "The touch is the first surface in this repository whose unit tests could reach a non-Gemini external provider. Either the guard is extended to cover the provider host, or TA-03's transport is injected such that no code path under Vitest can construct a real request - and whichever is chosen must be PROVED by a control, not asserted.",
+          "The existing guard's no-opt-out property must be preserved. No ALLOW_REAL_* escape hatch may be introduced."
+        ],
+        "done_when": [
+          "A control proves a unit test cannot issue a real request to the provider host."
+        ],
+        "notes": "This is a gap discovered by measuring the harness, not one named in the ratified package. It is recorded as a Track A node because the A2 touch creates it."
+      },
+      {
+        "id": "TA-20",
+        "name": "LEDGER_OWNER_UPDATE_FOR_M11_SC_7",
+        "kind": "GOVERNED_ACT_OUTSIDE_CODE",
+        "surface": [
+          "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json"
+        ],
+        "derives_from": [
+          "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json M11_SC7_OWNER_RIDER"
+        ],
+        "contract": [
+          "S-11 measured GATES[M11].owner as literally 'unassigned' at this HEAD.",
+          "The rider assigns Lorenzo Zanello as the named owner of GATES[M11] and states in terms that it does NOT edit the ledger, does NOT itself close M11-SC-7 as a ledger-verifiable fact, and records an assignment 'that a future ledger-update act should apply'.",
+          "M11-SC-7 is therefore satisfied IN SUBSTANCE and OPEN IN TEXT. Closing it requires a SEPARATE GOVERNED ACT against the ledger, which is a distinct governed artifact.",
+          "That act is NOT authorized by this DAG, is NOT part of the Track A code slice, and has no code dependency on any TA node."
+        ],
+        "done_when": [
+          "GATES[M11].owner reads 'Lorenzo Zanello' in docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json, applied by a governed ledger-update act that cites the rider."
+        ],
+        "notes": "See LEDGER_OWNER_UPDATE_REQUIREMENT for the full statement."
+      }
+    ]
+  },
+  "DAG_EDGES": {
+    "count": 31,
+    "semantics": "from -> to means `to` MUST NOT be implemented before `from` is complete.",
+    "acyclicity": "ASSERTED AND MACHINE-CHECKED in this authoring turn by topological sort over the edge list below; see VALIDATION. No cycle exists.",
+    "edges": [
+      {
+        "from": "PRE-2",
+        "to": "TA-01",
+        "why": "GATE - no node may be implemented before this derivation is independently certified"
+      },
+      {
+        "from": "PRE-2",
+        "to": "TA-03",
+        "why": "GATE"
+      },
+      {
+        "from": "PRE-2",
+        "to": "TA-07",
+        "why": "GATE"
+      },
+      {
+        "from": "PRE-2",
+        "to": "TA-08",
+        "why": "GATE"
+      },
+      {
+        "from": "PRE-2",
+        "to": "TA-09",
+        "why": "GATE"
+      },
+      {
+        "from": "PRE-2",
+        "to": "TA-18",
+        "why": "GATE"
+      },
+      {
+        "from": "PRE-2",
+        "to": "TA-19",
+        "why": "GATE"
+      },
+      {
+        "from": "PRE-2",
+        "to": "TA-20",
+        "why": "GATE"
+      },
+      {
+        "from": "TA-01",
+        "to": "TA-02",
+        "why": "the non-regression guard is only meaningful once the discriminator exists"
+      },
+      {
+        "from": "TA-01",
+        "to": "TA-06",
+        "why": "EP-1 cannot branch per AS state until the AS states are derivable"
+      },
+      {
+        "from": "TA-01",
+        "to": "TA-15",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-03",
+        "to": "TA-04",
+        "why": "cache wraps the touch"
+      },
+      {
+        "from": "TA-04",
+        "to": "TA-05",
+        "why": "the budget is enforced around the cached touch, not around a raw probe"
+      },
+      {
+        "from": "TA-05",
+        "to": "TA-06",
+        "why": "EP-1's AS-3 branch consumes the budgeted, cached verdict - including UNKNOWN"
+      },
+      {
+        "from": "TA-19",
+        "to": "TA-16",
+        "why": "no touch control may run before egress is provably impossible"
+      },
+      {
+        "from": "TA-03",
+        "to": "TA-16",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-04",
+        "to": "TA-16",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-05",
+        "to": "TA-16",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-03",
+        "to": "TA-18",
+        "why": "the guard constrains how the touch may be sited"
+      },
+      {
+        "from": "TA-06",
+        "to": "TA-13",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-07",
+        "to": "TA-14",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-06",
+        "to": "TA-09",
+        "why": "the runner's EP-1 cell is defined by EP-1's contract"
+      },
+      {
+        "from": "TA-07",
+        "to": "TA-09",
+        "why": "the runner's EP-3 cell is defined by EP-3's status split"
+      },
+      {
+        "from": "TA-08",
+        "to": "TA-09",
+        "why": "the runner's 429 handling assumes proxy.ts is unchanged"
+      },
+      {
+        "from": "TA-09",
+        "to": "TA-10",
+        "why": "INCONCLUSIVE semantics are a property of the runner core"
+      },
+      {
+        "from": "TA-09",
+        "to": "TA-11",
+        "why": "blocking semantics are a property of the runner core"
+      },
+      {
+        "from": "TA-09",
+        "to": "TA-12",
+        "why": "the pending cell is a property of the runner core"
+      },
+      {
+        "from": "TA-10",
+        "to": "TA-17",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-11",
+        "to": "TA-17",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TA-12",
+        "to": "TA-17",
+        "why": "controls follow their subject"
+      },
+      {
+        "from": "TB-IF",
+        "to": "TA-12",
+        "why": "the pending cell's activation condition is the Track B interface; Track A consumes the interface, never the principal"
+      }
+    ],
+    "terminal_nodes_no_dependents": [
+      "TA-02",
+      "TA-13",
+      "TA-14",
+      "TA-15",
+      "TA-16",
+      "TA-17",
+      "TA-18",
+      "TA-20"
+    ]
+  },
+  "LANDABLE_SLICES": {
+    "rule": "The mission brief requires that the initial A2 implementation remain INDEPENDENTLY LANDABLE, and OD-5's sequencing requires that creating the Track B principal must NOT be made a prerequisite for landing Track A. The DAG is therefore partitioned so that no slice below depends on Track B.",
+    "slices": [
+      {
+        "id": "SLICE-1",
+        "name": "A2_CORE__INDEPENDENTLY_LANDABLE",
+        "nodes": [
+          "TA-01",
+          "TA-02",
+          "TA-03",
+          "TA-04",
+          "TA-05",
+          "TA-06",
+          "TA-07",
+          "TA-08",
+          "TA-13",
+          "TA-14",
+          "TA-15",
+          "TA-16",
+          "TA-18",
+          "TA-19"
+        ],
+        "depends_on_track_b": false,
+        "what_it_achieves": "EP-1 becomes a public liveness surface with a real, cached, budgeted upstream touch and a genuinely failable anonymous cell; EP-3's status split lands; OD-4 is discharged without a proxy change. This is the slice OD-5 protects as landable before any principal exists."
+      },
+      {
+        "id": "SLICE-2",
+        "name": "RUNNER",
+        "nodes": [
+          "TA-09",
+          "TA-10",
+          "TA-11",
+          "TA-12",
+          "TA-17"
+        ],
+        "depends_on_track_b": "INTERFACE_ONLY - TA-12 consumes TB-IF's presence signal. The runner lands with the authenticated EP-2 cell recording UNAVAILABLE_PENDING_OD5, and must not be blocked on the principal.",
+        "what_it_achieves": "M11-SC-2/3/4/5/6 become satisfiable for the unauthenticated caller class. M11-SC-8 is non-vacuous via EP-1."
+      },
+      {
+        "id": "SLICE-3",
+        "name": "LEDGER_OWNER_ACT",
+        "nodes": [
+          "TA-20"
+        ],
+        "depends_on_track_b": false,
+        "what_it_achieves": "M11-SC-7 closes as a ledger-verifiable fact. Independent of all code nodes."
+      }
+    ]
+  },
+  "A2_IMPLEMENTATION_CONTRACT": {
+    "authority": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1] + OC-1",
+    "caller_class": "ANONYMOUS / UNAUTHENTICATED - the M11 runner's own class",
+    "matrix": [
+      {
+        "state": "AS-1 NO_SESSION",
+        "status": 200,
+        "body": "unauthenticated body, upstream verdict REACHABLE",
+        "blocking": "conformant"
+      },
+      {
+        "state": "AS-2 REJECTED_SESSION",
+        "status": 200,
+        "body": "unauthenticated body, upstream verdict REACHABLE",
+        "blocking": "conformant",
+        "hard_rule": "503 PROHIBITED for this state, unconditionally"
+      },
+      {
+        "state": "AS-3 AUTH_TRANSPORT_OR_PROVIDER_FAILURE",
+        "status": 503,
+        "body": "degraded body, upstream verdict UNREACHABLE",
+        "blocking": "FAILS the EP-1 cell - this is the failable cell M11-SC-8 requires"
+      },
+      {
+        "state": "AS-4 CREATE_CLIENT_OR_LOCAL_CONFIG_FAILURE",
+        "status": "NOT_AN_EP1_VERDICT",
+        "body": "n/a",
+        "blocking": "PLATFORM_FAILURE recorded once per deployment; run INCONCLUSIVE for all endpoints"
+      },
+      {
+        "state": "UPSTREAM VERDICT UNKNOWN (budget exhausted)",
+        "status": "MUST NOT BE 200-healthy; rendered as the non-committal form fixed by TA-06",
+        "body": "upstream verdict UNKNOWN",
+        "blocking": "must never manufacture a healthy verdict"
+      }
+    ],
+    "authenticated_caller": "200 with authenticated:true, unchanged from S-1.",
+    "never_exposed": "Any user identifier, email, provider name, token, cookie or upstream error text - inherited unchanged from EP-1's existing rule and its existing control."
+  },
+  "CACHE_BUDGET_CONTRACT": {
+    "authority": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.owner_approved_implementation_rider + OC-2",
+    "three_rider_constraints_mapped_to_nodes": [
+      {
+        "constraint": "The provider-health touch MUST use a short TTL/cache.",
+        "node": "TA-04",
+        "frozen_value": "TTL_MS = 15000, exported"
+      },
+      {
+        "constraint": "The provider-health touch MUST operate under its own bounded request budget, distinct from and not assumed to be covered by the existing global rate limit (OD-4).",
+        "node": "TA-05",
+        "frozen_value": "an independent bound; MUST NOT read KV_REST_API_URL or KV_REST_API_TOKEN and MUST NOT sit on proxy.ts's limiter"
+      },
+      {
+        "constraint": "No implementation may make every single anonymous health request necessarily cause a fresh upstream provider call.",
+        "node": "TA-04",
+        "frozen_value": "N requests in one TTL window -> exactly 1 upstream call, proved by a fake-timer control"
+      }
+    ],
+    "substrate": "IN_PROCESS_MODULE_CACHE (OC-2).",
+    "declared_limitations": [
+      "PER-INSTANCE SCOPE. With N warm instances the bound is N upstream calls per TTL window, not 1. No node may claim a global bound.",
+      "BOUNDED STALENESS. Within one TTL window EP-1 may answer 200 after the provider has failed. Bounded by TTL_MS and declared, not discovered."
+    ],
+    "fail_direction": "FAIL-CLOSED-TO-UNKNOWN. Budget exhaustion yields UNKNOWN, never REACHABLE. An exhausted budget must never manufacture a healthy verdict."
+  },
+  "AS2_CONTRACT": {
+    "selection": "200_UNAUTHENTICATED_BODY",
+    "authority": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.AS-2_disposition",
+    "meaning": "A caller presenting a session the provider REJECTS is treated as simply not-authenticated: 200 with an unauthenticated body, rather than 401.",
+    "hard_prohibition": "503 for AS-2 is PROHIBITED. Basis: docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-1].NB-3_rejected_session_semantics.constraint - 'Whatever is chosen must NOT be 503, because AS-2 proves the provider is reachable. A 503 would be the same category error B-1 identified, in the opposite direction.' This DAG does not relax it and OC-1 does not touch it.",
+    "why_AS2_is_positive_evidence": "AS-2 PROVES the provider answered. The current implementation discards that evidence (S-1 branches on userError alone). Under this contract AS-2 contributes a REACHABLE upstream verdict.",
+    "proved_by": "A MUST-FAIL control in TA-13: no code path may produce 503 for AS-2."
+  },
+  "OD2_RUNNER_CONTRACT": {
+    "authority": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-2]",
+    "assignments": {
+      "EP-1": "BLOCKING",
+      "EP-2": "BLOCKING (final target)",
+      "EP-3": "NON_BLOCKING_RECORDED"
+    },
+    "vocabulary_binding": "OBSERVABILITY_ONLY means OBSERVED AND RECORDED BUT NON-BLOCKING. It may NEVER mean NOT OBSERVED. Every endpoint named in source_of_truth is observed on every run under M11-SC-3.",
+    "unavailable_pending_authenticated_cell": {
+      "status_token": "UNAVAILABLE_PENDING_OD5",
+      "rule": "The authenticated EP-2 cell is a cell whose reachable_by_M11_only_if precondition (OD-5) is UNMET. It is recorded as UNAVAILABLE/PENDING - never as a passing observation, never as a failing one.",
+      "prohibitions": [
+        "Do NOT silently treat the authenticated EP-2 cell as PASS in its absence.",
+        "Do NOT represent authenticated evidence as existing when it does not.",
+        "EP-2 MAY NOT SILENTLY PASS BEFORE TRACK B EXISTS - proved by a must-fail control (TA-12), not by review."
+      ],
+      "target_preserved": "BLOCKING remains the target semantics for when the precondition IS met. The interim rule is SEQUENCING, not a change to the owner's selection."
+    },
+    "sufficiency_note": "OD-2's BLOCKING assignments are what give M11-SC-8 a non-vacuous cell BEFORE OD-5's principal exists (via EP-1, once TA-01/TA-03/TA-06 land) and a SECOND one once it does (via EP-2). This does not reroute provisioning through OD-2; OD-5 remains the sole provisioning decision."
+  },
+  "OD3_STATUS_CONTRACT": {
+    "authority": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-3]",
+    "selection": "SPLIT_STATUS_200_FOR_INTENTIONAL_OFF",
+    "mapping": [
+      {
+        "case": "stellaEnabled false (intentional off)",
+        "status": 200,
+        "note": "healthy-and-disabled"
+      },
+      {
+        "case": "stellaEnabled true, precondition unmet",
+        "status": 503,
+        "note": "as today"
+      },
+      {
+        "case": "stellaEnabled false AND rateLimit unsatisfied",
+        "status": 200,
+        "note": "PRECEDENCE: intentional-off DOMINATES"
+      }
+    ],
+    "no_new_body_field": "Confirmed against S-3: the body at :82-118 already publishes master.stellaEnabled, master.geminiApiKeyPresent, master.canUseStella, capabilities and rateLimit. Only the status mapping at :123 changes.",
+    "declared_consequence": "After TA-07, EP-3 status 200 NO LONGER IMPLIES ready:true. A caller branching on status alone reads intentional-off as ready. This is the direct cost of the selection, recorded here, and it is what TA-14's must-fail control exists to pin.",
+    "provisioning_cost": "NONE. OD-3 does not depend on OD-5. TA-07 is in SLICE-1.",
+    "boundary": "The auth boundary of EP-3 is NOT touched (TA-02, MG-4)."
+  },
+  "OD4_SC6_CONTRACT": {
+    "authority": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-4]",
+    "selection": "NOT_EXEMPT",
+    "code_effect": "NONE. S-6 measured that proxy.ts already subjects /api/health/* to the global limiter. The ratification states no code change to proxy.ts is authorized or required. TA-08 discharges the obligation as a guard, not as an edit.",
+    "M11_SC6": {
+      "selection": "INCONCLUSIVE_UNCONDITIONAL",
+      "rule": "HTTP 429 from the global rate limit is ALWAYS recorded INCONCLUSIVE. NEVER a PASS and NEVER a health FAIL, without exception - unconditionally, regardless of environment, deployment or caller class.",
+      "why_unconditional": "OD-4's NOT_EXEMPT makes 429 a live, reachable outcome on every health path, so the disposition is settled here rather than left a residual open question for the implementation lane.",
+      "other_inconclusive_outcomes": [
+        "302 from Deployment Protection",
+        "any transport error",
+        "a platform pre-handler failure (recorded once per deployment, not once per endpoint)"
+      ]
+    },
+    "rate_limiter_security_posture_inherited": "The global rate limiter is NOT a security control M11 may rely upon. Its presence is ENVIRONMENT-DEPENDENT (both KV variables must be bound, or no limiter is constructed at all - confirmed at proxy.ts:12-16) and its failure mode is FAIL-OPEN (confirmed at proxy.ts:40-42). No node in this DAG may treat the rate limit as a substitute for the authentication boundary.",
+    "self_throttling_hazard_recorded": "F-M11-20's added_consideration that OD-1 option A2 raises a self-throttling risk is inherited. TA-05's independent budget is the node that keeps the touch's own call rate off the global limiter's key, and TA-10 ensures a 429 the runner does provoke is recorded INCONCLUSIVE rather than as a health verdict."
+  },
+  "TRACK_B_INTERFACE": {
+    "boundary_statement": "This DAG does NOT create, specify, name, scope or provision the staging principal. It defines ONLY the interface Track A expects from Track B. FIS-M11-06 and OD-5's required_scope_of_the_separate_authority remain entirely Track B's.",
+    "what_track_a_defines": [
+      {
+        "id": "TB-IF-1",
+        "name": "PRINCIPAL_PRESENCE_SIGNAL",
+        "shape": "A boolean-valued presence signal the runner can read WITHOUT holding, logging or transiting credential material. Track A reads only whether an authenticated observation is possible - never the credential.",
+        "consumed_by": "TA-12"
+      },
+      {
+        "id": "TB-IF-2",
+        "name": "AUTHENTICATED_OBSERVATION_CAPABILITY",
+        "shape": "A mechanism by which the runner can issue an EP-2/EP-3 request as a verified session, supplied by Track B's governed credential-delivery mechanism. Track A specifies only the CALL SHAPE it will make; it specifies nothing about how the credential is created, held, rotated, delivered or revoked.",
+        "consumed_by": "TA-09, TA-12"
+      },
+      {
+        "id": "TB-IF-3",
+        "name": "ABSENCE_SEMANTICS",
+        "shape": "When TB-IF-1 reports absent, the runner records UNAVAILABLE_PENDING_OD5 for the authenticated cells and continues. Absence is NEVER an error, NEVER a FAIL, and NEVER a PASS.",
+        "consumed_by": "TA-12"
+      }
+    ],
+    "hard_constraints_track_a_inherits": [
+      "The principal must NEVER be used as justification to lower or bypass the existing authentication boundary. MG-4 is inherited verbatim and this DAG does not weaken, waive or create an exception to it.",
+      "Track A must remain landable with TB-IF-1 permanently reporting absent. SLICE-1 has no Track B dependency at all; SLICE-2 depends on the INTERFACE only, never on the principal.",
+      "EP-2 may not silently PASS before Track B exists (TA-12, must-fail control)."
+    ],
+    "explicitly_not_defined_here": [
+      "Who the principal is, what role it holds, or how it authenticates.",
+      "Custody, rotation cadence, credential delivery, evidence, revocation or expiry - all of which OD-5 assigns to the separate authority.",
+      "Whether FIS-M11-05's Deployment Protection bypass exists or may be provisioned - MG-5 records the underlying behaviour as UNKNOWN and this lane measured nothing hosted."
+    ]
+  },
+  "LEDGER_OWNER_UPDATE_REQUIREMENT": {
+    "question": "Is a separate governed act needed to close M11-SC-7?",
+    "answer": "YES.",
+    "measured_state": "S-11: docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES[id=M11].owner reads literally 'unassigned' at HEAD 26bc0f0c3c7e9e65f965920d23584d1df75b418e (blob 93c5bd667ff6b321bb913ac4bf46855a969d8608). Re-measured in this turn, not inherited.",
+    "substance_vs_text": "M11-SC-7 is SATISFIED IN SUBSTANCE and OPEN IN TEXT. docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json M11_SC7_OWNER_RIDER assigns Lorenzo Zanello as the named owner of GATES[M11], and states in its own words that it does NOT edit RELEASE_GATE_LEDGER, does NOT itself close M11-SC-7 as a ledger-verifiable fact, and records an assignment 'that a future ledger-update act should apply'.",
+    "required_act": {
+      "node": "TA-20",
+      "nature": "A governed edit to a separate governed artifact (the release gate ledger), citing the rider as its authority.",
+      "scope": "Exactly one field: GATES[id=M11].owner, 'unassigned' -> 'Lorenzo Zanello'. Nothing else in the ledger.",
+      "not_authorized_here": "This DAG does NOT perform, schedule or authorize that edit. This lane edits no ledger field.",
+      "independence": "TA-20 has no code dependency on any other node and may be sequenced independently of SLICE-1 and SLICE-2. It is, however, REQUIRED for any future M11 PASS, because M11-SC-7 is one of the eight conditions that must ALL hold."
+    },
+    "caution": "A future lane must not read the rider as having already closed the field. The rider is explicit that it did not. Treating substance as text here would be exactly the 'affirmed but not materialized' conflation this programme has previously had to correct."
+  },
+  "TEST_PLAN": {
+    "companion_manifest": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json - the machine-readable commitment, validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json in this authoring turn.",
+    "harness_facts_that_constrain_it": [
+      "S-13: vitest.config.ts runs jsdom with globals, aliases '@' to the repository root, and loads the network guard FIRST. Every Track A unit control lands in the default project and inherits the guard.",
+      "S-12: the guard is narrow by design and does NOT cover the Auth provider host. TA-19 closes this before TA-16 may run.",
+      "S-8: tests/health-auth-route.test.ts is EXTENDED, never replaced. Its two existing assertions are retained.",
+      "S-9: EP-3's one existing STRUCTURAL control (the :851 inventory count) is retained untouched; TA-14 adds the behavioural controls that FIS-M11-03 owes."
+    ],
+    "governing_principle": "Every semantic in this DAG needs a control that would FAIL if the semantic were removed. A control that only exercises the expected-PASS path proves nothing. The must-fail controls are enumerated explicitly in the manifest's negative_controls and mutation_controls rather than left implicit.",
+    "must_fail_controls_enumerated": [
+      "AS-2 can never produce 503 (TA-13).",
+      "EP-1 answers observably differently against a reachable vs an unreachable provider (TA-13) - the property F-M11-13 records as absent today.",
+      "Budget exhaustion yields UNKNOWN and never REACHABLE (TA-16).",
+      "EP-3 200-with-ready-false is reachable and is not treated as ready (TA-14).",
+      "An INCONCLUSIVE run cannot satisfy the gate (TA-17).",
+      "The authenticated EP-2 cell cannot emit PASS with no principal configured (TA-17/TA-12).",
+      "EP-3 cannot be omitted from a run - the NOT_OBSERVED reading of OBSERVABILITY_ONLY is unreachable (TA-17).",
+      "A unit test cannot issue a real request to the provider host (TA-16/TA-19)."
+    ],
+    "explicitly_out_of_scope": [
+      "Any hosted smoke. Any real deployment observation. Any provider call.",
+      "The wire numeral for a middleware throw - PLATFORM_PRE_HANDLER_FAILURE_RULE states it must be measured against a real deployment, and this lane measured nothing over HTTP.",
+      "Any authenticated EP-2/EP-3 evidence, which requires Track B."
+    ]
+  },
+  "explicit_non_authorizations": [
+    "This artifact does NOT authorize modification of app/api/health/auth/route.ts, app/api/health/runtime-identity/route.ts or app/api/health/stella-preconditions/route.ts.",
+    "This artifact does NOT authorize modification of lib/auth/identity.ts, lib/supabase/server.ts, proxy.ts or lib/supabase/proxy.ts.",
+    "This artifact does NOT authorize creation of lib/health/provider-touch.ts or of any runner surface.",
+    "This artifact does NOT authorize any test file creation or modification.",
+    "This artifact does NOT authorize implementation of the AS-1..AS-4 discriminator.",
+    "This artifact does NOT authorize implementation of the provider-health touch, its cache, its TTL or its budget.",
+    "This artifact does NOT authorize any rate-limit change.",
+    "This artifact does NOT edit docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json, including its GATES[M11].owner field.",
+    "This artifact does NOT edit any of the four M11 artifacts or the owner ratification record. All five blobs are pinned and unchanged.",
+    "This artifact does NOT amend, reopen or reinterpret the owner ratification, OD-1..OD-5, the M11-SC-7 rider, the AS-1..AS-4 taxonomy, the endpoint-by-caller matrix, the corrected provenance arithmetic, or MG-4.",
+    "This artifact does NOT declare PRE-1 (independent verification of the owner ratification) satisfied, and does NOT substitute itself for it.",
+    "This artifact does NOT open Track A. Opening Track A requires PRE-1 and PRE-2.",
+    "This artifact does NOT create, specify, scope or provision the Track B staging principal, and does NOT open Track B's lane.",
+    "This artifact does NOT authorize any deployment, any hosted smoke, any provider call, any Vercel environment change, any Supabase mutation, any credential generation or any credential rotation.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "NONBLOCKING_RESIDUE_CONSUMED": {
+    "source": "The ratification-IC's three nonblocking residues, carried into this lane by the product owner as ACCEPTED residue.",
+    "rule": "Consumed as WRITING DISCIPLINE. None of the three is amended, reopened or re-adjudicated here, and the owner ratification is untouched.",
+    "consumed": [
+      {
+        "id": "N-1",
+        "disposition": "Accepted as nonblocking residue of the ratification-IC. Not reopened by this derivation."
+      },
+      {
+        "id": "N-2",
+        "disposition": "Accepted as nonblocking residue of the ratification-IC. Not reopened by this derivation."
+      },
+      {
+        "id": "N-3",
+        "disposition": "APPLIED AS A WRITING CONSTRAINT THROUGHOUT. EP-3's prior test coverage is stated with its precise effective semantics - ONE STRUCTURAL CONTROL (tests/database-runtime-entrypoints.test.ts, ENTRY_POINTS at :221, the databaseReaching filter at :655, the four-way count assertion at :851, with the comment at :718 annotating EP-3's specific contribution) AND ZERO BEHAVIOURAL CONTROL. The phrase 'no test at all' is never used, and the structural control was independently re-measured in this turn by grepping 'stella-preconditions' across the non-docs tree rather than cited from prior prose. See S-9 and TA-14."
+      }
+    ]
+  },
+  "RISKS_AND_OPEN_FINDINGS": [
+    {
+      "id": "R-1",
+      "severity": "RECORDED_OPEN",
+      "finding": "PRE-1 - the independent bounded verification the owner ratification names as its own next_gate - OCCURRED by owner affirmation but is NOT MATERIALIZED as a committed artifact at this HEAD. Measured, not assumed.",
+      "consequence": "This derivation is docs-only and mutates nothing, so it proceeds under the owner's explicit direction. But no implementation node may be opened on the strength of this artifact alone: PRE-1's materialization status travels forward to the certification named in next_gate."
+    },
+    {
+      "id": "R-2",
+      "severity": "RESOLVED_BY_OC-1_CONFIRMATION_REQUESTED",
+      "finding": "The mission brief states '503 prohibited' flatly; the ratified authority scopes the prohibition to AS-2 alone. Read globally it would make M11-SC-8 vacuous and contradict OD-5's sequencing, which relies on EP-1 having a genuinely failable anonymous cell.",
+      "consequence": "Resolved by OC-1 (503 for AS-3 only; AS-2 prohibition preserved). Independent certification should confirm this reading explicitly, because it is the one place this derivation departs from the brief's literal wording - in favour of the ratified authority's narrower scope."
+    },
+    {
+      "id": "R-3",
+      "severity": "OPEN_UNMEASURED",
+      "finding": "The wire status numeral served for a middleware coherence throw is UNMEASURED. PLATFORM_PRE_HANDLER_FAILURE_RULE states the rule is written on the SHAPE of the failure and explicitly not on a numeral, and requires an implementation lane to measure it against a real deployment before encoding it.",
+      "consequence": "TA-10 cannot freeze the numeral. This lane performed no HTTP execution and does not authorize any. The measurement is a hosted act belonging to a later, separately authorized lane."
+    },
+    {
+      "id": "R-4",
+      "severity": "OPEN_DECLARED",
+      "finding": "The A2 cache is per-instance (OC-2), so the upstream call bound is N-per-TTL across N warm instances, not 1. The cache also admits bounded staleness of up to TTL_MS after a real provider failure.",
+      "consequence": "Both are inherent to the owner-selected substrate and are declared in CACHE_BUDGET_CONTRACT rather than left to be discovered as defects. No node may claim a global bound."
+    },
+    {
+      "id": "R-5",
+      "severity": "OPEN_GAP_DISCOVERED_BY_MEASUREMENT",
+      "finding": "S-12: the vitest network guard covers only the three Gemini/Vertex hostnames. Nothing prevents a unit test of the new provider-health touch from reaching a real Supabase Auth host. This gap is not named anywhere in the ratified package; it was found by reading the harness.",
+      "consequence": "TA-19 exists to close it and gates TA-16. An implementation lane that writes touch tests before TA-19 would be writing the first tests in this repository capable of real non-Gemini egress."
+    },
+    {
+      "id": "R-6",
+      "severity": "OPEN_DECLARED",
+      "finding": "TA-07 breaks the invariant that EP-3 status 200 implies ready:true. A status-only consumer will read an intentionally-off deployment as ready.",
+      "consequence": "Direct cost of OD-3's ratified selection. Pinned by a must-fail control in TA-14 rather than by prose."
+    },
+    {
+      "id": "R-7",
+      "severity": "RECORDED",
+      "finding": "FIS-M11-05 - hosted-smoke ACCESS to a Deployment-Protection-protected deployment - is a dependency of any hosted M11 run. MG-5 records the underlying protection behaviour as UNKNOWN and this lane measured nothing hosted.",
+      "consequence": "Out of Track A's landable scope. Recorded as a dependency, not an authorization; a bypass credential is a secret whose provisioning is a separate authority adjacent to OD-5."
+    }
+  ],
+  "self_check": [
+    "PARENT verified: HEAD == 26bc0f0c3c7e9e65f965920d23584d1df75b418e == the declared PARENT. Tree 03fe382430e4ff8dfba9a2934f93a14f5658f7fc. Worktree clean. Branch codex/cv1-m11-track-a-implementation-dag-authority-r1.",
+    "The four M11 companion blobs and the ratification blob were re-measured at HEAD and match the values the ratification records. The package is unchanged.",
+    "Every fact in CURRENT_IMPLEMENTATION_SURFACE was read from the tree in this turn. No filename or line number was taken from prior prose, as the mission required.",
+    "The DAG is acyclic - machine-checked by topological sort in this turn, not asserted.",
+    "No application code, test, workflow, ledger field or authority artifact was modified by this lane.",
+    "N-1/N-2/N-3 are consumed as accepted nonblocking residue; the owner ratification is not amended or reopened.",
+    "N-3 specifically: EP-3's coverage is stated as one structural control and zero behavioural controls, independently re-measured. The phrase 'no test at all' does not appear as a claim anywhere in this artifact.",
+    "Track B: no principal is created, specified, scoped or provisioned. Only the interface Track A consumes is defined.",
+    "SLICE-1 has no Track B dependency, satisfying OD-5's requirement that Track A remain independently landable.",
+    "EP-2 may not silently PASS before Track B exists - enforced by TA-12 as a must-fail control, not by prose."
+  ],
+  "required_independent_review": {
+    "status": "REQUIRED BEFORE ANY IMPLEMENTATION.",
+    "scope": [
+      "Confirm the CURRENT_IMPLEMENTATION_SURFACE facts S-1..S-13 against the tree at 03fe382430e4ff8dfba9a2934f93a14f5658f7fc, independently.",
+      "Confirm OC-1's reading of the 503 prohibition's scope (R-2) - the one place this derivation departs from the mission brief's literal wording.",
+      "Confirm the DAG is acyclic and that SLICE-1 carries no Track B dependency.",
+      "Confirm that no node, as written, would require editing the ledger, the four M11 artifacts, or the owner ratification.",
+      "Confirm the test manifest validates against UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 and that every semantic carries a must-fail control.",
+      "Record PRE-1's materialization status (R-1) as an input to whether Track A may be opened."
+    ]
+  },
+  "final_state": {
+    "derivation": "COMPLETE.",
+    "nodes_derived": 20,
+    "nodes_executed": 0,
+    "edges_derived": 31,
+    "track_a_status": "DERIVED, NOT OPENED.",
+    "track_b_status": "INTERFACE DEFINED ONLY. NOT OPENED, NOT SPECIFIED, NOT PROVISIONED.",
+    "external_mutations": "NONE.",
+    "code_modified": "NONE."
+  },
+  "next_gate": "INDEPENDENT_CERTIFICATION_OF_THIS_IMPLEMENTATION_DAG (PRE-2), before any implementation. The certification must also record the status of PRE-1 (R-1). Only after PRE-2 passes may SLICE-1 be opened; SLICE-2 follows SLICE-1; TA-20 is an independent governed ledger act; Track B remains a separate authority lane that this artifact does not open."
+}

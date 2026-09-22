@@ -1,0 +1,245 @@
+{
+  "manifest_id": "CV1-M11-TRACK-A",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3.json",
+    "PRE-1 (independent bounded verification of the owner ratification) - OCCURRED by owner affirmation, NOT MATERIALIZED in tree at HEAD 26bc0f0c",
+    "PRE-2 (independent certification of the DAG authority) - NOT OCCURRED; BLOCKING for every control below"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SENT-PROVIDER-URL",
+      "purpose": "A fictional provider URL injected into the provider-health touch, asserted absent from every EP-1 response body and from every error value the touch returns. Proves the A2 touch cannot leak its target."
+    },
+    {
+      "id": "SENT-UPSTREAM-ERROR-TEXT",
+      "purpose": "A fictional upstream error string carried by each constructed AS-2/AS-3 error, asserted absent from the EP-1 body. Extends the assertion tests/health-auth-route.test.ts already makes at :45 to the new AS branches."
+    },
+    {
+      "id": "SENT-SUBJECT-ID",
+      "purpose": "A fictional user id on the authenticated path, asserted absent from every health body. Retains the existing EP-1 PII control across the rewrite."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "P-01",
+      "description": "TA-01: the discriminator derives AS-1 from an AuthSessionMissingError shape (name AuthSessionMissingError, status 400, zero outbound attempts).",
+      "test_file": "tests/auth-identity-discriminator.test.ts"
+    },
+    {
+      "id": "P-02",
+      "description": "TA-01: the discriminator derives AS-2 from an AuthApiError shape carrying a provider 4xx.",
+      "test_file": "tests/auth-identity-discriminator.test.ts"
+    },
+    {
+      "id": "P-03",
+      "description": "TA-01: the discriminator derives AS-3 from an AuthRetryableFetchError shape (status 0 transport, and separately a provider 5xx).",
+      "test_file": "tests/auth-identity-discriminator.test.ts"
+    },
+    {
+      "id": "P-04",
+      "description": "TA-01: the discriminator derives AS-4 from a thrown SupabaseProjectCoherenceError.",
+      "test_file": "tests/auth-identity-discriminator.test.ts"
+    },
+    {
+      "id": "P-05",
+      "description": "TA-06: EP-1 answers AS-1 with 200 and an unauthenticated body carrying upstream verdict REACHABLE.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "P-06",
+      "description": "TA-06: EP-1 answers AS-2 with 200 and an unauthenticated body carrying upstream verdict REACHABLE.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "P-07",
+      "description": "TA-06: EP-1 answers AS-3 with 503 and a degraded body carrying upstream verdict UNREACHABLE (OC-1).",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "P-08",
+      "description": "TA-06: EP-1 retains 200 with authenticated:true for a verified session - the existing case at tests/health-auth-route.test.ts:18-28, preserved.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "P-09",
+      "description": "TA-04: many EP-1 requests inside one TTL window produce exactly ONE upstream provider call (fake timers).",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "P-10",
+      "description": "TA-04: a request after TTL_MS expiry produces a second upstream call; TTL_MS is an exported constant equal to 15000.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "P-11",
+      "description": "TA-04: concurrent callers coalesce onto a single in-flight probe (SINGLE_FLIGHT_COALESCED).",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "P-12",
+      "description": "TA-07: EP-3 answers 200 when master.stellaEnabled is false (intentional off).",
+      "test_file": "tests/stella-preconditions-route.test.ts"
+    },
+    {
+      "id": "P-13",
+      "description": "TA-07: EP-3 answers 503 when Stella is expected on and a precondition is unmet.",
+      "test_file": "tests/stella-preconditions-route.test.ts"
+    },
+    {
+      "id": "P-14",
+      "description": "TA-07: PRECEDENCE - stellaEnabled false AND rateLimit.satisfied false answers 200; intentional-off dominates.",
+      "test_file": "tests/stella-preconditions-route.test.ts"
+    },
+    {
+      "id": "P-15",
+      "description": "TA-11: a non-conformant EP-3 observation is PRESENT in the run record and does not block.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "P-16",
+      "description": "TA-11: a non-conformant EP-1 observation BLOCKS.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "P-17",
+      "description": "TA-10: 429 from the global rate limit is recorded INCONCLUSIVE.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "P-18",
+      "description": "TA-10: three identical platform-level failures in one run produce ONE platform incident bound to the deployment identifier and SHA, not three FAILs.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "P-19",
+      "description": "TA-09: all three endpoints are observed on every run and each is compared against the cell for the runner's own caller class; for an unauthenticated runner, 401 from EP-2 and EP-3 is CONFORMANT.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "P-20",
+      "description": "TA-12: once the Track B interface reports a principal present, the authenticated EP-2 cell activates its BLOCKING target semantics.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "P-21",
+      "description": "TA-08: /api/health/* is within proxy.ts config.matcher and is not special-cased; proxy.ts is unmodified.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "P-22",
+      "description": "TA-02: EP-2 answers 401 anonymously and EP-3 answers 401 anonymously, after the discriminator lands.",
+      "test_file": "tests/stella-preconditions-route.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-01",
+      "description": "MUST FAIL: no EP-1 code path may produce 503 for AS-2. The AS-2 503 prohibition is unconditional and this control is the proof, not review.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "N-02",
+      "description": "MUST FAIL: EP-1's anonymous answer against an UNREACHABLE provider must differ observably from its answer against a REACHABLE one. This is the M11-SC-8 non-vacuity property that F-M11-13 records as absent today; a build in which both answers are identical must fail this control.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "N-03",
+      "description": "MUST FAIL: budget exhaustion in the provider-health touch yields UNKNOWN and NEVER REACHABLE. An exhausted budget must not be able to manufacture a healthy verdict.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "N-04",
+      "description": "MUST FAIL: a unit test cannot issue a real outbound request to the Auth provider host. Closes the S-12 harness gap; the existing no-opt-out property of the network guard must be preserved (no ALLOW_REAL_* escape hatch).",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "N-05",
+      "description": "MUST FAIL: EP-3 answering 200 with ready:false is reachable and is NOT treated as a ready deployment. Pins the invariant TA-07 deliberately breaks - after the status split, 200 no longer implies ready:true.",
+      "test_file": "tests/stella-preconditions-route.test.ts"
+    },
+    {
+      "id": "N-06",
+      "description": "MUST FAIL: an INCONCLUSIVE run cannot satisfy the M11 gate. Without this, a protected Preview would make M11 green by never being measured.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "N-07",
+      "description": "MUST FAIL: with no authenticated principal configured, the runner records the authenticated EP-2 cell as UNAVAILABLE_PENDING_OD5 and NO code path can emit PASS for it. This is the enforcement of 'EP-2 may not silently PASS before Track B exists'.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "N-08",
+      "description": "MUST FAIL: EP-3 can never be omitted from a run. OBSERVABILITY_ONLY means observed-and-recorded-but-non-blocking and may never mean NOT OBSERVED; this control makes the NOT_OBSERVED reading unreachable.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "N-09",
+      "description": "MUST FAIL: no health response body may contain SENT-PROVIDER-URL, SENT-UPSTREAM-ERROR-TEXT or SENT-SUBJECT-ID.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "N-10",
+      "description": "MUST FAIL: the provider-health touch must not read KV_REST_API_URL or KV_REST_API_TOKEN. Its budget is independent of the OD-4 limiter, which the ratification records as not a control M11 may rely upon.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "N-11",
+      "description": "MUST FAIL: TA-01 must not change any existing call site's status code. EP-2 and EP-3 keep their session gate and anonymous 401 (MG-4 - the boundary is not lowered to make measurement convenient).",
+      "test_file": "tests/auth-identity-discriminator.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-01",
+      "description": "Deleting the AS-2/AS-3 separation in the discriminator - i.e. restoring the measured S-4 behaviour where every returned error collapses to SESSION_REJECTED - must be CAUGHT. This is defect B-1; the suite must not be able to pass with it reinstated.",
+      "test_file": "tests/auth-identity-discriminator.test.ts"
+    },
+    {
+      "id": "M-02",
+      "description": "Deleting the TTL check so that every request probes upstream must be CAUGHT. Guards the rider constraint that no implementation may make every anonymous health request necessarily cause a fresh upstream call.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "M-03",
+      "description": "Deleting the fail-closed-to-UNKNOWN branch so that budget exhaustion returns REACHABLE must be CAUGHT.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "M-04",
+      "description": "Deleting the intentional-off precedence so that a dark subsystem with an unsatisfied rate-limit precondition answers 503 must be CAUGHT.",
+      "test_file": "tests/stella-preconditions-route.test.ts"
+    },
+    {
+      "id": "M-05",
+      "description": "Deleting the UNAVAILABLE_PENDING_OD5 branch so that the authenticated EP-2 cell defaults to PASS must be CAUGHT. This is the single most consequential silent-pass risk in Track A.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "M-06",
+      "description": "Collapsing INCONCLUSIVE into PASS in the runner's classification must be CAUGHT.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "M-07",
+      "description": "Changing the tests/database-runtime-entrypoints.test.ts:851 counts {inventoried:147, reaching:122, contextualized:105, allowlisted:17} to accommodate a new app/** entry point must be CAUGHT as a mis-scoped node rather than accepted as a routine count update. Track A adds no app/** entry point; the provider-health touch is a lib module for exactly this reason.",
+      "test_file": "tests/database-runtime-entrypoints.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
