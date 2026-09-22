@@ -1,0 +1,161 @@
+{
+ "manifest_id": "CV1-INFRA-EXECUTION-DAG-AMENDMENT-v1.0.1",
+ "node_or_batch": "node",
+ "authority_reference": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+ "dependencies": [
+  "CV1-INFRA-EXECUTION-DAG (docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json, blob e8baab563e130bdc70a4cc3e87155ab8f3638add) - the parent manifest, left byte-unchanged",
+  "CV1_INFRA_EXECUTION_DAG_AUTHORITY (docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json, blob 0c36474b08076a844d32da8b194be79ab17915b1) - the parent authority, left byte-unchanged"
+ ],
+ "protected_surfaces": [],
+ "protected_authority": null,
+
+ "known_conditions": [
+  "THIS MANIFEST IS AN AMENDMENT, NOT A REPLACEMENT. The parent manifest docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json is left BYTE-UNCHANGED and continues to control every control it declares, EXCEPT those named under SUPERSEDED below. Where this manifest is silent, the parent controls verbatim.",
+  "SUPERSEDED PARENT CONTROLS, each replaced by a control here: P3 (rider evaluation reproducible from source) -> AP1, because P3's own description omitted the PR-into-release-branch limb; P7 (falsification sweep, exactly three loci) -> AP4, because P7 asserted a pattern-independent exact count; N-7 (required-check refusal on push-evaluated limbs) is EXTENDED, not superseded, by AN-2 to cover the PR-evaluated limb of release/commercial-v1 as well.",
+  "PARENT CONTROLS EXPLICITLY RETAINED AND NOT SUPERSEDED: P1, P2, P5, P6, P8, P9, P10 and N-1 through N-14 all continue to govern verbatim. N-6 continues to govern M-7 relative to DN-10 (O-1 coverage); it is NOT extended to O-2 coverage by this amendment, because M-7's own action does not configure required checks -- see the authority amendment's RELEASE_CHECK_PRODUCIBILITY_GAP.does_not_add_a_new_blocking_DAG_edge.",
+  "AUTHORING ARM vs EXECUTION ARM, as in the parent. Every control in this amendment is AUTHORING ARM: it checks a property of the amendment TEXT and the repository's workflow corpus, not of a future hosted act.",
+  "NO CODE IS WRITTEN. The write set is two JSON documents; writing a script or a test file would be code, which AUTHORING_ONLY forbids, exactly as the parent manifest already states for its own write set.",
+  "TWO FACTS IN THIS AMENDMENT ARE GRAPH-STRUCTURAL, NOT WORKFLOW-CORPUS FACTS. AP2 (INV-1 reachability) and AP3 (DN-0 deference / acyclicity) check the DAG's own internal consistency, independent of any hosted or workflow-corpus state, and can be verified by anyone holding this repository's git history alone."
+ ],
+
+ "sentinels": [
+  {
+   "id": "ASEN-1",
+   "purpose": "THE SEVEN RESTRICTED-BRANCH WORKFLOWS. ce3-entitlement-grants-real-pg-gate.yml, cl1-legal-acceptance-real-pg-gate.yml, golden-journey.yml, l1-organization-commercial-acceptance-real-pg-gate.yml, m2-real-pg-gate.yml, p1a-bootstrap-gate.yml and s3-refusal-real-pg-gate.yml each scope their pull_request trigger to branches: [integration/commercial-v1, main]. This is the exact list NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION's 1/8 finding rests on. If a future measurement finds an EIGHTH workflow with the same restriction, or finds this set to have changed, the 1/8 figure must be recomputed before being cited again."
+  },
+  {
+   "id": "ASEN-2",
+   "purpose": "THE ONE UNRESTRICTED WORKFLOW. ci.yml's pull_request trigger carries no branches: filter at all, and is the SOLE reason release/commercial-v1 produces 1/8 rather than 0/8 on the PR-evaluated limb. If ci.yml's pull_request trigger is ever given a branches: filter that excludes release/commercial-v1, the PR-evaluated number becomes 0/8 and every statement in this amendment built on '1 of 8' must be re-derived, not adjusted by one."
+  },
+  {
+   "id": "ASEN-3",
+   "purpose": "THE TWO NEW EDGES. DN-1 -> DN-14 and DN-1 -> DN-15, and the corresponding additions to DN-14.prerequisites and DN-15.prerequisites. Any consumer of the amended DAG that finds DN-14 or DN-15 executed WITHOUT a fresh DN-1 measurement immediately preceding it has violated INV-1 as corrected here, regardless of what v1.0.0 alone would have permitted."
+  }
+ ],
+
+ "positive_controls": [
+  {
+   "id": "AP1",
+   "description": "AUTHORING ARM. SUPERSEDES parent P3. THE FULL SIX-LIMB RIDER MATRIX IS RE-COMPUTABLE FROM SOURCE, INCLUDING THE RELEASE-BRANCH PR LIMB. Parsing each file under .github/workflows/ for its on: trigger keys, its pull_request branches: filter and its push branches: filter, then intersecting job names against the eight required-check names, must reproduce ALL SIX limbs: 8/8 on a PR into integration/commercial-v1, 8/8 on a PR into main, 1/8 on a PR into release/commercial-v1 (via ci.yml only), 1/8 on a push to main, 0/8 on a push to integration/commercial-v1, and 0/8 on a push to release/commercial-v1. A re-derivation that reproduces only the five limbs v1.0.0 originally stated, omitting the PR-into-release limb, does not satisfy this control -- it satisfies only the parent's narrower P3.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AP2",
+   "description": "AUTHORING ARM. INV-1's CORRECTED NODE SET IS PROVABLY THE BFS REACHABLE SET FROM DN-1. Running a breadth-first traversal from DN-1 over the amended DAG_EDGES (the 24 edges v1.0.0 originally declared, plus DN-1 -> DN-14 and DN-1 -> DN-15 added by this amendment, excluding DN-0's own fan-out) must return exactly {DN-7, DN-8, DN-9, DN-10, DN-11, DN-12, DN-14, DN-15} -- eight nodes, no more and no fewer. A traversal returning a different set means either the corrected INV-1 statement or the edge list is wrong, and both must be reconciled before either is cited.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AP3",
+   "description": "AUTHORING ARM. THE DN-0 DEFERENCE RULE AND DAG_NODES.prerequisites AGREE, AND THE FULL GRAPH IS ACYCLIC. Reading DN-0's outgoing edges as exactly {N : 'DN-0' in N.prerequisites} for every node N in DAG_NODES, then running Kahn's algorithm over the full 18-node graph (this deference set, plus the 24 original edges, plus the 2 new edges), must process all 18 nodes with zero remaining in-degree. A cycle, or a node left unprocessed, is a structural defect independent of any hosted fact.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AP4",
+   "description": "AUTHORING ARM. SUPERSEDES parent P7. THE FALSIFICATION SWEEP IS PATTERN-DOCUMENTED, NOT A FIXED COUNT. Re-running BOTH the original seven-term mandating-verb pattern (must, shall, required, calls for, retarget, change the default, make X the default) and this amendment's eleven-term pattern (adding will, mandate/mandatory, necessitate, trigger, obligate, demand) against all five files of the frozen package and the ratification chain must reproduce 3 candidate loci under the narrower pattern and 8 under the broader one, and every one of the 8 must classify as NOT independently calling for a default-branch change. A control asserting a single fixed count without naming which pattern produced it does not satisfy this control.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AP5",
+   "description": "AUTHORING ARM. RELEASE_CHECK_PRODUCIBILITY_GAP NAMES NO WORKFLOW-CORPUS CHANGE AND ADDS NO DAG EDGE. Reading the block must find zero specific file edits proposed (no exact branches: filter addition specified as the chosen fix), zero new node added to DAG_NODES, and zero new edge added into DN-10 or DN-11 beyond the two (DN-1->DN-14, DN-1->DN-15) this amendment separately and explicitly attributes to NB-2. A version of this block that quietly proposes an exact fix, or ties the gap to a new blocking edge on M-7, does not satisfy this control.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AP6",
+   "description": "AUTHORING ARM. EVERY SUPERSEDED_PARENT_CLAUSES LOCUS RESOLVES IN THE PINNED v1.0.0 BLOB. Reading each of the eleven SPC-A entries' locus field as a key path into docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json at blob 0c36474b08076a844d32da8b194be79ab17915b1 must resolve to an existing key. A dangling locus means the amendment claims to correct a field that does not exist at the pinned blob.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AP7",
+   "description": "AUTHORING ARM. NO GRANT WAS WIDENED. Re-deriving this amendment's write set (two JSON documents under docs/ops/release/**) and its EXPLICIT_NON_AUTHORIZATIONS inheritance must find v1.0.0's twenty-four non-authorizations intact and unextended, and this amendment's own five additive non-authorizations present and unweakened. No hosted mutation, no workflow-file edit and no authenticated control-plane read may appear anywhere in the write set.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AP8",
+   "description": "AUTHORING ARM. RBD-1 AND RBD-2 REMAIN UNANSWERED. Reading OWNER_DECISIONS_PRESERVED and the amended OWNER_DECISION_REQUIRED text must find zero selection recorded for either RBD-1 or RBD-2, and RBD-2's new fourth consequence phrased as a measurement ('EXTEND satisfies O-1 ONLY') rather than as a recommendation for or against extending.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+
+ "negative_controls": [
+  {
+   "id": "AN-1",
+   "description": "O-3/E CITED AS A FIX FOR THE RELEASE-BRANCH LIMBS IS REFUSED. Any claim that implementing ADJUDICATIONS.E (the push-triggered exact-SHA battery scoped to integration/commercial-v1) improves either of release/commercial-v1's producibility numbers (1/8 PR-evaluated, 0/8 push-evaluated) must be REFUSED. Measured: E's own verdict text names push -> integration/commercial-v1 only; it touches no pull_request trigger and no release-branch push trigger.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AN-2",
+   "description": "EXTENDS parent N-7. A REQUIRED CHECK CONFIGURED ON THE PR-EVALUATED LIMB OF release/commercial-v1 BEYOND THE ONE PRODUCIBLE NAME IS REFUSED. Configuring any of the seven names other than 'Lint, typecheck, test, build' as required on a pull-request gate targeting release/commercial-v1 must be REFUSED with STOP_RIDER_VIOLATION, on the same RIDER_PRE_1 basis N-7 already applies to push-evaluated limbs, now extended to this PR-evaluated one by the 1/8 finding.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AN-3",
+   "description": "RBD-2's EXTEND OPTION CITED AS CLOSING THE OD-4 BAR IN FULL IS REFUSED. A claim that selecting EXTEND for RBD-2 makes release/commercial-v1 satisfy O-1 THROUGH O-4 must be REFUSED. EXTEND closes O-1 only; O-2 remains unsatisfiable on the branch under the current workflow corpus regardless of RBD-2's answer, per RELEASE_CHECK_PRODUCIBILITY_GAP.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AN-4",
+   "description": "A WORKFLOW-CORPUS EDIT PROPOSED AS PART OF CLOSING RELEASE_CHECK_PRODUCIBILITY_GAP IS REFUSED HERE. Any edit to a file under .github/workflows/**, or any specific proposed branches: filter change, appearing in this amendment's write set or in RELEASE_CHECK_PRODUCIBILITY_GAP's own text as a chosen fix (rather than as an enumerated candidate shape) must be REFUSED. The gap is named, not closed, by design.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AN-5",
+   "description": "DN-17 GATED BEHIND DN-1 IS REFUSED. Any reading of the corrected INV-1 that includes DN-17 in the node set, or any execution record for DN-17 that cites a DN-1 measurement as a precondition, must be REFUSED. DN-17's asserted_non_edge is unchanged by this amendment and its independence from DN-1 is not merely preserved but restated with its own justification.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AN-6",
+   "description": "A FIXED CANDIDATE-LOCI COUNT CITED WITHOUT ITS PATTERN IS REFUSED. Any future citation of 'the falsification sweep found N loci' without naming which pattern (the seven-term or the eleven-term, or a third) produced N must be REFUSED as underspecified. The count is pattern-dependent; only the zero-mandates classification is the load-bearing, pattern-independent fact.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AN-7",
+   "description": "A REOPENING OF DEP-1's CONCLUSION UNDER COVER OF THE RECOUNT IS REFUSED. Any claim that NB5_FALSIFICATION_SWEEP_RECOUNT reopens whether M-4 is NOT_TRIGGERED must be REFUSED. The recount corrects a COUNT claim; it re-confirms, and does not revisit, DEP-1's substantive verdict.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AN-8",
+   "description": "AN EDITED v1.0.0 BYTE IS REFUSED. Any diff touching docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json or docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json must be REFUSED as a violation of append_only. Corrections are additive files only, as CANDIDATE_BINDING's re-derivation confirms.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+
+ "mutation_controls": [
+  {
+   "id": "AMUT-1",
+   "description": "SUPERSEDES parent MUT-8 for the widened pattern. Restate DEP-1's falsification sweep using only the original three-term reading and drop the eleven-term reading entirely. AP4 must REDDEN, naming the missing five loci and their classifications. If it stays green, the amendment silently reverted to the count it was supposed to correct.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AMUT-2",
+   "description": "Remove the DN-1 -> DN-14 edge while leaving DN-1 -> DN-15 in place. AP2 must REDDEN, returning a reachable set of {DN-7, DN-8, DN-9, DN-10, DN-11, DN-12, DN-15} -- seven nodes, missing DN-14 -- which does not match the corrected INV-1 statement's eight. This control exists because DN-14 and DN-15 were derived TOGETHER and a partial application of NB-2 is a distinct, cheaper-looking defect that must also be caught.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AMUT-3",
+   "description": "Re-add 'DN-0 -> every other node' as a literal wildcard alongside the deference rule, rather than replacing it. AP3 must REDDEN by finding the wildcard asserts an edge into DN-13, DN-16 or DN-17 that their own empty prerequisites arrays deny, reproducing NB-3's original defect underneath an apparently-fixed surface.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AMUT-4",
+   "description": "Restate RELEASE_CHECK_PRODUCIBILITY_GAP.what_would_close_it as a single selected fix (e.g. 'add release/commercial-v1 to the seven workflows' branches filters') rather than as enumerated candidate shapes. AP5 must REDDEN, naming the specific-fix language as exceeding the directing mission's 'do not design... here' scope limit.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AMUT-5",
+   "description": "Change AN-3's refusal to permit RBD-2's EXTEND option being described as satisfying 'the protected-line bar' without qualifying O-1-only. The control must REDDEN, naming the specific sentence that now overstates EXTEND's effect and tracing it back to RELEASE_BRANCH_PROTECTION_GAP's uncorrected consequence text.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "AMUT-6",
+   "description": "Answer RBD-1 or RBD-2 directly in this amendment, on the reasoning that the corrections make one option obviously preferable. AP8 must REDDEN via OWNER_DECISIONS_PRESERVED, naming the selection as an owner act this lane has no authority to perform, regardless of how obvious the preference might appear from the corrected facts."
+  }
+ ],
+
+ "exit_gates": [
+  "typecheck",
+  "secrets_scan",
+  "authority_seal_verify",
+  "ods_scope",
+  "ods_poststate"
+ ]
+}

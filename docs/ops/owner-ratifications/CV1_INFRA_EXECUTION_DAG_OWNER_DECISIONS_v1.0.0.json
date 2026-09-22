@@ -1,0 +1,234 @@
+{
+  "package_id": "CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS",
+  "version": "1.0.0",
+  "artifact_id": "CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_HOSTED_MUTATION__NO_BRANCH_CREATION__NO_PROTECTION_MUTATION__NO_WORKFLOW_EDIT__NO_VERCEL_MUTATION__NO_AUTHENTICATED_CONTROL_PLANE_READ__NO_DEPLOYMENT",
+  "append_only": true,
+  "mission_id": "CV1-INFRA-RBD1-RBD2-OWNER-RATIFICATION-AW-R1",
+  "lane": "CV1-INFRA-RBD1-RBD2-OWNER-RATIFICATION-AW-R1",
+  "role": "CV1_INFRA_EXECUTION_DAG_OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "OWNER_RATIFICATION_ARTIFACT_AUTHORING_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "materialized_at_base": {
+    "base_branch": "codex/cv1-infra-execution-dag-authority-r1",
+    "BASE_SHA": "2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61",
+    "BASE_TREE": "65ea2a54a2115994095edc428ebe951f012a9b8a",
+    "candidate_pr": "#211",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty; ods:prestate PASS)."
+  },
+
+  "CANDIDATE_BINDING": {
+    "rule": "This record ratifies RBD-1 and RBD-2 as they read in the EXACT candidate below, and in no other. A consumer that finds any bound blob hash to differ from the value re-derived by `git ls-tree` at read time MUST NOT apply this ratification to whatever the differing content is now. The correct response is STOP_RATIFICATION_BINDING_MISMATCH, not a silent carry-forward.",
+    "candidate_sha": "2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61",
+    "candidate_sha_re_derivation_note": "This is the commit whose tree the four effective_package blob hashes below were read FROM (`git ls-tree -r HEAD -- <paths>` at that commit, immediately before this ratification's own commit was authored). STOP_RATIFICATION_BINDING_MISMATCH is triggered by a BLOB HASH mismatch on any of the four paths, not by the candidate SHA alone becoming an ancestor of a later commit.",
+    "effective_package": [
+      {
+        "path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json",
+        "blob_sha": "0c36474b08076a844d32da8b194be79ab17915b1"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json",
+        "blob_sha": "e8baab563e130bdc70a4cc3e87155ab8f3638add"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "blob_sha": "c2f29de382ad2584788c85ba7cfa5bd0a7275204"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "blob_sha": "59f3a24dc44b60b6da549125fde5547d282f33e8"
+      }
+    ],
+    "STOP_RATIFICATION_BINDING_MISMATCH": "Triggered when a re-derivation of any blob_sha above, at the time this record is consumed, does not match the value recorded here. When triggered: this record does not apply to the differing artifact; the owner's selections remain their selections as a matter of record, but their binding to a SPECIFIC effective package is broken, and a successor ratification record (or a re-confirmation from the owner against the new candidate) is required before any execution lane may cite RBD-1/RBD-2 as settled."
+  },
+
+  "companion_authority": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json",
+  "companion_authority_amendments": [
+    "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json"
+  ],
+  "companion_certifications_consumed": {
+    "provenance_caveat": "No materialized independent-certification verdict artifact for either the original DAG derivation or the v1.0.1 amendment's bounded recertification exists anywhere in the repository tree, verified by `git grep` immediately before authoring this record. Both are therefore REPORTED_NOT_MATERIALIZED and consumed here as DIRECTING-TEXT content only, on the identical precedent v1.0.0's own RATIFICATION_IC_FINDINGS_CONSUMED and v1.0.1's own IC_CONSUMED already applied to the certifications THEY consumed. This record does not promote either reported verdict to a materialized fact by citing it.",
+    "reported_certifications": [
+      "CV1-INFRA-EXECUTION-DAG-IC-R1 (reported verdict: INFRA_DAG_IC_PASS_WITH_NONBLOCKING_FINDINGS on v1.0.0 -- NB-1 through NB-5, all five closed by v1.0.1)",
+      "CV1-INFRA-EXECUTION-DAG-AMENDMENT-BOUNDED-RECERT-R1 (reported verdict: PASS_WITH_NONBLOCKING on the v1.0.1 delta -- the result this ratification is written against)"
+    ]
+  },
+
+  "provenance_classification": "OWNER_RATIFIED_IN_THE_CURRENT_CONVERSATION. The human owner supplied the selections below directly as directing text (OWNER_DECISION=SELECTED, per option) for RBD-1 and RBD-2. THIS FILE IS NOT A VERBATIM TRANSCRIPT of the conversation and it is not a new adjudication: no option was chosen, weighed, or substituted by this lane. It is the canonical normalized ratification record so that a successor execution lane can cite a stable repository artifact instead of re-deriving or informally re-summarizing a decision the owner has already made. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout: a ratification is binding product/governance intent about WHICH option to pursue; a measurement (the head of main at M-8 execution time, O-1/O-2's live state on release/commercial-v1, the workflow corpus) is a falsifiable, timestamped claim about the hosted control plane or the git plane that any successor lane must re-derive rather than inherit.",
+
+  "owner_signoff": {
+    "signed": true,
+    "signing_party": "product owner (human, via directing text in this conversation)",
+    "what_is_signed": "RBD-1 = A_MAIN and RBD-2 = EXTEND (single branch, not pattern), each with the explicit acknowledgments transcribed verbatim below.",
+    "what_is_not_signed": "Nothing beyond RBD-1 and RBD-2. No OD (OD-1 through OD-5) is reopened. No hosted mutation, branch creation, protection mutation, workflow edit, Vercel mutation, or control-plane read is authorized by this signature."
+  },
+
+  "precedence_note": "This record is canonical for owner intent on RBD-1 and RBD-2 ONLY. It does NOT override the effective DAG authority (v1.0.0 + v1.0.1 amendment), which remains the source of the DERIVED nodes, edges, invariants, MEASURED_PRESTATE, the falsification sweep, RELEASE_BRANCH_CREATION_ACT (M-8), RELEASE_BRANCH_PROTECTION_GAP (M-9), and RELEASE_CHECK_PRODUCIBILITY_GAP. Where this record and the effective DAG authority could be read to conflict, the effective authority's derivations control the FACTS and MECHANISM; this record controls only WHICH branch of an owner-gated choice is pursued. A ratification does not relax a machine gate, a fail-closed rule, an invariant, or PR201's own semantics -- none of which this record touches.",
+
+  "reopening_rule": "THIS IS NOT A NEW ADJUDICATION AND NOT A NEW RBD. Do NOT reopen or re-derive DAG_NODES, DAG_EDGES, DAG_INVARIANTS, OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE, DERIVED_ORDERING_DEPARTURES, or ACT_IDENTITY_REQUIREMENTS. Do NOT treat RBD-1 = A_MAIN as authorization to execute M-8, and do NOT treat RBD-2 = EXTEND as authorization to execute M-9 or as a claim that O-2 is now satisfiable on release/commercial-v1. Absence of a hosted mutation following this record is not a contradiction -- none is authorized by it. A conflict between this record and the effective DAG authority that neither resolves fails closed (STOP_FOR_AUTHORITY_CONFLICT); it is not silently resolved in either direction by a successor lane.",
+
+  "why_this_record_exists": {
+    "problem": "v1.0.0's OWNER_DECISION_REQUIRED surfaced RBD-1 (the exact source ref for release/commercial-v1) and RBD-2 (whether O-1's scope extends to release/commercial-v1) with measured consequences and zero recommendation, and v1.0.1 added a fourth measured consequence to RBD-2's EXTEND option (it satisfies O-1 only, not O-2) plus the new RELEASE_CHECK_PRODUCIBILITY_GAP finding. Both questions were left unanswered through two authoring lanes and one bounded recertification, exactly as required.",
+    "what_changed": "Before this record, RBD-1 and RBD-2 were open questions with candidate options and no binding answer, and DN-7 (M-8) and DN-10 (M-9) were both blocked on them. After this record, each has an owner-selected disposition. No hosted state, no repository file under docs/ops/release/, and no execution authority changes as a result.",
+    "owner_choice_summary": "RBD-1: create release/commercial-v1 from the moving HEAD of main, re-derived immediately before M-8, not from a frozen SHA. RBD-2: extend O-1 to release/commercial-v1 specifically, as a single named branch, NOT by pattern (release/**)."
+  },
+
+  "definitional_intent": {
+    "RATIFIED_A_MAIN": "The owner has selected, from RBD-1's three enumerated candidates, the first: SOURCE = main. The owner's own acknowledgments (the release branch starts at the SHA production currently serves; integration/commercial-v1 is 992 commits ahead; no promotion path integration -> release is currently authored; this decision does not authorize M-8) match, verbatim in substance, the measured_consequences v1.0.0 already recorded against this exact option -- the owner is selecting among measured consequences, not asserting new ones.",
+    "RATIFIED_EXTEND": "The owner has selected, from RBD-2's three enumerated candidates, the first: EXTEND O-1 to release/commercial-v1. The owner explicitly and separately rejects the third candidate (EXTEND O-1 by PATTERN, release/**), which v1.0.0 recorded as broadening the ratified control beyond the single branch OD-1 named. The owner's acknowledgments (EXTEND covers O-1 only; O-2 remains unsatisfiable; 1/8 PR and 0/8 push; RELEASE_CHECK_PRODUCIBILITY_GAP requires a separate future authority; this decision does not authorize M-9) match, verbatim in substance, v1.0.1's fourth added consequence and RELEASE_CHECK_PRODUCIBILITY_GAP's own text."
+  },
+
+  "ratifications": [
+    {
+      "id": "RBD-1",
+      "domain": "RELEASE_BRANCH_SOURCE_REF",
+      "authority_recommendation": "NONE. v1.0.0 OWNER_DECISION_REQUIRED.decisions[0] states explicitly: 'No clause of the effective package prefers either.'",
+      "technical_recommendation": "NONE OFFERED by this lane or by v1.0.0's authoring lane. This record transcribes the owner's selection; it does not weigh the three options or argue for the one chosen.",
+      "owner_selected_decision": "release/commercial-v1 shall be created from the HEAD of main, RE-DERIVED IMMEDIATELY BEFORE M-8. The owner acknowledges: the release branch starts from the SHA production currently serves; integration/commercial-v1 is currently 992 commits ahead; no promotion path integration -> release currently exists in this authority chain; this decision does NOT authorize execution of M-8.",
+      "disposition": "RATIFIED_A_MAIN",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The option ratified is v1.0.0 OWNER_DECISION_REQUIRED.decisions[0].options_with_measured_consequences[0] ('SOURCE = main, at its head re-derived at execution time'), whose three measured consequences the owner's acknowledgments restate in substance: the release branch starts at exactly the commit production currently serves (v1.0.1 CM-2/CM-3 and GP-2); it would be 992 commits BEHIND integration/commercial-v1 (GP-5), so every subsequent release requires a promotion path from integration to release that no artifact in this chain has authored (UD-5); and main carries one of the eight governed checks on its head, the same posture production already has.",
+      "source_ref_contract": {
+        "SOURCE_KIND": "MOVING_REF",
+        "SOURCE_REF": "refs/heads/main",
+        "rule": "The exact source SHA MUST NOT be frozen now, by this record or by any artifact that cites it. M-8 must re-derive origin/main immediately before the branch-creation act, exactly as RELEASE_BRANCH_CREATION_ACT.exact_source_ref and .prestate_to_capture already require of ANY RBD-1 selection.",
+        "stale_prestate_rule": "If the measured head of origin/main at M-8's confirmation-immediately-before-mutation moment differs from the head captured at M-8's confirmation, M-8 MUST NOT proceed on the stale value. The act closes as ABANDONED (per RELEASE_BRANCH_CREATION_ACT.fail_closed_stale_prestate_rule, not FAILED) and is RE-PRESTATED and RE-CONFIRMED against the newly measured head before any retry.",
+        "what_this_ratification_does_not_do": "Reinterpret RATIFIED_A_MAIN as permission to create the branch. The disposition names the SOURCE; it does not discharge M-8's prestate, confirmation, verification, or rollback, all of which remain separate and mandatory."
+      },
+      "execution_not_authorized_by_this_ratification": "Creating release/commercial-v1, or any other hosted mutation, remains a SEPARATE governed act (RELEASE_BRANCH_CREATION_ACT / M-8, DN-7), requiring its own prestate capture (including a fresh re-derivation of origin/main's head), explicit confirmation immediately before execution, verification, and the conditional-delete rollback rule already authored in v1.0.0. This ratification supplies the source ref RBD-1 required; it performs none of M-8's own required elements."
+    },
+    {
+      "id": "RBD-2",
+      "domain": "O1_SCOPE_EXTENSION_TO_RELEASE_BRANCH",
+      "authority_recommendation": "NONE BINDING on the extension itself. v1.0.0 OWNER_DECISION_REQUIRED.decisions[1] records the authority's OWN transferable reasoning (FUTURE_MUTATIONS M-3's why_main_is_included, applied to release/commercial-v1 after M-7) as context, explicitly labelled NOT a recommendation and NOT a claim that O-1 already covers the branch.",
+      "technical_recommendation": "NONE OFFERED.",
+      "owner_selected_decision": "O-1 is extended specifically to refs/heads/release/commercial-v1. It is NOT extended to the pattern release/**. The owner acknowledges: EXTEND covers O-1 / existence protection only; EXTEND does NOT make O-2 satisfiable; release/commercial-v1 currently produces 1/8 governed checks on PR and 0/8 on push; closing RELEASE_CHECK_PRODUCIBILITY_GAP requires a separate future authority permitting changes under .github/workflows/**; this decision does NOT authorize execution of M-9.",
+      "disposition": "RATIFIED_EXTEND",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The option ratified is v1.0.0 OWNER_DECISION_REQUIRED.decisions[1].options_with_measured_consequences[0] ('EXTEND O-1 to release/commercial-v1'), AS AMENDED by v1.0.1 NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION.corrections_applied_to_dependent_text[2], which adds the fourth measured consequence the owner's own acknowledgment restates verbatim in substance: 'EXTEND satisfies O-1 (EXISTENCE: no direct/force push) ONLY. It does NOT make O-2 (REQUIRED CHECKS) satisfiable on release/commercial-v1... regardless of whether O-1 is extended to it.' The declined third option is v1.0.0's 'EXTEND O-1 by PATTERN (release/**) rather than by branch', whose own recorded consequence ('broadens a ratified control beyond the single branch OD-1 named, which is a larger extension than the question asks') the owner's explicit single-branch selection avoids.",
+      "pattern_extension_prohibition": {
+        "rule": "This ratification MUST NOT be translated, by any successor artifact, into release/*, release/**, 'all release branches', 'future release namespace', or any equivalent pattern. The scope is EXACTLY refs/heads/release/commercial-v1, one named branch.",
+        "why_this_is_load_bearing": "v1.0.0 itself recorded the pattern option's prestate hazard (a release/** ruleset would make ANY future release branch protected on creation, including ones created by another party) as a reason the pattern option is a LARGER extension than the question asked. The owner's selection deliberately avoids that hazard; a successor that silently widens the scope to a pattern would reintroduce it under cover of this ratification."
+      },
+      "what_is_NOT_in_question": "O-1 through O-4's CONTENT, per v1.0.0's own what_is_NOT_in_question field for RBD-2, unaltered here. The question was scope, not content, and remains answered only as to scope.",
+      "execution_not_authorized_by_this_ratification": "Creating GitHub branch protection or a ruleset on release/commercial-v1, or any other hosted mutation, remains a SEPARATE governed act (RELEASE_BRANCH_PROTECTION_GAP / M-9, DN-10), requiring its own prestate capture (which cannot be captured before DN-7/M-8 completes), confirmation, verification, and rollback. This ratification supplies the scope decision M-9 required; it performs none of M-9's own required elements, and M-9 additionally cannot execute at all until DN-7 (M-8) has completed, per DN-10's existing prerequisites."
+    }
+  ],
+
+  "RELEASE_BRANCH_PROTECTION_GAP_DISPOSITION": {
+    "rule": "RBD-2 = RATIFIED_EXTEND resolves v1.0.0's RELEASE_BRANCH_PROTECTION_GAP.conditionality: M-9 (DN-10) now EXISTS as a required node, no longer conditional on an undecided RBD-2. It remains UNEXECUTED and its own prestate, confirmation, verification and rollback are all still required in full.",
+    "what_this_does_not_resolve": "Whether release/commercial-v1 itself exists. M-9's prestate (RELEASE_BRANCH_CREATION_ACT dependency, DN-7 -> DN-10 in DAG_EDGES) cannot be captured until M-8 has created the branch, so RBD-2's resolution does not advance the DAG's critical path on its own -- DN-7 (M-8, gated on RBD-1, now also resolved) remains the next act in sequence, not this record."
+  },
+
+  "RELEASE_CHECK_PRODUCIBILITY_GAP_STATUS": {
+    "rule": "UNCHANGED and STILL OPEN after this ratification. Neither RBD-1 nor RBD-2's resolution touches it, exactly as v1.0.1's RELEASE_CHECK_PRODUCIBILITY_GAP.interaction_with_RBD-2 already stated: 'Independent of RBD-2's answer... O-2's producibility numbers on release/commercial-v1 (1/8 PR-evaluated, 0/8 push-evaluated) are UNCHANGED.'",
+    "the_two_numbers_preserved_verbatim": "PR -> release/commercial-v1 = 1/8 (via ci.yml only). push -> release/commercial-v1 = 0/8. Both remain TRUE after RBD-2 = EXTEND, and this record makes no claim that either has changed.",
+    "what_must_not_be_implied": "PROTECTED (O-1, existence) does not mean CHECK-PRODUCIBLE (O-2, required checks). This record does not imply the two are equivalent, and does not imply RBD-2 = EXTEND closes the OD-4 bar (O-1 through O-4 together) in full on release/commercial-v1. O-2 remains unsatisfiable on that branch until a separate, not-yet-authored workflow-corpus authority closes it.",
+    "EAD-5_STATUS": "STILL NONE EXISTS. v1.0.1's EAD-5 ('NONE EXISTS. Closing RELEASE_CHECK_PRODUCIBILITY_GAP requires editing .github/workflows/**, which is forbidden to this artifact and to its parent identically') is unchanged by this record. No workflow-corpus change, and no authority permitting one, is authorized, designed, or implied here."
+  },
+
+  "HPO_G08_P1_OPEN_OBSERVATION": {
+    "rule": "Preserved as an explicit UNRESOLVED observation. This owner record does NOT reconcile it and does not attempt to.",
+    "the_conflict": {
+      "locus_of_HPO_G_08": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json, the HPO governance-binding array, entry id HPO-G-08: 'Production requires backup and restore evidence, observability, security and legal signoff, and a normal integration-to-default-branch lineage,' materialized_by stage PRODUCTION_READY, gates D1, D2, D3, D4, D5, P7, P8, P1.",
+      "locus_of_P1": "The SAME file, CANONICAL_STAGES.stages[5] (stage PRODUCTION_READY, ordinal 6).exact_sha_evidence_identity: 'P1 requires a reviewed pull request from the integration branch to the default branch, with CI green on the EXACT SHA and a release tag on that SHA. A production authorization that cannot name the SHA it authorizes is void.' The same stage's own hpo_g_binding field independently restates: 'production requires... a normal integration-to-default-branch lineage.'",
+      "the_conflict_itself": "OD-1 = Option D and RBD-1 = A_MAIN together mean the ratified production lineage terminates at release/commercial-v1, sourced from main -- NOT at 'the default branch' via an integration-to-default-branch pull request. P1 and HPO-G-08 were both authored before Option D existed as a candidate (the same root cause v1.0.0's C-4 contradiction and DEP-1's departure already name for M-4/EXECUTION_ORDERING) and still read, unamended, as requiring the older lineage shape."
+    },
+    "this_record_does_not_reconcile_it": "Whether P1 and HPO-G-08 are satisfied by the release/commercial-v1 lineage OD-1/RBD-1 ratify, whether they must be amended to match it, or whether some other reconciliation applies, is NOT decided here. This record is scoped to RBD-1 and RBD-2 only.",
+    "routing": "Route to a future governed authority, under STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json's own amendment discipline, BEFORE any lane relies on P1 or HPO-G-08 to declare stage PRODUCTION_READY. A PRODUCTION_READY declaration citing P1 against the release/commercial-v1 lineage without that reconciliation would be citing a gate this record has shown, not resolved, to conflict with the ratified branch model."
+  },
+
+  "UD5_PROMOTION_PATH_STATUS": {
+    "rule": "Preserved from v1.0.0 UNKNOWNS_THIS_LANE.unknowns[4] (UD-5), now LOAD-BEARING rather than merely one of two conditional futures, because RBD-1 = A_MAIN selects the specific branch of UD-5.why_it_matters that requires it for the FIRST release, not only for subsequent ones.",
+    "v1.0.0s_own_text": "'Under RBD-1 option one (source = main), the release branch begins 992 commits behind integration and a promotion path is required before the first release.' RBD-1 = A_MAIN is exactly option one.",
+    "what_remains_true": "No artifact in this chain authors a promotion path from integration/commercial-v1 to release/commercial-v1, and OD-1 did not address one. This record does NOT design one.",
+    "what_must_not_be_inferred": "No specific promotion mechanism is inferred, implied, recommended or authorized by this record, INCLUDING but not limited to: a merge, a cherry-pick, a fast-forward, a pull-request-based promotion, or a tag promotion. Any of those would be a silent semantic choice of exactly the class RBD-1 and RBD-2 themselves were refused to this lane and to v1.0.0's authoring lane alike.",
+    "consequence": "A promotion-path authority is a NEW, separate authoring gap this record surfaces as now-urgent (load-bearing for the FIRST release under the ratified source) but does not open. It is not a node of the effective DAG and this record does not add one."
+  },
+
+  "PR214_INTERACTION": {
+    "rule": "PR #214 (branch codex/cv1-infra-control-plane-read-authority-r1, head commit feadb429afadfc0689c9137ba3fa97a93b9a83cd) is NOT modified by this lane. This record is scoped to authoring a new file under docs/ops/owner-ratifications/ only.",
+    "measured_fact": "PR #214's own authority file (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json, as committed in feadb429) pins AS_OF_PARENT_HEAD = 2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61 and AS_OF_PARENT_TREE = 65ea2a54a2115994095edc428ebe951f012a9b8a -- verified by `git show origin/codex/cv1-infra-control-plane-read-authority-r1:docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json` immediately before authoring this record. That is EXACTLY the PR #211 head this ratification amends past: PR #214 was derived from the tip of PR #211's branch as it stood BEFORE this owner-ratification commit exists.",
+    "no_automatic_invalidation": "This record does NOT invalidate PR #214's substantive findings. PR #214's scope (deriving the minimum read-only operation set for DN-1, DN-2 and DN-3, closing EAD-4) does not depend on RBD-1's or RBD-2's answer: DN-1/DN-2/DN-3 are prerequisites of virtually every downstream execution node regardless of which source ref or scope-extension the owner selects. Nothing in RBD-1 or RBD-2's content contradicts anything PR #214 measured about the Vercel or GitHub read surface.",
+    "reconciliation_still_required": "Notwithstanding the above, NO SILENT CARRY-FORWARD is permitted. Before any final certification of PR #214 is relied upon for execution sequencing, an EXPLICIT reconciliation analysis must be performed and recorded, deciding whether RBD-1/RBD-2's ratification alters any premise PR #214's read-authority derivation assumed -- in particular whether PR #214's own AS_OF_PARENT_HEAD pin needs re-basing to this record's own candidate_sha, and whether any of its nine declared reads implicitly assumed an unresolved RBD-1/RBD-2 state that is no longer unresolved.",
+    "what_this_record_does_not_do": "Perform that reconciliation analysis itself. It names the requirement and the exact measured fact (the pinned SHA) a reconciliation lane needs to start from, and stops there."
+  },
+
+  "EXECUTION_AUTHORITY_BOUNDARY": {
+    "rule": "This owner record authorizes NO hosted act, NO workflow edit, and NO control-plane read. It resolves owner decisions only.",
+    "explicit_non_authorizations": [
+      "NO branch is created. release/commercial-v1 is a ratified SOURCE and NAME, not a created branch.",
+      "NO M-8 (DN-7) execution. RBD-1's resolution supplies the source ref; it does not capture prestate, confirm, verify, or roll back.",
+      "NO M-9 (DN-10) execution. RBD-2's resolution supplies the scope; it does not capture prestate, confirm, verify, or roll back, and M-9 cannot execute before M-8 in any case.",
+      "NO GitHub branch protection rule or ruleset is created, edited, or deleted.",
+      "NO GitHub required-check configuration is changed.",
+      "NO file under .github/workflows/** is edited, in any respect, including toward closing RELEASE_CHECK_PRODUCIBILITY_GAP.",
+      "NO Vercel project setting, Git integration setting, or Ignored Build Step is changed.",
+      "NO Vercel production branch setting is changed, and no production-branch retarget occurs.",
+      "NO deployment of any kind, in any environment, is created, triggered, promoted, or redeployed.",
+      "NO environment variable, in any environment, is created, edited, deleted, or read for its value.",
+      "NO alias or custom domain is created, assigned, changed, or removed.",
+      "NO Supabase configuration is contacted or mutated in any way.",
+      "NO authenticated read of the Vercel or GitHub control plane is performed. This record cites only already-tracked repository files and already-fetched git-plane refs.",
+      "NO modification to any file under docs/ops/release/ -- the DAG authority v1.0.0 and its v1.0.1 amendment, and both companion manifests, remain byte-identical to the candidate.",
+      "NO modification to PR #214 or any file on its branch.",
+      "NO promotion path from integration/commercial-v1 to release/commercial-v1 is designed, inferred, or authorized (UD-5 remains open).",
+      "NO reconciliation of the P1 / HPO-G-08 lineage conflict is performed (HPO_G08_P1_OPEN_OBSERVATION remains open).",
+      "NO new OD is introduced, and no OD-1..OD-5 content is reopened, reinterpreted, or substituted.",
+      "NO new ODS or W2 lineage identifier is allocated, reserved, or implied.",
+      "NO execution lane is derived or authorized by this record -- independent bounded certification is explicitly named as the NEXT step."
+    ]
+  },
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 2,
+    "expected_id_set": ["RBD-1", "RBD-2"],
+    "expected_disposition_set": ["RATIFIED_A_MAIN", "RATIFIED_EXTEND"],
+    "expected_effective_package_file_count": 4,
+    "checks": [
+      "ratifications.length == 2",
+      "every id in ratifications is unique and equals expected_id_set exactly",
+      "every ratification carries all of id, domain, authority_recommendation, technical_recommendation, owner_selected_decision, disposition, status, repository_binding, execution_not_authorized_by_this_ratification",
+      "every ratification.status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "the two disposition values are exactly expected_disposition_set, one per ratification, in order",
+      "no ratification statement authorizes M-8 execution, M-9 execution, a GitHub setting change, a workflow-file edit, a Vercel setting change, a deployment, an env mutation, or a control-plane read",
+      "RBD-1.source_ref_contract.SOURCE_KIND == 'MOVING_REF' and no fixed SHA appears anywhere in RBD-1's ratification as the source commit for M-8",
+      "RBD-2.pattern_extension_prohibition is present and its rule field names release/* and release/** explicitly as prohibited translations",
+      "RELEASE_CHECK_PRODUCIBILITY_GAP_STATUS.the_two_numbers_preserved_verbatim states 1/8 (PR) and 0/8 (push), unchanged from v1.0.1",
+      "HPO_G08_P1_OPEN_OBSERVATION.this_record_does_not_reconcile_it is present and unambiguous",
+      "UD5_PROMOTION_PATH_STATUS.what_must_not_be_inferred enumerates at least four candidate mechanisms and authorizes none",
+      "PR214_INTERACTION.reconciliation_still_required is present and does not waive the requirement",
+      "CANDIDATE_BINDING.effective_package.length == 4, matching expected_effective_package_file_count",
+      "CANDIDATE_BINDING.candidate_sha == '2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61'",
+      "companion_authority and its one companion_authority_amendments entry name paths that exist, unmodified, in the same commit as CANDIDATE_BINDING.candidate_sha",
+      "re-deriving each effective_package[].blob_sha via `git ls-tree` at CANDIDATE_BINDING.candidate_sha reproduces the recorded value exactly, or the consumer STOPs per STOP_RATIFICATION_BINDING_MISMATCH",
+      "zero secret, token, credential or connection-string material appears anywhere in this file"
+    ]
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This record binds two owner decisions to a specific candidate and asserts they were transcribed rather than authored. Both claims deserve independent verification before any execution lane treats them as settled, and this record additionally surfaces two new open items (HPO-G-08/P1, PR #214 reconciliation) whose framing itself should be checked rather than trusted on this lane's word.",
+    "verification_criteria_for_the_next_gate": [
+      "Confirm this record's two ratifications match the human selections exactly -- no option, scope, or acknowledgment was altered, softened, or extended beyond what was supplied.",
+      "Confirm no NEW decision was introduced under the guise of transcription -- specifically that the MOVING_REF / re-derive-immediately-before-M-8 contract is a restatement of RELEASE_BRANCH_CREATION_ACT's ALREADY-existing requirement, not a new constraint this record invents.",
+      "Confirm RBD-2's pattern-extension prohibition is airtight: that nothing elsewhere in this file, read charitably or uncharitably, could be cited as extending O-1 to release/** or any pattern.",
+      "Confirm RELEASE_CHECK_PRODUCIBILITY_GAP_STATUS makes no claim that RBD-2 = EXTEND closes O-2, directly or by omission.",
+      "Confirm HPO_G08_P1_OPEN_OBSERVATION's two cited loci (HPO-G-08 and P1's exact_sha_evidence_identity) resolve to existing keys in docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json at its current committed content, and that the conflict described is real rather than manufactured.",
+      "Confirm UD5_PROMOTION_PATH_STATUS names no specific promotion mechanism, directly or by suggestive omission.",
+      "Confirm PR214_INTERACTION's measured_fact (the exact AS_OF_PARENT_HEAD pin) is independently re-derivable from PR #214's own committed authority file, and that PR #214 itself was not modified by this lane.",
+      "Confirm the CANDIDATE_BINDING blob hashes are correct by independent `git ls-tree` re-derivation at the candidate SHA.",
+      "Confirm no hosted mutation, no workflow-file edit, and no authenticated control-plane read of any kind was performed by this lane.",
+      "Confirm the companion_certifications_consumed provenance caveat is honest -- that no materialized IC artifact for either reported certification actually exists in the tree."
+    ]
+  },
+
+  "final_state": "RBD1_RBD2_OWNER_RATIFICATION_RECORDED__EXECUTION_NOT_AUTHORIZED",
+
+  "next_gate": "Independent bounded certification of this owner record against the ten criteria above, plus an explicit reconciliation check for PR #214 against this new PR #211 head (2d25b65c, now superseded within PR #211's own branch by this ratification's commit). Only after BOTH pass may execution sequencing continue -- meaning: M-8 (DN-7) may be prestated, confirmed and executed under RBD-1's source-ref contract; M-9 (DN-10) may follow once M-8 completes, under RBD-2's single-branch scope; and RELEASE_CHECK_PRODUCIBILITY_GAP, HPO_G08_P1_OPEN_OBSERVATION and UD5_PROMOTION_PATH_STATUS each remain open items requiring their own separate, not-yet-opened authoring lanes before the DAG can reach a fully-executable state."
+}

@@ -1,0 +1,983 @@
+{
+ "package_id": "CV1_INFRA_EXECUTION_DAG_AUTHORITY",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0",
+ "authority_class": "EXECUTION_DAG_DERIVATION_NOT_EXECUTION_AUTHORITY",
+ "document_class": "AUTHORITY_AUTHORING_ONLY__NO_EXECUTION__NO_BRANCH_CREATION__NO_PROTECTION_MUTATION__NO_VERCEL_SETTING_MUTATION__NO_ENVIRONMENT_CHANGE__NO_DEPLOYMENT__NO_VISIBILITY_MUTATION__NO_ALERT_CLOSURE__NO_OWNER_DECISION_SUBSTITUTION",
+ "append_only": true,
+ "mission_id": "CV1-INFRA-EXECUTION-DAG-AUTHORITY-R1",
+ "lane": "CV1-INFRA-EXECUTION-DAG-AUTHORITY-R1",
+ "role": "Derive the governed Commercial V1 infrastructure execution DAG without performing any node.",
+ "mode": "AUTHORITY_AUTHORING_ONLY",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json",
+ "AS_OF_BRANCH": "codex/cv1-infra-execution-dag-authority-r1",
+ "AS_OF_PARENT_HEAD": "8969553209857eb4a42959789446e05705a1d95c",
+ "AS_OF_PARENT_TREE": "c739216993938b10c81f42a8f51225c908184935",
+ "AS_OF_BASE_BRANCH": "codex/cv1-infra-release-control-authority-r1",
+ "as_of_measurement_note": "Every hosted and control-plane value in this artifact is an OBSERVATION MADE ON 2026-09-22 against the parent HEAD named above, never a standing fact. Git-plane values were re-derived in this lane with git ls-remote, git ls-tree, git merge-base and git rev-list at authoring time. Vercel-plane and GitHub-settings-plane values are NOT re-measured here at all: this lane performed no authenticated control-plane read, and every such value it needed is recorded as an UNKNOWN or as a node of the DAG rather than inherited from a predecessor's measurement. NODE_0_STALE_STATE_HANDLING governs all of it.",
+
+ "NAMING_DERIVATION": {
+  "artifact_name_basis": "Named for what it derives, the Commercial V1 infrastructure EXECUTION DAG, and versioned 1.0.0 because it is the first artifact in this lineage to state node and edge structure rather than adjudicate controls.",
+  "directory_basis": "docs/ops/release/**, the canonical precedent directory its entire effective package already occupies (CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json and its two amendments, plus their three companion manifests). No new directory is introduced.",
+  "why_not_an_amendment_to_the_parent": "The parent chain v1.0.0 + v1.0.1 + v1.0.2 is byte-frozen and bound by CANDIDATE_BINDING to the owner ratification. Amending it would break the six blob pins the owner's selections are bound to and would trigger STOP_RATIFICATION_BINDING_MISMATCH on the ratification record itself. This artifact is therefore a SUCCESSOR that CONSUMES the frozen package and adds structure, touching none of its bytes.",
+  "identifier_namespace_discipline": "DAG nodes use a NEW DN-* namespace. The two newly derived mutations extend the parent's FUTURE_MUTATIONS namespace as M-8 and M-9, on the exact precedent by which v1.0.2 RETRY_IDENTITY_CONTRACT extended v1.0.1's AIC-1..AIC-7 namespace with AIC-8 and AIC-9 without editing v1.0.1. Newly surfaced owner decisions use a NEW RBD-* namespace and DELIBERATELY DO NOT allocate OD-6 or any further number in the PR #204 ratification namespace, because that namespace belongs to the owner ratification record and not to this lane. No ODS or W2 identifier or lineage version is allocated, requested or implied."
+ },
+
+ "PURPOSE": {
+  "what_this_artifact_is": "The dependency structure of the future acts that the ratified owner set (OD-1 through OD-5) implies, derived node by node from the effective authority package and from measurements taken in this lane.",
+  "what_this_artifact_is_not": "It is not an execution lane, not a grant, and not a schedule. Deriving that an act belongs at a position in this DAG does not authorize that act. Every hosted mutation named here still requires its own separately authorized execution lane, its own prestate capture, its own human confirmation immediately before mutation, its own verification and its own rollback, exactly as the parent's FUTURE_MUTATIONS rule and the parent's adjudications P and Q already require, and which this artifact neither relaxes nor shortcuts.",
+  "why_a_DAG_and_not_a_list": "The parent's EXECUTION_ORDERING is a TOTAL order (steps 0 through 10). A total order over-constrains: it implies that step 9 waits on step 8 even where no dependency exists, it cannot express that a node is a NO-OP, and it cannot express that a node runs on an independent track. A DAG states exactly the edges that are load-bearing, which is what a certifier can actually falsify."
+ },
+
+ "EFFECTIVE_PACKAGE_CONSUMED": {
+  "rule": "This lane consumes the frozen package below and treats it as controlling. Each blob hash was RE-DERIVED in this lane, not copied from the ratification record, and each matched. CANDIDATE_BINDING therefore HOLDS and STOP_RATIFICATION_BINDING_MISMATCH did NOT fire.",
+  "re_derivation_method": "git ls-tree -r 8969553209857eb4a42959789446e05705a1d95c -- <the eight paths>, output compared field by field against CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json CANDIDATE_BINDING.effective_package (six paths) and against CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json CANDIDATE_BINDING.owner_ratification_parent_file (the seventh).",
+  "authority_package": [
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json", "blob_sha": "f3236a1a26e2d868e14590c72f4a7752ffba801c", "re_derived": "MATCH"},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_v1.0.0.json", "blob_sha": "d92c6e7a4b1e83e1c345e3dec45d606a78c202c7", "re_derived": "MATCH"},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json", "blob_sha": "65af13040b440987d3d08b1fafc295e270dc6f38", "re_derived": "MATCH"},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob_sha": "a3bac1cfb1dc38c53062817b9b6069d9a278bace", "re_derived": "MATCH"},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json", "blob_sha": "4192849f46c988afddf9fce548ec2db9d8df4be3", "re_derived": "MATCH"},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.2.json", "blob_sha": "ba3cde49496e4a80983a0c572846b5d2f680e838", "re_derived": "MATCH"}
+  ],
+  "owner_ratification_chain": [
+   {"path": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json", "blob_sha": "17c257b3b0b06b37601851ddf8fbc6aa4abdc6ae", "re_derived": "MATCH", "pinned_by": "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json CANDIDATE_BINDING.owner_ratification_parent_file"},
+   {"path": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json", "blob_sha": "4d99df8bd43263c17dda96b76f0321b789e8cb04", "re_derived": "MATCH", "pinned_by": "NOT pinned by any successor. It is the head of the ratification chain. Its blob hash is recorded here so a certifier of THIS artifact can pin what this lane actually read."}
+  ],
+  "candidate_commit_provenance": "The ratification records name authority-package candidate commit 42ed49a76f53518d451c06ca6d621d11654c4089 and ratification parent commit 22d8189847a65d40a19e51cbbfb45f0e7e042818. Both are ancestors of parent HEAD 89695532 in this branch's history. Per the ratification's own candidate_sha_re_derivation_note, a candidate SHA becoming an ancestor of a later commit does NOT itself trigger the STOP; only a blob-hash mismatch does, and none occurred."
+ },
+
+ "OWNER_SET_CONSUMED": {
+  "rule": "The five owner selections are CONSUMED AS SETTLED and are NOT re-adjudicated, re-weighed, softened, extended or reopened anywhere in this artifact. Where this artifact derives that a ratified selection has a consequence the ratification did not enumerate, it records that consequence as a DERIVED PREREQUISITE or as a NEW OWNER DECISION REQUIRED, never as a re-reading of the selection itself.",
+  "selections": [
+   {
+    "id": "OD-1",
+    "domain": "BRANCH_ROLE_MODEL",
+    "disposition": "RATIFIED_OPTION_D",
+    "as_consumed": "A dedicated release branch distinct from both integration/commercial-v1 and the development default branch, so the production lineage terminates at a branch whose only purpose is release. Owner-supplied proposed name: release/commercial-v1.",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json ratifications[0]. The ratified option text itself lives at docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json SUPERSEDED_PARENT_CLAUSES.clauses[4] (SPC-5)."
+   },
+   {
+    "id": "OD-2",
+    "domain": "REPOSITORY_VISIBILITY",
+    "disposition": "RATIFIED_REMAIN_PUBLIC_FOR_CURRENT_PHASE",
+    "as_consumed": "REMAIN PUBLIC for the current Commercial V1 phase, as a FINAL rather than deferred position, with four stated preconditions (PRECOND-1 through PRECOND-4) for any future move to private.",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json ratifications[0], which supersedes the parent record's RATIFIED_DEFERRED_PENDING_U3."
+   },
+   {
+    "id": "OD-3",
+    "domain": "AUTOMATIC_PREVIEW_DISPOSITION",
+    "disposition": "RATIFIED_L1",
+    "as_consumed": "L-1: configure an Ignored Build Step for integration/commercial-v1 specifically, leaving pull-request-triggered Previews intact; applied BEFORE the PR201 environment correction.",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json ratifications[2]. The ratified rung itself lives at docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json ADJUDICATIONS.L_if_narrowing_is_required.candidate_mutations_in_increasing_severity[1]."
+   },
+   {
+    "id": "OD-4",
+    "domain": "PROTECTED_LINE_BAR_RATIFICATION",
+    "disposition": "RATIFIED_ALL_FOUR_WITH_SEQUENCE_RIDER",
+    "as_consumed": "O-1 EXISTENCE, O-2 REQUIRED CHECKS, O-3 as amended by v1.0.1 SPC-4 (EXACT-SHA COVERAGE, distinguished from protection), and O-4 RE-MEASUREMENT AT DECLARATION TIME, all four together, plus the owner's sequencing rider.",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json ratifications[3]. The O-1/O-2/O-4 control text lives at docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json ADJUDICATIONS.O_controls_required_before_the_github_line_may_be_called_protected.controls."
+   },
+   {
+    "id": "OD-5",
+    "domain": "SECURITY_ALERT_ROUTING",
+    "disposition": "RATIFIED_ROUTING_ONLY_TO_PR206",
+    "as_consumed": "SSL-06 / SEC5 confirmed as the anchor, PR #206 confirmed as the governing venue, routing confirmed INDEPENDENT of OD-2 and explicitly NOT deferred behind it.",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json ratifications[4]."
+   }
+  ],
+  "what_the_ratifications_explicitly_did_not_authorize": "Every one of the five carries its own execution_not_authorized_by_this_ratification clause. Those clauses are carried forward in force. In particular OD-1 states that creating the release/commercial-v1 branch remains a SEPARATE governed act, which is the premise of RELEASE_BRANCH_CREATION_ACT below."
+ },
+
+ "MEASURED_PRESTATE_THIS_LANE": {
+  "rule": "Measured in THIS lane on 2026-09-22 at parent HEAD 89695532, by read-only operations only. Each entry names the operation, so a certifier can re-run it rather than trust it. Nothing here is inherited from a predecessor measurement.",
+  "plane_boundary": "Every measurement below is in the GIT plane or the REPOSITORY FILE plane. This lane made NO authenticated GitHub-settings read and NO Vercel control-plane read of any kind. That is why U-1, U-5 and U-6 appear as DAG nodes rather than as measurements.",
+  "git_plane": [
+   {"id": "GP-1", "measurement": "refs/heads/release/* on origin is ABSENT. No release/* head and no release/* tag exists.", "operation": "git ls-remote --heads origin 'refs/heads/release/*' and git ls-remote --tags origin 'refs/tags/release/*', both returning empty.", "why_it_matters": "It establishes that M-8 is genuinely a CREATION and not an overwrite, and it is M-8's measured prestate. If a future re-measurement finds the ref PRESENT, M-8's fail-closed branch fires rather than M-8 proceeding."},
+   {"id": "GP-2", "measurement": "refs/heads/main = 067e8c2f3ac9b5e843de3a35575182907b4365d4", "operation": "git ls-remote --heads origin refs/heads/main", "why_it_matters": "This is the SHA v1.0.1 CM-2/CM-3 recorded as the one the current production deployment was built from. Its continued equality with main's head is a freshness condition on every statement in PRODUCTION_BOUNDARY, not a standing fact."},
+   {"id": "GP-3", "measurement": "refs/heads/integration/commercial-v1 = 537487ac7b102d51f553fcb8f5cfe19614e113d8, tree 7228f833c57bfd37fe025546d939ecd46336159c", "operation": "git ls-remote --heads origin refs/heads/integration/commercial-v1 and git rev-parse 537487ac^{tree}", "why_it_matters": "It matches the parent's AS_OF_BASE and AS_OF_TREE exactly, so SEN-1 of the parent's companion manifest is SATISFIED at this authoring instant. That satisfaction is timestamped, not standing."},
+   {"id": "GP-4", "measurement": "refs/heads/feature/sprint-0-foundation = 0b1fd12685024593b5ba2dfc8015caac10ed4dc5", "operation": "git ls-remote --heads origin refs/heads/feature/sprint-0-foundation", "why_it_matters": "This is the branch the parent measured as the repository DEFAULT branch. Whether it is STILL the default branch is a GitHub-settings fact this lane did not read; see UNKNOWNS_THIS_LANE UD-2."},
+   {"id": "GP-5", "measurement": "main (067e8c2f) IS an ancestor of integration/commercial-v1 (537487ac). merge-base = 067e8c2f. integration is 992 commits AHEAD of main; main is 0 commits ahead of integration.", "operation": "git merge-base --is-ancestor, git merge-base, git rev-list --count in both directions.", "why_it_matters": "It is the load-bearing measurement for RBD-1. The two candidate source refs for release/commercial-v1 are not near-equivalents: choosing integration rather than main moves the release line 992 commits past what production currently serves, in one act."},
+   {"id": "GP-6", "measurement": "Trees differ: main^{tree} = 756ac8ca44ff3a6c02e822abcfe8264fd354eff1, integration^{tree} = 7228f833c57bfd37fe025546d939ecd46336159c.", "operation": "git rev-parse <sha>^{tree} for both.", "why_it_matters": "It forecloses the reading that the 992-commit gap is a history-only difference with an identical working tree. The content differs too."},
+   {"id": "GP-7", "measurement": "The remote origin of this worktree is https://github.com/lorenzozanello/uellix-antigravity.git. All three frozen artifacts of the chain declare repository = lorenzozanello/uellix-antigravity.", "operation": "git remote -v, and reading the repository field of the v1.0.0 authority, the v1.0.1 amendment and the parent ratification record.", "why_it_matters": "It CORROBORATES, in the git plane, the link.repo=lorenzozanello/uellix-antigravity that v1.0.1 CM-6 measured in the Vercel plane. The two planes agree that the Vercel project uellix-antigravity is linked to THIS repository, which is the premise every production-boundary statement in the chain rests on. Had they disagreed, the entire boundary analysis would have been about a different codebase. This is a cross-plane corroboration, not a substitute for DN-1's re-read of link.repo."}
+  ],
+  "workflow_file_plane": [
+   {"id": "WP-1", "measurement": "Nine workflow files exist under .github/workflows/. All eight of the required check names the parent's ADJUDICATIONS.D enumerates are present as job name values, across eight of the nine files. The ninth file, p1a-validation.yml, carries job name 'Validate P1A Architecture and Security', which is NOT one of the eight.", "operation": "Parse each .github/workflows/*.yml for its top-level name, its on: trigger keys, and its job-level name: values, then intersect the job names with ADJUDICATIONS.D.required_checks.", "why_it_matters": "O-2 requires the eight checks to be configurable as required BY EXACT NAME. This establishes that all eight names are producible by SOME trigger, which is a necessary but not sufficient condition for O-2."},
+   {"id": "WP-2", "measurement": "Exactly ONE of the nine workflows carries a push trigger: ci.yml, and its push trigger is scoped 'branches: [main]'. The other eight carry pull_request and workflow_dispatch only.", "operation": "Parse the on: block of each workflow file.", "why_it_matters": "It is the arithmetic that makes the OD-4 sequencing rider machine-verifiable rather than advisory. See OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE."},
+   {"id": "WP-3", "measurement": "A push to integration/commercial-v1 triggers ZERO workflows. A push to main triggers exactly ONE of the eight required checks ('Lint, typecheck, test, build'). A push to a newly created release/commercial-v1 would trigger ZERO workflows.", "operation": "Derived from WP-2 by evaluating each push trigger's branch filter against each ref name.", "why_it_matters": "It is independently corroborated inside the repository: golden-journey.yml carries a comment block titled WHY pull_request AND NOT push which states that a push to integration/commercial-v1 triggers zero workflows and that the only push trigger in the corpus is ci.yml scoped to main. The workflow author measured the same fact for the same reason. That corroboration is a repository comment, not an independent measurement, and does not replace WP-2."},
+   {"id": "WP-4", "measurement": "No workflow in the corpus carries a push trigger matching release/**, release/*, or release/commercial-v1.", "operation": "Parse every on:.push.branches list and evaluate against the proposed ref name.", "why_it_matters": "It means the branch OD-1 ratified as the terminus of the production lineage would, on creation, be the LEAST verified branch in the repository by the measure O-2 uses. This is a derived consequence of Option D that the effective authority could not have stated, because Option D was not yet the selection when it was authored."}
+  ],
+  "machine_gate_plane": [
+   {"id": "MG-1", "measurement": "ODS_PRESTATE=PASS with PRESTATE_BRANCH=PASS, PRESTATE_HEAD=PASS, PRESTATE_TREE=PASS, PRESTATE_CLEAN=PASS.", "operation": "pnpm ods:prestate -- --branch codex/cv1-infra-execution-dag-authority-r1 --head 8969553209857eb4a42959789446e05705a1d95c --tree c739216993938b10c81f42a8f51225c908184935 --clean"},
+   {"id": "MG-2", "measurement": "AUTHORITY_SEAL_VERIFY=PASS with ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS.", "operation": "pnpm authority:seal:verify"},
+   {"id": "MG-3", "measurement": "node_modules was ABSENT in this worktree at lane start and was installed with pnpm install --frozen-lockfile before any pnpm gate was run, so no gate result below is an infrastructure artifact of a missing dependency tree.", "operation": "Directory check, then pnpm install --frozen-lockfile --prefer-offline, exit code 0."}
+  ]
+ },
+
+ "NODE_0_STALE_STATE_HANDLING": {
+  "rule": "ABSOLUTE AND PRIOR TO EVERY OTHER NODE. Every hosted and control-plane fact on which an act in this DAG depends MUST be RE-MEASURED immediately before that act, by the lane performing it, under an authority permitting the necessary access. No act in this DAG may consume a measurement made by a predecessor lane, including a measurement made by this lane.",
+  "inherits": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json STALE_STATE_HANDLING, in full and unchanged. This block adds structure to it; it does not relax any part of it.",
+  "why_this_is_node_0_and_not_a_caveat": "A freshness obligation written as a caveat is satisfied by remembering it. Written as a node with edges, it is satisfied only by an artifact, and its absence is detectable by a certifier who looks for that artifact.",
+  "DN-0_scope": "DN-0 is not a single measurement. It is the requirement that the acting lane re-derive, for the specific act it is about to perform, every fact in the dependency closure of that act. The per-node re_measurement_required field of each DAG node names that closure for that node.",
+  "what_staleness_must_never_trigger": "A stale value is a STOP and a re-measurement. It is NEVER grounds to relax a control on the reasoning that the control was written against an older state. This restates the parent's own what_staleness_must_never_trigger clause because this artifact introduces new nodes that clause must also cover.",
+  "the_specific_trap_this_lane_measured": "The single most likely misreading of this DAG is that U-1 is already resolved because v1.0.1 resolved it. U1_EXACT_DEFINITION_AND_STATUS addresses that directly. A resolved UNKNOWN whose resolution is a hosted setting is not a closed node; it is a node whose measurement has a date."
+ },
+
+ "U1_EXACT_DEFINITION_AND_STATUS": {
+  "the_exact_effective_definition": {
+   "locus": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json UNKNOWNS.unknowns[0]",
+   "id": "U-1",
+   "unknown_as_defined": "The current Vercel Production Branch setting for project uellix-antigravity.",
+   "why_unmeasured_as_defined": "vercel project inspect returns General and Framework Settings only; the Git integration block is not exposed by the read-only CLI surface available to that lane.",
+   "what_was_measured_instead_as_defined": "BEHAVIOURAL evidence only: the most recent Production deployment was built from main's head, and an earlier one from the default branch's head, both by vercel[bot].",
+   "consequence_as_defined": "Whether a push to main TODAY would auto-deploy production is NOT established. It must be treated as POSSIBLE and therefore as requiring the production-boundary controls.",
+   "resolved_by_as_defined": "An owner-side reading of the project's Git settings, or an authority permitting an authenticated settings read.",
+   "citation_discipline": "The five fields above are a FAITHFUL RESTATEMENT of the parent's U-1 entry, cited by exact path. They are NOT offered as a byte-verbatim reproduction, because this lane did not perform a programmatic string comparison of its own prose against the source. A certifier verifying U-1's definition must read the cited path, not this restatement."
+  },
+  "blocking_scope_as_defined": {
+   "locus": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json FAIL_CLOSED_BEHAVIOR.branches[3] and EXECUTION_ORDERING.ordered_sequence[1], [4] and [5]",
+   "what_U1_blocks": "U-1 blocks M-4 and M-7. It is named a blocking precondition that does not itself require a mutation.",
+   "additional_coupling": "FUTURE_MUTATIONS M-4 carries a coupled_consequence_that_must_be_stated_at_confirmation naming U-1 directly: a Vercel project's production branch commonly follows the repository default branch, so changing the default branch could change what is deployed to www.uellix.com. FUTURE_MUTATIONS M-7 names U-1 in its prestate_to_capture and states that the capture is MANDATORY and blocking."
+  },
+  "STATUS_ADJUDICATION": {
+   "the_directing_premise_this_lane_received": "That the final ratification IC states U-1 remains OPEN and blocking.",
+   "what_the_repository_measures": "U-1 was RESOLVED by a successor measurement. docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json CORRECTED_MEASUREMENTS.corrections[5] records U-1 (the Vercel Production Branch setting) as its parent_statement and records the consequence that a push to main auto-deploys to public production at www.uellix.com, that the parent's hedge is replaced by a measured certainty, and that the blocking precondition U-1 placed on M-4 and M-7 is SATISFIED. The same amendment's UNCHANGED_AND_STILL_CONTROLLING.items[1] states that U-1 resolves to productionBranch=main.",
+   "adjudication": "BOTH ARE TRUE UNDER DIFFERENT READINGS, AND THE DISTINCTION IS LOAD-BEARING. U-1 is RESOLVED-AS-OF-MEASUREMENT (v1.0.1, productionBranch=main) and simultaneously OPEN-AS-OF-EXECUTION. It is open at execution time not because nobody measured it, but because what was measured is a mutable hosted setting and the controlling freshness rule forbids inheriting it.",
+   "the_authority_that_settles_it": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json FRESHNESS_CARRYOVER.what_this_record_freezes states that only the five owner selections are frozen and that everything else, naming U-1 through U-6 explicitly, remains exactly as mutable and exactly as re-measurement-obligated as the effective authority already required. The ratification therefore does NOT carry v1.0.1's U-1 resolution forward as a standing fact.",
+   "why_this_is_not_a_silent_reconciliation": "The programme's fail-closed rule forbids silently reconciling a conflict between authority levels. This is adjudicated rather than reconciled: the conversation-level premise (level 5 of the source-of-truth hierarchy) is recorded, the repository authority (level 1) is measured, and the result is stated as a distinction between two statuses rather than as one status overriding the other. Neither statement is discarded and neither is treated as an error.",
+   "the_operative_consequence": "IDENTICAL under either reading. DN-1 is a RE-MEASUREMENT and no later execution node may precede it. Had this lane instead concluded U-1 is closed, it would have deleted DN-1 and broken the DAG. Had it concluded U-1 was never measured, it would have mis-stated the prior art. The distinction changes what DN-1 is called, not whether it exists.",
+   "why_the_premise_matters_anyway": "A successor that reads only v1.0.1 CM-6 could conclude the U-1 node is discharged and proceed straight to M-7. This block exists so that conclusion is refused by name."
+  },
+  "DO_NOT_INFER_FROM_PREVIOUS_MEASUREMENTS": {
+   "rule": "DN-1 MUST NOT be satisfied by citing v1.0.1 CM-6, by citing productionBranch=main, by citing that www.uellix.com currently serves main's head, or by citing GP-2 of this artifact. Each of those is a previous measurement.",
+   "why": "The programme has measured repeatedly that a frozen status goes stale silently and that a true literal about the past can support a false conclusion about the present. A production-branch setting is mutable by parties this repository cannot see, which is the parent's own C-6 finding.",
+   "the_inversion_that_is_permitted": "A previous measurement may be used as a FALSIFICATION TARGET rather than as evidence. DN-1's own verification asserts that the freshly measured value either equals main, in which case v1.0.1's finding is corroborated for the present instant, or differs, in which case DN-1 fails closed and the production boundary is re-adjudicated. Corroborating a prior measurement with a fresh one is sound; substituting the prior one for the fresh one is not."
+  }
+ },
+
+ "U1_RESOLUTION_NODE": {
+  "node_id": "DN-1",
+  "name": "U1_PRODUCTION_BRANCH_REMEASUREMENT",
+  "class": "READ_ONLY_MEASUREMENT. No mutation of any kind. Not a grant of the access it requires.",
+  "target_named_exactly": "The Vercel project uellix-antigravity, and specifically its Git integration Production Branch setting.",
+  "the_minimum_read_only_measurement_required": {
+   "what_must_be_established": "The value of the Production Branch setting for project uellix-antigravity, whether automatic production deployment from Git is enabled for it, AND whether any deploy hook exists, as of the instant of measurement.",
+   "MIN-1_primary": "An authenticated read of the project's Git integration settings that returns the productionBranch field. The exact operation is NAMED IN THE PINNED SOURCE rather than recalled: docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json CORRECTED_MEASUREMENTS.corrections[5] (CM-6) records its own operation as GET /v9/projects/{id}, returning link.type, link.repo and link.productionBranch. That citation establishes both that a read-only path exists and what it was. It does NOT establish that the same endpoint version is still current, so DN-1 must re-verify the operation as well as the value: an endpoint that has been versioned away is an infrastructure failure of the measurement, not evidence about the setting.",
+   "MIN-1_the_three_fields_that_must_come_back_together": "link.repo, link.type and link.productionBranch, read in the SAME response. CM-6 recorded link.repo=lorenzozanello/uellix-antigravity, which this lane independently corroborated in the git plane: the remote origin of this worktree is https://github.com/lorenzozanello/uellix-antigravity.git, and all three artifacts of the frozen chain declare repository = lorenzozanello/uellix-antigravity. Reading productionBranch WITHOUT link.repo would leave open whether the measured setting governs THIS repository at all, which is the one reading under which the entire production-boundary analysis would be about a different codebase.",
+   "MIN-1_the_deploy_hook_limb": "CM-6 also recorded that there are ZERO deploy hooks. That limb MUST be re-measured, because a deploy hook is an independent path to a production deployment that does not pass through any branch push and is therefore invisible to the productionBranch setting entirely. A DN-1 that measures productionBranch and omits deploy hooks has measured one trigger and declared the surface known. The limb is carried explicitly because this lane observed that it is present in the source measurement and would have been silently dropped by a re-measurement written against U-1's definition alone.",
+   "MIN-1_scope_bound": "The read must be of PROJECT SETTINGS, not of deployments. A deployment-derived answer is behavioural evidence of what the setting WAS when that deployment was created, which is exactly the substitute the parent already recorded as insufficient in U-1's what_IS_measured_instead field.",
+   "MIN-2_corroboration_permitted_not_sufficient": "Re-reading the current production deployment and the SHA it serves is permitted as CORROBORATION and is independently required by the parent's STALE_STATE_HANDLING. It does NOT satisfy MIN-1. A deployment record answers what happened; the setting answers what will happen.",
+   "MIN-3_what_is_forbidden_as_a_substitute": ["Citing v1.0.1 CM-6 or CM-2 or CM-3.", "Citing that main is currently an ancestor of integration/commercial-v1.", "Citing that www.uellix.com answers 200 from main's head.", "Inferring the setting from the repository default branch, which is the precise coupling M-4's confirmation clause warns is COMMON but not guaranteed.", "Any answer sourced from this artifact's own MEASURED_PRESTATE_THIS_LANE."],
+   "cost_bound": "One authenticated settings read. It requires no mutation, no deployment, no environment change and no link step that writes local state. If the only available path to the field would require writing local state into a worktree, that is a DIFFERENT act with a different prestate and this node fails closed rather than performing it, exactly as the parent's U-4 entry records for the environment-configuration read."
+  },
+  "authority_gap_that_must_be_closed_first": {
+   "finding": "This lane holds NO authority permitting an authenticated Vercel control-plane read, and the parent's EXPLICIT_NON_AUTHORIZATIONS does not confer one.",
+   "consequence": "DN-1 is DERIVED here but is NOT EXECUTABLE under this artifact. Executing it requires either an owner-side reading of the project's Git settings, or a separate authority permitting an authenticated settings read. Both are exactly what the parent's U-1 resolved_by field already names.",
+   "why_this_is_recorded_rather_than_assumed_away": "A DAG whose first node is unexecutable under every authority currently in force is a DAG that cannot start. Stating that is more useful than implying the node is merely pending."
+  },
+  "verification": "Assert the measured value is recorded with its timestamp, its operation and its plane, and that it is stated as an observation rather than as a setting. Assert the measurement names the project uellix-antigravity explicitly rather than a project inferred from context.",
+  "fail_closed_branches": [
+   "The setting cannot be read read-only under the authority the acting lane holds -> STOP_U1_UNMEASURABLE. No downstream node proceeds. This is not a licence to proceed on v1.0.1's value.",
+   "The measured production branch differs from main -> STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED. The parent's PRODUCTION_BOUNDARY measured rationale, and v1.0.1's CM-6 consequence, were both written against productionBranch=main. A different value means the boundary was adjudicated against a state that no longer holds.",
+   "The measured production branch equals main but automatic production deployment from Git is found DISABLED -> the finding is recorded and M-7's prestate is updated, but no control is relaxed. A disabled toggle is a setting, and settings are what this node exists to stop trusting."
+  ],
+  "rollback": "NOT APPLICABLE. DN-1 mutates nothing. Recorded explicitly so no successor reads the absent field as an omission.",
+  "edges_out": "DN-1 is a prerequisite of DN-8 (M-3), DN-9 (M-1), DN-10 (M-9), DN-11 (M-7) and DN-12 (M-2), and transitively of everything downstream of those. See DAG_EDGES for the exact derivation of each edge."
+ },
+
+ "U6_REMEASUREMENT_REQUIREMENT": {
+  "rule": "U-6 MUST be re-measured under the BROADER definition the effective authority gives it, NOT under the narrower wording the ratification amendment reports.",
+  "the_broad_effective_definition": {
+   "locus": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json UNKNOWNS.unknowns[5]",
+   "unknown_as_defined": "Whether the separate Vercel project uellix-production-web has ANY Commercial V1 role.",
+   "why_unmeasured_as_defined": "Out of that lane's measurement scope; naming alone is not evidence of role.",
+   "consequence_as_defined": "No control there is written against it. A successor that finds it serves ANY Commercial V1 surface must re-open the production boundary adjudication.",
+   "the_fail_closed_binding": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json U6_FAIL_CLOSED_BINDING states that IF a future measurement establishes that another Vercel project serves an active Commercial V1 production surface, THEN STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED, and that no production-boundary execution derived from the ratification, including anything touching OD-1's release-branch model or OD-4's protected-line bar as applied to a production path, may proceed until the production boundary is re-adjudicated."
+  },
+  "THE_SCOPE_NARROWING_THIS_LANE_MEASURED": {
+   "finding": "The reported resolution is NARROWER than the unknown it claims to resolve.",
+   "the_narrow_wording": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json U6_FAIL_CLOSED_BINDING_STATUS.reported_measurement reports U6_RESOLVED_NO_SECOND_ACTIVE_PROJECT on the ground that uellix-antigravity is the sole active project serving current Commercial V1 CUSTOM DOMAINS.",
+   "the_gap": "ANY Commercial V1 ROLE is a strictly broader predicate than SERVING A CURRENT COMMERCIAL V1 CUSTOM DOMAIN. A project can hold a Commercial V1 role while serving no custom domain at all: by holding Commercial V1 environment variables or secrets, by being bound to a Commercial V1 Supabase project or any other Commercial V1 backing service, by serving a Commercial V1 surface on a vercel.app or preview domain rather than a custom one, by holding a Commercial V1 Git integration to this same repository, by being the target of a Commercial V1 alias that is not currently attached, or by being a dormant project whose configuration would make it a Commercial V1 surface the moment a domain were attached.",
+   "why_the_narrow_reading_is_not_merely_incomplete_but_unsafe": "The narrow predicate is evaluated against CURRENT custom domains, which is a snapshot of ATTACHMENT. Attachment is one of the cheapest and least-governed acts on the platform. A finding scoped to it can be falsified by a single alias change that no repository gate observes, which is the parent's C-6 finding applied to this specific unknown.",
+   "what_this_does_NOT_claim": "This lane does NOT claim that uellix-production-web has a Commercial V1 role. It performed no Vercel read at all. It claims only that the REPORTED measurement does not establish the ABSENCE the broad definition requires, and that the difference is material. This is the distinction between proving absence and proving harmlessness."
+  },
+  "DN-2_the_required_remeasurement": {
+   "node_id": "DN-2",
+   "name": "U6_BROAD_COMMERCIAL_V1_ROLE_REMEASUREMENT",
+   "class": "READ_ONLY_MEASUREMENT.",
+   "target_named_exactly": "The Vercel project uellix-production-web, named explicitly and not by inference from an inventory, together with every other project in the account.",
+   "the_predicate_that_must_be_evaluated": "For EACH project in the account other than uellix-antigravity, and for uellix-production-web by name whether or not an inventory returns it: does the project hold ANY Commercial V1 role?",
+   "enumeration_that_must_be_covered_not_only_custom_domains": ["Custom domains attached, production or otherwise.", "System and vercel.app domains that serve a Commercial V1 surface.", "Aliases assigned OR configured but not currently attached.", "Git integration to this repository, and to which branch.", "Environment variables in any environment whose NAME or TARGET indicates a Commercial V1 binding. Enumerating rows proves the ABSENCE of a binding by name; it never proves a PRESENT row is innocuous, because the target lives in the value.", "Any binding to a Commercial V1 Supabase project or other backing service.", "Deployments, ready or otherwise, built from this repository.", "Dormant or paused state, which does not retire a role."],
+   "why_each_limb_is_named": "A sweep by vocabulary catches what it was told to look for. The broad definition says ANY role, so the enumeration must be stated rather than left to the acting lane's judgement, or the same narrowing will recur under a different word.",
+   "verification": "Assert the measurement names uellix-production-web explicitly. Assert the finding states which of the limbs above were evaluated and which were not. A finding that evaluated fewer than all limbs is a PARTIAL measurement and is recorded as such; it does not discharge DN-2.",
+   "fail_closed_branches": [
+    "ANY limb establishes a Commercial V1 role for any second project -> STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED, per the ratification's U6_FAIL_CLOSED_BINDING. DN-11 (M-7), DN-10 (M-9) and DN-7 (M-8) are all blocked, because all three touch OD-1's release-branch model or a production path.",
+    "The measurement cannot be performed read-only under the authority the acting lane holds -> STOP_U6_UNMEASURABLE. The binding is NOT satisfied by inability to measure it.",
+    "A PARTIAL measurement finds no role among the limbs it evaluated -> the unevaluated limbs remain UNKNOWN and the STOP remains armed for them. Partial absence is not absence."
+   ],
+   "the_binding_is_not_retired_by_a_clean_result": "The ratification amendment's own U6_FAIL_CLOSED_BINDING_STATUS.effect states that a satisfied-today finding is not a standing exemption from re-checking tomorrow, and that the binding continues to govern EVERY future re-measurement. DN-2 therefore recurs before each production-boundary act rather than discharging once."
+  }
+ },
+
+ "DAG_NODES": {
+  "rule": "Each node names its class, its authority, its prerequisites, what must be re-measured before it, and its fail-closed branch. A node is DERIVED here; none is authorized here. Classes: READ_ONLY_MEASUREMENT performs no mutation. OWNER_DECISION requires a human selection and cannot be derived. HOSTED_MUTATION changes control-plane state and requires its own execution lane, prestate, confirmation, verification and rollback. NO_OP is derived to require no act. EXTERNAL_AUTHORITY is governed by an artifact outside this chain.",
+  "nodes": [
+   {
+    "id": "DN-0",
+    "name": "FRESHNESS_AND_BINDING_REBASELINE",
+    "class": "READ_ONLY_MEASUREMENT",
+    "act": "Re-run the freshness gate and re-derive the eight blob pins of EFFECTIVE_PACKAGE_CONSUMED, plus the integration head and tree, before any other node in this DAG.",
+    "authority": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json STALE_STATE_HANDLING and EXECUTION_ORDERING.ordered_sequence[0]; the ratification records' CANDIDATE_BINDING blocks.",
+    "prerequisites": [],
+    "re_measurement_required": "The eight blob hashes, the integration head and tree, and the branch and HEAD of the acting worktree.",
+    "verification": "ODS_PRESTATE=PASS and AUTHORITY_SEAL_VERIFY=PASS, plus a blob-by-blob comparison against the eight recorded pins.",
+    "fail_closed": "Any blob mismatch -> STOP_RATIFICATION_BINDING_MISMATCH. The owner's selections remain their selections, but their binding to a specific effective package is broken and a successor ratification or a fresh owner re-confirmation is required before any execution node may cite OD-1..OD-5 as settled.",
+    "recurrence": "DN-0 is not discharged once. It recurs at the head of every execution lane in this DAG."
+   },
+   {
+    "id": "DN-1",
+    "name": "U1_PRODUCTION_BRANCH_REMEASUREMENT",
+    "class": "READ_ONLY_MEASUREMENT",
+    "act": "See U1_RESOLUTION_NODE for the full node definition, its minimum measurement, its forbidden substitutes and its authority gap.",
+    "authority": "U-1 as defined at CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json UNKNOWNS.unknowns[0]. Execution of the node itself requires an authority this chain does not contain.",
+    "prerequisites": ["DN-0"],
+    "re_measurement_required": "The productionBranch setting of project uellix-antigravity, and its automatic-production-deployment toggle.",
+    "verification": "Per U1_RESOLUTION_NODE.verification.",
+    "fail_closed": "Per U1_RESOLUTION_NODE.fail_closed_branches.",
+    "no_later_execution_node_may_precede_it": "TRUE. This is the strongest ordering statement in this artifact and it is stated as an invariant in DAG_INVARIANTS."
+   },
+   {
+    "id": "DN-2",
+    "name": "U6_BROAD_COMMERCIAL_V1_ROLE_REMEASUREMENT",
+    "class": "READ_ONLY_MEASUREMENT",
+    "act": "See U6_REMEASUREMENT_REQUIREMENT.DN-2_the_required_remeasurement.",
+    "authority": "U-6 as defined at CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json UNKNOWNS.unknowns[5], and the ratification's U6_FAIL_CLOSED_BINDING.",
+    "prerequisites": ["DN-0"],
+    "re_measurement_required": "The full project inventory and, for uellix-production-web by name, every limb of the enumeration.",
+    "verification": "Per DN-2's verification field.",
+    "fail_closed": "Per DN-2's fail_closed_branches."
+   },
+   {
+    "id": "DN-3",
+    "name": "U5_VERCEL_GIT_INTEGRATION_PRESTATE_CAPTURE",
+    "class": "READ_ONLY_MEASUREMENT",
+    "act": "Capture, in full, the project's Git integration settings and any configured Ignored Build Step, as M-6's mandatory blocking prestate.",
+    "authority": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json FUTURE_MUTATIONS M-6.prestate_to_capture, which states the capture is MANDATORY and blocking and that without it M-6 has no rollback and must not be executed. U-5 is recorded as only PARTIALLY resolved: the OD-3 ratification's execution_not_authorized_by_this_ratification field records that v1.0.1 CM-8 found no Ignored Build Step configured at measurement time, but that per-branch automatic-deployment toggles were not fully exposed.",
+    "prerequisites": ["DN-0"],
+    "re_measurement_required": "The whole Git integration block, not only the Ignored Build Step, because the rollback is a verbatim restore of what was captured.",
+    "verification": "Assert the capture is complete enough to constitute an exact inverse. A partial capture is not a prestate.",
+    "fail_closed": "Capture fails or is partial -> M-6 MUST NOT be executed. Per the parent's adjudication P, a mutation whose prestate was not captured has no rollback."
+   },
+   {
+    "id": "DN-4",
+    "name": "O3_READINESS_AND_CHECK_PRODUCIBILITY_MEASUREMENT",
+    "class": "READ_ONLY_MEASUREMENT",
+    "act": "For each of the eight required check names and each ref that O-1 or OD-1 places under protection, determine whether that check can be produced on the SHA the protection will actually evaluate.",
+    "authority": "OD-4's sequencing rider, read against ADJUDICATIONS.D (the eight names), ADJUDICATIONS.E (the exact-SHA battery, status DERIVED AS A REQUIREMENT with implementation OUT OF SCOPE) and O-2/O-3.",
+    "prerequisites": ["DN-0"],
+    "re_measurement_required": "The workflow corpus at the exact SHA under consideration, and the required-check configuration of each protected ref.",
+    "verification": "Per OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE.RIDER_PRE_1 and RIDER_PRE_2.",
+    "fail_closed": "Any check would be required on a SHA that cannot produce it -> STOP_RIDER_VIOLATION. Configuring it would create a permanently unsatisfiable gate."
+   },
+   {
+    "id": "DN-5",
+    "name": "RBD-1_OWNER_SELECTION_OF_THE_RELEASE_BRANCH_SOURCE_REF",
+    "class": "OWNER_DECISION",
+    "act": "The owner selects the exact source ref for release/commercial-v1. This lane enumerates the candidates with measured consequences and selects none.",
+    "authority": "None exists. OD-1 ratified Option D and the branch NAME; it did not state the source. See OWNER_DECISION_REQUIRED.RBD-1.",
+    "prerequisites": ["DN-0"],
+    "re_measurement_required": "The head SHA of whichever ref is selected, re-derived immediately before M-8, because the candidate heads move.",
+    "verification": "Assert the selection names an exact ref AND that M-8 re-derives that ref's head at execution time rather than consuming a SHA recorded here.",
+    "fail_closed": "Unselected -> M-8 MUST NOT be executed. A source ref chosen by the executing lane rather than by the owner is a silent semantic choice of exactly the class this programme refuses."
+   },
+   {
+    "id": "DN-6",
+    "name": "RBD-2_OWNER_EXTENSION_OF_O1_SCOPE_TO_THE_RELEASE_BRANCH",
+    "class": "OWNER_DECISION",
+    "act": "The owner decides whether O-1's protection requirement extends to release/commercial-v1.",
+    "authority": "None exists. O-1 enumerates integration/commercial-v1, the default branch and main. It does not name a release branch, because Option D was not the selection when O-1 was authored. See OWNER_DECISION_REQUIRED.RBD-2.",
+    "prerequisites": ["DN-0"],
+    "re_measurement_required": "O-1's text at the pinned blob, to confirm the enumeration is still the three branches named.",
+    "verification": "Assert the decision is recorded as an extension of scope, not as a re-reading of O-1's existing text.",
+    "fail_closed": "Undecided -> DN-11 (M-7) MUST NOT be executed, because retargeting production to an unprotected branch is the measured hazard C-5 names."
+   },
+   {
+    "id": "DN-7",
+    "name": "M-8_CREATE_THE_RELEASE_BRANCH",
+    "class": "HOSTED_MUTATION",
+    "act": "Create refs/heads/release/commercial-v1 on origin at the owner-selected source ref.",
+    "authority": "DERIVED AND DEFINED HERE as M-8. No existing FUTURE_MUTATIONS entry covers it. See RELEASE_BRANCH_CREATION_ACT.",
+    "prerequisites": ["DN-0", "DN-1", "DN-2", "DN-5"],
+    "re_measurement_required": "The absence of refs/heads/release/* on origin, and the head SHA of the selected source ref.",
+    "verification": "Per RELEASE_BRANCH_CREATION_ACT.verification.",
+    "fail_closed": "Per RELEASE_BRANCH_CREATION_ACT.fail_closed_stale_prestate_rule."
+   },
+   {
+    "id": "DN-8",
+    "name": "M-3_PROTECT_MAIN",
+    "class": "HOSTED_MUTATION",
+    "act": "Prohibit direct pushes and force pushes on main.",
+    "authority": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json FUTURE_MUTATIONS M-3, required by O-1.",
+    "prerequisites": ["DN-0", "DN-1", "DN-4"],
+    "re_measurement_required": "The protection and ruleset endpoints for main. Measured ABSENT (404) at the parent's authoring; that is a dated observation.",
+    "verification": "Re-read; assert present.",
+    "fail_closed": "Prestate uncapturable -> no execution. Confirmation absent, ambiguous or differently scoped -> no execution, per the parent's adjudication Q silence_is_not_consent.",
+    "why_first_among_the_protections": "The parent states main first because its tip is live production. That ordering is UNCHANGED by Option D: main remains the measured production branch until DN-11 changes it."
+   },
+   {
+    "id": "DN-9",
+    "name": "M-1_PROTECT_INTEGRATION",
+    "class": "HOSTED_MUTATION",
+    "act": "Prohibit direct pushes and force pushes on integration/commercial-v1.",
+    "authority": "FUTURE_MUTATIONS M-1, required by O-1.",
+    "prerequisites": ["DN-0", "DN-1", "DN-4", "DN-8"],
+    "re_measurement_required": "The protection and ruleset endpoints for integration/commercial-v1.",
+    "verification": "Re-read; assert present.",
+    "fail_closed": "As DN-8."
+   },
+   {
+    "id": "DN-10",
+    "name": "M-9_PROTECT_THE_RELEASE_BRANCH",
+    "class": "HOSTED_MUTATION",
+    "act": "Prohibit direct pushes and force pushes on release/commercial-v1.",
+    "authority": "DERIVED AND DEFINED HERE as M-9, CONDITIONAL on RBD-2. No existing FUTURE_MUTATIONS entry covers it: M-1, M-2 and M-3 each name a specific target branch and none of them is a release branch.",
+    "prerequisites": ["DN-0", "DN-1", "DN-2", "DN-6", "DN-7"],
+    "re_measurement_required": "The protection and ruleset endpoints for release/commercial-v1, which cannot exist before DN-7.",
+    "verification": "Re-read; assert present.",
+    "fail_closed": "RBD-2 undecided -> not executed, and DN-11 is blocked. See RELEASE_BRANCH_PROTECTION_GAP."
+   },
+   {
+    "id": "DN-11",
+    "name": "M-7_PRODUCTION_BOUNDARY",
+    "class": "HOSTED_MUTATION",
+    "act": "Whatever OD-1 ratifies for the production boundary. NOT specified by the parent and NOT specified here.",
+    "authority": "FUTURE_MUTATIONS M-7, whose confirmation is ELEVATED and whose must_be_stated_at_confirmation records that www.uellix.com is LIVE, answers 200 anonymously, and that any error is publicly visible immediately.",
+    "prerequisites": ["DN-0", "DN-1", "DN-2", "DN-4", "DN-6", "DN-7", "DN-8", "DN-10"],
+    "re_measurement_required": "The production branch setting, the current production deployment and the SHA it serves, the protection state of the target branch, and U-6 under the broad definition.",
+    "verification": "Assert that a push to the previously auto-deploying branch no longer produces a production deployment, and that www.uellix.com continues to serve the intended deployment throughout. ADDITIONALLY, per the DEP-1 falsification sweep's surfaced hazard: assert that the repository default branch was NOT thereby coupled to the production branch. CM-6 measured the two as currently DECOUPLED (default = feature/sprint-0-foundation, production = main) and warned that a change to EITHER could couple them. M-7 changes one of the two limbs, so the decoupling is a postcondition this act must assert rather than assume. ADDITIONALLY assert that no deploy hook was created or activated by the act, per DN-1's deploy-hook limb.",
+    "fail_closed": "Restore the captured settings verbatim and STOP. Do not attempt a second variant in the same sitting, per the parent's adjudication P general_rule.",
+    "confirmation_must_additionally_state": "That the act moves one limb of a currently decoupled pair, and that the other limb (the repository default branch) is not being changed by it and must not become coupled to it.",
+    "the_edge_that_is_new_here": "DN-11 depends on DN-10, not merely on DN-7. Retargeting the production boundary to a branch that exists but is unprotected would move production onto the least protected branch in the repository. The parent could not state this edge because the release branch was not yet the ratified model."
+   },
+   {
+    "id": "DN-12",
+    "name": "M-2_PROTECT_THE_DEFAULT_BRANCH",
+    "class": "HOSTED_MUTATION",
+    "act": "Prohibit direct pushes and force pushes on the repository default branch.",
+    "authority": "FUTURE_MUTATIONS M-2, required by O-1, which names the default branch explicitly.",
+    "prerequisites": ["DN-0", "DN-1", "DN-4"],
+    "re_measurement_required": "WHICH branch is the default, re-read from repository settings rather than assumed to be feature/sprint-0-foundation, and that branch's protection endpoints.",
+    "verification": "Re-read; assert present on the branch that IS the default at the moment of the act.",
+    "fail_closed": "As DN-8. Additionally: if the measured default branch is not the one the prestate captured, STOP and re-capture.",
+    "the_ordering_change_derived_here": "The parent sequenced M-2 AFTER M-4 so the protection lands on the branch that will actually be the default. Under OD-1 = Option D, M-4 is not triggered (see DERIVED_ORDERING_DEPARTURES DEP-1), so that edge dissolves and DN-12 no longer waits on it. DN-12's own requirement to re-read WHICH branch is the default is what now carries the safety the M-4 edge used to carry."
+   },
+   {
+    "id": "DN-13",
+    "name": "M-4_DEFAULT_BRANCH_CHANGE",
+    "class": "NOT_TRIGGERED",
+    "act": "None under the current owner set.",
+    "authority": "FUTURE_MUTATIONS M-4, whose execution the parent conditions on OD-1 calling for it (EXECUTION_ORDERING.ordered_sequence[5], if OD-1 calls for it).",
+    "prerequisites": [],
+    "status": "NOT_TRIGGERED_BY_OD1_OPTION_D. See DERIVED_ORDERING_DEPARTURES DEP-1. This is NOT a NO-OP in the sense M-5 is: M-5 is derived to require no act because the owner selected no change. M-4 is derived not to be CALLED FOR by the selected option. The distinction matters because a future owner decision to change the default branch would re-trigger M-4 under its own existing authority, whereas M-5 would require OD-2 to be revisited first."
+   },
+   {
+    "id": "DN-14",
+    "name": "M-6_IGNORED_BUILD_STEP_FOR_THE_INTEGRATION_BRANCH",
+    "class": "HOSTED_MUTATION",
+    "act": "Configure an Ignored Build Step for integration/commercial-v1 specifically, leaving pull-request Previews intact. This is OD-3 = L-1.",
+    "authority": "FUTURE_MUTATIONS M-6, whose change field defers to whatever OD-3 ratifies, and whose timing_constraint requires any narrowing to be applied BEFORE the PR201 environment correction.",
+    "prerequisites": ["DN-0", "DN-3"],
+    "re_measurement_required": "The full Git integration prestate per DN-3, re-captured immediately before the act.",
+    "verification": "Per M-6: push a commit to a throwaway branch and assert the resulting deployment behaviour matches the intended setting; then assert the integration branch behaves as intended on its next legitimate advance.",
+    "fail_closed": "Restore the captured settings verbatim.",
+    "independence_derived_here": "DN-14 does NOT depend on DN-1, DN-7, DN-8, DN-9, DN-10 or DN-11. Its only hard prerequisite besides freshness is its own prestate capture, plus the constraint that it precede DN-15. The parent's total order placed it at step 7, after the protections and the production boundary, but no dependency in the authority requires that. Recording it as independent is what a DAG buys over a list. A lane MAY still choose to run it later; what it may not do is run it AFTER DN-15."
+   },
+   {
+    "id": "DN-15",
+    "name": "PR201_STAGING_BINDING_SEQUENCE",
+    "class": "EXTERNAL_AUTHORITY",
+    "act": "The PR201 environment correction and its one authorized Preview deployment.",
+    "authority": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json, and ONLY that. The parent states at EXECUTION_ORDERING.ordered_sequence[8] that this runs under ITS OWN authority and not the parent's, and at RELATIONSHIP_TO_PR201.no_reinterpretation that where the two could be read to conflict, PR201 controls and the consumer STOPS.",
+    "prerequisites": ["DN-0", "DN-14"],
+    "re_measurement_required": "Everything PR201's own SB-1 through SB-4 require, plus the U-4 re-measurement (PMV-2) the parent's UNKNOWNS U-4 makes mandatory before any actor relies on the H adjudication.",
+    "verification": "PR201's own.",
+    "fail_closed": "PR201's own, plus STOP if DN-14 has not been executed first.",
+    "additional_prerequisite_carried_here": "EXEC-NOTE-1. See ACT_IDENTITY_REQUIREMENTS.EXEC_NOTE_1_PREREQUISITE.",
+    "explicitly_not_authorized_here": "Nothing about PR201 is granted, widened, narrowed or reinterpreted by this artifact. Its one-deployment bound is untouched."
+   },
+   {
+    "id": "DN-16",
+    "name": "M-5_REPOSITORY_VISIBILITY",
+    "class": "NO_OP",
+    "act": "NONE. OD-2 = REMAIN PUBLIC FOR CURRENT PHASE.",
+    "authority": "FUTURE_MUTATIONS M-5; OD-2 as matured by the ratification amendment.",
+    "prerequisites": [],
+    "status": "NO_OP_FOR_THE_CURRENT_PHASE. See NO_OP_NODES.NON-1 for the full derivation, including why this is not dormant approval and why U-3 leaves the critical path."
+   },
+   {
+    "id": "DN-17",
+    "name": "SECRET_SCANNING_ALERT_1_ADJUDICATION",
+    "class": "EXTERNAL_AUTHORITY",
+    "act": "The substantive adjudication of secret-scanning alert 1.",
+    "authority": "PR #206's own lane, per OD-5. Anchored to SSL-06 / SEC5.",
+    "prerequisites": [],
+    "status": "INDEPENDENT_TRACK. Gated on NOTHING in this DAG. The parent states this at EXECUTION_ORDERING.ordered_sequence[10], and OD-5 states explicitly that the routing is independent of OD-2 and NOT deferred behind it.",
+    "explicitly_not_claimed_here": "Rotation proof, severity classification, disclosure obligation and alert closure are all PR #206's to determine on its own evidence. This artifact makes no claim about any of them and none may be inferred from its presence in this node list."
+   }
+  ]
+ },
+
+ "DAG_EDGES": {
+  "rule": "Each edge names WHY the dependency exists, so a certifier can falsify the edge rather than only the node. An edge absent from this list is asserted NOT to exist; DERIVED_ORDERING_DEPARTURES records the edges the parent's total order implied that this artifact measures to be absent.",
+  "notation": "A -> B reads: A must complete before B may begin.",
+  "edges": [
+   {"edge": "DN-0 -> every other node", "why": "The freshness and binding rebaseline is prior to everything. A node acting on a broken CANDIDATE_BINDING is acting on an owner set that is no longer bound to the package it was ratified against."},
+   {"edge": "DN-1 -> DN-7", "why": "M-8 creates the branch that OD-1 designates as the terminus of the production lineage. Creating it without knowing the current production branch setting means not knowing whether the new branch is already, or is about to become, a production trigger."},
+   {"edge": "DN-1 -> DN-8", "why": "M-3 protects main, which the last measurement identified as the production branch. The protection's rationale (its tip is live production) is only true if that is still so; if the production branch has moved, M-3 is still required by O-1 but its why_main_is_included rationale must be re-derived rather than cited."},
+   {"edge": "DN-1 -> DN-9", "why": "Transitive through the O-1 bar and through DN-8, whose completion DN-9 requires. Stated explicitly rather than left transitive because DN-9 is the node most likely to be run first by a lane optimising for the integration line."},
+   {"edge": "DN-1 -> DN-10", "why": "M-9 protects the branch that M-7 will point production at. The protection's adequacy depends on what production actually is."},
+   {"edge": "DN-1 -> DN-11", "why": "Direct and explicit in the parent: FAIL_CLOSED_BEHAVIOR.branches[3] states U-1 blocks M-7, and M-7's prestate_to_capture names U-1 and states the capture is MANDATORY and blocking."},
+   {"edge": "DN-1 -> DN-12", "why": "M-2 protects the default branch. M-4's coupled-consequence clause records that a project's production branch commonly follows the repository default branch. Even though M-4 is not triggered, the coupling means the default branch's relationship to production must be known before protection is reasoned about on it."},
+   {"edge": "DN-2 -> DN-7", "why": "The ratification's U6_FAIL_CLOSED_BINDING blocks anything touching OD-1's release-branch model until the production boundary is re-adjudicated, should a second Commercial V1 surface be found. M-8 IS the release-branch model's first act."},
+   {"edge": "DN-2 -> DN-10", "why": "Same binding: M-9 is OD-4's protected-line bar applied to a production path, which the binding names explicitly."},
+   {"edge": "DN-2 -> DN-11", "why": "Same binding, most directly: M-7 is the production-boundary execution the binding is written about."},
+   {"edge": "DN-3 -> DN-14", "why": "M-6's own prestate_to_capture states the capture is MANDATORY and blocking and that without it M-6 has no rollback and must not be executed."},
+   {"edge": "DN-4 -> DN-8", "why": "OD-4's sequencing rider. Any required check configured as part of protecting main must be producible on the SHA that protection will evaluate. WP-3 measures that a push to main produces 1 of 8."},
+   {"edge": "DN-4 -> DN-9", "why": "Same rider, applied to integration/commercial-v1, where WP-3 measures that a push produces 0 of 8."},
+   {"edge": "DN-4 -> DN-11", "why": "Retargeting production to a branch whose SHAs cannot produce the required checks would make the production line the least verified line. The rider's purpose is to prevent exactly this class of unsatisfiable configuration."},
+   {"edge": "DN-4 -> DN-12", "why": "Same rider, applied to whichever branch is measured to be the default."},
+   {"edge": "DN-5 -> DN-7", "why": "M-8 cannot have an exact source ref until the owner selects one. RBD-1 is the selection."},
+   {"edge": "DN-6 -> DN-10", "why": "M-9 exists only if O-1's scope extends to the release branch. RBD-2 is that extension."},
+   {"edge": "DN-6 -> DN-11", "why": "Fail-closed. If the owner declines to extend O-1 to the release branch, retargeting production to it is retargeting production to a branch the ratified protection bar does not cover. M-7 then STOPS rather than proceeding."},
+   {"edge": "DN-7 -> DN-10", "why": "A branch cannot be protected before it exists. The protection endpoints for release/commercial-v1 return nothing until DN-7 completes."},
+   {"edge": "DN-7 -> DN-11", "why": "M-7 cannot point the production branch at a ref that does not exist."},
+   {"edge": "DN-8 -> DN-9", "why": "Explicit in the parent: EXECUTION_ORDERING.ordered_sequence[3] orders M-3 then M-1 in that order, main first because its tip is live production."},
+   {"edge": "DN-8 -> DN-11", "why": "The production boundary is moved off main by M-7. Protecting main first means that at no instant is main both the production branch and unprotected while another act is in flight."},
+   {"edge": "DN-10 -> DN-11", "why": "Derived here and new. Retargeting production onto an unprotected branch is the shortest measured path from an ordinary push to a public production change, which is the parent's own stated rationale for why the production boundary is written as an absolute."},
+   {"edge": "DN-14 -> DN-15", "why": "Explicit and doubly stated: M-6's timing_constraint, and EXECUTION_ORDERING.ordered_sequence[7]. Reversed, there is a window in which an automatic Preview built with corrected configuration is indistinguishable from the governed deployment, which is ADJUDICATIONS.H's named hazard. The parent identifies this as one of the two orderings that matter most."}
+  ],
+  "asserted_non_edges": [
+   {"non_edge": "DN-14 (M-6) does NOT depend on DN-8, DN-9, DN-10 or DN-11", "why": "No clause in the effective authority conditions the Ignored Build Step on any GitHub protection or on the production boundary. The parent's total order placed it at step 7 for presentation, not dependency. Its only stated timing constraint is that it precede DN-15."},
+   {"non_edge": "DN-17 (alert 1) does NOT depend on any node", "why": "Stated twice: EXECUTION_ORDERING.ordered_sequence[10] says it runs on its own track and is NOT gated on any of the above, and OD-5 states the routing is independent of OD-2 and explicitly not deferred behind it."},
+   {"non_edge": "DN-16 (M-5) does NOT depend on U-3", "why": "U-3's blocking force was on EXECUTING a visibility change. OD-2 = REMAIN PUBLIC means there is no visibility change to execute, so the block has nothing to block. U-3 leaves the critical path entirely. It returns only as PRECOND-2 of a future transition, which is not a node in this DAG."},
+   {"non_edge": "DN-12 (M-2) does NOT depend on DN-13 (M-4)", "why": "The parent sequenced M-2 after M-4 so protection would land on the branch that will actually be the default. Under Option D, M-4 is not triggered, so there is no pending default-branch change for M-2 to wait on. See DERIVED_ORDERING_DEPARTURES DEP-2."}
+  ]
+ },
+
+ "DAG_INVARIANTS": {
+  "rule": "Invariants are checkable properties of any proposed execution schedule, independent of which node a lane is performing. A schedule violating one is refused before any act.",
+  "invariants": [
+   {"id": "INV-1", "statement": "No node of class HOSTED_MUTATION or EXTERNAL_AUTHORITY may begin before DN-1 has completed with a fresh measurement.", "basis": "The directing mission states no later execution node may precede U-1 resolution, and the parent's FAIL_CLOSED_BEHAVIOR.branches[3] makes U-1 blocking for M-4 and M-7. This invariant is STRICTLY STRONGER than the parent's clause: it extends the block from M-4 and M-7 to every execution node. The extension is derived, not inherited, and is recorded as such so a certifier can challenge it."},
+   {"id": "INV-2", "statement": "No node whose dependency closure contains a production path may begin while U-6's broad predicate is UNKNOWN or PARTIAL for any limb.", "basis": "The ratification's U6_FAIL_CLOSED_BINDING, read against U-6's broad definition rather than the narrow reported measurement."},
+   {"id": "INV-3", "statement": "No required check may be configured on a ref where the SHA that protection evaluates cannot produce that check.", "basis": "OD-4's sequencing rider, made arithmetic by WP-2 and WP-3."},
+   {"id": "INV-4", "statement": "Exactly one hosted mutation is in flight at any instant, and each carries its own confirmation obtained immediately before it.", "basis": "FUTURE_MUTATIONS rule states none may be batched with another; adjudication Q states confirmation covers the one mutation it was asked about and does not transfer to a retry, a variant, or the next mutation in the sequence."},
+   {"id": "INV-5", "statement": "A mutation whose prestate capture failed or is partial is not executed, and its absence of rollback is the reason, not a formality.", "basis": "Adjudication P verdict and FUTURE_MUTATIONS rule."},
+   {"id": "INV-6", "statement": "No node may be satisfied by citing a measurement recorded in this artifact.", "basis": "NODE_0_STALE_STATE_HANDLING. This artifact's own MEASURED_PRESTATE_THIS_LANE is dated 2026-09-22 and is subject to the same rule it imposes on its predecessors."}
+  ]
+ },
+
+ "RELEASE_BRANCH_CREATION_ACT": {
+  "id": "M-8",
+  "status": "DERIVED AND DEFINED HERE. NOT EXECUTED. NOT AUTHORIZED FOR EXECUTION BY THIS ARTIFACT.",
+  "why_a_new_act_was_required": {
+   "finding": "No existing FUTURE_MUTATIONS entry has a target that covers CREATING release/commercial-v1.",
+   "measured_basis": "The parent's FUTURE_MUTATIONS contains exactly seven entries. Their targets are: M-1 GitHub branch protection or ruleset on integration/commercial-v1; M-2 the same on the repository default branch; M-3 the same on main; M-4 GitHub repository default branch; M-5 GitHub repository visibility; M-6 Vercel automatic Git deployments for the integration branch; M-7 Vercel production branch / automatic production deployment. Not one names branch creation, and not one names a release branch.",
+   "the_misattribution_this_corrects": "OD-1's execution_not_authorized_by_this_ratification field states that creating the release/commercial-v1 branch remains a separate governed act and cites FUTURE_MUTATIONS M-4 and, conditionally, M-7. M-4's target is the repository DEFAULT BRANCH setting, which is a change to a setting, not the creation of a ref. M-7's target is the Vercel production branch. Neither creates a git ref. The ratification is CORRECT that creation is a separate governed act; its POINTER to which existing act covers it does not resolve, because none does. This artifact closes the gap by defining the act, and does NOT edit the ratification.",
+   "why_it_is_named_M-8": "It extends the parent's FUTURE_MUTATIONS namespace additively, on the precedent by which v1.0.2's RETRY_IDENTITY_CONTRACT added AIC-8 and AIC-9 to v1.0.1's AIC-1..AIC-7 namespace without editing v1.0.1. The parent's file is untouched; a consumer reads M-1..M-7 there and M-8..M-9 here."
+  },
+  "target": "The git ref refs/heads/release/commercial-v1 on remote origin (https://github.com/lorenzozanello/uellix-antigravity.git).",
+  "exact_target_name": {
+   "name": "release/commercial-v1",
+   "provenance": "OWNER-SUPPLIED. The ratification record flags this name as owner-supplied content not present in any prior effective-package file. This lane neither chose it nor validated it against a naming convention, because no naming-convention authority governs it.",
+   "no_variant_is_authorized": "release/commercial-v1 exactly. Not release/commercial-v1.0.0, not releases/commercial-v1, not release/cv1. A differently named ref is a different act requiring its own owner selection."
+  },
+  "exact_source_ref": {
+   "status": "UNRESOLVED. BLOCKING. See OWNER_DECISION_REQUIRED.RBD-1.",
+   "rule": "M-8 MUST NOT be executed while the source ref is unselected. The executing lane MUST NOT choose it.",
+   "what_must_be_recorded_at_execution": "The exact ref NAME the owner selected, AND the head SHA of that ref re-derived from origin immediately before the create, AND the assertion that the two correspond at that instant.",
+   "why_a_SHA_recorded_here_may_not_be_used": "The candidate heads move. GP-2 and GP-3 of this artifact are dated observations. An M-8 that creates the branch at a SHA copied from this artifact has created it at a SHA that may no longer be any ref's head, which is a silent divergence between the branch's name and its lineage."
+  },
+  "prestate_to_capture": {
+   "mandatory_and_blocking": true,
+   "what": ["The complete absence of refs/heads/release/commercial-v1 on origin, and of any refs/heads/release/* and refs/tags/release/*. Measured ABSENT on 2026-09-22 by git ls-remote (GP-1); that is a dated observation and must be re-derived.", "The head SHA of the owner-selected source ref, from origin.", "Whether any branch protection or ruleset already matches the pattern release/** on this repository, which would apply to the ref the instant it is created and would change what M-9 has to do.", "Whether any Vercel Git integration setting already references a release branch by name or pattern."],
+   "why_the_last_two_limbs_are_included": "A ruleset matching release/** would make the new branch protected on creation, and a Vercel setting referencing it would make the new branch a deployment trigger on creation. Both are settings this lane could not read, and both would change M-8's consequence from inert to load-bearing. A prestate that captures only the ref's absence would miss them."
+  },
+  "confirmation": {
+   "requirement": "REQUIRED, obtained from the owner IMMEDIATELY BEFORE the mutation and not earlier.",
+   "basis": "The parent's adjudication Q states every mutation in FUTURE_MUTATIONS requires explicit confirmation immediately before execution, that there is no control-plane mutation a successor may perform on standing authority, and that silence is not consent. M-8 is a control-plane mutation and inherits that rule.",
+   "what_must_be_stated_at_confirmation": ["The exact ref name to be created: release/commercial-v1.", "The exact source ref name AND its freshly re-derived head SHA.", "That OD-1 = Option D designates this branch as the terminus of the production lineage, so this act creates the branch production will later be pointed at.", "That the branch will, on creation, produce ZERO of the eight required checks on a push, per WP-3 and WP-4, and is therefore the least verified branch in the repository by O-2's own measure until O-3/E is implemented.", "If the owner selected integration/commercial-v1 as the source: that the branch will start 992 commits ahead of the commit production currently serves, per GP-5.", "That this act does NOT retarget production. M-7 (DN-11) is a separate act with ELEVATED confirmation."],
+   "elevated_or_not": "REQUIRED, not ELEVATED. The parent reserves ELEVATED for M-4, M-5 and M-7, each of which can change what is publicly served or what protection is available. M-8 creates an inert ref: by itself it changes nothing that is served, provided the last two prestate limbs came back clean. If the prestate finds a release/** ruleset or a Vercel setting referencing the branch, M-8's confirmation is ESCALATED TO ELEVATED, because the ref would then not be inert on creation."
+  },
+  "verification": {
+   "required": ["Re-read refs/heads/release/commercial-v1 from origin and assert it EXISTS.", "Assert its head SHA equals, byte for byte, the source head SHA captured in the prestate. Not the source ref's head at verification time, which may have advanced; the captured value.", "Assert that no OTHER ref was created or moved by the act, by comparing a full git ls-remote --heads before and after.", "Assert the repository default branch is UNCHANGED, because M-8 is not M-4.", "Assert the Vercel production branch setting is UNCHANGED, because M-8 is not M-7.", "Assert www.uellix.com still answers and still serves the deployment it served before the act."],
+   "why_the_last_three_are_in_M8s_verification": "They are negative assertions: they prove the act did NOT do what the adjacent acts do. The parent measured that a Vercel project's production branch commonly follows the repository default branch, so creating a branch in a repository whose settings this lane could not read is an act whose blast radius is not fully known in advance. Asserting the adjacent surfaces are unchanged is how a bounded act proves it stayed bounded."
+  },
+  "rollback_and_delete_rule": {
+   "inverse": "Delete refs/heads/release/commercial-v1 from origin.",
+   "when_the_inverse_is_applied": "Immediately, and once, if any limb of verification fails. Per the parent's adjudication P: if verification fails, apply the recorded inverse immediately and STOP; do not attempt a second variant of the mutation in the same sitting.",
+   "the_delete_is_conditional_and_bounded": "The inverse deletes the ref ONLY IF verification established that this act created it. If the prestate found the ref ABSENT and verification finds it PRESENT at an UNEXPECTED SHA, the ref may have been created by another party between the two reads. In that case the correct response is STOP_UNEXPECTED_REF_STATE and a GOVERNANCE INCIDENT record, NOT a delete: deleting a ref this act did not create would destroy another party's work.",
+   "what_the_delete_does_not_restore": "Nothing else needs restoring, because M-8 changes exactly one ref. This is stated so the rollback is not read as broader than it is.",
+   "irreversibility_assessment": "M-8 has a CLEAN INVERSE, unlike M-5. Creating and deleting a ref leaves the commit graph unchanged, because the ref points at a commit that already existed. The one residue is that the ref name may have been fetched, cached or referenced by a third party in the interval, which is a visibility residue and not a state residue. It is recorded because the programme has measured that treating an act as reversible is the error that makes it dangerous."
+  },
+  "retry_and_idempotence": {
+   "idempotence_rule": "M-8 is IDEMPOTENT ON ITS POSTCONDITION, NOT ON ITS ACT. If a re-run finds refs/heads/release/commercial-v1 already present AND at exactly the SHA this act's own record says it created, the postcondition already holds and the correct response is to CLOSE the act as ALREADY_SATISFIED, recording that no second create was performed. It is NOT to create again, and it is NOT to force-update.",
+   "the_case_that_is_not_idempotent": "If the ref is present at a DIFFERENT SHA than this act's record names, the postcondition does NOT hold and the act is NOT re-runnable. Force-updating the ref would rewrite a branch pointer that some other act or party set. Response: STOP_UNEXPECTED_REF_STATE and a GOVERNANCE INCIDENT record.",
+   "retry_ceiling": "AT MOST ONE retry of M-8, and only where the first attempt failed WITHOUT creating the ref, verified by a fresh read showing the ref still ABSENT. A retry after a create that partially succeeded is not a retry; it is the unexpected-ref-state case.",
+   "retry_requires_fresh_confirmation": "A retry requires a NEW confirmation. Per adjudication Q, confirmation does not transfer to a retry.",
+   "retry_requires_fresh_prestate": "A retry re-captures the whole prestate, including the source ref's head SHA. If the source head has advanced between the failed attempt and the retry, the retry is creating the branch at a DIFFERENT commit than the attempt the owner confirmed. That is not a retry of the confirmed act. It is a new act requiring a new confirmation stating the new SHA.",
+   "relationship_to_the_deployment_retry_contract": "M-8 is a GIT-PLANE act and is NOT governed by v1.0.2's AIC-8/AIC-9 bounded-retry chain, which governs DEPLOYMENT-creation acts under PR201's BOUNDED_RETRY_RULE. The nonce-chaining mechanism does not apply, because a git ref creation is idempotent on its postcondition in a way a deployment creation is not: a ref has a name the governing party controls, so it needs no nonce to be identifiable before it exists. This distinction is stated so no successor imports the deployment retry machinery into the git plane, or vice versa."
+  },
+  "fail_closed_stale_prestate_rule": {
+   "rule": "If ANY limb of the prestate, re-derived immediately before the mutation, differs from the value captured at confirmation time, the act STOPS. No create is performed. The act record is closed as ABANDONED, not as a failed attempt.",
+   "the_limbs_that_most_commonly_go_stale": ["The source ref's head SHA, which advances whenever anything merges.", "The absence of refs/heads/release/*, which another party could create.", "The repository's ruleset set, which is hosted, mutable, and invisible to every repository gate per the parent's C-6."],
+   "why_ABANDONED_and_not_FAILED": "The distinction is imported deliberately from v1.0.2's CONFIRMATION_AND_SHA_REVERIFICATION_ORDER_CORRECTION step 5, which closes a stale-SHA stop as ABANDONED rather than as a failed attempt eligible for the retry chain, on the ground that the byte-identical-SHA condition was never reached. The same logic holds here: an act that stopped before mutating did not fail, it declined, and the retry ceiling is not consumed by it.",
+   "what_the_stop_must_never_trigger": "A stale prestate is never grounds to widen the act, to accept the new value silently, or to proceed on the reasoning that the difference is immaterial. It is a re-capture and a fresh confirmation."
+  },
+  "ordering_position": "DN-7. Prerequisites DN-0, DN-1, DN-2 and DN-5. It precedes DN-10 (M-9) and DN-11 (M-7)."
+ },
+
+ "RELEASE_BRANCH_PROTECTION_GAP": {
+  "id": "M-9",
+  "status": "DERIVED AND DEFINED HERE, CONDITIONAL ON RBD-2. NOT EXECUTED. NOT AUTHORIZED FOR EXECUTION BY THIS ARTIFACT.",
+  "the_gap": {
+   "finding": "O-1, the EXISTENCE control the owner ratified in OD-4, enumerates exactly three branches: integration/commercial-v1, the default branch, and main. It does not name a release branch.",
+   "why_the_gap_exists_and_is_nobodys_error": "O-1 was derived in v1.0.0, before OD-1 was put to the owner. At that time the candidate branch roles were the three O-1 names. Option D introduced a FOURTH branch, and it introduced it as the terminus of the PRODUCTION lineage, which is the most consequential role of the four. O-1's enumeration is therefore complete for the world it was written in and incomplete for the world OD-1 selected.",
+   "why_it_cannot_be_closed_by_reading_O-1_generously": "O-1 is an enumeration, not a principle. Reading it to cover a branch it does not name would be exactly the silent authority expansion the programme's fail-closed rules forbid. The OD-4 ratification also states that the sequencing rider does not alter the content of O-1 through O-4 in any respect, so the ratification itself forecloses treating O-1's scope as elastic.",
+   "the_consequence_if_left_open": "M-7 would retarget the production boundary onto the one branch in the repository that the ratified protection bar does not cover, and that measurement WP-4 shows produces zero required checks on push. That is a strictly worse production posture than the status quo, in which production is served from main, a branch O-1 does name."
+  },
+  "target": "GitHub branch protection or ruleset on release/commercial-v1.",
+  "change": "Prohibit direct pushes and force pushes, matching what M-1, M-2 and M-3 do for the three branches O-1 names.",
+  "prestate_to_capture": "The protection and ruleset endpoints for release/commercial-v1, plus any ruleset whose pattern already matches it. Cannot be captured before DN-7, because the ref does not exist.",
+  "confirmation": "REQUIRED, immediately before the mutation.",
+  "verification": "Re-read both endpoints; assert present. Additionally assert the protection does not inadvertently apply to other refs via an over-broad pattern such as release/**, if the owner's RBD-2 selection scoped it to the single branch.",
+  "rollback": "Delete what was created.",
+  "conditionality": "M-9 exists only if RBD-2 extends O-1's scope. If the owner declines the extension, M-9 does not exist AND DN-11 (M-7) is BLOCKED, because the fail-closed response to an uncovered production branch is not to proceed uncovered.",
+  "what_this_lane_refused_to_do": "Assume the owner would extend O-1. Extending a ratified control's scope is an owner act. This lane derives that the extension is NECESSARY for the DAG to complete; it does not perform it, and it does not treat necessity as consent."
+ },
+
+ "DERIVED_ORDERING_DEPARTURES": {
+  "rule": "The directing mission required the binding ordering to be re-derived from the authority rather than copied from a summary. Re-derivation found the certified sequence CORRECT in every ordering it asserts, and found two of its conditional steps NOT TRIGGERED by the ratified owner set, plus three edges that must be ADDED because Option D postdates the parent. Each departure is recorded with its basis so a certifier can reject it.",
+  "confirmed_unchanged": [
+   {"id": "CONF-1", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[0]", "content": "Freshness and stale-state handling first.", "status": "CONFIRMED. Carried as DN-0 and as INV-6."},
+   {"id": "CONF-2", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[1]", "content": "Resolve U-1 and U-3 as blocking preconditions requiring no mutation.", "status": "CONFIRMED FOR U-1, carried as DN-1 and strengthened by INV-1. NOT APPLICABLE FOR U-3, because U-3's blocking force was on executing a visibility change and OD-2 selected none. See non_edge 3."},
+   {"id": "CONF-3", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[2]", "content": "Obtain OD-1 before anything protects or renames a branch.", "status": "CONFIRMED AND SATISFIED. OD-1 is ratified. This is the one step of the certified sequence that is already discharged."},
+   {"id": "CONF-4", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[3]", "content": "M-3 then M-1, in that order, main first because its tip is live production.", "status": "CONFIRMED. Carried as edge DN-8 -> DN-9."},
+   {"id": "CONF-5", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[4]", "content": "M-7 once OD-1 has settled it and U-1 is known.", "status": "CONFIRMED and EXTENDED. DN-11's prerequisite set is larger than the parent's two conditions, because Option D adds the existence and protection of the release branch, and the ratification adds U-6's binding."},
+   {"id": "CONF-6", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[7] and FUTURE_MUTATIONS M-6.timing_constraint", "content": "OD-3 and, if it selects narrowing, M-6, BEFORE any PR201 environment correction.", "status": "CONFIRMED. OD-3 selected L-1, which IS a narrowing, so the constraint is ARMED, not dormant. Carried as edge DN-14 -> DN-15 and identified by the parent as one of the two orderings that matter most."},
+   {"id": "CONF-7", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[8]", "content": "The PR201 sequence under ITS OWN authority and not the parent's.", "status": "CONFIRMED. Carried as DN-15, class EXTERNAL_AUTHORITY."},
+   {"id": "CONF-8", "parent_clause": "EXECUTION_ORDERING.ordered_sequence[10]", "content": "The alert-1 adjudication runs on its own track and is NOT gated on any of the above.", "status": "CONFIRMED. Carried as DN-17 and as an asserted non-edge."}
+  ],
+  "departures": [
+   {
+    "id": "DEP-1",
+    "parent_clause": "EXECUTION_ORDERING.ordered_sequence[5]",
+    "parent_content": "M-4 (default branch), if OD-1 calls for it, after U-1, so the production coupling is visible rather than discovered.",
+    "departure": "M-4 is NOT CALLED FOR by OD-1 = Option D. DN-13 is classed NOT_TRIGGERED.",
+    "basis": "The ratified Option D text, at v1.0.1 SUPERSEDED_PARENT_CLAUSES.clauses[4] (SPC-5), describes a release branch distinct from both the integration line and the development default, and states that this DECOUPLES THE PRODUCTION BOUNDARY FROM THE DEFAULT-BRANCH QUESTION ENTIRELY. A decision whose stated merit is that it does not force a choice among the three existing branches does not, by selecting it, call for changing which of them is the default. The OD-1 ratification's own owner_selected_decision field likewise describes the release branch as distinct from the development default branch, i.e. the development default branch persists in its role.",
+    "what_this_does_NOT_conclude": "It does NOT conclude that the default branch may never change, nor that M-4 is retired. M-4 remains a fully authored act under its own existing authority. It concludes only that the CURRENT owner set does not trigger it, so it is not on this DAG's critical path.",
+    "the_conditional_that_makes_this_safe": "IF a future owner decision does call for a default-branch change, M-4 re-enters under its existing authority WITH its existing U-1 precondition and its existing ELEVATED confirmation and coupled-consequence clause. Nothing about M-4 is weakened by its being off the current path.",
+    "why_recording_this_matters": "Copying the certified sequence without re-derivation would have placed M-4 on the critical path and made M-2 wait on it. That would have created a schedule in which the whole protection track blocks on an act the owner never asked for.",
+    "the_falsification_sweep_that_was_run": {
+     "method": "Every string value in all five files of the frozen package and the ratification chain was walked and tested against two conjunctive patterns: one matching M-4 or the default branch by name, and one matching a mandating verb (must, shall, required, calls for, retarget, change the default, make X the default). A locus had to match BOTH to become a candidate.",
+     "candidate_loci_returned": 3,
+     "classification": [
+      {"locus": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json FUTURE_MUTATIONS.mutations[3].coupled_consequence_that_must_be_stated_at_confirmation", "classification": "CONDITION ON M-4, NOT A CALL FOR IT. It states that M-4 MUST be preceded by establishing U-1 and that its verification re-checks the production branch afterwards. It governs HOW M-4 runs if it runs. It does not trigger it."},
+      {"locus": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json EXECUTION_ORDERING.ordered_sequence[5]", "classification": "EXPRESSLY CONDITIONAL. It reads M-4 (default branch), IF OD-1 CALLS FOR IT. This is the clause DEP-1 adjudicates, and its own conditional is what DEP-1 resolves."},
+      {"locus": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json CORRECTED_MEASUREMENTS.corrections[5].consequence", "classification": "STRENGTHENS DEP-1 RATHER THAN FALSIFYING IT. CM-6 records that the default branch is feature/sprint-0-foundation while the production branch is main, so the two are CURRENTLY DECOUPLED, and that a change to either could couple them. Since Option D's own ratified text decouples the production boundary from the default-branch question entirely, there is no coupling left for M-4 to resolve, and CM-6's warning becomes a reason NOT to touch the default branch rather than a reason to."}
+     ],
+     "verdict": "ZERO of the three candidate loci calls for a default-branch change. DEP-1 SURVIVES the sweep.",
+     "the_hazard_the_sweep_surfaced": "CM-6's clause that a change to EITHER the default branch or the production branch could couple them is a standing hazard on this DAG, not only on M-4. DN-11 (M-7) changes the production branch, which is one of the two limbs CM-6 names. DN-11's confirmation must therefore state that the act moves one limb of a currently decoupled pair, and its verification must assert the default branch was NOT thereby coupled to it.",
+     "why_the_sweep_result_is_recorded_rather_than_only_its_verdict": "A verdict with no method is a checklist. Recording the pattern, the candidate count and the per-locus classification lets a certifier re-run the same two patterns and challenge a classification, rather than only accepting or rejecting the conclusion."
+    }
+   },
+   {
+    "id": "DEP-2",
+    "parent_clause": "EXECUTION_ORDERING.ordered_sequence[6]",
+    "parent_content": "M-2 (protect the default branch), after M-4, so the protection lands on the branch that will actually be the default.",
+    "departure": "The edge M-4 -> M-2 DISSOLVES, because M-4 is not triggered (DEP-1). DN-12 depends on DN-0, DN-1 and DN-4 only.",
+    "basis": "The stated purpose of the edge was to prevent protection landing on a branch about to stop being the default. With no default-branch change pending, there is nothing to land wrongly.",
+    "the_safety_that_must_replace_it": "DN-12's re_measurement_required field now carries it: the acting lane must RE-READ which branch is the default from repository settings rather than assume feature/sprint-0-foundation, which is only what the PARENT measured. GP-4 of this artifact measures that ref's head SHA but establishes NOTHING about whether it is still the default, because this lane read no repository settings. UD-2 records that as an unknown.",
+    "why_this_is_not_a_relaxation": "The parent's edge protected against a KNOWN pending change. DN-12's re-measurement protects against an UNKNOWN past change, which is the weaker assumption and therefore the stronger control."
+   }
+  ],
+  "added_edges_that_the_parent_could_not_state": [
+   {"id": "ADD-1", "edge": "DN-7 (M-8, create the release branch) -> DN-11 (M-7)", "why": "M-7 cannot point the production branch at a ref that does not exist. The parent could not state this because M-8 did not exist as an act until this artifact derived it."},
+   {"id": "ADD-2", "edge": "DN-10 (M-9, protect the release branch) -> DN-11 (M-7)", "why": "Retargeting production onto an unprotected branch is the measured C-5 hazard. The parent could not state this because O-1's enumeration predates Option D."},
+   {"id": "ADD-3", "edge": "DN-4 (check producibility) -> DN-11 (M-7)", "why": "WP-4 measures that release/commercial-v1 would produce zero of the eight required checks on push. Pointing production at it makes the production line the least verified line in the repository. The parent measured the workflow corpus but not against a branch that did not yet exist."}
+  ]
+ },
+
+ "OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE": {
+  "the_riders_exact_text_as_ratified": {
+   "locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json ratifications[3].owner_selected_decision, final sentence, and ratifications[3].repository_binding, which records the rider as NEW content the ratification adds and states it does not alter the content of O-1 through O-4 in any respect.",
+   "as_ratified": "O-2's execution must not precede O-3's implementation or readiness in a way that would require checks the relevant SHA cannot actually produce.",
+   "citation_discipline": "Restated faithfully and cited by exact path; not offered as a byte-verbatim reproduction, for the same reason stated in U1_EXACT_DEFINITION_AND_STATUS.citation_discipline."
+  },
+  "why_it_needs_translating": "As ratified it is a prohibition on a STATE OF AFFAIRS (a required check the SHA cannot produce). A prohibition on a state of affairs is verifiable only if the state is computable. The translation below makes it computable from two inputs a lane already has: the workflow corpus at a SHA, and the required-check configuration of a ref.",
+  "the_computable_predicate": {
+   "definitions": ["C = the eight required check names, from ADJUDICATIONS.D.required_checks, by exact string.", "R = a ref that O-1 places under protection, or that RBD-2 extends O-1 to.", "S(R) = the SHA that R's protection configuration causes GitHub to evaluate required checks against. For a pull-request gate this is the PR's evaluated SHA; for a push-evaluated gate this is the pushed commit.", "PRODUCIBLE(c, S(R)) = TRUE iff the workflow corpus at that SHA contains a job whose name value equals c exactly, in a workflow whose on: triggers include an event that fires for S(R) on R, including that event's branch filter."],
+   "RIDER_PRE_1": "For every c in C configured as REQUIRED on R: PRODUCIBLE(c, S(R)) MUST be TRUE. If any is FALSE, configuring it violates the rider and the act STOPS with STOP_RIDER_VIOLATION.",
+   "RIDER_PRE_2": "O-2 is DISCHARGEABLE on R only when RIDER_PRE_1 holds for all eight. Where it holds for a proper subset, O-2 is PARTIALLY configurable: the producible subset may be required and the rest may not, and O-2 is recorded as NOT YET SATISFIED on R rather than as satisfied by the subset. A partially configured O-2 must never be reported as O-2 met.",
+   "RIDER_PRE_3": "O-3 / E is the act that makes the push-evaluated limb producible. Until E is implemented, RIDER_PRE_1 is satisfiable only on the pull-request-evaluated limb. The rider therefore does not merely SEQUENCE O-2 after O-3; for the push limb it makes O-2 UNREACHABLE until O-3 exists, which is a stronger statement than sequencing and is the reason the owner's rider was necessary rather than merely prudent."
+  },
+  "measured_evaluation_at_the_parent_head": {
+   "as_of": "2026-09-22, workflow corpus at parent HEAD 89695532. A dated observation; INV-6 forbids reusing it.",
+   "method": "Per WP-1 and WP-2: parse each of the nine workflow files for its on: trigger keys and branch filters and its job-level name values; intersect with the eight names; evaluate the branch filters against each ref.",
+   "results": [
+    {"limb": "PR-evaluated SHA, PR into integration/commercial-v1", "producible": "8 of 8", "basis": "All eight names appear as job names in workflows carrying a pull_request trigger.", "rider_verdict": "RIDER_PRE_1 SATISFIABLE. O-2 is configurable on the pull-request limb today."},
+    {"limb": "Push-evaluated SHA on main", "producible": "1 of 8", "basis": "Only ci.yml carries a push trigger, scoped branches: [main], and it produces exactly one of the eight names: Lint, typecheck, test, build.", "rider_verdict": "RIDER_PRE_1 VIOLATED for 7 of 8. Requiring those seven on a push-evaluated gate on main would create a permanently unsatisfiable gate."},
+    {"limb": "Push-evaluated SHA on integration/commercial-v1", "producible": "0 of 8", "basis": "No workflow's push trigger matches this ref; ci.yml's filter is [main].", "rider_verdict": "RIDER_PRE_1 VIOLATED for all 8."},
+    {"limb": "Push-evaluated SHA on a newly created release/commercial-v1", "producible": "0 of 8", "basis": "WP-4: no workflow carries a push trigger matching release/**, release/* or release/commercial-v1.", "rider_verdict": "RIDER_PRE_1 VIOLATED for all 8. This is the limb with the most consequence, because OD-1 designates this branch as the production terminus."},
+    {"limb": "Push-evaluated SHA on the repository default branch", "producible": "UNKNOWN", "basis": "Which branch is the default is a repository-settings fact this lane did not read (UD-2). If it is feature/sprint-0-foundation, no push trigger matches it and the answer is 0 of 8; if a prior act changed the default to main, the answer is 1 of 8.", "rider_verdict": "MUST BE MEASURED AT DN-4. Not inferable here."}
+   ],
+   "the_one_number_that_summarises_it": "On every push-evaluated limb measured, at most 1 of the 8 required checks is producible; on the release branch and the integration branch, 0 of 8. O-3 / E, whose status the parent records as DERIVED AS A REQUIREMENT with implementation OUT OF SCOPE, is the act that changes those numbers.",
+   "independent_corroboration_in_the_repository": "golden-journey.yml carries a comment block headed WHY pull_request AND NOT push which states that a push to integration/commercial-v1 triggers zero workflows, that the only push trigger in the corpus is ci.yml scoped to main, and that a push trigger there would produce a gate that looks armed and never fires. The workflow author reached the same measurement for the same reason. This is a repository comment, which is corroboration, not an independent measurement, and it does not substitute for re-running the parse."
+  },
+  "the_prerequisites_this_yields": [
+   {"id": "RIDER-DAG-1", "prerequisite": "DN-4 precedes DN-8, DN-9, DN-11 and DN-12.", "basis": "Each of those four configures or depends on protection on a ref, and the rider forbids configuring a check the ref's evaluated SHA cannot produce."},
+   {"id": "RIDER-DAG-2", "prerequisite": "O-2 may be configured on the pull-request-evaluated limb before O-3 exists, and MUST NOT be configured on any push-evaluated limb before O-3 exists.", "basis": "RIDER_PRE_3 applied to the measured results. This is the operative content of the owner's rider."},
+   {"id": "RIDER-DAG-3", "prerequisite": "Any lane that reports O-2 as SATISFIED must report it per ref and per limb, and must not aggregate a satisfied pull-request limb with an unsatisfiable push limb into a single green.", "basis": "RIDER_PRE_2. The programme has measured that a validation exercising only the expected-pass path passes identically for a sound and an unsound primitive."},
+   {"id": "RIDER-DAG-4", "prerequisite": "The producibility evaluation is re-derived at the SHA under consideration, never cited from this artifact.", "basis": "INV-6, and the fact that the workflow corpus is itself versioned: a SHA can add or remove a trigger."}
+  ],
+  "what_the_rider_does_not_do": "It does not weaken O-2, does not make O-2 optional, and does not license declaring the GitHub line protected on a partial configuration. The OD-4 ratification states that O-1..O-4 are the bar the line must clear before any release authority may describe it as protected, and that the rider does not alter their content. A rider that sequences a control is not a rider that excuses it."
+ },
+
+ "ACT_IDENTITY_REQUIREMENTS": {
+  "rule": "The effective ACT_IDENTITY_CONTRACT is CARRIED FORWARD IN FULL and is not restated clause by clause here, because a restatement risks diverging from the pinned source. It is cited by exact path and its operative requirements are enumerated by identifier.",
+  "loci": [
+   {"clauses": "AIC-1 through AIC-7", "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json ACT_IDENTITY_CONTRACT", "blob_sha": "65af13040b440987d3d08b1fafc295e270dc6f38"},
+   {"clauses": "AIC-8 and AIC-9, plus the AIC-5 scoping clarification", "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json RETRY_IDENTITY_CONTRACT", "blob_sha": "4192849f46c988afddf9fce548ec2db9d8df4be3"},
+   {"clauses": "The corrected eight-step ordering", "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json CONFIRMATION_AND_SHA_REVERIFICATION_ORDER_CORRECTION.the_corrected_sequence", "blob_sha": "4192849f46c988afddf9fce548ec2db9d8df4be3"}
+  ],
+  "the_four_requirements_the_mission_names": [
+   {"requirement": "PRE-EXISTENCE IDENTITY", "clause": "AIC-1", "carried_as": "Before any governed deployment is created, the act record must contain a cryptographically secure act nonce of at least 128 bits, the exact frozen and re-verified Git SHA, the intended deployment mechanism, the timestamp, and the human confirmation. The load-bearing property is a TIMING property: an automatic Git deployment cannot carry a nonce nobody had generated when it was created. The nonce is not unforgeable because of any platform property; it is unforgeable because it was recorded before the fact."},
+   {"requirement": "POST-CREATION dpl_ BINDING", "clause": "AIC-3, with AIC-2 as the carriage mechanism", "carried_as": "The nonce and frozen SHA are passed as deployment metadata under the exact keys uellix_governed_act_nonce and uellix_governed_act_sha. The server-generated deployment id returned by the create act is captured immediately, within the same governed act, and written into the act record against the nonce. An act whose id was never bound is INCOMPLETE and its deployment is INADMISSIBLE. The deployment id is never required to pre-exist its deployment."},
+   {"requirement": "FIRST-BOUND-WINS", "clause": "AIC-5, as scoped by v1.0.2", "carried_as": "An act nonce binds to EXACTLY ONE deployment id: the first bound under AIC-3. Any later deployment bearing the same nonce with a different id is INADMISSIBLE as governed evidence and is a GOVERNANCE INCIDENT to be recorded rather than resolved by choosing between them. Its measured necessity is the redeploy-copy hazard: a redeploy COPIES meta, so a nonce alone does not identify one deployment. Corollary: a governed deployment MUST NOT be redeployed. v1.0.2 clarifies, without superseding, that this does not prohibit a retry that mints its OWN distinct nonce under AIC-8."},
+   {"requirement": "BOUNDED RETRY WITH FRESH SUCCESSOR NONCE", "clause": "AIC-8 and AIC-9", "carried_as": "A retry authorized under PR201's BOUNDED_RETRY_RULE MUST mint a NEW nonce distinct from the first attempt's, and must carry meta.uellix_governed_act_supersedes_nonce naming the predecessor, so the chain is verifiable by re-reading the platform record alone. AIC-9 caps the sequence at TWO total deployment-creation acts; a third nonce chained directly or transitively is REFUSED at the act-record stage without re-evaluating BR-1..BR-5, because a nonce mechanism cannot expand a count ceiling a frozen authority fixed. A broken or multi-hop chain is a STOP, not a judgement call."}
+  ],
+  "EXEC_NOTE_1_PREREQUISITE": {
+   "status": "PREREQUISITE, CARRIED FORWARD AND UNDISCHARGED.",
+   "locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json NONBLOCKING_EXECUTION_PRECONDITION_NOTES.notes[0], sourced to CV1-INFRA-RELEASE-CONTROL-V102-FOCUSED-RECERT-R1.",
+   "the_requirement": "meta.uellix_governed_act_supersedes_nonce has NOT had its platform round-trip independently verified, for the same reason the original nonce key's round-trip could not be verified without deploying: doing so requires creating a deployment, which no authoring lane is permitted to do. Before any execution lane relies on the retry identity chain as EVIDENCE, rather than as an internal act-record discipline, it MUST perform the equivalent of AIC-4 for the PREDECESSOR key specifically: re-read the deployment record after creation and assert the key round-tripped EXACTLY, with the same fail-closed branch on a mismatch (absent, renamed, truncated, case-folded or otherwise altered).",
+   "how_it_attaches_to_this_DAG": "It is an additional prerequisite on DN-15, and it is conditional in a precise way: it binds only if that lane ever exercises the bounded retry. A first attempt that reaches READY never touches the predecessor key and never triggers the obligation.",
+   "the_distinction_that_must_not_collapse": "EXEC-NOTE-1 distinguishes using the chain as an INTERNAL DISCIPLINE from using it as EVIDENCE. Recording a predecessor nonce in a local act record is permitted unconditionally. CITING the chain as proof that a retry was the authorized one is what requires the round-trip verification, because that citation rests on a platform behaviour nobody has yet observed.",
+   "why_this_lane_cannot_discharge_it": "Discharging it requires creating a deployment. This artifact's document_class forbids deployment, and the parent's EXPLICIT_NON_AUTHORIZATIONS forbids creating any deployment in any environment. The note is therefore carried, not closed, and a certifier finding it closed here should treat that as a defect.",
+   "scope_limit_restated": "EXEC-NOTE-1 does not touch OD-1 through OD-5. It is scoped entirely to a future PR201 execution lane's evidence discipline."
+  },
+  "what_is_NOT_governed_by_the_act_identity_contract": "GIT-PLANE acts. M-8 and M-9 create and configure refs and protection, not deployments. Their identity discipline is the ref name plus the prestate and verification recorded against them, per RELEASE_BRANCH_CREATION_ACT.retry_and_idempotence.relationship_to_the_deployment_retry_contract. Importing nonce machinery into the git plane, or git idempotence reasoning into the deployment plane, is refused in both directions."
+ },
+
+ "NO_OP_NODES": {
+  "rule": "A NO-OP is DERIVED to require no act under the current owner set. It is not an act that was skipped, not a deferral, and not dormant approval. Each entry states what would re-arm it.",
+  "no_ops": [
+   {
+    "id": "NON-1",
+    "node": "DN-16 / M-5 REPOSITORY VISIBILITY",
+    "derivation": "OD-2 = RATIFIED_REMAIN_PUBLIC_FOR_CURRENT_PHASE. The selected outcome is the current state, so the act that would change it has nothing to do.",
+    "basis": "The OD-2 amendment states the repository's public state is UNCHANGED by the amendment, that it was public before the ratification and remains public after it, for the reason stated and not because the record performed or permits any act.",
+    "what_this_is_not": "It is NOT a grant to keep the repository public indefinitely. The parent OD-2 entry's must_not_happen clause forbids that reading, and the amendment's what_is_explicitly_not_ratified states no claim is made about whether the repository should ever become private, only about the current phase.",
+    "what_would_re_arm_it": "A future owner decision to move to private, which must clear PRECOND-1 (capability preserved), PRECOND-2 (freshness re-measurement, not inheriting the reported U-3 finding), PRECOND-3 (its own governed authority with prestate, verification and rollback) and PRECOND-4 (its own immediate pre-execution confirmation). None of the four is pre-approved by this DAG's recording of them.",
+    "the_consequence_for_U-3": "U-3 LEAVES THE CRITICAL PATH. Its blocking force, per EXECUTION_ORDERING's plan-tier-before-visibility constraint, was on executing a visibility change; with no change to execute, there is nothing to block. U-3 is not a node of this DAG. It returns as PRECOND-2 of a future transition, and PRECOND-2 requires re-measurement rather than reuse of the reported finding, so no U-3 value is carried forward here at all.",
+    "the_irreversibility_note_that_survives": "The parent's adjudication P records that visibility is the one mutation with no clean inverse: making a public repository private does not retract what has been fetched, forked, cached or indexed, and specifically does not un-leak alert 1. That remains true and is the reason NON-1 is recorded as a derivation rather than as an absence.",
+    "relationship_to_alert_1": "Both the parent OD-2 entry and the amendment state that making the repository private is NOT remediation for secret-scanning alert 1: that exposure is historical and only rotation closes it. NON-1 therefore removes no security control, because visibility was never one."
+   },
+   {
+    "id": "NON-2",
+    "node": "DN-13 / M-4 DEFAULT BRANCH",
+    "classification": "NOT_TRIGGERED, which is DISTINCT from NO_OP.",
+    "derivation": "See DERIVED_ORDERING_DEPARTURES DEP-1.",
+    "why_the_distinction_is_kept": "NON-1 is a NO-OP because the owner selected an outcome identical to the current state. NON-2 is NOT_TRIGGERED because the selected option does not call for the act at all. The practical difference: re-arming M-4 needs only a new owner decision under M-4's existing authority, whereas re-arming M-5 needs OD-2 to be revisited AND four preconditions cleared. Collapsing the two into one label would lose that."
+   }
+  ]
+ },
+
+ "EXTERNAL_AUTHORITY_DEPENDENCIES": {
+  "rule": "These nodes are governed by artifacts outside this chain. This artifact records the dependency and the ordering constraint it must respect; it grants nothing, reinterprets nothing, and widens nothing.",
+  "dependencies": [
+   {
+    "id": "EAD-1",
+    "node": "DN-15",
+    "external_authority": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json (PR #201), with its companion docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_TEST_MANIFEST_v1.0.0.json.",
+    "what_it_governs": "A bounded, non-transferable permission to correct three branch-scoped Preview environment variables and to create EXACTLY ONE new Preview deployment afterwards, bound to one exact SHA, solely so D-1 can be measured.",
+    "the_constraint_this_DAG_imposes": "DN-14 (M-6) must precede it. That constraint originates in the PARENT's M-6 timing_constraint and EXECUTION_ORDERING step 7, not in PR201, and it constrains the ORDER in which the PR201 lane may run, not the content of its grant.",
+    "precedence_on_conflict": "PR201 CONTROLS and the consumer STOPS. The parent states this at RELATIONSHIP_TO_PR201.no_reinterpretation, naming PR201's custom_alias_required = NO, its D1_PROOF_CONTRACT, its HOSTED_CATALOG_OBSERVATION_DISPOSITION and its M11_S6_BOUNDARY as specifically not reinterpreted.",
+    "additional_undischarged_prerequisites": ["EXEC-NOTE-1, conditional on the bounded retry being exercised.", "PMV-2, the mandatory pre-execution re-measurement of U-4 that the parent's UNKNOWNS U-4 requires before any actor relies on the H adjudication. U-4 is whether the environment-variable correction has ALREADY been applied; the parent expressly refused to infer it from repository state, noting that PR201's final_state reads AUTHORED__NOT_EXECUTED but that this is an inference from the repository about a hosted fact."],
+    "a_measured_caution_carried_here": "PR201's final_state reading AUTHORED__NOT_EXECUTED is a statement about the AUTHORITY artifact, not about the hosted world. Merging an authority is not exercising it, and an authority's own final_state cannot establish whether a hosted mutation happened. U-4 must be measured, not read."
+   },
+   {
+    "id": "EAD-2",
+    "node": "DN-17",
+    "external_authority": "PR #206's secret-scanning alert 1 adjudication lane, anchored to SSL-06 and to the SEC5 gate of docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json via docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json.",
+    "what_it_governs": "Rotation proof, severity classification, disclosure obligation and alert closure.",
+    "the_constraint_this_DAG_imposes": "NONE. It is gated on nothing here and this DAG is gated on nothing there.",
+    "what_this_artifact_must_not_be_read_to_claim": "No claim about rotation, severity, disclosure or closure. OD-5's what_is_explicitly_not_ratified field enumerates all four as PR #206's to determine on its own evidence, and states none may be inferred from the ratification. The same applies to this artifact.",
+    "the_namespace_distinction_carried": "SEC5 is a GATE in RELEASE_GATE_LEDGER_v1.0.0.json (secret custody and hygiene). SSL-06 and SSL-08 are STOP-LINES that attach to it. The two are different namespaces and v1.0.2's SPC102-V101-3 corrected an earlier statement that did not acknowledge SEC5's existence. Recorded so no successor conflates them."
+   },
+   {
+    "id": "EAD-3",
+    "node": "DN-4, downstream limb only",
+    "external_authority": "NONE EXISTS YET. O-3 / E requires editing .github/workflows/**, which the parent's EXPLICIT_NON_AUTHORIZATIONS forbids it from doing and which this artifact is equally forbidden from doing.",
+    "what_it_would_govern": "The push-triggered exact-SHA battery that makes the eight required checks producible on the merge SHA.",
+    "status": "The requirement is AUTHORED (ADJUDICATIONS.E, status DERIVED AS A REQUIREMENT, implementation OUT OF SCOPE). A successor implementation lane must carry it out under its own authority and its own manifest. Until it exists, RIDER_PRE_3 holds and the push-evaluated limb of O-2 is unreachable.",
+    "the_interim_control_that_applies_meanwhile": "The parent's E entry names an interim compensating control: until the battery exists, no release authority may treat the integration tip as verified unless TREE_IDENTITY_CONTROL has been evaluated and passed for the merge in question. That control is carried here unchanged and is NOT a substitute for E.",
+    "the_alternative_the_parent_recorded_without_choosing": "A GitHub merge queue would also close the gap by testing the exact prospective merge commit before it lands. The parent declined to recommend it over a push trigger, because a merge queue also changes merge mechanics and required-check semantics and that lane had no authority to adjudicate the trade. This artifact likewise does not choose. The choice belongs to the implementation lane or the owner, and recording both without selecting is deliberate."
+   },
+   {
+    "id": "EAD-4",
+    "node": "DN-1 and DN-2, and DN-3",
+    "external_authority": "NONE EXISTS. No artifact in this chain permits an authenticated Vercel control-plane read.",
+    "what_it_would_govern": "The read-only measurement of the production branch setting (U-1), the broad project-role predicate (U-6), and the Git integration prestate (U-5).",
+    "status": "BLOCKING AND UNRESOLVED. U-1's own resolved_by field names the two admissible paths: an owner-side reading of the project's Git settings, or an authority permitting an authenticated settings read.",
+    "why_this_is_the_first_thing_the_next_gate_should_see": "It means the DAG's three earliest measurement nodes cannot be executed by any lane currently authorized. Whatever else is true of this derivation, execution cannot begin until that is addressed, and addressing it is an owner or authority act, not an implementation one."
+   }
+  ]
+ },
+
+ "RATIFICATION_IC_FINDINGS_CONSUMED": {
+  "rule": "The final ratification IC's non-blocking findings are consumed as AUTHORING INPUTS. Where a finding is cheap to close, it is closed here by pointer. NO owner selection is reopened by any closure. Where a finding cannot be closed by an authoring lane, it is carried forward named.",
+  "PROVENANCE_OF_THESE_FINDINGS": {
+   "status": "REPORTED_NOT_MATERIALIZED.",
+   "what_this_lane_measured": "No certification or IC verdict artifact for the CV1 infrastructure release-control ratification exists anywhere in the repository tree at parent HEAD 89695532. A search of docs/** for the NB identifier pattern returns hits only in unrelated artifacts (COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json, COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json, CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json, EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json, W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json), none of which is this chain.",
+   "classification": "The NB-1..NB-10 set is therefore OWNER-REPORTED AND NOT MATERIALIZED, on the same precedent by which this programme has previously held that an owner-affirmed certification without a materialized verdict artifact counts as OCCURRED but NOT MATERIALIZED, and that the three states OCCURRED, MATERIALIZED and UNKNOWN must be kept separate before fail-closed is applied.",
+   "what_follows_from_that": "This lane consumes the five findings the directing text NAMES and VERIFIES each against the source before closing it. It does NOT enumerate or invent content for the five it was not given. NB-1 through NB-10 as a numbered set is therefore carried as PARTIALLY CONSUMED, and a certifier holding the actual IC should treat any unaddressed finding as open.",
+   "what_this_lane_refused_to_do": "Reconstruct the unnamed findings by guessing what an IC would have found, and label the result a closure. A closure of a finding whose text this lane never read would be a checklist, not a sweep."
+  },
+  "closures": [
+   {
+    "id": "CL-1",
+    "finding_as_named": "Stale U3_MEASUREMENT_STATUS.",
+    "verified_against_source": "CONFIRMED. docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json U3_MEASUREMENT_STATUS.rule states that U-3 is UNRESOLVED at the moment the ratification was recorded and that a separate read-only lane is understood to be currently measuring it; its effect_on_OD-2 field states OD-2's DEFERRED disposition remains NON-EXECUTABLE. The successor amendment's U3_MEASUREMENT_CONTEXT reports U-3 resolved and matures OD-2 to RATIFIED_REMAIN_PUBLIC_FOR_CURRENT_PHASE. The parent block is therefore stale in both its status claim and its effect claim.",
+    "closure": "The CONTROLLING U-3 status for any consumer of this DAG is the AMENDMENT's, not the parent's: U-3 is resolved BY REPORT, expressly not independently verified by that lane, and OD-2's disposition is final for the current phase rather than deferred. The parent block is NOT edited and remains historically accurate to what was true when written, exactly as the amendment's relationship_to_U-3s_original_unknown field states about U-3's own entry in the effective authority.",
+    "the_operative_consequence_for_this_DAG": "U-3 is not a node. See NO_OP_NODES NON-1.the_consequence_for_U-3.",
+    "what_the_closure_does_not_do": "It does not promote the reported U-3 finding to a standing fact. PRECOND-2 of OD-2 requires re-measurement at the time of any future decision, and this closure changes nothing about that."
+   },
+   {
+    "id": "CL-2",
+    "finding_as_named": "Wrong U-2 / U-3 freshness identifier.",
+    "verified_against_source": "CONFIRMED AND LOCATED EXACTLY. docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json FRESHNESS_CARRYOVER_REAFFIRMED.rule opens by stating that resolving U-2 and U-6 by report does not convert either into a standing fact. The amendment resolved U-3 and U-6, not U-2. U-2 is defined at CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json UNKNOWNS.unknowns[1] as which deployment the integration branch alias currently resolves to, which this amendment never addresses.",
+    "the_internal_evidence_that_the_substance_is_U-3": "The SAME sentence goes on to enumerate the hosted facts it means, and the first of them is THE PLAN TIER, which is U-3's subject. The amendment's dedicated section is titled U3_MEASUREMENT_CONTEXT. The identifier is wrong; the substance is unambiguously U-3.",
+    "closure": "Read FRESHNESS_CARRYOVER_REAFFIRMED.rule as governing U-3 and U-6. The block's FORCE is unaffected: it is a freshness reaffirmation, and it applies to every hosted fact in the chain including U-2, so the mislabel does not narrow its coverage. Nothing downstream relied on the U-2 reading.",
+    "why_it_was_still_worth_closing": "An identifier error in a freshness clause is the class of defect that lets a later reader conclude the alias binding was resolved. U-2 remains UNRESOLVED and the alias remains a moving pointer of indeterminate current binding, forbidden as an evidence target by the parent's EVIDENCE_REQUIREMENTS regardless of how it currently resolves."
+   },
+   {
+    "id": "CL-3",
+    "finding_as_named": "Obsolete parent verification criterion.",
+    "verified_against_source": "CONFIRMED. docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json required_independent_review.verification_criteria_for_the_next_gate[2] requires a certifier to confirm that OD-2's DEFERRED disposition is preserved as non-executable and is not read anywhere as implicit approval to remain public indefinitely. The amendment lawfully SUPERSEDED that disposition, recording supersedes_parent_disposition = RATIFIED_DEFERRED_PENDING_U3.",
+    "the_defect": "A certifier applying the parent's six criteria verbatim to the current chain would demand the preservation of a disposition the chain no longer holds, and would be correct to fail it on those terms. The criterion is obsolete, not wrong: it was exactly right for the state it was written against.",
+    "closure": "The CONTROLLING criteria for certifying the ratification chain are the AMENDMENT's six, at required_independent_review.verification_criteria_for_the_next_gate in the amendment, which are written against the superseded state. Specifically, the amendment's criterion 1 replaces the parent's criterion 3: confirm the OD-2 entry matches the human's new selection exactly, with no addition, softening or extension. The parent's remaining five criteria are NOT obsolete and continue to apply: OD-1/OD-3/OD-4/OD-5 transcription fidelity, no new decision introduced under the guise of transcription, OD-5 routing-only scope, CANDIDATE_BINDING re-derivation, and no hosted mutation.",
+    "how_this_closure_avoids_re_blessing_the_superseded_state": "It does not affirm that the parent's criterion 3 reasoning remains correct. It records the criterion as OBSOLETE and names its replacement. Affirming a superseded clause's reasoning would re-bless the defect another clause of the same chain corrects, which this programme has measured to be a real and distinct failure mode."
+   },
+   {
+    "id": "CL-4",
+    "finding_as_named": "U-6 scope.",
+    "verified_against_source": "CONFIRMED. The unknown is ANY Commercial V1 role; the reported resolution is CURRENT Commercial V1 CUSTOM DOMAINS. See U6_REMEASUREMENT_REQUIREMENT.THE_SCOPE_NARROWING_THIS_LANE_MEASURED for the full derivation and the enumeration of limbs the narrow reading omits.",
+    "closure": "DN-2 is defined against the BROAD predicate and enumerates eight limbs that must be covered. The narrow reported finding is recorded as a PARTIAL measurement of the broad predicate: it may stand as evidence about the custom-domain limb and about nothing else. The fail-closed binding remains ARMED for every unevaluated limb.",
+    "what_this_closure_explicitly_does_not_do": "It does not reopen OD-1 or OD-4, and it does not assert that a second production surface exists. It corrects the SCOPE of a measurement, which changes what still has to be measured, not what the owner decided.",
+    "the_binding_is_not_retired_by_this_closure": "The ratification amendment's own U6_FAIL_CLOSED_BINDING_STATUS.effect states the binding continues to govern every future re-measurement and that a satisfied-today finding is not a standing exemption. That is why DN-2 recurs before each production-boundary act."
+   },
+   {
+    "id": "CL-5",
+    "finding_as_named": "Citation-path precision.",
+    "verified_against_source": "CONFIRMED, with the exact loci resolved. docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json ratifications[2].repository_binding (OD-3) states that the sequencing constraint the owner accepted matches v1.0.1 ACT_IDENTITY_CONTRACT's FUTURE_MUTATIONS M-6 timing_constraint and v1.0.1 EXECUTION_ORDERING step 7. Both citation paths are wrong in the same sentence.",
+    "the_two_resolved_paths": [
+     {"as_cited": "v1.0.1 ACT_IDENTITY_CONTRACT's FUTURE_MUTATIONS M-6 timing_constraint", "measured": "v1.0.1's ACT_IDENTITY_CONTRACT contains keys AIC-1 through AIC-7 plus status and core_invariant, and contains ZERO occurrences of the string M-6 and zero occurrences of timing_constraint. It is not the locus.", "actual_locus": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json FUTURE_MUTATIONS.mutations[5].timing_constraint, i.e. the PARENT, where M-6 carries a timing_constraint field."},
+     {"as_cited": "v1.0.1 EXECUTION_ORDERING step 7", "measured": "v1.0.1 has NO EXECUTION_ORDERING key at all. It is not the locus.", "actual_locus": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json EXECUTION_ORDERING.ordered_sequence[7]."}
+    ],
+    "why_the_error_is_of_a_known_class": "An amendment can be cited as the LOCUS of a clause it only carries by reference, because a grep for the identifier hits the amendment and the substance matches. Both clauses are in the PARENT and are among the parent's clauses v1.0.1 leaves unchanged and still controlling. The substance the ratification asserts is CORRECT: M-6's timing_constraint does require any narrowing to precede the PR201 correction, and ordered_sequence[7] does say the same thing.",
+    "closure": "This artifact cites both loci at their MEASURED paths throughout: see CONF-6, edge DN-14 -> DN-15, and DN-14's authority field. No conclusion anywhere in the ratification chain depended on the wrong paths, because the substance at the correct paths is identical.",
+    "the_discipline_this_installs": "Every citation in this artifact names the FILE and the KEY PATH, and each of the ones load-bearing for an ordering claim was resolved by opening the named path rather than by grepping the identifier. Where this artifact restates a clause in its own words it says so explicitly rather than implying a verbatim reproduction, because a verbatim claim needs a programmatic string comparison and this lane performed none."
+   }
+  ],
+  "carried_forward_not_closed": [
+   {"id": "CF-1", "finding": "EXEC-NOTE-1's platform round-trip verification of meta.uellix_governed_act_supersedes_nonce.", "why_not_closable_here": "Closing it requires creating a deployment. Carried as a prerequisite on DN-15. See ACT_IDENTITY_REQUIREMENTS.EXEC_NOTE_1_PREREQUISITE."},
+   {"id": "CF-2", "finding": "The five NB findings of the ten that the directing text did not name.", "why_not_closable_here": "Their text is not in the repository and was not supplied. Guessing at them and declaring them closed would be a fabricated closure. Recorded as an open item for the next gate."},
+   {"id": "CF-3", "finding": "U-2, the integration branch alias's current binding.", "why_not_closable_here": "It requires a control-plane read this lane has no authority for, and per the parent's EVIDENCE_REQUIREMENTS the alias is forbidden as an evidence target regardless of how it resolves, so resolving it would not unlock anything in this DAG. Recorded so its absence is not read as an oversight."},
+   {"id": "CF-4", "finding": "U-4, whether the PR201 environment correction has already been applied.", "why_not_closable_here": "The parent expressly refused to infer it from repository state and requires PMV-2, a mandatory pre-execution re-measurement. Carried as a prerequisite on DN-15 via EAD-1."}
+  ]
+ },
+
+ "OWNER_DECISION_REQUIRED": {
+  "rule": "Two decisions are SURFACED here that the ratified owner set does not contain. Neither is a reopening of OD-1 through OD-5: each is a consequence of OD-1 = Option D that the ratification did not reach, because the consequence only becomes visible once the DAG is derived. This lane enumerates options with measured consequences and SELECTS NONE. The RBD-* namespace is new and deliberately does not allocate a number in the PR #204 OD namespace.",
+  "decisions": [
+   {
+    "id": "RBD-1",
+    "question": "What is the exact source ref for release/commercial-v1?",
+    "why_it_is_not_already_decided": "OD-1 ratified the branch ROLE (a dedicated release branch terminating the production lineage) and the owner supplied the NAME. Neither the ratification nor any clause of the effective package states the source. A branch is a name plus a commit; only the name is settled.",
+    "why_this_lane_may_not_decide_it": "The choice determines what the production line will carry the first time M-7 points production at it. GP-5 measures that the two natural candidates differ by 992 commits and GP-6 measures that their trees differ. That is a product and release decision, not an implementation detail, and choosing it here would be the silent semantic choice the programme's fail-closed rules refuse.",
+    "authority_recommendation": "NONE. No clause of the effective package prefers either.",
+    "technical_recommendation": "NONE OFFERED. The consequences below are measurements, not arguments for one option.",
+    "options_with_measured_consequences": [
+     {"option": "SOURCE = main, at its head re-derived at execution time (067e8c2f as measured on 2026-09-22, GP-2)", "measured_consequences": ["The release branch starts at exactly the commit production currently serves, per v1.0.1 CM-2/CM-3 and GP-2. If M-7 then retargets production to it, the SHA production serves does not change at that instant, so M-7's verification limb that www.uellix.com continues to serve the intended deployment throughout is satisfiable by non-change rather than by a successful cutover.", "The release branch would be 992 commits BEHIND integration/commercial-v1 (GP-5), so every subsequent release requires a promotion path from integration to release that no artifact in this chain has authored.", "main carries one of the eight governed checks on its head, per the parent's PRODUCTION_BOUNDARY measured rationale. That is the same posture production already has."]},
+     {"option": "SOURCE = integration/commercial-v1, at its head re-derived at execution time (537487ac as measured on 2026-09-22, GP-3)", "measured_consequences": ["The release branch starts 992 commits ahead of what production currently serves (GP-5), with a different tree (GP-6). If M-7 then retargets production to it, the very next production deployment moves production forward by 992 commits in one act, and that change is publicly visible immediately at www.uellix.com, which M-7's must_be_stated_at_confirmation identifies as the only mutation in the parent whose failure mode is a visible outage.", "It aligns the release line with where work actually happens, so no promotion path needs authoring for the first release.", "537487ac is the parent's AS_OF_BASE, so the release branch would start at the exact commit the entire effective package was measured against.", "By O-2's measure the resulting branch produces 0 of 8 required checks on push (WP-4), identically to option one; the check posture does not distinguish the options."]},
+     {"option": "SOURCE = a specific certified commit other than either head", "measured_consequences": ["Permits starting the release line at a commit with a known certification status rather than at a moving head.", "Requires the owner to name that commit, and requires the executing lane to verify it is reachable from origin. No artifact in this chain nominates one, so this option is recorded as available rather than as specified."]}
+    ],
+    "what_is_NOT_in_question": "The branch NAME (release/commercial-v1, owner-supplied and settled), the branch ROLE (OD-1 = Option D, ratified), and whether creation is a separate governed act (OD-1 states it is).",
+    "fail_closed": "While RBD-1 is unselected, M-8 MUST NOT be executed and every node downstream of DN-7 is blocked. The DAG does not proceed on a default."
+   },
+   {
+    "id": "RBD-2",
+    "question": "Does O-1's EXISTENCE control extend to release/commercial-v1?",
+    "why_it_is_not_already_decided": "O-1 enumerates integration/commercial-v1, the default branch and main. Option D introduced a fourth branch after O-1 was derived. See RELEASE_BRANCH_PROTECTION_GAP.the_gap.",
+    "why_this_lane_may_not_decide_it": "Extending the scope of a ratified control is an owner act. The OD-4 ratification states the sequencing rider does not alter the content of O-1 through O-4 in any respect, which forecloses this lane treating O-1's enumeration as elastic. Necessity is not consent.",
+    "authority_recommendation": "NONE BINDING on the extension itself. But the effective authority's reasoning for why O-1 covers main is on the record and is directly transferable: FUTURE_MUTATIONS M-3's why_main_is_included states that an unprotected branch whose tip is live production is the shortest measured path from a direct push to a public production change. Under Option D, after M-7, that description fits release/commercial-v1 and no longer fits main. This is recorded as the authority's own reasoning applied to a new branch, NOT as a recommendation and NOT as a claim that O-1 already covers it.",
+    "technical_recommendation": "NONE OFFERED.",
+    "options_with_measured_consequences": [
+     {"option": "EXTEND O-1 to release/commercial-v1", "measured_consequences": ["M-9 (DN-10) becomes a required node and DN-11 (M-7) may proceed once it completes.", "Adds one governed mutation to the DAG, with its own prestate, confirmation, verification and rollback.", "Makes the production terminus the fourth protected branch, so no branch in the production lineage is unprotected at any point after DN-10."]},
+     {"option": "DECLINE the extension", "measured_consequences": ["M-9 does not exist AND DN-11 is BLOCKED, per RELEASE_BRANCH_PROTECTION_GAP.conditionality. The fail-closed response to an uncovered production branch is not to proceed uncovered.", "The DAG cannot reach the production boundary. OD-1 = Option D would be ratified but unexecutable through to M-7.", "It would leave the production terminus as the only branch in the lineage that the ratified bar does not cover, which is a strictly worse posture than the status quo where production is served from main, a branch O-1 does name."]},
+     {"option": "EXTEND O-1 by PATTERN (release/**) rather than by branch", "measured_consequences": ["Covers future release branches without a further decision.", "Applies to refs that do not yet exist, including any created by another party, which changes M-8's prestate: a release/** ruleset would make the new branch protected on creation. RELEASE_BRANCH_CREATION_ACT.prestate_to_capture already includes a limb checking for exactly this, so the DAG is prepared for it either way.", "Broadens a ratified control beyond the single branch OD-1 named, which is a larger extension than the question asks."]}
+    ],
+    "what_is_NOT_in_question": "O-1 through O-4's CONTENT, which OD-4 ratified and which nothing here alters. The question is scope, not content.",
+    "fail_closed": "While RBD-2 is undecided, DN-10 does not exist and DN-11 is blocked."
+   }
+  ],
+  "what_this_block_is_not": "It is not a re-opening of the owner set, not a request to reconsider Option D, and not a claim that the ratification was deficient. The ratification decided what it was asked. These two questions became answerable only once the DAG made the consequences of Option D explicit, which is the work this artifact was authorized to do."
+ },
+
+ "UNKNOWNS_THIS_LANE": {
+  "rule": "Facts this derivation would have used and could NOT establish with a read-only operation available to it. None is filled with an assumption. Any consumer requiring one MUST measure it under an authority permitting the necessary access, and MUST fail closed until it does.",
+  "unknowns": [
+   {"id": "UD-1", "unknown": "Every Vercel control-plane fact: the production branch setting (U-1), the Git integration toggles and Ignored Build Step (U-5), the project inventory and each project's Commercial V1 role (U-6), the alias binding (U-2), and the Preview environment variable state (U-4).", "why_unmeasured": "This lane holds no authority permitting an authenticated Vercel read, and performed none. See EAD-4.", "consequence": "DN-1, DN-2 and DN-3 are derived but unexecutable under any authority currently in force. The DAG cannot start until that is addressed."},
+   {"id": "UD-2", "unknown": "Which branch is CURRENTLY the repository default branch, and the current protection and ruleset state of every branch.", "why_unmeasured": "It requires an authenticated GitHub repository-settings read, which this lane did not perform. GP-4 measures feature/sprint-0-foundation's head SHA, which establishes that the ref exists and nothing about its role.", "why_it_matters": "O-1 requires protection on THE DEFAULT BRANCH, identified by role rather than by name. M-2 (DN-12) therefore cannot know its own target without this read, which is why DN-12's re_measurement_required field makes the read mandatory rather than assuming the parent's measurement.", "consequence": "The default-branch limb of the rider evaluation is recorded as UNKNOWN rather than computed, and DN-12's target is UNKNOWN until measured."},
+   {"id": "UD-3", "unknown": "The text of the five NB findings the directing text did not name.", "why_unmeasured": "No IC verdict artifact exists in the tree and the text was not supplied. See RATIFICATION_IC_FINDINGS_CONSUMED.PROVENANCE_OF_THESE_FINDINGS.", "consequence": "Carried as CF-2. A certifier holding the actual IC must treat any unaddressed finding as open, and this artifact's consumption of the IC is PARTIAL by construction."},
+   {"id": "UD-4", "unknown": "Whether any repository ruleset already matches a release/** pattern.", "why_unmeasured": "Same as UD-2.", "why_it_matters": "It determines whether M-8 creates an inert ref or a ref that is protected on creation, which is the condition under which M-8's confirmation escalates from REQUIRED to ELEVATED.", "consequence": "It is a mandatory limb of M-8's prestate rather than a value recorded here."},
+   {"id": "UD-5", "unknown": "Whether any promotion path from integration/commercial-v1 to release/commercial-v1 is intended, and under what control.", "why_unmeasured": "No artifact in this chain authors one, and OD-1 did not address it.", "why_it_matters": "Under RBD-1 option one (source = main), the release branch begins 992 commits behind integration and a promotion path is required before the first release. Under option two it is not required for the first release but is required for every subsequent one.", "consequence": "Recorded as a downstream authority gap, NOT as a node of this DAG, because it is a release-process question rather than an infrastructure mutation. It is named so it is not discovered after M-8."}
+  ]
+ },
+
+ "FAIL_CLOSED_BEHAVIOR": {
+  "rule": "The listed condition produces the listed response. A response is never softened on the reasoning that the condition is unlikely, immaterial, or already known.",
+  "branches": [
+   "Any of the eight blob pins re-derives to a different value -> STOP_RATIFICATION_BINDING_MISMATCH. This DAG does not apply to the differing package.",
+   "U-1 cannot be measured read-only under the acting lane's authority -> STOP_U1_UNMEASURABLE. No execution node proceeds, and v1.0.1's value is not substituted.",
+   "U-1 measures a production branch other than main -> STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED.",
+   "Any limb of U-6's broad predicate establishes a Commercial V1 role for a second project -> STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED, per the ratification's U6_FAIL_CLOSED_BINDING. DN-7, DN-10 and DN-11 are all blocked.",
+   "U-6 is measured only partially -> the unevaluated limbs remain UNKNOWN and the STOP remains armed for them. Partial absence is not absence.",
+   "A required check would be configured on a ref whose evaluated SHA cannot produce it -> STOP_RIDER_VIOLATION.",
+   "RBD-1 is unselected -> M-8 is not executed. No default source ref is inferred.",
+   "RBD-2 is undecided -> M-9 does not exist and M-7 is blocked.",
+   "M-8's prestate finds refs/heads/release/commercial-v1 already present -> STOP_UNEXPECTED_REF_STATE unless the ref's SHA matches this act's own record, in which case the act closes as ALREADY_SATISFIED without a second create. In no case is the ref force-updated or deleted on the assumption this act created it.",
+   "Any prestate limb, re-derived immediately before a mutation, differs from the value captured at confirmation -> the act STOPS and is closed as ABANDONED, not as a failed attempt. The retry ceiling is not consumed.",
+   "A prestate capture fails or is partial -> the mutation is not executed, because it has no rollback.",
+   "Confirmation is absent, ambiguous, or differently scoped than the act -> the act is not executed. Silence is not consent, and confirmation does not transfer to a retry, a variant, or the next act.",
+   "Verification of a mutation fails -> apply the recorded inverse immediately and STOP. Do not attempt a second variant in the same sitting.",
+   "A retry-of-a-retry is requested on the deployment path -> REFUSED at the act-record stage, without re-evaluating BR-1..BR-5, per AIC-9.",
+   "The retry identity chain is to be cited as EVIDENCE and EXEC-NOTE-1 is undischarged -> STOP. The chain may be kept as an internal discipline; it may not be cited as proof.",
+   "This artifact and PR201 could be read to conflict -> PR201 CONTROLS and the consumer STOPS.",
+   "This artifact and the frozen effective package could be read to conflict -> the FROZEN PACKAGE CONTROLS and the consumer STOPS. This artifact is a successor derivation, not an amendment, and has no power to override a clause it consumes.",
+   "A consumer finds a node satisfied by citing a measurement recorded in this artifact -> that satisfaction is REFUSED, per INV-6."
+  ]
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": {
+  "rule": "Enumerated so no successor can read this artifact as conferring any of them. The list is exhaustive of what was considered and refused, and silence elsewhere is not a grant.",
+  "non_authorizations": [
+   "Creating, deleting or updating any git ref on any remote, including refs/heads/release/commercial-v1. M-8 is DEFINED here and EXECUTED nowhere.",
+   "Creating, editing or deleting any branch protection rule or repository ruleset, including on release/commercial-v1. M-9 is DEFINED here and EXECUTED nowhere.",
+   "Changing the repository default branch.",
+   "Changing repository visibility, in either direction.",
+   "Changing any Vercel project setting, including the production branch.",
+   "Changing the Vercel Git integration, any automatic-deployment toggle, or any Ignored Build Step.",
+   "Changing, adding or removing any environment variable in any environment, or binding any branch to any environment.",
+   "Creating, promoting or redeploying any deployment, in any environment.",
+   "Creating, changing or removing any alias or domain, including www.uellix.com.",
+   "Performing any authenticated read of the Vercel or GitHub control plane. This lane performed none, which is why UD-1 and UD-2 exist.",
+   "Contacting or mutating Supabase in any way, in any environment.",
+   "Editing any file under .github/workflows/**, or implementing O-3 / E.",
+   "Modifying any application code.",
+   "Modifying, amending or reinterpreting any file of the frozen effective package or of the owner ratification chain.",
+   "Reopening, re-weighing, softening or extending any of OD-1 through OD-5.",
+   "Selecting RBD-1 or RBD-2 on the owner's behalf, or treating the necessity of an extension as consent to it.",
+   "Widening, narrowing or reinterpreting PR201's grant, its one-deployment bound, or any of its named clauses.",
+   "Claiming anything about secret-scanning alert 1: rotation, severity, disclosure or closure.",
+   "Discharging EXEC-NOTE-1, or citing the retry identity chain as evidence.",
+   "Declaring D-1, M11, S4, S6, STAGING_ALIGNED, PHASE_P0 or any stage or gate state.",
+   "Treating any automatic Preview as a governed staging deployment.",
+   "Allocating, inventing or implying any ODS or W2 identifier or lineage version, or allocating OD-6 or any further number in the PR #204 owner-decision namespace.",
+   "Citing this artifact as evidence that the GitHub line is protected. It measures that protection was ABSENT at the parent's authoring and performs no read of its own.",
+   "Citing this artifact as a schedule, a commitment, or an estimate. It states dependencies, not dates."
+  ],
+  "on_ods_lineage": "No ODS or W2 identifier is allocated, requested or implied. NEW_ODS_REQUIRED records the measured scope classification of this lane's write set; it does not reserve a lineage, and any future allocation belongs to the governed allocator alone."
+ },
+
+ "NEW_ODS_REQUIRED": {
+  "verdict": "NO",
+  "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+  "method": "This lane's two write-set paths were classified by EXECUTING the repository's own scope gate (pnpm ods:scope) against the frozen base, rather than by reading DEFAULT_PROTECTED_PATTERNS and reasoning about it.",
+  "result": "Both paths are ORDINARY. The gate reported SCOPE_BASE=8969553209857eb4a42959789446e05705a1d95c, CHANGED_FILE_COUNT=2, PROTECTED_AUTHORITY=NONE, PROTECTED_AUTHORIZED_PATH_COUNT=0, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0, UNAUTHORIZED_PATHS=0, ODS_SCOPE=PASS, under a single ordinary --allow of docs/ops/release/**.",
+  "corroborating_read_of_the_pattern_list": "DEFAULT_PROTECTED_PATTERNS carries exactly seven entries: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. docs/ops/release/** matches none of them. This reading CORROBORATES the executed classification and does not replace it.",
+  "PROTECTED_AUTHORITY": "NONE",
+  "consistency_with_precedent": "Identical to the classification the three immediately preceding authorities in this directory measured, for the same reason: both write-set paths are under docs/ops/release/**.",
+  "reversal_condition": "If a future measurement finds this lane's write set requires ANY protected path, this verdict is void and the lane must stop and escalate rather than widen an allowlist."
+ },
+
+ "self_check": {
+  "no_hosted_mutation_performed": "TRUE. This lane performed no GitHub mutation, no Vercel mutation, no environment change, no deployment, no visibility change, no branch creation and no alert closure. It also performed no authenticated control-plane READ of either platform.",
+  "no_branch_created_on_hosted_github": "TRUE. GP-1 measures refs/heads/release/* as ABSENT and this lane left it absent. M-8 is a definition.",
+  "no_branch_protection_or_ruleset_mutated": "TRUE.",
+  "no_vercel_setting_mutated": "TRUE.",
+  "no_environment_changed": "TRUE.",
+  "no_deployment_created": "TRUE.",
+  "no_visibility_mutated": "TRUE.",
+  "frozen_package_untouched": "TRUE. All six authority-package blobs and both ratification blobs re-derive to their recorded values at parent HEAD and are unmodified by this lane's write set, which adds two new files and edits none.",
+  "owner_selections_not_reopened": "TRUE. OD-1 through OD-5 are consumed as settled. RBD-1 and RBD-2 are NEW questions the ratification did not reach, not re-readings of what it decided, and this lane selected neither.",
+  "no_option_chosen_on_the_owners_behalf": "TRUE. RBD-1 enumerates three source options and RBD-2 three scope options; no recommendation is offered for either, and where the authority's own transferable reasoning exists (M-3's why_main_is_included applied to the release branch) it is labelled as the authority's reasoning and expressly not as a recommendation.",
+  "U1_definition_read_from_the_exact_effective_source": "TRUE. Read at CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json UNKNOWNS.unknowns[0], and its blocking scope read at FAIL_CLOSED_BEHAVIOR.branches[3], EXECUTION_ORDERING.ordered_sequence[1]/[4]/[5], FUTURE_MUTATIONS M-4.coupled_consequence_that_must_be_stated_at_confirmation and M-7.prestate_to_capture.",
+  "U1_status_contradiction_adjudicated_rather_than_reconciled": "TRUE. The directing premise (U-1 OPEN and blocking) and the measured repository state (U-1 resolved in v1.0.1 CM-6) are both recorded, the distinction between resolved-as-of-measurement and open-as-of-execution is stated, the clause that settles it is cited (the ratification's FRESHNESS_CARRYOVER), and neither statement is discarded.",
+  "U1_not_inferred_from_previous_measurements": "TRUE. DN-1 is defined as a RE-MEASUREMENT with an explicit list of forbidden substitutes, including this artifact's own GP-2.",
+  "U1_minimum_measurement_named_from_the_pinned_source_not_from_recall": "TRUE. DN-1's MIN-1 names GET /v9/projects/{id} and the fields link.type, link.repo and link.productionBranch by CITING v1.0.1 CM-6, which records its own operation, and requires DN-1 to re-verify the operation as well as the value because an endpoint version is itself mutable. It additionally carries the deploy-hook limb CM-6 measured, which a re-measurement written against U-1's definition alone would have silently dropped.",
+  "repository_identity_measured_not_assumed": "TRUE. GP-7 records the git remote as https://github.com/lorenzozanello/uellix-antigravity.git and corroborates it against the repository field of three frozen artifacts and against the link.repo value CM-6 measured in the Vercel plane. All four agree on lorenzozanello/uellix-antigravity. The two planes agreeing is what establishes that the Vercel project is linked to THIS repository, which every production-boundary statement presupposes.",
+  "departures_subjected_to_a_recorded_falsification_sweep": "TRUE. DEP-1 carries the_falsification_sweep_that_was_run, naming the two conjunctive patterns, the three candidate loci returned, the classification of each, and the verdict. The sweep also surfaced a hazard the derivation had not carried (CM-6's decoupling warning applies to M-7, not only to M-4), which is now a mandatory limb of DN-11's verification and confirmation.",
+  "no_execution_node_precedes_U1": "TRUE. Stated as INV-1, and INV-1 is recorded as STRICTLY STRONGER than the parent's clause so a certifier can challenge the extension rather than inherit it silently.",
+  "U6_remeasured_under_the_broader_definition": "TRUE. DN-2 is written against ANY Commercial V1 role, names uellix-production-web explicitly, enumerates eight limbs, and records the narrow custom-domain wording as a PARTIAL measurement rather than relying on it.",
+  "branch_creation_act_has_all_nine_required_elements": "TRUE. Prestate (four limbs, mandatory and blocking), exact source SHA/ref (routed to RBD-1 rather than guessed), exact target name (owner-supplied, no variant authorized), confirmation immediately before mutation (with six items that must be stated), verification (six assertions including three negative ones), rollback/delete rule (with the conditional-delete carve-out), retry/idempotence (idempotent on postcondition, not on act; one retry; fresh confirmation and fresh prestate), and the fail-closed stale-prestate rule (ABANDONED, not FAILED).",
+  "branch_creation_act_not_executed": "TRUE.",
+  "ordering_re_derived_not_copied": "TRUE. Eight steps of the certified sequence are CONFIRMED against their exact clauses, two conditional steps are measured NOT TRIGGERED under OD-1 = Option D (DEP-1, DEP-2), and three edges are ADDED that the parent could not state (ADD-1, ADD-2, ADD-3). Each departure names its basis.",
+  "OD4_rider_translated_into_machine_verifiable_prerequisites": "TRUE. A computable predicate PRODUCIBLE(c, S(R)), three rider preconditions, four DAG prerequisites, and a measured evaluation giving 8 of 8 on the pull-request limb, 1 of 8 on a push to main, 0 of 8 on a push to integration, 0 of 8 on a push to the release branch, and UNKNOWN on the default branch.",
+  "act_identity_contract_carried_by_reference_not_restated_as_verbatim": "TRUE. Cited by file and key path with blob hashes, and the four requirements the mission names are enumerated by clause identifier. No clause is claimed to be reproduced verbatim.",
+  "EXEC_NOTE_1_carried_as_undischarged_prerequisite": "TRUE. Recorded as CF-1 and as a conditional prerequisite on DN-15, with the internal-discipline versus evidence distinction stated.",
+  "no_op_nodes_derived_not_assumed": "TRUE. M-5 is NO_OP because OD-2 selected the current state; M-4 is NOT_TRIGGERED because Option D does not call for it. The two labels are kept distinct and the difference in what re-arms each is stated.",
+  "external_authority_dependencies_enumerated": "TRUE. Four, including the one that matters most: no authority currently in force permits the Vercel read that DN-1, DN-2 and DN-3 require.",
+  "IC_findings_consumed_with_provenance_stated": "TRUE. The absence of any materialized IC verdict artifact in the tree is measured and recorded, the set is classified REPORTED_NOT_MATERIALIZED and PARTIALLY CONSUMED, the five named findings are each verified against the source before closure, and the five unnamed ones are carried as CF-2 rather than invented.",
+  "every_named_IC_finding_verified_before_closure": "TRUE. CL-1 through CL-5 each carry a verified_against_source field naming the exact key path checked, and CL-5 resolves both wrong citation paths to their measured loci by opening the named files rather than by grepping the identifier.",
+  "no_superseded_clause_reasoning_re_blessed": "TRUE. CL-3 records the parent's criterion 3 as OBSOLETE and names its replacement, and explicitly declines to affirm that its reasoning remains correct.",
+  "citation_discipline_stated_where_restatement_occurs": "TRUE. Two blocks (U-1's definition and the OD-4 rider's text) carry an explicit citation_discipline field stating they are faithful restatements cited by path and NOT byte-verbatim reproductions, because this lane performed no programmatic string comparison.",
+  "no_verbatim_claim_made_without_a_programmatic_comparison": "TRUE. No block in this artifact asserts verbatim reproduction of any source text.",
+  "unknowns_recorded_rather_than_filled": "TRUE. Five, each naming why it is unmeasured and what it blocks. None is filled with an assumption.",
+  "no_new_identifier_allocated_in_a_namespace_this_lane_does_not_own": "TRUE. DN-* and RBD-* are new namespaces this artifact defines. M-8 and M-9 extend FUTURE_MUTATIONS additively on the AIC-8/AIC-9 precedent. No OD number, ODS identifier or W2 identifier is allocated.",
+  "write_set_classified_by_executing_the_gate": "TRUE. pnpm ods:scope was executed against base 89695532 with a single ordinary --allow of docs/ops/release/**, returning CHANGED_FILE_COUNT=2, PROTECTED_AUTHORITY=NONE, PROTECTED_PATH_VIOLATIONS=0, UNAUTHORIZED_PATHS=0 and ODS_SCOPE=PASS. The verdict is the gate's output, not a reading of the pattern list, which is recorded separately as corroboration only.",
+  "machine_gates_run_on_a_dependency_tree_that_actually_exists": "TRUE. MG-3 records that node_modules was ABSENT at lane start and was installed before any gate ran, so no PASS below is an artifact of a missing dependency tree.",
+  "this_artifact_confers_no_execution_authority": "TRUE. Stated in document_class, in PURPOSE, in EXPLICIT_NON_AUTHORIZATIONS, and against every node of class HOSTED_MUTATION."
+ },
+
+ "required_independent_review": {
+  "required": true,
+  "reason": "This artifact derives a dependency structure over acts that change publicly served state, adds two mutations the effective authority does not contain, measures two steps of a certified ordering to be not triggered, and surfaces two owner decisions. Each of those is a place where a derivation can quietly become an authorship, and none should be relied upon before an independent gate has tried to falsify it.",
+  "verification_criteria_for_the_next_gate": [
+   "Re-derive all eight blob pins with git ls-tree at the head under review and confirm CANDIDATE_BINDING still holds.",
+   "Confirm U-1's definition and blocking scope against the five exact key paths cited, and confirm the STATUS_ADJUDICATION does not silently resolve the contradiction in favour of either reading.",
+   "Confirm DN-1 is a RE-MEASUREMENT and that its forbidden-substitute list includes this artifact's own GP-2. A DN-1 satisfiable by citing v1.0.1 CM-6 is a defect.",
+   "Confirm INV-1's extension of the U-1 block from M-4/M-7 to every execution node is sound, or reject it. It is derived, not inherited, and is labelled as such.",
+   "Confirm DN-2 is written against ANY Commercial V1 role and that the eight limbs are exhaustive enough for the broad predicate. A limb this lane missed is an open finding.",
+   "Falsify DEP-1 by finding any clause of the effective package or the ratification chain that DOES call for a default-branch change under Option D. If one exists, the M-4 and M-2 edges must be restored and this artifact is wrong.",
+   "Falsify DEP-2 independently of DEP-1: even granting M-4 is not triggered, check whether any other clause requires M-2 to wait on something this artifact does not name.",
+   "Re-derive the rider evaluation by parsing the workflow corpus at the head under review and confirm the five limb results, including that ci.yml is still the only push trigger and still scoped to main. The numbers 8/8, 1/8, 0/8, 0/8 must be re-computed, not read.",
+   "Confirm M-8's nine required elements are each present and load-bearing, and specifically that the source ref is routed to RBD-1 rather than defaulted anywhere in the artifact.",
+   "Confirm M-8's conditional-delete carve-out cannot be read as authorizing the deletion of a ref this act did not create.",
+   "Confirm the RELEASE_BRANCH_PROTECTION_GAP is real by checking O-1's enumeration directly, and confirm that declining RBD-2 genuinely blocks M-7 rather than merely being noted.",
+   "Confirm RBD-1 and RBD-2 introduce no decision under the guise of derivation: that no option is recommended, and that the transferable-reasoning note under RBD-2 is not functioning as a disguised recommendation.",
+   "Confirm every closure CL-1 through CL-5 was verified against the cited source and that none re-blesses a superseded clause's reasoning.",
+   "Confirm the IC-finding consumption is honestly labelled PARTIAL, and that no closure is claimed for a finding whose text this lane never held.",
+   "Confirm that no block claims verbatim reproduction, and that the two restatement blocks carry their citation_discipline caveat.",
+   "Confirm no hosted mutation and no authenticated control-plane read of any kind was performed by this lane.",
+   "Confirm the companion manifest validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json by an independent schema check, rather than on this artifact's assertion that it does."
+  ],
+  "what_a_certifier_should_attack_first": "The three ADDED edges and the two DEPARTURES. They are the places where this artifact departs from a certified sequence, and if any is wrong the schedule it implies is wrong. DEP-1 is the highest-leverage: if M-4 IS called for by Option D, then M-4's ELEVATED confirmation and its production coupling re-enter the critical path and the DAG's shape changes materially."
+ },
+
+ "final_state": "EXECUTION_DAG_DERIVED__NO_NODE_PERFORMED__TWO_OWNER_DECISIONS_SURFACED__THREE_MEASUREMENT_NODES_UNEXECUTABLE_UNDER_ANY_AUTHORITY_IN_FORCE",
+
+ "next_gate": "Independent certification of this DAG before ANY execution node. The certification must re-derive the eight blob pins, re-compute the rider evaluation from the workflow corpus rather than reading it, attempt to falsify DEP-1 and DEP-2 and the three added edges, and validate the companion manifest against its schema independently. Only after that certification passes should the owner be asked for RBD-1 and RBD-2, and only after both are answered may an execution lane be authored. The first such lane cannot be an execution lane at all: DN-1, DN-2 and DN-3 require an authenticated Vercel read that no authority currently in force permits, so the actual next authorized act after certification is either an owner-side reading of the project settings or a separate authority permitting that read, exactly as UNKNOWNS U-1's resolved_by field already names."
+}

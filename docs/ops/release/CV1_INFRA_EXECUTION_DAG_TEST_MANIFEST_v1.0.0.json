@@ -1,0 +1,206 @@
+{
+ "manifest_id": "CV1-INFRA-EXECUTION-DAG",
+ "node_or_batch": "node",
+ "authority_reference": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json",
+ "dependencies": [
+  "CV1-INFRA-RELEASE-CONTROL (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json, blob f3236a1a26e2d868e14590c72f4a7752ffba801c)",
+  "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1 (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json, blob 65af13040b440987d3d08b1fafc295e270dc6f38)",
+  "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2 (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json, blob 4192849f46c988afddf9fce548ec2db9d8df4be3)",
+  "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0 (docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json, blob 17c257b3b0b06b37601851ddf8fbc6aa4abdc6ae)",
+  "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1 (docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json, blob 4d99df8bd43263c17dda96b76f0321b789e8cb04)",
+  "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY (docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json) - EXTERNAL, governs DN-15 only, not consumed as a dependency of this manifest's own controls",
+  "STAGING_RELEASE_PRODUCTION_AUTHORITY (docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json) and RELEASE_GATE_LEDGER_v1.0.0.json - EXTERNAL, named only for the SEC5 / SSL-06 anchor of DN-17"
+ ],
+ "protected_surfaces": [],
+ "protected_authority": null,
+ "sentinels": [
+  {
+   "id": "SEN-1",
+   "purpose": "THE EIGHT BLOB PINS. The six authority-package blob hashes and the two owner-ratification blob hashes recorded in the authority's EFFECTIVE_PACKAGE_CONSUMED must re-derive identically at the moment any consumer acts. A consumer finding any one to differ must treat the DAG as inapplicable to the differing package and raise STOP_RATIFICATION_BINDING_MISMATCH rather than carrying it forward."
+  },
+  {
+   "id": "SEN-2",
+   "purpose": "THE ABSENCE OF refs/heads/release/*. Measured ABSENT on origin on 2026-09-22 (authority GP-1). It is M-8's prestate. A consumer finding the ref PRESENT must raise STOP_UNEXPECTED_REF_STATE and must not create, force-update or delete it on the assumption that a governed act created it."
+  },
+  {
+   "id": "SEN-3",
+   "purpose": "THE SINGLE PUSH TRIGGER. Exactly one workflow in the corpus carries a push trigger (ci.yml, scoped branches: [main]). This is the value the whole OD-4 rider evaluation rests on. If a future measurement finds a second push trigger, or finds ci.yml's filter widened, every limb result in OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE is void and must be recomputed before O-2 is configured anywhere."
+  },
+  {
+   "id": "SEN-4",
+   "purpose": "THE FRESHNESS FRONTIER. integration/commercial-v1 at 537487ac7b102d51f553fcb8f5cfe19614e113d8 with tree 7228f833c57bfd37fe025546d939ecd46336159c, and main at 067e8c2f3ac9b5e843de3a35575182907b4365d4. These match the parent authority's AS_OF_BASE and AS_OF_TREE and the SHA its v1.0.1 recorded as the current production deployment's source. Equality is satisfied at authoring and is timestamped, never standing."
+  }
+ ],
+ "known_conditions": [],
+ "positive_controls": [
+  {
+   "id": "P1",
+   "description": "AUTHORING ARM. THE EIGHT BLOB PINS RE-DERIVE. Running git ls-tree -r <head> against the eight paths named in EFFECTIVE_PACKAGE_CONSUMED must reproduce all eight recorded blob hashes exactly. PASS is eight of eight. Anything less is STOP_RATIFICATION_BINDING_MISMATCH, not a partial pass.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P2",
+   "description": "AUTHORING ARM. THE GIT-PLANE PRESTATE IS REPRODUCIBLE. Re-executing the read-only operations the authority names in MEASURED_PRESTATE_THIS_LANE.git_plane must reproduce GP-1 through GP-6: refs/heads/release/* absent; main, integration and feature/sprint-0-foundation at the recorded SHAs; main an ancestor of integration with merge-base equal to main's head, 992 commits ahead and 0 behind; and the two distinct tree hashes. A divergence in any of the six is a freshness finding, not a defect in the authority, and the correct response is to record the new value and re-derive every conclusion that rested on the old one.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P3",
+   "description": "AUTHORING ARM. THE RIDER EVALUATION IS RE-COMPUTABLE FROM SOURCE. Parsing each file under .github/workflows/ for its on: trigger keys, its push branch filters and its job-level name values, then intersecting the job names with the eight names in ADJUDICATIONS.D.required_checks, must reproduce: nine workflow files; all eight required names present as job names; exactly one push trigger, in ci.yml, scoped branches: [main]; and therefore 8 of 8 producible on a pull-request-evaluated SHA, 1 of 8 on a push to main, 0 of 8 on a push to integration/commercial-v1, 0 of 8 on a push to release/commercial-v1, and UNKNOWN for the default branch. The numbers must be COMPUTED, not read from the authority.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P4",
+   "description": "AUTHORING ARM. THE DAG IS ACYCLIC AND CLOSED. Every node id referenced in a prerequisites array, in DAG_EDGES.edges, in DAG_EDGES.asserted_non_edges, in DAG_INVARIANTS, in RELEASE_BRANCH_CREATION_ACT.ordering_position and in the RBD entries must exist in DAG_NODES.nodes; every node's prerequisites must be a subset of the edges declared into it; and the edge relation must contain no cycle. A dangling reference or a cycle is a structural defect in the derivation itself.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P5",
+   "description": "AUTHORING ARM. EVERY CITED KEY PATH RESOLVES. Every file-plus-key-path citation the authority makes into the frozen package or the ratification chain must resolve to an existing key in the named file at the pinned blob. This control exists because CL-5 measured two citation paths in the ratification chain that do not resolve, and a successor that repeats that class of error is harder to detect than one that misstates a fact.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P6",
+   "description": "AUTHORING ARM. THE COMPANION MANIFEST VALIDATES AGAINST ITS SCHEMA. This manifest must validate against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json under a real JSON Schema draft-07 check, including additionalProperties false at the top level and on every control object, and including that every exit_gates entry is in the schema's enum. This control is declared because no repository gate validates a test manifest against this schema: ods-scope treats the path as protected-or-not and never reads the content, so a manifest can violate its own schema while a pull request claims schema PASS.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P7",
+   "description": "AUTHORING ARM. THE TWO DEPARTURES ARE FALSIFIABLE AND UNFALSIFIED. Walking every string value in all five files of the frozen package and the ratification chain and requiring a conjunctive match on both an M-4-or-default-branch pattern and a mandating-verb pattern must return exactly THREE candidate loci, and all three must classify as not calling for a default-branch change: the M-4 coupled-consequence clause (a condition on M-4, not a trigger), EXECUTION_ORDERING.ordered_sequence[5] (expressly conditional on OD-1 calling for it), and v1.0.1 CM-6's consequence (which records the default and production branches as currently DECOUPLED and therefore strengthens DEP-1). A FOURTH candidate locus, or a reclassification of any of the three, falsifies DEP-1 and the M-4 and M-2 edges must be restored.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P10",
+   "description": "AUTHORING ARM. THE REPOSITORY IDENTITY AGREES ACROSS BOTH PLANES. The git remote of the acting worktree, the repository field of the v1.0.0 authority, the v1.0.1 amendment and the parent ratification record, and the link.repo value v1.0.1 CM-6 measured in the Vercel plane, must all name lorenzozanello/uellix-antigravity. This control exists because every production-boundary statement in the chain presupposes that the Vercel project uellix-antigravity is linked to THIS repository; a disagreement between the two planes would mean the boundary was adjudicated against a different codebase, and it is the one premise whose failure would invalidate the analysis silently rather than loudly.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P8",
+   "description": "EXECUTION ARM. EVERY HOSTED-MUTATION NODE CARRIES ITS FIVE ELEMENTS AT EXECUTION TIME. For each node of class HOSTED_MUTATION actually performed, the executing lane's record must contain a captured prestate, a confirmation obtained immediately before the mutation, a verification result, a recorded inverse, and the assertion that no other mutation was in flight. A record missing any one is not a governed act, regardless of whether the mutation succeeded.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P9",
+   "description": "EXECUTION ARM. M-8 IS IDEMPOTENT ON ITS POSTCONDITION. Re-running M-8 when refs/heads/release/commercial-v1 already exists at exactly the SHA the act's own record names must close the act as ALREADY_SATISFIED with no second create and no force-update, and must record that no mutation was performed.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "negative_controls": [
+  {
+   "id": "N-1",
+   "description": "A PREVIOUS MEASUREMENT IS REFUSED AS SATISFACTION OF DN-1. Offering v1.0.1 CORRECTED_MEASUREMENTS.corrections[5], or productionBranch=main, or the fact that www.uellix.com serves main's head, or this authority's own GP-2, as satisfaction of DN-1 must be REFUSED. Each is a previous measurement and the node is a re-measurement. A harness that accepts any of the four has converted a freshness obligation into a memory.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-2",
+   "description": "THE NARROW U-6 FINDING IS REFUSED AS SATISFACTION OF DN-2. Offering U6_RESOLVED_NO_SECOND_ACTIVE_PROJECT on the ground that uellix-antigravity is the sole active project serving current Commercial V1 custom domains must be REFUSED as a discharge of DN-2, and must be accepted only as evidence about the custom-domain limb. A harness that treats it as discharging the broad predicate has substituted proof of one limb for proof of absence.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-3",
+   "description": "AN M-8 WITHOUT AN OWNER-SELECTED SOURCE REF IS REFUSED. An M-8 execution record whose source ref was chosen by the executing lane, or defaulted to main or to integration/commercial-v1 because either seemed obvious, must be REFUSED. RBD-1 is unselected and a default is a silent semantic choice.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-4",
+   "description": "AN M-8 CARRYING A SHA COPIED FROM AN ARTIFACT IS REFUSED. An M-8 record whose source SHA is 067e8c2f or 537487ac cited FROM this authority or from the parent, rather than re-derived from origin immediately before the create, must be REFUSED even when the value happens to still be correct. The defect is the provenance, not the value.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-5",
+   "description": "A FORCE-UPDATE OR A DELETE OF AN UNEXPECTED release/commercial-v1 IS REFUSED. If the ref is found present at a SHA the act's record does not name, any force-update, any delete, and any create must be REFUSED, and STOP_UNEXPECTED_REF_STATE with a governance-incident record must be the only permitted outcome. A harness that deletes it has destroyed a ref the act did not create.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-6",
+   "description": "M-7 ONTO AN UNPROTECTED OR UNCOVERED RELEASE BRANCH IS REFUSED. An M-7 execution attempted while DN-10 has not completed, or while RBD-2 is undecided, must be REFUSED. Retargeting production onto a branch the ratified O-1 bar does not cover is a strictly worse posture than the status quo and is exactly the hazard the production boundary is written as an absolute to prevent.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-7",
+   "description": "A REQUIRED CHECK ON A SHA THAT CANNOT PRODUCE IT IS REFUSED. Configuring any of the eight names as required on a push-evaluated gate on main (7 of 8 unproducible), on integration/commercial-v1 (8 of 8) or on release/commercial-v1 (8 of 8) must be REFUSED with STOP_RIDER_VIOLATION. A harness that allows it has created a permanently unsatisfiable gate that reports as armed.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-8",
+   "description": "A PARTIALLY CONFIGURED O-2 REPORTED AS O-2 MET IS REFUSED. A report aggregating a satisfiable pull-request limb with an unsatisfiable push limb into a single green must be REFUSED. O-2 must be reported per ref and per limb, because a validation that exercises only the expected-pass path passes identically for a sound and an unsound configuration.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-9",
+   "description": "THE RETRY IDENTITY CHAIN CITED AS EVIDENCE WHILE EXEC-NOTE-1 IS UNDISCHARGED IS REFUSED. Citing meta.uellix_governed_act_supersedes_nonce as proof that a retry was the PR201-authorized one, without having performed the AIC-4-equivalent round-trip verification for the predecessor key specifically, must be REFUSED. Keeping the chain as an internal act-record discipline remains permitted; the refusal is scoped to its use as evidence.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-10",
+   "description": "A THIRD CHAINED NONCE IS REFUSED. A deployment act record whose predecessor field is itself populated must be REFUSED at the act-record stage, before any deployment is triggered, and without re-evaluating BR-1 through BR-5. A nonce mechanism cannot expand a count ceiling a frozen authority fixed at one retry.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-11",
+   "description": "A STALE-PRESTATE STOP RECORDED AS A FAILED ATTEMPT IS REFUSED. An act that stopped before mutating because a prestate limb had gone stale must be recorded as ABANDONED and must NOT consume the retry ceiling. Recording it as a failed attempt eligible for retry must be REFUSED, because the byte-identical precondition was never reached.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-12",
+   "description": "A CLOSURE OF AN UNREAD IC FINDING IS REFUSED. Any successor claim that NB-1 through NB-10 are fully consumed must be REFUSED while UD-3 stands: five of the ten were never supplied and no IC verdict artifact exists in the tree. A closure of a finding whose text nobody held is a fabricated closure, and declaring the set closed after addressing only the named items is a checklist, not a sweep.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-13",
+   "description": "THIS AUTHORITY CITED AS AN EXECUTION GRANT IS REFUSED. Any citation of this artifact as authorizing a branch creation, a protection mutation, a Vercel setting change, an environment change, a deployment, a visibility change or an alert closure must be REFUSED. It defines acts and dependencies; it grants none of them, and its EXPLICIT_NON_AUTHORIZATIONS enumerates all twenty-four refusals.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-14",
+   "description": "AN OWNER SELECTION MADE BY AN IMPLEMENTATION LANE IS REFUSED. Any RBD-1 or RBD-2 answer recorded by a lane rather than by the owner must be REFUSED, including one justified by the authority's own transferable reasoning under RBD-2. Necessity is not consent, and the reasoning is labelled as the authority's precisely so it cannot be read as a recommendation."
+  }
+ ],
+ "mutation_controls": [
+  {
+   "id": "MUT-1",
+   "description": "Remove the forbidden-substitute list from U1_RESOLUTION_NODE and leave DN-1 described only as a re-measurement. Control N-1 must REDDEN, naming the four substitutes that become acceptable. If it stays green, the control was only checking that DN-1 exists, not that it is unsatisfiable by inheritance.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-2",
+   "description": "Replace DN-2's broad eight-limb enumeration with the narrow custom-domain predicate. Control N-2 must REDDEN. If it stays green, the control was only checking that a U-6 node exists, not that it is scoped to ANY Commercial V1 role.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-3",
+   "description": "Delete the edge DN-10 -> DN-11 (ADD-2), so M-7 no longer waits on the release branch being protected. Control N-6 must REDDEN. If it stays green, the DAG was recording the protection node without enforcing it as a prerequisite of the production boundary.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-4",
+   "description": "Delete the edge DN-14 -> DN-15, so M-6 no longer precedes the PR201 correction. A control asserting the ADJUDICATIONS.H window must REDDEN. This is the ordering the parent identifies as one of the two that matter most, and the one OD-3's ratification records the owner as explicitly accepting.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-5",
+   "description": "Change RIDER_PRE_2 to allow a producible subset to discharge O-2. Control N-8 must REDDEN. If it stays green, the rider was translated into a sequencing note rather than into a satisfiability condition.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-6",
+   "description": "Change M-8's fail-closed stale-prestate rule from ABANDONED to FAILED. Control N-11 must REDDEN, because a FAILED close makes the act eligible for a retry whose confirmed source SHA has already moved.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-7",
+   "description": "Replace M-8's conditional-delete carve-out with an unconditional delete inverse. Control N-5 must REDDEN, because the rollback would then authorize deleting a ref the act did not create.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-8",
+   "description": "Restate DEP-1 as M-4 IS TRIGGERED and restore the M-4 -> M-2 edge. Control P7 must REDDEN by finding that its zero-hit sweep no longer matches the artifact's own claim. This control exists so the departure is held to the same falsifiability standard as the clauses it departs from."
+  }
+ ],
+ "exit_gates": [
+  "typecheck",
+  "secrets_scan",
+  "authority_seal_verify",
+  "ods_scope",
+  "ods_poststate"
+ ]
+}
