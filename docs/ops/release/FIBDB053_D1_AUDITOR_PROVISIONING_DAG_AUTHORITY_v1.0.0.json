@@ -1,0 +1,1903 @@
+{
+  "package_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "authority_class": "DERIVED_EXECUTION_SEQUENCING_AUTHORITY",
+  "document_class": "PROVISIONING_DAG_DERIVATION__NO_EXECUTION__NO_HOSTED_POSTGRESQL_CONNECTION__NO_CREDENTIAL_GENERATION__NO_CREDENTIAL_ROTATION__NO_WCM_SECRET_WRITE__NO_GRANT__NO_REVOKE__NO_VALID_UNTIL_COMPUTATION__NO_OWNER_NOTE_AUTHORED__NO_PRECHECK_R2",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-PROVISIONING-DAG-AUTHORITY-R1",
+  "lane": "CV1-D1-AUDITOR-PROVISIONING-DAG-AUTHORITY-R1",
+  "role": "PROVISIONING_DAG_DERIVATION_AUTHORITY_WRITER",
+  "mode": "AUTHORITY_AUTHORING_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-provisioning-dag-authority-r1",
+  "AS_OF_PARENT_SHA": "bee14e0a17fca6c6557b8e5e931fc32af789b49b",
+  "AS_OF_TREE": "cf3a77d26608f08d6bde4a8c88e5072362909f2b",
+  "AS_OF_WORKTREE_STATE": "CLEAN at derivation. git status --porcelain --untracked-files=all returned empty before any write in this lane.",
+  "AS_OF_BASE_BRANCH_FOR_THE_STACKED_PR": "codex/cv1-d1-auditor-capability-adjudication-aw-r1, measured at bee14e0a17fca6c6557b8e5e931fc32af789b49b by git rev-parse --verify origin/codex/cv1-d1-auditor-capability-adjudication-aw-r1.",
+  "NAMING_DERIVATION": {
+    "rule_followed": "Carried from the parent pair's own NAMING_DERIVATION: the FIBDB053 prefix names the NODE, and the subject segment names what the artifact governs.",
+    "node": "FIBDB-053 criterion D1-8, at one further remove. This artifact does not observe the node, and does not govern the capability; it SEQUENCES the already-authored capability provisioning.",
+    "subject_derivation": "D1_AUDITOR_PROVISIONING_DAG. Chosen over any D1_OLD_DB_* or D1_AUDITOR_CAPABILITY_* form because the subject is the ORDER OF ACTS, not the acts themselves, and reusing the capability artifact's own subject segment would invite a reader to treat this as an amendment of it. It is not: the capability pair is append-only and is not opened, edited, amended or superseded here.",
+    "placement_adjudication": {
+      "chosen": "docs/ops/release/",
+      "reason": "Placed beside the authority it derives from, so that a reader who resolves FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json finds its sequencing derivation in the same directory listing.",
+      "the_counter_argument_is_carried_not_dismissed": "The parent's OF-1 records that docs/ops/staging/** is where hosted role and ACL authorities live and where the future capability evidence will land, and that a certifier may reasonably prefer that domain. That finding is carried forward here unchanged as OF-DAG-7 rather than treated as settled by the parent's own choice.",
+      "no_protected_surface": "docs/ops/release/ is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, re-derived at AS_OF_TREE. This write set touches no protected surface and claims no protected-authority id."
+    },
+    "no_parent_is_edited": "Every file in the effective capability package remains byte-identical. This artifact ADDS a derivation; it removes and rewrites nothing."
+  },
+  "PURPOSE": {
+    "statement": "Derive the exact, ordered, dependency-resolved DAG by which the already-authored and owner-ratified D-1 auditor capability provisioning would be EXECUTED, without executing any part of it.",
+    "what_this_artifact_is": "A sequencing derivation. It takes the canonical phases the capability authority already declares, refines them into nodes whose preconditions are individually checkable, states the edges between them, and names the point at which each fail-closed token can fire.",
+    "what_this_artifact_is_NOT": [
+      "It is NOT an execution authority. It confers no permission the capability authority did not already confer, and it withholds nothing the capability authority already conferred.",
+      "It is NOT an amendment of the capability authority, its two amendments, its companion manifest, or the owner-ratification record.",
+      "It is NOT a certification of any of them, and it does not substitute for one.",
+      "It is NOT the owner-level certification-occurrence note that DAG node N02 requires, and it does not author, assume, pre-empt or draft that note.",
+      "It is NOT a runbook. A runbook tells an operator what to type; this tells a governed lane what must be TRUE before an act may occur and what STOPS if it is not."
+    ],
+    "why_it_is_needed": "The owner-ratification record's own next_gate names the provisioning DAG as the next derivation and sketches seven of its beats in one sentence. A sentence is not a dependency graph. Four orderings that sentence does not resolve are load-bearing, and each is resolved explicitly below: where the protected-surface allocation sits relative to the measurement that triggers it, where delivery-mechanism readiness sits relative to the irreversible mint, where the two halves of the target-identity check sit relative to the credential that one of them needs, and whether MR-1 is reachable at all under the ratified OD-2."
+  },
+  "CONTROLLING_AUTHORITY": {
+    "precedence": "The effective capability package controls every FACT and every MECHANISM. This artifact controls only the ORDER and the PRECONDITION STRUCTURE, and where any reading of this artifact could be taken to alter a fact, a mechanism, a privilege model, a fail-closed token or a human confirmation, the effective package controls and this artifact is wrong.",
+    "effective_capability_package_read_order": [
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json"
+    ],
+    "companion_manifests_of_that_package": [
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.2.json"
+    ],
+    "owner_ratification_record": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+    "grandparent_observation_authority": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+    "conflict_rule": "STOP_FOR_AUTHORITY_CONFLICT, carried unchanged. Where this artifact and any of the above could be read to disagree on a fact this lane needs, the lane STOPS and escalates. It does not pick the more convenient source, and it does not treat this artifact's later materialization date as seniority."
+  },
+  "CANDIDATE_BINDING_RE_DERIVED": {
+    "rule": "The owner-ratification record binds OD-1..OD-6 to six exact blob hashes and instructs a consumer to STOP_RATIFICATION_BINDING_MISMATCH rather than carry forward if any differs. This DAG cites OD-1..OD-6 as settled, so it re-derived all six before doing so.",
+    "method": "git ls-tree -r bee14e0a17fca6c6557b8e5e931fc32af789b49b -- <the six paths>, executed in this lane at AS_OF_TREE.",
+    "result": "ALL SIX MATCH. STOP_RATIFICATION_BINDING_MISMATCH DOES NOT FIRE.",
+    "re_derived": [
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+        "recorded_blob_sha": "eb77f0954495625d110be3791053a6850ba2b590",
+        "re_derived_blob_sha": "eb77f0954495625d110be3791053a6850ba2b590",
+        "match": true
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json",
+        "recorded_blob_sha": "2790f3530ce44fd77e12ecdf49430d93ec7a4a70",
+        "re_derived_blob_sha": "2790f3530ce44fd77e12ecdf49430d93ec7a4a70",
+        "match": true
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "recorded_blob_sha": "b233bd1f947fd6c49e0416279a2f98a260a6d5de",
+        "re_derived_blob_sha": "b233bd1f947fd6c49e0416279a2f98a260a6d5de",
+        "match": true
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "recorded_blob_sha": "f4a9956012c471044a6044efd9f3a79bedc77cee",
+        "re_derived_blob_sha": "f4a9956012c471044a6044efd9f3a79bedc77cee",
+        "match": true
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "recorded_blob_sha": "f7387d720eb8e6ec439ae968ff11661aa1c53e47",
+        "re_derived_blob_sha": "f7387d720eb8e6ec439ae968ff11661aa1c53e47",
+        "match": true
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+        "recorded_blob_sha": "1433789381483733502d503a8f55c23a05185bb4",
+        "re_derived_blob_sha": "1433789381483733502d503a8f55c23a05185bb4",
+        "match": true
+      }
+    ],
+    "the_ratification_record_own_blob_at_this_parent": "fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f, recorded so a successor can detect an edit to the record this DAG consumed.",
+    "this_re_derivation_expires": "RULE_OBSERVATION_FRESHNESS binds. The execution lane RE-DERIVES all six at ITS base before DAG node N03 passes. This table is provenance for THIS derivation, never a standing substitute for that re-derivation."
+  },
+  "P0_CERTIFICATION_STATUS": {
+    "rule": "PHASE_P0_PREREQUISITE.gate requires BOTH independent certification of the authority/manifest pair AND ratification of OD-1..OD-6. This section states the measured status of each half, separating OCCURRED from MATERIALIZED from UNKNOWN, because collapsing those three is how a lane either fabricates a certification it did not have or refuses one it did.",
+    "HALF_A_INDEPENDENT_CERTIFICATION": {
+      "IC_R1_on_v1_0_0": {
+        "status": "OCCURRED",
+        "verdict": "CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS",
+        "materialized_in_repository": false,
+        "repository_corroboration": "Named in the owner-ratification record's companion_certifications_consumed[0] and in the v1.0.1 amendment's CERTIFICATION_THIS_AMENDMENT_RESPONDS_TO. Nine non-blocking findings, resolved by v1.0.1."
+      },
+      "FOCUSED_RECERT_R1_on_v1_0_0_plus_v1_0_1": {
+        "status": "OCCURRED",
+        "verdict": "FOCUSED_RECERT_FAIL",
+        "materialized_in_repository": false,
+        "repository_corroboration": "Named in companion_certifications_consumed[1] and in v1.0.2 FOCUSED_RECERT_CONSUMED. One blocking finding B-1 and three non-blocking NB-1/NB-2/NB-3, represented as resolved by v1.0.2's five new clauses."
+      },
+      "BOUNDED_RECERT_on_v1_0_2": {
+        "status": "OCCURRED",
+        "verdict": "BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+        "materialized_in_repository": false,
+        "how_this_lane_knows": "SUPPLIED AS LANE INPUT BY THE OWNER, and consumed as such. It is NOT re-derived from the repository, because OD-6 ratified MATERIALIZE_GOING_FORWARD and expressly did NOT retroactively reconstruct past verdicts. A repository sweep in this lane for any certification-verdict artifact belonging to this chain returned none, which is CONSISTENT WITH the verdict having occurred and not been materialized, and is NOT evidence that it did not occur.",
+        "the_distinction_this_lane_refuses_to_collapse": "ABSENCE OF A MATERIALIZED VERDICT IS NOT ABSENCE OF A VERDICT. The effective package's own CERTIFICATION_PREREQUISITE_OF_THE_PARENT already adjudicated exactly this shape for the grandparent pair: an owner-affirmed certification with no tracked evidence artifact is recorded as OCCURRED with its evidence-governance limitation disclosed (OF-2), not as not-occurred. This artifact applies the same rule to the same shape rather than inventing a stricter one for a verdict it happens to find inconvenient.",
+        "what_this_artifact_therefore_does_NOT_do": [
+          "It does NOT reconstruct a retroactive certification artifact for the bounded recertification. That is writing history rather than recording it, and OD-6 forbids it in terms.",
+          "It does NOT assert the bounded recertification as re-derivable from the repository.",
+          "It does NOT treat the verdict as satisfying anything the verdict itself did not cover. Its scope was v1.0.2's five new clauses SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3 and the residual-sweep method's completeness, and nothing wider."
+        ]
+      },
+      "OWNER_RATIFICATION_IC": {
+        "status": "OCCURRED",
+        "verdict": "OWNER_RATIFICATION_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+        "materialized_in_repository": false,
+        "findings_consumed_by_this_artifact": "NB-IC-1 through NB-IC-6, consumed at OWNER_RATIFICATION_IC_FINDINGS_CONSUMED below.",
+        "how_this_lane_knows": "SUPPLIED AS LANE INPUT BY THE OWNER. Same treatment, same disclosure, same refusal to reconstruct."
+      },
+      "HALF_A_VERDICT": "SATISFIED AS TO OCCURRENCE. NOT SATISFIED AS TO REPOSITORY MATERIALIZATION. The gap is not closed by this artifact and is the entire subject of DAG node N02."
+    },
+    "HALF_B_OWNER_RATIFICATION": {
+      "status": "OCCURRED AND MATERIALIZED",
+      "artifact": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json, commit bee14e0a17fca6c6557b8e5e931fc32af789b49b.",
+      "count": "Six of six. OD-1..OD-6, each with status RATIFIED_BY_PRODUCT_OWNER.",
+      "binding": "Bound to the six blob hashes re-derived above, all matching.",
+      "HALF_B_VERDICT": "SATISFIED."
+    },
+    "COMBINED_P0_VERDICT": "BOTH HALVES OCCURRED. THE DERIVATION OF THIS DAG IS THEREFORE AUTHORIZED. HOSTED EXECUTION IS NOT, because half A's occurrence is attested rather than materialized and four statements in the repository's own ratification record currently assert the opposite. See OWNER_NOTE_DEPENDENCY."
+  },
+  "OWNER_NOTE_DEPENDENCY": {
+    "rule": "A repository that says a certification has not occurred, and an owner who reports that it has, are two effective sources disagreeing on a fact this lane needs. That is STOP_FOR_AUTHORITY_CONFLICT by its own definition, and it is NOT silently resolved in either direction.",
+    "what_this_artifact_does_with_the_conflict": "It DOES NOT RESOLVE IT. It derives the DAG, which depends on WHAT the acts are and in WHAT order, and it models the resolution as a NODE (N02) that must close before any hosted act. Deriving a graph whose first hosted node is blocked is not the same as acting on an unresolved conflict.",
+    "THE_FOUR_OVER_RESTRICTIVE_STATEMENTS": {
+      "rule": "The latest IC reports FOUR statements in the ratification record asserting that the bounded recertification had not occurred. This lane GREPPED the record for every locus touching that question and classifies each, rather than accepting a count it did not check. Six loci were found. Four assert non-occurrence or treat the certification as outstanding; two are scope disclaimers that are accurate as written. The four are listed first.",
+      "method": "grep -n -i on the exact ratification-record file at blob fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f for: outstanding, has NOT yet occurred, not yet, also passes, re-certification, recertification.",
+      "ASSERTING_NON_OCCURRENCE": [
+        {
+          "id": "ORS-1",
+          "json_path": "OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD",
+          "line_at_that_blob": 63,
+          "verbatim_fragment": "has NOT yet occurred as of this record's materialization",
+          "why_over_restrictive": "The record's materialization_date is 2026-09-22 and the bounded recertification is reported to have occurred 2026-09-21. The clause is therefore not merely cautious, it is counterfactual on its own stated time index.",
+          "MATERIALITY": "HIGH. This is the clause the other three cross-reference."
+        },
+        {
+          "id": "ORS-2",
+          "json_path": "explicit_non_authorizations[16]",
+          "line_at_that_blob": 192,
+          "verbatim_fragment": "after independent verification of this record AND completion of v1.0.2's own outstanding certification",
+          "why_over_restrictive": "Treats the certification as pending completion, which forecloses the DAG derivation this very clause names as the NEXT step.",
+          "MATERIALITY": "HIGH. Read strictly, it is the clause that would bar this artifact from existing."
+        },
+        {
+          "id": "ORS-3",
+          "json_path": "required_independent_review.reason",
+          "line_at_that_blob": 236,
+          "verbatim_fragment": "v1.0.2's own focused certification is still separately outstanding",
+          "why_over_restrictive": "States the certification's outstanding status as a present fact to the certifier of the record itself.",
+          "MATERIALITY": "MEDIUM. It steers a downstream reviewer rather than gating an act."
+        },
+        {
+          "id": "ORS-4",
+          "json_path": "next_gate",
+          "line_at_that_blob": 249,
+          "verbatim_fragment": "ONLY AFTER v1.0.2's own outstanding focused independent re-certification ... also passes, may the provisioning DAG be derived",
+          "why_over_restrictive": "Conditions the DAG derivation on a future passing of a certification that has already passed. Under the measured status the condition is SATISFIED rather than pending, and the clause's own consequent therefore FIRES rather than bars.",
+          "MATERIALITY": "HIGH. It is the clause this artifact must satisfy to exist, and it does."
+        }
+      ],
+      "NOT_OVER_RESTRICTIVE_ACCURATE_AS_WRITTEN": [
+        {
+          "id": "ORS-X1",
+          "json_path": "explicit_non_authorizations[15]",
+          "line_at_that_blob": 191,
+          "verbatim_fragment": "NO claim is made that v1.0.2's own outstanding focused independent re-certification is satisfied by this record",
+          "classification": "ACCURATE. The ratification record genuinely does not satisfy the certification, and saying so is correct. Its only defect is the adjective outstanding, inherited by cross-reference from ORS-1.",
+          "action": "NO correction required of its substance."
+        },
+        {
+          "id": "ORS-X2",
+          "json_path": "required_independent_review.verification_criteria_for_the_next_gate, last item",
+          "line_at_that_blob": 245,
+          "verbatim_fragment": "Confirm v1.0.2's own outstanding focused independent re-certification is not mischaracterized anywhere in this record as complete or as satisfied by owner ratification",
+          "classification": "MIXED. The second limb is correct and remains correct: owner ratification does not satisfy a certification, ever. The first limb, read after the certification occurred, would instruct a reviewer to treat an accurate statement of completeness as a defect.",
+          "action": "Recorded. NOT corrected here."
+        }
+      ],
+      "a_certifier_may_reject_this_classification": "The IC named a COUNT of four and did not, so far as this lane was told, name WHICH four. The partition above is this lane's own, derived from the grep and from whether each locus asserts non-occurrence or merely disclaims scope. A certifier who partitions the same six loci differently should treat that as a finding against this artifact, and the count is not evidence the partition is right.",
+      "this_artifact_does_not_edit_any_of_them": "The ratification record is append-only and is not opened. Not one byte of it is changed by this lane, and the classification above is a CLASSIFICATION, not an edit."
+    },
+    "THE_REQUIRED_RESOLUTION": {
+      "form": "AN OWNER-LEVEL CERTIFICATION-OCCURRENCE NOTE, or any other mechanism a certified authority provides that resolves the same contradiction.",
+      "what_it_must_establish": [
+        "That the bounded recertification of v1.0.2's five new clauses OCCURRED, on what date, by which lane, with what verdict.",
+        "That its non-materialization is an evidence-governance consequence of OD-6's going-forward-only scope, and not an absence of the act.",
+        "That ORS-1, ORS-2, ORS-3 and ORS-4 are superseded as to their factual assertion of non-occurrence, WITHOUT reopening OD-1..OD-6 and WITHOUT editing the append-only ratification record.",
+        "That PHASE_P0_PREREQUISITE.gate is thereby satisfied in both halves."
+      ],
+      "what_it_must_NOT_do": [
+        "It must NOT reconstruct the verdict artifact retroactively. OD-6 forbids that, and a note recording that an act occurred is a different document class from a reconstruction of what the act found.",
+        "It must NOT restate the certification's findings as though the note's author had certified anything.",
+        "It must NOT widen the recertification's scope beyond v1.0.2's five new clauses and the residual-sweep completeness.",
+        "It must NOT relax any fail-closed token, the EXECUTE prohibition, REQ-2's conditionality, or any machine gate."
+      ],
+      "THIS_ARTIFACT_DOES_NOT_AUTHOR_IT": "ABSOLUTE. The note is an OWNER-LEVEL act. Drafting it here, even as a template, would be a lane supplying the very owner statement whose absence it is reporting, and would convert an escalation into a self-service. The lane mandate forbids it in terms and this artifact obeys.",
+      "ALTERNATIVE_MECHANISM_IS_NOT_FORECLOSED": "If a certified mechanism other than an owner note resolves the same contradiction, N02 closes by that mechanism instead. N02's exit condition is THE CONTRADICTION RESOLVED BY A CERTIFIED MECHANISM, not THE PARTICULAR DOCUMENT THIS SECTION DESCRIBES.",
+      "if_it_is_never_produced": "DAG node N02 never closes, every hosted node remains unreachable, and the terminal state of the graph is STOP_FOR_AUTHORITY_CONFLICT. The DAG is still correctly derived; it is simply not traversable past N02."
+    }
+  },
+  "OWNER_RATIFICATION_IC_FINDINGS_CONSUMED": {
+    "rule": "NB-IC-1..NB-IC-6 are consumed as LANE INPUT, not re-derived from a repository artifact, because the owner-ratification IC verdict is not materialized (OD-6, going-forward only). Each is recorded with what this artifact DID about it, so a certifier can check the disposition against the finding rather than against a summary.",
+    "provenance_disclosure": "The six findings are reported by the owner from the IC. Their full verbatim text is not in the repository at AS_OF_TREE and is NOT reconstructed here. Where a finding's substance was independently checkable in the repository, this lane checked it and says so; where it was not, the finding is carried as attested.",
+    "dispositions": [
+      {
+        "id": "NB-IC-1",
+        "substance_as_supplied": "The ratification record contains four over-restrictive statements asserting that the bounded recertification had not occurred.",
+        "disposition": "CONSUMED AND INDEPENDENTLY RE-DERIVED. This lane grepped the record itself, found six loci, and classified four as asserting non-occurrence and two as accurate scope disclaimers. See THE_FOUR_OVER_RESTRICTIVE_STATEMENTS. The count matches; the classification is this lane's own and is offered for a certifier to reject.",
+        "effect_on_the_DAG": "Materialized as DAG node N02 and as edge E-02-10."
+      },
+      {
+        "id": "NB-IC-2",
+        "substance_as_supplied": "Correct the factual certification status in the DAG.",
+        "disposition": "DONE at P0_CERTIFICATION_STATUS, which states OCCURRED / MATERIALIZED / UNKNOWN separately for all four certification events rather than collapsing them into a single pass-or-fail.",
+        "effect_on_the_DAG": "N02's exit condition is the resolution of a CONTRADICTION, not the performance of a missing certification."
+      },
+      {
+        "id": "NB-IC-3",
+        "substance_as_supplied": "Do not retroactively materialize the old verdict.",
+        "disposition": "OBEYED. No certification-verdict artifact is created by this lane for any past certification, and P0_CERTIFICATION_STATUS states the prohibition and its OD-6 basis explicitly.",
+        "effect_on_the_DAG": "N02 is a note about OCCURRENCE, and the DAG nowhere requires a reconstructed verdict as an input."
+      },
+      {
+        "id": "NB-IC-4",
+        "substance_as_supplied": "Treat the Windows Credential Manager mechanics as a real prerequisite; no in-repo reader mechanism currently demonstrates the five MECHANISM_2 conditions.",
+        "disposition": "CONSUMED AND INDEPENDENTLY VERIFIED IN THIS LANE, because a negative capability claim is verified rather than accepted. Method and result at WCM_READINESS_PREREQUISITE.measured_absence.",
+        "effect_on_the_DAG": "Materialized as DAG node N05, and HOISTED to before MR-2 rather than left inside PHASE_P4."
+      },
+      {
+        "id": "NB-IC-5",
+        "substance_as_supplied": "Do not weaken the P0 gate because the companion manifest's N16 test_file is UNKNOWN.",
+        "disposition": "OBEYED. N16 of the capability manifest carries test_file UNKNOWN, re-read in this lane at blob 2790f3530ce44fd77e12ecdf49430d93ec7a4a70. DAG node N03 therefore discharges STOP_OWNER_DECISION_UNRATIFIED by a DOCUMENTARY AND BLOB-BOUND assertion an executing lane can perform with git alone, rather than by a test that does not exist. An absent automated control is a reason to specify the manual assertion precisely, never a reason to lower the bar it enforces.",
+        "effect_on_the_DAG": "N03 carries an explicit, re-runnable check list and a named token. It does not carry a to-be-written test as its evidence."
+      },
+      {
+        "id": "NB-IC-6",
+        "substance_as_supplied": "Reserved by the IC. Its substance was supplied to this lane only as the instruction to consume NB-IC-1..NB-IC-6 collectively, with five named in particular.",
+        "disposition": "RECORDED AS CONSUMED WITHOUT INDEPENDENT SUBSTANCE. This artifact does NOT invent a sixth finding to fill the slot. If NB-IC-6 carries substance this DAG has not addressed, the certifier should treat that as an open gap against this artifact rather than as satisfied.",
+        "effect_on_the_DAG": "None asserted. Flagged as OF-DAG-8."
+      }
+    ]
+  },
+  "CANONICAL_PHASE_DERIVATION": {
+    "rule": "The canonical phases are NOT invented here. They are the six the capability authority's own FUTURE_EXECUTION_PHASES declares, plus the ten-node macro-chain its D1_RELATIONSHIP.expected_sequence declares. The DAG nodes below REFINE these; they never rename or renumber them.",
+    "canonical_phases_from_FUTURE_EXECUTION_PHASES": [
+      {
+        "phase": "PHASE_P0_PREREQUISITE",
+        "summary": "Independent certification of the authority/manifest pair AND ratification of OD-1..OD-6, both required, before P1 opens."
+      },
+      {
+        "phase": "PHASE_P1_HOSTED_CAPABILITY_OBSERVATION",
+        "summary": "Measure the hosted answers to HU-1, HU-2, HU-5..HU-10 in one BEGIN READ ONLY transaction closed by an unconditional ROLLBACK, after KP-1..KP-6 in order."
+      },
+      {
+        "phase": "PHASE_P2_MINIMAL_REMEDIATION_ONLY_IF_NEEDED",
+        "summary": "MR-1, MR-2, MR-3, each on its own measured trigger, its own human confirmation and its own transaction. Never a remediation loop."
+      },
+      {
+        "phase": "PHASE_P3_POSTSTATE_VERIFICATION",
+        "summary": "POSTSTATE_VERIFICATION and READ_ONLY_PROOF in full, using the SAME queries as P1, every row an assertion with an expected value."
+      },
+      {
+        "phase": "PHASE_P4_SECRET_DELIVERY",
+        "summary": "Place the credential into the PRECHECK-R2 execution environment as UELLIX_AUDITOR_DATABASE_URL, with removal and POSITIVE ABSENCE VERIFICATION as a mandatory closing step on both paths."
+      },
+      {
+        "phase": "PHASE_P5_HANDOFF",
+        "summary": "CV1-D1-OLDDB-PRECHECK-EXEC-R2 may open ONLY after provisioning has been EXECUTED and its poststate INDEPENDENTLY CERTIFIED. It carries no observation and not the parent's human confirmation."
+      }
+    ],
+    "canonical_macro_chain_from_D1_RELATIONSHIP": "Ten nodes. 1 CAPABILITY AUTHORITY. 2 INDEPENDENT ADVERSARIAL CERTIFICATION. 3 OWNER RATIFICATION. 4 PROTECTED-SURFACE ALLOCATION, if and only if MR-3 is triggered and the delivery package is required. 5 CAPABILITY EXECUTION, phases P1..P4. 6 CAPABILITY POSTSTATE CERTIFICATION and evidence. 7 CV1-D1-OLDDB-PRECHECK-EXEC-R2. 8 GOVERNED DEPLOYMENT SEQUENCE. 9 D1_OLD_DB_FINAL_WITNESS. 10 D1-8, and only then D-1, and only if D1-7 has also closed.",
+    "no_node_may_be_skipped_or_collapsed": "Carried verbatim in force. Each node is a distinct act with a distinct authority. Node 2 cannot be performed by the lane that wrote node 1, node 5 cannot open before node 3, and node 7 is not a continuation of node 5 but a separate lane under a separate authority with its own confirmation. Grounds mutant M28.",
+    "THE_ORDERING_THE_TWO_CANONICAL_STATEMENTS_DO_NOT_JOINTLY_RESOLVE": {
+      "the_tension": "D1_RELATIONSHIP.expected_sequence places node 4, the protected-surface allocation, BEFORE node 5, the P1..P4 execution. But node 4's own condition is if and only if MR-3 is triggered, and MR-3's trigger is a MEASUREMENT taken inside P1, which is inside node 5. Read as a strict temporal bar, node 4's condition could never be evaluated before node 4 had to occur, and MR-3 would be unreachable by construction.",
+      "the_clause_that_resolves_it": "MINIMUM_PRIVILEGE_CONTRACT.GRANT_DELIVERY_CHANNEL_ADJUDICATION.the_ordering_this_forces_and_why_it_is_correct rules directly on this: REQ-1 must precede REQ-2, because whether REQ-2 is needed at all is a MEASUREMENT that requires an authenticated session. A sequence that provisioned the grant first would be granting on repository intent rather than on hosted prestate, which is mutant M23 and mutant M24 at once.",
+      "THE_DERIVED_RESOLUTION": "expected_sequence's numbering is a COARSE NARRATIVE ORDERING of distinct acts, not a fine-grained temporal bar. The FINE ordering the contracts force is: P1 measures KP-3 and KP-5, then the MR-3 trigger is evaluated, then ONLY IF it fires the protected-surface allocation is sought, then the prepared package is authored, then HC-2, then MR-3. Node 4 therefore sits INSIDE node 5's window, and it remains strictly BEFORE the act it gates, which is what the sequencing rule exists to guarantee.",
+      "why_this_is_a_derivation_and_not_a_reconciliation_of_a_conflict": "Neither clause is contradicted. expected_sequence requires the allocation to precede the MUTATION it enables, and this ordering does. GRANT_DELIVERY_CHANNEL_ADJUDICATION requires the measurement to precede the provisioning, and this ordering does. The only reading foreclosed is one that would make MR-3 structurally unreachable, which neither clause intends and which the authority's own conditional treatment of REQ-2 refutes.",
+      "THE_FAIL_CLOSED_ESCAPE_IS_NAMED_AND_NOT_ASSUMED_AWAY": "If an independent certifier reads expected_sequence node 4 as a STRICT temporal bar on P1, then the MR-3 arm of this DAG is NOT traversable and the correct outcome is STOP_FOR_AUTHORITY_CONFLICT with a successor authority required to resolve it. This artifact states that reading, does not adopt it, and does not hide that adopting it would change the graph.",
+      "flagged": "OF-DAG-1, so a certifier can reject this derivation and restore the strict reading."
+    }
+  },
+  "MR1_REACHABILITY_DERIVATION": {
+    "rule": "A DAG that draws a branch no execution can enter is a DAG that misleads. MR-1's reachability is therefore derived rather than assumed from the fact that the authority lists it.",
+    "MR_1_trigger_as_written": "MUTATION_ROLLBACK_CONTRACT.MR_1_LOGIN_ATTRIBUTE.trigger: P1 measured rolcanlogin = false. Restated identically at FUTURE_EXECUTION_PHASES.PHASE_P2_MINIMAL_REMEDIATION_ONLY_IF_NEEDED.mutations[0].fires_only_if and at HUMAN_CONFIRMATION.HC_3.act.",
+    "the_derivation": [
+      "PHASE_P1 is executed INSIDE an authenticated session opened AS uellix_auditor. PHASE_P1_HOSTED_CAPABILITY_OBSERVATION.precondition says so: the credential from HC-1 must already exist, because P1 connects AS uellix_auditor.",
+      "KP-1 asserts current_user = session_user = 'uellix_auditor' FROM THE SERVER. A server that reports that has already authenticated the role.",
+      "A PostgreSQL role with rolcanlogin = false CANNOT open a session. Therefore any successful P1 run PROVES rolcanlogin = true at the moment of connection.",
+      "Therefore P1 CANNOT measure rolcanlogin = false. The measurement whose result is the trigger is, in the identity this lane holds, incapable of returning the triggering value.",
+      "The only identity that COULD observe rolcanlogin = false without first authenticating as the role is an OPERATOR. THE_ORDERING_PROBLEM_AND_ITS_RESOLUTION.the_tempting_resolution_that_is_REFUSED refuses operator access, and OD-2 as ratified elects OPERATOR PRESTATE READ: NOT ELECTED.",
+      "The Supabase management plane exposes no rolcanlogin reading, and LIVE_STATE_AND_UNKNOWN_STATE records the management-plane observation performed in the parent lane as project-level only."
+    ],
+    "VERDICT": "MR-1 IS STRUCTURALLY UNREACHABLE UNDER THE RATIFIED OD-2. Its trigger cannot be measured by any identity this lane is permitted to hold.",
+    "what_happens_instead_if_the_role_genuinely_lacks_LOGIN": {
+      "the_reachable_failure": "MR-2 sets a credential, then attempts its own poststate: a connection opens as uellix_auditor and the SERVER reports current_user = session_user = 'uellix_auditor'. Against a NOLOGIN role that connection fails, so MR-2's poststate does not verify.",
+      "WHICH_TOKEN_FIRES_IS_NOT_DECIDED_BY_THIS_ARTIFACT": "Two tokens are candidates and the authority does not disambiguate them: STOP_CREDENTIAL_MUTATION_FAILED, which is MR-2's own named failure token for a poststate that does not verify, and STOP_AUDITOR_AUTHENTICATION_FAILED, which is the token for a session that cannot be opened as the role. E-9 measured that the client CANNOT distinguish the causes: no-credential and wrong-credential produce the identical FATAL message, and a NOLOGIN role is a third indistinguishable case.",
+      "THE_DERIVED_DISPOSITION": "RULE_FAIL_CLOSED_ON_UNKNOWN. The execution lane STOPS, records the SQLSTATE, records BOTH candidate tokens as co-triggered, records explicitly that the cause is UNDIAGNOSABLE FROM THE CLIENT under E-9, and escalates. It does NOT pick the more convenient token, and it does NOT infer NOLOGIN from an authentication failure, because inferring it is exactly what E-9 proves cannot be done.",
+      "what_it_may_NOT_do": "It may NOT issue ALTER ROLE uellix_auditor LOGIN on the strength of that inference. MR-1 requires a MEASURED false, HC-3 requires the attribute to have been measured false before the ALTER, and an inference from an ambiguous FATAL is not a measurement. Doing so would restore a login somebody may have deliberately disabled, which is the precise act HC_3.why_it_needs_its_OWN_confirmation exists to prevent."
+    },
+    "MR_1_IS_NOT_DELETED_AND_NOT_AMENDED": "The capability authority authorizes MR-1 and this artifact has no power to withdraw it. MR-1 remains in the graph as node N16, marked DECLARED_UNREACHABLE with its unreachability proof attached, and it becomes reachable if and only if the owner re-elects the operator prestate read under OD-2 or a successor authority supplies another identity that can measure the attribute.",
+    "flagged": "OF-DAG-2, severity NON_BLOCKING_BUT_MATERIAL."
+  },
+  "WCM_READINESS_PREREQUISITE": {
+    "binds_to": "OD-2 as ratified: CUSTODY = Windows Credential Manager, a DPAPI-backed OS credential vault. DELIVERY = process-scoped from that vault, per SECRET_DELIVERY_CONTRACT MECHANISM_2_PROCESS_SCOPED's five binding conditions as corrected by v1.0.2 SPC102-1. Never user-scope persistent, never setx.",
+    "consumes": "EXEC-NOTE-2 of the owner-ratification record, binding on the execution lane though it is not ratification content: selecting the vault does not itself prove the delivery mechanics satisfy the five conditions; that is a separate, execution-time confirmation.",
+    "MECHANISM_1_IS_NOT_A_CANDIDATE": "v1.0.1 SECTION_A7 ruled MECHANISM_1_USER_SCOPE_PERSISTENT NOT ACCEPTABLE, ABSOLUTE, AND NOT AN OWNER ELECTION, because user-scope persistence and process-scoping are mutually exclusive properties of the same mechanism. v1.0.2 SPC102-1 then closed OD-2's own sub-decision so a user-scope persistent variable is no longer selectable at all. setx, and the equivalent System Properties action, are therefore outside the choice entirely and appear in this DAG only as prohibitions.",
+    "measured_absence": {
+      "claim_checked": "No in-repo mechanism currently demonstrates the five MECHANISM_2 conditions.",
+      "why_it_was_checked_rather_than_accepted": "A negative capability claim is verified, not accepted. An absent mechanism and an unfound mechanism are different facts and only one of them is a prerequisite.",
+      "method": "git grep -l -i -E over the whole tree at AS_OF_TREE for the alternation: credential.?manager, cmdkey, dpapi, ProtectedData, Get-StoredCredential, keytar, wincred, credui.",
+      "raw_result": "Two files matched.",
+      "classification_of_each_match": [
+        {
+          "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+          "classification": "NAMES THE VAULT, IMPLEMENTS NOTHING. It is the OD-2 ratification selecting Windows Credential Manager as the custody store. A selection of a mechanism is not a mechanism."
+        },
+        {
+          "path": "db/hosted/authority/certification/prechain-requirements.ts",
+          "classification": "FALSE POSITIVE, CONFIRMED BY RE-GREP. The alternation member keytar matched case-insensitively inside the identifier foreignKeyTargets at lines 115 and 232. A targeted re-grep of the same file for the same alternation returned only those two identifier lines. The file contains no credential-vault code of any kind."
+        }
+      ],
+      "VERDICT": "CONFIRMED BY INDEPENDENT MEASUREMENT. There is NO Windows Credential Manager reader, no DPAPI wrapper, and no OS-credential-vault integration anywhere in the repository at AS_OF_TREE. The IC's finding stands, and it stands on this lane's own measurement rather than on the IC's authority alone.",
+      "what_this_measurement_does_NOT_prove": "It does not prove that no compliant mechanism exists OUTSIDE the repository, on the owner's workstation or in the owner's tooling. The prerequisite is discharged by DEMONSTRATION against the five conditions, not by the presence of a repository file, and a mechanism that lives entirely outside the tree can discharge it."
+    },
+    "THE_FIVE_CONDITIONS_THE_MECHANISM_MUST_DEMONSTRATE": {
+      "rule": "Carried from SECRET_DELIVERY_CONTRACT MECHANISM_2_PROCESS_SCOPED.conditions_carried_unchanged_from_the_base_text, which v1.0.1 SECTION_A7 restates unchanged from the base. A mechanism that cannot satisfy EVERY one of them is not used. The lane mandate's phrasing of the same properties is recorded alongside as a cross-check, never as a substitute for the authority's own words.",
+      "conditions": [
+        {
+          "id": "WCM-C1",
+          "verbatim": "PROCESS-SCOPED, NOT USER-SCOPED. The variable is set in the environment of the single command that consumes it and does not persist to a new shell.",
+          "mandate_phrasing_cross_check": "process scoped"
+        },
+        {
+          "id": "WCM-C2",
+          "verbatim": "NOT SET BY A COMMAND THAT CARRIES THE VALUE AS AN ARGUMENT. It is read from the secret store into the process environment, never typed or pasted into a command line.",
+          "mandate_phrasing_cross_check": "secret never appears in command-line args"
+        },
+        {
+          "id": "WCM-C3",
+          "verbatim": "SHELL HISTORY IS DISABLED FOR THE SESSION, or the session is a fresh non-persisting one.",
+          "mandate_phrasing_cross_check": "not written to persistent user env"
+        },
+        {
+          "id": "WCM-C4",
+          "verbatim": "REMOVED IMMEDIATELY after the consuming process exits, on BOTH the success and the failure path.",
+          "mandate_phrasing_cross_check": "cleared after use"
+        },
+        {
+          "id": "WCM-C5",
+          "verbatim": "POSITIVE ABSENCE VERIFICATION after removal, recorded in the evidence artifact as a boolean. Absence is asserted from a check, never from the fact that a removal command was issued.",
+          "mandate_phrasing_cross_check": "cleared after use, provably"
+        }
+      ],
+      "TWO_MANDATE_PROPERTIES_THAT_ARE_NOT_SEPARATE_CONDITIONS_AND_ARE_CARRIED_AS_DERIVED_OBLIGATIONS": [
+        {
+          "property": "NOT INHERITED BEYOND THE INTENDED PROCESS TREE.",
+          "status": "NOT a sixth condition in the authority's list. It is a STRICTER reading of WCM-C1 than WCM-C1's own words require: WCM-C1 bars persistence to a NEW SHELL and says nothing about child processes of the consuming command, which inherit the environment by default on Windows as on POSIX.",
+          "disposition": "CARRIED AS A DERIVED OBLIGATION OF N05, NOT AS AN AMENDMENT. The demonstration must state what the consuming process's child processes are and whether any of them retains, forwards or logs the environment. Flagged OF-DAG-3 so a certifier may rule that the authority's five conditions do not reach it and that a successor amendment is required to bind it."
+        },
+        {
+          "property": "NOT LOGGED.",
+          "status": "PARTLY COVERED. SECRET_DELIVERY_CONTRACT.ABSOLUTELY_PROHIBITED_MECHANISMS bars echoing, printing or including the value in retained command output at any verbosity, grounding mutant M15, and SECRET_GENERATION_CONTRACT.WHERE_THE_PASSWORD_MUST_NOT_TRAVEL bars the ALTER ROLE literal a server with log_statement = ddl would log.",
+          "disposition": "The demonstration must additionally show that the VAULT READ itself does not log, since neither clause reaches a credential-manager audit trail. Flagged OF-DAG-4."
+        }
+      ]
+    },
+    "WHAT_N05_MUST_PRODUCE": [
+      "A NAMED mechanism, described by what it does rather than by a product name alone.",
+      "A demonstration, per condition WCM-C1 through WCM-C5, performed on a NON-SECRET SENTINEL VALUE and never on a real credential, showing the condition holds.",
+      "A statement of the consuming process's child-process topology, per OF-DAG-3.",
+      "A statement of whether the vault read is audited or logged, and where, per OF-DAG-4.",
+      "An explicit STOP_SECRET_DELIVERY_NONCOMPLIANT if any single condition cannot be demonstrated. A missed observation is preferable to a leaked credential."
+    ],
+    "THIS_ARTIFACT_INVENTS_NO_IMPLEMENTATION": "ABSOLUTE. No reader, no wrapper, no script, no command, no API and no library is named, designed, sketched or recommended here. N05 states WHAT MUST BE PROVEN and by WHAT STANDARD. Choosing and building the mechanism is a separate governed act outside this write set, and the lane mandate forbids inventing it.",
+    "WHY_N05_IS_HOISTED_BEFORE_MR_2_RATHER_THAN_LEFT_IN_PHASE_P4": {
+      "where_the_authority_narrates_it": "PHASE_P4_SECRET_DELIVERY, which is after P1, P2 and P3.",
+      "the_derivation_that_moves_it": "MR-2 is IRREVERSIBLE AS TO THE PRIOR SECRET, by its own contract. SECRET_ROTATION_CONTRACT.if_rotation_fails_midway names the exact failure this ordering prevents: the failure mode that matters is a credential SET on the server but NOT successfully delivered: the prior credential is then already dead and the new one is unusable. If delivery compliance is first tested at P4, that test can only fail AFTER the irreversible act, and its only compensating action is to rotate again into the same undemonstrated mechanism.",
+      "the_rule_it_rests_on": "MUTATION_ROLLBACK_CONTRACT.rule requires every authorized mutation to carry a ROLLBACK OR COMPENSATING ACTION that is concrete. For MR-2 the compensating action is ROTATE AGAIN, which is only a compensation if a compliant delivery path exists. Proving the path exists is therefore a PRECONDITION of MR-2 having a compensating action at all.",
+      "what_this_does_NOT_change": "PHASE_P4 still performs the DELIVERY, the REMOVAL and the POSITIVE ABSENCE VERIFICATION exactly as written. N05 proves the mechanism CAN satisfy the five conditions; N23 and N24 are where it DOES, on the real value. Nothing is moved out of P4 except the proof of feasibility, and no P4 obligation is discharged early.",
+      "flagged": "OF-DAG-5, so a certifier may rule that the hoist is an unauthorized re-sequencing of a certified phase list rather than a derivation from MR-2's own irreversibility."
+    }
+  },
+  "SSL06_INVENTORY_PREREQUISITE": {
+    "binds_to": "SECRET_CUSTODY_CONTRACT.SSL_06_ADJUDICATION.CONSEQUENT_BINDING_REQUIREMENT, and OD-2 as ratified.",
+    "why_SSL_06_is_engaged_at_all": "THIS_ARTIFACT_VERDICT of the capability authority: SSL-06 IS ENGAGED BY THE ACT OF PROVISIONING THE CREDENTIAL, ON CONFIDENTIALITY GROUNDS. Measured in MRS_5, uellix_auditor holds SELECT on roughly forty tables including public.users, public.organizations, public.organization_members, public.audit_logs, public.evidence_items and public.stella_interactions. A leaked auditor credential is a full staging data-confidentiality breach with no write anywhere. Carried; not re-adjudicated here. The parent's contrary reading is preserved as OF-6 of the capability authority.",
+    "the_governing_sentence_verbatim": "Before the credential is minted, an INVENTORY ENTRY must exist recording WHO and WHAT holds it. NAMES AND ROLES ONLY, never the value, per SSL-08.",
+    "CANONICAL_PATH": {
+      "path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json",
+      "provenance": "OWNER-SUPPLIED under OD-2, whose owner_selected_decision states CUSTODY INVENTORY PATH and gives this exact string. The authority itself named only the DIRECTORY, in OD-2's engineering_recommendation, because no inventory surface existed at AS_OF_TREE.",
+      "measured_state_at_AS_OF_TREE": "ABSENT. The file does not exist. docs/ops/staging/ exists and holds the hosted role and ACL authorities.",
+      "not_protected": "docs/ops/staging/** is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, re-derived at AS_OF_TREE. Creating it requires no protected-surface allocation. This is stated so that no lane invents a gate the repository does not impose, just as no lane may skip one it does.",
+      "it_is_NOT_created_by_this_lane": "The owner-ratification record states in terms that populating the custody inventory's structure, even empty, is explicitly NOT authorized by this record, and that selection of a path is not authorization to populate it. This artifact creates nothing at that path, reserves nothing, and writes no schema for it."
+    },
+    "EXACTLY_WHEN_THE_RECORD_MUST_EXIST": {
+      "rule": "The contract says BEFORE THE CREDENTIAL IS MINTED, and MR-2 is the mint. The binding therefore attaches to the edge INTO MR-2, not to PHASE_P4 where the delivery happens. Three beats follow, and the first is the one the contract makes mandatory.",
+      "BEAT_1_PRE_MINT_CREATION": {
+        "when": "DAG node N06, strictly before N10 (HC-1) and therefore strictly before N11 (MR-2).",
+        "why_before_HC_1_and_not_merely_before_MR_2": "HC_1.must_state_before_asking requires the owner to be told, before consenting, where the credential will be stored and how it will be delivered, and when it will be removed. Those three statements are the inventory entry's own content. Asking for consent before the record exists would ask the owner to consent to a custody arrangement that is not yet written down anywhere, and a custody arrangement that exists only in a confirmation prompt is not an inventory.",
+        "fields_that_can_be_known_before_the_mint": [
+          "the capability name",
+          "the role, uellix_auditor",
+          "the target project ref, bvyzblhqymxruxdguaee",
+          "the human custodian",
+          "every process or environment that will hold it",
+          "the expiry, as the exact UTC VALID UNTIL computed at N09",
+          "the planned removal date"
+        ],
+        "the_authority_field_list_this_derives_from": "SECRET_CUSTODY_CONTRACT.CONSEQUENT_BINDING_REQUIREMENT: the entry records the capability name, the role, the target project ref, the human custodian, every process or environment that will hold it, the mint date, the expiry if OD-3 sets one, and the planned removal date. Of those eight, seven are knowable before the mint and one is not."
+      },
+      "BEAT_2_POST_MINT_UPDATE": {
+        "when": "DAG node N12, immediately after N11 (MR-2) verifies.",
+        "the_one_field_that_cannot_be_known_earlier": "the mint date. It is the timestamp of an act that has not happened at N06.",
+        "the_rule_that_makes_it_an_UPDATE_and_not_a_SECOND_ENTRY": "SECRET_ROTATION_CONTRACT.rotation_mechanics: same custody entry updated rather than appended twice. A second entry for the same credential would make the inventory report two holders where there is one, which is the precise failure an inventory exists to prevent."
+      },
+      "BEAT_3_CLOSURE": {
+        "when": "DAG node N28, after the post-FINAL-WITNESS mandatory rotation and its removal verification.",
+        "content": "The entry records that the credential was rotated out and removed, with the positive absence verification boolean. An inventory whose last state is a live credential that is no longer live is an inventory that is wrong.",
+        "basis": "OD-1 as ratified makes rotation after the FINAL WITNESS MANDATORY, and an inventory that does not record the end of custody does not record custody."
+      }
+    },
+    "NEVER_A_SECRET_VALUE": {
+      "rule": "ABSOLUTE, at every beat. SSL-08 carried without qualification: no secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever.",
+      "specifically_prohibited_at_this_path": [
+        "the credential, in any form, redacted or not",
+        "the full DSN, or the userinfo in any form",
+        "any password hash or any rolpassword value",
+        "the direct host string, as distinct from the ConnectionMechanism enum value",
+        "any vault handle, entry key or lookup token that would itself retrieve the value"
+      ],
+      "the_last_one_is_a_derived_addition": "The authority's MUST_NEVER_CONTAIN list was written for the EVIDENCE artifact and does not name a vault handle, because no vault was selected when it was written. OD-2 selected one. A retrievable handle recorded beside a named custodian is materially closer to the value than a role name is. Recorded as a derived obligation and flagged OF-DAG-6 rather than asserted as the authority's own text."
+    },
+    "WHAT_AUTHORIZES_THE_WRITE": "SECRET_CUSTODY_CONTRACT.CONSEQUENT_BINDING_REQUIREMENT makes the entry MANDATORY before the mint, and OD-2 fixes its path. The WRITE ITSELF is performed by the future execution lane as part of its own governed act. It is not authorized by this DAG artifact and it is not authorized by the ratification record, both of which say so explicitly."
+  },
+  "HC1_CONTRACT": {
+    "rule": "HC-1 is reproduced in its authority form and REFINED only by the two execution notes the ratification record binds. Nothing in HC_1_CREDENTIAL_MUTATION is weakened, reordered or made conditional.",
+    "act": "Setting or rotating the LOGIN credential of uellix_auditor on project bvyzblhqymxruxdguaee.",
+    "why_it_needs_a_human_verbatim": "It is the first hosted credential this programme mints outside the operator chain, it may silently break an unrecorded consumer (HU-4), and it is irreversible in the sense that matters: the prior secret cannot be restored, only replaced again.",
+    "placement_verbatim": "After target identity is verified by REF and before the credential is minted.",
+    "THE_SIX_MANDATORY_STATEMENTS_BEFORE_ASKING": [
+      {
+        "id": "HC1-S1",
+        "verbatim": "the exact project REF, and that the ref rather than the name is what selects the target",
+        "DAG_source": "N04, arm A of the target-identity split"
+      },
+      {
+        "id": "HC1-S2",
+        "verbatim": "the exact role",
+        "DAG_source": "constant, uellix_auditor"
+      },
+      {
+        "id": "HC1-S3",
+        "verbatim": "that the act REPLACES any existing credential and will break any unrecorded consumer",
+        "DAG_source": "HU-4, ACCEPTED under OD-2"
+      },
+      {
+        "id": "HC1-S4",
+        "verbatim": "whether an expiry is being set, and its value (OD-3)",
+        "DAG_source": "N09, the exact UTC VALID UNTIL"
+      },
+      {
+        "id": "HC1-S5",
+        "verbatim": "where the credential will be stored and how it will be delivered (OD-2)",
+        "DAG_source": "N05 and N06"
+      },
+      {
+        "id": "HC1-S6",
+        "verbatim": "when it will be removed",
+        "DAG_source": "N06 planned removal date, discharged at N24 and N28"
+      }
+    ],
+    "EXEC_NOTE_1_BINDS_HC1_S4": "The exact UTC VALID UNTIL value implementing OD-3's policy MUST be computed and PRESENTED TO THE OWNER as part of HC-1, immediately before MR-2, once a planned FINAL WITNESS timestamp is concrete. If no concrete planned witness time is available when HC-1 would otherwise proceed, MR-2 remains BLOCKED. The execution lane does not substitute a default, an estimate, or an open-ended VALID UNTIL.",
+    "EXEC_NOTE_2_BINDS_HC1_S5": "Before MR-2 can deliver a credential from Windows Credential Manager under MECHANISM_2_PROCESS_SCOPED, the execution lane must confirm all five binding conditions are satisfiable with the specific vault-read mechanism used. Selecting the vault does not itself prove the delivery mechanics satisfy the five conditions.",
+    "silence_is_not_consent": "An absent answer, an ambiguous answer, or an answer to a different question is NOT confirmation. The lane waits or stops.",
+    "confirmations_are_not_transferable": "HC-1 covers the ONE act it named. It is spent when its act completes or its lane stops. A RE-ROTATION under OD-3's re-rotate rule is a DIFFERENT act on a DIFFERENT day and requires a FRESH HC-1 with a FRESHLY COMPUTED VALID UNTIL. This is the load-bearing consequence of non-transferability for this DAG and it is stated rather than left implicit.",
+    "HC_1_IS_NOT_THE_PARENT_CONFIRMATION": "The parent's HUMAN_CONFIRMATION covers the D-1 OBSERVATION's first hosted connection and its scope is one PRECHECK plus one FINAL WITNESS. It is NOT consumed, satisfied, extended or substituted by HC-1, and none of HC-1, HC-2 or HC-3 may be offered to PRECHECK-R2 in its place.",
+    "WHAT_DOES_NOT_NEED_A_CONFIRMATION": "Reading. PHASE_P1's observation-only statements, PHASE_P3's poststate reads, and the management-plane project listing are reads governed by the target-identity gate rather than by a confirmation prompt. Carried so that confirmation fatigue does not erode the three that matter."
+  },
+  "OD3_TIME_MATERIALIZATION": {
+    "rule": "NO UTC TIMESTAMP IS CALCULATED BY THIS ARTIFACT. None appears anywhere in it, and none may be added by a successor citing it.",
+    "the_ratified_policy_verbatim": "SET VALID UNTIL. POLICY: VALID_UNTIL = planned FINAL WITNESS time + 24 hours. This is an OWNER POLICY OFFSET, not an already-computable UTC timestamp.",
+    "why_no_timestamp_can_be_computed_here": "The policy's operand is the PLANNED FINAL WITNESS TIME, which does not exist at this derivation. Computing anything from an assumed witness time would invent the operand and then present the result as policy output, which is the exact substitution EXEC-NOTE-1 forbids.",
+    "THE_REQUIRED_CHAIN": [
+      {
+        "step": 1,
+        "act": "A PLANNED FINAL WITNESS TIMESTAMP becomes concrete. Supplied by the owner. NOT estimated, NOT defaulted, NOT inferred from a schedule.",
+        "DAG_node": "N08",
+        "if_absent": "MR-2 remains BLOCKED. The graph does not proceed. EXEC-NOTE-1."
+      },
+      {
+        "step": 2,
+        "act": "COMPUTE planned FINAL WITNESS + 24 hours, as an EXACT UTC instant.",
+        "DAG_node": "N09",
+        "constraint": "UTC, not a local Windows time zone. The evidence artifact and the server both speak UTC, and a local-time VALID UNTIL is a different instant wearing the same digits."
+      },
+      {
+        "step": 3,
+        "act": "SHOW the exact UTC value to the owner as HC1-S4, inside HC-1, before the mint.",
+        "DAG_node": "N10",
+        "constraint": "Shown as a value the owner can read and check, never as a formula the owner is asked to trust."
+      },
+      {
+        "step": 4,
+        "act": "OWNER CONFIRMS. Silence is not consent.",
+        "DAG_node": "N10"
+      },
+      {
+        "step": 5,
+        "act": "MR-2 sets the credential with that VALID UNTIL.",
+        "DAG_node": "N11"
+      }
+    ],
+    "THE_SLIP_RULE": {
+      "the_ratified_text_verbatim": "If the planned witness window changes, or the 24-hour window would be exceeded before the witness completes, the response is RE-ROTATE (mint a fresh credential under the same policy), never extend the existing credential's expiration merely to continue.",
+      "what_RE_ROTATE_costs_in_this_DAG": "It is a full re-entry, not a patch. A fresh planned witness time (N08), a fresh computed VALID UNTIL (N09), a FRESH HC-1 (N10, because confirmations are not transferable), a fresh MR-2 (N11), a custody-entry UPDATE and not a second entry (N12), and, because MR-2 invalidates the already-delivered value, a fresh delivery (N23) and a fresh removal with positive absence verification (N24) for the value that is now dead.",
+      "what_is_ABSOLUTELY_PROHIBITED": "ALTER ROLE uellix_auditor VALID UNTIL <a later instant>, in any form, by any plane, for any reason, including to finish a witness that is nearly done. It is not in the authorized mutation set, MUTATION_ROLLBACK_CONTRACT.NO_OTHER_MUTATION_IS_AUTHORIZED closes that set at three, and OD-3 names extension as the thing the policy exists to refuse.",
+      "the_loop_edge_this_creates": "E-SLIP, from N27 back to N08. It is the only backward edge in this DAG that re-enters the mutation arm, and it is drawn rather than hidden because a DAG that cannot express the slip case would be a DAG that silently invites the extension."
+    },
+    "A_SECOND_FRESHNESS_LOOP_THAT_IS_NOT_THE_SLIP_RULE": {
+      "rule": "PHASE_P5_HANDOFF.freshness: a capability poststate is valid for the mutation window it immediately precedes; if anything mutates the target between P3 and PRECHECK-R2, the poststate is expired and P3 is re-run.",
+      "the_loop_edge": "E-FRESH, from N27 back to N22. It re-runs POSTSTATE VERIFICATION only. It does NOT re-enter the mutation arm and it does NOT require a fresh HC-1, because no mutation is being performed.",
+      "why_the_two_loops_are_kept_separate": "Collapsing them would either force a needless re-rotation for a merely stale poststate, or permit a stale credential to be carried through a re-verified poststate. They have different triggers, different costs and different tokens."
+    }
+  },
+  "MR2_CONTRACT": {
+    "rule": "Reproduced from MUTATION_ROLLBACK_CONTRACT.MR_2_CREDENTIAL and refined only as to its DAG placement and its edge preconditions. No term is softened.",
+    "trigger": "ALWAYS. It is the one mutation that always fires, because it is the one that makes P1 possible at all.",
+    "prestate": "rolpassword existence is UNKNOWN AND IS RECORDED AS UNKNOWN, with the reason: E-9 measured that a client cannot distinguish no-credential from wrong-credential, and reading pg_authid is prohibited by PROHIBITED_SQL. This is the ONE prestate in the contract that is declared rather than measured, and it is declared rather than guessed.",
+    "why_that_is_not_mutant_M24": "M24 is granting a PRIVILEGE before measuring its prestate. No privilege is granted before P1 measures. The credential is not a privilege; it is an authentication secret whose prior state is provably unobservable from the only identity this lane may hold, and rotation was chosen precisely because it is idempotent over that unknown.",
+    "mutation": "Set a freshly generated credential for uellix_auditor, through the management plane, or through SQL using the set_config bound-parameter pattern so no literal is logged.",
+    "management_plane_is_preferred_and_why": "SECRET_GENERATION_CONTRACT.if_the_management_plane_is_used_instead_of_SQL: a management-plane password set is preferable to an ALTER ROLE precisely because it never forms a SQL statement that a server could log. If the successor uses SQL, the set_config bound-parameter pattern is MANDATORY, not optional.",
+    "generation_requirements_carried": {
+      "entropy": "At least 32 bytes from a cryptographically secure random source.",
+      "encoding": "base64url, so the value survives placement in a URL userinfo field without percent-encoding.",
+      "generated_where": "In the operator's own secure environment or by the management plane itself. NOT by a repository script, because no repository script can reach a hosted target and none may be made to.",
+      "distinctness": "The value MUST differ from every credential held by any other role and from any prior auditor credential."
+    },
+    "poststate": "A connection opens as uellix_auditor using the new value, and the SERVER reports current_user = session_user = 'uellix_auditor'.",
+    "verification": "The successful authenticated session IS the verification. NO hash is read, and the value is never echoed.",
+    "rollback": "NONE IS POSSIBLE, AND THIS IS DECLARED RATHER THAN DISGUISED. A prior credential cannot be restored because it was never known and its hash is not reversible.",
+    "COMPENSATING_ACTION": "ROTATE AGAIN, or, if the capability is to be withdrawn entirely, ALTER ROLE uellix_auditor PASSWORD NULL, which returns the role to the repository's own designed state of a LOGIN role that cannot authenticate.",
+    "reversibility": "IRREVERSIBLE AS TO THE PRIOR SECRET. CONVERGENT AS TO THE END STATE.",
+    "failure_token": "STOP_CREDENTIAL_MUTATION_FAILED",
+    "human_confirmation": "HC-1, at N10, immediately before.",
+    "THE_PRECONDITIONS_THIS_DAG_ATTACHES_TO_THE_EDGE_INTO_MR_2": {
+      "rule": "Each is derived from a named clause and each is individually checkable. MR-2 does not fire until ALL NINE are true. This list is the single most load-bearing product of this derivation, because MR-2 is the irreversible act and every guarantee that depends on it depends on this list being complete.",
+      "preconditions": [
+        {
+          "id": "MR2-PRE-1",
+          "condition": "N01 passed. Freshness, HEAD, tree, clean worktree, and all six CANDIDATE_BINDING blob hashes re-derived and matching.",
+          "source": "FAIL_CLOSED_TOKENS STOP_STALE_INTEGRATION, STOP_WRONG_HEAD, STOP_WRONG_TREE, STOP_DIRTY_WORKTREE, and CANDIDATE_BINDING."
+        },
+        {
+          "id": "MR2-PRE-2",
+          "condition": "N02 closed. The certification-occurrence contradiction is resolved by a certified mechanism.",
+          "source": "PHASE_P0_PREREQUISITE.gate and STOP_FOR_AUTHORITY_CONFLICT."
+        },
+        {
+          "id": "MR2-PRE-3",
+          "condition": "N03 passed. All six of OD-1..OD-6 ratified, asserted documentarily and blob-bound.",
+          "source": "STOP_OWNER_DECISION_UNRATIFIED."
+        },
+        {
+          "id": "MR2-PRE-4",
+          "condition": "N04 passed. Target identity verified BY REF, and the production ref refused by any path including by name.",
+          "source": "HC_1.placement, TARGET_IDENTITY, STOP_PRODUCTION_TARGET_REFUSED."
+        },
+        {
+          "id": "MR2-PRE-5",
+          "condition": "N05 passed. The delivery mechanism has DEMONSTRATED all five MECHANISM_2 conditions on a non-secret sentinel.",
+          "source": "EXEC-NOTE-2 and MR-2's own irreversibility. See WHY_N05_IS_HOISTED_BEFORE_MR_2_RATHER_THAN_LEFT_IN_PHASE_P4."
+        },
+        {
+          "id": "MR2-PRE-6",
+          "condition": "N06 passed. The SSL-06 custody inventory entry EXISTS at the OD-2 path, with names, roles and custody metadata, and no value.",
+          "source": "SECRET_CUSTODY_CONTRACT.CONSEQUENT_BINDING_REQUIREMENT, verbatim: Before the credential is minted."
+        },
+        {
+          "id": "MR2-PRE-7",
+          "condition": "N07 passed. The evidence artifact skeleton exists with every REQUIRED_CONTENTS field present, and the exact rollback statements are pre-written and reviewed.",
+          "source": "EVIDENCE_MATERIALIZATION and MUTATION_ROLLBACK_CONTRACT.rule."
+        },
+        {
+          "id": "MR2-PRE-8",
+          "condition": "N09 passed. An EXACT UTC VALID UNTIL is computed from a CONCRETE planned FINAL WITNESS time.",
+          "source": "EXEC-NOTE-1. If absent, MR-2 remains BLOCKED."
+        },
+        {
+          "id": "MR2-PRE-9",
+          "condition": "N10 passed. HC-1 given, after all six mandatory statements, by the owner, in the affirmative, for THIS act.",
+          "source": "HUMAN_CONFIRMATION.HC_1 and silence_is_not_consent."
+        }
+      ]
+    },
+    "residual_risk_stated": "If an unrecorded consumer authenticates as uellix_auditor against staging today, this mutation breaks it without warning. HU-4 means that cannot be excluded. The owner ACCEPTED this explicitly under OD-2, on the stated basis that the risk is bounded to staging and to the existing read-only role and that no pre-rotation detector exists under the current authority."
+  },
+  "MR3_CONDITIONAL_PATH": {
+    "rule": "FULLY CONDITIONAL. NEVER PRE-AUTHORIZED. MINIMUM_PRIVILEGE_CONTRACT frames REQ-2 as CONDITIONAL AND MEASURED, NEVER PRE-AUTHORIZED, and the OD-5 ratification explicitly preserves that framing rather than altering it: this selection decides the CHANNEL a future MR-3 would use, contingent on MR-3 firing at all.",
+    "THE_TRIGGER_IS_A_CONJUNCTION_OF_THREE": {
+      "rule": "MR-3 fires only if ALL THREE are true. A DAG that drew it as firing on the measurement alone would licence a grant with no allocation.",
+      "conjuncts": [
+        {
+          "id": "MR3-T1",
+          "condition": "KP-3 TRUE. to_regnamespace('uellix_stella_ops') IS NOT NULL, established BEFORE any has_schema_privilege call.",
+          "if_false": "STOP_STELLA_OPS_SCHEMA_ABSENT at KP-4. Do NOT call has_schema_privilege, and do NOT issue a GRANT. E-6 measured that has_schema_privilege RAISES SQLSTATE 3F000 over an absent schema rather than returning false, so ordering the existence check first converts an unhandled error into a named outcome."
+        },
+        {
+          "id": "MR3-T2",
+          "condition": "KP-5 FALSE. has_schema_privilege(current_user,'uellix_stella_ops','USAGE') = false, recorded as a boolean. This is the prestate for REQ-2.",
+          "if_true": "KP-6. REQ-2 IS NOT PERFORMED. MR-3 IS SKIPPED. MG-2 resolved in the favourable direction."
+        },
+        {
+          "id": "MR3-T3",
+          "condition": "THE PROTECTED-SURFACE ALLOCATION FOR THE DELIVERY PACKAGE EXISTS.",
+          "if_false": "STOP_PROTECTED_SURFACE_ALLOCATION_ABSENT."
+        }
+      ]
+    },
+    "IF_MEASUREMENT_SAYS_NO_EXTRA_SCHEMA_USAGE_GRANT_IS_NEEDED": {
+      "verdict": "SKIP MR-3 ENTIRELY. Nodes N17, N18, N19, N20 and N21 are NOT ENTERED. No allocation is sought, no package is authored, HC-2 is never asked, no GRANT is issued, and no REVOKE rollback exists because no mutation occurred.",
+      "and_it_is_still_a_finding": "PHASE_P1.outcome_if_CP_3_is_true, verbatim: REQ-2 IS NOT NEEDED. MG-2 resolved favourably, the hosted grant exists although no package explains it, and THAT ITSELF is a finding to record rather than a relief to pass over: a privilege nobody can cite the origin of is a privilege nobody can defend. MG-1 measured that NO package in this repository grants it. A hosted grant with no repository lineage is recorded in the evidence artifact as an unexplained privilege.",
+      "what_it_does_NOT_trigger": "It does NOT trigger STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE. That token covers PV-24 through PV-28, which are the PROHIBITED rows, and USAGE on uellix_stella_ops is a REQUIRED row, not a prohibited one. Recording the anomaly is the disposition; stopping is not, and conflating the two would halt the lane on a favourable measurement."
+    },
+    "IF_IT_FIRES_THE_ORDERED_PATH": [
+      {
+        "step": 1,
+        "DAG_node": "N17",
+        "act": "SEEK THE PROTECTED-SURFACE ALLOCATION for the db/prepared/** delivery package.",
+        "notes": "db/prepared/** is a PROTECTED SURFACE under scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, re-derived at AS_OF_TREE. No allocation exists. Neither the capability authority nor the ratification record reserves, implies or requests one, and neither does this artifact. Seeking it is a separate governed act."
+      },
+      {
+        "step": 2,
+        "DAG_node": "N18",
+        "act": "AUTHOR THE GOVERNED db/prepared/** PACKAGE.",
+        "notes": "PREPARED PACKAGE ONLY. NO AD-HOC SQL. OD-5 ratified PREPARED_PACKAGE and no ad-hoc hosted GRANT is ratified as an alternative. The package carries preconditions, self-verification and a pinned manifest entry, as every hosted GRANT in this repository's history does. RULE_NO_GATE_WEAKENING forbids reaching for a thinner channel because the thicker one is inconvenient."
+      },
+      {
+        "step": 3,
+        "DAG_node": "N19",
+        "act": "HC-2.",
+        "notes": "Its own confirmation, not HC-1's, because it is a DIFFERENT KIND of act on a DIFFERENT SURFACE with a DIFFERENT ROLLBACK, conditional on a measurement not yet taken when HC-1 was asked. Placement: after PHASE_P1 measures CP-3 as false, and before any GRANT is issued. It must state the measured has_schema_privilege value, that the schema was confirmed to EXIST so the grant is not issued into a 3F000, the exact statement in full, that it confers name resolution only over a schema measured to contain six functions and no tables, that EXECUTE is NOT being granted and is prohibited, and the exact REVOKE that reverses it."
+      },
+      {
+        "step": 4,
+        "DAG_node": "N20",
+        "act": "APPLY. GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_auditor;",
+        "notes": "In its own transaction. Exactly this statement and no other."
+      },
+      {
+        "step": 5,
+        "DAG_node": "N21",
+        "act": "EXACT POSTSTATE VERIFICATION. Three booleans, all asserted.",
+        "notes": "has_schema_privilege for USAGE = true, AND has_schema_privilege for CREATE = false, AND has_function_privilege for uellix_auditor over each canonical signature for EXECUTE = false. The second and third are what make the verification adversarial: a GRANT ALL typed instead of GRANT USAGE satisfies the first assertion and fails the second, and a well-meaning extra EXECUTE fails the third."
+      }
+    ],
+    "ROLLBACK": {
+      "statement": "REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor;",
+      "precondition_verbatim": "The rollback is issued ONLY if the recorded prestate was false. If the prestate was true, no mutation occurred and there is nothing to reverse; revoking then would remove a privilege this act did not create.",
+      "reversibility": "FULLY REVERSIBLE.",
+      "failure_token": "STOP_SCHEMA_USAGE_GRANT_FAILED"
+    },
+    "UNEXPLAINED_PROHIBITED_PRIVILEGE_STOP": {
+      "token": "STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE, added by v1.0.1 SECTION_A5 as the twenty-third token.",
+      "when": "PV-24, PV-25, PV-26, PV-27 or PV-28 measured TRUE at PHASE_P3 or any later re-observation, AND not attributable to this artifact's own MR-3, meaning MR-3 either did not fire or fired and its own verification already separately confirmed the corresponding row false.",
+      "what_those_rows_are": "Respectively: EXECUTE on the nine-argument canonical literal, EXECUTE on the seven-argument canonical literal, CREATE on uellix_stella_ops, CREATE on public, and any of INSERT/UPDATE/DELETE/TRUNCATE on uellix_bootstrap.staging_sentinel.",
+      "disposition_verbatim": "STOP AND RECORD, NEVER SILENTLY REVOKE. A hosted privilege this artifact did not create and cannot attribute is not this artifact's to remove, and revoking it would destroy the evidence of how it arrived.",
+      "what_is_recorded": "The exact PV id, the exact boolean, and the exact SQLSTATE or absence of one."
+    },
+    "THE_PHASE_P2_RULE_THAT_BINDS_THE_WHOLE_ARM": "What this phase may never become, verbatim: a remediation loop. If a mutation's poststate does not verify, the phase ROLLS BACK and STOPS. It does not try a wider grant, a different role or a second statement.",
+    "WHAT_IS_NOT_IN_THE_DELTA_AND_IS_ASSERTED_RATHER_THAN_GRANTED": [
+      "CONNECT on the staging database. E-5 measured it is PUBLIC-derived and present on a stock engine. Asserted PRESENT by the poststate at PV-20; a poststate that finds it ABSENT is STOP_CONNECT_PRIVILEGE_ABSENT and a finding, NOT a licence to grant it.",
+      "USAGE on schema uellix_bootstrap. ALREADY GRANTED at stella_hosted_0001:617. Asserted present, never re-granted.",
+      "SELECT on uellix_bootstrap.staging_sentinel. ALREADY GRANTED at stella_hosted_0001:620. Asserted present, never re-granted.",
+      "USAGE on schema public. ALREADY GRANTED at stella_hosted_0001:295. Not needed by the D-1 surface at all; recorded so its presence in the poststate is not mistaken for a change this act made."
+    ]
+  },
+  "PRECHECK_R2_ENTRY_CONTRACT": {
+    "rule": "PRECHECK-R2 is a DIFFERENT LANE under a DIFFERENT AUTHORITY. This DAG derives the conditions under which it may OPEN. It does not derive its contents, does not authorize it, and does not carry anything into it that the parent does not carry.",
+    "NO_DB_SOCKET_UNTIL_EVERY_UPSTREAM_PREREQUISITE_IS_SATISFIED": {
+      "rule": "ABSOLUTE. PHASE_P5_HANDOFF: CV1-D1-OLDDB-PRECHECK-EXEC-R2 may open ONLY after the capability provisioning has been EXECUTED and its poststate INDEPENDENTLY CERTIFIED.",
+      "the_full_upstream_set": "N01 through N26 inclusive, with the MR-3 arm either SKIPPED on a measured KP-5 true or COMPLETED through N21. A single unsatisfied upstream node means no socket.",
+      "the_refusal_is_structural_and_not_merely_procedural": "resolveAuditorDatabaseUrl reaches DB_CAPABILITY_URL_MISSING BEFORE parseDeclaredRole and therefore before any network act. A PRECHECK-R2 opened without delivery does not fail at a socket; it refuses before one exists. That is the predecessor stop CV1-D1-OLDDB-PRECHECK-EXEC-R1 recorded."
+    },
+    "THE_ONLY_AUTHORIZED_CREDENTIAL": {
+      "variable": "UELLIX_AUDITOR_DATABASE_URL",
+      "why_only_this_one": "resolveAuditorDatabaseUrl reads env[AUDITOR_DATABASE_URL_ENV_VAR] and nothing else, and refuses DB_CAPABILITY_URL_MISSING with no fallback because DATABASE_URL is deliberately not consulted. It further refuses DB_CAPABILITY_URL_WRONG_ROLE when the userinfo role half is not AUDITOR_DATABASE_ROLE.",
+      "NEVER_SUBSTITUTED_BY": [
+        "UELLIX_RUNTIME_DATABASE_URL",
+        "UELLIX_MIGRATOR_DATABASE_URL",
+        "DATABASE_URL",
+        "postgres",
+        "supabase_admin",
+        "service_role",
+        "authenticator",
+        "uellix_owner",
+        "uellix_migrator",
+        "any role reached by SET ROLE from any of them"
+      ],
+      "the_mandate_categories_mapped_onto_that_list": "runtime URL maps to UELLIX_RUNTIME_DATABASE_URL. migrator URL maps to UELLIX_MIGRATOR_DATABASE_URL. admin or postgres credential maps to postgres and supabase_admin. operator credential maps to the pooler operator role postgres, plus service_role, authenticator, uellix_owner and uellix_migrator. Every category the lane mandate names is already inside the authority's own forbidden-substitution list, carried here unchanged rather than restated as a new rule."
+    },
+    "EXPOSED_TO_THE_PRECHECK_PROCESS_ONLY": {
+      "rule": "The value reaches the SINGLE consuming process and no other. WCM-C1 makes it process-scoped, and SECRET_CUSTODY_CONTRACT.who_may_NOT_know_it bars any second process, including a second observation run, without a fresh delivery.",
+      "the_consequence_for_the_FINAL_WITNESS": "The FINAL WITNESS is a SECOND consuming process. It requires its OWN delivery and its OWN removal with its OWN positive absence verification. REMOVAL_AFTER_USE says so in terms: immediately after the consuming process exits, after PRECHECK-R2 and again after the FINAL WITNESS, on the success path and the failure path alike.",
+      "and_it_may_NOT_be_left_set_between_the_two": "A single delivery spanning both runs would be a credential resident across an interval bounded by nothing but the operator's memory, which is mutant M26. Two deliveries and two removals, each verified."
+    },
+    "CONNECTION_MECHANISM": {
+      "authorized": "DIRECT HOST ONLY. db.bvyzblhqymxruxdguaee.supabase.co, classified by the module's own ConnectionMechanism enum as direct-db.",
+      "session_pooler_REFUSED": "MG-3. projectRefFromPoolerUser folds to lower case and then delegates to parseQualifiedPoolerUser, returning a ref ONLY when the role half is the literal OPERATOR_POOLER_ROLE 'postgres'. A qualified username of the form uellix_auditor.<ref> therefore yields null, and deriveConnectionIdentity's pooler branch refuses HOSTED_TARGET_POOLER_USER_INVALID because a regional pooler host names no project.",
+      "what_is_NOT_authorized_in_response": "Widening the parser so the auditor can use the pooler. That is a code change on the identity surface, outside this write set, and it would weaken the one signal the pooler branch has. Grounds mutant M29.",
+      "reachability_remains_UNKNOWN": "MG-4 carried: direct-host REACHABILITY is UNKNOWN. The management-plane observation confirms the hostname exists for the ref and does NOT confirm a route. A failure to route is not a failure of the credential and must not be recorded as one."
+    },
+    "WHAT_THE_HANDOFF_CARRIES": "The capability evidence artifact, the poststate assertion results, and the fact that the credential is delivered. NO observation, NO catalog fact, NO OLD_DB claim and NO resolution of either canonical literal.",
+    "WHAT_THE_HANDOFF_DOES_NOT_CARRY": "The parent's human confirmation. PRECHECK-R2 obtains its OWN, under the PARENT's HUMAN_CONFIRMATION, immediately before its first hosted connection.",
+    "THE_PROVISIONING_LANE_MAY_NOT_PRE_EMPT_IT": "CAPABILITY_PREFLIGHT_CONTRACT.what_the_provisioning_lane_may_NOT_do_in_this_preflight, verbatim: It may NOT evaluate SQ-6 or SQ-7. Resolving either canonical literal is the PRECHECK, and performing it inside the provisioning lane is mutant M20. The provisioning lane establishes that the capability CAN observe; it does not observe.",
+    "THIS_ARTIFACT_DOES_NOT_OPEN_IT": "NO PRECHECK-R2 is opened, executed, authorized or scheduled by this artifact. The lane mandate states NO PRECHECK-R2 and this artifact obeys."
+  },
+  "TARGET_IDENTITY": {
+    "rule": "Carried unchanged. Target identity is established BEFORE any act, by the repository's own identity logic, BY REF, and a refusal is final.",
+    "AUTHORIZED_TARGET_REF": "bvyzblhqymxruxdguaee",
+    "authorized_management_plane_name": "Uellix Staging",
+    "authorized_direct_host": "db.bvyzblhqymxruxdguaee.supabase.co",
+    "pinned_in_code": "db/hosted/target-identity.ts KNOWN_STAGING_PROJECT_REF = 'bvyzblhqymxruxdguaee'",
+    "PRODUCTION_VETOED_REF": "ctaxtgujyyprgynmnvtq",
+    "production_vetoed_management_plane_name": "uellix-staging",
+    "SELECTION_IS_BY_REF_AND_NEVER_BY_NAME": {
+      "rule": "ABSOLUTE. Every act selects its target by the literal ref, compared against KNOWN_STAGING_PROJECT_REF.",
+      "the_measured_reason_carried_verbatim": "The management-plane listing shows the PRODUCTION-VETOED ref ctaxtgujyyprgynmnvtq carries the name uellix-staging, while the authorized ref carries Uellix Staging. Selecting by name selects the vetoed project. This is not a hypothetical confusion; it is what the two names are.",
+      "consequence_for_tooling": "No dashboard position, no transcribed string and no human-readable label may select a target at any point in the sequence.",
+      "grounds_mutant": "M19."
+    },
+    "required_derivation": "verifyStagingTarget from db/hosted/target-identity.ts, with sentinelPolicy required, CALLED and not re-implemented. A node that parsed the connection string itself would be a second answer to the identity question.",
+    "THE_TWO_ARMS_THIS_DAG_SPLITS": {
+      "why_it_must_be_split": "HC_1.placement requires target identity to be verified BY REF before the credential is minted. But verifyStagingTarget with sentinelPolicy required also reads the IN-DATABASE sentinel uellix_bootstrap.staging_sentinel, and reading it requires an authenticated session, which requires the credential MR-2 has not yet minted. The two halves of the identity check therefore cannot both precede the mint, and pretending otherwise would either delay the identity check past the act it guards or claim a sentinel reading that no session took.",
+      "ARM_A_DECLARED_REF_PRE_CONNECTION": {
+        "DAG_node": "N04",
+        "when": "Before HC-1 and therefore before the mint.",
+        "what_it_checks": "The declared project ref literal, compared against KNOWN_STAGING_PROJECT_REF, and refused if it resolves to ctaxtgujyyprgynmnvtq by any path including by name. The ConnectionMechanism classification as direct-db and the refusal of the session pooler for this role.",
+        "what_it_CANNOT_check": "The in-database sentinel. No session exists.",
+        "tokens": "STOP_PRODUCTION_TARGET_REFUSED, and STOP_TARGET_IDENTITY_CONTRADICTION on any disagreement among host, declared ref and declared environment."
+      },
+      "ARM_B_IN_DATABASE_SENTINEL": {
+        "DAG_node": "N13",
+        "when": "On the FIRST authenticated session, immediately after MR-2 verifies and before PHASE_P1's observation reads.",
+        "what_it_checks": "uellix_bootstrap.staging_sentinel, read as exactly two columns (environment, project_ref) of exactly one row-set, completing verifyStagingTarget's sentinelPolicy required contract.",
+        "tokens": "STOP_TARGET_IDENTITY_CONTRADICTION. A consistent identity for the wrong project is still the wrong project, and the module says so in its own words.",
+        "THE_RESIDUAL_RISK_THIS_SPLIT_LEAVES_AND_DOES_NOT_HIDE": "MR-2 is performed against a target verified by ARM A only. If the declared ref were correct and the sentinel disagreed, the credential would already have been minted before the disagreement surfaced. The exposure is bounded and is stated rather than argued away: the mint is refused outright against the vetoed ref by ARM A, the compensating action ALTER ROLE uellix_auditor PASSWORD NULL is available, and the alternative, which is minting after a sentinel read that cannot be taken, is not available at all. Flagged OF-DAG-9."
+      }
+    },
+    "contradiction_rule": "Any disagreement among host, declared project ref, declared environment and the in-database sentinel is STOP_TARGET_IDENTITY_CONTRADICTION.",
+    "PRODUCTION_VETO": {
+      "rule": "No act of any kind against ctaxtgujyyprgynmnvtq, including a read.",
+      "token": "STOP_PRODUCTION_TARGET_REFUSED, fired if any act resolves to it by any path, including by name.",
+      "no_production_analogue_is_invented": "This DAG establishes no production analogue of anything, and creates no precedent, template or runbook for production."
+    }
+  },
+  "DAG_NODES": {
+    "rule": "TWENTY-EIGHT NODES. Each names ONE act, ONE canonical phase it refines, its PRECONDITIONS, its EXIT CONDITION, and the FAIL-CLOSED TOKEN it can fire. A node with no exit condition is a wish; a node with no token is an act nobody can refuse.",
+    "plane_legend": {
+      "REPOSITORY": "Acts entirely within the git tree. No hosted contact of any kind.",
+      "OWNER": "Acts requiring a human owner statement, decision or confirmation. No hosted contact.",
+      "WORKSTATION": "Acts on the operator's own machine or vault. No hosted contact.",
+      "HOSTED_MANAGEMENT_PLANE": "Acts against the Supabase management plane for project bvyzblhqymxruxdguaee.",
+      "HOSTED_SQL": "Acts inside an authenticated PostgreSQL session as uellix_auditor against that project.",
+      "EXTERNAL_LANE": "Acts belonging to a different lane under a different authority. Named so the graph terminates honestly, never executed here."
+    },
+    "nodes": [
+      {
+        "id": "N01",
+        "name": "REPOSITORY FRESHNESS AND AUTHORITY BINDING RE-DERIVATION",
+        "plane": "REPOSITORY",
+        "canonical_phase": "Precondition of PHASE_P0_PREREQUISITE",
+        "act": "Re-derive branch, HEAD, tree and clean-including-untracked worktree state. Re-derive origin/integration/commercial-v1. Re-derive ALL SIX CANDIDATE_BINDING blob hashes by git ls-tree at the execution lane's OWN base.",
+        "preconditions": [],
+        "exit_condition": "All four machine facts match the frozen base, and all six blob hashes match the values the ratification record records.",
+        "tokens": [
+          "STOP_STALE_INTEGRATION",
+          "STOP_WRONG_HEAD",
+          "STOP_WRONG_TREE",
+          "STOP_DIRTY_WORKTREE",
+          "STOP_RATIFICATION_BINDING_MISMATCH"
+        ],
+        "notes": "This is a machine gate, class D. No LLM judgement is admissible in it. CANDIDATE_BINDING_RE_DERIVED in this artifact is provenance for THIS derivation and does NOT discharge N01 for the execution lane."
+      },
+      {
+        "id": "N02",
+        "name": "CERTIFICATION-OCCURRENCE CONTRADICTION RESOLUTION",
+        "plane": "OWNER",
+        "canonical_phase": "PHASE_P0_PREREQUISITE, half A",
+        "act": "An OWNER-LEVEL CERTIFICATION-OCCURRENCE NOTE, or another certified mechanism, resolves the contradiction between the reported occurrence of the bounded v1.0.2 recertification and the four statements ORS-1..ORS-4 in the ratification record that assert it has not occurred.",
+        "preconditions": [
+          "N01"
+        ],
+        "exit_condition": "The contradiction is RESOLVED BY A CERTIFIED MECHANISM. Half A of PHASE_P0_PREREQUISITE.gate is satisfied on the record as well as in fact.",
+        "tokens": [
+          "STOP_FOR_AUTHORITY_CONFLICT"
+        ],
+        "IT_IS_NOT_AUTHORED_HERE": "This artifact does not author, draft, template, assume or pre-empt the note. See OWNER_NOTE_DEPENDENCY.THIS_ARTIFACT_DOES_NOT_AUTHOR_IT.",
+        "if_it_never_closes": "Every hosted node is unreachable and the graph terminates at STOP_FOR_AUTHORITY_CONFLICT. The derivation remains correct; it is simply not traversable."
+      },
+      {
+        "id": "N03",
+        "name": "OWNER RATIFICATION GATE, OD-1 THROUGH OD-6",
+        "plane": "REPOSITORY",
+        "canonical_phase": "PHASE_P0_PREREQUISITE, half B",
+        "act": "Assert, from the ratification record at its re-derived blob, that all six of OD-1..OD-6 carry status RATIFIED_BY_PRODUCT_OWNER, and that the six effective-package blob hashes they bind to still match.",
+        "preconditions": [
+          "N01"
+        ],
+        "exit_condition": "Six of six ratified and bound. Not five. Not five plus a recommendation the lane finds persuasive.",
+        "tokens": [
+          "STOP_OWNER_DECISION_UNRATIFIED",
+          "STOP_RATIFICATION_BINDING_MISMATCH"
+        ],
+        "WHY_THIS_IS_A_DOCUMENTARY_ASSERTION_AND_NOT_A_TEST": "The capability manifest's negative control N16 covers exactly this gate and carries test_file UNKNOWN, re-read in this lane at blob 2790f3530ce44fd77e12ecdf49430d93ec7a4a70. NB-IC-5 warns against weakening the gate on that basis. The gate is therefore discharged by an assertion an executing lane can perform with git and a JSON read alone, specified precisely enough to be re-run by a third party. An absent automated control is a reason to specify the manual assertion, never a reason to lower the bar."
+      },
+      {
+        "id": "N04",
+        "name": "TARGET IDENTITY, DECLARED-REF ARM, PRE-CONNECTION",
+        "plane": "REPOSITORY",
+        "canonical_phase": "PHASE_P0_PREREQUISITE, and the placement precondition of HC-1",
+        "act": "Resolve the target BY REF. Compare the declared literal against KNOWN_STAGING_PROJECT_REF in db/hosted/target-identity.ts. Classify the connection mechanism as direct-db. Refuse the session pooler for this role.",
+        "preconditions": [
+          "N01"
+        ],
+        "exit_condition": "The ref is bvyzblhqymxruxdguaee, selected by ref and never by name, and host, declared ref and declared environment agree.",
+        "tokens": [
+          "STOP_PRODUCTION_TARGET_REFUSED",
+          "STOP_TARGET_IDENTITY_CONTRADICTION"
+        ],
+        "what_it_CANNOT_do": "It cannot read the in-database sentinel. No session exists yet. That half is ARM B at N13. See TARGET_IDENTITY.THE_TWO_ARMS_THIS_DAG_SPLITS."
+      },
+      {
+        "id": "N05",
+        "name": "WCM PROCESS-SCOPED DELIVERY MECHANISM READINESS",
+        "plane": "WORKSTATION",
+        "canonical_phase": "Derived prerequisite of PHASE_P4, HOISTED before MR-2",
+        "act": "DEMONSTRATE that the chosen vault-read mechanism satisfies all five MECHANISM_2 conditions WCM-C1..WCM-C5, on a NON-SECRET SENTINEL VALUE, plus the two derived obligations OF-DAG-3 and OF-DAG-4.",
+        "preconditions": [
+          "N03"
+        ],
+        "exit_condition": "All five conditions demonstrated, the child-process topology stated, and the vault read's own logging behaviour stated.",
+        "tokens": [
+          "STOP_SECRET_DELIVERY_NONCOMPLIANT"
+        ],
+        "no_implementation_is_invented_here": "This artifact names no reader, wrapper, script, command, API or library. It states what must be proven and by what standard.",
+        "why_it_is_here_and_not_at_N23": "MR-2 is irreversible and its only compensating action is to rotate again. A delivery mechanism first tested after the mint can only fail after the prior credential is already dead. See WCM_READINESS_PREREQUISITE.WHY_N05_IS_HOISTED_BEFORE_MR_2_RATHER_THAN_LEFT_IN_PHASE_P4 and OF-DAG-5."
+      },
+      {
+        "id": "N06",
+        "name": "SSL-06 CUSTODY INVENTORY, PRE-MINT ENTRY",
+        "plane": "REPOSITORY",
+        "canonical_phase": "Derived prerequisite of MR-2, from SECRET_CUSTODY_CONTRACT.CONSEQUENT_BINDING_REQUIREMENT",
+        "act": "Create the custody inventory entry at docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json, recording the capability name, the role, the target project ref, the human custodian, every process or environment that will hold it, the expiry from N09 and the planned removal date. NAMES, ROLES AND CUSTODY METADATA ONLY.",
+        "preconditions": [
+          "N03",
+          "N05",
+          "N09"
+        ],
+        "exit_condition": "The entry EXISTS and contains all seven pre-mint fields. The mint date is absent and is expected to be, because the mint has not occurred.",
+        "tokens": [
+          "STOP_SECRET_DELIVERY_NONCOMPLIANT"
+        ],
+        "NEVER_A_VALUE": "No credential, no DSN, no userinfo, no hash, no host string, and no vault handle or lookup token. The last is a derived addition, flagged OF-DAG-6.",
+        "it_is_not_created_by_this_lane": "The ratification record states that populating the inventory, even empty, is NOT authorized by it, and this artifact creates nothing at that path."
+      },
+      {
+        "id": "N07",
+        "name": "EVIDENCE PACKAGE AND ROLLBACK READINESS",
+        "plane": "REPOSITORY",
+        "canonical_phase": "Derived prerequisite of MR-2, from EVIDENCE_MATERIALIZATION and MUTATION_ROLLBACK_CONTRACT.rule",
+        "act": "Derive the evidence artifact filename from the docs/ops/staging/evidence/ dated attempt-scoped precedent AT THE EXECUTION LANE'S OWN BASE. Create the skeleton with every REQUIRED_CONTENTS field present as an explicit hole. Pre-write and review the exact rollback statements: ALTER ROLE uellix_auditor NOLOGIN for MR-1, REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor for MR-3, and record that MR-2 has NO rollback and that its compensating action is ROTATE AGAIN or ALTER ROLE uellix_auditor PASSWORD NULL.",
+        "preconditions": [
+          "N03"
+        ],
+        "exit_condition": "Every REQUIRED_CONTENTS field is present as a field, so its later absence is a hole rather than a silence. Every rollback statement is exact and pre-reviewed rather than composed under failure.",
+        "tokens": [],
+        "the_filename_is_NOT_fixed_by_any_authority": "EVIDENCE_MATERIALIZATION declines to fix it, because fixing a filename in an authority pins a name nobody has checked against the directory's convention at the time it lands. This artifact declines likewise.",
+        "MUST_NEVER_CONTAIN": "The credential in any form redacted or not, the full DSN or userinfo, any token or key or query string carrying a credential, the host string as distinct from the mechanism enum, any password hash or rolpassword value, any driver error message that has not passed through redactForHostedLog, any row of any application or tenant table, and any resolution of either canonical literal."
+      },
+      {
+        "id": "N08",
+        "name": "PLANNED FINAL WITNESS TIMESTAMP INTAKE",
+        "plane": "OWNER",
+        "canonical_phase": "Derived prerequisite of OD-3's materialization, from EXEC-NOTE-1",
+        "act": "The owner supplies a CONCRETE planned FINAL WITNESS timestamp.",
+        "preconditions": [
+          "N03"
+        ],
+        "exit_condition": "A concrete planned witness time exists.",
+        "tokens": [],
+        "if_it_is_absent": "MR-2 remains BLOCKED. EXEC-NOTE-1, verbatim: the execution lane does not substitute a default, an estimate, or an open-ended VALID UNTIL. Blocked is a state of the graph, not a token, because nothing has gone wrong; a required owner input simply has not arrived."
+      },
+      {
+        "id": "N09",
+        "name": "EXACT UTC VALID UNTIL COMPUTATION",
+        "plane": "WORKSTATION",
+        "canonical_phase": "OD-3 materialization",
+        "act": "Compute planned FINAL WITNESS + 24 hours as an EXACT UTC instant.",
+        "preconditions": [
+          "N08"
+        ],
+        "exit_condition": "One exact UTC instant, expressed in UTC and not in a local Windows time zone.",
+        "tokens": [],
+        "NO_TIMESTAMP_IS_COMPUTED_BY_THIS_ARTIFACT": "None appears anywhere in it. The operand does not exist at this derivation and inventing it would present an invented input as policy output."
+      },
+      {
+        "id": "N10",
+        "name": "HC-1, CREDENTIAL MUTATION HUMAN CONFIRMATION",
+        "plane": "OWNER",
+        "canonical_phase": "The confirmation gate of PHASE_P2's MR-2",
+        "act": "State all six mandatory statements HC1-S1..HC1-S6, including the exact UTC VALID UNTIL from N09, then ask. Wait for an affirmative answer to THIS question about THIS act.",
+        "preconditions": [
+          "N02",
+          "N03",
+          "N04",
+          "N05",
+          "N06",
+          "N07",
+          "N09"
+        ],
+        "exit_condition": "An affirmative, unambiguous owner confirmation, given after all six statements, covering this one act.",
+        "tokens": [],
+        "silence_is_not_consent": "An absent answer, an ambiguous answer, or an answer to a different question is NOT confirmation. The lane waits or stops.",
+        "not_transferable": "Spent when its act completes or its lane stops. A re-rotation needs a fresh HC-1 with a freshly computed VALID UNTIL."
+      },
+      {
+        "id": "N11",
+        "name": "MR-2, CREDENTIAL MINT AND ROTATION",
+        "plane": "HOSTED_MANAGEMENT_PLANE",
+        "canonical_phase": "PHASE_P2_MINIMAL_REMEDIATION_ONLY_IF_NEEDED, the one mutation that always fires",
+        "act": "Set a freshly generated credential for uellix_auditor on bvyzblhqymxruxdguaee, with the VALID UNTIL from N09. Management plane preferred; if SQL is used, the set_config bound-parameter pattern is MANDATORY.",
+        "preconditions": [
+          "N10"
+        ],
+        "prestate": "UNKNOWN, DECLARED AND NOT GUESSED. E-9 measured that a client cannot distinguish no-credential from wrong-credential, and pg_authid is prohibited by PROHIBITED_SQL.",
+        "exit_condition": "A connection opens as uellix_auditor using the new value and the SERVER reports current_user = session_user = 'uellix_auditor'. The successful authenticated session IS the verification. No hash is read and the value is never echoed.",
+        "tokens": [
+          "STOP_CREDENTIAL_MUTATION_FAILED",
+          "STOP_AUDITOR_ROLE_ABSENT",
+          "STOP_AUDITOR_AUTHENTICATION_FAILED"
+        ],
+        "rollback": "NONE POSSIBLE. Compensating action: ROTATE AGAIN, or ALTER ROLE uellix_auditor PASSWORD NULL to withdraw the capability entirely.",
+        "THIS_IS_THE_FIRST_HOSTED_ACT_IN_THE_GRAPH": "Everything upstream is repository, owner or workstation. The edge into N11 is where the OWNER_NOTE_DEPENDENCY bites, and it is where all nine MR2-PRE preconditions are checked."
+      },
+      {
+        "id": "N12",
+        "name": "CUSTODY INVENTORY, POST-MINT UPDATE",
+        "plane": "REPOSITORY",
+        "canonical_phase": "Derived, from SECRET_ROTATION_CONTRACT.rotation_mechanics",
+        "act": "UPDATE the existing N06 entry with the mint date. Do NOT append a second entry.",
+        "preconditions": [
+          "N11"
+        ],
+        "exit_condition": "The single entry now carries all eight fields including the mint date.",
+        "tokens": [],
+        "why_an_update": "Same custody entry updated rather than appended twice. A second entry for one credential makes the inventory report two holders where there is one, which is the failure an inventory exists to prevent."
+      },
+      {
+        "id": "N13",
+        "name": "FIRST AUTHENTICATED SESSION, KP-1, KP-2, AND TARGET IDENTITY ARM B",
+        "plane": "HOSTED_SQL",
+        "canonical_phase": "PHASE_P1_HOSTED_CAPABILITY_OBSERVATION, entry",
+        "act": "KP-1: assert current_user = session_user = 'uellix_auditor' FROM THE SERVER. KP-2: assert current_setting('transaction_read_only') = 'on'. Then complete verifyStagingTarget's sentinelPolicy required contract by reading uellix_bootstrap.staging_sentinel as exactly two columns of exactly one row-set.",
+        "preconditions": [
+          "N11"
+        ],
+        "exit_condition": "The server confirms the identity, the transaction is read-only, and the in-database sentinel agrees with the declared ref from N04.",
+        "tokens": [
+          "STOP_TARGET_IDENTITY_CONTRADICTION",
+          "STOP_AUDITOR_AUTHENTICATION_FAILED"
+        ],
+        "the_resolver_check_is_not_the_guarantee": "The resolver's role check is a pre-check and the module itself says it is NOT the guarantee. KP-1 asks the server."
+      },
+      {
+        "id": "N14",
+        "name": "PHASE P1 PRESTATE OBSERVATION",
+        "plane": "HOSTED_SQL",
+        "canonical_phase": "PHASE_P1_HOSTED_CAPABILITY_OBSERVATION, body",
+        "act": "KP-3: to_regnamespace('uellix_stella_ops') IS NOT NULL, BEFORE any has_schema_privilege call. KP-4: if false, STOP. KP-5: if true, record has_schema_privilege for USAGE as a boolean. KP-6: if KP-5 true, REQ-2 is not performed. Then measure every OTHER prestate: role attributes, memberships, ownership, required privileges, prohibited privileges, PUBLIC-derived privileges and the pre-existing surface.",
+        "preconditions": [
+          "N13"
+        ],
+        "transaction_shape": "ONE BEGIN READ ONLY transaction, closed by an UNCONDITIONAL ROLLBACK. Observation only; AUTHORIZED_FUTURE_SQL.PHASE_P1_OBSERVATION_ONLY_READS.",
+        "exit_condition": "Every prestate except MR-2's is MEASURED and recorded as a boolean or a value. MR-2's own prestate is already recorded as a declared UNKNOWN with its reason.",
+        "tokens": [
+          "STOP_STELLA_OPS_SCHEMA_ABSENT",
+          "STOP_DANGEROUS_ROLE_ATTRIBUTE",
+          "STOP_UNEXPLAINED_ROLE_MEMBERSHIP",
+          "STOP_UNEXPECTED_AUDITOR_OWNERSHIP",
+          "STOP_CONNECT_PRIVILEGE_ABSENT",
+          "STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE"
+        ],
+        "exactly_one_mutation_preceded_a_measured_prestate": "MR-2, and only MR-2, and the fact is declared rather than hidden. OF-8 of the capability authority. Every OTHER prestate is measured here, BEFORE the mutations that depend on it.",
+        "it_may_NOT_evaluate_SQ_6_or_SQ_7": "Resolving either canonical literal is the PRECHECK, and doing it here is mutant M20."
+      },
+      {
+        "id": "N15",
+        "name": "MR-3 TRIGGER EVALUATION",
+        "plane": "REPOSITORY",
+        "canonical_phase": "PHASE_P2 decision point",
+        "act": "Evaluate the three-way conjunction MR3-T1 AND MR3-T2 AND MR3-T3 against the N14 measurements.",
+        "preconditions": [
+          "N14"
+        ],
+        "exit_condition": "A recorded decision: FIRE or SKIP, with the measured booleans that produced it.",
+        "tokens": [
+          "STOP_PROTECTED_SURFACE_ALLOCATION_ABSENT"
+        ],
+        "if_SKIP": "N17..N21 are NOT ENTERED. The favourable measurement is STILL RECORDED AS A FINDING: a hosted grant with no repository lineage is a privilege nobody can cite the origin of. It does NOT fire STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE, which covers the PROHIBITED rows PV-24..PV-28 only."
+      },
+      {
+        "id": "N16",
+        "name": "MR-1, LOGIN ATTRIBUTE MUTATION",
+        "plane": "HOSTED_SQL",
+        "canonical_phase": "PHASE_P2_MINIMAL_REMEDIATION_ONLY_IF_NEEDED",
+        "STATUS": "DECLARED_UNREACHABLE UNDER THE RATIFIED OD-2",
+        "act": "ALTER ROLE uellix_auditor LOGIN, under HC-3, if and only if P1 measured rolcanlogin = false.",
+        "preconditions": [
+          "N14"
+        ],
+        "unreachability_proof": "A successful P1 run PROVES rolcanlogin = true, because a NOLOGIN role cannot open the session P1 runs inside. The only identity that could observe the attribute as false without authenticating as the role is an operator, and OD-2 as ratified elects OPERATOR PRESTATE READ: NOT ELECTED. See MR1_REACHABILITY_DERIVATION.",
+        "exit_condition": "NOT REACHABLE. The node is retained because the authority authorizes MR-1 and this artifact has no power to withdraw it.",
+        "tokens": [
+          "STOP_LOGIN_ATTRIBUTE_MUTATION_FAILED"
+        ],
+        "what_happens_instead": "A genuinely NOLOGIN role fails MR-2's own poststate at N11. Two tokens are co-candidates, STOP_CREDENTIAL_MUTATION_FAILED and STOP_AUDITOR_AUTHENTICATION_FAILED, and E-9 proves the client cannot distinguish the causes. The lane records BOTH, records the SQLSTATE, records that the cause is undiagnosable, and STOPS under RULE_FAIL_CLOSED_ON_UNKNOWN. It does NOT issue the ALTER on an inference.",
+        "how_it_becomes_reachable": "Only by an owner re-election of the operator prestate read under OD-2, or a successor authority supplying another identity that can measure the attribute. Neither is performed or requested here.",
+        "flagged": "OF-DAG-2."
+      },
+      {
+        "id": "N17",
+        "name": "PROTECTED-SURFACE ALLOCATION FOR THE MR-3 DELIVERY PACKAGE",
+        "plane": "OWNER",
+        "canonical_phase": "D1_RELATIONSHIP.expected_sequence node 4, sited inside node 5's window",
+        "CONDITIONAL": "Entered ONLY if N15 decided FIRE.",
+        "act": "Seek a protected-surface allocation covering the db/prepared/** delivery package.",
+        "preconditions": [
+          "N15"
+        ],
+        "exit_condition": "An allocation exists and names the surface.",
+        "tokens": [
+          "STOP_PROTECTED_SURFACE_ALLOCATION_ABSENT"
+        ],
+        "measured_state": "db/prepared/** is protected under scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, re-derived at AS_OF_TREE. NO allocation exists.",
+        "nothing_is_reserved_by_this_artifact": "It does not author the package, name its number, reserve a lineage position, invent an ODS or W2 identifier, or assert that the allocation will be granted.",
+        "the_ordering_derivation_this_node_depends_on": "CANONICAL_PHASE_DERIVATION.THE_ORDERING_THE_TWO_CANONICAL_STATEMENTS_DO_NOT_JOINTLY_RESOLVE, flagged OF-DAG-1. A certifier reading expected_sequence node 4 as a strict temporal bar on P1 makes this whole arm untraversable, and that reading is stated rather than hidden."
+      },
+      {
+        "id": "N18",
+        "name": "GOVERNED db/prepared/** PACKAGE AUTHORING",
+        "plane": "REPOSITORY",
+        "canonical_phase": "PHASE_P2, delivery channel per OD-5",
+        "CONDITIONAL": "Entered ONLY if N17 closed.",
+        "act": "Author the governed prepared package carrying preconditions, self-verification and a pinned manifest entry.",
+        "preconditions": [
+          "N17"
+        ],
+        "exit_condition": "The package exists inside the granted allocation and carries the exact statement and nothing wider.",
+        "tokens": [
+          "STOP_PROTECTED_SURFACE_ALLOCATION_ABSENT"
+        ],
+        "PREPARED_PACKAGE_ONLY_NO_AD_HOC_SQL": "OD-5 ratified PREPARED_PACKAGE and no ad-hoc hosted GRANT is ratified as an alternative. RULE_NO_GATE_WEAKENING forbids reaching for a thinner channel because the thicker one is inconvenient."
+      },
+      {
+        "id": "N19",
+        "name": "HC-2, PRIVILEGE MUTATION HUMAN CONFIRMATION",
+        "plane": "OWNER",
+        "canonical_phase": "The confirmation gate of MR-3",
+        "CONDITIONAL": "Entered ONLY if N18 closed.",
+        "act": "State the measured has_schema_privilege value, that the schema was confirmed to EXIST so the grant is not issued into a 3F000, the exact statement in full, that it confers name resolution only over a schema measured to contain six functions and no tables, that EXECUTE is NOT granted and is prohibited, and the exact REVOKE that reverses it. Then ask.",
+        "preconditions": [
+          "N18"
+        ],
+        "exit_condition": "An affirmative owner confirmation for THIS act.",
+        "tokens": [],
+        "it_is_not_HC_1": "A DIFFERENT KIND of act on a DIFFERENT SURFACE with a DIFFERENT ROLLBACK, conditional on a measurement that had not been taken when HC-1 was asked. A confirmation obtained before the measurement would be consent to an act whose necessity was unknown."
+      },
+      {
+        "id": "N20",
+        "name": "MR-3, SCHEMA USAGE GRANT APPLY",
+        "plane": "HOSTED_SQL",
+        "canonical_phase": "PHASE_P2_MINIMAL_REMEDIATION_ONLY_IF_NEEDED",
+        "CONDITIONAL": "Entered ONLY if N19 closed.",
+        "act": "GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_auditor; in its own transaction, delivered through the N18 package.",
+        "preconditions": [
+          "N19"
+        ],
+        "prestate": "has_schema_privilege for USAGE = false, RECORDED as a boolean at N14, together with to_regnamespace IS NOT NULL = true.",
+        "exit_condition": "The statement applied.",
+        "tokens": [
+          "STOP_SCHEMA_USAGE_GRANT_FAILED"
+        ],
+        "rollback": "REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor; issued ONLY if the recorded prestate was false."
+      },
+      {
+        "id": "N21",
+        "name": "MR-3 POSTSTATE VERIFICATION",
+        "plane": "HOSTED_SQL",
+        "canonical_phase": "PHASE_P3_POSTSTATE_VERIFICATION, MR-3 arm",
+        "CONDITIONAL": "Entered ONLY if N20 fired.",
+        "act": "Assert three booleans: USAGE = true, CREATE = false, and EXECUTE = false on each canonical signature.",
+        "preconditions": [
+          "N20"
+        ],
+        "exit_condition": "All three assertions pass.",
+        "tokens": [
+          "STOP_SCHEMA_USAGE_GRANT_FAILED",
+          "STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE"
+        ],
+        "why_three_and_not_one": "The second and third are what make it adversarial. A GRANT ALL typed instead of GRANT USAGE satisfies the first and fails the second; a well-meaning extra EXECUTE fails the third.",
+        "no_remediation_loop": "If it does not verify, ROLL BACK and STOP. Do not try a wider grant, a different role or a second statement."
+      },
+      {
+        "id": "N22",
+        "name": "PHASE P3 POSTSTATE VERIFICATION AND READ-ONLY PROOF",
+        "plane": "HOSTED_SQL",
+        "canonical_phase": "PHASE_P3_POSTSTATE_VERIFICATION",
+        "act": "Run the FULL PV-1..PV-34 assertion table using the SAME queries as P1, plus READ_ONLY_PROOF in full.",
+        "preconditions": [
+          "N15 decided SKIP, or N21 passed"
+        ],
+        "exit_condition": "Every row is an ASSERTION with an expected value and an actual value, and every one passes. A poststate that merely SELECTs and prints is NOT a verification.",
+        "tokens": [
+          "STOP_DANGEROUS_ROLE_ATTRIBUTE",
+          "STOP_UNEXPLAINED_ROLE_MEMBERSHIP",
+          "STOP_UNEXPECTED_AUDITOR_OWNERSHIP",
+          "STOP_CONNECT_PRIVILEGE_ABSENT",
+          "STOP_PRE_EXISTING_SURFACE_CHANGED",
+          "STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE"
+        ],
+        "if_any_assertion_fails": "ROLL BACK the corresponding mutation per MUTATION_ROLLBACK_CONTRACT and STOP. Do NOT proceed to N23.",
+        "the_pre_existing_surface_is_asserted_unchanged": "PV-31 and PV-32. If either is false this act removed something it does not own, and that is STOP_PRE_EXISTING_SURFACE_CHANGED."
+      },
+      {
+        "id": "N23",
+        "name": "PHASE P4 SECRET DELIVERY TO THE PRECHECK PROCESS ONLY",
+        "plane": "WORKSTATION",
+        "canonical_phase": "PHASE_P4_SECRET_DELIVERY",
+        "act": "Place the credential into the SINGLE consuming process's environment as UELLIX_AUDITOR_DATABASE_URL, by the N05-demonstrated mechanism.",
+        "preconditions": [
+          "N22"
+        ],
+        "exit_condition": "The value is present in exactly one process environment and nowhere else.",
+        "tokens": [
+          "STOP_SECRET_DELIVERY_NONCOMPLIANT"
+        ],
+        "ONLY_THIS_VARIABLE": "Never UELLIX_RUNTIME_DATABASE_URL, UELLIX_MIGRATOR_DATABASE_URL, DATABASE_URL, postgres, supabase_admin, service_role, authenticator, uellix_owner, uellix_migrator, or any role reached by SET ROLE from any of them.",
+        "ONLY_THIS_PROCESS": "A second consuming process, including the FINAL WITNESS run, requires its OWN delivery. The value is never left set between the two."
+      },
+      {
+        "id": "N24",
+        "name": "REMOVAL AND POSITIVE ABSENCE VERIFICATION",
+        "plane": "WORKSTATION",
+        "canonical_phase": "PHASE_P4_SECRET_DELIVERY, mandatory closing step",
+        "act": "Remove the value immediately after the consuming process exits, then VERIFY ABSENCE BY A CHECK and record the result as a boolean.",
+        "preconditions": [
+          "N23"
+        ],
+        "exit_condition": "A boolean from a POSITIVE ABSENCE CHECK, recorded as a FIELD in the evidence artifact.",
+        "tokens": [
+          "STOP_CREDENTIAL_REMOVAL_UNVERIFIED"
+        ],
+        "on_both_paths": "Success and failure alike. A sequence that ends at a green observation and leaves the credential in place has completed the observation and FAILED the capability contract.",
+        "absence_is_asserted_from_a_check": "Never from the fact that a removal command was issued. Grounds mutant M26."
+      },
+      {
+        "id": "N25",
+        "name": "EVIDENCE MATERIALIZATION",
+        "plane": "REPOSITORY",
+        "canonical_phase": "PHASE_P4 to PHASE_P5 boundary",
+        "act": "Fill the N07 skeleton with every REQUIRED_CONTENTS field: lane id, base SHA and tree, target REF with the statement that selection was by ref and not by name, verifyStagingTarget verdict and signal names, the ConnectionMechanism enum value and NOT the host string, server-observed current_user and session_user, the full PV-1..PV-34 table with expected, actual and pass or fail, for each of MR-1, MR-2 and MR-3 whether it fired with its prestate or declared UNKNOWN, its poststate and its verification, the three human confirmations with timestamps and the act each covered, the custody entry reference BY NAME ONLY, the delivery mechanism BY NAME ONLY, the removal verification boolean, the engine version observed, every HOSTED_STATE_UNKNOWN entry still unknown, every SQLSTATE for every refusal, and an explicit statement that neither canonical literal was resolved.",
+        "preconditions": [
+          "N24"
+        ],
+        "exit_condition": "One durable evidence artifact under docs/ops/staging/evidence/**, with no hole and no secret.",
+        "tokens": [],
+        "what_it_is_NOT": "NOT a staging observation packet, NOT a release-gate record, and NOT citable for D1-8 or any gate."
+      },
+      {
+        "id": "N26",
+        "name": "CAPABILITY POSTSTATE INDEPENDENT CERTIFICATION",
+        "plane": "EXTERNAL_LANE",
+        "canonical_phase": "PHASE_P5_HANDOFF precondition, and D1_RELATIONSHIP.expected_sequence node 6",
+        "act": "An INDEPENDENT lane certifies the executed provisioning and its poststate.",
+        "preconditions": [
+          "N25"
+        ],
+        "exit_condition": "A certification verdict, MATERIALIZED as a tracked repository artifact per OD-6's going-forward posture.",
+        "tokens": [],
+        "OD_6_BINDS_HERE_AND_THIS_IS_THE_FIRST_PLACE_IT_BITES": "OD-6 ratified MATERIALIZE_GOING_FORWARD. This certification is a FUTURE certification, so its verdict MUST be materialized as tracked repository evidence. No secret material may be stored in it. The unmaterialized-verdict problem that produced N02 must not recur here.",
+        "node_2_cannot_be_performed_by_the_lane_that_wrote_node_1": "Carried. The executing lane may not certify itself."
+      },
+      {
+        "id": "N27",
+        "name": "CV1-D1-OLDDB-PRECHECK-EXEC-R2 ENTRY",
+        "plane": "EXTERNAL_LANE",
+        "canonical_phase": "PHASE_P5_HANDOFF, and D1_RELATIONSHIP.expected_sequence node 7",
+        "act": "A DIFFERENT LANE, under the PARENT's authority, obtains its OWN human confirmation and opens its first hosted connection.",
+        "preconditions": [
+          "N26"
+        ],
+        "exit_condition": "Outside this DAG's scope. This artifact derives only the conditions under which the lane may OPEN.",
+        "tokens": [],
+        "it_carries": "The capability evidence artifact, the poststate assertion results, and the fact that the credential is delivered.",
+        "it_does_NOT_carry": "Any observation, any catalog fact, any OLD_DB claim, any resolution of either canonical literal, and NOT the parent's human confirmation.",
+        "THIS_ARTIFACT_DOES_NOT_OPEN_IT": "NO PRECHECK-R2 is opened, executed, authorized or scheduled here."
+      },
+      {
+        "id": "N28",
+        "name": "POST-FINAL-WITNESS MANDATORY ROTATION AND CUSTODY CLOSURE",
+        "plane": "HOSTED_MANAGEMENT_PLANE",
+        "canonical_phase": "OD-1, second half",
+        "act": "After the FINAL WITNESS is recorded, ROTATE the credential. Mandatory, not discretionary. Then remove the delivered value and verify absence positively, and close the custody entry.",
+        "preconditions": [
+          "The FINAL WITNESS is recorded. That act belongs to macro-chain node 9 and lies OUTSIDE this DAG."
+        ],
+        "exit_condition": "The credential is rotated, the delivered value is removed with a positive absence boolean, and the custody entry records the end of custody.",
+        "tokens": [
+          "STOP_CREDENTIAL_MUTATION_FAILED",
+          "STOP_CREDENTIAL_REMOVAL_UNVERIFIED"
+        ],
+        "OD_1_as_ratified": "PERSISTENT_ROLE_ROTATED_SECRET, with rotation after the FINAL WITNESS MANDATORY. A persistent credential with no rotation is explicitly NOT the selected posture.",
+        "rotation_mechanics": "Identical to the initial mint: same entropy, same encoding, same prohibited paths, same custody entry UPDATED rather than appended twice, same delivery, same removal, same positive absence verification. It changes no grant, attribute, membership or ownership.",
+        "it_needs_its_own_HC_1": "Confirmations are not transferable. This rotation is a different act and requires a fresh HC-1."
+      }
+    ]
+  },
+  "DAG_EDGES": {
+    "rule": "Every edge is a PRECONDITION RELATION, not a suggestion of order. An edge from A to B means B MAY NOT BEGIN until A's exit condition is satisfied. Conditional edges name their condition. Backward edges are drawn, not hidden.",
+    "forward_edges": [
+      {
+        "id": "E-01-02",
+        "from": "N01",
+        "to": "N02",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-01-03",
+        "from": "N01",
+        "to": "N03",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-01-04",
+        "from": "N01",
+        "to": "N04",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-03-05",
+        "from": "N03",
+        "to": "N05",
+        "kind": "HARD",
+        "why": "OD-2 must be ratified before its selected mechanism can be the one demonstrated."
+      },
+      {
+        "id": "E-03-07",
+        "from": "N03",
+        "to": "N07",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-03-08",
+        "from": "N03",
+        "to": "N08",
+        "kind": "HARD",
+        "why": "OD-3's policy must be ratified before a witness time is taken as its operand."
+      },
+      {
+        "id": "E-08-09",
+        "from": "N08",
+        "to": "N09",
+        "kind": "HARD",
+        "why": "The offset has no operand until the planned witness time is concrete. EXEC-NOTE-1."
+      },
+      {
+        "id": "E-03-06",
+        "from": "N03",
+        "to": "N06",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-05-06",
+        "from": "N05",
+        "to": "N06",
+        "kind": "HARD",
+        "why": "The inventory entry must name every process or environment that will hold the credential, which is not known until the delivery mechanism is."
+      },
+      {
+        "id": "E-09-06",
+        "from": "N09",
+        "to": "N06",
+        "kind": "HARD",
+        "why": "The inventory entry records the expiry, which is the exact UTC value N09 computes."
+      },
+      {
+        "id": "E-02-10",
+        "from": "N02",
+        "to": "N10",
+        "kind": "HARD",
+        "why": "THE OWNER-NOTE EDGE. HC-1 asks the owner to authorize a hosted mutation while the repository record asserts the gating certification has not occurred. The contradiction is resolved before the ask, not after."
+      },
+      {
+        "id": "E-03-10",
+        "from": "N03",
+        "to": "N10",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-04-10",
+        "from": "N04",
+        "to": "N10",
+        "kind": "HARD",
+        "why": "HC_1.placement, verbatim: After target identity is verified by REF and before the credential is minted."
+      },
+      {
+        "id": "E-05-10",
+        "from": "N05",
+        "to": "N10",
+        "kind": "HARD",
+        "why": "HC1-S5 states how it will be delivered. A mechanism not yet demonstrated cannot be stated as the delivery."
+      },
+      {
+        "id": "E-06-10",
+        "from": "N06",
+        "to": "N10",
+        "kind": "HARD",
+        "why": "HC1-S5 and HC1-S6 state where it will be stored and when it will be removed, which are the inventory entry's own content."
+      },
+      {
+        "id": "E-07-10",
+        "from": "N07",
+        "to": "N10",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-09-10",
+        "from": "N09",
+        "to": "N10",
+        "kind": "HARD",
+        "why": "HC1-S4 shows the exact UTC VALID UNTIL. EXEC-NOTE-1."
+      },
+      {
+        "id": "E-10-11",
+        "from": "N10",
+        "to": "N11",
+        "kind": "HARD",
+        "why": "The nine MR2-PRE preconditions are all checked on this edge. It is the boundary between the repository/owner/workstation planes and the hosted plane."
+      },
+      {
+        "id": "E-11-12",
+        "from": "N11",
+        "to": "N12",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-11-13",
+        "from": "N11",
+        "to": "N13",
+        "kind": "HARD",
+        "why": "PHASE_P1.precondition, verbatim: the credential from HC-1 must already exist, because P1 connects AS uellix_auditor."
+      },
+      {
+        "id": "E-13-14",
+        "from": "N13",
+        "to": "N14",
+        "kind": "HARD",
+        "why": "KP-1 and KP-2 precede the observation body, and target identity arm B precedes any read of the target."
+      },
+      {
+        "id": "E-14-15",
+        "from": "N14",
+        "to": "N15",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-14-16",
+        "from": "N14",
+        "to": "N16",
+        "kind": "CONDITIONAL",
+        "condition": "P1 measured rolcanlogin = false",
+        "STATUS": "UNSATISFIABLE under the ratified OD-2. See MR1_REACHABILITY_DERIVATION."
+      },
+      {
+        "id": "E-15-17",
+        "from": "N15",
+        "to": "N17",
+        "kind": "CONDITIONAL",
+        "condition": "N15 decided FIRE, that is MR3-T1 true AND MR3-T2 false"
+      },
+      {
+        "id": "E-17-18",
+        "from": "N17",
+        "to": "N18",
+        "kind": "CONDITIONAL",
+        "condition": "The protected-surface allocation exists. MR3-T3."
+      },
+      {
+        "id": "E-18-19",
+        "from": "N18",
+        "to": "N19",
+        "kind": "CONDITIONAL"
+      },
+      {
+        "id": "E-19-20",
+        "from": "N19",
+        "to": "N20",
+        "kind": "CONDITIONAL",
+        "why": "HC_2.placement: after PHASE_P1 measures CP-3 as false, and before any GRANT is issued."
+      },
+      {
+        "id": "E-20-21",
+        "from": "N20",
+        "to": "N21",
+        "kind": "CONDITIONAL"
+      },
+      {
+        "id": "E-15-22",
+        "from": "N15",
+        "to": "N22",
+        "kind": "CONDITIONAL",
+        "condition": "N15 decided SKIP. The MR-3 arm is bypassed entirely."
+      },
+      {
+        "id": "E-21-22",
+        "from": "N21",
+        "to": "N22",
+        "kind": "CONDITIONAL",
+        "condition": "N15 decided FIRE and N21 passed."
+      },
+      {
+        "id": "E-22-23",
+        "from": "N22",
+        "to": "N23",
+        "kind": "HARD",
+        "why": "PHASE_P3.if_any_assertion_fails: roll back and STOP. Do not proceed to P4."
+      },
+      {
+        "id": "E-23-24",
+        "from": "N23",
+        "to": "N24",
+        "kind": "HARD",
+        "why": "The removal is a STEP OF THE PROCEDURE, not a courtesy at the end of it."
+      },
+      {
+        "id": "E-24-25",
+        "from": "N24",
+        "to": "N25",
+        "kind": "HARD",
+        "why": "The removal verification boolean is a REQUIRED FIELD of the evidence artifact, so its absence is a hole rather than a silence."
+      },
+      {
+        "id": "E-25-26",
+        "from": "N25",
+        "to": "N26",
+        "kind": "HARD"
+      },
+      {
+        "id": "E-26-27",
+        "from": "N26",
+        "to": "N27",
+        "kind": "HARD",
+        "why": "PHASE_P5_HANDOFF: PRECHECK-R2 may open ONLY after provisioning has been EXECUTED and its poststate INDEPENDENTLY CERTIFIED."
+      }
+    ],
+    "backward_edges": [
+      {
+        "id": "E-SLIP",
+        "from": "N27",
+        "to": "N08",
+        "kind": "CONDITIONAL_LOOP",
+        "condition": "The planned witness window changed, OR the 24-hour VALID UNTIL window would be exceeded before the FINAL WITNESS completes.",
+        "action": "RE-ROTATE under the same policy. NEVER extend.",
+        "what_it_re_enters": "N08, N09, N10 with a FRESH HC-1, N11, N12, then N23 and N24 for the value the re-rotation killed.",
+        "what_is_prohibited_instead_of_taking_this_edge": "ALTER ROLE uellix_auditor VALID UNTIL <a later instant>, in any form, by any plane, for any reason. It is not in the authorized mutation set and OD-3 names extension as the thing the policy exists to refuse."
+      },
+      {
+        "id": "E-FRESH",
+        "from": "N27",
+        "to": "N22",
+        "kind": "CONDITIONAL_LOOP",
+        "condition": "Anything mutated the target between N22 and N27.",
+        "action": "The poststate is EXPIRED. Re-run N22 only.",
+        "why_it_does_not_re_enter_the_mutation_arm": "No mutation is being performed, so no fresh HC-1 is required. Collapsing this loop into E-SLIP would force a needless re-rotation for a merely stale poststate."
+      }
+    ],
+    "EXTERNAL_SEGMENT_BETWEEN_N27_AND_N28": {
+      "rule": "Two macro-chain nodes lie between them and are OUTSIDE this DAG. They are named so the graph terminates honestly rather than appearing to run from provisioning straight to rotation.",
+      "nodes": [
+        "D1_RELATIONSHIP.expected_sequence node 8: GOVERNED DEPLOYMENT SEQUENCE.",
+        "D1_RELATIONSHIP.expected_sequence node 9: D1_OLD_DB_FINAL_WITNESS."
+      ],
+      "neither_is_derived_authorized_or_scheduled_here": "This artifact does not authorize PR201 execution or any deployment, and it does not authorize D1_OLD_DB_FINAL_WITNESS."
+    },
+    "TERMINAL_STATES": [
+      {
+        "state": "COMPLETED",
+        "meaning": "N28 closed. The capability was provisioned, used, certified, rotated out and its custody closed."
+      },
+      {
+        "state": "BLOCKED_AT_N02",
+        "meaning": "The certification-occurrence contradiction was never resolved. STOP_FOR_AUTHORITY_CONFLICT. No hosted act occurred."
+      },
+      {
+        "state": "BLOCKED_AT_N08",
+        "meaning": "No concrete planned FINAL WITNESS time. MR-2 BLOCKED per EXEC-NOTE-1. Not a token; a required owner input that has not arrived."
+      },
+      {
+        "state": "STOPPED_ON_A_TOKEN",
+        "meaning": "Any of the twenty-three fail-closed tokens fired. Each is TERMINAL for the lane. None is a retry ladder and none is a diagnosis branch."
+      }
+    ],
+    "acyclicity_note": "The forward edge set is a DAG. The two backward edges are CONDITIONAL RE-ENTRY loops, not cycles in the dependency order: each fires only on an external event (a schedule change, or a mutation by another actor) and each re-enters a node whose preconditions are then re-satisfied from scratch. A DAG that could not express them would be a DAG that silently invited the extension it forbids."
+  },
+  "FAIL_CLOSED_TOKEN_PLACEMENT": {
+    "rule": "All TWENTY-THREE tokens of the effective package are placed on a node. A token with no node is a rule nobody can trigger. The token set is NOT extended, reworded, reordered or narrowed by this artifact; twenty-two come from FAIL_CLOSED_TOKENS.tokens and the twenty-third from v1.0.1 SECTION_A5.",
+    "governing_rule": "RULE_FAIL_CLOSED_ON_UNKNOWN. Where a required fact is UNKNOWN or two sources conflict, the lane stops and escalates. It does not pick the more convenient source.",
+    "each_is_terminal": "TOTAL over the outcomes this artifact can produce. Each is terminal for the lane; none is a retry ladder, and none is a diagnosis branch.",
+    "placement": [
+      {
+        "token": "STOP_STALE_INTEGRATION",
+        "nodes": [
+          "N01"
+        ]
+      },
+      {
+        "token": "STOP_WRONG_HEAD",
+        "nodes": [
+          "N01"
+        ]
+      },
+      {
+        "token": "STOP_WRONG_TREE",
+        "nodes": [
+          "N01"
+        ]
+      },
+      {
+        "token": "STOP_DIRTY_WORKTREE",
+        "nodes": [
+          "N01"
+        ]
+      },
+      {
+        "token": "STOP_OWNER_DECISION_UNRATIFIED",
+        "nodes": [
+          "N03"
+        ]
+      },
+      {
+        "token": "STOP_TARGET_IDENTITY_CONTRADICTION",
+        "nodes": [
+          "N04",
+          "N13"
+        ],
+        "note": "Fires on BOTH arms of the split identity check, for different reasons: declared-ref disagreement at N04, sentinel disagreement at N13."
+      },
+      {
+        "token": "STOP_PRODUCTION_TARGET_REFUSED",
+        "nodes": [
+          "N04"
+        ],
+        "note": "And at EVERY subsequent node as a standing refusal. Any act resolving to ctaxtgujyyprgynmnvtq by any path including by name."
+      },
+      {
+        "token": "STOP_AUDITOR_ROLE_ABSENT",
+        "nodes": [
+          "N11",
+          "N13"
+        ]
+      },
+      {
+        "token": "STOP_AUDITOR_AUTHENTICATION_FAILED",
+        "nodes": [
+          "N11",
+          "N13"
+        ],
+        "note": "Records the SQLSTATE and the explicit note, carried from E-9, that the message does not distinguish no-credential from wrong-credential and therefore does not license a diagnosis."
+      },
+      {
+        "token": "STOP_LOGIN_ATTRIBUTE_MUTATION_FAILED",
+        "nodes": [
+          "N16"
+        ],
+        "note": "N16 is DECLARED_UNREACHABLE, so this token is placed on a node no traversal reaches. Recorded rather than dropped, because dropping it would silently narrow the token set."
+      },
+      {
+        "token": "STOP_CREDENTIAL_MUTATION_FAILED",
+        "nodes": [
+          "N11",
+          "N28"
+        ]
+      },
+      {
+        "token": "STOP_STELLA_OPS_SCHEMA_ABSENT",
+        "nodes": [
+          "N14"
+        ],
+        "note": "At KP-4, before any has_schema_privilege call. E-6 measured 3F000 is RAISED over an absent schema rather than false being returned."
+      },
+      {
+        "token": "STOP_SCHEMA_USAGE_GRANT_FAILED",
+        "nodes": [
+          "N20",
+          "N21"
+        ]
+      },
+      {
+        "token": "STOP_PROTECTED_SURFACE_ALLOCATION_ABSENT",
+        "nodes": [
+          "N15",
+          "N17",
+          "N18"
+        ]
+      },
+      {
+        "token": "STOP_UNEXPLAINED_ROLE_MEMBERSHIP",
+        "nodes": [
+          "N14",
+          "N22"
+        ],
+        "note": "PV-12, PV-13 or PV-14. NOT repaired."
+      },
+      {
+        "token": "STOP_UNEXPECTED_AUDITOR_OWNERSHIP",
+        "nodes": [
+          "N14",
+          "N22"
+        ],
+        "note": "PV-15..PV-19. NOT repaired."
+      },
+      {
+        "token": "STOP_DANGEROUS_ROLE_ATTRIBUTE",
+        "nodes": [
+          "N14",
+          "N22"
+        ],
+        "note": "PV-6..PV-10. NOT repaired, because a role found with a dangerous attribute is a finding about how it got there."
+      },
+      {
+        "token": "STOP_CONNECT_PRIVILEGE_ABSENT",
+        "nodes": [
+          "N14",
+          "N22"
+        ],
+        "note": "PV-20 false. A finding about an unrecorded hardening, NOT a licence to grant."
+      },
+      {
+        "token": "STOP_PRE_EXISTING_SURFACE_CHANGED",
+        "nodes": [
+          "N22"
+        ],
+        "note": "PV-31 or PV-32 false, meaning this act removed something it does not own."
+      },
+      {
+        "token": "STOP_SECRET_DELIVERY_NONCOMPLIANT",
+        "nodes": [
+          "N05",
+          "N06",
+          "N23"
+        ],
+        "note": "Placed at N05 as well as N23 because of the hoist. A missed observation is preferable to a leaked credential."
+      },
+      {
+        "token": "STOP_CREDENTIAL_REMOVAL_UNVERIFIED",
+        "nodes": [
+          "N24",
+          "N28"
+        ],
+        "note": "Positive absence verification does not return absent. Fires on BOTH removals: after PRECHECK-R2 and after the FINAL WITNESS."
+      },
+      {
+        "token": "STOP_FOR_AUTHORITY_CONFLICT",
+        "nodes": [
+          "N02"
+        ],
+        "note": "And at EVERY node as a standing rule. Two effective authorities disagreeing on a fact this lane needs is never reconciled silently."
+      },
+      {
+        "token": "STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE",
+        "nodes": [
+          "N14",
+          "N21",
+          "N22"
+        ],
+        "note": "The twenty-third token, from v1.0.1 SECTION_A5. PV-24..PV-28 true and not attributable to this artifact's own MR-3. STOP AND RECORD, NEVER SILENTLY REVOKE."
+      }
+    ],
+    "one_derived_non_token_state": {
+      "state": "MR_2_BLOCKED_PENDING_CONCRETE_WITNESS_TIME",
+      "node": "N08",
+      "why_it_is_not_a_token": "EXEC-NOTE-1 says MR-2 remains BLOCKED, not that the lane stops. Nothing has failed; a required owner input has not arrived. Inventing a token for it would convert a wait into a terminal failure, and the token set is TOTAL over the outcomes the authority can produce, so adding to it would be an amendment."
+    }
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Enumerated so that no successor reads this artifact as conferring any of them. THE PRESENCE OF A DETAILED SEQUENCE FOR AN ACTION IS NOT AUTHORITY TO TAKE IT. This DAG is a graph of acts, not a licence for them.",
+    "non_authorizations": [
+      "This artifact does NOT authorize any act by THIS lane. It is AUTHORITY AUTHORING ONLY.",
+      "It does NOT confer any permission the effective capability package did not already confer, and it does not withhold any the package already conferred.",
+      "It does NOT amend, edit, supersede or reinterpret the capability authority, either amendment, any companion manifest, the owner-ratification record, the parent observation authority or any other existing authority, evidence artifact or historical ledger.",
+      "It does NOT certify anything, and it does NOT substitute for the independent certification PHASE_P0_PREREQUISITE requires.",
+      "It does NOT author, draft, template, assume or pre-empt the OWNER-LEVEL CERTIFICATION-OCCURRENCE NOTE that node N02 requires.",
+      "It does NOT reconstruct any past certification verdict as a repository artifact, retroactively or otherwise.",
+      "NO hosted PostgreSQL connection is opened by this artifact.",
+      "NO credential is generated, minted, rotated, read, printed, requested or exposed by this artifact, and no secret VALUE appears anywhere in it.",
+      "NO Windows Credential Manager entry is created, read or written, and no custody-store write of any kind occurs.",
+      "NO custody-inventory file is created, populated or given a schema at docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json or anywhere else.",
+      "NO VALID UNTIL value is computed, set, mutated or estimated. No UTC timestamp implementing OD-3 appears anywhere in this artifact.",
+      "NO GRANT is issued. NO REVOKE is issued. NO CREATE ROLE, ALTER ROLE or DROP ROLE is issued.",
+      "NO protected-surface allocation is granted, reserved, requested or implied for OD-5's package route, and no db/prepared/** package is written, named, numbered or scaffolded.",
+      "NO Supabase project configuration is contacted or mutated: no pause, resume, upgrade, restore, network restriction or settings change, and no SQL editor or management-plane SQL runner is used.",
+      "NO Vercel mutation of any kind, on any project or environment.",
+      "NO act of any kind against ctaxtgujyyprgynmnvtq, including a read.",
+      "NO PRECHECK-R2 is opened, executed, authorized or scheduled, and PRECHECK-R2 is NOT authorized by this artifact at any stage, by any lane.",
+      "It does NOT authorize D1_OLD_DB_FINAL_WITNESS, and it does NOT authorize the governed deployment sequence or any deployment.",
+      "It does NOT satisfy, advance or partially satisfy D1-8, does NOT establish OLD_DB, does NOT declare D-1, does NOT authorize Stage-A and does NOT resolve G2.",
+      "It does NOT resolve, compose, interpolate, normalize, abbreviate or evaluate either canonical literal, and neither appears anywhere in it.",
+      "NO code is written. NO test is written. NO script, SQL file or migration is written. NO db path, db/schema.ts, db/migrations/**, db/prepared/**, db/baseline/**, application code, workflow, runtime code, Vercel configuration or Supabase configuration is touched.",
+      "NO implementation of any WCM reader, DPAPI wrapper or vault integration is invented, named, designed, sketched or recommended.",
+      "It does NOT invent, reserve or imply any ODS, HPO or W2 identifier, and it claims no protected-authority id.",
+      "It does NOT relax any fail-closed token, any machine gate, the EXECUTE prohibition, REQ-2's conditionality, any human confirmation or any privilege model.",
+      "It does NOT withdraw MR-1. Declaring a node unreachable under a ratified owner decision is a finding about traversability, not a withdrawal of authority.",
+      "It does NOT authorize use of any credential other than UELLIX_AUDITOR_DATABASE_URL, and the forbidden-substitution list is carried in full.",
+      "It does NOT authorize operator credential use, and OD-2 as ratified elects OPERATOR PRESTATE READ: NOT ELECTED.",
+      "It does NOT establish a production analogue of anything, and it creates no precedent, template or runbook for production.",
+      "It does NOT self-certify, and its own certification is a gate it cannot satisfy."
+    ]
+  },
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-DAG-1",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "D1_RELATIONSHIP.expected_sequence places the protected-surface allocation (node 4) before the P1..P4 execution (node 5), but the allocation's own condition is if and only if MR-3 is triggered, and that trigger is measured inside P1. Read as a strict temporal bar, MR-3 is unreachable by construction.",
+      "disposition": "Resolved by reading expected_sequence's numbering as a COARSE NARRATIVE ORDERING and siting node 4 inside node 5's window but strictly before the act it gates, on the authority of GRANT_DELIVERY_CHANNEL_ADJUDICATION.the_ordering_this_forces_and_why_it_is_correct, which rules directly that the measurement precedes the provisioning.",
+      "what_a_certifier_should_press": "Whether a coarse-versus-fine reading of expected_sequence is available to a derivation lane at all, or whether the tension is a defect in the capability authority requiring its own amendment. If the strict reading is restored, the MR-3 arm of this DAG is untraversable and STOP_FOR_AUTHORITY_CONFLICT is the correct outcome."
+    },
+    {
+      "id": "OF-DAG-2",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "MR-1 is STRUCTURALLY UNREACHABLE under the ratified OD-2. Its trigger is a P1 measurement of rolcanlogin = false, but a successful P1 run proves rolcanlogin = true, and OD-2 elects OPERATOR PRESTATE READ: NOT ELECTED, removing the only identity that could measure the attribute otherwise.",
+      "disposition": "N16 is retained in the graph marked DECLARED_UNREACHABLE with its proof attached, and its token STOP_LOGIN_ATTRIBUTE_MUTATION_FAILED is retained on it. The reachable failure for a genuinely NOLOGIN role is MR-2's own poststate at N11, where two tokens are co-candidates and E-9 proves the client cannot distinguish the causes, so the lane records both and stops under RULE_FAIL_CLOSED_ON_UNKNOWN.",
+      "what_a_certifier_should_press": "Whether the authority intended MR-1 to be reachable and, if so, whether OD-2's non-election of the operator prestate silently removed a mutation the authority authorizes. If so, the correct remedy is an owner re-election or a successor authority, NOT this DAG inferring NOLOGIN from an ambiguous FATAL."
+    },
+    {
+      "id": "OF-DAG-3",
+      "severity": "NON_BLOCKING",
+      "finding": "The lane mandate requires the delivery mechanism to be not inherited beyond the intended process tree. That is STRICTER than MECHANISM_2 condition WCM-C1, which bars persistence to a NEW SHELL and says nothing about child processes, which inherit the environment by default.",
+      "disposition": "Carried as a DERIVED OBLIGATION of N05, not as an amendment to the five conditions. The demonstration must state the consuming process's child-process topology.",
+      "what_a_certifier_should_press": "Whether a DAG derivation may attach an obligation the authority's own condition list does not contain, or whether binding it requires a successor amendment to SECRET_DELIVERY_CONTRACT."
+    },
+    {
+      "id": "OF-DAG-4",
+      "severity": "NON_BLOCKING",
+      "finding": "The lane mandate requires the secret to be not logged. The authority bars echoing or printing the value in retained command output and bars the ALTER ROLE literal a server with log_statement = ddl would log, but neither clause reaches a credential-manager AUDIT TRAIL produced by the vault read itself.",
+      "disposition": "Carried as a DERIVED OBLIGATION of N05. The demonstration must state whether the vault read is audited or logged, and where.",
+      "what_a_certifier_should_press": "Same question as OF-DAG-3. Additionally, whether a vault audit entry naming the credential's handle is itself a custody disclosure under SSL-06."
+    },
+    {
+      "id": "OF-DAG-5",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "N05, delivery-mechanism readiness, is HOISTED from PHASE_P4 where the authority narrates it to before MR-2. The phase list is part of a certified authority and this artifact re-sites one of its obligations.",
+      "disposition": "Derived from MR-2's own irreversibility: SECRET_ROTATION_CONTRACT.if_rotation_fails_midway names the exact failure, and MUTATION_ROLLBACK_CONTRACT.rule requires MR-2 to carry a concrete compensating action, which ROTATE AGAIN only is if a compliant delivery path exists. Only the PROOF OF FEASIBILITY moves; every PHASE_P4 obligation is still discharged at N23 and N24 on the real value.",
+      "what_a_certifier_should_press": "Whether this is a derivation from MR-2's contract or an unauthorized re-sequencing of a certified phase list. If the latter, N05 returns to PHASE_P4 and the DAG must state that MR-2 proceeds without a demonstrated delivery path."
+    },
+    {
+      "id": "OF-DAG-6",
+      "severity": "NON_BLOCKING",
+      "finding": "The custody inventory's prohibited-content list is derived from EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN, which was written for the EVIDENCE artifact and names no VAULT HANDLE, because no vault was selected when it was written. OD-2 selected one.",
+      "disposition": "A retrievable handle, entry key or lookup token is added as prohibited at the custody path, as a DERIVED obligation and not as the authority's own text.",
+      "what_a_certifier_should_press": "Whether a handle is materially closer to the value than a role name is, and whether the addition should instead be made by amendment to SECRET_CUSTODY_CONTRACT."
+    },
+    {
+      "id": "OF-DAG-7",
+      "severity": "NON_BLOCKING",
+      "finding": "Domain placement. Carried forward unchanged from the capability authority's own OF-1: docs/ops/staging/** is where hosted role and ACL authorities live and where the future capability evidence will land, and a certifier may reasonably prefer that domain over docs/ops/release/ for this artifact.",
+      "disposition": "Placed in docs/ops/release/ beside the authority it derives from, so the pair resolves in one directory listing. The counter-argument is recorded rather than dismissed.",
+      "what_a_certifier_should_press": "Whether a derivation artifact follows the domain of its subject or the domain of its parent."
+    },
+    {
+      "id": "OF-DAG-8",
+      "severity": "NON_BLOCKING",
+      "finding": "NB-IC-6 was supplied to this lane only as part of the instruction to consume NB-IC-1..NB-IC-6, with five named in particular. Its independent substance is not known to this lane and is not in the repository, because the owner-ratification IC verdict is not materialized.",
+      "disposition": "RECORDED AS CONSUMED WITHOUT INDEPENDENT SUBSTANCE. No sixth finding is invented to fill the slot.",
+      "what_a_certifier_should_press": "Whether NB-IC-6 carries substance this DAG has not addressed. If it does, that is an open gap against this artifact, not a satisfied finding. This is a direct consequence of the unmaterialized-verdict problem that N02 exists to close."
+    },
+    {
+      "id": "OF-DAG-9",
+      "severity": "NON_BLOCKING",
+      "finding": "The target-identity check is SPLIT across the mint. MR-2 at N11 is performed against a target verified by the declared-ref arm only, because the in-database sentinel arm cannot run before a session exists, and a session cannot exist before the credential.",
+      "disposition": "Declared, not hidden. The exposure is bounded: the vetoed ref is refused outright by arm A, the compensating action ALTER ROLE uellix_auditor PASSWORD NULL is available, and the alternative of minting after a sentinel read that cannot be taken is not available at all. This is the SAME shape as the capability authority's own OF-8 and is resolved the same way, by splitting the prestate rather than by escalating to an operator.",
+      "what_a_certifier_should_press": "Whether the management plane can corroborate the target more strongly than the declared ref alone before the mint, without engaging SSL-06 at the operator level."
+    },
+    {
+      "id": "OF-DAG-10",
+      "severity": "BLOCKING_FOR_HOSTED_EXECUTION_ONLY",
+      "finding": "The repository's own ratification record asserts, in four places, that the gating bounded recertification has not occurred, while the owner reports that it has. Until that is resolved by a certified mechanism, the graph is not traversable past N02.",
+      "disposition": "Modelled as node N02 and edge E-02-10. NOT resolved by this artifact, and NOT resolved by this artifact's later materialization date. The DAG is fully derived and simply blocked, which is the correct state for an unresolved authority conflict.",
+      "what_a_certifier_should_press": "Whether this lane was entitled to DERIVE the DAG at all while ORS-2 and ORS-4 read as written. This artifact's position is that ORS-4's condition is SATISFIED under the measured status and its consequent therefore FIRES, and that a derivation producing a graph blocked at its first hosted node is not an act on an unresolved conflict. A certifier may hold otherwise."
+    },
+    {
+      "id": "OF-DAG-11",
+      "severity": "NON_BLOCKING",
+      "finding": "Carried unchanged from the capability authority's OF-10 and the parent's OF-5. Even with D1-8 satisfied, D-1 remains undeclarable while D1-7 is blocked on the M11 health contract.",
+      "disposition": "Carried. This DAG sequences a prerequisite of a prerequisite and closes nothing in D-1 itself.",
+      "what_a_certifier_should_press": "Nothing new. It is recorded so no reader mistakes a completed provisioning DAG for progress on D-1."
+    }
+  ],
+  "self_check": {
+    "note": "Each is a statement this lane asserts about its OWN conduct, re-derived rather than remembered. A certifier should treat any one of them as falsifiable.",
+    "write_set_is_exactly_two_new_documents": true,
+    "no_existing_file_was_edited_amended_or_superseded": true,
+    "all_six_candidate_binding_blob_hashes_re_derived_by_git_ls_tree_and_matching": true,
+    "ratification_record_own_blob_recorded": true,
+    "no_hosted_postgresql_connection_was_opened": true,
+    "no_hosted_sql_was_issued": true,
+    "no_supabase_management_plane_act_was_performed_in_this_lane": true,
+    "no_sql_editor_or_management_plane_sql_runner_was_used": true,
+    "no_credential_was_created_rotated_resolved_read_printed_or_requested": true,
+    "no_secret_value_is_present_anywhere_in_this_artifact_or_its_manifest": true,
+    "no_windows_credential_manager_entry_was_created_read_or_written": true,
+    "no_custody_inventory_file_was_created_or_populated": true,
+    "no_utc_timestamp_implementing_OD_3_appears_anywhere_in_this_artifact": true,
+    "no_valid_until_was_computed_set_or_estimated": true,
+    "no_grant_or_revoke_was_executed_anywhere": true,
+    "no_role_was_created_altered_or_dropped_anywhere": true,
+    "no_protected_surface_allocation_was_granted_reserved_requested_or_implied": true,
+    "no_db_prepared_package_was_written_named_or_numbered": true,
+    "no_protected_path_was_touched_and_the_write_set_is_entirely_under_docs_ops_release": true,
+    "no_ods_hpo_or_w2_identifier_was_invented_or_reserved": true,
+    "no_vercel_or_supabase_configuration_touched": true,
+    "no_production_project_contacted_in_any_way": true,
+    "no_code_written_no_test_written_no_script_written_no_sql_file_written": true,
+    "no_precheck_r2_opened_executed_or_authorized": true,
+    "neither_canonical_literal_appears_anywhere_in_this_artifact": true,
+    "the_owner_note_was_not_authored_drafted_or_templated": true,
+    "no_past_certification_verdict_was_retroactively_reconstructed": true,
+    "certification_status_states_OCCURRED_and_MATERIALIZED_separately_for_all_four_events": true,
+    "the_four_over_restrictive_statements_were_grepped_and_classified_not_accepted_on_count_alone": true,
+    "the_wcm_negative_capability_claim_was_independently_verified_and_its_one_code_hit_shown_to_be_a_false_positive": true,
+    "the_P0_gate_was_not_weakened_on_account_of_N16_test_file_being_UNKNOWN": true,
+    "MR_1_reachability_was_derived_rather_than_assumed_and_the_node_was_retained_not_deleted": true,
+    "every_one_of_the_twenty_three_fail_closed_tokens_is_placed_on_at_least_one_node": true,
+    "no_fail_closed_token_was_added_reworded_reordered_or_narrowed": true,
+    "every_derived_obligation_beyond_the_authority_text_is_flagged_as_an_open_finding": true,
+    "every_re_sequencing_of_a_canonical_phase_obligation_is_flagged_as_an_open_finding": true,
+    "the_companion_manifest_validates_against_UELLIX_TEST_MANIFEST_SCHEMA_v1_0_0": true,
+    "prestate_gate_executed_and_passed_worktree_clean_including_untracked_at_authoring": true
+  },
+  "required_independent_review": {
+    "required": true,
+    "reason": "This artifact derives an execution order for an irreversible hosted credential act, re-sites one obligation of a certified phase list, declares one authorized mutation structurally unreachable, attaches three obligations the authority's own text does not contain, and classifies four statements of an append-only owner record as counterfactual. Each of those is a place where a derivation could quietly become an amendment, and none of them may be taken on this lane's word.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Is the hoist of N05 before MR-2 a derivation from MR-2's irreversibility, or an unauthorized re-sequencing of PHASE_P4? Press OF-DAG-5.",
+      "Is the coarse-versus-fine reading of expected_sequence available to a derivation lane, or is the tension a defect requiring an amendment of the capability authority? Press OF-DAG-1.",
+      "Is MR-1 genuinely unreachable, or has this lane missed an identity that could measure rolcanlogin without authenticating as the role and without engaging SSL-06 at the operator level? Press OF-DAG-2. A single counterexample falsifies the derivation.",
+      "Do the three derived obligations OF-DAG-3, OF-DAG-4 and OF-DAG-6 exceed what a DAG derivation may bind, given that each is stricter than the authority text it refines?",
+      "Is the four-versus-two partition of the six recertification loci correct? The IC named a count, not a set. Re-run the grep and partition independently.",
+      "Was this lane entitled to derive the DAG at all while ORS-2 and ORS-4 read as written? Press OF-DAG-10.",
+      "Are the nine MR2-PRE preconditions COMPLETE? A missing precondition on the edge into the irreversible act is the most consequential defect this artifact could contain.",
+      "Is every one of the twenty-three tokens placed on a node where it can actually fire, and does any node carry a token that its own act could not produce?",
+      "Does any node, edge or precondition confer a permission the effective capability package does not confer, or withhold one it does?",
+      "Does the E-SLIP loop correctly exclude every path by which a VALID UNTIL extension could be reached instead of a re-rotation?"
+    ],
+    "what_a_certifier_may_NOT_do": [
+      "It may NOT treat this artifact's sequencing as authority for any act. The acts are authorized, or not, by the effective capability package alone.",
+      "It may NOT resolve the N02 contradiction by certifying this artifact. A certification of a derivation is not an owner statement about an occurrence.",
+      "It may NOT reconstruct the bounded recertification's verdict in order to close N02. OD-6 forbids it.",
+      "It may NOT accept the WCM absence, the MR-1 unreachability or the blob-hash match on this lane's assertion. Each is re-derivable and each should be re-derived.",
+      "It may NOT self-serve the owner note."
+    ]
+  },
+  "final_state": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_DERIVED__NOT_EXECUTED__HOSTED_EXECUTION_BLOCKED_AT_N02_PENDING_CERTIFICATION_OCCURRENCE_RESOLUTION",
+  "next_gate": "INDEPENDENT CERTIFICATION OF THIS PROVISIONING DAG, against its companion manifest and against the effective capability package. It is a gate this artifact cannot satisfy and does not attempt. After that certification passes, the next act is NOT execution: it is the OWNER-LEVEL CERTIFICATION-OCCURRENCE NOTE that node N02 requires, which this artifact does not author. Only once N02 closes does the graph become traversable, and even then N08 must receive a concrete planned FINAL WITNESS timestamp before MR-2 ceases to be BLOCKED. No hosted mutation, no credential, no GRANT, no custody-store write and no Supabase or Vercel act is authorized by this artifact at any point."
+}
