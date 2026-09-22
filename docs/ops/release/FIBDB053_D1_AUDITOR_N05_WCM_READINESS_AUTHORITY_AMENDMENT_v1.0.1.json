@@ -1,0 +1,265 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.1",
+  "artifact_id": "FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_AMENDMENT",
+  "authority_class": "DERIVED_READINESS_AUTHORITY_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "N05_READINESS_AUTHORITY_ERRATA__APPEND_ONLY__AB_1_RESOLUTION_ONLY__NO_EXECUTION__NO_SECRET__NO_WINDOWS_CREDENTIAL_MANAGER_READ_OR_WRITE__NO_POSTGRESQL_CONNECTION__NO_PROVISIONING__NO_CREDENTIAL_GENERATION__NO_CREDENTIAL_ROTATION__NO_GRANT__NO_REVOKE__NO_VALID_UNTIL_COMPUTATION__NO_CUSTODY_INVENTORY_WRITE__NO_MECHANISM_IMPLEMENTED__NO_DAG_NODE_INSERTED",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_v1.0.0.json",
+  "amends_note": "v1.0.0 is NOT edited by this artifact. Every field of v1.0.0 stands as written except where THIS document's SUPERSEDED_PARENT_CLAUSES explicitly names a locus and a replacement. Silence on any other locus of v1.0.0 means v1.0.0 continues to control verbatim there.",
+  "mission_id": "CV1-D1-AUDITOR-N05-WCM-READINESS-ERRATA-R3",
+  "lane": "CV1-D1-AUDITOR-N05-WCM-READINESS-ERRATA-R3",
+  "role": "Correct the single artifact blocker the independent certification of v1.0.0 found (AB-1), append-only, without touching the substantive N05 adjudication or either program-execution blocker.",
+  "mode": "DOCS_AND_AUTHORITY_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "companion_manifest_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-wcm-readiness-authority-r1",
+  "AS_OF_HEAD": "f10187aab4d9eca81a5ecfb5b8d26023039826e9",
+  "AS_OF_TREE": "f8a461cfd78292a05281855e9fb0cbb49c077c2d",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the start of this errata lane, before any file of this write set existed. git status --porcelain --untracked-files=all returned empty.",
+  "PARENT_TREE_MEASURED_AGAINST": {
+    "commit": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+    "tree": "66cbcee0d7a849c4ac7305f7f40f02b4aa058988",
+    "note": "This is v1.0.0's own AS_OF_TREE. AB-1 is a claim about a measurement v1.0.0 made against THIS tree, so the correction is re-derived against the SAME tree, not against AS_OF_HEAD above, which already contains v1.0.0's own two files and would double-count v1.0.0's own vocabulary (vault-read, credential, keychain) as if it were repository evidence. Verified in this lane: git rev-parse 173fabce180b71fe49f65e5c7290ca9f20d85572^{tree} resolves to 66cbcee0d7a849c4ac7305f7f40f02b4aa058988, byte-identical to what v1.0.0 already declared."
+  },
+
+  "IC_VERDICT_CONSUMED": {
+    "verdict": "N05_WCM_READINESS_AUTHORITY_IC_FAIL",
+    "source": "Independent certification recorded at the project memory entry for this lane (2026-09-22, Opus 5, worktree uellix-cv1-d1-auditor-n05-wcm-ic). Not a repository artifact at AS_OF_HEAD; consumed here as attested instruction, per the lane mandate, exactly as the certified DAG consumed the owner-ratification IC's findings before that IC was itself materialized.",
+    "substance_confirmed_by_the_IC": "N05 semantics (demonstration, not implementation), WCM-C1..C5 byte-identity across all four provenance hops, all 13 blob pins with zero self-pins, the 9-runner/0-Windows CI claim, the 7-family DETECTORS enumeration, the 28-node sweep with zero deposit hits, and method_1's exact-6 result were all INDEPENDENTLY RE-DERIVED by the certifier and CONFIRMED. Only method_2's declared count was found wrong.",
+    "AB_1": "The declared method_2 widened-alternation sweep stated 17 files. Independent replication against the pinned AS_OF_TREE returns 24. The number was frozen as the expected value of positive control NP4 and restated as an enumeration count in self_check, so the defect propagated from a measurement error into two control assertions.",
+    "program_blockers_confirmed_not_disturbed": "OF-N05-1 and OF-N05-2 were independently re-derived and CONFIRMED as correctly classified PROGRAM_EXECUTION_BLOCKERs by the certifier. The certifier additionally corroborated OF-N05-2 from a locus this artifact had not cited: the OD-2 owner ratification itself states elsewhere that vault custody is a separate governed act gated behind PHASE_P4 and HC-1, and PHASE_P4's own nodes (N23, N24) contain no deposit act — the same gap, found by an independent route."
+  },
+
+  "SECTION_B1_METHOD_2_RECOUNT": {
+    "rule": "Re-derived, not copied. The certifier's own count of 24 is confirmed by an independent run of this errata's own author, against the exact tree v1.0.0 declares, using the exact alternation v1.0.0 declares — not accepted on the certifier's word.",
+    "method": "git grep -l -i -E over the pinned parent commit's tree object, alternation identical to v1.0.0's method_2: the original eight of method_1 (credential.?manager, cmdkey, dpapi, ProtectedData, Get-StoredCredential, keytar, wincred, credui) plus CredRead, CredWrite, CredEnumerate, secretstorage, vault, keyring, keychain, SecretClient, Export-Clixml, ConvertTo-SecureString, SecureString, setx.",
+    "command_run_against": "commit 173fabce180b71fe49f65e5c7290ca9f20d85572 (tree 66cbcee0d7a849c4ac7305f7f40f02b4aa058988), the exact commit v1.0.0 names as AS_OF_TREE's origin.",
+    "RAW_RESULT": "TWENTY-FOUR files, alphabetically listed below. Re-run twice in this lane with identical output both times.",
+    "FULL_ENUMERATION": [
+      ".claude/skills/ui-ux-pro-max/data/_sync_all.py",
+      ".claude/skills/ui-ux-pro-max/data/colors.csv",
+      ".claude/skills/ui-ux-pro-max/data/products.csv",
+      ".claude/skills/ui-ux-pro-max/data/stacks/react.csv",
+      "artifacts/hosted-b0-observation.json",
+      "db/baseline/README.md",
+      "db/baseline/stella_g2_schema.sql",
+      "db/hosted/authority/certification/prechain-requirements.ts",
+      "db/hosted/baseline-postconditions.ts",
+      "db/prepared/stella_0005b_admin_bootstrap.sql",
+      "docs/ops/DATABASE_CAPABILITY_MODEL.md",
+      "docs/ops/DATABASE_ROLE_MODEL.md",
+      "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json",
+      "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json",
+      "scripts/capability-baseline-verify.sh",
+      "scripts/capability-dry-run.sh",
+      "supabase/config.toml",
+      "tests/database-role-safety.test.ts"
+    ],
+    "COUNT_CHECK": "24 paths listed above, matching the certifier's count and this lane's own two independent runs.",
+    "WHAT_WENT_WRONG_IN_V1_0_0": "v1.0.0's method_2 correctly RAN the widened sweep — the raw grep output this errata's author actually produced while authoring v1.0.0 already contained all 24 lines, visible in that authoring session's own tool transcript. The defect was introduced at the CLASSIFICATION step immediately after: v1.0.0's text states method_1's six files plus eleven additional matches, classified in three groups summing to eleven (nine in-database-schema hits, one commented configuration stanza, one colour-palette label) totalling seventeen. That arithmetic is internally consistent (6+11=17) but the ELEVEN never included seven of the eighteen files that are NOT among method_1's six: the three ui-ux-pro-max data files beyond the one .py file already classified, db/baseline/stella_g2_schema.sql, and the three FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY files. Eighteen files are outside method_1's six (24-6=18); v1.0.0 classified only eleven of them. This is a DIFFERENT defect from OF-N05-8, which is about a count going stale against a MOVING tree between two authoring sessions. This is a count that was WRONG AT THE MOMENT IT WAS WRITTEN, against a tree that never changed. Recorded as OF-N05-9."
+  },
+
+  "SECTION_B2_SEVEN_OMITTED_FILES_CLASSIFIED": {
+    "rule": "Each of the seven files v1.0.0 failed to enumerate is classified individually here, by what actually matched, not by inference from the filename.",
+    "classifications": [
+      {
+        "path": ".claude/skills/ui-ux-pro-max/data/colors.csv",
+        "matched_line": "111,Password Manager,...,Vault dark blue + secure green",
+        "classification": "SAME CLASS AS THE ALREADY-CLASSIFIED _sync_all.py HIT. A colour-token label in a UI/UX design-system data table, naming a palette entry for a hypothetical Password Manager product template. Not code, not credentials, not a vault of any kind."
+      },
+      {
+        "path": ".claude/skills/ui-ux-pro-max/data/products.csv",
+        "matched_line": "111,Password Manager,\"password, security, vault, credentials, login, secure, encrypt, keychain, 2fa, biometric\",...",
+        "classification": "SAME DESIGN-SYSTEM CATALOG AS colors.csv, a different row of the same skill's product-template data, listing UX keywords for a hypothetical password-manager product design. Not code, not credentials."
+      },
+      {
+        "path": ".claude/skills/ui-ux-pro-max/data/stacks/react.csv",
+        "matched_line": "29,Hooks,...,\"const [x, setX] = useState()\",...",
+        "classification": "THE SAME setX LEXICAL FALSE POSITIVE ALREADY NAMED IN v1.0.0's setx_specifically FIELD, occurring in a SECOND file. A React hooks naming-convention guideline row (the useState setter idiom), matched case-insensitively by the setx alternation member. Confirms, rather than changes, v1.0.0's existing conclusion that setx occurs nowhere in the tree as a command."
+      },
+      {
+        "path": "db/baseline/stella_g2_schema.sql",
+        "matched_lines": "CREATE SCHEMA vault; / ALTER SCHEMA vault OWNER TO supabase_admin; / CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault; / GRANT USAGE ON SCHEMA vault TO ...",
+        "classification": "SHOULD HAVE BEEN THE TENTH MEMBER OF v1.0.0's NINE-FILE 'in-database-schema' GROUP, not a separate omission. This is the local baseline SQL dump that DEFINES the same Supabase-internal vault schema the other nine hits merely reference or list alongside auth/storage/realtime/graphql/extensions. It is, if anything, the CANONICAL source of that schema's DDL. Not an OS credential vault, not a mechanism."
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+        "hit_count": 5,
+        "classification": "GOVERNANCE ARTIFACT, SAME CLASS AS THE SIX ALREADY-NAMED GOVERNANCE HITS. This is the base capability authority whose SECRET_DELIVERY_CONTRACT section is the actual SOURCE TEXT of the WCM-C1..C5 conditions this artifact carries verbatim, and whose WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION names the vault to adjudicate its use. It is pinned in this artifact's own CONTROLLING_AUTHORITY.pins with the role BASE TEXT OF SECRET_DELIVERY_CONTRACT. It implements nothing."
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "hit_count": 7,
+        "classification": "GOVERNANCE ARTIFACT, SAME CLASS. This is SECTION_A7, which splits MECHANISM_1 from MECHANISM_2 and rules MECHANISM_1 absolutely prohibited. Pinned in CONTROLLING_AUTHORITY.pins. Implements nothing."
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "hit_count": 5,
+        "classification": "GOVERNANCE ARTIFACT, SAME CLASS. This is SPC102-1, which closes OD-2's sub-decision so a user-scope persistent variable is unselectable. Pinned in CONTROLLING_AUTHORITY.pins. Implements nothing."
+      }
+    ],
+    "RECONCILED_TOTAL": "method_1's 6, plus the 18 additional matches (11 originally classified plus these 7), equals 24. Zero of the 24 is a mechanism. v1.0.0's VERDICT sentence — NO Windows Credential Manager reader, no DPAPI wrapper, no Win32 credential API call site, no PowerShell secure-string or serialized-credential custody idiom, and no OS-credential-vault integration of any kind anywhere in the repository at AS_OF_TREE — is UNCHANGED and remains independently confirmed by this recount."
+  },
+
+  "SUPERSEDED_PARENT_CLAUSES": [
+    {
+      "id": "SPC101-1",
+      "locus": "DOES_ANY_CURRENT_REPOSITORY_MECHANISM_SATISFY_THEM.method_2_widened_alternation.raw_result",
+      "old_text": "SEVENTEEN files matched: the six above plus eleven more.",
+      "new_text": "TWENTY-FOUR files matched: the six of method_1 plus eighteen more, per SECTION_B1_METHOD_2_RECOUNT and SECTION_B2_SEVEN_OMITTED_FILES_CLASSIFIED of this errata.",
+      "why": "AB-1. The recount is a correction of a classification omission, not a re-measurement finding a new fact; the underlying grep result was always 24 at this tree."
+    },
+    {
+      "id": "SPC101-2",
+      "locus": "DOES_ANY_CURRENT_REPOSITORY_MECHANISM_SATISFY_THEM.method_2_widened_alternation.classification_of_the_eleven_additional_matches",
+      "old_text": "Three groups totalling eleven (nine in-database-schema hits, one commented configuration stanza, one colour-palette label).",
+      "new_text": "Five groups totalling eighteen: TEN in-database-schema hits (the original nine plus db/baseline/stella_g2_schema.sql, the schema's own DDL source), one commented configuration stanza, TWO colour/design-catalogue hits (colors.csv and products.csv, both rows of the same Password Manager design-template entry), ONE additional setX lexical false positive (stacks/react.csv, the same React hooks idiom already named for _sync_all.py), and THREE governance-artifact hits (the base capability authority and its two amendments, already pinned elsewhere in this document as the source text of the WCM-C1..C5 conditions). Full per-file classification at SECTION_B2_SEVEN_OMITTED_FILES_CLASSIFIED.",
+      "why": "AB-1."
+    },
+    {
+      "id": "SPC101-3",
+      "locus": "self_check.checks[8]",
+      "old_text": "seventeen files at method_2 with eleven additional matches classified in three groups totalling eleven",
+      "new_text": "twenty-four files at method_2 with eighteen additional matches beyond method_1's six, classified in five groups totalling eighteen, per SECTION_B1_METHOD_2_RECOUNT and SECTION_B2_SEVEN_OMITTED_FILES_CLASSIFIED",
+      "why": "AB-1. The self-check asserted the same wrong count as a claimed enumeration; correcting method_2 without correcting this locus would leave a self-check that verifies a stale number against itself."
+    },
+    {
+      "id": "SPC101-4",
+      "locus": "MEASURED_EXECUTION_SURFACE.facts[ES-4].method",
+      "old_text": "git grep located the dot-env audit-local filename written by scripts/m2-disposable-pg-bootstrap.ts at blob a91154166155c37a14e904fbbebf9949f051b61c and referenced by scripts/p1a-bootstrap-gate.ts at blob e3d7f5a7b65ff010415f82fd87201521826cfb81. Both are the DISPOSABLE and LOCAL PostgreSQL harness, and the file they write is gitignored.",
+      "new_text": "git grep located the LITERAL FILENAME .env.audit.local written by THREE scripts, not two: scripts/m2-disposable-pg-bootstrap.ts (blob a91154166155c37a14e904fbbebf9949f051b61c), scripts/p1a-bootstrap-gate.ts (blob e3d7f5a7b65ff010415f82fd87201521826cfb81, which reads the path rather than writing it), and scripts/rotate-local-role-credentials.ts (blob 69b162fec03bf060a7b49e41823080f0ab88adaa), newly found in this errata. All three concern the DISPOSABLE and LOCAL PostgreSQL harness (LOCAL_PROJECT_ID, LOCAL_DB_PORT, connecting to 127.0.0.1), and the file they write is gitignored. The third script writes the environment variable named literally AUDITOR_DATABASE_URL_ENV_VAR, which resolves to the exact literal string UELLIX_AUDITOR_DATABASE_URL — the SAME name N23 of the certified DAG must deliver for the hosted credential.",
+      "why": "Mechanical, low-risk correction requested by the lane mandate. Strengthens, does not weaken, the collision-hazard finding OF-N05-5: a THIRD established, working, gitignored caller writing the exact target variable name to the exact prohibited path makes the convention more established, not less, and correspondingly easier for a future implementer to reach for in error."
+    },
+    {
+      "id": "SPC101-5",
+      "locus": "MEASURED_EXECUTION_SURFACE.facts[ES-4].consequence_for_N05",
+      "old_text": "IT IS A COLLISION HAZARD AND IS RECORDED AS ONE. A future implementer reaching for the nearest existing pattern would find a working, gitignored, in-tree env-file delivery path at exactly the filename the contract prohibits, and reusing it for the hosted credential would breach the contract while looking like reuse of an established convention. The readiness contract therefore forbids that reuse by name rather than leaving it to judgement. Flagged OF-N05-5.",
+      "new_text": "IT IS A COLLISION HAZARD, NOW MEASURED AT THREE INDEPENDENT CALLERS RATHER THAN TWO, AND IS RECORDED AS ONE. A future implementer reaching for the nearest existing pattern would find three working, gitignored, in-tree callers of the literal filename .env.audit.local, one of which (scripts/rotate-local-role-credentials.ts) writes the identical variable name N23 must deliver for the hosted credential, UELLIX_AUDITOR_DATABASE_URL — reusing that path or that pattern for the hosted value would breach the contract while looking like conformity to an established, thrice-used convention. The readiness contract therefore forbids that reuse by the literal path name .env.audit.local, not by a paraphrase of it, so the prohibition remains grep-able against the same string the three callers actually use. Flagged OF-N05-5.",
+      "why": "Mechanical, low-risk correction. The literal-path requirement additionally answers SECTION_D_DOT_ENV_LITERAL of this errata."
+    },
+    {
+      "id": "SPC101-6",
+      "locus": "OPEN_FINDINGS[OF-N05-5].finding",
+      "old_text": "AN IN-TREE DELIVERY PATTERN EXISTS AT EXACTLY THE FILENAME THE CONTRACT PROHIBITS. scripts/m2-disposable-pg-bootstrap.ts writes the dot-env audit-local file inside the working tree, gitignored, for the disposable local PostgreSQL harness, and scripts/p1a-bootstrap-gate.ts references the same path. This is NOT a violation, because the prohibition binds the hosted auditor credential and these scripts write a local disposable one.",
+      "new_text": "AN IN-TREE DELIVERY PATTERN EXISTS AT EXACTLY THE FILENAME THE CONTRACT PROHIBITS, AND A THIRD SCRIPT WRITES THE EXACT TARGET VARIABLE NAME TO IT. scripts/m2-disposable-pg-bootstrap.ts writes .env.audit.local inside the working tree, gitignored, for the disposable local PostgreSQL harness; scripts/p1a-bootstrap-gate.ts references the same path; and scripts/rotate-local-role-credentials.ts writes UELLIX_AUDITOR_DATABASE_URL — the literal name N23 must deliver for the hosted credential — into that same file, for the LOCAL role only. None of the three is a violation, because the prohibition binds the hosted auditor credential and all three concern the local disposable one, but the third strengthens the hazard: an implementer who greps for UELLIX_AUDITOR_DATABASE_URL to find precedent for delivering it will find it already being written, correctly and legitimately, to the one path the hosted contract absolutely forbids.",
+      "why": "Mechanical, low-risk correction. AB-1 does not touch this finding; this edit is the lane mandate's separate item A/B."
+    }
+  ],
+
+  "SECTION_C_WCM_C3_CROSS_CHECK_NOTE": {
+    "rule": "A RECORDED OBSERVATION, NOT A CHANGE. This errata does not alter WCM-C3's controlling text at REQUIREMENTS_AS_READ.conditions[2] of v1.0.0, which remains byte-identical to the certified DAG and to the base authority. Nothing below supersedes it.",
+    "observation": "v1.0.0's REQUIREMENTS_AS_READ.conditions carries WCM-C3's mandate_phrasing_cross_check verbatim from the certified DAG as 'not written to persistent user env'. Re-read against the certified DAG in this errata (docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json, blob 7223279f2dbb46ed6e252cd3aa1469ff0b4419d5), that value is confirmed present there, character for character, at all five conditions in the same order this artifact carries them. The mismatch is therefore INHERITED FROM THE CERTIFIED DAG, not introduced by v1.0.0 or by this errata.",
+    "why_it_is_a_mismatch": "WCM-C1's own text is PROCESS-SCOPED, NOT USER-SCOPED ... does not persist to a new shell, and its cross-check is process scoped. WCM-C3's own text is SHELL HISTORY IS DISABLED FOR THE SESSION, or the session is a fresh non-persisting one — a statement about HISTORY, not about the PERSISTENT ENVIRONMENT BLOCK. The phrase not written to persistent user env describes the registry-persistence failure mode of MECHANISM_1 (the setx defect the base authority's WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION names under PERSISTENCE and SCOPE) far more precisely than it describes shell-history behaviour, which is C3's actual subject.",
+    "disposition": "RECORDED, NOT RESOLVED. This artifact does not decide whether the certified DAG's cross-check for C3 was transcribed from the wrong condition, whether it is a deliberately loose paraphrase not meant to bind, or whether it is correct under a reading this errata has not found. WCM-C3's CONTROLLING VERBATIM TEXT — SHELL HISTORY IS DISABLED FOR THE SESSION, or the session is a fresh non-persisting one — is unaffected either way, and RC-4 of v1.0.0 already binds to that verbatim text, not to the cross-check phrasing. The mismatch is upstream of this errata's write set, in the certified DAG itself, and a correction there would be a DAG amendment, which the lane mandate expressly forbids this errata from attempting.",
+    "what_a_certifier_should_press": "Whether the certified DAG's own mandate_phrasing_cross_check for WCM-C3 requires a successor amendment to the DAG, and whether any execution lane has, in practice, read the cross-check rather than the verbatim condition when demonstrating C3."
+  },
+
+  "SECTION_D_DOT_ENV_LITERAL": {
+    "rule": "Everywhere this errata's own text names the prohibited path, it uses the literal string .env.audit.local, not a paraphrase, so the prohibition stays grep-able against the exact string the three writer scripts use. v1.0.0's own three prose occurrences (dot-env audit-local) are corrected in place at SPC101-4, SPC101-5 and SPC101-6 above; this section states the rule those corrections implement."
+  },
+
+  "PRESERVED_NOT_SUPERSEDED": {
+    "rule": "Everything below is explicitly UNCHANGED by this errata, stated so a reader does not have to infer preservation from silence.",
+    "items": [
+      "N05's semantics: a DEMONSTRATION and CONFIRMATION node, not an implementation node. IS_N05_AN_IMPLEMENTATION_LANE, its four-locus evidence chain, and its VERDICT are untouched.",
+      "WCM-C1 through WCM-C5, byte-identical to the certified DAG at REQUIREMENTS_AS_READ.conditions. Not one word is altered by this errata.",
+      "All eight items of READINESS_CONTRACT (RC-1 through RC-8), their standard_of_proof and what_does_NOT_count fields, and THE_CONJUNCTION_IS_TOTAL.",
+      "The single fail-closed token, STOP_SECRET_DELIVERY_NONCOMPLIANT, carried from the certified DAG and created by neither v1.0.0 nor this errata.",
+      "SENTINEL_CONTRACT in full, including SP-1 through SP-4.",
+      "THE_SUBSEQUENT_IMPLEMENTATION_LANE, still DERIVED and still NOT OPENED by this or any prior artifact in this lane.",
+      "EVIDENCE_CONTRACT_FOR_THE_N05_DEMONSTRATION in full.",
+      "EXPLICIT_NON_AUTHORIZATIONS of v1.0.0, carried forward and restated below for this errata's own write set.",
+      "OF-N05-1: PROGRAM_EXECUTION_BLOCKER, CONFIRMED by the independent certification. The act that selects and builds the vault-read mechanism is still not a node of the certified DAG. UNCHANGED.",
+      "OF-N05-2: PROGRAM_EXECUTION_BLOCKER, CONFIRMED and independently corroborated by the certifier from OD-2's own text (custody-store deposit is a separate governed act gated behind PHASE_P4 and HC-1, and neither N23 nor N24 performs it). UNCHANGED.",
+      "OF-N05-3, OF-N05-4, OF-N05-6 and OF-N05-7, none of which AB-1 or the mandate's item C/D touches.",
+      "OF-N05-8, the DAG's-own-count-going-stale lesson, which is a DIFFERENT defect class from AB-1 and is not superseded by it: OF-N05-8 is about a count going stale against a MOVING tree between two authoring sessions; AB-1/OF-N05-9 is about a count that was wrong AT THE MOMENT IT WAS WRITTEN, against a tree that never moved. Both stand.",
+      "N05 itself: still OPEN. No demonstration has been performed, no mechanism has been named, and this errata performs none."
+    ]
+  },
+
+  "OPEN_FINDINGS_ADDED": [
+    {
+      "id": "OF-N05-9",
+      "severity": "NON_BLOCKING_NOW_CORRECTED",
+      "finding": "v1.0.0's method_2 sweep RAN correctly (the raw grep output the authoring session actually produced contained all 24 lines) but the CLASSIFICATION step immediately after it dropped seven of the eighteen non-method_1 files, understating the total as 17 and freezing that wrong number as the expected value of a positive control (NP4) and as an enumeration claim in self_check.",
+      "why_it_is_recorded_as_its_own_finding_rather_than_folded_into_OF_N05_8": "OF-N05-8 is about staleness against a MOVING target: the certified DAG's count of 2 became 6 at this lane's tree because four new governance files were added between the two measurements. OF-N05-9 is a DIFFERENT failure mode: the tree never moved between the grep and the prose that reported it; the error is a transcription/classification slip within a SINGLE authoring session. Distinguishing the two matters because the FIX differs — OF-N05-8's fix is re-deriving against the live tree; OF-N05-9's fix is re-counting the SAME raw output against itself, which is what SECTION_B1 and SECTION_B2 of this errata do.",
+      "disposition": "CORRECTED in this errata by SPC101-1, SPC101-2 and SPC101-3. The corrected count (24) and its full per-file classification are now enumerated rather than asserted.",
+      "what_a_certifier_should_press": "Whether a control that freezes a count derived from prose classification, rather than from a live re-run of its own stated method, is a durable design for NP4-shaped controls generally, or whether such controls should instead assert a PROPERTY of the classification (every matched path individually classified, classifications sum to the raw match count) rather than a specific NUMBER that goes stale the moment a new file is added to the alternation's vocabulary anywhere in the tree."
+    }
+  ],
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Carried from v1.0.0, restated for this errata's own write set. Each line is a thing this write set does NOT do and does NOT authorize any other lane to do on its strength.",
+    "items": [
+      "NO secret of any kind is generated, read, written, transported, echoed, stored or handled. No sentinel value exists in this write set.",
+      "NO Windows Credential Manager entry is created, read, written, enumerated or deleted, and no custody-store interaction of any kind occurs.",
+      "NO DPAPI call is made and no Win32 credential API is invoked.",
+      "NO implementation of any WCM reader, DPAPI wrapper or vault integration is invented, named, designed, sketched or recommended.",
+      "NO PostgreSQL connection is opened, hosted or local, and no SQL is written or executed.",
+      "NO provisioning occurs. NO credential is minted or rotated. NO GRANT, REVOKE, CREATE ROLE, ALTER ROLE or DROP ROLE is issued.",
+      "NO VALID UNTIL value is computed, set, mutated or estimated.",
+      "NO custody-inventory file is created, populated or given a schema.",
+      "NO code is written, no test file is written, no script, SQL file or migration is written.",
+      "NO CI workflow is added, modified or proposed for modification.",
+      "NO node, edge, token, phase or condition of the certified provisioning DAG is added, removed, reworded, reordered, narrowed or widened.",
+      "NO node, condition, token, contract item or finding of v1.0.0 of this artifact's own authority is EDITED in place. v1.0.0 is append-only; this errata supersedes named loci by ADDING this document, never by mutating the prior one.",
+      "It does NOT close N05, N06, N07, N08 or N09, and it does not move the DAG graph's frontier. BLOCKED_AT_N05_N06_N07_N09 is UNCHANGED.",
+      "It does NOT resolve OF-N05-1 or OF-N05-2. Both remain OPEN PROGRAM_EXECUTION_BLOCKERs.",
+      "It does NOT select, name, design, sketch or recommend a vault-read mechanism, and it does NOT open THE_SUBSEQUENT_IMPLEMENTATION_LANE.",
+      "It does NOT adjudicate cmdkey or any other named Windows credential-manager tool as a candidate mechanism.",
+      "It does NOT invent an abrupt-termination requirement beyond what RC-5 of v1.0.0 already states as a statement obligation, not a pass criterion.",
+      "It does NOT invent, reserve or imply any ODS, HPO or W2 identifier, and it claims no protected-authority id.",
+      "It does NOT self-certify, and its own certification is a gate it cannot satisfy."
+    ]
+  },
+
+  "self_check": {
+    "rule": "Each check is a statement about THIS errata that a certifier can verify against it directly.",
+    "checks": [
+      "AS_OF_TREE PARENT_TREE_MEASURED_AGAINST.tree (66cbcee0d7a849c4ac7305f7f40f02b4aa058988) is byte-identical to v1.0.0's own AS_OF_TREE and to git rev-parse 173fabce180b71fe49f65e5c7290ca9f20d85572^{tree}, verified in this lane.",
+      "SECTION_B1's FULL_ENUMERATION contains exactly 24 entries, alphabetically sorted, matching two independent git grep runs in this lane.",
+      "SECTION_B2 classifies all 7 previously-omitted files individually, none folded into a group count without its own entry.",
+      "6 (method_1) + 18 (method_2 additional) = 24, and 11 (v1.0.0's original classification) + 7 (this errata's additions) = 18: both arithmetic identities check against the enumerated lists, not against prose alone.",
+      "WCM-C1 through WCM-C5 are NOT reproduced or restated anywhere in this errata; SECTION_C discusses only the cross-check phrasing, never the controlling verbatim text, and PRESERVED_NOT_SUPERSEDED states this explicitly.",
+      "No new fail-closed token appears anywhere in this errata. STOP_SECRET_DELIVERY_NONCOMPLIANT does not occur in this document at all, since this errata touches no token-bearing clause.",
+      "No secret, sentinel, connection string, userinfo, vault handle, entry key or lookup token appears anywhere in this errata or its companion manifest amendment.",
+      "No ISO-8601 instant, no Z-suffixed time and no plus-24-hours expression appears anywhere. The only date present is 2026-09-22, the materialization date, not presented as a VALID UNTIL.",
+      "Every blob hash newly introduced in this errata (scripts/rotate-local-role-credentials.ts at 69b162fec03bf060a7b49e41823080f0ab88adaa) is re-derivable by git ls-tree -r against 173fabce180b71fe49f65e5c7290ca9f20d85572.",
+      "v1.0.0 is not modified by this write set. git diff between AS_OF_HEAD (f10187aab4d9eca81a5ecfb5b8d26023039826e9, the commit that created v1.0.0) and this errata's own commit, restricted to the two v1.0.0 paths, must be empty. Diffing against the PARENT commit (173fabce) instead would always show these two files as newly added, since they did not exist at the parent, and would prove nothing about whether v1.0.0 itself changed after it was authored."
+    ]
+  },
+
+  "required_independent_review": {
+    "rule": "The certifier re-derives; it does not accept.",
+    "it_MUST_re_derive": [
+      "SECTION_B1's 24-file count, at the exact tree named, with the exact alternation named.",
+      "SECTION_B2's classification of each of the 7 previously-omitted files, individually.",
+      "That v1.0.0's two files are byte-unchanged by this errata (git diff --stat against the parent commit for both paths must be empty).",
+      "The scripts/rotate-local-role-credentials.ts blob and its writing of AUDITOR_DATABASE_URL_ENV_VAR to .env.audit.local for the LOCAL role only."
+    ],
+    "it_MUST_rule_on": [
+      "Whether SECTION_C's WCM-C3 cross-check observation should trigger a successor amendment to the certified DAG itself, which this errata is barred from attempting.",
+      "Whether OF-N05-9's distinction from OF-N05-8 is itself correct, or whether the two should be merged.",
+      "OF-N05-1 and OF-N05-2, unchanged from v1.0.0's required_independent_review, still requiring a ruling before either may be treated as resolved."
+    ],
+    "it_MUST_NOT": [
+      "Accept the 24-file count on this errata's assertion. Re-run the grep.",
+      "Treat AB-1's correction as touching N05's substantive adjudication, WCM-C1..C5, or either program-execution blocker. It does not.",
+      "Treat this errata as authorizing THE_SUBSEQUENT_IMPLEMENTATION_LANE. It does not; v1.0.0's gate on that lane is unchanged."
+    ]
+  },
+
+  "final_state": "FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY_v1_0_0_PLUS_v1_0_1_ERRATA__AB_1_CORRECTED__OF_N05_1_AND_OF_N05_2_PRESERVED_AS_PROGRAM_EXECUTION_BLOCKERS__N05_STILL_OPEN__NO_MECHANISM_SELECTED__NO_MECHANISM_IMPLEMENTED__NO_DEMONSTRATION_PERFORMED__DAG_FRONTIER_UNCHANGED_AT_N05_N06_N07_N09",
+
+  "next_gate": "SHORT, BOUNDED, INDEPENDENT RECERTIFICATION of v1.0.1 ONLY: re-derive SECTION_B1's 24-file count and SECTION_B2's seven classifications, confirm v1.0.0's two files are byte-unchanged, and confirm the errata resolves AB-1 without touching N05's substantive adjudication, WCM-C1..C5, or the standing OF-N05-1/OF-N05-2 program-execution blockers. No hosted PostgreSQL connection, no credential, no sentinel, no custody-store write, no GRANT, no VALID UNTIL computation, no DAG node insertion and no Supabase or Vercel act is authorized by this errata at any point, by any lane."
+}
