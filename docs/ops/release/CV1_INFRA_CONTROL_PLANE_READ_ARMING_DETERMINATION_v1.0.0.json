@@ -1,0 +1,194 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION_v1.0.0",
+ "authority_class": "ARMING_DETERMINATION_RECORD__EVALUATES_AC-1__DOES_NOT_ARM",
+ "document_class": "ARMING_DETERMINATION__NO_READ__NO_MUTATION__NO_M8__NO_M9__ARMED_REMAINS_FALSE",
+ "append_only": true,
+ "evaluates": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json ARMING_CONJUNCTION (AC-1)",
+ "mission_id": "CV1-INFRA-CONTROL-PLANE-READ-CLOSURE-ARMING-AW-R1",
+ "lane": "CV1-INFRA-CONTROL-PLANE-READ-CLOSURE-ARMING-AW-R1",
+ "mode": "ARMING_DETERMINATION_ONLY",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+
+ "DETERMINATION": {
+  "ARMED": false,
+  "verdict": "ARMING_REFUSED__LIMB_3_UNSATISFIED",
+  "limbs_satisfied": ["LIMB_1_CERTIFICATION", "LIMB_2_DN0_REBASELINE"],
+  "limbs_unsatisfied": ["LIMB_3_RC9_EXECUTOR_PROVENANCE"],
+  "failure_token": "STOP_RC9_UNRESOLVED",
+  "the_predicate_evaluated": "ARMED = LIMB_1 AND LIMB_2 AND LIMB_3 = true AND true AND false = FALSE.",
+  "why_two_of_three_is_not_enough": "AC-1 is a conjunction. Two limbs satisfied is an unarmed state, not a partial arming, and no read authorized by the effective authority may be performed. This is the exact reading AC-1 was written to make unavoidable, applied to its own first evaluation."
+ },
+
+ "ACTING_STATE_EVALUATED": {
+  "acting_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "acting_head": "e1ed883191007b6da93021511fe324ba66594bf0",
+  "acting_tree": "8c8246dc7c3670a5d7ea8316068f4c3c41f82dbc",
+  "what_this_head_is": "The closure commit that materialized the certification event and the v1.0.2 amendment with its companion manifest amendment.",
+  "self_pin_avoidance": "This record is committed as a SUCCESSOR of the acting head it names. It therefore pins its PREDECESSOR, which is immutable, and never its own materialization state. The programme has measured an artifact pinning the pre-commit draft of its own base under a MANDATORY AND VERIFIED heading; recording a state the recording itself changes is the failure this ordering avoids."
+ },
+
+ "LIMB_1_CERTIFICATION": {
+  "status": "SATISFIED",
+  "evidence_path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json",
+  "evidence_blob": "67cc6573fc3c3e318a0e276363d10a82f5f1fbf8",
+  "verdict_recorded": "INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_PASS_WITH_NONBLOCKING_FINDINGS (0 blocking / 10 nonblocking)",
+  "materialization_requirement": "MET. The certification is now a repository-resident artifact rather than a conversational report, which is the specific deficiency LIMB_1 was written to close after two prior certifications of this lineage were measured REPORTED_NOT_MATERIALIZED.",
+  "the_caveat_carried_forward": "The certification event's own nonblocking-findings enumeration is PARTIAL: five remediation targets identified, five TEXT_NOT_SUPPLIED and still open. LIMB_1 asks for a materialized PASS, and that is satisfied. It does NOT assert that all ten findings are dispositioned, and nothing here should be read as asserting it."
+ },
+
+ "LIMB_2_DN0_REBASELINE": {
+  "status": "SATISFIED",
+  "performed_at": "acting head e1ed883191007b6da93021511fe324ba66594bf0, freshly, after the closure commit and before this determination was written.",
+  "freshness_discipline": "Every value below was derived by running git at the acting state during this determination. NONE was copied from the v1.0.1 amendment, from the v1.0.2 amendment's AS_OF fields, from the certification event, or from any prior report. NB-2 of the v1.0.2 manifest amendment refuses exactly that reuse.",
+  "plane": "GIT ONLY. No Vercel or GitHub API call was made to satisfy this limb, which is why LIMB_2 is satisfiable before arming while LIMB_3's RC-9b sibling is not.",
+  "measured": {
+   "acting_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+   "acting_head": "e1ed883191007b6da93021511fe324ba66594bf0",
+   "acting_tree": "8c8246dc7c3670a5d7ea8316068f4c3c41f82dbc",
+   "integration_branch": "origin/integration/commercial-v1",
+   "integration_head": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+   "integration_tree": "7228f833c57bfd37fe025546d939ecd46336159c",
+   "required_parent_binding": "6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2",
+   "parent_binding_is_ancestor_of_acting_head": true,
+   "worktree_clean": true,
+   "fetch_note": "origin was fetched (--prune) immediately before measuring the integration head, because an unfetched remote-tracking ref is a cached value and DN-0 exists to refuse cached values. The fetch is a non-mutating git-plane operation; DN-0 is classified in NODE_TO_READ_MAP as requiring no control-plane read and being executable under existing authority, and its own re_measurement_required names the integration head, so obtaining it is within DN-0's already-granted scope. It is NOT the X-R1 ref-plane read, which remains unexecuted and gated."
+  },
+  "nine_package_pins": {
+   "result": "9 of 9 MATCH",
+   "method": "git rev-parse HEAD:<path> for each of the nine EFFECTIVE_PACKAGE_CONSUMED paths of the v1.0.0 authority, compared to the recorded blob values.",
+   "pins": [
+    {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json", "blob": "0c36474b08076a844d32da8b194be79ab17915b1", "match": true},
+    {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "c2f29de382ad2584788c85ba7cfa5bd0a7275204", "match": true},
+    {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json", "blob": "e8baab563e130bdc70a4cc3e87155ab8f3638add", "match": true},
+    {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "59f3a24dc44b60b6da549125fde5547d282f33e8", "match": true},
+    {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json", "blob": "f3236a1a26e2d868e14590c72f4a7752ffba801c", "match": true},
+    {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "65af13040b440987d3d08b1fafc295e270dc6f38", "match": true},
+    {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json", "blob": "4192849f46c988afddf9fce548ec2db9d8df4be3", "match": true},
+    {"path": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json", "blob": "17c257b3b0b06b37601851ddf8fbc6aa4abdc6ae", "match": true},
+    {"path": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json", "blob": "4d99df8bd43263c17dda96b76f0321b789e8cb04", "match": true}
+   ]
+  },
+  "recurrence_warning": "LIMB_2 is satisfied AT THIS HEAD AND NOWHERE ELSE. Committing this determination creates a new head, and the parent DAG states DN-0 recurs at the head of every execution lane rather than discharging once. A future lane that resolves LIMB_3 MUST re-run DN-0 at whatever state it acts on; it may NOT cite this block. Recording that here is the difference between durable evidence and a standing fact, and F-NEVER_STANDING forbids the latter."
+ },
+
+ "LIMB_3_RC9_EXECUTOR_PROVENANCE": {
+  "status": "UNSATISFIED",
+  "failure_token": "STOP_RC9_UNRESOLVED",
+  "what_RC9a_requires": "For EACH plane the reads will touch: where the credential came from, what scope or permission it carries, and what it could mutate if misused, recorded before the first read and containing no secret value. AC-1's per_plane_bound makes this owed for every plane in the intended read set.",
+  "planes_in_the_read_set": {
+   "PLANE-V": "Required by V-R1, V-R2, V-R3, V-R4 (four of the nine reads).",
+   "PLANE-G": "Required by G-R1, G-R2, G-R3, G-R4.",
+   "PLANE-X": "Required by X-R1."
+  },
+  "A_MEASUREMENT_ERROR_THIS_LANE_MADE_AND_CORRECTED": {
+   "severity": "MATERIAL. It inverted a dispositive finding.",
+   "what_was_first_measured": "This lane initially searched AppData/Local/com.vercel.cli and AppData/Roaming/com.vercel.cli, found only a package-update cache, and concluded NO VERCEL CREDENTIAL EXISTS ON THIS MACHINE. That conclusion was written into an earlier draft of this record as reason R3-1, marked DISPOSITIVE.",
+   "what_a_wider_search_found": "A subsequent exhaustive search located a Vercel credential at AppData/Roaming/xdg.data/com.vercel.cli/auth.json — a path neither of the two targeted probes covered, because the CLI stores its data under an xdg.data subdirectory rather than directly under Roaming.",
+   "the_failure_class": "This is RC-3 exactly: AN EMPTY RESULT FROM ONE TOOL READ AS AN ABSENCE IN THE WORLD. It is the same failure CM-4 recorded when an empty CLI alias table was read as an absence of aliases, and the same failure DF-5 warns about for a pattern-scoped ls-remote. The lane applying those controls committed the error they describe, in the act of applying them.",
+   "why_it_is_recorded_rather_than_silently_fixed": "The false version was dispositive: it would have justified this determination on a ground that does not exist. A certifier re-running the narrow probe would reproduce the false negative and might conclude the wider finding was the error. Recording both, and which is correct, is the only way the next reader can tell.",
+   "the_control_this_argues_for": "An absence claim about a credential must name the search paths it covered and must be corroborated by a search whose scope is wider than the expected location. A negative capability claim is verified, never accepted — including when the lane making it is the one that wrote the rule.",
+   "net_effect_on_this_determination": "The VERDICT is UNCHANGED (LIMB_3 unsatisfied, ARMED false) but the REASONING is materially different: the blocker is not credential absence, it is credential expiry plus undeterminable scope plus the executor-binding structure. R3-1 below is the corrected reason."
+  },
+  "MEASUREMENT_PERFORMED": {
+   "method": "Local filesystem and environment inspection only. No network call, no control-plane read, and no credential VALUE read, printed, or recorded anywhere. Only presence, path, non-secret expiry and non-secret identity metadata were examined.",
+   "PLANE-V_vercel": {
+    "credential_present": true,
+    "credential_path": "AppData/Roaming/xdg.data/com.vercel.cli/auth.json",
+    "shape_measured_by_key_names_only": "The file carries token, refreshToken, userId and expiresAt. The presence of a refreshToken alongside an expiring access token identifies this as a Vercel CLI OAuth SESSION credential rather than a manually-minted scoped access token. NO value of token, refreshToken or userId was read, printed, or recorded.",
+    "expiry_measured": {
+     "expiresAt_utc": "2026-09-22T08:02:56Z",
+     "evaluated_at_utc": "2026-09-22T21:25:35Z",
+     "EXPIRED": true,
+     "expired_by": "approximately 13 hours 23 minutes",
+     "why_the_expiry_is_recorded": "An expiry timestamp is not a secret, and it is exactly the kind of fact RC-9a exists to surface: a credential's authority is bounded in time as well as in scope."
+    },
+    "active_team_scope": "config.json in the same directory carries a currentTeam value, so the CLI session is bound to a team context. The value is not recorded here; the executing lane records it as part of its own RC-9a, together with the scope that team context confers.",
+    "scope_establishable_by_this_lane": false,
+    "why_scope_could_not_be_established": "A Vercel OAuth session credential does not carry its permissions on disk. Determining what it may read or mutate requires an API call, which is not one of the nine reads enumerated in READS, and RC-10 refuses any operation the authority does not enumerate.",
+    "consequence": "A Vercel credential EXISTS but is EXPIRED and its scope is UNDETERMINED. RC-9a for PLANE-V cannot be discharged from it: an expired credential's blast radius is not recordable as a present fact, and a refresh would be a network operation whose success is unknown without performing it.",
+    "why_this_cannot_be_worked_around": "Recording a scope that was not established would be inventing it, which AC-1's LIMB_3, this lane's directing mission, and manifest control NB-3 each prohibit independently."
+   },
+   "PLANE-G_github": {
+    "credential_present": true,
+    "provenance_establishable": "PARTIALLY. The GitHub CLI is configured for host github.com with user lorenzozanello and git_protocol https. The hosts.yml file contains NO token field, so the credential is held in the operating system keyring rather than on disk. This was established by reading only key names and non-secret values; no token was read or recorded.",
+    "scope_establishable": false,
+    "why_scope_could_not_be_established": "A GitHub token's scopes are reported only by the API's response headers. Obtaining them requires a network call that is NOT one of the nine reads enumerated in READS, and RC-10 refuses any operation the authority does not enumerate. This lane declined to make that call rather than perform an unenumerated operation to satisfy a control.",
+    "what_was_deliberately_NOT_inferred": "That prior successful git pushes and pull-request operations in this branch's history imply a particular token scope. That is an inference from an operation having succeeded, not a scope measurement, and manifest control NB-3 refuses exactly it."
+   },
+   "PLANE-X_git": {
+    "credential_present": "Origin is https://github.com/lorenzozanello/uellix-antigravity.git. Whether a credential is required for a ref listing depends on repository visibility, which this lane did not read. No credential value was examined.",
+    "scope_establishable": false
+   },
+   "RC-4_side_check": "No .vercel directory exists in this worktree, so no read or tooling step has written project-link local state here. RC-4 is clean."
+  },
+  "THREE_INDEPENDENT_REASONS_LIMB_3_FAILS": [
+   {
+    "id": "R3-1",
+    "reason": "PLANE-V's CREDENTIAL IS EXPIRED AND ITS SCOPE IS UNDETERMINED. A Vercel CLI OAuth session credential exists but expired at 2026-09-22T08:02:56Z, roughly 13 hours 23 minutes before this evaluation, and its permissions are not recorded on disk. Four of the nine reads target Vercel. AC-1's per_plane_bound requires RC-9a for every plane in the intended read set, and manifest control NB-4 refuses a partial-plane RC-9a as discharging LIMB_3.",
+    "severity": "DISPOSITIVE",
+    "correction_notice": "An earlier draft of this reason asserted that NO Vercel credential existed. That was FALSE and is superseded here; see A_MEASUREMENT_ERROR_THIS_LANE_MADE_AND_CORRECTED. The limb still fails, on expiry and undetermined scope rather than on absence."
+   },
+   {
+    "id": "R3-2",
+    "reason": "RC-9a BINDS THE EXECUTOR, AND THIS IS NOT THE EXECUTOR. RC-9's own text binds 'the acting lane' before ITS first read. This is an authoring lane that performs no read. Even a complete provenance record of THIS session's credentials would not describe the credentials a future read-executing lane will hold, possibly on another machine. A provenance record written in advance for a party that does not yet exist is not provenance.",
+    "severity": "STRUCTURAL"
+   },
+   {
+    "id": "R3-3",
+    "reason": "NEITHER PLANE's SCOPE IS OBTAINABLE FROM AN AUTHORIZED, NON-SECRET, LOCAL SOURCE. A GitHub token's scopes live in an API response header; a Vercel OAuth session credential's permissions live server-side. Obtaining either requires a network operation the authority does not enumerate, and RC-10 refuses unenumerated operations.",
+    "severity": "CONTRIBUTING",
+    "the_gap_this_exposes": "See DERIVED_FINDING_DF-11 below. RC-9a demands a fact that no operation enumerated in READS can produce, while RC-10 forbids reaching outside that enumeration to get it."
+   }
+  ],
+  "DERIVED_FINDING_DF-11": {
+   "id": "DF-11",
+   "severity": "MEDIUM",
+   "finding": "RC-9a REQUIRES A CREDENTIAL SCOPE THAT NO ENUMERATED OPERATION CAN PRODUCE.",
+   "derivation": "RC-9a obliges the executor to record 'what scope or permission it carries' for each plane. A credential's scope is a server-side fact: for GitHub it is returned in an API response header, for a Vercel OAuth session it is held by the provider. READS enumerates nine operations and none of them is a credential-introspection call. RC-10 states that any operation not enumerated in READS is refused and escalated as an authority question rather than performed.",
+   "the_hazard": "A conscientious executor is caught between two controls of the same authority: it cannot discharge RC-9a without an operation RC-10 refuses. The likely resolutions are both bad — perform the unenumerated call quietly, or record a scope inferred from what previously happened to succeed, which NB-3 refuses as an inference rather than a measurement.",
+   "relationship_to_the_RC-9_circularity": "This is the SECOND instrument defect in the same control. The v1.0.2 amendment fixed the TIMING defect (RC-9b depended on G-R1, which depends on arming). DF-11 is a distinct INSTRUMENT defect: even RC-9a, correctly timed, names no admissible way to obtain half of what it asks for. Fixing the first did not fix the second, and this lane does not fix the second.",
+   "why_it_is_recorded_and_not_fixed_here": "Closing it means either enumerating a credential-introspection operation as an authorized non-read, or narrowing RC-9a to facts obtainable locally. Both change what the authority permits, which exceeds this lane's declared mode. It is named so the lane that resolves LIMB_3 encounters it before it is blocked by it, rather than after.",
+   "what_it_does_NOT_excuse": "It does not license arming without RC-9a, and it does not license an invented scope. An unresolvable control fails closed."
+  },
+  "what_this_determination_does_NOT_claim": "It does not claim the reads are unperformable or that no credential could be provisioned. It claims only that, at this acting state and by this lane, RC-9a cannot be discharged honestly: the Vercel credential present is expired, neither plane's scope is obtainable by an enumerated operation, and RC-9a binds an executor this lane is not. A lane holding live executor credentials can discharge most of it quickly, subject to DF-11."
+ },
+
+ "CONSEQUENCE": {
+  "ARMED": false,
+  "authority_state": "The effective control-plane read authority remains UNARMED. No V-R*, G-R* or X-R1 read is permitted.",
+  "what_is_nonetheless_now_true": [
+   "LIMB_1 is permanently satisfied for this candidate lineage: the certification is materialized and will not need re-materializing.",
+   "LIMB_2 was demonstrated satisfiable and was satisfied at e1ed8831, with 9/9 pins matching and the worktree clean.",
+   "The arming condition itself is now unambiguous, machine-checkable, and no longer contains a circular precondition. Before this closure, LIMB_3 was unsatisfiable BY CONSTRUCTION because RC-9 required G-R1's output; after the RC-9a/RC-9b split it is satisfiable by any lane holding credentials."
+  ],
+  "the_honest_summary": "This closure did not arm the grant. It made arming POSSIBLE, by removing a circularity that made the conjunction unclosable, and then refused to arm because the one remaining limb genuinely does not hold. The single blocker is narrow, named, and resolvable without touching any authority."
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "ARMED is false. No read on any plane is authorized by this record.",
+  "No M-8, no M-9, no branch creation, no GitHub or Vercel mutation, no deployment, no workflow-file edit, no Supabase contact.",
+  "This record does not weaken, reinterpret, or waive any limb of AC-1 in order to reach a positive result.",
+  "This record does not close the five unsupplied certification findings.",
+  "This record's LIMB_2 evidence may NOT be cited by a future arming attempt at a different head. DN-0 recurs.",
+  "No credential value, token, cookie, deploy-hook URL or environment-variable value is recorded anywhere in this record."
+ ],
+
+ "self_check": {
+  "SC-D1": "ARMED is false and the conjunction is evaluated explicitly as true AND true AND false.",
+  "SC-D2": "Every LIMB_2 value was derived at the acting state during this determination; none was copied from a prior report.",
+  "SC-D3": "The nine package pins are listed individually with their match result, not asserted as a count alone.",
+  "SC-D4": "LIMB_3's failure is supported by a measurement (a Vercel credential that is present but expired, and undeterminable scope on both planes) and by a structural reason (RC-9a binds the executor), each stated separately with its own severity.",
+  "SC-D4b": "A material measurement error made by this lane — first concluding no Vercel credential existed, from two probes that missed the xdg.data path — is recorded in full with its failure class (RC-3), its correction, and its net effect on the verdict, rather than silently overwritten.",
+  "SC-D5": "No credential value of any kind was read, printed, or recorded. Only presence, path, and non-secret identity fields were examined.",
+  "SC-D6": "This record pins its predecessor commit, never its own materialization state.",
+  "SC-D7": "The recurrence warning states in terms that LIMB_2's evidence does not travel to another head.",
+  "SC-D8": "No limb was reinterpreted to reach a positive result; the unsatisfied limb is named and the determination is negative."
+ },
+
+ "final_state": "ARMED_FALSE__LIMB_1_SATISFIED__LIMB_2_SATISFIED__LIMB_3_UNSATISFIED_STOP_RC9_UNRESOLVED",
+ "next_gate": "Resolve LIMB_3 ONLY. Three concrete steps, none of which touches any authority: (1) re-authenticate the Vercel CLI on the executing host, since the session credential present expired at 2026-09-22T08:02:56Z; (2) adjudicate DF-11 — decide whether a credential-introspection call is an authorized non-read or whether RC-9a is narrowed to locally-obtainable facts — because without that, scope cannot be recorded without violating RC-10; (3) have the EXECUTING lane, not an authoring one, record RC-9a for PLANE-V, PLANE-G and PLANE-X with provenance, scope and blast radius and no secret values. With LIMB_3 recorded, a successor arming determination re-runs DN-0 at its own acting head (LIMB_2 does not travel) and, with LIMB_1 already materialized and permanent, may record ARMED = true. Only then, and only after one independent bounded certification of this closure and arming package, may actual DN-0 / DN-1 read execution begin."
+}
