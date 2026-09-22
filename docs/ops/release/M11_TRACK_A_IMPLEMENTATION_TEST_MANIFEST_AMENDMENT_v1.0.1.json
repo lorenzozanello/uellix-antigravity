@@ -1,0 +1,191 @@
+{
+  "manifest_id": "CV1-M11-TRACK-A-AMENDMENT-v1.0.1",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "dependencies": [
+    "CV1-M11-TRACK-A (docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json, blob c4651ea0f35791bc1de4d4e61d8fb4f1d5b39396) - the parent manifest, left byte-unchanged",
+    "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY (docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json, blob 635ce14527774972822f92fc5736986cb50a12f3) - the parent authority, left byte-unchanged",
+    "PRE-2 (independent certification of the DAG authority, as amended) - NOT OCCURRED; BLOCKING for every control below"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [
+    "THIS MANIFEST IS AN AMENDMENT, NOT A REPLACEMENT. The parent manifest docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json is left BYTE-UNCHANGED and continues to control every control it declares (P-01..P-22, N-01..N-11, M-01..M-07), EXCEPT where a control here is marked EXTENDS or SUPERSEDES. Where this manifest is silent, the parent controls verbatim.",
+    "SUPERSEDED PARENT CONTROLS: P-05/P-06/P-07 (EP-1's AS-1/AS-2/AS-3 body forms) are EXTENDED, not superseded, by AP-M11-1..AP-M11-5 to add the fourth UNKNOWN row and the collision proof; the underlying AS-1/AS-2/AS-3 assertions in P-05/P-06/P-07 remain correct and controlling. N-01 (AS-2 never 503) is EXTENDED, not superseded, by AN-M11-3. N-03 (budget exhaustion yields UNKNOWN) is EXTENDED, not superseded, by AN-M11-4 with the concrete budget parameters. N-04 (no real provider egress) is EXTENDED, not superseded, by AN-M11-5 with the concrete Supabase-host coverage.",
+    "PARENT CONTROLS EXPLICITLY RETAINED AND NOT TOUCHED: P-01..P-04, P-08..P-22, N-02, N-05..N-11, M-01..M-07 all continue to govern verbatim.",
+    "AUTHORING ARM vs EXECUTION ARM, as in the parent's own convention (see the CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json precedent). Every control in this amendment is AUTHORING ARM where it checks a property of the amendment TEXT or of static repository source (e.g. lib/supabase/project-coherence.ts's env-var read); it becomes an EXECUTION ARM control (test_file resolved, actually run) only once TA-01/TA-03/TA-05/TA-06/TA-10/TA-19 are implemented.",
+    "NO CODE IS WRITTEN. The write set is two JSON documents; writing a script or a test file would be code, which this errata's APPEND_ONLY_AUTHORITY_ERRATA_ONLY mode forbids, exactly as the parent manifest already states for its own write set.",
+    "PNPM GATES COULD NOT RUN IN THIS WORKTREE. node_modules is absent; typecheck, secrets:scan, authority:seal:verify, ods:scope and ods:poststate are all tsx-based and require node_modules. This is stated honestly rather than claimed. See the companion authority amendment's NEW_ODS_REQUIRED for the manual equivalent performed instead."
+  ],
+  "sentinels": [
+    {
+      "id": "ASEN-M11-1",
+      "purpose": "PARENT SENTINELS RETAINED. SENT-PROVIDER-URL, SENT-UPSTREAM-ERROR-TEXT and SENT-SUBJECT-ID from docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json remain controlling and apply to every new AS/UNKNOWN body-form control below; they are not restated verbatim here."
+    },
+    {
+      "id": "ASEN-M11-2",
+      "purpose": "THE FOUR EP-1 VERDICT TUPLES. (200,'ok',authenticated:false,upstream:'REACHABLE') for AS-1/AS-2; (503,'degraded',authenticated:false,upstream:'UNREACHABLE') for AS-3; (200,'unknown',authenticated:false,upstream:'UNKNOWN') for UNKNOWN; (200,'ok',authenticated:true) for the authenticated caller. If a future rename changes any of the literal field names ('status','authenticated','upstream') or literal values ('ok','degraded', 'unknown','REACHABLE','UNREACHABLE','UNKNOWN'), every control citing this sentinel must be re-derived against the new literals, not patched in place."
+    },
+    {
+      "id": "ASEN-M11-3",
+      "purpose": "THE TWO NEW EDGES. TA-19 -> TA-13 and TA-19 -> TA-17. Any consumer of the amended DAG that finds TA-13 or TA-17's tests written or executed WITHOUT TA-19's guard extension already in place has violated the corrected ordering, regardless of what v1.0.0 alone would have permitted."
+    },
+    {
+      "id": "ASEN-M11-4",
+      "purpose": "THE SUPABASE HOST-COVERAGE RULE. Suffix pattern '.supabase.co', PLUS the exact host parsed from process.env.NEXT_PUBLIC_SUPABASE_URL when set and non-localhost (measured at lib/supabase/project-coherence.ts:154). If the project ever moves off the supabase.co domain convention, this sentinel's second limb (the env-derived host) is the one that must still catch it; the suffix limb alone would not."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "AP-M11-1",
+      "description": "OWNER ITEM 1. UNKNOWN => HTTP 200. EP-1's response for the IN_FLIGHT_WAIT_EXCEEDED and BUDGET_EXHAUSTED producers both carry HTTP status 200, never 503.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "AP-M11-2",
+      "description": "OWNER ITEM 2. UNKNOWN body is distinguishable from the healthy AS-1 form: body.status 'unknown' != 'ok', and body.upstream 'UNKNOWN' != 'REACHABLE', for the same HTTP 200.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "AP-M11-3",
+      "description": "OWNER ITEM 3. UNKNOWN body is distinguishable from AS-2: since AS-1 and AS-2 share the identical body form under OC-1 (both 'ok'/'REACHABLE'), this control is the SAME assertion as AP-M11-2 applied to the AS-2 fixture specifically, verifying the AS-2 code path also cannot be confused with the UNKNOWN code path.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "AP-M11-4",
+      "description": "OWNER ITEM 4. UNKNOWN => runner INCONCLUSIVE. The runner classifies an EP-1 response with body.upstream 'UNKNOWN' as INCONCLUSIVE regardless of its (always-200) HTTP status.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "AP-M11-5",
+      "description": "AS-3 still returns 503 (OWNER ITEM 7) - re-asserted here alongside the UNKNOWN controls so the four-row matrix is verified as ONE coherent set in a single control file, not only via the parent's separate P-07.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "AP-M11-6",
+      "description": "OWNER ITEM 11. Budget exhaustion eventually recovers: with fake timers, advancing past BUDGET_WINDOW_MS after BUDGET_EXHAUSTED resets the probe counter and a subsequent cache-miss request can obtain a fresh REACHABLE/UNREACHABLE verdict rather than remaining permanently UNKNOWN.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AP-M11-7",
+      "description": "OWNER ITEM 12. TTL_MS=15000 is NOT classified as owner-selected. Reading the companion authority amendment's B_IC_2_CLOSURE.corrected_provenance confirms TTL_MS appears only under technical_derived_parameters, never under owner_selected_parameters.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP-M11-8",
+      "description": "OWNER ITEM 13. The provider budget parameters (BUDGET_WINDOW_MS, BUDGET_MAX_PROBES_PER_WINDOW) are technical, not owner-selected. Reading PROVIDER_REQUEST_BUDGET_CONTRACT confirms both are labelled TECHNICAL_DERIVED_PARAMETER / NOT_OWNER_SELECTED with explicit admissible ranges.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP-M11-9",
+      "description": "OWNER ITEM 14. TA-19 precedes every relevant egress-capable test consumer. Reading DAG_EDGES (as amended) confirms exactly three outgoing edges from TA-19: to TA-13, TA-16 and TA-17, and no egress-capable test-surface node lacks an incoming edge from TA-19.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP-M11-10",
+      "description": "NB-IC-4. TA-01's implementation updates the stale comment at lib/auth/identity.ts's `if (!authUser)` branch to name AS-2 and AS-3 explicitly, closing the incomplete-binary-split finding without overclaiming the original comment was false.",
+      "test_file": "tests/auth-identity-discriminator.test.ts"
+    },
+    {
+      "id": "AP-M11-11",
+      "description": "NB-IC-5. The touch's TOUCH_VERDICT type has exactly three inhabitants: REACHABLE, UNREACHABLE, UNKNOWN.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AP-M11-12",
+      "description": "NB-IC-5. No route or server action under app/** other than app/api/health/auth/route.ts imports lib/health/provider-touch.ts, verified by a grep of import specifiers across app/**.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AP-M11-13",
+      "description": "The IN_FLIGHT_WAIT_EXCEEDED producer is reachable: a caller arriving while a same-key probe is already in flight, whose PROBE_WAIT_BUDGET_MS elapses before that probe settles, receives UNKNOWN with upstream 'UNKNOWN' - not a hang, not a guessed REACHABLE/UNREACHABLE.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AP-M11-14",
+      "description": "Every cache-miss request that is NEITHER budget-exhausted NOR wait-timed-out receives a DEFINITIVE REACHABLE or UNREACHABLE verdict - never a bare pending/UNKNOWN result for any other reason. This is the positive form of the cold-start correction.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AP-M11-15",
+      "description": "The runner reads body.upstream (EP-1) and the equivalent already-published discriminator fields (EP-3) to classify a 200 response; it does not branch on HTTP status alone anywhere in its classification logic.",
+      "test_file": "tests/m11-runner.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "AN-M11-1",
+      "description": "OWNER ITEM 5. MUST FAIL: UNKNOWN can never PASS. No code path may classify an EP-1 response with body.upstream 'UNKNOWN' as PASS, regardless of its HTTP status.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "AN-M11-2",
+      "description": "OWNER ITEM 6. MUST FAIL: UNKNOWN can never health-FAIL. No code path may classify an EP-1 response with body.upstream 'UNKNOWN' as a health FAIL for the blocking EP-1 cell.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "AN-M11-3",
+      "description": "OWNER ITEM 8. EXTENDS parent N-01. MUST FAIL: AS-2 cannot return 503, re-verified alongside the new UNKNOWN and AS-3 forms so all four rows are checked as one mutually exclusive set.",
+      "test_file": "tests/health-auth-route.test.ts"
+    },
+    {
+      "id": "AN-M11-4",
+      "description": "OWNER ITEM 10. EXTENDS parent N-03. MUST FAIL: an exhausted budget (BUDGET_MAX_PROBES_PER_WINDOW consumed within BUDGET_WINDOW_MS) cannot manufacture a healthy (REACHABLE) verdict - it must yield UNKNOWN via BUDGET_EXHAUSTED.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AN-M11-5",
+      "description": "OWNER ITEM 15. EXTENDS parent N-04. MUST FAIL: real network egress to a host matching '.supabase.co' or to the exact host parsed from NEXT_PUBLIC_SUPABASE_URL (non-localhost) from a unit/contract test is denied by the extended guard. No ALLOW_REAL_* escape hatch exists.",
+      "test_file": "vitest.setup.network-guard.ts"
+    },
+    {
+      "id": "AN-M11-6",
+      "description": "MUST FAIL: 'not yet probed' is NOT reachable as a bare, persistent externally observable state independent of IN_FLIGHT_WAIT_EXCEEDED or BUDGET_EXHAUSTED. A build that returns UNKNOWN for any OTHER reason on a cache miss must be caught as violating the exhaustiveness of UNKNOWN_PRODUCERS's canonical set.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AN-M11-7",
+      "description": "MUST FAIL: the runner cannot classify EP-3's OD-3-split 200-with-ready-false response as PASS by status alone, mirroring AP-M11-15's requirement that the body discriminator, not the HTTP status, drives classification uniformly across EP-1 and EP-3.",
+      "test_file": "tests/m11-runner.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "AMUT-M11-1",
+      "description": "OWNER ITEM 9. Reinstate `status === 200 => PASS` in the runner's classification logic. AP-M11-4, AN-M11-1 and AN-M11-2 must all REDDEN, because an UNKNOWN response (always 200) would then wrongly classify as PASS.",
+      "test_file": "tests/m11-runner.test.ts"
+    },
+    {
+      "id": "AMUT-M11-2",
+      "description": "Reintroduce 'not yet probed' as a producer independent of IN_FLIGHT_WAIT_EXCEEDED (e.g. return UNKNOWN on a cold cache with no wait-budget check at all). AN-M11-6 must REDDEN.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AMUT-M11-3",
+      "description": "Remove the '.supabase.co' suffix coverage from the extended guard, keeping only the four fixed hostnames (three Gemini/Vertex plus a hard-coded single Supabase host). AN-M11-5 must REDDEN when the test project's ref differs from whatever single host was hard-coded.",
+      "test_file": "vitest.setup.network-guard.ts"
+    },
+    {
+      "id": "AMUT-M11-4",
+      "description": "Add a second importer of lib/health/provider-touch.ts under app/** (e.g. from app/api/health/runtime-identity/route.ts). AP-M11-12 must REDDEN.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AMUT-M11-5",
+      "description": "Set BUDGET_MAX_PROBES_PER_WINDOW below ceil(BUDGET_WINDOW_MS / TTL_MS) at the configured values (e.g. 3 at the defaults 60000/15000). A control checking the lower-bound invariant from PROVIDER_REQUEST_BUDGET_CONTRACT must REDDEN.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AMUT-M11-6",
+      "description": "Relabel TTL_MS or either budget parameter back under an 'owner_selected' grouping in a future edit. AP-M11-7 and AP-M11-8 must REDDEN, naming the field that was wrongly re-attributed.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

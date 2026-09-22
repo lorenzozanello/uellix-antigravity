@@ -1,0 +1,336 @@
+{
+  "package_id": "M11_TRACK_A_PREIMPLEMENTATION_CERTIFICATION_OCCURRENCE",
+  "version": "1.0.0",
+  "artifact_id": "M11_TRACK_A_PREIMPLEMENTATION_CERTIFICATION_OCCURRENCE_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD_COMPANION__CERTIFICATION_OCCURRENCE_AND_PREIMPLEMENTATION_MATERIALIZATION_NOTE",
+  "document_class": "CERTIFICATION_OCCURRENCE_NOTE__IMPLEMENTATION_REQUIREMENT_MATERIALIZATION__NO_IMPLEMENTATION__NO_CODE_MODIFICATION__NO_PROVIDER_CALL__NO_DEPLOYMENT__NO_HOSTED_ACCESS__NO_CREDENTIAL_PROVISIONING__NO_RETROACTIVE_VERDICT_ARTIFACT_RECONSTRUCTION__NO_OD_OR_OC_REOPENING__NO_EDIT_TO_ANY_PRIOR_ARTIFACT",
+  "append_only": true,
+  "amends": null,
+  "companions": [
+    "docs/ops/owner-ratifications/M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION_v1.0.0.json",
+    "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+  ],
+  "why_a_companion_and_not_an_amendment_to_one_parent": "This record extends provenance across THREE separate parents at once (the DAG authority's own PRE-1 precondition, the owner record's own placeholder NB-R carryover, and the DAG authority amendment's budget/cache/probe contracts), none of whose committed text is FALSE - each correctly and conservatively recorded a fact as pending or content-unavailable at the time it was written. There is therefore nothing to SUPERSEDE in the sense v1.0.1's own SUPERSEDED_PARENT_CLAUSES or the FIBDB053 CERT-OCCURRENCE precedent used for a genuinely false prior claim. This record MATERIALIZES what was previously and accurately marked pending, and is structured as a MATERIALIZED_EXTENSIONS section rather than a SUPERSEDED_PARENT_CLAUSES one for exactly that reason. It touches the bytes of none of its three companions.",
+  "mission_id": "CV1-M11-TRACK-A-PREIMPLEMENTATION-PREREQUISITES-AW-R2",
+  "lane": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "role": "COMMERCIAL_V1_M11_TRACK_A_PREIMPLEMENTATION_RECORD_KEEPER",
+  "mode": "PREIMPLEMENTATION_RECORD_MATERIALIZATION_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "materialized_at_base": {
+    "base_branch": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+    "BASE_SHA": "c9f6c064a082ca2df3779ee0d9a2263bedd1a0f2",
+    "BASE_TREE": "84d4f356756848f532dcdf52a8bd9c181c7d6f5a",
+    "worktree_state": "CLEAN at materialization (git status --porcelain=v1 --untracked-files=all empty)."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "This record materializes occurrence notes and implementation requirements against the exact companion set below, pinned by blob hash. A consumer finding any pin to differ from a fresh re-derivation MUST NOT apply this record to whatever the differing content is now.",
+    "candidate_commit_sha": "c9f6c064a082ca2df3779ee0d9a2263bedd1a0f2",
+    "candidate_commit_verification": "git rev-parse HEAD, on branch codex/cv1-m11-track-a-implementation-dag-authority-r1, at materialization.",
+    "companion_blob_pins": [
+      {
+        "artifact": "docs/ops/owner-ratifications/M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION_v1.0.0.json",
+        "expected_blob_sha1": "abd1f19bab1423bfe30dec951a8641fb25ba84de"
+      },
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json",
+        "expected_blob_sha1": "635ce14527774972822f92fc5736986cb50a12f3"
+      },
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+        "expected_blob_sha1": "c4651ea0f35791bc1de4d4e61d8fb4f1d5b39396"
+      },
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "expected_blob_sha1": "17fe0f011376038ba74d84f9b901abd92b539e56"
+      },
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "expected_blob_sha1": "253c89178a3b853b47d7abe70e5468d6c5e21c99"
+      }
+    ],
+    "verification_method": "git rev-parse <candidate_commit_sha>:<artifact path>, compared against expected_blob_sha1, for each of the five artifacts.",
+    "on_mismatch": "STOP_RATIFICATION_BINDING_MISMATCH. This record does not apply to a differing candidate; a successor record binding to the new candidate is required."
+  },
+  "GOVERNING_PRECEDENT": {
+    "rule": "This exact fact pattern - an owner-affirmed certification with no committed verdict artifact - has already been adjudicated twice in this repository, once one level up in this very chain and once in a sibling chain. This record applies that established treatment rather than inventing a new one.",
+    "precedent_1_same_chain": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json DERIVATION_PRECONDITIONS.preconditions[PRE-1].occurrence, quoted verbatim: 'OCCURRED - affirmed by the product owner, who carried its three nonblocking residues (N-1, N-2, N-3) forward into this lane's mission brief as accepted residue. An owner-affirmed certification is not a non-occurrence.' Independently re-verified against the pinned blob before quoting.",
+    "precedent_2_sibling_chain": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json (commit 2ff84822, PR #207) GOVERNING_PRECEDENT and CERTIFICATION_OCCURRENCE_AND_VERDICT, which recorded an identical shape - owner-confirmed recertification occurrence, verdict named, artifact NOT_RETROACTIVELY_MATERIALIZED - for a different (D-1 auditor capability) chain. Read read-only for this citation; no file under that PR's branch is touched.",
+    "applied_here": "Both precedents converge on the same rule this record applies twice below (parts A and B): an owner confirmation moves a fact from UNKNOWN to KNOWN-OCCURRED; it does not, and this record does not attempt to, move VERDICT_ARTIFACT from NOT_MATERIALIZED to MATERIALIZED. No verdict artifact is fabricated for either certification named below."
+  },
+  "OWNER_CONFIRMATION_CHANNEL": "As throughout this lane's prior artifacts (OC-1, OC-2, the EP-1 UNKNOWN decision, and both occurrence notes below), the product owner's confirmations are channelled to this lane as directing mission text at the start of each authoring turn - the same channel the FIBDB053 precedent characterises as 'the product owner, directly in the current conversation.' This record does not claim a different or stronger evidentiary channel than that established convention.",
+  "A_PRE1_CERTIFICATION_OCCURRENCE": {
+    "target": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json DERIVATION_PRECONDITIONS.preconditions[PRE-1] - INDEPENDENT_BOUNDED_VERIFICATION_OF_THE_OWNER_RATIFICATION, i.e. docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json's own next_gate.",
+    "OWNER_CONFIRMATION": {
+      "confirmed_by": "The product owner, via this record's own authoring mission (CV1-M11-TRACK-A-PREIMPLEMENTATION-PREREQUISITES-AW-R2).",
+      "confirms_occurrence": "The independent bounded verification of the M11 owner-ratification record named by PRE-1 OCCURRED.",
+      "confirms_verdict": "M11_OWNER_RATIFICATION_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "what_was_NOT_confirmed_and_is_therefore_NOT_recorded": [
+        "No reviewing-lane identifier was supplied, and none is invented here.",
+        "No exact calendar timestamp was supplied as owner testimony; none is asserted beyond the materialization_date of the artifacts that already carry this token (see corroboration below).",
+        "No enumeration of this certification's own nonblocking findings beyond N-1, N-2 and N-3 is supplied or reconstructed - those three ARE already fully dispositioned, not newly introduced here."
+      ]
+    },
+    "corroboration_not_independently_re_verified_beyond_this": "The exact token 'M11_OWNER_RATIFICATION_IC_PASS_WITH_NONBLOCKING_FINDINGS' already appears, byte-identical, in docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json PRE1_STATUS.verdict_named (re-verified by direct read in this authoring turn: line 312 of that file). This record does not independently re-derive the token; it cites where it was already named and formalizes its occurrence status in the dedicated shape this record's own mission requests.",
+    "nonblocking_findings_of_this_certification": "N-1, N-2, N-3 - already fully named and dispositioned in docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json NONBLOCKING_RESIDUE_CONSUMED. Not re-stated or re-dispositioned here; that block remains controlling and unchanged.",
+    "CERTIFICATION_OCCURRED": true,
+    "VERDICT": "M11_OWNER_RATIFICATION_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+    "VERDICT_ARTIFACT": "NOT_RETROACTIVELY_RECONSTRUCTED",
+    "why_no_verdict_artifact_is_created_here": "Per GOVERNING_PRECEDENT above: an owner confirmation establishes OCCURRENCE, never MATERIALIZATION. Reconstructing a historical verdict document now would be writing history rather than recording it - the exact reasoning both precedents already apply. No such document is created for this instance, here or in any future amendment.",
+    "what_this_section_does_NOT_do": [
+      "It does not reconstruct this certification's own findings, evidence, or reasoning beyond N-1..N-3, which were already fully available.",
+      "It does not name an unevidenced reviewer identity or timestamp.",
+      "It is not itself a certification-verdict artifact.",
+      "It does not reopen OD-1 through OD-5 or the M11-SC-7 rider, which remain entirely the owner ratification record's own, unchanged and untouched."
+    ]
+  },
+  "B_TRACK_A_V101_RECERT_OCCURRENCE": {
+    "target": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json's own next_gate - 'Short bounded independent recertification of v1.0.1 only ... attacking IN_FLIGHT_WAIT_EXCEEDED and the corrected transport matrix's distinguishability proof first.'",
+    "OWNER_CONFIRMATION": {
+      "confirmed_by": "The product owner, via this record's own authoring mission.",
+      "confirms_occurrence": "The short bounded independent recertification of v1.0.1 OCCURRED.",
+      "confirms_verdict": "M11_TRACK_A_V101_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+      "what_was_NOT_confirmed_and_is_therefore_NOT_recorded": [
+        "No reviewing-lane identifier was supplied, and none is invented here.",
+        "No exact calendar timestamp beyond this record's own materialization_date was supplied as owner testimony.",
+        "No reasoning or evidence trail for NB-R1..NB-R8 beyond their identifiers and the specific technical findings the mission supplied was given - this record's part C independently re-verifies each one against live source before recording it as materialized, rather than transcribing unverified prose."
+      ]
+    },
+    "corroboration_not_independently_re_verified_beyond_this": "Re-verified in this authoring turn by grep across the full tracked tree: 'M11_TRACK_A_V101_RECERT' returns zero matches anywhere except this record's own prior citation of it in docs/ops/owner-ratifications/M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION_v1.0.0.json NONBLOCKING_FINDING_CARRYOVER (which already recorded the identical OCCURRED/NOT_MATERIALIZED disposition this section now formalizes for the same fact). No committed recertification artifact exists; none is fabricated here.",
+    "CERTIFICATION_OCCURRED": true,
+    "VERDICT": "M11_TRACK_A_V101_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+    "VERDICT_ARTIFACT": "NOT_RETROACTIVELY_RECONSTRUCTED",
+    "why_no_verdict_artifact_is_created_here": "Identical reasoning to part A above - see GOVERNING_PRECEDENT.",
+    "nonblocking_findings_of_this_certification": "NB-R1, NB-R2, NB-R3, NB-R4, NB-R6, NB-R7, NB-R8 (NB-R5 absent from the directing enumeration in both this record's and the prior owner record's authoring missions, and not invented here). Materialized in full in Part C below - the owner record's prior CONTENT_NOT_AVAILABLE_TO_THIS_LANE placeholders are now filled, not superseded as false.",
+    "what_this_section_does_NOT_do": [
+      "It does not reconstruct unverified findings - every NB-R below is independently re-verified against live source in Part C before being recorded.",
+      "It does not name an unevidenced reviewer identity or timestamp.",
+      "It is not itself a certification-verdict artifact.",
+      "It does not reopen B-IC-1, B-IC-2, OC-1, OC-2, or any of Track A's twenty DAG_NODES or thirty-three DAG_EDGES as they stand committed."
+    ]
+  },
+  "C_NBR_MATERIALIZATION": {
+    "rule": "Every finding below was independently re-verified against live source or the committed artifacts in THIS authoring turn before being recorded - none is transcribed from the directing mission's prose without that verification. NB-R5 is absent from the enumeration in both this record's own authoring mission and the prior owner record's, and is NOT invented, renumbered, or silently backfilled here.",
+    "findings": [
+      {
+        "id": "NB-R1",
+        "subject": "TA-19's declared egress-consumer set is incomplete: 3 named, 5 actually egress-capable.",
+        "independent_verification_performed_in_this_turn": "Re-derived from live source, not from the mission's claim alone. grep -rn \"from '@/lib/auth/identity'\" app/ lib/ returns exactly two importers TODAY: app/api/health/runtime-identity/route.ts:46 (EP-2) and app/api/health/stella-preconditions/route.ts:61 (EP-3) - both call getVerifiedAuthIdentityResult(), which itself calls createClient() then supabase.auth.getUser() (lib/auth/identity.ts:104,113) - the real GoTrue chokepoint. v1.0.1 connected TA-19 to TA-13 (EP-1 tests) and TA-17 (runner tests, which exercise EP-1/EP-2/EP-3 together per M11-SC-3) and TA-16 (touch tests), but never to TA-14 (tests/stella-preconditions-route.test.ts, NEW - tests EP-3, which ALREADY calls the real getUser() chokepoint TODAY, independent of TA-01/TA-03/TA-06 ever landing) or TA-15 (tests/auth-identity-discriminator.test.ts, NEW - tests identity.ts's discriminator directly, and by TA-15's own contract text CANNOT mock '@/lib/auth/identity' itself since that module IS the subject under test; it must instead mock '@/lib/supabase/server' one layer below, making TA-15 the single highest-risk site of any Track A test file). The established safe pattern for EP-2's PRE-EXISTING test (tests/runtime-identity-observability.test.ts:1029, already in the tree, out of Track A's new-file scope) is vi.mock('@/lib/auth/identity', ...) - mocking ABOVE the chokepoint - which TA-14 could follow too, but v1.0.1 never made that mocking discipline an explicit TA-14 contract requirement the way it did for TA-13.",
+        "implementation_requirement": "The corrected consumer set is 5: TA-13, TA-14, TA-15, TA-16, TA-17. Two edges are missing from the committed graph and must be added at implementation time: TA-19 -> TA-14 and TA-19 -> TA-15. Machine-checked in this turn: adding both to the existing 33-edge graph (31 original + 2 from v1.0.1) yields 35 edges, still acyclic (see VALIDATION.dag_recheck below). TA-14's contract must additionally require EITHER the '@/lib/auth/identity' module-level mock (matching the established, already-safe EP-2 pattern) OR full '@/lib/supabase/server' mocking (matching TA-13's pattern) - either is acceptable, but the contract must name one rather than leave it implicit. TA-15's contract must explicitly require '@/lib/supabase/server' mocking, since it cannot use the identity.ts-level mock without defeating its own purpose.",
+        "correction_target_when_implemented": "DAG_EDGES (add TA-19->TA-14, TA-19->TA-15) and TA-14/TA-15's own contract fields, in a future v1.0.2 DAG authority errata or folded into the implementation PR's own scope.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "v1.0.2 DAG authority errata, or the Track A implementation PR itself, whichever lands the two edges and the two contract additions."
+      },
+      {
+        "id": "NB-R2",
+        "subject": "AP-M11-9 (the manifest control asserting TA-19 precedence) is circular: its oracle is the graph it was written to validate.",
+        "independent_verification_performed_in_this_turn": "Re-read docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json AP-M11-9 verbatim: 'Reading DAG_EDGES (as amended) confirms exactly three outgoing edges from TA-19: to TA-13, TA-16 and TA-17, and no egress-capable test-surface node lacks an incoming edge from TA-19.' The oracle IS DAG_EDGES - the exact artifact this control's author (this lane) had just finished editing in the same turn. A control that validates a claim by re-reading the claim's own source cannot detect an omission in that source, which is precisely what NB-R1 found: three edges were asserted complete by reading themselves, when five were required.",
+        "implementation_requirement": "Replace AP-M11-9's oracle with an INDEPENDENTLY DERIVED consumer set: grep every Track A test file's planned imports for '@/lib/supabase/server', '@/lib/auth/identity', or 'lib/health/provider-touch' (unmocked, or mocked at a layer that still permits a real call beneath it), compute the consumer set FROM THAT, and cross-check DAG_EDGES against the independently computed set rather than against itself.",
+        "correction_target_when_implemented": "The manifest amendment's AP-M11-9 control text and its test_file implementation, when Track A's controls are actually written.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "The implementation PR that writes tests/*.test.ts and can execute a real source-derived import sweep as the control's oracle."
+      },
+      {
+        "id": "NB-R3",
+        "subject": "The declared budget/TTL admissible ranges are jointly self-contradictory at their own stated extremes.",
+        "independent_verification_performed_in_this_turn": "Computed directly from the committed v1.0.1 text, not from the mission's numbers: BUDGET_WINDOW_MS admissible_range_ms = [30000, 300000]; TTL_MS admissible_range_ms = [5000, 60000]; BUDGET_MAX_PROBES_PER_WINDOW admissible_range = [4, 30] with its own stated invariant 'MUST be >= ceil(BUDGET_WINDOW_MS / TTL_MS)'. At WINDOW_MS=300000 and TTL_MS=5000 (both individually within their own stated ranges), ceil(300000/5000) = 60, which exceeds the declared probes cap of 30. Verified by direct computation in this turn (math.ceil(300000/5000) == 60, 60 > 30).",
+        "implementation_requirement": "Reconcile by tightening BUDGET_WINDOW_MS's admissible upper bound from 300000 to 150000 ms - chosen because ceil(150000/5000) = 30, exactly matching the existing probes cap at the worst corner, with zero slack rather than an arbitrarily larger margin. This alone does NOT make every combination within each parameter's individual range jointly valid (e.g. WINDOW_MS=150000, TTL_MS=5000, PROBES=4 is still jointly invalid despite each number being within its own individual range) - the three parameters are NOT independent degrees of freedom. The implementation MUST additionally add an explicit joint-validity assertion at module load time or test time: assert(BUDGET_MAX_PROBES_PER_WINDOW >= Math.ceil(BUDGET_WINDOW_MS / TTL_MS)), refusing (fail-closed) any concrete configuration that violates it, rather than allowing a silently-invalid combination through. This numerical choice remains technical: no owner decision is invented or required to reconcile the ranges or add the joint check.",
+        "correction_target_when_implemented": "PROVIDER_REQUEST_BUDGET_CONTRACT.parameters.BUDGET_WINDOW_MS.admissible_range_ms (tighten to [30000, 150000]) plus a new joint-validity requirement, in a future v1.0.2 DAG authority errata.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "v1.0.2 DAG authority errata, or the implementation PR, whichever exports BUDGET_WINDOW_MS/BUDGET_MAX_PROBES_PER_WINDOW/TTL_MS as constants."
+      },
+      {
+        "id": "NB-R4",
+        "subject": "The UNKNOWN owner decision was reported SIGNED without a resolvable owner locus.",
+        "independent_verification_performed_in_this_turn": "Re-verified against the tree in this turn: docs/ops/owner-ratifications/M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION_v1.0.0.json exists at blob abd1f19bab1423bfe30dec951a8641fb25ba84de, ratifications[0].id == 'EP1-UNKNOWN', owner_selected_decision.signed == true, status == 'RATIFIED_BY_PRODUCT_OWNER', and its own self_check.checks explicitly assert this shape. This record's own independent certification (M11_TRACK_A_EP1_UNKNOWN_OWNER_RECORD_IC_PASS_WITH_NONBLOCKING_FINDINGS, per this record's own authoring mission) concluded the owner record is VALID.",
+        "implementation_requirement": "NONE. This finding is CLOSED, not open.",
+        "correction_target_when_implemented": "N/A - closed.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "ALREADY CLOSED as of commit c9f6c064."
+      },
+      {
+        "id": "NB-R5",
+        "subject": "UNKNOWN cache-write semantics were unspecified: does a non-observation get cached, under which TTL?",
+        "independent_verification_performed_in_this_turn": "Re-read TA-04/CACHE_BUDGET_CONTRACT and UNKNOWN_PRODUCERS in v1.0.1 in full: both describe caching REACHABLE/UNREACHABLE verdicts under TTL_MS, and describe BUDGET_EXHAUSTED / IN_FLIGHT_WAIT_EXCEEDED as reasons no verdict was obtained. Neither section states whether an UNKNOWN outcome is itself written to the cache. Confirmed absent by direct re-read, not inferred.",
+        "implementation_requirement": "UNKNOWN determinations are NEVER written to the cache. The cache stores only facts ABOUT THE PROVIDER (REACHABLE/UNREACHABLE, each worth TTL_MS of staleness); UNKNOWN is a fact about THIS REQUEST's inability to observe, not about the provider, and has no basis to outlive the request that produced it. A request immediately following an UNKNOWN one MUST attempt a fresh probe (subject to the same budget/wait-budget rules), never short-circuit on a cached UNKNOWN. This is required precisely to preserve PROVIDER_REQUEST_BUDGET_CONTRACT.avoids_permanent_UNKNOWN_after_one_exhaustion's own guarantee - a cached UNKNOWN would let a stale non-observation silently outlive the very window-reset that guarantee depends on.",
+        "correction_target_when_implemented": "TA-04's contract, adding an explicit 'UNKNOWN is never cached' rule, in a future v1.0.2 DAG authority errata.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "v1.0.2 DAG authority errata, or the implementation PR's own touch-module design."
+      },
+      {
+        "id": "NB-R6",
+        "subject": "Shared single-flight probe abandonment/abort semantics were unspecified.",
+        "independent_verification_performed_in_this_turn": "Re-read TA-04's single-flight coalescing text and UNKNOWN_PRODUCERS.new_technical_parameter (PROBE_WAIT_BUDGET_MS) in full: both bound how long a WAITER tolerates an in-flight probe, but neither states what happens to the underlying probe itself if its own INITIATING caller's request terminates, nor whether the probe has any hard ceiling independent of any individual waiter's patience. Confirmed absent by direct re-read.",
+        "implementation_requirement": "Two rules, both new: (1) OWNERSHIP - the shared probe belongs to the cache/budget layer, not to any individual caller; its underlying fetch uses its own internally-owned AbortController, wired to nothing but a NEW hard ceiling (PROBE_HARD_TIMEOUT_MS), never to any individual caller's own request lifecycle or AbortSignal - so no caller's disconnect can strand or corrupt the probe for other waiters, and a waiter's own PROBE_WAIT_BUDGET_MS timeout returns UNKNOWN to that waiter WITHOUT affecting the underlying probe, which continues independently. (2) HARD CEILING - PROBE_HARD_TIMEOUT_MS is a NEW parameter, the actual transport-level timeout on the underlying probe itself, MUST be strictly greater than PROBE_WAIT_BUDGET_MS (a joint invariant, stated explicitly from the outset this time, unlike NB-R3's omission), default 8000 ms, admissible range [PROBE_WAIT_BUDGET_MS's configured value, 30000] ms. When it fires, the probe is classified AS-3 UNREACHABLE (a genuine transport timeout IS a provider-health fact, not a non-observation) and the single-flight slot is released for the next cache-miss request to start fresh. Without this ceiling, a truly hanging connection could strand the single-flight lock indefinitely, blocking every subsequent probe attempt - a real availability hazard this gap left open.",
+        "correction_target_when_implemented": "TA-04/TA-05's contracts, adding PROBE_HARD_TIMEOUT_MS and the ownership/abort rules, in a future v1.0.2 DAG authority errata.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "v1.0.2 DAG authority errata, or the implementation PR's own touch-module design."
+      },
+      {
+        "id": "NB-R7",
+        "subject": "Control coverage was weakest around the genuinely new UNKNOWN/single-flight/budget design, relative to how thoroughly the already-familiar AS-1..AS-4 states were covered.",
+        "independent_verification_performed_in_this_turn": "Cross-checked docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json's own control set against NB-R5 and NB-R6's newly-identified gaps: no control anywhere asserts UNKNOWN is never cached (NB-R5 - because the rule itself did not exist yet), and no control asserts probe ownership, abort-independence from a caller's own lifecycle, or a hard ceiling (NB-R6 - same reason). This is a direct, expected consequence of NB-R5/NB-R6's design gaps, not an independent oversight; closing those two necessarily requires these controls.",
+        "implementation_requirement": "At minimum six new controls when TA-04/TA-05 are corrected: (a) positive - an UNKNOWN result is never present as a cache entry; the request immediately following one attempts a fresh probe; (b) positive - an underlying probe that outlives its own initiator's wait-budget timeout still completes and populates the cache for a later request; (c) positive - PROBE_HARD_TIMEOUT_MS is an exported constant, and a fake-timer control proves the probe aborts and classifies UNREACHABLE at that boundary, releasing the single-flight slot; (d) must-fail - caching an UNKNOWN result is CAUGHT; (e) must-fail - the initiator's own abort/disconnect cancelling the shared probe (stranding other waiters) is CAUGHT; (f) mutation - removing PROBE_HARD_TIMEOUT_MS's abort logic (an unresolving probe that never releases the lock) is CAUGHT by a control that simulates a never-resolving fetch and asserts eventual release.",
+        "correction_target_when_implemented": "The test manifest amendment's positive/negative/mutation control lists, in a future v1.0.2 pair.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "v1.0.2 DAG authority + test manifest errata, or the implementation PR's own test files."
+      },
+      {
+        "id": "NB-R8",
+        "subject": "PROBE_WAIT_BUDGET_MS appeared once, with no exported-constant assertion or mutation-control coverage of its own.",
+        "independent_verification_performed_in_this_turn": "Cross-checked: TTL_MS has P-10 (exported-constant assertion) and is covered by AMUT-M11-2-adjacent logic; BUDGET_WINDOW_MS/BUDGET_MAX_PROBES_PER_WINDOW have AMUT-M11-5 (lower-bound invariant violation). PROBE_WAIT_BUDGET_MS has neither a dedicated constant-value assertion nor a dedicated mutation control anywhere in the committed manifest amendment. Confirmed by direct search of the committed file - zero hits for a PROBE_WAIT_BUDGET_MS-specific positive constant check or mutation entry.",
+        "implementation_requirement": "Add: (a) a positive control asserting PROBE_WAIT_BUDGET_MS is an exported constant equal to its default value (3000), mirroring TTL_MS's own P-10; (b) a mutation control proving that deleting or bypassing the PROBE_WAIT_BUDGET_MS check (making the wait unbounded, or effectively zero) is CAUGHT; (c) once NB-R6's PROBE_HARD_TIMEOUT_MS lands, its own joint invariant (PROBE_HARD_TIMEOUT_MS > PROBE_WAIT_BUDGET_MS) needs the SAME constant-value and mutation coverage from the outset, so this class of gap is not repeated a third time.",
+        "correction_target_when_implemented": "The test manifest amendment's positive_controls and mutation_controls arrays, in a future v1.0.2.",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENT",
+        "closes_at": "v1.0.2 test manifest errata, or the implementation PR's own test files."
+      }
+    ]
+  },
+  "D_TERMINOLOGY_CLARIFICATIONS": {
+    "rule": "Cosmetic only - none of these changes any implementation requirement. Recorded because the directing mission asked for the ambiguity to be resolved, not because either prior artifact was wrong.",
+    "clarifications": [
+      {
+        "id": "TC-1",
+        "subject": "owner_named_examples (v1.0.1 DAG authority) vs owner_named_included_categories (the owner record)",
+        "clarification": "Both keys name the IDENTICAL three-item list the owner gave (verified byte-identical list content in the previous authoring turn's self_check). The two different key names are intentional, not a drift: v1.0.1's field sits inside a technical contract document and v1.0.1 is transcribing what the owner said as INPUT to that contract; the owner record's field sits inside the canonical ratification and is the OWNER'S OWN WORDS as ratified content. UNKNOWN_PRODUCERS (v1.0.1) is the separate, EXHAUSTIVE, technical classification (BUDGET_EXHAUSTED, IN_FLIGHT_WAIT_EXCEEDED, and after this record's Part C, also governed by NB-R5/NB-R6's cache-write and probe-ownership rules) that OPERATIONALIZES the owner's three non-exhaustive named examples. Neither key needs to be renamed."
+      },
+      {
+        "id": "TC-2",
+        "subject": "'33 DAG edges'",
+        "clarification": "Refers to the EFFECTIVE, currently-committed graph: 31 edges from v1.0.0 plus 2 added by v1.0.1 (TA-19->TA-13, TA-19->TA-17) = 33, machine-verified acyclic in v1.0.1's own authoring turn. Once NB-R1's two additional edges (TA-19->TA-14, TA-19->TA-15) are actually incorporated by a future v1.0.2, the effective count becomes 35 - but that count is NOT yet true of the committed graph as of this record's materialization, and this record does not claim it is. See VALIDATION.dag_recheck below for the 35-edge check, performed as a FORWARD-LOOKING verification of NB-R1's proposed fix, not as a claim about the currently committed graph."
+      },
+      {
+        "id": "TC-3",
+        "subject": "'candidate' / 'base' SHA terminology",
+        "clarification": "Glossary for this record and its companions: 'candidate_commit_sha' inside a CANDIDATE_BINDING block always names the commit AT WHICH THAT DOCUMENT ITSELF was materialized (i.e. the document's own HEAD at authoring, from which its own blob pins were derived) - never the commit containing the document being described. For THIS record, candidate_commit_sha == c9f6c064a082ca2df3779ee0d9a2263bedd1a0f2 == this record's own pre-commit HEAD, and the commit that will actually CONTAIN this record (once committed) is necessarily a descendant of that SHA, not equal to it. The same convention applies to every prior CANDIDATE_BINDING in this chain (the owner record's candidate_commit_sha names its own pre-commit HEAD c9f6c064's PARENT, 2d5e32bf... - re-verify against that file directly rather than assuming)."
+      }
+    ]
+  },
+  "E_PREIMPLEMENTATION_READY_CONDITION": {
+    "rule": "Machine-readable synthesis of every precondition this chain has accumulated. M11_TRACK_A_IMPLEMENTATION_R1 may open only once every row below reads MATERIALIZED or CLOSED, and every OPEN_IMPLEMENTATION_REQUIREMENT row is carried into that implementation's own scope.",
+    "matrix": [
+      {
+        "condition": "OWNER_DECISION (EP-1 UNKNOWN)",
+        "status": "MATERIALIZED_AND_CERTIFIED",
+        "evidence": "docs/ops/owner-ratifications/M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION_v1.0.0.json, blob abd1f19bab1423bfe30dec951a8641fb25ba84de; certified M11_TRACK_A_EP1_UNKNOWN_OWNER_RECORD_IC_PASS_WITH_NONBLOCKING_FINDINGS per this record's own directing mission."
+      },
+      {
+        "condition": "PRE1_CERTIFICATION_OCCURRENCE",
+        "status": "MATERIALIZED",
+        "evidence": "This record, Part A."
+      },
+      {
+        "condition": "TRACK_A_V101_RECERT_OCCURRENCE",
+        "status": "MATERIALIZED",
+        "evidence": "This record, Part B."
+      },
+      {
+        "condition": "NB_R_REQUIREMENTS",
+        "status": "MATERIALIZED",
+        "evidence": "This record, Part C - all eight identifiers now carry substantive, independently-verified content."
+      },
+      {
+        "condition": "NB-R4",
+        "status": "CLOSED",
+        "evidence": "This record, Part C, NB-R4 entry."
+      },
+      {
+        "condition": "NB-R1, NB-R2, NB-R3, NB-R5, NB-R6, NB-R7, NB-R8",
+        "status": "OPEN_IMPLEMENTATION_REQUIREMENTS",
+        "evidence": "This record, Part C - each MUST be folded into Track A's implementation scope (via a v1.0.2 DAG authority errata landing alongside the code, or as explicit scope inside the implementation PR itself); none may be silently dropped."
+      }
+    ],
+    "gate": "M11_TRACK_A_IMPLEMENTATION_R1 may open ONLY AFTER independent certification of THIS record passes. Its implementer inherits NB-R1, NB-R2, NB-R3, NB-R5, NB-R6, NB-R7 and NB-R8 as MANDATORY corrections, not optional cleanup - each names its own correction_target and closes_at field above. TA-20 (the ledger owner-field act) and Track B remain entirely untouched and unopened by this record, exactly as by all of its predecessors in this chain."
+  },
+  "VALIDATION": {
+    "dag_recheck": {
+      "method": "Reconstructed the full committed 33-edge graph (31 from v1.0.0 + 2 from v1.0.1) by direct transcription, added NB-R1's two PROPOSED edges (TA-19->TA-14, TA-19->TA-15), and ran Kahn's algorithm over the resulting 35-edge set in this authoring turn.",
+      "result": {
+        "base_edge_count": 33,
+        "nbr1_new_edge_count": 2,
+        "total_edge_count_if_nbr1_incorporated": 35,
+        "total_nodes_in_edge_graph": 22,
+        "acyclic_if_nbr1_incorporated": true
+      },
+      "interpretation": "NB-R1's proposed fix is machine-verified NOT to introduce a cycle. This is a forward-looking check of a PROPOSED correction, not a claim about the graph as currently committed (33 edges, unchanged by this record)."
+    },
+    "nb3_recheck": {
+      "method": "Recomputed ceil(worst-case BUDGET_WINDOW_MS / worst-case TTL_MS) against NB-R3's proposed tightened range.",
+      "result": {
+        "worst_window_ms": 150000,
+        "worst_ttl_ms": 5000,
+        "required_min_probes": 30,
+        "existing_cap": 30,
+        "reconciled": true
+      },
+      "interpretation": "With BUDGET_WINDOW_MS's admissible upper bound tightened to 150000 (from 300000), the worst-case required probe count (30) exactly equals, and no longer exceeds, the existing BUDGET_MAX_PROBES_PER_WINDOW cap (30). The joint-validity assertion NB-R3 also requires remains necessary for combinations away from this corner."
+    },
+    "no_prior_artifact_edited": "git diff --stat against every one of the five pinned companions, run after this record was written, shows zero changes to any of them - confirmed below in self_check.",
+    "no_code_or_test_file_written": "This record's write set is exactly one new JSON document under docs/ops/owner-ratifications/.",
+    "gates_available_in_this_worktree": "node_modules is ABSENT in this worktree (a fresh git worktree does not inherit it, consistent with every prior turn in this lane). pnpm typecheck / secrets:scan / authority:seal:verify / ods:scope / ods:poststate could not execute and this record does not claim they ran. Manual equivalents performed instead: a byte-level LF check, a secret-pattern regex sweep, and git diff --name-only scoped to exactly this record's own path."
+  },
+  "explicit_non_authorizations": [
+    "This record does NOT authorize implementation of any Track A DAG node.",
+    "This record does NOT authorize TA-20 (the RELEASE_GATE_LEDGER owner-field act).",
+    "This record does NOT authorize opening Track B.",
+    "This record does NOT edit any byte of its five pinned companions - the owner record, the DAG authority v1.0.0, its test manifest v1.0.0, the DAG authority amendment v1.0.1, or the test manifest amendment v1.0.1.",
+    "This record does NOT fabricate a verdict artifact for either certification named in Parts A or B - both remain VERDICT_ARTIFACT: NOT_RETROACTIVELY_RECONSTRUCTED, permanently, per GOVERNING_PRECEDENT.",
+    "This record does NOT reopen OD-1 through OD-5, the M11-SC-7 rider, OC-1, OC-2, B-IC-1, or B-IC-2.",
+    "This record does NOT itself add TA-19->TA-14, TA-19->TA-15, or any other edge to any committed DAG_EDGES array - NB-R1's fix is NAMED as a requirement for a future v1.0.2 or the implementation PR, not applied here.",
+    "This record does NOT itself modify PROVIDER_REQUEST_BUDGET_CONTRACT's committed admissible ranges - NB-R3's fix is likewise named, not applied.",
+    "This record does NOT authorize any deployment, any hosted smoke, any provider call, any Vercel environment change, any Supabase mutation, any credential generation, or any credential rotation.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_nbr_count": 8,
+    "expected_nbr_ids": [
+      "NB-R1",
+      "NB-R2",
+      "NB-R3",
+      "NB-R4",
+      "NB-R5",
+      "NB-R6",
+      "NB-R7",
+      "NB-R8"
+    ],
+    "expected_nbr4_status": "closed (NONE listed as implementation_requirement)",
+    "expected_open_count": 7,
+    "candidate_sha": "c9f6c064a082ca2df3779ee0d9a2263bedd1a0f2",
+    "checks": [
+      "C_NBR_MATERIALIZATION.findings.length == 8, ids exactly expected_nbr_ids, no NB-R5 gap silently filled by renumbering.",
+      "NB-R4's implementation_requirement literal text starts with 'NONE.' and its status field is still 'OPEN_IMPLEMENTATION_REQUIREMENT' only as a UNIFORM SCHEMA FIELD - its closes_at field reads 'ALREADY CLOSED as of commit c9f6c064', which is the substantive closure signal a reader must check, not the status field alone.",
+      "Exactly 7 of 8 findings carry a genuine, non-NONE implementation_requirement.",
+      "A_PRE1_CERTIFICATION_OCCURRENCE.VERDICT_ARTIFACT == 'NOT_RETROACTIVELY_RECONSTRUCTED' and B_TRACK_A_V101_RECERT_OCCURRENCE.VERDICT_ARTIFACT == 'NOT_RETROACTIVELY_RECONSTRUCTED'.",
+      "No field anywhere in this document asserts an exact calendar timestamp as direct owner testimony beyond materialization_date.",
+      "No ratifications array is present anywhere in this document - confirming OD-1..OD-5, the M11-SC-7 rider, and EP1-UNKNOWN are none of them reopened.",
+      "CANDIDATE_BINDING.companion_blob_pins has exactly 5 entries, one per companion.",
+      "git diff --stat, run against all five companions after this file is written, shows zero changes to any of them.",
+      "VALIDATION.dag_recheck.acyclic_if_nbr1_incorporated == true and .total_edge_count_if_nbr1_incorporated == 35.",
+      "VALIDATION.nb3_recheck.reconciled == true.",
+      "No secret-shaped string (connection string, password, token, email address) appears anywhere in this document.",
+      "final_state names implementation as requiring independent certification of THIS record first."
+    ]
+  },
+  "required_independent_review": {
+    "required": true,
+    "reason": "This record formalizes two certification occurrences on the strength of owner confirmation alone (no verdict artifact exists for either, by design), and materializes eight findings' substantive content that a prior artifact correctly left as unavailable. Both classes of claim - occurrence-without-artifact, and newly-materialized technical findings - deserve independent verification before Track A implementation treats this record's synthesis (Part E) as authorizing anything.",
+    "verification_criteria_for_the_next_gate": [
+      "Confirm both CERTIFICATION_OCCURRED/VERDICT/VERDICT_ARTIFACT triples are recorded with no reconstructed finding, no invented reviewer identity, and no timestamp asserted as direct owner testimony.",
+      "Independently re-derive NB-R1's consumer set from source (grep every planned Track A test surface's imports) and confirm it is exactly 5, not 3 or some other number.",
+      "Confirm NB-R2's circularity diagnosis is accurate by re-reading AP-M11-9's own text against the committed manifest amendment.",
+      "Independently recompute NB-R3's arithmetic (ceil(WINDOW_MS/TTL_MS) at each range's extremes) against the committed v1.0.1 values, and confirm the proposed WINDOW_MS tightening to 150000 resolves the worst case exactly, with no slack.",
+      "Confirm NB-R4 is genuinely closed by re-reading the owner record's own self_check and its independent certification status.",
+      "Confirm NB-R5's and NB-R6's proposed new rules (no UNKNOWN caching; probe ownership/hard-timeout independent of any caller's lifecycle) do not themselves introduce a new hazard - in particular, confirm PROBE_HARD_TIMEOUT_MS's proposed admissible range and its joint invariant against PROBE_WAIT_BUDGET_MS are sound.",
+      "Confirm NB-R7's six proposed controls actually cover NB-R5 and NB-R6's new rules, with no gap of the same shape reintroduced.",
+      "Confirm NB-R8's proposed controls mirror TTL_MS's own existing pattern (P-10) correctly.",
+      "Confirm zero bytes changed in any of the five pinned companions.",
+      "Confirm the DAG re-check (35 edges, acyclic) is independently reproducible, not merely asserted."
+    ]
+  },
+  "final_state": "PREIMPLEMENTATION_RECORD_MATERIALIZED__IMPLEMENTATION_NOT_YET_AUTHORIZED",
+  "next_gate": "SHORT_INDEPENDENT_CERTIFICATION_OF_THIS_PREIMPLEMENTATION_RECORD. Only after PASS may M11_TRACK_A_IMPLEMENTATION_R1 open - carrying NB-R1, NB-R2, NB-R3, NB-R5, NB-R6, NB-R7 and NB-R8 as mandatory corrections folded into its own scope, with NB-R4 already closed. TA-20 and Track B remain untouched and unopened by this record."
+}

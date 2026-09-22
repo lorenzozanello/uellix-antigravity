@@ -1,0 +1,76 @@
+{
+  "package_id": "M11_TRACK_A_HT_HARD_TIMEOUT_OWNER_DECISION",
+  "version": "1.0.0",
+  "artifact_id": "M11_TRACK_A_HT_HARD_TIMEOUT_OWNER_DECISION_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__MINIMAL__NO_IMPLEMENTATION__NO_HOSTED_ACCESS__NO_CREDENTIAL_PROVISIONING__NO_BUDGET_OR_TTL_NUMERAL_RATIFICATION",
+  "append_only": true,
+  "mission_id": "CV1-M11-TRACK-A-IMPLEMENTATION-R1",
+  "lane": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "role": "COMMERCIAL_V1_M11_TRACK_A_HT_HARD_TIMEOUT_OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_RECORD",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_implementation": [
+    "lib/health/provider-touch.ts (NEW - implements HT-1/HT-2/HT-3 in the performProbe/waitWithBudget functions)",
+    "app/api/health/auth/route.ts (MODIFIED - consumes the touch's UNKNOWN/UNREACHABLE verdicts per this contract)",
+    "lib/auth/identity.ts (MODIFIED - the AS-1..AS-4 discriminator this contract's UNKNOWN category extends)"
+  ],
+  "materialized_at_base": {
+    "base_branch": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+    "BASE_SHA": "a87d87c90c5a0941f88c070ce952408fd3e84e2a",
+    "worktree_state": "The companion implementation is committed in the SAME commit as this record - see CANDIDATE_BINDING."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "This record ratifies the HT-1/HT-2/HT-3 decision governing lib/health/provider-touch.ts's hard-timeout classification. Unlike the prior M11 owner records, the decision and its implementation land in the SAME commit - per this record's own directing mission: 'The final independent implementation certification will certify this record and the code together.' There is therefore no separate pre-existing candidate to pin; the binding is to whatever commit this file itself is committed in, re-derivable by `git log --oneline -- <this path>`.",
+    "pre_commit_head": "a87d87c90c5a0941f88c070ce952408fd3e84e2a"
+  },
+  "OWNER_AUTHORITY_SOURCE": "HT-1, HT-2 and HT-3 were given by the human product owner (Lorenzo Zanello), explicitly, as directing text in the CV1-M11-TRACK-A-IMPLEMENTATION-R1 mission that authored this record and its companion implementation together, marked SIGNED = YES. Not a selection Claude made, inferred, or defaulted to.",
+  "purpose": "Freeze the product owner's binding HT-1/HT-2/HT-3 decision governing PROBE_HARD_TIMEOUT_MS's classification, as a minimal companion to the code that implements it in this same commit - following this repository's OWNER_RATIFICATION_RECORD convention without opening a separate authority chain, per this record's own directing mission.",
+  "precedence_note": "Canonical for the HT-1/HT-2/HT-3 decision only. Does NOT override, weaken or reinterpret OC-1 (the AS-2/AS-3 scope, unchanged), the EP-1 UNKNOWN decision this record's companion (M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION_v1.0.0.json) already ratifies (HT-1/HT-2 REFINE how a specific UNKNOWN producer - a bare hard timeout - is classified; they do not relax the UNKNOWN contract itself: HTTP 200, non-healthy body, runner INCONCLUSIVE, never PASS, never health FAIL, still hold unconditionally for the case HT-1 names), OD-1 through OD-5, or any FIB/PC-01B/IM-01B frozen authority.",
+  "reopening_rule": "NOT a re-adjudication of the EP-1 UNKNOWN decision, OC-1, OC-2, or Track A's DAG_NODES/DAG_EDGES. It answers exactly one refinement question the prior UNKNOWN decision left open: for the SPECIFIC producer 'PROBE_HARD_TIMEOUT expires', does that alone count as the affirmative evidence AS-3/503/health-FAIL requires? The owner's answer is no - see HT-2.",
+  "ratifications": [
+    {
+      "id": "HT-CONTRACT",
+      "domain": "PROBE_HARD_TIMEOUT_CLASSIFICATION",
+      "question_ratified": "When lib/health/provider-touch.ts's own PROBE_HARD_TIMEOUT_MS ceiling fires with no other evidence, is that itself affirmative proof the provider is unreachable (AS-3/503/health FAIL), or is it UNKNOWN (no affirmative evidence, 200, runner INCONCLUSIVE)?",
+      "owner_selected_decision": {
+        "HT_1": {
+          "rule": "If PROBE_HARD_TIMEOUT_MS expires WITHOUT affirmative evidence that the provider/upstream is unreachable or faulty: classification = UNKNOWN.",
+          "consequence": "HTTP 200, body explicitly non-healthy UNKNOWN, runner INCONCLUSIVE, never PASS, never health FAIL."
+        },
+        "HT_2": {
+          "rule": "AS-3 / HTTP 503 / health FAIL applies ONLY when there is affirmative evidence of provider unreachable, upstream health fault, or equivalent technical evidence establishing real unavailability."
+        },
+        "HT_3": {
+          "rule": "PROBE_HARD_TIMEOUT_MS is TECHNICAL_DERIVED_PARAMETER, NOT_OWNER_SELECTED.",
+          "mechanical_guarantee_required": "PROBE_HARD_TIMEOUT_MS > PROBE_WAIT_BUDGET_MS for every admissible configuration.",
+          "how_implemented": "Derived, not independently chosen: PROBE_HARD_TIMEOUT_MS = PROBE_WAIT_BUDGET_MS + a fixed positive margin (lib/health/provider-touch.ts), removing the degree of freedom that let NB-R3's earlier independent-range contradiction occur, plus a defensive module-load assertion that throws if the invariant is ever violated by a future edit."
+        },
+        "signed": true
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implemented_at": "lib/health/provider-touch.ts `performProbe` (the AbortError-vs-genuine-transport-failure distinction implementing HT-1/HT-2) and the PROBE_HARD_TIMEOUT_MS/PROBE_WAIT_BUDGET_MS derivation plus its module-load assertion (implementing HT-3)."
+    }
+  ],
+  "explicit_non_authorizations": [
+    "This record does NOT ratify PROBE_WAIT_BUDGET_MS, PROBE_HARD_TIMEOUT_MS, TTL_MS, BUDGET_WINDOW_MS or BUDGET_MAX_PROBES_PER_WINDOW as numerals - all remain TECHNICAL_DERIVED_PARAMETER, NOT_OWNER_SELECTED.",
+    "This record does NOT reopen the EP-1 UNKNOWN decision, OC-1, OC-2, or any DAG_NODES/DAG_EDGES.",
+    "This record does NOT authorize any deployment, hosted smoke, provider call, or credential action.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "self_check": {
+    "expected_ratification_count": 1,
+    "expected_id": "HT-CONTRACT",
+    "checks": [
+      "ratifications.length == 1",
+      "ratifications[0].owner_selected_decision.HT_3.mechanical_guarantee_required names PROBE_HARD_TIMEOUT_MS > PROBE_WAIT_BUDGET_MS",
+      "no numeral (a bare number) appears under owner_selected_decision - only the RULE and the mechanism are ratified",
+      "final_state names implementation as materialized, not merely authorized"
+    ]
+  },
+  "required_independent_review": "This record and its companion implementation are certified TOGETHER, per this record's own directing mission. Independent review should confirm: HT-1/HT-2 are correctly implemented in lib/health/provider-touch.ts's AbortError-vs-genuine-failure branch; HT-3's mechanical guarantee holds by re-deriving PROBE_HARD_TIMEOUT_MS from PROBE_WAIT_BUDGET_MS in source; and that no numeral was smuggled into owner_selected_decision as ratified content.",
+  "final_state": "HT_CONTRACT_RATIFIED_AND_IMPLEMENTED__HOSTED_EXECUTION_NOT_PERFORMED",
+  "next_gate": "Independent adversarial source-code certification of the Track A implementation, covering this record's HT-1/HT-2/HT-3 together with the code."
+}

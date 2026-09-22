@@ -1,0 +1,524 @@
+{
+  "package_id": "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "IMPLEMENTATION_DAG_DERIVATION_AMENDMENT_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "APPEND_ONLY_DAG_AUTHORITY_AMENDMENT__NO_IMPLEMENTATION__NO_CODE_MODIFICATION__NO_DEPLOYMENT__NO_HOSTED_SMOKE__NO_PROVIDER_CALL__NO_DATABASE_MUTATION__NO_CREDENTIAL_PROVISIONING__NO_DESTRUCTIVE_AUTHORIZATION__NO_OWNER_DECISION_SUBSTITUTION__NO_TRACK_B_DESIGN",
+  "append_only": true,
+  "amends": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "mission_id": "CV1-M11-TRACK-A-IMPLEMENTATION-DAG-ERRATA-R2",
+  "lane": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "role": "Correct two blocking findings (B-IC-1, B-IC-2) and six nonblocking findings (NB-IC-1..NB-IC-6) surfaced by the independent certification of v1.0.0 (M11_TRACK_A_DAG_IC_FAIL), apply the product owner's binding UNKNOWN-rendering decision, without reopening OC-1's or OC-2's substance, without designing Track B, and without performing any node.",
+  "mode": "APPEND_ONLY_AUTHORITY_ERRATA_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest_amendment": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+  "AS_OF_BRANCH": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "AS_OF_PRE_AMENDMENT_HEAD": "afc67125f5f08522eabba82e25d57222371a056e",
+  "AS_OF_PRE_AMENDMENT_TREE": "a115efe22dda9532c0f1f6dd304a738caaa8fdce",
+  "as_of_measurement_note": "Every source-code fact this amendment cites (lib/auth/identity.ts:121-123, lib/supabase/project-coherence.ts's NEXT_PUBLIC_SUPABASE_URL read at :154, vitest.setup.network-guard.ts's BLOCKED_GEMINI_HOSTNAMES) was re-read directly from the working tree at AS_OF_PRE_AMENDMENT_HEAD in this authoring turn, not copied from the IC's report or from v1.0.0's own prose. Every graph fact (acyclicity, the two new edges' endpoints) was recomputed programmatically against the FULL corrected edge set. Nothing in this amendment relies on a value this lane did not itself re-derive.",
+  "NAMING_DERIVATION": {
+    "basis": "Named and versioned on the exact precedent this repository's own release-control chain set for a DAG-authority correction: docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json amends docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json without editing its bytes, on branch codex/cv1-infra-execution-dag-authority-r1, commit 2d25b65c. This artifact does the same to docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json, which is itself untouched by this write set."
+  },
+  "AMENDMENT_SEMANTICS": {
+    "rule": "This amendment CORRECTS eight specific, cited defects in v1.0.0 (two blocking, six nonblocking). It does not re-derive the DAG from scratch, does not re-open OC-1 or OC-2's substance, does not create, modify or remove any TA-* node, does not open Track B, and does not widen this lane's authority in any respect. Where v1.0.0 is silent, v1.0.0 controls. Where this amendment corrects a field, THIS amendment controls for that field and v1.0.0's original text is superseded IN THAT RESPECT ONLY, named explicitly under SUPERSEDED_PARENT_CLAUSES.",
+    "why_an_amendment_and_not_a_v2_derivation": "Re-deriving the whole DAG would discard what v1.0.0 measured correctly, which is nearly all of it: thirteen measured facts (S-1..S-13), twenty DAG nodes, thirty-one of thirty-three edges, three landable slices, and the AS-2/AS-3 scope resolution (OC-1) are all UNCHANGED and re-confirmed here, not re-litigated. Only TA-06's UNKNOWN branch, TA-03/TA-05's producer/budget contracts, TA-10's classification list, TA-19's guard design, TA-01's stale-comment note, and two new edges are touched."
+  },
+  "IC_CONSUMED": {
+    "verdict_received": "M11_TRACK_A_DAG_IC_FAIL",
+    "blocking_findings_closed_by_this_amendment": [
+      {
+        "id": "B-IC-1",
+        "summary": "EP-1 rendering of provider-touch UNKNOWN is undefined."
+      },
+      {
+        "id": "B-IC-2",
+        "summary": "TTL_MS=15000 is falsely attributed to the human owner."
+      }
+    ],
+    "nonblocking_findings_closed_or_dispositioned_by_this_amendment": [
+      {
+        "id": "NB-IC-1",
+        "summary": "Test-egress guard does not provably precede every egress-capable test consumer."
+      },
+      {
+        "id": "NB-IC-2",
+        "summary": "Reliance on CI's absent provider env vars is an environmental accident, not a control."
+      },
+      {
+        "id": "NB-IC-3",
+        "summary": "The touch's independent request budget names a constant but no magnitude, unit or refill semantics."
+      },
+      {
+        "id": "NB-IC-4",
+        "summary": "lib/auth/identity.ts:121-123's comment states an incomplete binary split at the exact site TA-01 must extend."
+      },
+      {
+        "id": "NB-IC-5",
+        "summary": "TA-03 lacks controls for verdict-type exhaustiveness and consumption scope."
+      },
+      {
+        "id": "NB-IC-6",
+        "summary": "PRE-1's occurred-but-unmaterialized status needed its verdict token named precisely, without fabricating an artifact."
+      }
+    ],
+    "how_consumed": "As a directing input naming two blocking and six nonblocking findings by number and content, all eight independently re-verified against source or against the ratified package in this lane before correction, exactly as v1.0.0's own DERIVATION_PRECONDITIONS required for what it consumed. No finding is corrected here on the IC's word alone; each correction below states what THIS lane independently re-measured or re-derived.",
+    "provenance_note": "No materialized IC verdict artifact for this DAG's certification exists in the repository tree as of this amendment's authoring. The eight findings are consumed as directing-text content, verified independently, exactly as v1.0.0 required of the ratification-IC findings it consumed from an equally unmaterialized source (v1.0.0 DERIVATION_PRECONDITIONS.preconditions[PRE-1]). This is not a double standard - it is the SAME standard applied twice. See PRE1_STATUS below for NB-IC-6's own disposition of this same fact pattern."
+  },
+  "OWNER_UNKNOWN_DECISION": {
+    "status": "OWNER DECISION. BINDING. SIGNED. NOT REINTERPRETED BY THIS AMENDMENT.",
+    "scope": "Governs EP-1's response when the provider-touch verdict is UNKNOWN (TA-03/TA-05's third verdict state).",
+    "http_status": 200,
+    "body_requirement": "The health state MUST be explicitly UNKNOWN / NON-HEALTHY, and MUST be observably distinguishable from both AS-1 healthy and AS-2 reachable/non-failing.",
+    "runner_disposition": "INCONCLUSIVE. NEVER PASS. NEVER HEALTH FAIL.",
+    "owner_named_examples": [
+      "provider-touch budget exhausted",
+      "no valid observation obtained",
+      "other explicitly governed non-observation conditions"
+    ],
+    "hard_prohibition": "UNKNOWN MUST NOT be mapped to 503 merely because an observation was unavailable.",
+    "this_amendments_obligation": "Convert the owner's three named example categories into an EXHAUSTIVE, testable producer set (see UNKNOWN_PRODUCERS below), because 'other explicitly governed non-observation conditions' is not by itself implementable. This amendment does not add a fourth CATEGORY the owner did not name; it makes the owner's own third category ('other explicitly governed non-observation conditions') concrete and bounded, rather than leaving it open-ended."
+  },
+  "B_IC_1_CLOSURE": {
+    "the_gap_the_IC_named": "v1.0.0's A2_IMPLEMENTATION_CONTRACT.matrix carried a fifth row for the UNKNOWN state whose status field read literally: 'MUST NOT BE 200-healthy; rendered as the non-committal form fixed by TA-06'. TA-06's own contract and done_when arrays never returned to define that non-committal form: no HTTP status, no body shape, no distinguishing field. An implementer had nothing deterministic to build against, and the phrase 'MUST NOT BE 200-healthy' is ambiguous between 'must not be HTTP 200' and 'must not be treated as healthy while still being 200' - exactly the ambiguity the owner's decision now resolves in favour of the second reading.",
+    "the_corrected_EP1_transport_matrix": {
+      "rule": "SUPERSEDES A2_IMPLEMENTATION_CONTRACT.matrix in v1.0.0 in its entirety. Four rows, fully specified.",
+      "rows": [
+        {
+          "state": "AS-1 NO_SESSION",
+          "http_status": 200,
+          "body": {
+            "status": "ok",
+            "authenticated": false,
+            "upstream": "REACHABLE"
+          },
+          "runner": "PASS where all other cell conditions permit"
+        },
+        {
+          "state": "AS-2 REJECTED_SESSION",
+          "http_status": 200,
+          "body": {
+            "status": "ok",
+            "authenticated": false,
+            "upstream": "REACHABLE"
+          },
+          "runner": "PASS where all other cell conditions permit",
+          "hard_rule": "503 PROHIBITED for this state, unconditionally. Identical body form to AS-1 by design - both are the ratified conformant cell."
+        },
+        {
+          "state": "AS-3 AUTH_TRANSPORT_OR_PROVIDER_FAILURE",
+          "http_status": 503,
+          "body": {
+            "status": "degraded",
+            "authenticated": false,
+            "upstream": "UNREACHABLE",
+            "message": "Authentication service unavailable"
+          },
+          "runner": "HEALTH FAIL for the blocking EP-1 cell - this is the failable cell M11-SC-8 requires"
+        },
+        {
+          "state": "UNKNOWN (no valid provider-touch observation)",
+          "http_status": 200,
+          "body": {
+            "status": "unknown",
+            "authenticated": false,
+            "upstream": "UNKNOWN",
+            "message": "Provider reachability not observed this request"
+          },
+          "runner": "INCONCLUSIVE. NEVER PASS. NEVER HEALTH FAIL.",
+          "owner_authority": "OWNER_UNKNOWN_DECISION above."
+        }
+      ],
+      "AS-4_unchanged": "AS-4 remains NOT_AN_EP1_VERDICT - a pre-handler platform failure recorded once per deployment, exactly as v1.0.0 stated. This amendment does not touch that row.",
+      "authenticated_caller_unchanged": "200 with {status:'ok', authenticated:true, timestamp}, unchanged from S-1 and from v1.0.0."
+    },
+    "body_discriminator_design": {
+      "fields": {
+        "status": "enum('ok', 'degraded', 'unknown') - the field name and its first two values are UNCHANGED from the route's existing shape (S-1); 'unknown' is the one new value this amendment adds.",
+        "authenticated": "boolean - UNCHANGED from S-1.",
+        "upstream": "enum('REACHABLE', 'UNREACHABLE', 'UNKNOWN') - NEW field, mirrors TA-03's TOUCH_VERDICT type exactly so the touch's own verdict is never re-encoded at the route boundary."
+      },
+      "why_this_satisfies_the_owner_requirement": "UNKNOWN's tuple is (200, 'unknown', 'UNKNOWN') - distinct from AS-1/AS-2's (200, 'ok', 'REACHABLE') by the status AND upstream fields, and distinct from AS-3's (503, 'degraded', 'UNREACHABLE') by the HTTP status AND both fields. No two of the four EP-1 verdicts share a full (http_status, body.status, body.upstream) tuple. A status-only observer sees three DIFFERENT 200 responses (AS-1, AS-2, UNKNOWN, plus the authenticated-caller form) and cannot tell them apart without reading the body - which is precisely why the runner must read the body (see RUNNER_CORRECTION)."
+    },
+    "must_not_collide_proof": "Four EP-1 verdict forms exist after this correction: AS-1/AS-2 (200, ok, REACHABLE, authenticated:false), AS-3 (503, degraded, UNREACHABLE, authenticated:false), UNKNOWN (200, unknown, UNKNOWN, authenticated:false), and the authenticated form (200, ok, undefined-upstream-field-or-omitted, authenticated:true). Pairwise: AS-1/AS-2 vs AS-3 differ by HTTP status; AS-1/AS-2 vs UNKNOWN differ by body.status and body.upstream while sharing HTTP status; AS-3 vs UNKNOWN differ by HTTP status, body.status and body.upstream; the authenticated form differs from all three unauthenticated forms by body.authenticated. No collision exists."
+  },
+  "UNKNOWN_PRODUCERS": {
+    "rule": "Reconciles TA-03's original phrasing, TA-05's budget contract, and the A2 matrix into ONE canonical, exhaustive producer set.",
+    "the_conflict_the_IC_named": "v1.0.0 TA-03.contract[0] said UNKNOWN is 'a first-class value for budget exhausted or not yet probed'. TA-04/TA-05 both specify a SYNCHRONOUS, AWAITED, single-flight-coalesced probe on every cache miss - meaning a cache miss never returns without first attempting (and awaiting) a probe. Under that design 'not yet probed' cannot occur as a PERSISTENT, externally observable state for a completed EP-1 response: by the time EP-1 responds, either a probe was attempted and produced a definitive REACHABLE/UNREACHABLE result, or it was never attempted because the budget was already exhausted, or an already-in-flight probe (from a concurrent caller) had not yet settled when this caller's own request needed to respond. v1.0.0 named the first and second cases but not the third, and used language ('not yet probed') that could be misread as a bare, unbounded pending state.",
+    "canonical_producer_set": [
+      {
+        "id": "BUDGET_EXHAUSTED",
+        "definition": "A cache miss or expiry requires a fresh probe, and TA-05's independent request budget has zero remaining tokens this window. No probe is attempted for this request."
+      },
+      {
+        "id": "IN_FLIGHT_WAIT_EXCEEDED",
+        "definition": "A probe for the current cache key is already in flight (TA-04's single-flight coalescing) when this request arrives, and this caller's bounded wait for that in-flight probe's settlement (PROBE_WAIT_BUDGET_MS, a new named constant) elapses before the probe resolves either way. The caller does NOT block indefinitely on a slow or hanging upstream.",
+        "why_this_replaces_bare_not_yet_probed": "This is the ONLY way 'no valid observation obtained' can occur externally under the synchronous single-flight design, and it IS genuinely observable (a slow or hanging upstream produces it). It is NOT a claim that observation simply has not started yet; it is a claim that a bounded wait for an observation already in progress ran out."
+      }
+    ],
+    "explicitly_excluded_from_UNKNOWN": [
+      "Genuine upstream unreachability (transport failure, connection refused, DNS failure) - this is AS-3 UNREACHABLE, never UNKNOWN.",
+      "A provider 5xx response - this is AS-3 UNREACHABLE, never UNKNOWN.",
+      "Any exception the touch's OWN probe logic raises that is not itself a classified transport/provider failure - this MUST fail closed to UNREACHABLE (AS-3), not UNKNOWN. UNKNOWN is reserved exclusively for the two BUDGET/WAIT-based non-observation producers above; it is never a catch-all for an unclassified internal error."
+    ],
+    "cold_start_correction": "'Not yet probed' as a bare, persistent, externally observable state is RETRACTED as a producer. It cannot actually occur under TA-04's synchronous-probe-on-miss design, and the mission's own instruction - 'do not claim not yet probed as a persistent externally observable state unless it can actually occur' - is satisfied by this retraction, not by asserting the opposite.",
+    "new_technical_parameter": {
+      "name": "PROBE_WAIT_BUDGET_MS",
+      "purpose": "Bounds how long a caller waits on an ALREADY in-flight probe before answering UNKNOWN via IN_FLIGHT_WAIT_EXCEEDED, rather than hanging the EP-1 response indefinitely on a slow upstream.",
+      "classification": "TECHNICAL_DERIVED_PARAMETER. NOT_OWNER_SELECTED. TUNABLE_WITHIN_BOUNDED_ADMISSIBLE_RANGE.",
+      "default_value_ms": 3000,
+      "admissible_range_ms": [
+        500,
+        10000
+      ],
+      "rationale": "Short enough that EP-1 itself stays a fast liveness check even when the provider is slow; long enough that an ordinary, healthy round trip (well under a second in the normal case) is never mistaken for UNKNOWN. Independently tunable within this range without a new owner act, exactly as TTL_MS and the budget parameters below."
+    }
+  },
+  "RUNNER_CORRECTION": {
+    "supersedes": "DAG_NODES.nodes[id=TA-10].contract in v1.0.0, EXTENDED not replaced: the existing 429/platform-failure INCONCLUSIVE rules are UNCHANGED and restated here for completeness alongside the new UNKNOWN rule.",
+    "corrected_TA10_contract": [
+      "429 from the global rate limit is ALWAYS recorded INCONCLUSIVE. Unchanged from v1.0.0.",
+      "302 from Deployment Protection and any transport error are likewise INCONCLUSIVE. Unchanged from v1.0.0.",
+      "A pre-handler platform failure (AS-4) is recorded as ONE incident per deployment, run INCONCLUSIVE for every endpoint. Unchanged from v1.0.0.",
+      "NEW: EP-1's body.upstream === 'UNKNOWN' maps to INCONCLUSIVE, regardless of HTTP status. NEVER PASS. NEVER HEALTH FAIL. This is the owner's binding decision, applied."
+    ],
+    "hard_prohibition": "The runner MUST NOT implement `status === 200 => PASS`. After this correction, HTTP 200 covers THREE semantically distinct EP-1 outcomes for an unauthenticated caller (AS-1/AS-2 healthy-reachable, and UNKNOWN non-committal) plus a fourth for an authenticated caller. Both OD-3 (EP-3's intentional-off split, TA-07) and this UNKNOWN decision make HTTP 200 non-equivalent to health success across this DAG's surface, not only at EP-1.",
+    "what_the_runner_must_do_instead": "Inspect the response BODY's discriminator field (body.upstream for EP-1; the equivalent already-published fields for EP-3 per OD3_STATUS_CONTRACT) to classify a 200 response, never the status code alone.",
+    "proved_by": "A MUST-FAIL mutation control (AMUT-M11-1 in the companion manifest amendment) proving that reinstating `status === 200 => PASS` is CAUGHT."
+  },
+  "B_IC_2_CLOSURE": {
+    "the_defect_the_IC_named": "v1.0.0 OWNER_CLARIFICATIONS_IN_LANE.clarifications[OC-2].owner_selected_parameters read {'TTL_MS': 15000, 'in_flight_policy': 'SINGLE_FLIGHT_COALESCED'}. The owner's actual answer (OC-2's own owner_answer field) was 'IN_PROCESS_MODULE_CACHE. A module-scope cache with a declared TTL... with at most one in-flight upstream call coalesced' - a SUBSTRATE and a COALESCING POLICY. The owner was never separately asked to choose a numeral, and the field name owner_selected_parameters wrongly attributed the specific value 15000 to the owner's own selection rather than to this lane's technical derivation.",
+    "what_the_owner_actually_selected": {
+      "substrate": "IN_PROCESS_MODULE_CACHE",
+      "in_flight_policy": "SINGLE_FLIGHT_COALESCED"
+    },
+    "corrected_provenance": {
+      "supersedes": "OWNER_CLARIFICATIONS_IN_LANE.clarifications[id=OC-2].owner_selected_parameters in v1.0.0, split into two groups.",
+      "owner_selected_parameters": {
+        "substrate": "IN_PROCESS_MODULE_CACHE",
+        "in_flight_policy": "SINGLE_FLIGHT_COALESCED"
+      },
+      "technical_derived_parameters": [
+        {
+          "name": "TTL_MS",
+          "classification": "TECHNICAL_DERIVED_PARAMETER. NOT_OWNER_SELECTED. TUNABLE_WITHIN_RATIFIED_SHORT_TTL_CONSTRAINT.",
+          "default_value": 15000,
+          "admissible_range_ms": [
+            5000,
+            60000
+          ],
+          "rationale": "Satisfies the rider's 'short TTL/cache' language (docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-1].owner_selected_decision.owner_approved_implementation_rider.constraints[0]) without the owner having separately fixed a numeral. Tuning within the admissible range does NOT require a new owner act, because the range is bounded to remain 'short' by construction: the upper bound (60s) keeps bounded staleness within a caller-perceptible window, and the lower bound (5s) keeps the cache meaningfully reducing upstream call volume rather than degenerating to effectively no caching."
+        }
+      ]
+    },
+    "no_future_owner_act_required_to_tune_TTL_MS": "Explicitly: changing TTL_MS to any value within [5000, 60000] ms, while it continues to satisfy the ratified short-TTL/bounded-budget contract, is a technical implementation choice and does NOT require a new owner ratification or a new OC-2-style clarification. Only a change that would violate the rider's own constraints (e.g. no TTL at all, or a TTL so long it defeats the 'short' characterisation) would need to return to the owner."
+  },
+  "PROVIDER_REQUEST_BUDGET_CONTRACT": {
+    "closes": "NB-IC-3.",
+    "supersedes": "DAG_NODES.nodes[id=TA-05].contract and .done_when in v1.0.0, EXTENDED with concrete magnitude/unit/refill semantics. TA-05's existing constraints (independent of OD-4/KV, fail-closed-to-UNKNOWN) are UNCHANGED and restated here.",
+    "parameters": {
+      "BUDGET_WINDOW_MS": {
+        "default_value": 60000,
+        "admissible_range_ms": [
+          30000,
+          300000
+        ],
+        "classification": "TECHNICAL_DERIVED_PARAMETER. NOT_OWNER_SELECTED. TUNABLE_WITHIN_RATIFIED_BOUNDED_BUDGET_CONSTRAINT."
+      },
+      "BUDGET_MAX_PROBES_PER_WINDOW": {
+        "default_value": 10,
+        "admissible_range": [
+          4,
+          30
+        ],
+        "classification": "TECHNICAL_DERIVED_PARAMETER. NOT_OWNER_SELECTED. TUNABLE_WITHIN_RATIFIED_BOUNDED_BUDGET_CONSTRAINT.",
+        "lower_bound_invariant": "MUST be >= ceil(BUDGET_WINDOW_MS / TTL_MS) at whatever values are actually configured, so a full recovery cycle can always obtain at least one fresh probe within a window even in the worst case where every prior probe in the window failed and was never cached as a success. At the defaults (60000/15000) this invariant requires >= 4; 10 is chosen for margin, not as the tight minimum."
+      },
+      "refill_semantics": "FIXED_WINDOW_RESET. The consumed-probe counter resets to zero at each BUDGET_WINDOW_MS boundary. Chosen over a sliding window for testability with fake timers and because the rider's own concern (bounding upstream call volume) does not require sliding-window smoothing."
+    },
+    "independence_from_OD4_restated": "Unchanged from v1.0.0: MUST NOT be implemented on top of proxy.ts's limiter, MUST NOT read KV_REST_API_URL or KV_REST_API_TOKEN.",
+    "per_instance_restated": "Unchanged: PER-INSTANCE. No shared/global budget substrate is authorized by this DAG or this amendment.",
+    "avoids_permanent_UNKNOWN_after_one_exhaustion": "FIXED_WINDOW_RESET guarantees the budget is never permanently zero: at most BUDGET_WINDOW_MS after exhaustion, the counter resets and a fresh probe becomes possible again. Combined with the lower-bound invariant above, a provider that recovers is always re-observable within one window, never permanently stuck reporting UNKNOWN or stale REACHABLE.",
+    "testability": "Both BUDGET_WINDOW_MS and BUDGET_MAX_PROBES_PER_WINDOW are exported named constants; fake-timer controls advance past a window boundary and assert the counter resets, exactly as TA-04's TTL controls already do for TTL_MS.",
+    "not_elevated_to_an_owner_decision": "Explicitly: these two parameters and their admissible ranges are TECHNICAL. No owner act named or implied them; none is required to adopt or later tune them within their stated ranges."
+  },
+  "TEST_EGRESS_CORRECTION": {
+    "closes": "NB-IC-1, NB-IC-2.",
+    "the_gap_the_IC_named": "v1.0.0's TA-19 named the problem (the vitest network guard covers only three Gemini/Vertex hostnames) and required a fix, but left 'extend the guard, or inject the transport' as an unresolved either/or, did not enumerate every test file that would need the fix in place before it could safely run, and did not add the edges expressing that ordering to DAG_EDGES.",
+    "corrected_TA19_design": {
+      "mechanism": "EXTEND vitest.setup.network-guard.ts's existing transport guard, adding Supabase Auth host coverage alongside the existing BLOCKED_GEMINI_HOSTNAMES set, rather than relying on transport injection alone.",
+      "why_extend_the_harness_guard_rather_than_rely_solely_on_injection": "Three separate test files (TA-13, TA-16, TA-17) exercise code paths that reach the touch, directly or through EP-1. Proving injection covers all three separately is three separate proofs with three chances to miss one; a single harness-level guard covers all three by construction, the same property that already makes the existing Gemini guard effective for every current and future Vitest file rather than only the ones that remember to inject a mock. Per-module injection remains REQUIRED for unit isolation (TA-03's contract already requires the probe target/transport be injectable) but is a UNIT-TESTING property, not a SAFETY property; the harness guard is the safety property.",
+      "host_coverage_measured_precisely": "lib/supabase/project-coherence.ts:154 reads `process.env.NEXT_PUBLIC_SUPABASE_URL` as the source of the Auth project's URL (`readInlinedAuthUrl`), which lib/supabase/server.ts's createClient and lib/supabase/proxy.ts's updateSession both pass to createServerClient as the authUrl. There is no single fixed public hostname the way generativelanguage.googleapis.com is fixed for Gemini - the host is per-project (`<ref>.supabase.co`). The guard is therefore extended by SUFFIX PATTERN (hostname ends with '.supabase.co'), which covers the configured project's Auth host regardless of which ref is deployed, PLUS the exact host parsed from `process.env.NEXT_PUBLIC_SUPABASE_URL` if set and not itself localhost, as a second independent check that does not depend on the domain convention holding forever.",
+      "localhost_exclusion_preserved": "Unchanged from the existing guard's own stated rationale: the suite legitimately talks to localhost (Supabase, Postgres) and this correction does not touch that exclusion.",
+      "no_opt_out_preserved": "No ALLOW_REAL_* escape hatch is introduced by this correction, exactly as v1.0.0 required.",
+      "alternative_not_foreclosed": "A future implementer MAY instead prove full transport-injection coverage of TA-13, TA-16 AND TA-17 as an equivalent, but must demonstrate the equivalence with a control per consumer; the harness-guard extension is the default this amendment specifies precisely so that proof is not required per-file."
+    },
+    "consumer_enumeration_corrected": {
+      "supersedes": "RISKS_AND_OPEN_FINDINGS[id=R-5] in v1.0.0, which named only the touch's own tests without enumerating every consumer.",
+      "consumers": [
+        {
+          "node": "TA-13",
+          "surface": "tests/health-auth-route.test.ts",
+          "why": "Exercises EP-1's route directly, which after TA-06 consumes the touch (TA-03) via TA-04/TA-05."
+        },
+        {
+          "node": "TA-16",
+          "surface": "tests/provider-health-touch.test.ts",
+          "why": "Exercises the touch module directly. Already named in v1.0.0."
+        },
+        {
+          "node": "TA-17",
+          "surface": "tests for the runner surface",
+          "why": "The runner (TA-09) observes EP-1 over some call path (direct handler invocation or an HTTP client against a local test server); either path can reach the real touch if not isolated."
+        }
+      ]
+    },
+    "new_edges_added": [
+      {
+        "from": "TA-19",
+        "to": "TA-13",
+        "why": "TA-13's own contract already states the touch is injected, never reached (S-12, TA-19) - this edge makes that textual dependency a graph dependency."
+      },
+      {
+        "from": "TA-19",
+        "to": "TA-17",
+        "why": "The runner's tests reach EP-1, which reaches the touch; the same egress risk TA-13 carries applies here."
+      }
+    ],
+    "edge_unchanged": "TA-19 -> TA-16 (present in v1.0.0) is unchanged."
+  },
+  "STALE_COMMENT_DISPOSITION": {
+    "closes": "NB-IC-4.",
+    "measured_text": "lib/auth/identity.ts:120-124 (re-measured at AS_OF_PRE_AMENDMENT_HEAD): 'if (!authUser) { // `@supabase/ssr` reports both \"no cookie at all\" and \"cookie rejected\" // through the same shape. The error object distinguishes them: an absent // session produces no error, a rejected one does. return { identity: null, failure: data.error ? \"SESSION_REJECTED\" : \"NO_SESSION\" } }'",
+    "why_this_is_not_called_false": "The comment's binary claim is LITERALLY ACCURATE as far as it goes: no error -> NO_SESSION, any error -> the code labels it SESSION_REJECTED. It is INCOMPLETE at exactly this site: 'any error' silently bundles AS-2 (the provider genuinely rejected the session) and AS-3 (the provider was unreachable or answered 5xx) under one label and one comment that describes only a two-way split. This is the same conflation S-4 already measured in v1.0.0 as defect B-1, restated here as a comment accuracy finding rather than a behavioural one.",
+    "disposition": "NOT corrected in this lane - this amendment modifies no source file, per its own mode. Routed into TA-01's contract as an explicit addition: TA-01's implementation, when it installs the AS-1..AS-4 discriminator, MUST ALSO update this comment to name the four-way split it introduces at this exact call site, rather than leaving a comment describing a two-way split immediately above code that no longer implements only two ways.",
+    "supersedes": "DAG_NODES.nodes[id=TA-01].done_when in v1.0.0, EXTENDED with one additional item (not replacing the existing three).",
+    "new_TA01_done_when_item": "The comment at lib/auth/identity.ts's `if (!authUser)` branch is updated to name AS-2 and AS-3 explicitly, rather than describing only a no-error/error binary that predates the four-way discriminator this node installs."
+  },
+  "TA03_CONTROLS": {
+    "closes": "NB-IC-5.",
+    "supersedes": "DAG_NODES.nodes[id=TA-03].done_when in v1.0.0, EXTENDED with two additional items (not replacing the existing three).",
+    "new_TA03_done_when_items": [
+      "The touch's verdict type has EXACTLY three inhabitants (REACHABLE, UNREACHABLE, UNKNOWN); a control proves adding or removing a state is CAUGHT (exhaustiveness), not merely that the three intended ones exist.",
+      "No route or server action under app/** other than app/api/health/auth/route.ts imports lib/health/provider-touch.ts, checked by a grep of import specifiers across app/**. This is the ACTUAL property needed - EP-1 is the touch's only intended consumer - stated as an import-graph check rather than as an unenforceable claim about 'exclusive use' at runtime, which the module system cannot itself guarantee."
+    ],
+    "why_the_import_check_and_not_a_broader_exclusivity_claim": "A runtime 'used only by EP-1' property cannot be checked without instrumenting every call in the process; a static import-specifier grep over app/** is the concrete, mechanically checkable property that actually matters here - that no OTHER route accidentally starts depending on a module built for one specific liveness check."
+  },
+  "PRE1_STATUS": {
+    "closes": "NB-IC-6.",
+    "supersedes": "DERIVATION_PRECONDITIONS.preconditions[id=PRE-1] in v1.0.0, EXTENDED to name the verdict token explicitly. Not replaced: OCCURRED/NOT_MATERIALIZED/RECORDED_NONBLOCKING_FOR_THIS_DOCS_ONLY_DERIVATION all stand unchanged.",
+    "verdict_named": "M11_OWNER_RATIFICATION_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+    "distinction_preserved": "OCCURRED and MATERIALIZED remain distinct axes, exactly as v1.0.0 stated. The owner-ratification IC OCCURRED, with the verdict token above, but no committed verdict ARTIFACT for it exists in this lineage. This is NOT the same as certification not having occurred, and this amendment does not say it did not occur.",
+    "no_fabrication": "This amendment does NOT create, back-date or otherwise fabricate a retroactive certification artifact for PRE-1. Naming the verdict token is a textual precision correction, not a materialization act.",
+    "does_not_block_this_errata": "PRE-1's status does not block AUTHORING this errata, for the same reason it did not block v1.0.0's own authoring: this lane is docs-only and mutates no code, no gate and no hosted state. PRE-2 (this artifact's own next_gate) remains the gate that blocks IMPLEMENTATION.",
+    "forward_pointer": "If repository materialization of PRE-1's verdict artifact is required before Track A implementation may begin, that materialization is a SEPARATE pre-implementation prerequisite, not something this errata can or does supply."
+  },
+  "AS2_AS3_SCOPE_PRESERVED": {
+    "rule": "OC-1's substance is UNTOUCHED by this amendment.",
+    "restated": [
+      "503 remains PROHIBITED for AS-2, unconditionally.",
+      "503 remains the correct EP-1 answer for AS-3 - the one state that is a genuine health fact.",
+      "EP-1 remains genuinely FAIL-able (via AS-3), satisfying M11-SC-8.",
+      "The global, unqualified reading of '503 prohibited' is NOT reinstated by anything in this amendment. Adding the UNKNOWN state's HTTP 200 answer does not touch AS-3's 503 in any way."
+    ]
+  },
+  "TRACK_B_BOUNDARY_PRESERVED": {
+    "rule": "No Track B principal design enters this amendment.",
+    "restated": [
+      "TB-IF-1/2/3 are unchanged.",
+      "SLICE-1 continues to carry no Track B dependency.",
+      "TA-12's must-fail control (EP-2 may not silently PASS before Track B exists) is UNCHANGED and UNTOUCHED by this amendment; nothing here weakens it.",
+      "The initial A2 implementation (SLICE-1, now including this errata's corrections to TA-01/TA-03/TA-05/TA-06/TA-10/TA-19) remains independently landable without Track B."
+    ]
+  },
+  "SUPERSEDED_PARENT_CLAUSES": [
+    {
+      "id": "SPC-1",
+      "locus": "A2_IMPLEMENTATION_CONTRACT.matrix",
+      "v1.0.0_text_summary": "Five-row matrix whose UNKNOWN row read status 'MUST NOT BE 200-healthy; rendered as the non-committal form fixed by TA-06' with no concrete form ever supplied.",
+      "corrected_by": "B_IC_1_CLOSURE.the_corrected_EP1_transport_matrix, above. Fully specified: HTTP status, body shape, runner disposition for all four rows."
+    },
+    {
+      "id": "SPC-2",
+      "locus": "DAG_NODES.nodes[id=TA-06].contract and .done_when",
+      "v1.0.0_text_summary": "Contract named AS-1/AS-2/AS-3/AS-4 branches only; done_when never required an UNKNOWN control.",
+      "corrected_by": "B_IC_1_CLOSURE - the UNKNOWN row and its distinguishability proof are now part of TA-06's contract."
+    },
+    {
+      "id": "SPC-3",
+      "locus": "DAG_NODES.nodes[id=TA-03].contract[0]",
+      "v1.0.0_text_summary": "'UNKNOWN is a first-class value for budget exhausted or not yet probed, never coerced to REACHABLE.'",
+      "corrected_by": "UNKNOWN_PRODUCERS.canonical_producer_set - 'not yet probed' is retracted as a bare persistent state and replaced by BUDGET_EXHAUSTED and IN_FLIGHT_WAIT_EXCEEDED."
+    },
+    {
+      "id": "SPC-4",
+      "locus": "OWNER_CLARIFICATIONS_IN_LANE.clarifications[id=OC-2].owner_selected_parameters",
+      "v1.0.0_text_summary": "{'TTL_MS': 15000, 'in_flight_policy': 'SINGLE_FLIGHT_COALESCED'} presented as one undifferentiated owner-selected object.",
+      "corrected_by": "B_IC_2_CLOSURE.corrected_provenance - split into owner_selected_parameters (substrate, in_flight_policy) and technical_derived_parameters (TTL_MS, with an admissible range)."
+    },
+    {
+      "id": "SPC-5",
+      "locus": "DAG_NODES.nodes[id=TA-05].contract and .done_when",
+      "v1.0.0_text_summary": "'A named budget bound exists as an exported constant' with no magnitude, unit or refill semantics stated.",
+      "corrected_by": "PROVIDER_REQUEST_BUDGET_CONTRACT - BUDGET_WINDOW_MS, BUDGET_MAX_PROBES_PER_WINDOW, FIXED_WINDOW_RESET, all with admissible ranges."
+    },
+    {
+      "id": "SPC-6",
+      "locus": "DAG_NODES.nodes[id=TA-19].contract",
+      "v1.0.0_text_summary": "'Either the guard is extended to cover the provider host, or TA-03's transport is injected... whichever is chosen must be PROVED by a control' - left as an open either/or.",
+      "corrected_by": "TEST_EGRESS_CORRECTION.corrected_TA19_design - the harness-guard extension is specified as the default mechanism, with exact host-coverage logic, while not foreclosing a proven-equivalent alternative."
+    },
+    {
+      "id": "SPC-7",
+      "locus": "DAG_EDGES.edges",
+      "v1.0.0_text_summary": "31 edges; no edge from TA-19 into TA-13 or TA-17, despite TA-13's own contract text already assuming TA-19's protection.",
+      "corrected_by": "TEST_EGRESS_CORRECTION.new_edges_added - two edges added: TA-19 -> TA-13, TA-19 -> TA-17. Purely additive; no existing edge is removed or altered."
+    },
+    {
+      "id": "SPC-8",
+      "locus": "RISKS_AND_OPEN_FINDINGS[id=R-5]",
+      "v1.0.0_text_summary": "Named the touch's own tests as the gap's consequence without enumerating every test consumer at risk.",
+      "corrected_by": "TEST_EGRESS_CORRECTION.consumer_enumeration_corrected - TA-13, TA-16 and TA-17 all named explicitly."
+    },
+    {
+      "id": "SPC-9",
+      "locus": "DAG_NODES.nodes[id=TA-01].done_when",
+      "v1.0.0_text_summary": "Three done_when items; none referenced lib/auth/identity.ts's own comment text.",
+      "corrected_by": "STALE_COMMENT_DISPOSITION.new_TA01_done_when_item - one item added (additive)."
+    },
+    {
+      "id": "SPC-10",
+      "locus": "DAG_NODES.nodes[id=TA-10].contract",
+      "v1.0.0_text_summary": "Three contract items covering 429, 302/transport, and the one-platform-incident rule; no UNKNOWN mapping and no status==200=>PASS prohibition.",
+      "corrected_by": "RUNNER_CORRECTION.corrected_TA10_contract - the UNKNOWN mapping and the status==200=>PASS prohibition are added; the three existing items are restated unchanged."
+    },
+    {
+      "id": "SPC-11",
+      "locus": "DERIVATION_PRECONDITIONS.preconditions[id=PRE-1]",
+      "v1.0.0_text_summary": "'affirmed by the product owner... An owner-affirmed certification is not a non-occurrence' - no verdict token quoted.",
+      "corrected_by": "PRE1_STATUS.verdict_named - 'M11_OWNER_RATIFICATION_IC_PASS_WITH_NONBLOCKING_FINDINGS' is now the quoted token."
+    }
+  ],
+  "CORRECTED_MEASUREMENTS": {
+    "full_graph_reverification": {
+      "method": "Reconstructed all 31 of v1.0.0's original edges by direct transcription from the pinned blob, added the 2 new edges (TA-19->TA-13, TA-19->TA-17), and ran Kahn's algorithm (topological sort) over the full 33-edge set in this authoring turn.",
+      "result": {
+        "orig_edge_count": 31,
+        "new_edge_count": 2,
+        "total_edge_count": 33,
+        "total_nodes_in_edge_graph": 22,
+        "acyclic": true,
+        "topo_order_length": 22,
+        "new_edges_present": [
+          [
+            "TA-19",
+            "TA-13"
+          ],
+          [
+            "TA-19",
+            "TA-17"
+          ]
+        ]
+      },
+      "interpretation": "33 total edges, acyclic (all 22 nodes appearing in the edge graph processed with zero remaining in-degree). Node count is UNCHANGED at 20 - this amendment creates, removes or renames NO node; every correction is to an EXISTING node's contract/done_when fields or to DAG_EDGES additively."
+    },
+    "node_count_unchanged": {
+      "v1.0.0": 20,
+      "v1.0.1_effective": 20,
+      "delta": 0
+    },
+    "edge_count": {
+      "v1.0.0": 31,
+      "v1.0.1_effective": 33,
+      "delta": 2
+    },
+    "slices_unchanged": "SLICE-1/SLICE-2/SLICE-3 membership is UNCHANGED; the 2 new edges are both internal to SLICE-1 (TA-19->TA-13) and SLICE-2 (TA-19->TA-17 - TA-19 itself is a SLICE-1 node whose guard protects a SLICE-2 test file; this cross-slice edge existed in spirit in v1.0.0's own text and is now made explicit), so no slice gains or loses a Track B dependency."
+  },
+  "UNCHANGED_AND_STILL_CONTROLLING": [
+    "All thirteen measured facts S-1..S-13.",
+    "All twenty DAG_NODES identifiers, kinds and surfaces (only specific contract/done_when fields on TA-01, TA-03, TA-05, TA-06, TA-10, TA-19 are extended; TA-02, TA-04, TA-07, TA-08, TA-09, TA-11, TA-12, TA-13, TA-14, TA-15, TA-16, TA-17, TA-18, TA-20 are entirely untouched).",
+    "29 of 31 original DAG_EDGES entries (all except none removed - all 31 are retained verbatim; 2 are added).",
+    "LANDABLE_SLICES's three-slice partition and each slice's node membership.",
+    "OD2_RUNNER_CONTRACT, OD3_STATUS_CONTRACT, OD4_SC6_CONTRACT in full, except TA-10's INCONCLUSIVE list now also names UNKNOWN (an addition, not a change to any existing entry in OD4_SC6_CONTRACT.M11_SC6.other_inconclusive_outcomes, which remains textually as v1.0.0 wrote it - the UNKNOWN mapping lives in RUNNER_CORRECTION, layered on top).",
+    "TRACK_B_INTERFACE in full.",
+    "LEDGER_OWNER_UPDATE_REQUIREMENT and TA-20 in full.",
+    "NONBLOCKING_RESIDUE_CONSUMED (N-1/N-2/N-3).",
+    "OC-1 in full (AS-2/AS-3 scope). Only OC-2's owner_selected_parameters field is corrected - OC-1 is untouched.",
+    "explicit_non_authorizations from v1.0.0, all of which remain in force (restated in this amendment's own EXPLICIT_NON_AUTHORIZATIONS below for this artifact's own write set)."
+  ],
+  "OWNER_DECISIONS_PRESERVED": [
+    "OC-1's full text and effect (the AS-2/AS-3 scope resolution) is untouched by this amendment.",
+    "OC-2's SUBSTANCE (IN_PROCESS_MODULE_CACHE, SINGLE_FLIGHT_COALESCED) is untouched; only the field that mislabeled TTL_MS's provenance is corrected.",
+    "OD-1 through OD-5, the M11-SC-7 rider, and every field of the five pinned M11/ratification blobs are untouched and unmentioned as subject to change anywhere in this amendment.",
+    "No new owner decision is invented for TTL_MS, PROBE_WAIT_BUDGET_MS, BUDGET_WINDOW_MS or BUDGET_MAX_PROBES_PER_WINDOW - all four are explicitly TECHNICAL_DERIVED_PARAMETER, NOT_OWNER_SELECTED.",
+    "The owner's UNKNOWN decision (OWNER_UNKNOWN_DECISION) is applied exactly as given - HTTP 200, INCONCLUSIVE runner disposition, never PASS, never FAIL - with no reinterpretation. This amendment's only addition to the owner's own words is converting the third named example category into two concrete, testable producers (UNKNOWN_PRODUCERS), which the owner's own text invited ('other explicitly governed non-observation conditions') rather than substituted."
+  ],
+  "explicit_non_authorizations": [
+    "This amendment does NOT authorize implementation of any node, exactly as v1.0.0. PRE-2 remains BLOCKING for every TA-* node.",
+    "This amendment does NOT modify any byte of docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json or docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json - both re-derived to their original blob hashes under CANDIDATE_BINDING below and untouched by this write set.",
+    "This amendment does NOT modify lib/auth/identity.ts, vitest.setup.network-guard.ts, or any application source file. The stale-comment correction (STALE_COMMENT_DISPOSITION) and the guard extension (TEST_EGRESS_CORRECTION) are both NAMED here as obligations a future implementation of TA-01/TA-19 must satisfy; this amendment performs neither edit.",
+    "This amendment does NOT invent a new owner decision for TTL_MS, the budget parameters, or PROBE_WAIT_BUDGET_MS. All are explicitly technical.",
+    "This amendment does NOT reopen OC-1, OD-1 through OD-5, the M11-SC-7 rider, or any of the five pinned M11/ratification blobs.",
+    "This amendment does NOT create, specify, scope or provision the Track B staging principal, and does NOT open Track B's lane. TB-IF-1/2/3 are unchanged.",
+    "This amendment does NOT perform TA-20 (the ledger owner-field act).",
+    "This amendment does NOT authorize any deployment, any hosted smoke, any provider call, any Vercel environment change, any Supabase mutation, any credential generation or any credential rotation.",
+    "This amendment does NOT create, remove or rename any DAG node. Only DAG_EDGES gains two additive entries.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "CANDIDATE_BINDING": {
+    "rule": "This amendment corrects the artifact below, pinned by blob hash re-derived at AS_OF_PRE_AMENDMENT_HEAD. A consumer finding either blob hash to differ from a fresh re-derivation MUST NOT apply this amendment to whatever the differing content now is.",
+    "amended_authority": {
+      "path": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json",
+      "blob_sha": "635ce14527774972822f92fc5736986cb50a12f3",
+      "re_derived": "MATCH, via git ls-tree -r afc67125f5f08522eabba82e25d57222371a056e at authoring"
+    },
+    "amended_manifest": {
+      "path": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+      "blob_sha": "c4651ea0f35791bc1de4d4e61d8fb4f1d5b39396",
+      "re_derived": "MATCH, via git ls-tree -r afc67125f5f08522eabba82e25d57222371a056e at authoring"
+    },
+    "upstream_package_and_ratification_pins": "UNCHANGED from v1.0.0's own CANDIDATE_BINDING (six blobs: the owner ratification plus the five M11/ledger artifacts). This amendment does not re-verify them because it touches none of the owner-set consumption logic; v1.0.0's own re-derivation of those six pins stands."
+  },
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NOT_MACHINE_VERIFIED_IN_THIS_WORKTREE",
+    "honest_limitation": "node_modules is ABSENT in this worktree (a fresh git worktree does not inherit it). pnpm ods:scope (tsx scripts/ods-scope.ts) could not execute, and this amendment does NOT claim it ran. The same limitation applied to v1.0.0's own authoring turn in this lane.",
+    "manual_equivalent_performed": "git diff --name-only against AS_OF_PRE_AMENDMENT_HEAD, confirming the write set is exactly two new files (this artifact and its companion manifest amendment), both under docs/ops/release/**, matching the SAME shape v1.0.0's own write set had and that both v1.0.0 and the CV1_INFRA_EXECUTION_DAG precedent machine-verified PASS under pnpm ods:scope in their own (node_modules-present) authoring sessions. No file under docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, or docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json is touched.",
+    "PROTECTED_AUTHORITY": "NONE"
+  },
+  "self_check": [
+    "PARENT verified: HEAD == afc67125f5f08522eabba82e25d57222371a056e before authoring. Tree a115efe22dda9532c0f1f6dd304a738caaa8fdce. Branch codex/cv1-m11-track-a-implementation-dag-authority-r1. PR #213 head matches HEAD at start of this turn (re-checked via gh pr view).",
+    "The two v1.0.0 blobs were re-derived via git ls-tree -r afc67125f5f08522eabba82e25d57222371a056e and match CANDIDATE_BINDING exactly.",
+    "The owner's UNKNOWN decision is applied literally: HTTP 200, body distinguishable from AS-1 and AS-2, runner INCONCLUSIVE, never PASS, never FAIL, 503 never used for an unavailable observation.",
+    "UNKNOWN_PRODUCERS's canonical set was derived by tracing TA-04's synchronous single-flight design to its logical consequence, not by inventing categories beyond the owner's three named examples.",
+    "The full 33-edge DAG (31 original + 2 new) was independently re-verified acyclic by topological sort in this turn - see CORRECTED_MEASUREMENTS.full_graph_reverification.",
+    "TTL_MS and the two new budget parameters are labelled TECHNICAL_DERIVED_PARAMETER / NOT_OWNER_SELECTED and given explicit admissible ranges, closing B-IC-2 and NB-IC-3 without inventing a new owner decision.",
+    "TA-19's consumer set (TA-13, TA-16, TA-17) was independently re-derived by tracing what each test file actually exercises, not copied from the IC's finding text alone.",
+    "lib/auth/identity.ts:121-123 was re-read directly from source in this turn; the disposition states precisely what is accurate (the binary claim) and what is incomplete (the AS-2/AS-3 conflation at that site), never claiming the comment is false.",
+    "AS-2/AS-3 scope (OC-1) is unmentioned as subject to change anywhere in this amendment except by explicit restatement that it is UNCHANGED.",
+    "Track B: TB-IF-1/2/3 are not mentioned as subject to change; TA-12's must-fail control is restated as unchanged, not re-derived.",
+    "No source file, workflow file, ledger field or either v1.0.0 blob was modified. git status after staging confirms the write set is exactly two new files.",
+    "PRE-1's OCCURRED/NOT_MATERIALIZED distinction is preserved; no verdict artifact is fabricated."
+  ],
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment closes two BLOCKING findings from an independent certification and adds two new DAG edges plus a new named technical parameter set. Each of those is exactly the class of change that most needs an adversarial re-read before Track A implementation opens on the strength of it.",
+    "verification_criteria_for_the_next_gate": [
+      "Confirm the corrected EP-1 transport matrix's four (http_status, body.status, body.upstream) tuples are pairwise distinct, independently, not by trusting B_IC_1_CLOSURE.must_not_collide_proof's own prose.",
+      "Confirm UNKNOWN_PRODUCERS's retraction of 'not yet probed' as a bare state is correct given TA-04's synchronous single-flight design, and independently assess whether IN_FLIGHT_WAIT_EXCEEDED is itself sufficient or whether a third producer is still missing.",
+      "Confirm the BUDGET_MAX_PROBES_PER_WINDOW lower-bound invariant (>= ceil(WINDOW_MS/TTL_MS)) is correctly stated and that 10 satisfies it at the stated defaults.",
+      "Confirm TTL_MS's admissible range [5000, 60000] and the two budget parameters' admissible ranges are genuinely consistent with the rider's 'short TTL' and 'own bounded budget' language, not merely asserted to be.",
+      "Re-derive TA-19's consumer set independently - confirm no fourth test file (present or planned) also needs the guard before this DAG's implementation nodes are considered complete.",
+      "Confirm the two new edges (TA-19->TA-13, TA-19->TA-17) do not introduce a cycle when combined with the full 31-edge original graph, independently of this amendment's own topological-sort claim.",
+      "Confirm RUNNER_CORRECTION's prohibition on status==200=>PASS is actually enforceable given EP-3's OD-3 status split ALSO makes 200 non-equivalent to health success there - i.e. that the runner's body-discriminator requirement is stated uniformly across EP-1 and EP-3, not only for EP-1.",
+      "Confirm STALE_COMMENT_DISPOSITION's characterisation (incomplete, not false) is the correct framing rather than an understatement of the defect.",
+      "Confirm no owner decision was silently manufactured anywhere in this amendment - specifically re-read OWNER_DECISIONS_PRESERVED against every new numeral this amendment introduces.",
+      "Confirm the companion manifest amendment validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json independently, including that every one of the owner's 15 required proof points maps to at least one control.",
+      "Confirm no hosted mutation, no source-file edit, and no v1.0.0 byte change was performed by this lane."
+    ],
+    "what_a_certifier_should_attack_first": "The IN_FLIGHT_WAIT_EXCEEDED producer and its PROBE_WAIT_BUDGET_MS parameter. It is the one correction in this amendment that is a genuine DESIGN ADDITION rather than a transcription or labelling fix - v1.0.0 never named this producer at all, and the owner's decision named only three EXAMPLE categories without specifying this one. The reasoning chain (synchronous single-flight probing implies 'not yet probed' cannot persist, therefore the only remaining non-observation case is a bounded wait on an in-flight probe) is sound only if TA-04's synchronous-probe-on-miss design is itself correct and unchanged by a future implementer; that assumption is the sharpest angle to press."
+  },
+  "final_state": "M11_TRACK_A_DAG_ERRATA_AUTHORED__IMPLEMENTATION_NOT_AUTHORIZED",
+  "next_gate": "Short bounded independent recertification of v1.0.1 only (this amendment layered on the unchanged v1.0.0), attacking IN_FLIGHT_WAIT_EXCEEDED and the corrected transport matrix's distinguishability proof first, and re-deriving the graph/acyclicity fact independently rather than reading it from this file. Only after that recertification PASSES may Track A implementation (SLICE-1, then SLICE-2) open. TA-20 remains an independent governed ledger act. Track B remains a separate authority lane this amendment does not open. External mutations performed by this lane: NONE. Secrets exposed: NONE."
+}

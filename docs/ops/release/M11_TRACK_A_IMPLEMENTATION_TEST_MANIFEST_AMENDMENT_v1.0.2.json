@@ -1,0 +1,146 @@
+{
+  "manifest_id": "CV1-M11-TRACK-A-AMENDMENT-v1.0.2",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "dependencies": [
+    "CV1-M11-TRACK-A-AMENDMENT-v1.0.1 (docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json, blob 253c89178a3b853b47d7abe70e5468d6c5e21c99) - the parent amendment manifest, left byte-unchanged",
+    "CV1-M11-TRACK-A (docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json, blob c4651ea0f35791bc1de4d4e61d8fb4f1d5b39396) - the root manifest, left byte-unchanged",
+    "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.2 - the companion authority text this manifest tests against",
+    "commit a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0 (Track A implementation) plus the M11-hardening-pass working-tree changes on codex/cv1-m11-track-a-implementation-dag-authority-r1 - unlike v1.0.1 (authored before any code existed, all controls UNKNOWN/EXECUTION-ARM-PENDING), every control below cites a REAL test that exists and was run in this authoring turn"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [
+    "THIS MANIFEST IS AN AMENDMENT, NOT A REPLACEMENT. docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json and its v1.0.1 amendment are left BYTE-UNCHANGED and continue to control every control they declare, except where a control here is marked EXTENDS.",
+    "UNLIKE v1.0.1 (written before implementation, every test_file UNKNOWN or a future path), every control below is EXECUTION ARM NOW: the cited test_file exists in the working tree and was actually run against the implementation in this authoring turn, with its stated pass/fail outcome reproduced, not assumed.",
+    "This manifest closes exactly the four authority-text limbs the companion v1.0.2 authority amendment closes (A: TA-19/TA-14/TA-15 coverage: B: budget contract correction; C: hard-timeout superseded by HT-1/HT-2; D: TA-19 exact-host limb retirement) plus the DNS-trailing-dot hardening bundled into limb D. It does not restate or re-certify the implementation IC's own 13 findings, which are recorded separately in docs/ops/owner-ratifications/M11_TRACK_A_IMPLEMENTATION_CERTIFICATION_OCCURRENCE_v1.0.0.json.",
+    "NO NEW CODE IS AUTHORIZED BY THIS MANIFEST. Every test cited already exists; this manifest only records and cross-checks it against the corrected authority text. Any test file edit needed to make a cited assertion true was already made as part of the hardening pass this manifest documents, not as a side effect of writing this manifest.",
+    "PNPM GATES RUN FROM THIS WORKTREE (node_modules present, unlike the v1.0.1 authoring turn) - see exit_gates for the actual invocations used."
+  ],
+  "sentinels": [
+    {
+      "id": "ASEN-M11-5",
+      "purpose": "PARENT SENTINELS RETAINED. ASEN-M11-1..4 from v1.0.1 remain controlling except where explicitly corrected: ASEN-M11-3's 'TWO NEW EDGES' claim is corrected by AP-M11-16 below (the coverage is now source-derived, not edge-based); ASEN-M11-4's 'exact host parsed from process.env' limb is retired by AP-M11-19 below (suffix-only, by design, to preserve the no-env-read property)."
+    },
+    {
+      "id": "ASEN-M11-6",
+      "purpose": "THE DERIVED BUDGET TUPLE. At the shipped defaults (BUDGET_WINDOW_MS=60000, TTL_MS=15000, BUDGET_HEADROOM=2): BUDGET_MAX_PROBES_PER_WINDOW=6, NOT 10. Any control or authority text still citing 10 as the default is stale against LIMB_B and must be re-derived from deriveBudgetMaxProbesPerWindow(BUDGET_WINDOW_MS, TTL_MS), not from a fixed literal."
+    },
+    {
+      "id": "ASEN-M11-7",
+      "purpose": "THE HARD-TIMEOUT UNKNOWN RULE, RATIFIED. A bare PROBE_HARD_TIMEOUT_MS expiry with no affirmative evidence of provider fault is UNKNOWN (HT-1), never AS-3/UNREACHABLE. This supersedes v1.0.1's own prior text at UNKNOWN_PRODUCERS.explicitly_excluded_from_UNKNOWN[2], which predated the owner's HT decision and said the opposite."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "AP-M11-16",
+      "description": "LIMB A. TA-19's precedence over TA-14 and TA-15 (and TA-13/TA-16/TA-17) is enforced by a SOURCE-DERIVED oracle, not by the two DAG_EDGES entries v1.0.1 named. The AST-derived scanner asserts the real-consumer set has EXACTLY the expected size (closing the prior 'exactly five' miscount) and that every real importer of an egress-capable module also really mocks/injects the boundary.",
+      "test_file": "tests/health-egress-consumer-set.test.ts",
+      "cited_tests": [
+        "'every test file that REALLY imports an egress-capable health module also REALLY mocks/injects the egress boundary'",
+        "'the consumer set has EXACTLY the expected SIZE, not merely the expected members - closes the prior \"exactly five\" miscount'"
+      ]
+    },
+    {
+      "id": "AP-M11-17",
+      "description": "LIMB B. BUDGET_MAX_PROBES_PER_WINDOW is DERIVED (deriveBudgetMaxProbesPerWindow(BUDGET_WINDOW_MS, TTL_MS) = ceil(60000/15000)+2 = 6), not an independently-tunable constant with a [4,30] range and default 10 as v1.0.1's text stated. A module-load assertion backstops the derivation invariant.",
+      "test_file": "tests/provider-health-touch.test.ts",
+      "cited_tests": [
+        "'BUDGET_MAX_PROBES_PER_WINDOW satisfies its own joint invariant against BUDGET_WINDOW_MS/TTL_MS'",
+        "'deriveBudgetMaxProbesPerWindow satisfies the invariant at the previously-contradictory corner (NB-R3)'"
+      ]
+    },
+    {
+      "id": "AP-M11-18",
+      "description": "LIMB C. probeProviderOnce, called DIRECTLY (bypassing the PROBE_WAIT_BUDGET_MS < PROBE_HARD_TIMEOUT_MS waiter race that masked this branch in v1.0.1-era tests), resolves UNKNOWN when its OWN hard timeout fires with no affirmative evidence - and observeProviderHealth (the public API) resolves the same way for the same scenario, proving direct and public-API views are consistent.",
+      "test_file": "tests/provider-health-touch.test.ts",
+      "cited_tests": [
+        "'the probe itself resolves UNKNOWN when ITS OWN hard timeout fires - no waiter involved'",
+        "'observeProviderHealth (the public API) still resolves UNKNOWN under the SAME hard-timeout scenario - consistency between the direct and public-API views'"
+      ]
+    },
+    {
+      "id": "AP-M11-19",
+      "description": "LIMB D. The guard blocks a Supabase-project host by SUFFIX alone; a caller may point NEXT_PUBLIC_SUPABASE_URL at any other project ref and the guard still blocks the tested host, proving the env-derived exact-host limb v1.0.1 proposed is redundant with the suffix check, not an independent gap. The guard file reads NO environment variable, preserved from the Gemini guard's own property.",
+      "test_file": "tests/no-real-supabase-auth-network-guard.test.ts",
+      "cited_tests": [
+        "'still blocks with NEXT_PUBLIC_SUPABASE_URL pointed at a DIFFERENT project than the blocked one'",
+        "'the guard file reads no environment variable - preserved from the original Gemini guard property'"
+      ]
+    },
+    {
+      "id": "AP-M11-20",
+      "description": "M11 hardening, bundled into LIMB D's closure. A trailing DNS root dot (abc.supabase.co.) cannot bypass the suffix guard - it names the same host as abc.supabase.co.",
+      "test_file": "tests/no-real-supabase-auth-network-guard.test.ts",
+      "cited_tests": [
+        "'M11 hardening - a trailing DNS root dot cannot bypass the guard (abc.supabase.co. names the same host)'"
+      ]
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "AN-M11-8",
+      "description": "LIMB A. MUST FAIL: a relative-path import of an egress-capable module without a real mock/injection is NOT recognised as safe by the AST scanner - the exact bypass class the pre-hardening text-scanner missed.",
+      "test_file": "tests/health-egress-consumer-set.test.ts",
+      "cited_tests": [
+        "'MUST FAIL: a file that imports the touch via a RELATIVE path without injecting is caught - the exact bypass the v1 scanner missed'"
+      ]
+    },
+    {
+      "id": "AN-M11-9",
+      "description": "LIMB A. MUST FAIL: import-shaped prose inside a template literal, comment, or a comment merely CLAIMING a mock exists, is never counted as a real consumer or a real safety measure.",
+      "test_file": "tests/health-egress-consumer-set.test.ts",
+      "cited_tests": [
+        "'MUST FAIL: a file that merely CONTAINS import-shaped text in a template literal or comment is NOT counted as a consumer'",
+        "'MUST FAIL: a comment CLAIMING a mock exists, without a real vi.mock() call, is not treated as safe'"
+      ]
+    },
+    {
+      "id": "AN-M11-10",
+      "description": "LIMB B. MUST FAIL: BUDGET_MAX_PROBES_PER_WINDOW cannot be independently set below its own derivation floor (ceil(BUDGET_WINDOW_MS/TTL_MS)) - the module-load assertion throws.",
+      "test_file": "tests/provider-health-touch.test.ts",
+      "cited_tests": [
+        "'MUST FAIL: BUDGET_MAX_PROBES_PER_WINDOW must not be independently settable below the derived floor'"
+      ]
+    },
+    {
+      "id": "AN-M11-11",
+      "description": "LIMB C. MUST FAIL: probeProviderOnce, called directly, must never report UNREACHABLE for its own hard timeout (proven on the function itself, not only observed indirectly through the masked public-API race) - and must still correctly report UNREACHABLE for a GENUINE transport failure that is not its own abort, proving the AbortError branch does not swallow every rejection.",
+      "test_file": "tests/provider-health-touch.test.ts",
+      "cited_tests": [
+        "'MUST FAIL: probeProviderOnce must never report UNREACHABLE for its own hard timeout - proven on the function itself, not on the public API'",
+        "'MUST FAIL: probeProviderOnce still reports UNREACHABLE for a GENUINE transport failure (the AbortError branch does not swallow every rejection)'"
+      ]
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "AMUT-M11-7",
+      "description": "LIMB A. Add a sixth real consumer (a new test file importing an egress-capable module via a relative path, uninjected). AP-M11-16/AN-M11-8 must REDDEN. Independently re-verified in this authoring turn (see the companion authority amendment's required_independent_review).",
+      "test_file": "tests/health-egress-consumer-set.test.ts"
+    },
+    {
+      "id": "AMUT-M11-8",
+      "description": "LIMB B. Hardcode BUDGET_MAX_PROBES_PER_WINDOW = 10 instead of deriving it. AP-M11-17 must REDDEN once BUDGET_WINDOW_MS/TTL_MS are varied away from the exact corner where 10 happens to exceed the floor; the module-load assertion catches any corner where it does not.",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AMUT-M11-9",
+      "description": "LIMB C. Delete probeProviderOnce's AbortError-vs-genuine-failure branch. AP-M11-18/AN-M11-11 must REDDEN - independently re-verified in this authoring turn via a real Python-based source mutation, test run, and byte-identical restoration (diff-confirmed against a /tmp backup).",
+      "test_file": "tests/provider-health-touch.test.ts"
+    },
+    {
+      "id": "AMUT-M11-10",
+      "description": "LIMB D. Add a `process.env.NEXT_PUBLIC_SUPABASE_URL` read to vitest.setup.network-guard.ts. The existing 'reads no environment variable' control (retained from the Gemini guard's own precedent) must REDDEN.",
+      "test_file": "tests/no-real-supabase-auth-network-guard.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "lint",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

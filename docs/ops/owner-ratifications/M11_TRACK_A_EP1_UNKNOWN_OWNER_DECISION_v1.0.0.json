@@ -1,0 +1,267 @@
+{
+  "package_id": "M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION",
+  "version": "1.0.0",
+  "artifact_id": "M11_TRACK_A_EP1_UNKNOWN_OWNER_DECISION_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION__NO_DESTRUCTIVE_AUTHORIZATION__NO_CREDENTIAL_PROVISIONING__NO_HOSTED_ACCESS__NO_TRACK_B_DESIGN__NO_BUDGET_OR_TTL_NUMERAL_RATIFICATION",
+  "append_only": true,
+  "mission_id": "CV1-M11-TRACK-A-EP1-UNKNOWN-OWNER-RECORD-AW-R1",
+  "lane": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "role": "COMMERCIAL_V1_M11_TRACK_A_EP1_UNKNOWN_OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_RECORD",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_authorities": [
+    {
+      "role": "TRACK_A_DAG_AUTHORITY_ORIGINAL",
+      "path": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json",
+      "blob": "635ce14527774972822f92fc5736986cb50a12f3",
+      "size": 85250
+    },
+    {
+      "role": "TRACK_A_TEST_MANIFEST_ORIGINAL",
+      "path": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+      "blob": "c4651ea0f35791bc1de4d4e61d8fb4f1d5b39396",
+      "size": 12203
+    },
+    {
+      "role": "TRACK_A_DAG_AUTHORITY_AMENDMENT_APPLIES_THIS_DECISION",
+      "path": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "blob": "17fe0f011376038ba74d84f9b901abd92b539e56",
+      "size": 52527
+    },
+    {
+      "role": "TRACK_A_TEST_MANIFEST_AMENDMENT_APPLIES_THIS_DECISION",
+      "path": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+      "blob": "253c89178a3b853b47d7abe70e5468d6c5e21c99",
+      "size": 14233
+    }
+  ],
+  "materialized_at_base": {
+    "base_branch": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+    "BASE_SHA": "2d5e32bf0efb2db355f46ce74b2ea03f5545a1d6",
+    "BASE_TREE": "2d4b869daef2de6c94932a33dc83524d19ba5766",
+    "worktree_state": "CLEAN at materialization (git status --porcelain=v1 --untracked-files=all empty)."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "This record ratifies ONE owner decision AGAINST ONE EXACT EFFECTIVE PACKAGE, identified by the lane HEAD commit SHA and, independently, by the git blob SHA of each of the four Track A DAG artifacts it companions. Both must be re-derivable by inspection at any later time. If either check fails, the correct response is STOP_RATIFICATION_BINDING_MISMATCH - this record does not apply to a different candidate and must not be read as ratifying one.",
+    "candidate_commit_sha": "2d5e32bf0efb2db355f46ce74b2ea03f5545a1d6",
+    "candidate_commit_verification": "git rev-parse HEAD, on branch codex/cv1-m11-track-a-implementation-dag-authority-r1, at materialization.",
+    "package_blob_pins": [
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json",
+        "expected_blob_sha1": "635ce14527774972822f92fc5736986cb50a12f3",
+        "expected_size_bytes": 85250
+      },
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+        "expected_blob_sha1": "c4651ea0f35791bc1de4d4e61d8fb4f1d5b39396",
+        "expected_size_bytes": 12203
+      },
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "expected_blob_sha1": "17fe0f011376038ba74d84f9b901abd92b539e56",
+        "expected_size_bytes": 52527
+      },
+      {
+        "artifact": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "expected_blob_sha1": "253c89178a3b853b47d7abe70e5468d6c5e21c99",
+        "expected_size_bytes": 14233
+      }
+    ],
+    "verification_method": "git rev-parse <candidate_commit_sha>:<artifact path>, compared against expected_blob_sha1, for each of the four artifacts.",
+    "on_mismatch": "STOP_RATIFICATION_BINDING_MISMATCH. Any later amendment to any of the four artifacts (v1.0.2 or beyond) requires a SUCCESSOR ratification record binding to the new candidate; it does not retroactively apply to this one."
+  },
+  "OWNER_AUTHORITY_SOURCE": {
+    "statement": "The EP-1 UNKNOWN decision recorded under `ratifications` below was given by the human product owner (Lorenzo Zanello), explicitly, as directing text in the CV1-M11-TRACK-A-IMPLEMENTATION-DAG-ERRATA-R2 mission that authored v1.0.1 (commit 2d5e32bf, captured byte-for-byte in that amendment's OWNER_UNKNOWN_DECISION block), and was framed as 'the already-explicit human owner decision... Do NOT reopen the decision' - quoted verbatim - by the mission that authors THIS record (CV1-M11-TRACK-A-EP1-UNKNOWN-OWNER-RECORD-AW-R1), which restates the SAME decision in its own condensed prose. This record's owner_selected_decision below is transcribed from v1.0.1's JSON block, the only one of the two renderings that is itself a citable artifact; the two renderings were compared and found identical IN SUBSTANCE (see V101_PROVENANCE_RECONCILIATION), not claimed byte-identical against the second turn's prose. It is NOT a selection Claude made, inferred, or defaulted to at any point in either turn.",
+    "what_claude_authored": "v1.0.1's operationalization of the owner's decision into a concrete, testable contract: the exact body field names and literal values (status:'unknown', upstream:'UNKNOWN'), the four-row transport matrix and its collision proof, the UNKNOWN_PRODUCERS canonical set (BUDGET_EXHAUSTED, IN_FLIGHT_WAIT_EXCEEDED) that gives concrete shape to the owner's third named category ('other explicitly governed non-observation conditions'), and every numeral (TTL_MS, PROBE_WAIT_BUDGET_MS, BUDGET_WINDOW_MS, BUDGET_MAX_PROBES_PER_WINDOW). None of this technical elaboration is ratified by this record - see TECHNICAL_NUMERALS_EXPLICITLY_NOT_RATIFIED below. Only the owner's own words, transcribed under owner_selected_decision, carry ratifying force here.",
+    "three_distinct_concepts": {
+      "authority_recommendation": "What v1.0.0's original A2_IMPLEMENTATION_CONTRACT.matrix left ambiguous for the UNKNOWN row ('MUST NOT BE 200-healthy; rendered as the non-committal form fixed by TA-06', with no concrete form ever supplied) - the gap an independent certification (M11_TRACK_A_DAG_IC_FAIL) identified as blocking finding B-IC-1.",
+      "technical_recommendation": "NOT APPLICABLE AS A SEPARATE, PRIOR CLAUDE RECOMMENDATION. Unlike OD-1..OD-4 of the M11 health contract chain, no Claude-authored recommendation for the UNKNOWN rendering preceded the owner's decision. The owner supplied the closing decision directly, in response to B-IC-1, without an intervening recommendation step - the same asymmetry the M11 health contract record's OD-5 already precedented (docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-5].authority_recommendation.status: 'NOT_APPLICABLE_AS_A_SEPARATE_RECOMMENDATION_AT_V1_0_0').",
+      "owner_selected_decision": "The human owner's binding choice, recorded below and already APPLIED (not merely proposed) in v1.0.1's B_IC_1_CLOSURE and OWNER_UNKNOWN_DECISION blocks. This record is the ONLY thing that ratifies it as a canonical, independently-citable owner-authority artifact, promoting it out of an authority-derivation lane's own directing-text block and into this repository's established OWNER_RATIFICATION_RECORD class, alongside M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json."
+    }
+  },
+  "provenance_classification": "OWNER_RATIFIED_IN_A_PRIOR_AUTHORING_CONVERSATION_TURN__RE_CONFIRMED_IN_SUBSTANCE_IN_THIS_TURN__NOT_REOPENED. The decision was given as explicit conversational directing input to the CV1-M11-TRACK-A-IMPLEMENTATION-DAG-ERRATA-R2 mission, captured byte-for-byte in v1.0.1's OWNER_UNKNOWN_DECISION block, and restated in condensed prose as controlling, non-reopenable input to this record's own authoring mission. The two renderings were compared field-by-field in this authoring turn (see V101_PROVENANCE_RECONCILIATION and self_check) and found identical in substance; this record transcribes from v1.0.1's JSON block, the citable one of the two.",
+  "purpose": "Freeze the product owner's binding EP-1 UNKNOWN decision as a canonical, independently-citable OWNER_RATIFICATION_RECORD, against the exact effective Track A DAG package identified by CANDIDATE_BINDING. This record does not introduce a new decision - v1.0.1 already applies it - it supplies the dedicated ratification-record provenance the decision previously lacked, consistent with this repository's own convention (compare docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json). This record is a PRECONDITION for opening Track A implementation; it does not itself open it.",
+  "precedence_note": "This record is canonical for the EP-1 UNKNOWN decision's owner-authority provenance only. It does NOT override, weaken, or reinterpret v1.0.0 or v1.0.1 of the Track A DAG authority, OC-1 (the AS-2/AS-3 scope), OD-1 through OD-5 of the M11 health contract chain, the M11-SC-7 rider, or any FIB/PC-01B/IM-01B frozen authority. Where this record is silent, v1.0.1 (the currently controlling, corrected Track A DAG authority) and the M11 health contract ratification chain control.",
+  "reopening_rule": "THIS IS NOT A RE-ADJUDICATION AND NOT A RE-CERTIFICATION. It does not reopen B-IC-1 or B-IC-2's technical closure in v1.0.1, does not reopen OC-1 or OC-2, does not reopen or modify any of Track A's twenty DAG_NODES or thirty-three DAG_EDGES, does not reopen any of OD-1 through OD-5 or the M11-SC-7 rider, and does not reopen or re-derive the M11_TRACK_A_V101_RECERT verdict named in NONBLOCKING_FINDING_CARRYOVER below. It records ONE decision - EP-1's UNKNOWN rendering - that was already explicit and already applied; nothing else about the effective package is reconsidered.",
+  "ratifications": [
+    {
+      "id": "EP1-UNKNOWN",
+      "domain": "EP1_PROVIDER_TOUCH_UNKNOWN_VERDICT_RENDERING",
+      "question_ratified": "What does EP-1 (/api/health/auth) return, and how does the M11 runner classify that return, when the provider-health touch (TA-03) cannot produce a definitive REACHABLE/UNREACHABLE verdict - the gap independent certification M11_TRACK_A_DAG_IC_FAIL named as blocking finding B-IC-1?",
+      "authority_recommendation": {
+        "source": "v1.0.0 A2_IMPLEMENTATION_CONTRACT.matrix, the row for state 'UPSTREAM VERDICT UNKNOWN (budget exhausted)'",
+        "text": "status: \"MUST NOT BE 200-healthy; rendered as the non-committal form fixed by TA-06\", body: \"upstream verdict UNKNOWN\", blocking: \"must never manufacture a healthy verdict\"",
+        "status": "AMBIGUOUS AND INCOMPLETE - flagged as blocking finding B-IC-1 by independent certification. The phrase 'MUST NOT BE 200-healthy' does not by itself fix an HTTP status, and TA-06's contract never returned to supply the deferred 'non-committal form'. Superseded by v1.0.1's B_IC_1_CLOSURE, which is itself the direct application of the owner_selected_decision below."
+      },
+      "technical_recommendation": {
+        "source": "N/A - no Claude-authored recommendation for the UNKNOWN rendering existed prior to the owner's decision.",
+        "status": "NOT_APPLICABLE_AS_A_SEPARATE_RECOMMENDATION. The owner supplied the closing decision directly in response to B-IC-1."
+      },
+      "owner_selected_decision": {
+        "http_status": 200,
+        "body_requirement": "The health state MUST be explicitly UNKNOWN / NON-HEALTHY, and MUST be observably distinguishable from both AS-1 healthy and AS-2 reachable/non-failing.",
+        "runner_disposition": "INCONCLUSIVE. NEVER PASS. NEVER HEALTH FAIL.",
+        "owner_named_included_categories": [
+          "provider-touch budget exhausted",
+          "no valid observation obtained",
+          "other explicitly governed non-observation conditions"
+        ],
+        "hard_prohibition": "UNKNOWN MUST NOT be mapped to 503 merely because an observation was unavailable.",
+        "reopening_instruction_from_the_owner": "Do not reinterpret this decision.",
+        "signed": true
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "already_applied_at": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json OWNER_UNKNOWN_DECISION (the directing-text capture) and B_IC_1_CLOSURE.the_corrected_EP1_transport_matrix (the operationalized four-row contract) and RUNNER_CORRECTION (the INCONCLUSIVE mapping and the status===200=>PASS prohibition). This ratification record does not change any of that text; it supplies its canonical owner-authority provenance.",
+      "repository_binding": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json A2_IMPLEMENTATION_CONTRACT.matrix (the ambiguous row this ratifies a fix for); docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json OWNER_UNKNOWN_DECISION, B_IC_1_CLOSURE, UNKNOWN_PRODUCERS and RUNNER_CORRECTION (the applied, corrected contract)."
+    }
+  ],
+  "TECHNICAL_NUMERALS_EXPLICITLY_NOT_RATIFIED": {
+    "status": "NONE OF THE FOLLOWING IS RATIFIED BY THIS RECORD. Each remains Claude-authored TECHNICAL_DERIVED_PARAMETER content from v1.0.1, NOT_OWNER_SELECTED, tunable within its own stated admissible range without any owner act.",
+    "numerals": [
+      {
+        "name": "TTL_MS",
+        "value": 15000,
+        "admissible_range": [
+          5000,
+          60000
+        ],
+        "source": "v1.0.1 B_IC_2_CLOSURE.corrected_provenance.technical_derived_parameters"
+      },
+      {
+        "name": "PROBE_WAIT_BUDGET_MS",
+        "value": 3000,
+        "admissible_range": [
+          500,
+          10000
+        ],
+        "source": "v1.0.1 UNKNOWN_PRODUCERS.new_technical_parameter"
+      },
+      {
+        "name": "BUDGET_WINDOW_MS",
+        "value": 60000,
+        "admissible_range": [
+          30000,
+          300000
+        ],
+        "source": "v1.0.1 PROVIDER_REQUEST_BUDGET_CONTRACT.parameters.BUDGET_WINDOW_MS"
+      },
+      {
+        "name": "BUDGET_MAX_PROBES_PER_WINDOW",
+        "value": 10,
+        "admissible_range": [
+          4,
+          30
+        ],
+        "source": "v1.0.1 PROVIDER_REQUEST_BUDGET_CONTRACT.parameters.BUDGET_MAX_PROBES_PER_WINDOW"
+      }
+    ],
+    "what_IS_ratified_instead": "Only the owner's own four requirements under ratifications[EP1-UNKNOWN].owner_selected_decision: the HTTP status, the distinguishability requirement, the runner disposition, and the 503 prohibition. No numeral appears in that block for exactly this reason."
+  },
+  "CROSS_DECISION_COHERENCE": {
+    "rule": "Recorded so no reader has to re-derive how this decision sits alongside the M11 health contract's own ratified decisions.",
+    "bindings": [
+      {
+        "id": "XD-EP1-1",
+        "statement": "UNKNOWN's INCONCLUSIVE disposition is the SAME classification class the owner already ratified for 429 under OD-4's M11-SC-6 disposition (docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json ratifications[OD-4].owner_selected_decision.M11-SC-6_disposition.selection: 'INCONCLUSIVE_UNCONDITIONAL'). This decision extends an already-ratified pattern - 'we do not have a real answer, so we do not manufacture PASS or FAIL' - to a new trigger (a non-observation of the provider), rather than introducing a novel disposition class."
+      },
+      {
+        "id": "XD-EP1-2",
+        "statement": "This decision does NOT touch OC-1 or the AS-2/AS-3 scope. AS-2 remains 200/REACHABLE, 503 remains prohibited for it; AS-3 remains 503/UNREACHABLE. UNKNOWN is a FOURTH, distinct outcome, not a relabeling of either."
+      },
+      {
+        "id": "XD-EP1-3",
+        "statement": "This decision does not touch OD-5 or Track B. The UNKNOWN rendering governs EP-1's ANONYMOUS/UNAUTHENTICATED cell only; it has no bearing on the authenticated EP-2 cell's UNAVAILABLE_PENDING_OD5 status, which remains governed entirely by OD-2's interim recording rule."
+      }
+    ]
+  },
+  "NONBLOCKING_FINDING_CARRYOVER": {
+    "source": "A bounded v1.0.1 recertification, directed by this record's own authoring mission as verdict token M11_TRACK_A_V101_RECERT_PASS_WITH_NONBLOCKING_FINDINGS. NO COMMITTED RECERTIFICATION ARTIFACT EXISTS IN THIS REPOSITORY TREE as of this record's materialization: grep -rln for 'M11_TRACK_A_V101_RECERT' and for 'RECERT_PASS_WITH_NONBLOCKING' across the full tracked tree returns zero matches for the former and exactly one match for the latter - docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json:26, which reads 'FOCUSED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS', a DIFFERENT verdict token for a different (M11 health contract) recertification entirely, independently re-verified in this authoring turn, not assumed.",
+    "occurred_vs_materialized": "OCCURRED_PER_DIRECTING_MISSION / NOT_MATERIALIZED_IN_TREE. Consistent with this lane's own established treatment of PRE-1 (v1.0.0 DERIVATION_PRECONDITIONS.preconditions[PRE-1]): an owner-directed, affirmed certification with no committed verdict artifact is not the same as one that did not occur. It is ALSO not the same as one this record can cite substantive content from - that is the genuine limitation stated in what_this_record_cannot_do below.",
+    "rule": "Findings NB-R1, NB-R2, NB-R3, NB-R4, NB-R6 and NB-R7 and NB-R8 are named by the directing mission as nonblocking findings of that recertification, to be carried forward as Track A implementation requirements. NB-R5 is CONSPICUOUSLY ABSENT from the directing mission's own enumeration and is NOT assumed, renumbered, backfilled, or silently skipped over without mention by this record.",
+    "findings_carried_forward_by_identifier_only": [
+      {
+        "id": "NB-R1",
+        "disposition": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+      },
+      {
+        "id": "NB-R2",
+        "disposition": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+      },
+      {
+        "id": "NB-R3",
+        "disposition": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+      },
+      {
+        "id": "NB-R4",
+        "disposition": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+      },
+      {
+        "id": "NB-R6",
+        "disposition": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+      },
+      {
+        "id": "NB-R7",
+        "disposition": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+      },
+      {
+        "id": "NB-R8",
+        "disposition": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+      }
+    ],
+    "what_this_record_cannot_do": "This record does NOT fabricate substantive text for NB-R1..NB-R4 or NB-R6..NB-R8. No recertification artifact naming their content exists in the repository tree, and the directing mission supplied only the seven identifiers, not their text. Inventing plausible findings under these identifiers would be evidence fabrication - exactly the class of error this repository's own practice (ATTESTED != PROVEN, applied throughout the M11 and CV1-D1 lanes' own nonblocking-finding carryovers) exists to prevent.",
+    "what_this_record_does_instead": "Names the seven identifiers, records the obligation the directing mission places on them (carry forward as Track A implementation requirements), and states plainly that a future implementation lane MUST locate each finding's actual text - from the recertification's own eventual materialization, or from the conversation that produced the verdict - before treating any of NB-R1..NB-R4 or NB-R6..NB-R8 as satisfied, deferred, or closed. An implementation lane that proceeds without locating this content is proceeding with an INCOMPLETE requirement set, and this record says so explicitly rather than silently treating seven unread findings as already closed."
+  },
+  "V101_PROVENANCE_RECONCILIATION": {
+    "question": "Does v1.0.1 need a successor amendment (v1.0.2) now that this canonical ratification record exists?",
+    "answer": "NO. v1.0.1 is NOT edited, amended, or superseded by this record.",
+    "reasoning": "v1.0.1's OWNER_UNKNOWN_DECISION block accurately describes the decision as 'OWNER DECISION. BINDING. SIGNED. NOT REINTERPRETED BY THIS AMENDMENT' and sources it to the directing mission text of its own authoring turn. It never claimed to BE, or to be housed in, a dedicated OWNER_RATIFICATION_RECORD-class artifact - it correctly recorded a directing input, in the class of artifact (an IMPLEMENTATION_DAG_DERIVATION_AMENDMENT) that consumes such input rather than originates it. This record supplies the dedicated ratification-record home the decision previously lacked, WITHOUT that prior text having been inaccurate. Nothing in v1.0.1 requires correction; a v1.0.2 amendment would therefore not be MECHANICALLY REQUIRED, and this record does not create one.",
+    "if_a_future_lane_disagrees": "If a future independent review finds v1.0.1's OWNER_UNKNOWN_DECISION text to in fact diverge from this record's ratifications[EP1-UNKNOWN] in some respect not identified here, THAT divergence - not the mere existence of this record - would be the trigger for a v1.0.2 successor amendment, authored under its own separate authority.",
+    "verification_performed_in_this_turn": "v1.0.1's OWNER_UNKNOWN_DECISION and B_IC_1_CLOSURE blocks were re-read in full in this authoring turn and compared field-by-field against this record's ratifications[EP1-UNKNOWN].owner_selected_decision: http_status (200 in both), body_requirement (identical text), runner_disposition (identical text), hard_prohibition (identical text), and the three named categories (identical list, same order). No divergence was found."
+  },
+  "explicit_non_authorizations": [
+    "This record does NOT authorize implementation of TA-01, TA-03, TA-05, TA-06, TA-10, TA-19, or any other Track A DAG node.",
+    "This record does NOT authorize TA-20 (the RELEASE_GATE_LEDGER owner-field act).",
+    "This record does NOT authorize opening Track B or any staging-principal authority lane.",
+    "This record does NOT ratify TTL_MS, PROBE_WAIT_BUDGET_MS, BUDGET_WINDOW_MS, BUDGET_MAX_PROBES_PER_WINDOW, or any other numeral. See TECHNICAL_NUMERALS_EXPLICITLY_NOT_RATIFIED.",
+    "This record does NOT edit, amend, or supersede docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json or its v1.0.1 amendment. Both are re-derived to their exact blob hashes under CANDIDATE_BINDING and are untouched by this write set.",
+    "This record does NOT declare the M11_TRACK_A_V101_RECERT verdict materialized, and does NOT fabricate a recertification artifact or NB-R1..NB-R8's substantive content.",
+    "This record does NOT reopen B-IC-1, B-IC-2, OC-1, OC-2, or any of Track A's twenty DAG_NODES or thirty-three DAG_EDGES.",
+    "This record does NOT authorize any deployment, any hosted smoke, any provider call, any Vercel environment change, any Supabase mutation, any credential generation, or any credential rotation.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 1,
+    "expected_id_set": [
+      "EP1-UNKNOWN"
+    ],
+    "expected_owner_selected_decision": {
+      "http_status": 200,
+      "runner_disposition": "INCONCLUSIVE. NEVER PASS. NEVER HEALTH FAIL.",
+      "signed": true
+    },
+    "candidate_sha": "2d5e32bf0efb2db355f46ce74b2ea03f5545a1d6",
+    "checks": [
+      "ratifications.length == 1",
+      "ratifications[0].id == 'EP1-UNKNOWN'",
+      "ratifications[0].owner_selected_decision.http_status == 200",
+      "ratifications[0].owner_selected_decision.signed == true",
+      "ratifications[0].status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "no ratification's owner_selected_decision block contains TTL_MS, PROBE_WAIT_BUDGET_MS, BUDGET_WINDOW_MS or BUDGET_MAX_PROBES_PER_WINDOW as a KEY - those live only under TECHNICAL_NUMERALS_EXPLICITLY_NOT_RATIFIED",
+      "NONBLOCKING_FINDING_CARRYOVER.findings_carried_forward_by_identifier_only has exactly 7 entries, ids NB-R1,NB-R2,NB-R3,NB-R4,NB-R6,NB-R7,NB-R8, NB-R5 absent and not silently renumbered",
+      "every findings_carried_forward_by_identifier_only[*].disposition == 'CONTENT_NOT_AVAILABLE_TO_THIS_LANE' - no fabricated finding text present",
+      "CANDIDATE_BINDING.package_blob_pins has exactly 4 entries",
+      "every companion_authorities entry's blob field matches CANDIDATE_BINDING.package_blob_pins for the same path",
+      "v1.0.1's OWNER_UNKNOWN_DECISION fields (http_status, body_requirement, runner_disposition, hard_prohibition, owner_named_examples) match this record's ratifications[EP1-UNKNOWN].owner_selected_decision field-by-field - re-verified in V101_PROVENANCE_RECONCILIATION.verification_performed_in_this_turn",
+      "no secret, credential, token, connection string, project reference, email address or user identifier appears anywhere in this artifact",
+      "final_state names implementation as NOT AUTHORIZED"
+    ],
+    "validation_method": "JSON parse, structural self-check executed against this document, byte-identity verification of all four companion artifacts via git object reads at the candidate commit, referential integrity of every cited JSON path against live content, a repository-wide grep for the recert verdict token and for NB-R identifiers (both re-run in this authoring turn, not cited from an earlier one), and a secret scan."
+  },
+  "required_independent_review": "This record requires INDEPENDENT BOUNDED VERIFICATION before Track A implementation may begin. The verification is bounded to: the candidate and blob bindings, this record's fidelity to the owner's EP-1 UNKNOWN decision as it was actually given (both in the ERRATA-R2 mission and restated in this record's own mission), the field-by-field match against v1.0.1's already-applied text, the TECHNICAL_NUMERALS_EXPLICITLY_NOT_RATIFIED list (confirming no numeral was smuggled into ratified content), and NONBLOCKING_FINDING_CARRYOVER's honest treatment of the unmaterialized recert verdict and the seven content-pending NB-R findings. It is not a re-adjudication of v1.0.0 or v1.0.1 of the Track A DAG authority, which remain independently certified as recorded in their own chain.",
+  "final_state": "OWNER_RATIFICATION_RECORDED__IMPLEMENTATION_NOT_AUTHORIZED",
+  "next_gate": "SHORT_INDEPENDENT_VERIFICATION_OF_THIS_OWNER_RECORD: verify the candidate/blob bindings and this record's fidelity to the owner's EP-1 UNKNOWN decision. Only after that verification may Track A implementation begin - carrying NB-R1, NB-R2, NB-R3, NB-R4, NB-R6, NB-R7 and NB-R8 as implementation requirements, but ONLY once each finding's actual content has been located; this record does not supply it. Track B remains untouched and unopened by this record."
+}
