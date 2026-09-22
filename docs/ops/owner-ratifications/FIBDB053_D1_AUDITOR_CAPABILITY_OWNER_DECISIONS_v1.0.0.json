@@ -1,0 +1,250 @@
+{
+  "package_id": "FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+  "authority_class": "OWNER_RATIFICATION_RECORD",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_HOSTED_POSTGRESQL_CONNECTION__NO_CREDENTIAL_GENERATION__NO_CREDENTIAL_ROTATION__NO_VALID_UNTIL_MUTATION__NO_GRANT__NO_REVOKE__NO_SUPABASE_MUTATION__NO_CUSTODY_STORE_WRITE__NO_SECRET_VALUE__NO_PRECHECK_R2",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-CAPABILITY-OWNER-RATIFICATION-AW-R1",
+  "lane": "CV1-D1-AUDITOR-CAPABILITY-OWNER-RATIFICATION-AW-R1",
+  "role": "FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "OWNER_RATIFICATION_ARTIFACT_AUTHORING_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "candidate_branch": "codex/cv1-d1-auditor-capability-adjudication-aw-r1",
+    "candidate_pr": "#207",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty)."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "This record ratifies OD-1 through OD-6 as they read in the EXACT candidate below, and in no other. A consumer that finds any bound blob hash to differ from the value re-derived by `git ls-tree` at read time MUST NOT apply this ratification to whatever the differing content is now. The correct response is STOP_RATIFICATION_BINDING_MISMATCH, not a silent carry-forward.",
+    "candidate_sha": "d21f9f18a26197d288542035bdb49f65b17d1203",
+    "candidate_sha_re_derivation_note": "This is the commit whose tree the six effective_package blob hashes below were read FROM (`git ls-tree -r d21f9f18a26197d288542035bdb49f65b17d1203 -- <paths>`, re-run at materialization). It is recorded for provenance; STOP_RATIFICATION_BINDING_MISMATCH is triggered by a BLOB HASH mismatch on any of the six paths, not by the candidate SHA alone becoming an ancestor of a later commit.",
+    "effective_package": [
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+        "blob_sha": "eb77f0954495625d110be3791053a6850ba2b590"
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json",
+        "blob_sha": "2790f3530ce44fd77e12ecdf49430d93ec7a4a70"
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "blob_sha": "b233bd1f947fd6c49e0416279a2f98a260a6d5de"
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "blob_sha": "f4a9956012c471044a6044efd9f3a79bedc77cee"
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "blob_sha": "f7387d720eb8e6ec439ae968ff11661aa1c53e47"
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+        "blob_sha": "1433789381483733502d503a8f55c23a05185bb4"
+      }
+    ],
+    "STOP_RATIFICATION_BINDING_MISMATCH": "Triggered when a re-derivation of any blob_sha above, at the time this record is consumed, does not match the value recorded here. When triggered: this record does not apply to the differing artifact; the owner's selections remain their selections as a matter of record, but their binding to a SPECIFIC effective package is broken, and a successor ratification record (or a re-confirmation from the owner against the new candidate) is required before any execution DAG may cite OD-1..OD-6 as settled."
+  },
+  "companion_authority": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+  "companion_authority_amendments": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json"
+  ],
+  "companion_certifications_consumed": [
+    "CV1-D1-AUDITOR-CAPABILITY-IC-R1 (CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS on v1.0.0, 9 non-blocking findings, resolved by v1.0.1)",
+    "CV1-D1-AUDITOR-CAPABILITY-FOCUSED-RECERT-R1 (FOCUSED_RECERT_FAIL on v1.0.0+v1.0.1 — 1 blocking finding B-1 and 3 non-blocking findings NB-1/NB-2/NB-3 — which the authoring lane represents as resolved by v1.0.2, per the v1.0.2 amendment’s own SUPERSEDED_PARENT_CLAUSES_V102 and SUPERSEDED_V101_CLAUSES)"
+  ],
+  "OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD": "v1.0.2’s own FOCUSED INDEPENDENT RE-CERTIFICATION (the gate v1.0.2’s own next_gate names: bounded verification of its five new clauses SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3) has NOT yet occurred as of this record’s materialization. This ratification record TRANSCRIBES the owner’s selections against the candidate AS IT CURRENTLY READS; it does not assert, substitute for, or satisfy that outstanding certification. PHASE_P0_PREREQUISITE.gate (unchanged, still controlling) requires BOTH independent certification of the authority/manifest pair AND ratification of OD-1..OD-6 before PHASE_P1 opens — this record closes only the second half.",
+  "provenance_classification": "OWNER_RATIFIED_IN_THE_CURRENT_CONVERSATION. The human owner supplied the selections below directly as directing text for OD-1 through OD-6. THIS FILE IS NOT A VERBATIM TRANSCRIPT of the conversation and it is not a new adjudication: no option was chosen, weighed, or substituted by this lane. It is the canonical normalized ratification record so that a successor execution lane can cite a stable repository artifact instead of re-deriving or informally re-summarizing a decision the owner has already made. OWNER_RATIFICATION and REPOSITORY MEASUREMENT remain distinct categories throughout: a ratification is binding product/governance intent about WHICH option to pursue; a measurement (HU-1..HU-13’s hosted facts, MG-1..MG-6, KG-1..KG-6) remains a falsifiable, timestamped claim about the hosted target that any successor lane must re-derive rather than inherit.",
+  "precedence_note": "This record is canonical for owner intent on OD-1 through OD-6 ONLY. It does NOT override the effective authority (v1.0.0+v1.0.1+v1.0.2), which remains the source of the DERIVED contracts (MINIMUM_PRIVILEGE_CONTRACT, SECRET_GENERATION_CONTRACT, SECRET_CUSTODY_CONTRACT, SECRET_DELIVERY_CONTRACT, SECRET_ROTATION_CONTRACT, MUTATION_ROLLBACK_CONTRACT, FAIL_CLOSED_TOKENS, TARGET_IDENTITY, PRODUCTION_VETO), the HOSTED_STATE_UNKNOWN register, and PHASE_P0_PREREQUISITE. Where this record and the effective authority could be read to conflict, the effective authority's derivations control the FACTS and MECHANISM; this record controls only WHICH branch of an owner-gated choice is pursued. A ratification does not relax a machine gate, a fail-closed rule, the EXECUTE prohibition, or REQ-2's conditionality — none of which this record touches.",
+  "reopening_rule": "THIS IS NOT A NEW ADJUDICATION AND NOT A NEW OD. Do NOT reopen or re-derive MINIMUM_PRIVILEGE_CONTRACT, ENGINE_SEMANTICS_MEASURED, MEASURED_REPOSITORY_STATE, or any FAIL_CLOSED_TOKENS. Do NOT treat OD-4’s ratified successor-routing as authorizing the successor lane’s own work, and do NOT treat OD-5’s package-route selection as itself the protected-surface allocation MR-3 still requires. Absence of a hosted mutation following this record is not a contradiction — none is authorized by it. A conflict between this record and the effective authority that neither resolves fails closed (STOP_FOR_AUTHORITY_CONFLICT); it is not silently resolved in either direction by a successor lane.",
+  "why_this_record_exists": {
+    "problem": "The effective authority (v1.0.0+v1.0.1+v1.0.2) correctly refused to make six semantic choices silently and routed them to OWNER_DECISION_REQUIRED (OD-1..OD-6), per FACT_VS_RECOMMENDATION_VS_DECISION and PHASE_P0_PREREQUISITE. The owner has now supplied explicit selections for all six, in the current conversation.",
+    "what_changed": "Before this record, OD-1..OD-6 were open questions with candidate options and, for most, an engineering recommendation the authority explicitly declined to bind. After this record, each has an owner-selected disposition. No hosted state, no repository file under docs/ops/release/, and no execution authority changes as a result — the six authority-package files remain byte-identical to CANDIDATE_BINDING.",
+    "owner_choice_summary": "Persistent role with a rotated execution secret, rotation mandatory after the FINAL WITNESS, for OD-1; Windows Credential Manager (DPAPI-backed OS credential vault) custody with process-scoped delivery from that vault, a named custody-inventory path, HU-4 risk acceptance, and operator prestate read NOT elected, for OD-2; VALID UNTIL set to a policy offset of 24 hours after the planned FINAL WITNESS — not a computed timestamp — for OD-3; ratify OD-4 itself now and route the narrower-catalog-capability question to a named successor lane after D1-8 closes, for OD-4; the governed db/prepared/** package route for OD-5; and materialize independent-certification verdicts as tracked repository evidence going forward, for OD-6."
+  },
+  "AUTHORITY_RECOMMENDATION_VS_TECHNICAL_RECOMMENDATION_VS_OWNER_SELECTED_DECISION": {
+    "rule": "The three categories are kept distinct throughout the ratifications array below, per-decision. Restated once here for a reader who wants the general shape rather than six repetitions.",
+    "AUTHORITY_RECOMMENDATION": "What the effective authority (v1.0.0+v1.0.1+v1.0.2) itself derived, enumerated as options, or recommended under ENGINEERING_RECOMMENDATION — repository content that predates this record and that this record does not alter.",
+    "TECHNICAL_RECOMMENDATION": "Any recommendation this AUTHORING lane itself might have offered on top of the authority’s derivation. NONE was offered for any of the six decisions — this record’s role is transcription and binding, not advocacy.",
+    "OWNER_SELECTED_DECISION": "The only binding content in this artifact: the human owner’s explicit selection for each OD, supplied directly in the current conversation. Distinguishing this from the two categories above is the entire purpose of this record. For several decisions (OD-1, OD-2’s custody/delivery direction, OD-5, OD-6) the owner’s selection coincides with the authority’s own engineering recommendation — recorded explicitly as such below, because agreement is still the owner’s own act and not an inheritance."
+  },
+  "definitional_intent": {
+    "RATIFIED_PERSISTENT_ROLE_ROTATED_SECRET_MANDATORY_POST_WITNESS": "The owner has selected, from SECRET_GENERATION_CONTRACT.EPHEMERAL_OR_PERSISTENT's three options, the second — PERSISTENT ROLE WITH A ROTATED EXECUTION SECRET — and, from SECRET_ROTATION_CONTRACT.MANDATORY_ROTATION_AFTER_FINAL_WITNESS's two-sided framing, the MANDATORY side. Both selections coincide exactly with the authority's own ENGINEERING_RECOMMENDATION for each half of OD-1; the owner's act is agreement, not inheritance, and is recorded as the owner's own selection rather than as an automatic default.",
+    "RATIFIED_CREDENTIAL_MANAGER_CUSTODY_PROCESS_SCOPED_DELIVERY": "The owner has selected Windows Credential Manager, a DPAPI-backed OS credential vault, as the specific custody mechanism under OD-2.sub_decisions[0] — a SPECIFIC instance of the authority's generic 'a secret manager or OS credential vault' engineering recommendation, and new owner-supplied specificity the authority itself left open. Delivery is selected as PROCESS-SCOPED FROM THAT VAULT under OD-2.sub_decisions[1] AS CORRECTED BY v1.0.2 SPC102-1 — the only candidate mechanism SPC102-1 leaves selectable, since v1.0.1 SECTION_A7 closed the user-scope-persistent alternative absolutely. The custody-inventory path is owner-supplied new content (a specific filename) under the directory the authority's own engineering recommendation named. HU-4's break-risk is explicitly ACCEPTED under sub_decisions[3]. The operator-credential prestate read is explicitly NOT ELECTED under sub_decisions[4], again coinciding with the authority's own engineering recommendation.",
+    "RATIFIED_VALID_UNTIL_POLICY_OFFSET_24H_POST_WITNESS": "The owner has selected to SET VALID UNTIL, agreeing with OD-3's engineering recommendation direction, but has supplied a CONCRETE POLICY — 24 hours after the planned FINAL WITNESS — where the authority's own recommendation said only 'shortly after'. This is a POLICY OFFSET, not an already-computable UTC timestamp: no planned FINAL WITNESS time is concrete at the moment of this ratification, so no exact timestamp is invented here. NONBLOCKING_EXECUTION_PRECONDITION_NOTES below records the binding rule that the exact UTC value must be computed and shown to the owner at HC-1, immediately before MR-2, once a planned witness time exists.",
+    "RATIFIED_SUCCESSOR_QUESTION_ROUTED": "The owner ratifies OD-4 ITSELF now — it is not deferred — and additionally names a specific successor lane, CV1-D1-AUDITOR-NARROWER-CATALOG-CAPABILITY-AUTHORITY-R1, to own the narrower-catalog-capability question after D1-8 closes. This is new owner-supplied content (a lane identifier) the authority itself did not name, analogous to how a prior ratification record in this repository introduced an owner-supplied branch name for an option the authority had named without naming a specific instance of it. The owner’s selection coincides with, and gives a concrete successor venue to, the authority’s own engineering recommendation — clarified by v1.0.2 SPC102-2 — to raise the narrower-role question as a SUCCESSOR question and not let it block D-1.",
+    "RATIFIED_PREPARED_PACKAGE": "The owner has selected the governed db/prepared/** package route for MR-3, IF measurement proves USAGE on uellix_stella_ops is required, coinciding exactly with GRANT_DELIVERY_CHANNEL_ADJUDICATION’s verdict and OD-5’s own engineering recommendation. No ad-hoc hosted GRANT is ratified by this selection. REQ-2’s conditionality (MINIMUM_PRIVILEGE_CONTRACT, unchanged) is explicitly preserved: this ratification decides the CHANNEL a future MR-3 would travel through, not whether MR-3 fires at all, and a protected-surface allocation may still be required before it can.",
+    "RATIFIED_MATERIALIZE_GOING_FORWARD": "The owner has selected to materialize FUTURE independent-certification verdicts as tracked repository evidence, coinciding exactly with OD-6's own engineering recommendation, and explicitly NOT retroactively — no past verdict (including CV1-D1-AUDITOR-CAPABILITY-IC-R1's own CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS, or the FOCUSED_RECERT_FAIL this v1.0.2 pair responds to) is reconstructed as a document by this ratification. Scope is VERDICT ARTIFACTS specifically, not conversation transcripts or session logs, and no secret material may ever be stored in one."
+  },
+  "ratifications": [
+    {
+      "id": "OD-1",
+      "domain": "CREDENTIAL_LIFECYCLE",
+      "authority_recommendation": "SECRET_GENERATION_CONTRACT.EPHEMERAL_OR_PERSISTENT enumerates three options and recommends the second: 'PERSISTENT ROLE WITH A ROTATED EXECUTION SECRET, rotated after the FINAL WITNESS.' SECRET_ROTATION_CONTRACT.MANDATORY_ROTATION_AFTER_FINAL_WITNESS separately frames rotation-after-witness as an owner decision and recommends 'MANDATORY', while stating the argument against fairly (rotating every use adds an owner act and a human confirmation to every future audit). Neither recommendation is promoted into a contract clause; OD-1 explicitly routes both halves to the owner.",
+      "technical_recommendation": "NONE OFFERED by this lane. This record transcribes the owner’s selection; it does not weigh the three lifecycle options or the rotation argument.",
+      "owner_selected_decision": "PERSISTENT_ROLE_ROTATED_SECRET, with rotation after the FINAL WITNESS MANDATORY. uellix_auditor remains a persistent role; its execution secret is rotated for governed use; after the FINAL WITNESS, rotation is mandatory; a persistent credential with no rotation is explicitly NOT the selected posture.",
+      "disposition": "RATIFIED_PERSISTENT_ROLE_ROTATED_SECRET_MANDATORY_POST_WITNESS",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The option ratified is SECRET_GENERATION_CONTRACT.EPHEMERAL_OR_PERSISTENT.options_stated_neutrally[1] ('persistent role with a rotated execution secret') combined with SECRET_ROTATION_CONTRACT.MANDATORY_ROTATION_AFTER_FINAL_WITNESS.engineering_recommendation ('MANDATORY'). Both selections coincide with the authority's own ENGINEERING_RECOMMENDATION text, cited verbatim above; the owner's act is to adopt them as binding, not merely to leave them as recommendations.",
+      "execution_not_authorized_by_this_ratification": "Minting, rotating, or delivering any credential remains a separate governed act (MR-2 under MUTATION_ROLLBACK_CONTRACT), gated behind HC-1 and requiring its own prestate capture (declared UNKNOWN per MR-2’s own contract), poststate verification, and compensating action on failure. No credential exists, is generated, or is rotated as a result of this ratification."
+    },
+    {
+      "id": "OD-2",
+      "domain": "SECRET_CUSTODY_AND_DELIVERY",
+      "authority_recommendation": "SECRET_DELIVERY_CONTRACT.WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION.MECHANISM_2_PROCESS_SCOPED.engineering_recommendation names 'a dedicated secret manager or OS credential vault, read into the process environment at invocation' as preferable on every axis, without mandating one because none was established in the repository at AS_OF_TREE. OD-2's own engineering_recommendation adds: 'the custody inventory as a NAMES-ONLY tracked document under docs/ops/staging/; and the operator prestate read NOT elected.' v1.0.2 SPC102-1 subsequently closed sub_decisions[1] so that a user-scope persistent variable is no longer a candidate this sub-decision may select at all; only MECHANISM_2 (process-scoped) remains.",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "CUSTODY: Windows Credential Manager (a DPAPI-backed OS credential vault). DELIVERY: process-scoped from that vault, per SECRET_DELIVERY_CONTRACT.MECHANISM_2_PROCESS_SCOPED’s five binding conditions as corrected by v1.0.2 SPC102-1 — never user-scope persistent, never setx. CUSTODY INVENTORY PATH: docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json, recording names, roles and custody metadata only, never a secret value. HU-4 (rotation may break an unrecorded staging consumer): ACCEPTED — the risk is bounded to staging and to the existing read-only role, and no pre-rotation detector exists under the current authority. OPERATOR PRESTATE READ: NOT ELECTED.",
+      "disposition": "RATIFIED_CREDENTIAL_MANAGER_CUSTODY_PROCESS_SCOPED_DELIVERY",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The delivery mechanism ratified is the ONLY one v1.0.2 SPC102-1 leaves selectable under OD-2.sub_decisions[1] as corrected: “Which PROCESS-SCOPED delivery mechanism places it in the process environment, evaluated against all five binding conditions in SECRET_DELIVERY_CONTRACT.MECHANISM_2_PROCESS_SCOPED (v1.0.1 SECTION_A7) — a dedicated secret manager or OS credential vault … being the two live candidates at AS_OF_TREE.” The custody mechanism (Windows Credential Manager) is owner-supplied specificity of that generic pair; the inventory filename is owner-supplied new content under the directory OD-2’s own engineering_recommendation names; HU-4 acceptance is direct ratification of OD-2.sub_decisions[3]; the operator-prestate election is direct ratification of OD-2.sub_decisions[4], coinciding with the authority’s own recommendation.",
+      "execution_not_authorized_by_this_ratification": "No credential is stored in Windows Credential Manager, no custody-inventory file is created or populated, and no delivery occurs as a result of this ratification. Populating the custody inventory’s structure (even empty) is explicitly NOT authorized by this record — the owner has selected its FUTURE canonical path, which is a selection of a path, not authorization to create or populate it now. That remains a separate governed act, gated behind its own prestate/poststate discipline under PHASE_P4 and HC-1."
+    },
+    {
+      "id": "OD-3",
+      "domain": "CREDENTIAL_EXPIRATION_POLICY",
+      "authority_recommendation": "OD-3's own engineering_recommendation: 'Set it, to a date shortly after the planned FINAL WITNESS, and RECORD the exact UTC timestamp in the capability evidence. An unrecorded expiry converts a scheduled event into an unexplained outage that E-9 shows presents as an ordinary authentication failure.'",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "SET VALID UNTIL. POLICY: VALID_UNTIL = planned FINAL WITNESS time + 24 hours. This is an OWNER POLICY OFFSET, not an already-computable UTC timestamp — no planned FINAL WITNESS time is concrete at the moment of this ratification. If the planned witness window changes, or the 24-hour window would be exceeded before the witness completes, the response is RE-ROTATE (mint a fresh credential under the same policy), never extend the existing credential’s expiration merely to continue.",
+      "disposition": "RATIFIED_VALID_UNTIL_POLICY_OFFSET_24H_POST_WITNESS",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Concretizes OD-3's engineering_recommendation ('shortly after the planned FINAL WITNESS') into a specific, owner-selected offset (24 hours), and binds SECRET_ROTATION_CONTRACT's rotation-mechanics ('rotation mechanics … identical to the initial mint') as the response to any window change, per this ratification's own re-rotate rule rather than an extension.",
+      "execution_not_authorized_by_this_ratification": "No VALID UNTIL value is set, computed, or recorded by this ratification. The exact UTC timestamp implementing this policy is computed and materialized only at HC-1, immediately before MR-2, once a planned FINAL WITNESS time is concrete — see NONBLOCKING_EXECUTION_PRECONDITION_NOTES EXEC-NOTE-1 below, which is binding on the execution lane though it is not itself ratification content."
+    },
+    {
+      "id": "OD-4",
+      "domain": "NARROWER_CATALOG_CAPABILITY_SUCCESSOR_QUESTION",
+      "authority_recommendation": "OD-4's own engineering_recommendation: 'Raise it as a SUCCESSOR question after D1-8 closes. Do NOT let it block D-1 …' — clarified by v1.0.2 SPC102-2 that 'it' names the successor design-and-build question, never OD-4's own ratification, which SECTION_A4 (v1.0.1) and OWNER_DECISIONS.rule (base) already require regardless.",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "SUCCESSOR_QUESTION_AFTER_D1_8. OD-4 ITSELF IS RATIFIED NOW — the narrower-role design-and-build question is not designed or built in this lane, and D-1 is NOT deferred by it. Successor lane: CV1-D1-AUDITOR-NARROWER-CATALOG-CAPABILITY-AUTHORITY-R1, to be opened after D1-8 closes, owning the question of whether a narrower catalog-observer role should exist for future observations of this kind.",
+      "disposition": "RATIFIED_SUCCESSOR_QUESTION_ROUTED",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The disposition ratified matches OD-4's engineering_recommendation exactly, as disambiguated by v1.0.2 SPC102-2's appended text: “‘it’ in ‘Do NOT let it block D-1’ refers to the SUCCESSOR QUESTION … not to OD-4’s own ratification under PHASE_P0_PREREQUISITE. OD-4 itself remains one of the six owner decisions that MUST be ratified before PHASE_P1 opens.” The successor lane name is new owner-supplied content the authority itself did not name, analogous in kind to owner-supplied names this repository's ratification precedent has recorded for other authorities.",
+      "what_this_ratification_does_not_authorize": "This ratification does NOT authorize opening CV1-D1-AUDITOR-NARROWER-CATALOG-CAPABILITY-AUTHORITY-R1 now — it is explicitly a POST-D1-8 successor, and D1-8 has not closed. It does NOT authorize any design, scaffolding, or repository write for a narrower role. It does NOT reduce OD-4's own standing as one of the six decisions PHASE_P0_PREREQUISITE requires ratified — ratifying OD-4 with a routed successor question is not a lesser or partial ratification of OD-4 itself."
+    },
+    {
+      "id": "OD-5",
+      "domain": "MR3_GRANT_DELIVERY_CHANNEL",
+      "authority_recommendation": "GRANT_DELIVERY_CHANNEL_ADJUDICATION rules for the governed package route, and OD-5's own engineering_recommendation states: 'Keep the package route. The precedent is worth more to a future mistake than this grant is worth to this lane.'",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "PREPARED_PACKAGE. If measurement (PHASE_P1, KP-3/KP-5) proves REQ-2 (GRANT USAGE ON SCHEMA uellix_stella_ops) is required, its delivery travels through the governed db/prepared/** package route, per GRANT_DELIVERY_CHANNEL_ADJUDICATION. No ad-hoc hosted GRANT is ratified as an alternative.",
+      "disposition": "RATIFIED_PREPARED_PACKAGE",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The option ratified is OD-5's own engineering_recommendation, coinciding exactly with GRANT_DELIVERY_CHANNEL_ADJUDICATION's verdict. MINIMUM_PRIVILEGE_CONTRACT's framing of REQ-2 as 'CONDITIONAL AND MEASURED, NEVER PRE-AUTHORIZED' is explicitly preserved and is not altered by this ratification: this selection decides the CHANNEL a future MR-3 would use, contingent on MR-3 firing at all, which itself remains contingent on a hosted measurement this ratification does not perform.",
+      "execution_not_authorized_by_this_ratification": "No protected-surface allocation is granted by this ratification, and none is implied. FAIL_CLOSED_TOKENS.STOP_PROTECTED_SURFACE_ALLOCATION_ABSENT remains in force exactly as the effective authority states it: if MR-3 is triggered, its delivery package is still a db/prepared/** write requiring its own protected-surface allocation gate before it can fire, and that gate is a SEPARATE governed act this ratification does not perform or authorize."
+    },
+    {
+      "id": "OD-6",
+      "domain": "CERTIFICATION_VERDICT_MATERIALIZATION",
+      "authority_recommendation": "OD-6's own engineering_recommendation: 'Materialize certification verdicts as tracked artifacts going forward. NOT retroactively: reconstructing a past verdict as a document would be writing history rather than recording it.'",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "MATERIALIZE_GOING_FORWARD. Independent-certification VERDICTS must be materialized as tracked repository evidence for future certifications. Past verdicts (including CV1-D1-AUDITOR-CAPABILITY-IC-R1’s own CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS, and CV1-D1-AUDITOR-CAPABILITY-FOCUSED-RECERT-R1’s FOCUSED_RECERT_FAIL) are NOT retroactively reconstructed as documents by this ratification. Scope is VERDICT ARTIFACTS, not conversation transcripts or session logs. No secret material may be stored in a verdict artifact.",
+      "disposition": "RATIFIED_MATERIALIZE_GOING_FORWARD",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The option ratified is OD-6’s own engineering_recommendation, adopted verbatim as binding rather than left as a recommendation. This ratification record is itself an act of tracked repository evidence, consistent with (though not itself an instance of) the going-forward posture OD-6 selects — an owner-ratification record and a certification-verdict record are different document classes in this repository’s own precedent (docs/ops/owner-ratifications/ versus a certification artifact under the authority’s own domain).",
+      "execution_not_authorized_by_this_ratification": "No certification-verdict artifact schema, directory convention, or template is created by this ratification — that remains a separate governance-improvement act, explicitly named non-blocking (consequence_if_unratified: 'NONE for P1..P5') by the authority itself and unratified-scope-narrowed but not touched in substance here."
+    }
+  ],
+  "NONBLOCKING_EXECUTION_PRECONDITION_NOTES": {
+    "rule": "Recorded as execution preconditions for a future lane to satisfy. NONE of these change, qualify, or condition any of the six owner selections above — they are downstream implementation notes, not ratification content.",
+    "notes": [
+      {
+        "id": "EXEC-NOTE-1",
+        "source": "OD-3 ratification, this record.",
+        "note": "The exact UTC VALID UNTIL value implementing OD-3's policy (planned FINAL WITNESS + 24 hours) MUST be computed and PRESENTED TO THE OWNER as part of HC-1, immediately before MR-2, once a planned FINAL WITNESS timestamp is concrete. No timestamp is computed or invented by this record. If no concrete planned witness time is available when HC-1 would otherwise proceed, MR-2 remains BLOCKED — the execution lane does not substitute a default, an estimate, or an open-ended VALID UNTIL.",
+        "does_not_affect": "This note does not touch any of OD-1 through OD-6. It is scoped entirely to a future provisioning lane’s HC-1/MR-2 execution discipline."
+      },
+      {
+        "id": "EXEC-NOTE-2",
+        "source": "OD-2 ratification, this record.",
+        "note": "Before MR-2 can deliver a credential from Windows Credential Manager under MECHANISM_2_PROCESS_SCOPED, the execution lane must confirm all five of SECRET_DELIVERY_CONTRACT.MECHANISM_2_PROCESS_SCOPED’s binding conditions are satisfiable with the specific vault-read mechanism used (process-scoped only, not set by a command carrying the value as an argument, shell history disabled or a fresh non-persisting session, removed immediately on both success and failure paths, positive absence verification recorded) — selecting the vault does not itself prove the delivery mechanics satisfy the five conditions; that is a separate, execution-time confirmation.",
+        "does_not_affect": "This note does not touch any of OD-1 through OD-6. It is scoped entirely to PHASE_P4’s own execution discipline."
+      }
+    ]
+  },
+  "FRESHNESS_CARRYOVER": {
+    "rule": "Ratifying a CHOICE does not convert any timestamped, hosted MEASUREMENT into a standing fact. Every hosted fact the effective authority recorded as HOSTED_STATE_UNKNOWN (HU-1..HU-13) remains exactly as unknown after this record as before it, and every measurement this authority relies on (the management-plane observation, the engine-semantics measurements E-1..E-11) remains subject to RULE_OBSERVATION_FRESHNESS and must be re-derived immediately before any execution act that depends on it, exactly as if this ratification had not been recorded.",
+    "what_this_record_freezes": "Only the SIX OWNER SELECTIONS themselves are frozen by this record (subject to CANDIDATE_BINDING). Everything else — whether uellix_auditor exists hosted, whether it can authenticate, whether it holds USAGE on uellix_stella_ops, every entry of the HOSTED_STATE_UNKNOWN register — remains exactly as unknown and exactly as measurement-obligated as the effective authority already required."
+  },
+  "explicit_non_authorizations": [
+    "NO hosted PostgreSQL connection is opened by this record.",
+    "NO credential is generated, minted, rotated, read, or exposed by this record.",
+    "NO VALID UNTIL value is computed, set, or mutated by this record — only a policy OFFSET is ratified.",
+    "NO GRANT is issued. NO REVOKE is issued.",
+    "NO CREATE ROLE, ALTER ROLE, or DROP ROLE is issued.",
+    "NO Supabase project configuration is contacted or mutated in any way.",
+    "NO Windows Credential Manager entry, custody-store write, or custody-inventory file is created or populated. Only the FUTURE canonical path is selected — selection of a path is not authorization to populate custody state.",
+    "NO secret value is present anywhere in this artifact, and none is recorded by this ratification act.",
+    "NO PRECHECK-R2 is opened, executed, or authorized by this record.",
+    "NO protected-surface allocation is granted or implied for OD-5’s package route.",
+    "NO successor lane (CV1-D1-AUDITOR-NARROWER-CATALOG-CAPABILITY-AUTHORITY-R1) is opened by this record — it is named and routed, not started.",
+    "NO certification-verdict artifact schema or directory convention is created for OD-6.",
+    "NO modification to any file under docs/ops/release/ — all six effective-package files remain byte-identical to CANDIDATE_BINDING.",
+    "NO new OD is introduced, and no OD-1..OD-6 content is reinterpreted, improved, or substituted beyond transcribing the owner’s exact selection.",
+    "NO ODS or W2 lineage identifier is allocated, reserved, or implied.",
+    "NO claim is made that v1.0.2’s own outstanding focused independent re-certification is satisfied by this record — see OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD above.",
+    "NO execution DAG is derived or authorized by this record — that is explicitly named as the NEXT step, after independent verification of this record AND completion of v1.0.2’s own outstanding certification."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 6,
+    "expected_id_set": [
+      "OD-1",
+      "OD-2",
+      "OD-3",
+      "OD-4",
+      "OD-5",
+      "OD-6"
+    ],
+    "expected_disposition_set": [
+      "RATIFIED_PERSISTENT_ROLE_ROTATED_SECRET_MANDATORY_POST_WITNESS",
+      "RATIFIED_CREDENTIAL_MANAGER_CUSTODY_PROCESS_SCOPED_DELIVERY",
+      "RATIFIED_VALID_UNTIL_POLICY_OFFSET_24H_POST_WITNESS",
+      "RATIFIED_SUCCESSOR_QUESTION_ROUTED",
+      "RATIFIED_PREPARED_PACKAGE",
+      "RATIFIED_MATERIALIZE_GOING_FORWARD"
+    ],
+    "expected_effective_package_file_count": 6,
+    "checks": [
+      "ratifications.length == 6",
+      "every id in ratifications is unique and equals expected_id_set exactly",
+      "every ratification carries all of id, domain, authority_recommendation, technical_recommendation, owner_selected_decision, disposition, status, repository_binding",
+      "every ratification.status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "the six disposition values are exactly expected_disposition_set, one per ratification, in order",
+      "no ratification statement authorizes a hosted PostgreSQL connection, a credential mutation, a GRANT, a REVOKE, a Supabase mutation, or a custody-store write containing a value",
+      "OD-2’s execution_not_authorized_by_this_ratification field explicitly states the custody inventory is NOT created or populated by this record",
+      "OD-3’s owner_selected_decision states a POLICY OFFSET and explicitly disclaims computing an exact timestamp; NONBLOCKING_EXECUTION_PRECONDITION_NOTES EXEC-NOTE-1 is present and non-empty",
+      "OD-4’s what_this_ratification_does_not_authorize field is present and explicitly states OD-4 itself remains fully ratified despite routing its successor question",
+      "no ratification re-offers a Windows user-scope persistent environment variable as a selectable delivery mechanism anywhere in this document",
+      "OD-5’s repository_binding explicitly preserves REQ-2 as conditional and never pre-authorized",
+      "OD-4 and OD-6 are present in expected_id_set and neither carries any field suggesting the global six-decision ratification gate does not apply to it",
+      "CANDIDATE_BINDING.effective_package.length == 6, matching expected_effective_package_file_count",
+      "CANDIDATE_BINDING.candidate_sha == 'd21f9f18a26197d288542035bdb49f65b17d1203'",
+      "companion_authority and both companion_authority_amendments entries name paths that exist, unmodified, in the same commit as CANDIDATE_BINDING.candidate_sha",
+      "OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD is present and non-empty",
+      "re-deriving each effective_package[].blob_sha via `git ls-tree` at CANDIDATE_BINDING.candidate_sha reproduces the recorded value exactly, or the consumer STOPs per STOP_RATIFICATION_BINDING_MISMATCH"
+    ]
+  },
+  "required_independent_review": {
+    "required": true,
+    "reason": "This record binds six owner decisions to a specific candidate and asserts they were transcribed rather than authored. Both claims deserve independent verification before any execution DAG treats them as settled — and v1.0.2’s own focused certification is still separately outstanding.",
+    "verification_criteria_for_the_next_gate": [
+      "Confirm this record’s six ratifications match the human selections exactly — no option, path, offset, or successor-lane name was altered, softened, or extended beyond what was supplied.",
+      "Confirm no NEW decision was introduced under the guise of transcription (e.g., that the custody-inventory filename and the successor-lane name are correctly flagged as owner-supplied content, not as something this lane selected).",
+      "Confirm OD-3’s POLICY OFFSET is preserved as non-computed — no exact UTC timestamp appears anywhere in this record.",
+      "Confirm OD-4’s ratification is preserved as full ratification of OD-4 itself, with the successor question routed but not treated as a partial or deferred ratification.",
+      "Confirm OD-5’s selection is preserved as channel-only, with REQ-2’s conditionality intact.",
+      "Confirm the CANDIDATE_BINDING blob hashes are correct by independent `git ls-tree` re-derivation at the candidate SHA.",
+      "Confirm no hosted mutation of any kind was performed by this lane.",
+      "Confirm v1.0.2’s own outstanding focused independent re-certification is not mischaracterized anywhere in this record as complete or as satisfied by owner ratification."
+    ]
+  },
+  "final_state": "OWNER_RATIFICATION_RECORDED__PROVISIONING_NOT_AUTHORIZED",
+  "next_gate": "Independent bounded verification of this owner-ratification artifact. Only after that review passes, AND ONLY AFTER v1.0.2's own outstanding focused independent re-certification (its own next_gate: bounded verification of SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3) also passes, may the provisioning DAG be derived: protected-surface allocation if OD-5's package route is triggered by measurement → custody/inventory readiness under OD-2's selected mechanism → HC-1 (with OD-3's exact UTC VALID UNTIL computed and shown) → MR-2 credential rotation/provisioning → poststate verification → conditional MR-3 if measurement proves it necessary → PRECHECK-R2. No hosted mutation occurs in this lane."
+}
