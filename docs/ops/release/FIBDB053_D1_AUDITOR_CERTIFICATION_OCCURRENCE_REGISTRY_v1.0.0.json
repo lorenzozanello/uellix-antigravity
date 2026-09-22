@@ -98,17 +98,83 @@
       "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate prior verdict document exists and none is reconstructed.",
       "IMPORTANT_SUCCESSOR_NOTE": "The schema and template blobs pinned above are the v1.0.0 files AS CERTIFIED, and they remain byte-intact in the tree. This lane adds SUCCESSOR files at v1.0.1 rather than editing them, so these pins stay true.",
       "node_status_unchanged_by_this_record": "N07 remains OPEN and NOT SATISFIED. A certified skeleton is not a filled evidence artifact, and the execution-time filename is still derived at the execution lane's own base."
+    },
+    {
+      "occurrence_id": "CERT-OCC-CONSOLIDATED",
+      "subject_node": "NONE. The consolidated closure package certifies an AUTHORITY PACKAGE spanning N05, N06, N07, N29, N30 and N31, and closes none of them.",
+      "subject_package": "FIBDB053-D1-AUDITOR-CONSOLIDATED-CLOSURE",
+      "certified_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CONSOLIDATED_CLOSURE_AUTHORITY_v1.0.0.json",
+          "blob_sha": "a563866cbc3e65f8d62aa882cfe5bb4acaacd443"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CONSOLIDATED_CLOSURE_TEST_MANIFEST_v1.0.0.json",
+          "blob_sha": "dd30af82da393650bf98faa89cbd3419416ab9ba"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "blob_sha": "5d345e001a4179fa4a83a1a9f62a899dead16279"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "ff32c91dc2da4894a35445e298c8b4abc3f3ca19"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.1.json",
+          "blob_sha": "1c3995be16c3d276a438dfd18e509bd1a076f23f"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.1.json",
+          "blob_sha": "154c86e833d3cde8b7460a6bc6571b8098ca38b5"
+        },
+        {
+          "path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json",
+          "blob_sha": "d99d19a19f12aaad23d38c5168be313321641f31"
+        }
+      ],
+      "certified_at_commit": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL CERTIFICATION of the consolidated closure package",
+      "VERDICT": "D1_AUDITOR_CONSOLIDATED_CLOSURE_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-22",
+      "blocking_findings": 0,
+      "nonblocking_findings": 10,
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate prior verdict document exists and none is reconstructed.",
+      "SELF_PIN_NOTE": "The fourth certified artifact above is THIS REGISTRY, pinned at the blob it carried when the certification ran. That pin is deliberately NOT updated to the blob this append produces. The certification examined the THREE-occurrence registry; a self-pin re-derived after an append would claim the four-occurrence version is what was certified, which is false. The pin is a historical fact about a past blob, not a pointer to the current file. NM11 of the N05 test manifest names the mirror-image defect — an artifact pinning the pre-commit draft of its own base — and the reasoning is the same in both directions.",
+      "what_the_verdict_string_itself_discloses": "PASS WITH NONBLOCKING FINDINGS: zero blockers, ten non-blocking findings. The certifier re-derived the graph independently and found it COINCIDENT, and reproduced five mutants with a different JSON Schema engine. Non-blocking finding NB-1 recorded that human_custodian had no producer node while planned_removal_date was given one at N31, classified the human_custodian gap NONBLOCKING_FUTURE_INPUT, and expressly declined to rule on the asymmetry, calling it one of SCOPE rather than of CLASS.",
+      "what_the_successor_lane_did_with_it": "NB-1 was put to the product owner, who ratified ADD_N32_OWNER_INTAKE at OD-N32-1, recorded at docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json and implemented as node N32 by DAG amendment v1.0.3. The other nine non-blocking findings are NOT addressed by the CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1 lane and remain OPEN.",
+      "node_status_unchanged_by_this_record": "ZERO nodes closed. N05, N06 and N07 remain OPEN and NOT SATISFIED; N29, N30 and N31 remain declared and unexecuted. Certifying a consolidated authority package is not demonstrating a mechanism, supplying an owner datum, or filling an evidence artifact."
     }
   ],
 
   "DERIVED_FACTS": {
-    "OCCURRENCE_COUNT": 3,
-    "CERTIFIED_ARTIFACT_COUNT": 10,
-    "VERDICTS_RECORDING_A_PASS": 3,
+    "OCCURRENCE_COUNT": 4,
+    "CERTIFIED_ARTIFACT_COUNT": 17,
+    "VERDICTS_RECORDING_A_PASS": 4,
     "VERDICTS_RECORDING_A_FAIL": 0,
     "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 0,
-    "why_the_last_number_is_zero": "Every one of the three verdicts certifies an AUTHORITY PACKAGE. None of the three demonstrates a mechanism, supplies an owner datum, or fills an evidence artifact, which is what closing N05, N06 or N07 respectively would require. A registry that let three PASS strings read as three closed nodes would be the most expensive error it could make.",
+    "COUNTS_RECOMPUTED_ON_APPEND": "The first three numbers were 3, 10 and 3 when this registry held three occurrences. They are RECOMPUTED from the arrays on every append, never incremented: an incremented count is a count nobody re-derived, which is the defect OF-N05-9 records. CERTIFIED_ARTIFACT_COUNT is the union of path-and-blob pairs, so the consolidated occurrence's pin of this registry at its own earlier blob counts once and does not collide with anything.",
+    "why_the_last_number_is_zero": "Every one of the four verdicts certifies an AUTHORITY PACKAGE. None demonstrates a mechanism, supplies an owner datum, or fills an evidence artifact, which is what closing N05, N06 or N07 respectively would require. A registry that let four PASS strings read as four closed nodes would be the most expensive error it could make.",
     "derivation_note": "OCCURRENCE_COUNT and CERTIFIED_ARTIFACT_COUNT are derived by counting this document's own OCCURRENCES array and the union of its certified_artifacts entries, and are re-derivable by any reader from the arrays above."
+  },
+
+  "APPEND_RECORD": {
+    "rule": "This registry is APPEND_ONLY. An occurrence is ADDED to OCCURRENCES and the DERIVED_FACTS counts are RECOMPUTED from the arrays. No existing occurrence, blob pin, verdict string or hole reason is edited by an append, and this block records each one so a reader can tell the original write from a later addition.",
+    "appends": [
+      {
+        "appended_occurrence": "CERT-OCC-CONSOLIDATED",
+        "appended_by": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+        "append_date": "2026-09-22",
+        "appended_at_base": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+        "what_was_not_touched": "CERT-OCC-N05, CERT-OCC-N06 and CERT-OCC-N07 are byte-unchanged, including CERT-OCC-N06's deliberate pin to the PRE-correction custody inventory blob 28c2379f. Re-pinning that to the corrected blob would report that the corrected file is what was certified, which is false, and the consolidated closure authority says so in terms. The original self_check block below is also unedited and its 'three of three' phrasing is preserved rather than restated, because it is a claim about the three occurrences it was written for.",
+        "why_the_original_self_check_is_left_alone": "It is an assertion the AUTHORING lane made about ITS write set. Rewriting it to say 'four of four' would put this lane's words in that lane's mouth. The fourth occurrence's own fields carry the same guarantees and are checkable independently: reviewer_identity and exact_timestamp_utc are explicit nulls with stated hole reasons, no prior verdict document is reconstructed, and no secret value appears."
+      }
+    ]
   },
 
   "self_check": {

@@ -1,0 +1,74 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD",
+  "document_class": "SINGLE_DECISION_RECORD__APPEND_ONLY__NO_EXECUTION__NO_SECRET__NO_CREDENTIAL__NO_CUSTODIAN_NAMED__NO_PROVISIONING",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+  "lane": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+  "role": "Record the single owner decision this lane consumed, and nothing else.",
+  "mode": "DOCS_AND_IMPLEMENTATION__THIS_FILE_IS_THE_DOCS_HALF",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "materialized_at_base": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+
+  "WHY_THIS_IS_A_SEPARATE_ONE_DECISION_FILE": {
+    "rule": "It is NOT a second owner-decision authority chain, and it does not amend, supersede or reopen FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json or its v1.0.1 amendment. OD-1..OD-6 stand exactly as ratified.",
+    "why_not_appended_to_OD_1_through_OD_6": "That record is append-only and was certified at a pinned blob as a set of SIX. Adding a seventh entry to it would change the blob that N03's exit condition asserts against — 'Six of six ratified and bound' — and a node whose gate reads a count would then read a different one. The decision is recorded beside that file rather than inside it.",
+    "why_it_is_minimal": "The lane mandate directs that the owner ratification be materialized MINIMALLY, and that the implementation certification review the decision record and its implementation together. This file therefore carries one decision, its derivation and its limits, and declines to build a governance apparatus around a single sentence."
+  },
+
+  "THE_DECISION": {
+    "id": "OD-N32-1",
+    "domain": "CUSTODY_METADATA_INTAKE",
+    "question_put_to_the_owner": "The consolidated closure package's independent certification recorded, as non-blocking finding NB-1, that human_custodian is a hole in the custody inventory with no producer node in the DAG, while planned_removal_date — a hole of the same class, discovered in the same sweep — was given one (N31). The asymmetry was disclosed rather than resolved. Should the D-1 provisioning DAG gain an explicit node whose sole act is to acquire and bind the human_custodian value?",
+    "owner_selected_decision": "ADD_N32_OWNER_INTAKE. human_custodian is classified HUMAN_SUPPLIED_EXECUTION_DATUM. An explicit governed node N32 is created whose sole purpose is to acquire and bind that value before N06 may meet its exit condition.",
+    "disposition": "RATIFIED_ADD_N32_OWNER_INTAKE",
+    "status": "RATIFIED_BY_PRODUCT_OWNER",
+    "ratified_on": "2026-09-22",
+    "authority_recommendation": "NONE. No artifact in this repository recommends creating this node. The consolidated IC recorded the asymmetry as NONBLOCKING_FUTURE_INPUT and expressly declined to rule on it, on the ground that the asymmetry is one of SCOPE rather than of CLASS.",
+    "technical_recommendation": "NONE OFFERED by this lane. This record transcribes the owner's selection; it does not argue for or against it."
+  },
+
+  "WHAT_THE_DECISION_DOES_NOT_DECIDE": {
+    "rule": "Four things a reader could take from this record that are not in it. Each is listed because each is the reading that would let the node look closed.",
+    "no_person_is_named": "NO CUSTODIAN IS CHOSEN, PROPOSED, DEFAULTED OR IMPLIED, by this record, by the node it creates, or by any artifact of this lane. The value remains UNSUPPLIED. A record that filled the hole with a plausible name would commit exactly the error the consolidated closure registry refuses when it declines to attribute a reviewer.",
+    "no_new_policy_is_created": "The POLICY that a custody inventory must name a human custodian is already binding: SECRET_CUSTODY_CONTRACT's SSL-06 adjudication requires the entry, and N06's own act names 'the human custodian' among the seven pre-mint fields. What was missing is a node that ACQUIRES the value, not a rule that one is needed. This is the same relationship N31 bears to OD-1 and N08 bears to OD-3: the policy is ratified and only the concrete datum is awaited.",
+    "no_credential_is_held_by_N32": "N32 acquires a NAME. It never holds, reads, writes, mints, rotates or delivers a credential, and it never touches the custody store. A node that took custody of a person's identity and of the secret at the same beat would be two acts wearing one id.",
+    "no_provisioning_is_authorized": "N32's existence authorizes nothing downstream. N06 remains NOT SATISFIED, MR-2 remains BLOCKED, and provisioning remains NOT AUTHORIZED."
+  },
+
+  "WHY_THE_CLASSIFICATION_IS_HUMAN_SUPPLIED_EXECUTION_DATUM": {
+    "verdict": "HUMAN_SUPPLIED_EXECUTION_DATUM, the same class v1.0.2 assigns to planned_removal_date at N31 and v1.0.0 assigns to the planned FINAL WITNESS instant at N08.",
+    "why_it_cannot_be_mechanically_derived": "No measurement in this repository can produce it. The custody inventory's own hole reason, written in the consolidated closure lane, states the position exactly: 'No artifact in this repository at any point measured names a specific person as custodian; OD-2 ratifies a MECHANISM (Windows Credential Manager) and a delivery POSTURE, not a person.' A lane that derived a custodian would be deriving it from nothing.",
+    "why_it_is_an_OWNER_plane_node": "The datum is supplied by the owner, for the reason N08 and N31 are owner-plane nodes: no measurement produces it and no lane may estimate it.",
+    "why_it_is_not_equated_to_materialized_by": "The identity that AUTHORED an artifact and the identity that HOLDS a credential are different facts, and this record does not collapse them. Every artifact in this package is materialized by an AI executor under HPO-ODS-01, which cannot be a human custodian of anything; reading an authoring attribution as a custody attribution would name a custodian that does not exist."
+  },
+
+  "WHAT_THE_NODE_MUST_FAIL_CLOSED_ON": {
+    "rule": "N32's exit condition is unmet while the datum is absent, and an unmet N32 blocks N06 through a HARD edge. The failure mode is the same one N08 and N31 already have, which is deliberate: three owner intakes that fail the same way are easier to reason about than three that fail differently.",
+    "consequence_today": "N32 EXISTS and its datum is UNSUPPLIED. N06 therefore cannot meet its exit condition — it could not before this record either, because N05 and N09 are also open, but it now cannot for a reason that is visible in the graph rather than only in a hole reason in a data file.",
+    "what_changed_and_what_did_not": "What changed: the hole acquired a producer, so a reader of the graph can see who is supposed to fill it. What did not change: the hole is still empty, and no node closed."
+  },
+
+  "execution_not_authorized_by_this_ratification": "No credential is minted, rotated, deposited or delivered. No PostgreSQL connection is opened. No GRANT, REVOKE or role mutation occurs. No VALID UNTIL is computed. No custody inventory field is populated. No hosted resource is touched.",
+
+  "companion_artifacts": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0.json"
+  ],
+
+  "self_check": {
+    "no_person_named": "No personal name, email address, account identifier, handle or role-holder appears anywhere in this document.",
+    "no_secret_value": "No credential, DSN, userinfo, host string, password hash, vault handle, entry key or lookup token appears anywhere in this document.",
+    "no_existing_ratification_edited": "FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json and its v1.0.1 amendment are not read-modified by this lane and remain byte-intact. OD-1..OD-6 are unchanged and N03's six-of-six exit condition is undisturbed.",
+    "no_node_declared_closed": "N05, N06, N07, N08, N09, N31 and N32 are all stated OPEN or UNSUPPLIED in this document. None is asserted satisfied.",
+    "no_timestamp_invented": "Only the materialization and ratification date 2026-09-22 appears. No UTC instant is calculated, and none is presented as a VALID UNTIL or a planned removal."
+  },
+
+  "required_independent_review": "MANDATORY, as part of the custody realization package this record belongs to. The lane mandate directs that the decision record and its implementation be certified together.",
+  "final_state": "N32_RATIFIED_AS_AN_OWNER_INTAKE_NODE__DATUM_UNSUPPLIED__NO_CUSTODIAN_NAMED__N06_STILL_NOT_SATISFIED",
+  "next_gate": "ONE independent adversarial certification of the custody realization package."
+}

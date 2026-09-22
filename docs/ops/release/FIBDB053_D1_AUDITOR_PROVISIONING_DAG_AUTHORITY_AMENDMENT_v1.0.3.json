@@ -1,0 +1,185 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.3",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ONE_NODE_TWO_EDGES__NO_EXECUTION__NO_SECRET__NO_CUSTODIAN_NAMED__NO_POSTGRESQL_CONNECTION__NO_PROVISIONING__NO_CREDENTIAL_MINT__NO_CREDENTIAL_ROTATION__NO_GRANT__NO_REVOKE__NO_VALID_UNTIL_COMPUTATION__NO_CUSTODY_INVENTORY_WRITE__NO_NODE_CLOSED",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "v1.0.0 and amendments v1.0.1 and v1.0.2 are NOT edited by this artifact. Every node, edge, token, phase, condition and open finding of all three stands exactly as written. This amendment ADDS one node and two edges and changes nothing else.",
+  "mission_id": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+  "lane": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+  "role": "Absorb the ratified owner decision OD-N32-1 into the graph as node N32, and recompute the graph mechanically.",
+  "mode": "DOCS_AND_IMPLEMENTATION__THIS_FILE_IS_THE_GRAPH_HALF",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+  "AS_OF_BASE_TREE": "bc0272b3612fc6fff2985c06ac926c1e962d5263",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the start of this lane, before any file of this write set existed. git status --porcelain --untracked-files=all returned empty.",
+  "AS_OF_BASE_BRANCH_FOR_THE_STACKED_PR": "codex/cv1-d1-auditor-consolidated-closure-r1",
+
+  "WHY_THIS_AMENDMENT_EXISTS": {
+    "trigger": "The independent certification of the consolidated closure package recorded NB-1: human_custodian is a hole in the custody inventory with NO PRODUCER NODE, while planned_removal_date — a hole of the same class, found in the same sweep — was given one (N31). The IC classified the asymmetry NONBLOCKING_FUTURE_INPUT and disclosed it as one of SCOPE rather than of CLASS, expressly declining to rule.",
+    "what_resolved_it": "The product owner did, at OD-N32-1, recorded at docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json: ADD_N32_OWNER_INTAKE, with human_custodian classified HUMAN_SUPPLIED_EXECUTION_DATUM.",
+    "why_it_is_not_this_lane_inventing_a_node": "A lane that added a node to close a non-blocking finding it disagreed with would be amending a certified graph on its own authority. This amendment implements a decision the owner took; the finding it answers was raised by an independent certifier and left open on purpose."
+  },
+
+  "THE_NUMBERING_IS_NOT_THE_ORDERING": "N32 is the thirty-second node DECLARED and it executes at the OWNER INTAKE beat, alongside N08 and before N06. Node ids in this package record declaration order and carry no topological meaning, exactly as v1.0.2 states of N29, N30 and N31.",
+
+  "NEW_NODES": [
+    {
+      "id": "N32",
+      "name": "HUMAN CUSTODIAN INTAKE",
+      "plane": "OWNER",
+      "canonical_phase": "Derived prerequisite of N06, at the same owner intake beat as N08. Introduced by v1.0.3 to close the human_custodian producer gap recorded as NB-1 of the consolidated closure IC.",
+      "act": "OBTAIN the human custodian for the auditor credential as a NON-SECRET, owner-supplied execution datum, and carry it to N06 so the custody inventory's human_custodian field holds a value rather than a hole before the mint is asked for.",
+      "preconditions": ["N03"],
+      "exit_condition": "One human custodian, supplied by the owner, identifying a specific accountable person. If no such datum is supplied, N06 cannot meet its own exit condition and MR-2 stays BLOCKED, exactly as it does when N08 or N31 is unsupplied.",
+      "tokens": [],
+      "NO_CUSTODIAN_IS_NAMED_BY_THIS_AMENDMENT": "No personal name, email address, account identifier, handle or role-holder appears anywhere in this document, and none may be added by a successor citing it. This mirrors v1.0.2's NO_DATE_IS_INVENTED_BY_THIS_AMENDMENT clause and honours it for the same reason: a node that supplied the datum it exists to await would have closed itself at declaration.",
+      "WHAT_N32_MUST_NOT_DO": [
+        "It does NOT choose the person. The node acquires a datum; it does not select one.",
+        "It does NOT invent, default or estimate a name. An unsupplied datum stays unsupplied.",
+        "It does NOT convert the choice into a new policy decision. The policy is already binding — SSL-06 requires the custody entry to name a human custodian and N06's own act lists it among the seven pre-mint fields. Only the concrete datum is awaited.",
+        "It does NOT hold, read, write, mint, rotate or deliver any credential, and it never touches the custody store. N30 deposits; N32 names a person.",
+        "It does NOT authorize provisioning. Its satisfaction moves nothing downstream except N06's own precondition set."
+      ],
+      "WHY_ITS_ONLY_PRECONDITION_IS_N03": {
+        "derivation": "N08, the other pure owner-intake node whose datum has no lower bound in another node's output, has preconditions [N03]. N31's precondition is N08 rather than N03 ONLY because its datum carries a derivable ordering bound — 'not earlier than the planned FINAL WITNESS instant' — which is a fact about the removal DATE, not a property of owner-intake nodes generally.",
+        "why_no_such_bound_exists_here": "A custodian is an identity, not an instant. No ratified clause orders it relative to the final witness, the expiry or the removal date, and inventing an ordering would be adding a constraint no authority carries — the error OF-DAG-3 exists to flag.",
+        "why_N03_and_not_N01": "The custodian is a custody-arrangement datum, and the custody arrangement is what OD-2 ratifies. Taking the datum before the ratification gate closed would be acquiring a custodian for a custody posture the owner had not yet adopted.",
+        "method": "Derived from the effective graph by comparing N32's datum against the two existing owner-intake nodes, not asserted. The derivation is checkable: if a clause ordering the custodian against any instant is ever found, this edge is wrong and must be re-derived."
+      },
+      "IT_IS_NOT_THE_AUTHORING_IDENTITY": "The identity that MATERIALIZED an artifact and the identity that HOLDS a credential are different facts. Every artifact in this package is materialized by an AI executor under HPO-ODS-01, which cannot be a human custodian of anything. A successor lane that read materialized_by as a custodian would name a custodian that does not exist, and would close this node with a value it invented."
+    }
+  ],
+
+  "NEW_EDGES": [
+    {
+      "id": "E-03-32",
+      "from": "N03",
+      "to": "N32",
+      "kind": "HARD",
+      "why": "The custodian is a datum of the custody arrangement OD-2 ratifies, so the ratification gate must have closed before it is taken. Parallel to E-01-08's role for the other unbounded owner intake."
+    },
+    {
+      "id": "E-32-06",
+      "from": "N32",
+      "to": "N06",
+      "kind": "HARD",
+      "why": "N06's exit condition requires all seven pre-mint fields present, and the human custodian is one of the seven. Without this edge the field has no producer and N06's exit condition names a value nothing supplies — the precise shape of DAG_GAP_C, which v1.0.2 closed for planned_removal_date and left open for this field."
+    }
+  ],
+
+  "PRECONDITION_SETS_WIDENED_BY_THESE_EDGES": {
+    "rule": "One node gains an incoming HARD edge. Its v1.0.0 object is NOT edited. This section states what its precondition set becomes under the amended graph, machine-derived from the amended edge set rather than transcribed.",
+    "N06": {
+      "v1_0_0": ["N03", "N05", "N09"],
+      "amended": ["N03", "N05", "N09", "N31", "N32"]
+    },
+    "nothing_is_weakened": "No precondition is removed from any node and no exit condition is relaxed. The single change is a WIDENING, which can only make N06 harder to reach, never easier."
+  },
+
+  "RECOMPUTED_GRAPH": {
+    "method": "Kahn topological sort plus breadth-first forward reachability sweeps, computed over the union of v1.0.0's twenty-eight nodes and thirty-five forward edges, v1.0.2's three nodes and seven edges, and this amendment's one node and two edges. v1.0.1 contributes no node and no edge and is read anyway, so its non-contribution is a measured fact rather than an omission.",
+    "EVERY_NUMERAL_BELOW_IS_MACHINE_DERIVED": "By scripts/custody/d1-dag-validate.ts, run as `pnpm custody:dag:validate`, which parses the authority artifacts and prints these values. No count in this section is hand-authored, and any reader can re-run the method rather than trust the transcription. The validator was written BEFORE this amendment and independently reproduced v1.0.2's own declared figures — 31 nodes, 42 edges, 34 HARD, 8 CONDITIONAL, acyclic, N28 the sole orphan — against the pre-amendment tree, which is what makes its output here worth citing.",
+    "NODE_COUNT_BASE": 31,
+    "NODE_COUNT_NEW": 1,
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_BASE": 42,
+    "EDGE_COUNT_NEW": 2,
+    "EDGE_COUNT_TOTAL": 44,
+    "HARD_EDGE_COUNT": 36,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "DUPLICATE_NODE_IDS": [],
+    "DUPLICATE_EDGE_IDS": [],
+    "DUPLICATE_EDGE_PAIRS": [],
+    "EDGE_ENDPOINTS_NOT_DECLARED": [],
+    "DECLARED_PRECONDITION_WITHOUT_EDGE": 0,
+    "INCOMING_EDGE_NOT_DECLARED_OR_WIDENED": 0,
+    "ACYCLIC": true,
+    "TOPOLOGICAL_ORDER_LENGTH": 32,
+    "NODES_IN_A_CYCLE": [],
+    "TOPOLOGICAL_ORDER": "N01 N02 N03 N04 N07 N08 N09 N28 N29 N05 N31 N32 N06 N10 N11 N12 N13 N14 N15 N16 N17 N18 N19 N20 N21 N22 N30 N23 N24 N25 N26 N27",
+    "TOPOLOGICAL_ORDER_IS_NOT_UNIQUE": "The linearization above is ONE valid order, made deterministic by breaking ties on node id. Nothing in this amendment is derived from a node's POSITION in it. v1.0.2's GAP_B_METHOD_NOTE records why: a positional computation reported a passing shape against a graph that had lost the property it claimed, and was caught only by a mutation control.",
+    "SINK_NODES": ["N12", "N16", "N27", "N28"],
+    "REACHABILITY_PROPERTIES_BY_TRAVERSAL": {
+      "N32_reachable_from_N03": true,
+      "N06_reachable_from_N32": true,
+      "N06_reachable_from_N31": true,
+      "N05_reachable_from_N29": true,
+      "N30_reachable_from_N11": true,
+      "N23_reachable_from_N30": true,
+      "N10_reachable_from_N06": true,
+      "method_note": "Each is a breadth-first sweep over the edge set from the named source. None is inferred from the topological order."
+    },
+    "ORPHAN_AND_UNREACHABLE_DISCLOSURE": {
+      "ORPHAN_NODES_AFTER": ["N28"],
+      "UNREACHABLE_FROM_N01_AFTER": ["N28"],
+      "ORPHAN_NODES_BEFORE": ["N28"],
+      "UNREACHABLE_FROM_N01_BEFORE": ["N28"],
+      "DELTA_INTRODUCED_BY_THIS_AMENDMENT": "NONE. Zero new orphans, zero new unreachable nodes.",
+      "why_N28_is_not_a_defect": "N28's disconnection is DECLARED AND DELIBERATE in v1.0.0, at DAG_EDGES.EXTERNAL_SEGMENT_BETWEEN_N27_AND_N28: two macro-chain nodes lie between N27 and N28 and are OUTSIDE this DAG, 'so the graph terminates honestly rather than appearing to run from provisioning straight to rotation'. It is a declared discontinuity, not an accidental orphan, and the validator whitelists it by name rather than by suppressing the whole class."
+    }
+  },
+
+  "WHAT_REMAINS_OPEN_AFTER_THIS_AMENDMENT": {
+    "N32": "EXISTS. Datum UNSUPPLIED. No custodian named anywhere.",
+    "N31": "EXISTS. Datum UNSUPPLIED. No planned removal date computed anywhere.",
+    "N08": "OPEN. No planned FINAL WITNESS instant supplied.",
+    "N09": "OPEN. It cannot run before N08.",
+    "N05": "OPEN. A mechanism now EXISTS and has been DEMONSTRATED against a sentinel by this lane, but the demonstration is a CANDIDATE for an independent certifier and this lane may not rule on it. N29's THE_BUILDER_MUST_NOT_SELF_CERTIFY_N05 is binding on exactly this lane.",
+    "N29": "The technical act is IMPLEMENTED at db/custody/**. Whether the implementation discharges N29's exit condition is for the certifier, not for the builder.",
+    "N30": "The technical mechanism is IMPLEMENTED at db/custody/**. The ACT is NOT PERFORMED: no real credential exists, N11 has not fired, and nothing but a sentinel has ever been deposited.",
+    "N06": "NOT SATISFIED. Its precondition set is now five nodes wide and four of the five are open.",
+    "N07": "NOT SATISFIED. Untouched by this lane.",
+    "N10_and_HC_1": "UNTOUCHED. Not opened, not scheduled, not authorized.",
+    "MR_2": "BLOCKED.",
+    "the_frontier": "BLOCKED_AT_N05_N06_N07_N08_N09_N31_N32."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO credential is generated, minted, rotated, deposited or delivered by this amendment or by the lane that wrote it.",
+    "NO real Windows Credential Manager entry carrying a real value is created. The only entries this lane's harness creates are sentinel entries under a reserved prefix, and it verifies none survives.",
+    "NO hosted PostgreSQL connection is opened. No GRANT, no REVOKE, no role mutation, no VALID UNTIL computation.",
+    "NO custody inventory field is populated. docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json is not edited by this lane.",
+    "NO human custodian is named, proposed, defaulted or implied.",
+    "NO node of the DAG is declared closed, satisfied, discharged or resolved.",
+    "NO new fail-closed token is created. N32 carries none, exactly as N08 and N31 carry none, because an unsupplied owner datum blocks a successor rather than firing a stop of its own.",
+    "NO CI workflow is added or modified. Every runner in this repository remains ubuntu-latest and no Windows runner is introduced to make a platform-dependent control look green."
+  ],
+
+  "OPEN_FINDINGS_ADDED": [
+    {
+      "id": "OF-DAG-7",
+      "severity": "NON_BLOCKING",
+      "finding": "The custody inventory entry's seven pre-mint fields now have producers for six of seven at the graph level, but the field processes_or_environments has no producer node either. v1.0.2 corrected its value from [] to null precisely because [] was a resolved value meaning 'no process holds it'; the corrected null is an honest hole, and this amendment does not give it a node.",
+      "why_it_is_not_closed_here": "Unlike human_custodian and planned_removal_date, this field is not owner-supplied. Its value is a CONSEQUENCE of which processes the built mechanism delivers to, which is knowable only once N05 has been certified and the production invocation fixed — a question this lane's own mandate defers until source and runtime constraints are measured. Adding an intake node for a derived value would create a node that can only copy an answer from elsewhere.",
+      "what_a_certifier_should_press": "Whether the field's producer is N05 (which fixes the delivery topology), N29 (which fixes the reader), or the production-invocation decision that neither node contains, and whether the absence of a node for it is the same class of gap NB-1 named or a different one."
+    },
+    {
+      "id": "OF-DAG-8",
+      "severity": "NON_BLOCKING",
+      "finding": "Three owner-intake nodes — N08, N31 and N32 — now block N06 or its predecessors, and none of the three carries a fail-closed token. An unsupplied owner datum is therefore visible only as an unmet exit condition on a node nobody is watching, rather than as a named stop.",
+      "why_it_is_recorded_rather_than_fixed": "v1.0.0 placed no token on N08 and v1.0.2 placed none on N31, and FAIL_CLOSED_TOKEN_PLACEMENT's control DP5 asserts the token set is TOTAL over the outcomes the graph can produce. Adding a token here would amend that set on this lane's own authority, for a class of outcome the two existing precedents deliberately leave tokenless.",
+      "what_a_certifier_should_press": "Whether DP5's totality claim survives three tokenless blocking nodes, or whether 'owner datum unsupplied' is an outcome the token set does not currently reach."
+    }
+  ],
+
+  "self_check": {
+    "every_count_is_machine_derived": "RECOMPUTED_GRAPH is transcribed from the output of `pnpm custody:dag:validate`, which parses the authority artifacts and computes each figure. The validator reproduced v1.0.2's own declared numbers before this amendment existed, which is the control that makes its post-amendment numbers worth transcribing.",
+    "reachability_never_positional": "Every reachability claim is a breadth-first sweep. The topological order is printed and is expressly marked non-unique and non-load-bearing.",
+    "no_parent_artifact_edited": "v1.0.0, v1.0.1 and v1.0.2 are not read-modified by this lane and remain byte-intact. This amendment adds one file.",
+    "no_custodian_named": "No personal name, email address, account identifier, handle or role-holder appears anywhere in this document.",
+    "no_secret_value": "No credential, sentinel, DSN, userinfo, host string, password hash, vault handle, entry key or lookup token appears anywhere in this document.",
+    "no_timestamp_invented": "Only the materialization date 2026-09-22 appears. No UTC instant is calculated and none is presented as a VALID UNTIL or a planned removal.",
+    "no_node_declared_closed": "WHAT_REMAINS_OPEN_AFTER_THIS_AMENDMENT states every relevant node's status and declares none satisfied. N05 in particular is stated OPEN despite this lane having demonstrated a mechanism, because N29 forbids the builder to certify it.",
+    "no_new_token": "The only token names appearing in this document are ones the certified DAG already places. N32 carries an empty token list."
+  },
+
+  "required_independent_review": "MANDATORY. ONE independent adversarial certification of the custody realization package, covering this amendment, the owner decision record it implements, and the implementation at db/custody/** and scripts/custody/** together.",
+  "final_state": "N32_DECLARED__32_NODES__44_EDGES__ACYCLIC__ZERO_NEW_ORPHANS__ZERO_NODES_CLOSED",
+  "next_gate": "ONE independent adversarial implementation certification. No real auditor credential and no provisioning before PASS."
+}

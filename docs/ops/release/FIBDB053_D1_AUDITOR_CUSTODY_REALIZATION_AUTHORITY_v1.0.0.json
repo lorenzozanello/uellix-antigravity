@@ -1,0 +1,232 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0",
+  "authority_class": "IMPLEMENTATION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "N29_AND_N30_IMPLEMENTATION_RECORD__APPEND_ONLY__NO_REAL_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_HOSTED_MUTATION__NO_CREDENTIAL_MINT__NO_CREDENTIAL_ROTATION__NO_GRANT__NO_REVOKE__NO_VALID_UNTIL_COMPUTATION__NO_CUSTODY_INVENTORY_WRITE__NO_CUSTODIAN_NAMED__NO_NODE_CLOSED__NO_SELF_CERTIFICATION_OF_N05",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+  "lane": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+  "role": "Record what the N29 and N30 technical acts BUILT, where it lives, what the sentinel demonstration measured, and what remains open. It does not rule on N05.",
+  "mode": "CLOSURE_FIRST_IMPLEMENTATION_PLUS_MINIMUM_GOVERNANCE",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_v1.0.0.json",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+  "AS_OF_BASE_TREE": "bc0272b3612fc6fff2985c06ac926c1e962d5263",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the start of this lane, before any file of this write set existed. git status --porcelain --untracked-files=all returned empty.",
+  "AS_OF_BASE_BRANCH_FOR_THE_STACKED_PR": "codex/cv1-d1-auditor-consolidated-closure-r1",
+
+  "THIS_LANE_DOES_NOT_CERTIFY_N05": {
+    "rule": "ABSOLUTE. N29's own text states that demonstrating the mechanism satisfies WCM-C1..WCM-C5 is N05, that the builder must not self-certify it, and that 'a builder who also certifies the build has produced a self-report, and a self-report is the failure mode an empty node invites'. This lane is the builder.",
+    "what_the_demonstration_produces": "A DEMONSTRATION CANDIDATE and a secret-free evidence record. The strongest verdict word the harness can emit is SATISFIED_CANDIDATE, and `db/custody/n05-control-state.ts` refuses to construct the word SATISFIED at all.",
+    "who_rules": "An independent adversarial certifier, at the next gate. N05 is OPEN in this document and in every artifact of this write set."
+  },
+
+  "N29_WHAT_WAS_SELECTED_AND_BUILT": {
+    "node": "N29, WCM VAULT-READ MECHANISM SELECTION AND BUILD, declared by DAG amendment v1.0.2 to close DAG_GAP_A (OF-N05-1).",
+    "the_selection_was_made_inside_the_ratified_class": "OD-2 ratifies the custody STORE (Windows Credential Manager, a DPAPI-backed OS credential vault) and the delivery CLASS (MECHANISM_2_PROCESS_SCOPED, which v1.0.2 SPC102-1 leaves as the only selectable one). This lane selected WITHIN that class and did not widen it. No owner decision was needed and none was taken.",
+    "mechanism_named_by_behaviour": "A FIXED, UNINTERPOLATED POWERSHELL PROGRAM THAT P/INVOKES THE WIN32 CREDENTIAL MANAGEMENT API — CredWriteW, CredReadW, CredDeleteW and CredEnumerateW — against CRED_TYPE_GENERIC entries. It is launched non-interactively, with -NoProfile -NonInteractive -EncodedCommand, by a TypeScript module that constructs the argv itself and accepts none from a caller. The value crosses the process boundary base64-framed on an anonymous stdin pipe for a deposit and an anonymous stdout pipe for a retrieval, and never as a command-line argument. Delivery writes the value into the environment block of exactly one consuming child process at CreateProcess time; the launching process never sets the variable in its own environment, and no persistent user or machine environment is written at any point.",
+    "ALTERNATIVES_CONSIDERED_AND_WHY_THEY_WERE_REFUSED": [
+      {
+        "candidate": "cmdkey.exe",
+        "verdict": "REFUSED",
+        "why": "`cmdkey /generic:X /pass:Y` places the value in argv, which N29's first absolute constraint prohibits outright. It also cannot read a password back, so it could not serve as the reader at all."
+      },
+      {
+        "candidate": "A native Node addon over the Credential Management API",
+        "verdict": "REFUSED as disproportionate",
+        "why": "It adds a compiler toolchain and a build step to a mechanism whose whole job is four Win32 entry points."
+      },
+      {
+        "candidate": "An FFI package such as koffi or ffi-napi",
+        "verdict": "REFUSED",
+        "why": "A new runtime dependency in the lockfile is a supply-chain surface added to the one code path in this repository that will handle a hosted credential."
+      },
+      {
+        "candidate": "PowerShell SecretManagement / SecretStore",
+        "verdict": "REFUSED",
+        "why": "Not present by default, and it interposes a second vault abstraction over the store OD-2 already ratified."
+      },
+      {
+        "candidate": "Windows.Security.Credentials.PasswordVault (WinRT)",
+        "verdict": "REFUSED",
+        "why": "A different store from the generic credential set OD-2 names, reached through a packaged-app-oriented API."
+      },
+      {
+        "candidate": "Windows PowerShell 5.1 with Add-Type P/Invoke into advapi32",
+        "verdict": "SELECTED",
+        "why": "It ships with the operating system, needs no new dependency and no build step, reaches exactly the documented API the ratified store exposes, and the whole mechanism is one auditable file. It was MEASURED on this workstation before selection: a CredWriteW / CredReadW / CredDeleteW round trip succeeded and a post-delete CredReadW returned ERROR_NOT_FOUND (1168)."
+      }
+    ],
+    "THE_INVOCATION_CONTRACT_AND_HOW_IT_IS_ENFORCED": {
+      "what_RC_4_requires": "RC-4's structural note observes that WCM-C3 is a property of the SESSION, not of the mechanism, and that N05 can only mean the mechanism carries an invocation contract that is ENFORCED at every invocation rather than documented once.",
+      "how_it_is_enforced": "`bridgeArgv()` in db/custody/wcm-credential-store.ts is a pure function of NOTHING. It takes no parameters, so there is no channel through which a caller could drop -NonInteractive, re-enable the profile, supply a different interpreter, or append a -Command carrying a value. A control asserts its arity is zero and its contents exact.",
+      "why_the_contract_is_stronger_than_disabling_history": "The value never enters anything a history sink can record. PSReadLine records INTERACTIVE input and this program is never invoked interactively. Script-block logging records the SCRIPT, and the script is a fixed constant containing no value. The process table records argv, and argv carries only the flags and the base64 of that constant. A session with every history facility enabled still records no secret, so the property does not depend on the session being configured correctly."
+    }
+  },
+
+  "N30_WHAT_WAS_BUILT_AND_WHAT_WAS_NOT_DONE": {
+    "node": "N30, CREDENTIAL DEPOSIT INTO THE RATIFIED CUSTODY STORE, declared by DAG amendment v1.0.2 to close DAG_GAP_B (OF-N05-2).",
+    "THE_ACT_IS_NOT_PERFORMED": "ABSOLUTE. N11 has not fired, no credential has been minted, and no real value exists to deposit. What this lane built is the MECHANISM a future N30 will use. The only values ever deposited were non-secret sentinels, and every one was removed and its removal verified.",
+    "the_five_stages_are_separated_in_the_implementation": {
+      "why_separation_is_load_bearing": "Fusing any two of these is how a mechanism acquires a capability nobody authorized. N29's own text keeps the reader and the writer apart for the same reason the DAG keeps N29 and N30 apart as nodes.",
+      "secret_acquisition": "acquireSecretFromStdin — db/custody/secret-intake.ts",
+      "credential_deposit": "depositCredential — db/custody/wcm-credential-store.ts",
+      "credential_retrieval": "retrieveCredential — db/custody/wcm-credential-store.ts",
+      "process_delivery": "runWithDeliveredSecret — db/custody/process-delivery.ts",
+      "cleanup": "removeCredential and sweepCredentials — db/custody/wcm-credential-store.ts"
+    },
+    "THE_FUTURE_REAL_VALUE_INPUT_PATH": {
+      "channel": "STDIN, as a pipe. The value is read as bytes into a Buffer the caller can zero, and never as argv, never from an environment variable, never from a temp file, and never from an echoing terminal.",
+      "refusals_that_are_enforced_rather_than_documented": "assertNonEchoingChannel refuses a TTY outright, on the ground that a terminal scrollback is a history sink WCM-C3 would then have to reach. It also refuses when argv already carries something credential-shaped — which cannot un-breach WCM-C2, but reports the breach instead of silently accepting it.",
+      "THE_PRODUCTION_INVOCATION_IS_NOT_INVENTED_HERE": "The lane mandate is explicit that the final production invocation must not be chosen before its source and runtime constraints are measured, and the producer on the other end of the pipe — a vault export, a non-echoing reader, a hosted API response — is exactly that choice. This lane builds the channel and declines to choose the producer."
+    }
+  },
+
+  "NB_7_RESOLVED_BY_IMPLEMENTATION_WHERE_THE_MECHANISM_LIVES": {
+    "the_finding": "The consolidated closure IC noted that N29 did not state WHERE the built mechanism lives. This lane resolves it as a technical implementation fact, which is what it is: no trust boundary moves either way, so no owner decision is required.",
+    "verdict": "IN-REPOSITORY, at db/custody/**, as tracked source.",
+    "why_in_repository": "The least complex auditable option. A reader whose source nobody can read is a reader nobody can check, and an out-of-tree mechanism would need a separate reproducibility and provenance story for the one code path that will handle a hosted credential.",
+    "why_it_is_safe_for_the_reader_to_be_public": "Repository code is not secret. The mechanism's security rests on DPAPI, on the process boundary, and on the value never entering argv, a log or a persistent environment — none of which is weakened by the reader being readable.",
+    "the_exact_paths": [
+      "db/custody/wcm-powershell-source.ts — the bridge program as a fixed constant.",
+      "db/custody/wcm-credential-store.ts — deposit, retrieve, probe, remove, sweep, and the argv the bridge is always launched with.",
+      "db/custody/process-delivery.ts — process-scoped delivery into exactly one consuming child.",
+      "db/custody/secret-intake.ts — the ephemeral acquisition channel.",
+      "db/custody/n05-control-state.ts — the evidence record type and the tri-state that makes NOT_RUN unrepresentable as a pass."
+    ],
+    "WHY_THE_SENTINEL_AND_THE_HARNESS_ARE_NOT_UNDER_db_custody": "They are demonstration scaffolding, not production code, and they live under scripts/custody/**. Keeping the two apart is what makes 'no test value in production source' checkable by looking at a directory rather than by reading every line of it.",
+    "PROOF_THAT_THE_SOURCE_CONTAINS_CODE_ONLY": "Asserted by control, not by inspection: tests/custody/wcm-custody-mechanism.test.ts requires the bridge constant to match no PostgreSQL scheme, no URL userinfo pair and no token-shaped literal, and `pnpm secrets:scan` runs clean over the whole write set. No sentinel value appears in any tracked file, and no sentinel generator output is ever written inside the tree."
+  },
+
+  "THE_SENTINEL_AND_A_DECLARED_CONFLICT_WITH_THE_LANE_MANDATE": {
+    "rule": "DISCLOSED, NOT GUESSED. The lane mandate and the certified readiness authority give contradictory instructions about the sentinel's shape, and this lane followed the authority and says so rather than picking one silently.",
+    "what_the_lane_mandate_says": "'A valid sentinel must be unmistakably non-production, e.g. generated/labeled as test-only, and must not resemble a DSN/password/token.'",
+    "what_the_certified_authority_says": {
+      "SP_1": "'SHAPED LIKE THE REAL VALUE, which is a connection string carrying userinfo. A sentinel of a different shape would leave the WCM-C2 command-line search and the WCM-C5 absence check searching for a pattern the real value does not have, which is a check that cannot fail for the right reason.'",
+      "SP_4": "'IT MUST NOT BE SUPPRESSED BY THE REPOSITORY SECRET SCANNER. It must carry NO fixture marker in its own body and its password component must be at least six characters, so that the scanner classifies it exactly as it would classify the real credential.'"
+    },
+    "how_it_was_resolved": "The repository's source-of-truth hierarchy places certified repository authority above conversation context, and CLAUDE.md requires a conflict between levels to fail closed rather than be guessed. SP-1 and SP-4 were implemented and the mandate's phrasing was departed from, narrowly and on the record.",
+    "what_was_honoured_from_the_mandate": "The sentinel IS unmistakably non-production to a human reader. Its host is under `.invalid`, which RFC 6761 guarantees can never resolve; its entry lives under a reserved target prefix naming the demonstration; and it is freshly generated per run and never written to disk inside the tree.",
+    "what_was_departed_from": "'Must not resemble a DSN.' It must, and it does, because the WCM-C2 command-line search and the WCM-C5 absence check hunt the shape the REAL value has.",
+    "where_the_non_production_markers_are_placed_and_why_it_matters": "In the USERNAME and the HOST, NEVER in the PASSWORD component. scripts/scan-secrets.ts tests only the password against isUnmistakablePlaceholder. A marker in the password is mutant NM12 of the N05 test manifest exactly: it makes the repository's own leak gate stop seeing the sentinel, which is the one divergence from the real value that runs in the UNSAFE direction.",
+    "the_generator_asks_the_scanner_rather_than_trusting_probability": "A random base62 run can contain `fake` or `dummy` by chance, which would reproduce NM12 by accident in perhaps one run in a hundred thousand and present as a broken gate. generateSentinel calls the scanner's OWN isUnmistakablePlaceholder and regenerates. A control exercises the scanner against a hundred independently generated sentinels and requires a finding on every one.",
+    "THIS_IS_AN_OWNER_DECISION_POINT": "Whether the mandate's phrasing or SP-1 governs is the owner's to settle. This lane reports the conflict; it does not claim to have resolved it in the owner's favour."
+  },
+
+  "WHAT_THE_DEMONSTRATION_MEASURED": {
+    "rule": "The harness and its evidence record live OUTSIDE the repository working tree, per the readiness contract's universal preconditions and SP-3. The harness REFUSES to run against an --out-dir inside the tree.",
+    "how_to_reproduce": "pnpm custody:n05:demonstrate -- --out-dir=<a path outside this repository>",
+    "platform": "Windows 11, Windows PowerShell 5.1. This is a WORKSTATION-RECORDED demonstration and it is NOT CI-gated, because ES-1 measured that every runner in this repository is ubuntu-latest and no Windows runner exists.",
+    "NO_WINDOWS_CI_WORKFLOW_WAS_ADDED": "Deliberately. The lane mandate forbids adding one merely to make CI look green, no existing authority authorizes the workflow change, and a Linux runner cannot behaviourally prove anything about a DPAPI-backed Windows vault.",
+    "the_two_layers": {
+      "A_cross_platform_deterministic": "tests/custody/** — 146 tests that run on any platform, including the only runners this repository has. They assert the argv is fixed, the bridge source is secret-free, the refusals refuse, the sentinel conforms to SP-1 and SP-4, the scanner fires on it, the evidence record matches the authority's required_fields in both directions, and the amendment's declared graph numbers match a re-derivation.",
+      "B_windows_local_sentinel": "scripts/custody/n05-sentinel-demonstration.ts — the behavioural demonstration, executable on this host, producing the evidence record."
+    },
+    "THE_OBSERVATIONS_ARE_MADE_FROM_OUTSIDE": {
+      "why": "Each readiness-contract item names a cheap demonstration that proves nothing, and each of those cheap demonstrations is a self-report by the party under examination.",
+      "command_lines_RC_3": "A SEPARATE PowerShell process polls Win32_Process every 100ms for the whole run and records every command line it can read, machine-wide. The harness then searches that capture for the sentinel. No process reports its own command line.",
+      "fresh_shell_RC_2": "A process created through Win32_Process.Create, which the operating system re-parents onto WmiPrvSE and which is therefore genuinely OUTSIDE the demonstration's process tree — a child shell would inherit this process's environment block and could not distinguish process scope from session scope. The registry-backed User and Machine environment blocks are ALSO read directly, because that is the surface setx writes and the one MECHANISM_1 was refused for.",
+      "history_sinks_RC_4": "Seven sinks enumerated BY NAME, each classified FILE, EVENT_LOG or STRUCTURAL, each recorded whether present or absent, and every file-backed one searched for the sentinel. An unreadable sink is recorded as a HIT, not as clean.",
+      "audit_surface_RC_8": "auditpol is asked to enumerate the audit subcategories rather than an absence being asserted. The measured statement is that no subcategory covers a Credential Manager vault READ — credential VALIDATION is the authentication of a credential by a logon authority, a different act — and that therefore no audit surface records the entry handle, so SSL-06 is not engaged by the read path on this configuration."
+    }
+  },
+
+  "FINDINGS_THE_DEMONSTRATION_PRODUCED_BY_BEING_RUN": {
+    "rule": "Three defects were found by RUNNING the mechanism, not by reading it. All three are recorded because each generalises past this lane, and because a lane that reported only its successes would be reporting a different run from the one that happened.",
+    "F_1_THE_ZEROING_RACE": {
+      "what": "The first implementation zeroed the stdin buffer immediately after calling write(). `writable.write()` is asynchronous and may only have QUEUED the buffer, so the zeroing raced the flush and the bridge received base64 of NUL bytes.",
+      "how_it_presented": "As `CredWriteW failed` — a data-loss bug wearing a Win32 error's clothes, pointing at the one call that had never run.",
+      "fix": "The zeroing is deferred to the flush callback of `end()`.",
+      "what_it_generalises_to": "Zeroing a secret buffer is correct only after the consumer of that buffer has finished with it, and an asynchronous API has not finished when it returns."
+    },
+    "F_2_THE_RUNTIME_SPAWNED_A_CHILD_THAT_INHERITED_THE_VALUE": {
+      "what": "The first demonstration ran the consumer through the tsx TypeScript runtime. The external observation showed esbuild.exe as a CHILD OF THE CONSUMING PROCESS. tsx starts esbuild as a helper service and Node inherits the parent environment by default, so a bundler worker held the delivered value in its environment block for its lifetime.",
+      "why_it_matters": "WCM-C1's scope is 'the single command that consumes it', and a bundler is not that command. Nothing printed the value and nothing logged it, but the scope was breached.",
+      "why_no_source_reading_would_have_caught_it": "The consumer's source spawns nothing. RC-7 says exactly this in advance: an enumeration drawn from reading the consumer's source 'cannot see children spawned by libraries, tooling hooks or the runtime itself'. This is that case, observed.",
+      "fix": "The consumer and its four-file runtime import closure are transpiled to plain CommonJS ONCE, before any deposit, and run under bare node. The observed consumer topology is now console hosts only.",
+      "what_it_generalises_to": "THE PRODUCTION INVOCATION MUST NOT DELIVER THE REAL CREDENTIAL INTO A PROCESS RUNNING UNDER A DEVELOPMENT RUNTIME. A future lane that reached for tsx because the demonstration used it would reintroduce this leak. The observation is carried as control RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD, which can FAIL, rather than as prose a reader has to interpret."
+    },
+    "F_3_A_CONTROL_THAT_PASSED_OVER_AN_EMPTY_SET": {
+      "what": "With the consumer running under bare node it exited in about fifty milliseconds, and the 100ms external poller never saw it. RC-3's command-line control and RC-7's topology control both reported CLEAN — over zero observed consuming processes.",
+      "why_it_matters": "It is the readiness contract's own central failure mode arriving from an unexpected direction: not a check that exercises only its pass path, but a check with no subject at all. The evidence record said CONSUMING PROCESSES OBSERVED: 0 next to two green controls.",
+      "fix": "TWO changes, because either alone would be fragile. The consumer now DWELLS with the value live in its environment for 1500ms against a 100ms poll interval, so the observation is possible; and the harness REFUSES to pass NP10 or RC-7 when the observer saw no consuming process, so a future change that makes the consumer fast again fails loudly instead of quietly.",
+      "what_it_generalises_to": "A control over a set must assert the set is non-empty. 'No violations found' and 'nothing was looked at' are the same sentence in most report formats."
+    }
+  },
+
+  "WHAT_REMAINS_OPEN": {
+    "N05": "OPEN and NOT SATISFIED. A mechanism now exists and has been demonstrated against a sentinel, and the demonstration reports SATISFIED_CANDIDATE. That is a candidate for a certifier, not a discharge, and N29 forbids this lane to treat it as one.",
+    "N29": "The technical act is IMPLEMENTED. Whether the implementation meets N29's exit condition is for the certifier.",
+    "N30": "The technical mechanism is IMPLEMENTED. The ACT is NOT PERFORMED and cannot be until N11 mints a credential.",
+    "N32": "EXISTS as of DAG amendment v1.0.3. Datum UNSUPPLIED. No custodian named anywhere.",
+    "N31": "EXISTS. Datum UNSUPPLIED.",
+    "N08_and_N09": "OPEN. No planned FINAL WITNESS instant, therefore no VALID UNTIL.",
+    "N06": "NOT SATISFIED. Its precondition set is now five nodes wide and four of the five are open.",
+    "N07": "NOT SATISFIED. Untouched by this lane, deliberately: the lane mandate scopes it out, and its remaining non-blocking schema hygiene is unrelated to custody realization.",
+    "N10_HC_1_N11_N25": "UNTOUCHED. Not opened, not scheduled, not authorized.",
+    "provisioning": "NOT AUTHORIZED.",
+    "the_nine_other_consolidated_IC_findings": "NOT addressed by this lane and still OPEN. Only NB-1 was put to the owner and only NB-1 was implemented."
+  },
+
+  "OPEN_FINDINGS_ADDED": [
+    {
+      "id": "OF-CUST-1",
+      "severity": "NON_BLOCKING",
+      "finding": "The retrieved value transits the launching Node process as a JavaScript STRING before reaching the consuming child's environment block, and a JavaScript string cannot be zeroed. The Buffer is zeroed on every path; the string derived from it at the spawn boundary is at the mercy of the garbage collector.",
+      "why_it_is_not_fixed_here": "The design that removes the hop — letting the PowerShell bridge itself spawn the consumer, so the value never enters the Node heap — is measured and understood, and it is not built because it IS the production-invocation decision the lane mandate defers until source and runtime constraints are measured. Building it now would choose the production topology on this lane's authority.",
+      "what_a_certifier_should_press": "Whether an unzeroable in-heap copy inside the launching process is acceptable for the REAL credential, or whether the bridge-spawns-consumer topology must be built before N30's act is performed."
+    },
+    {
+      "id": "OF-CUST-2",
+      "severity": "NON_BLOCKING",
+      "finding": "conhost.exe appears as a child of the consuming process and is EXEMPTED from the environment-inheriting-child control by a declared reason — that the Windows console subsystem attaches it rather than the application handing it an environment block — rather than by a measurement of its environment.",
+      "why_it_is_recorded": "It is the one exemption in the topology control, and an exemption nobody measured is the shape a future leak would hide in. Reading another process's environment block requires PROCESS_VM_READ and was not performed.",
+      "what_a_certifier_should_press": "Whether conhost.exe's environment block should be read directly before the real credential is ever delivered, and whether a delivery that avoided a console host altogether would be cheaper than proving this one safe."
+    },
+    {
+      "id": "OF-CUST-3",
+      "severity": "NON_BLOCKING",
+      "finding": "The vault entry is written with CRED_PERSIST_LOCAL_MACHINE, so a process killed between deposit and cleanup leaves the entry behind. The demonstration's recovery path is sweepCredentials over a reserved sentinel prefix, run before and after every run and verified empty. NO EQUIVALENT SWEEP EXISTS OR SHOULD EXIST FOR THE REAL CREDENTIAL, whose removal is the rotation act N28 governs.",
+      "why_persistence_is_nevertheless_correct": "The depositor (N30) and the reader (N23) are different runs. A session-scoped entry would not survive to be read.",
+      "what_a_certifier_should_press": "Whether the asymmetry is acceptable — that the sentinel has an automatic recovery path and the real credential deliberately does not — and whether N28's rotation act is reachable if the workstation is lost between N30 and N23."
+    },
+    {
+      "id": "OF-CUST-4",
+      "severity": "NON_BLOCKING",
+      "finding": "RC-2's fresh-shell observation is discharged by a Win32_Process.Create probe re-parented onto WmiPrvSE, plus direct reads of the User and Machine registry environment blocks. The readiness contract asks for 'a FRESHLY LAUNCHED shell, started from the ordinary user session', which is a description of an interactive act no automated harness performs.",
+      "why_the_substitute_is_argued_to_be_stronger": "The WMI-created process is genuinely outside the demonstration's process tree, which a manually launched shell would also be; and the direct registry reads answer the underlying question — does the variable persist beyond this process — more decisively than any shell's view of its inherited block.",
+      "what_a_certifier_should_press": "Whether an automated out-of-tree probe discharges a clause written in terms of a human opening a new shell, or whether the human act is itself load-bearing."
+    }
+  ],
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO real auditor credential was read, written, generated, minted, rotated, deposited or delivered. None exists.",
+    "NO PostgreSQL connection of any kind was opened. No GRANT, no REVOKE, no role mutation, no VALID UNTIL computation.",
+    "NO hosted resource was touched. External hosted mutations: NONE.",
+    "NO custody inventory field was populated and the inventory file was not edited by this lane.",
+    "NO human custodian was named, proposed, defaulted or implied.",
+    "NO node of the DAG is declared closed, satisfied, discharged or resolved. N05 in particular is OPEN.",
+    "NO CI workflow was added or modified.",
+    "NO new fail-closed token was created. The only token this write set can emit is STOP_SECRET_DELIVERY_NONCOMPLIANT, which the certified DAG already places at N05.",
+    "NO sentinel value, and no example of a sentinel's shape, appears in any tracked file of this write set.",
+    "NO child pull request was closed, merged or modified by this lane."
+  ],
+
+  "self_check": {
+    "no_secret_value": "No credential, sentinel, DSN, userinfo, host string, password hash, vault handle, entry key or lookup token appears anywhere in this document or its companion manifest. `pnpm secrets:scan` runs clean over the whole write set.",
+    "no_custodian_named": "No personal name, email address, account identifier, handle or role-holder appears anywhere in this document.",
+    "no_node_declared_closed": "WHAT_REMAINS_OPEN states every relevant node's status and declares none satisfied.",
+    "no_self_certification": "THIS_LANE_DOES_NOT_CERTIFY_N05 is stated first, and the harness is built so that it cannot emit the word SATISFIED.",
+    "sentinel_cleanup_verified_independently": "After the final demonstration run, zero entries remained under the reserved prefix. Verified THREE ways: the harness's own post-run sweep; `cmdkey /list` filtered to the prefix, which reported no matching entries; and a CredEnumerateW call from a FRESH PowerShell process unrelated to the harness, which returned ERROR_NOT_FOUND. A cleanup failure is a lane failure, so the verification does not rely on the component that performed the cleanup.",
+    "findings_from_running_are_recorded_not_only_fixed": "Three defects found by execution are recorded at FINDINGS_THE_DEMONSTRATION_PRODUCED_BY_BEING_RUN, including one — the vacuous pass over zero observed consumers — that made two controls green before it was caught.",
+    "conflict_disclosed_not_guessed": "The sentinel-shape conflict between the lane mandate and SP-1/SP-4 is stated in full, with the resolution and its basis in the source-of-truth hierarchy, and is flagged as an owner decision point."
+  },
+
+  "required_independent_review": "MANDATORY. ONE independent adversarial implementation certification, covering this authority, its companion manifest, the owner decision record at OD-N32-1, DAG amendment v1.0.3, and the implementation at db/custody/** and scripts/custody/** together.",
+  "final_state": "CUSTODY_REALIZATION_IMPLEMENTED_WITH_SENTINEL__NO_REAL_CREDENTIAL__N06_STILL_BLOCKED_ON_RUNTIME_INPUTS",
+  "next_gate": "ONE independent adversarial implementation certification. No real auditor credential and no provisioning before PASS."
+}
