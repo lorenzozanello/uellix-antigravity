@@ -1,0 +1,482 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_N05_WCM_READINESS_AUTHORITY",
+  "authority_class": "DERIVED_READINESS_AUTHORITY_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "N05_READINESS_CONTRACT_DERIVATION__NO_EXECUTION__NO_SECRET__NO_WINDOWS_CREDENTIAL_MANAGER_READ_OR_WRITE__NO_POSTGRESQL_CONNECTION__NO_PROVISIONING__NO_CREDENTIAL_GENERATION__NO_CREDENTIAL_ROTATION__NO_GRANT__NO_REVOKE__NO_VALID_UNTIL_COMPUTATION__NO_CUSTODY_INVENTORY_WRITE__NO_MECHANISM_IMPLEMENTED",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-N05-WCM-READINESS-AUTHORITY-R1",
+  "lane": "CV1-D1-AUDITOR-N05-WCM-READINESS-AUTHORITY-R1",
+  "role": "Author the readiness authority governing DAG node N05, WCM PROCESS-SCOPED DELIVERY MECHANISM READINESS.",
+  "mode": "DOCS_AND_AUTHORITY_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_N05_WCM_READINESS_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-wcm-readiness-authority-r1",
+  "AS_OF_PARENT_SHA": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+  "AS_OF_TREE": "66cbcee0d7a849c4ac7305f7f40f02b4aa058988",
+  "AS_OF_WORKTREE_STATE": "CLEAN. git status --porcelain --untracked-files=all returned empty at the start of this lane, before any file of this write set existed.",
+  "AS_OF_BASE_BRANCH_FOR_THE_STACKED_PR": "The PR #210 head 173fabce180b71fe49f65e5c7290ca9f20d85572, which is this lane's stated PARENT and is byte-identical to this lane's HEAD at authoring start.",
+
+  "NAMING_DERIVATION": {
+    "rule": "The filename follows the sibling convention already established in docs/ops/release/ by the capability, DAG and observation packages: FIBDB053_<SUBJECT>_<KIND>_v<semver>.json with a companion _TEST_MANIFEST_ at the same version. No new convention is invented.",
+    "why_a_separate_artifact_rather_than_a_DAG_amendment": "The certified DAG states at WCM_READINESS_PREREQUISITE.THIS_ARTIFACT_INVENTS_NO_IMPLEMENTATION that N05 states WHAT MUST BE PROVEN and by WHAT STANDARD, and that everything beyond that is a separate governed act outside its write set. A readiness contract that specifies the STANDARD OF PROOF in operational detail is therefore a SUBORDINATE artifact under the DAG, not a correction to it. Nothing in the DAG is superseded, reworded, reordered, narrowed or widened by this file.",
+    "no_protected_surface": "docs/ops/release/ is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, re-derived at AS_OF_TREE by reading that array at blob 17bb74e698b47450dec8e36c016e6568d0b369d7 lines 82 to 90: the seven protected patterns are docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. This write set touches no protected surface and claims no protected-authority id."
+  },
+
+  "PURPOSE": "To state, in terms an execution lane can discharge and a certifier can check, what DAG node N05 must prove, by what standard of proof, what does NOT count as proof, and what happens when it cannot be proven. It additionally records this lane's own independent re-derivation of the mechanism-absence measurement, the measured execution surface available to any future N05 test, and the lane that must exist before N05 can be attempted at all.",
+
+  "CONTROLLING_AUTHORITY": {
+    "rule": "Every clause below is derived from one of the pinned artifacts. Where this artifact states something none of them states, it is marked DERIVED and carries an open finding. A derivation that cannot name its source is an invention.",
+    "pin_method": "git ls-tree -r HEAD -- <path>, executed in this lane at AS_OF_TREE 66cbcee0d7a849c4ac7305f7f40f02b4aa058988. Every hash below is a BLOB hash of the COMMITTED object at that tree, not of any working-copy draft.",
+    "pins": [
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json", "blob": "7223279f2dbb46ed6e252cd3aa1469ff0b4419d5", "role": "THE DIRECTLY CONTROLLING ARTIFACT. Defines node N05, the five conditions, the two derived obligations, the hoist, and WHAT_N05_MUST_PRODUCE." },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "d18cf2a654945c1fc2efdb3ff52abd70b76c22dd", "role": "Reconciles N02 and restates that NOTHING in it touches N05; the measured absence recorded in v1.0.0 stands unchanged. Its final_state names N05 as one of the four open blocking nodes." },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json", "blob": "e9b843c6761b38473ad1080b8b21680c99741b93", "role": "Source of sentinel SENT-DAG-1, which this artifact BINDS TO rather than duplicating." },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "e2829fca31c7d7fce26a4cf5831ff8f2211b51cf", "role": "Companion of the DAG amendment." },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json", "blob": "eb77f0954495625d110be3791053a6850ba2b590", "role": "Base text of SECRET_DELIVERY_CONTRACT, from which the five conditions and the ABSOLUTELY_PROHIBITED_MECHANISMS list originate." },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "b233bd1f947fd6c49e0416279a2f98a260a6d5de", "role": "SECTION_A7, which splits MECHANISM_1 from MECHANISM_2, rules MECHANISM_1 NOT ACCEPTABLE ABSOLUTE, and restates MECHANISM_2's five conditions unchanged from the base." },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json", "blob": "f7387d720eb8e6ec439ae968ff11661aa1c53e47", "role": "SPC102-1, which closes OD-2 sub_decisions[1] so that a user-scope persistent variable is not selectable at all, and names a dedicated secret manager or an OS credential vault as the two live candidates." },
+      { "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json", "blob": "fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f", "role": "OD-2 as ratified, and EXEC-NOTE-2, which binds the execution lane to a separate execution-time confirmation of the five conditions against the specific vault-read mechanism used." },
+      { "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json", "blob": "e639396719e6d2701f7894a50bc51056741bfa92", "role": "Owner ratification amendment. Carried in the binding set for completeness; it does not touch OD-2's delivery election." },
+      { "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json", "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50", "role": "The schema the companion manifest of this artifact validates against." },
+      { "path": "db/safety/resolve-capability-database-url.ts", "blob": "14ff0a01ce331d6453686935f5c026e116b0107e", "role": "The CONSUMING SURFACE. resolveAuditorDatabaseUrl reads AUDITOR_DATABASE_URL_ENV_VAR from an EnvironmentSource defaulting to process.env and nothing else. Re-read in this lane; it performs no file read and imports no dotenv." },
+      { "path": "scripts/ods-scope.ts", "blob": "17bb74e698b47450dec8e36c016e6568d0b369d7", "role": "Source of DEFAULT_PROTECTED_PATTERNS, re-read for the no-protected-surface claim." },
+      { "path": "scripts/scan-secrets.ts", "blob": "0d3e601e1cb26dd8488a88596afd0d4081ee5eaa", "role": "The repository secret scanner, whose detectors bound what a sentinel may safely be and where a demonstration may safely run." }
+    ],
+    "freshness": "RULE_OBSERVATION_FRESHNESS is carried in full. Every pin above is a repository fact and is re-derivable by the method named. NOTHING in this artifact converts a hosted measurement into a standing fact, and the FRESHNESS_CARRYOVER clause of the ratification record applies to this artifact exactly as it applies to its parents."
+  },
+
+  "IS_N05_AN_IMPLEMENTATION_LANE": {
+    "question": "The lane mandate forbids implementing the secret-bearing mechanism here UNLESS authority precedent explicitly says N05 is itself an implementation lane. Does it?",
+    "VERDICT": "NO. N05 IS A DEMONSTRATION AND CONFIRMATION NODE, NOT AN IMPLEMENTATION NODE. No implementation is authored by this artifact.",
+    "evidence_chain": [
+      { "locus": "DAG_NODES.nodes[N05].act", "verbatim_fragment": "DEMONSTRATE that the chosen vault-read mechanism satisfies all five MECHANISM_2 conditions", "what_it_proves": "The word CHOSEN presupposes a mechanism that already exists and has already been selected. A node cannot demonstrate a property of a thing it is also creating in the same act without its demonstration being a self-report." },
+      { "locus": "DAG_NODES.nodes[N05].no_implementation_is_invented_here", "verbatim_fragment": "This artifact names no reader, wrapper, script, command, API or library. It states what must be proven and by what standard.", "what_it_proves": "The DAG assigns N05 the STANDARD, not the BUILD." },
+      { "locus": "WCM_READINESS_PREREQUISITE.THIS_ARTIFACT_INVENTS_NO_IMPLEMENTATION", "verbatim_fragment": "Choosing and building the mechanism is a separate governed act outside this write set, and the lane mandate forbids inventing it.", "what_it_proves": "Choosing AND building are together a SEPARATE GOVERNED ACT. That is the precedent the mandate asks for, and it points the opposite way: it forecloses implementation here." },
+      { "locus": "EXPLICIT_NON_AUTHORIZATIONS of the DAG", "verbatim_fragment": "NO implementation of any WCM reader, DPAPI wrapper or vault integration is invented, named, designed, sketched or recommended.", "what_it_proves": "An express prohibition, carried forward into this artifact verbatim at EXPLICIT_NON_AUTHORIZATIONS." },
+      { "locus": "Owner ratification record, EXEC-NOTE-2", "verbatim_fragment": "selecting the vault does not itself prove the delivery mechanics satisfy the five conditions; that is a separate, execution-time confirmation.", "what_it_proves": "The owner-binding note frames N05's work as CONFIRMATION at execution time, against a mechanism that is USED, not built." }
+    ],
+    "THE_STRUCTURAL_CONSEQUENCE": {
+      "finding": "The separate governed act that CHOOSES and BUILDS the mechanism is NOT A NODE OF THE CERTIFIED DAG. The twenty-eight nodes were enumerated in this lane and none of them selects, builds, installs or validates a vault-read mechanism; N05 consumes one that is already chosen, and no predecessor of N05 produces it. N03, N05's only precondition, is the OD-1..OD-6 ratification gate, which ratifies a CUSTODY STORE and a DELIVERY CLASS, not a mechanism.",
+      "why_it_matters": "N05 is currently unreachable not because a demonstration failed but because its SUBJECT does not exist and no node creates it. An execution lane that arrives at N05 with nothing to demonstrate does not have a failing node; it has an empty one, and an empty node is the kind that gets declared satisfied by default.",
+      "flagged": "OF-N05-1."
+    }
+  },
+
+  "REQUIREMENTS_AS_READ": {
+    "rule": "The five conditions are CARRIED VERBATIM from the certified DAG's WCM_READINESS_PREREQUISITE.THE_FIVE_CONDITIONS_THE_MECHANISM_MUST_DEMONSTRATE.conditions, which the DAG in turn carries from SECRET_DELIVERY_CONTRACT MECHANISM_2_PROCESS_SCOPED as restated unchanged by v1.0.1 SECTION_A7 from the base text. No word is altered, no condition is added, none is reordered and none is merged. Where this artifact adds a STANDARD OF PROOF, the standard is marked as such and is clearly separated from the condition's own words.",
+    "provenance_chain_verified_in_this_lane": "Base authority v1.0.0 SECRET_DELIVERY_CONTRACT.WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION.CONDITIONS_UNDER_WHICH_IT_BECOMES_ACCEPTABLE.conditions -> v1.0.1 SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION.MECHANISM_2_PROCESS_SCOPED.conditions_carried_unchanged_from_the_base_text -> v1.0.2 SPC102-1, which closes OD-2 sub_decisions[1] and does NOT alter SECTION_A7 -> DAG v1.0.0 WCM_READINESS_PREREQUISITE -> this artifact. Four hops, each read in this lane at the blob pinned above.",
+    "conditions": [
+      { "id": "WCM-C1", "verbatim": "PROCESS-SCOPED, NOT USER-SCOPED. The variable is set in the environment of the single command that consumes it and does not persist to a new shell.", "mandate_phrasing_cross_check": "process scoped" },
+      { "id": "WCM-C2", "verbatim": "NOT SET BY A COMMAND THAT CARRIES THE VALUE AS AN ARGUMENT. It is read from the secret store into the process environment, never typed or pasted into a command line.", "mandate_phrasing_cross_check": "secret never appears in command-line args" },
+      { "id": "WCM-C3", "verbatim": "SHELL HISTORY IS DISABLED FOR THE SESSION, or the session is a fresh non-persisting one.", "mandate_phrasing_cross_check": "not written to persistent user env" },
+      { "id": "WCM-C4", "verbatim": "REMOVED IMMEDIATELY after the consuming process exits, on BOTH the success and the failure path.", "mandate_phrasing_cross_check": "cleared after use" },
+      { "id": "WCM-C5", "verbatim": "POSITIVE ABSENCE VERIFICATION after removal, recorded in the evidence artifact as a boolean. Absence is asserted from a check, never from the fact that a removal command was issued.", "mandate_phrasing_cross_check": "cleared after use, provably" }
+    ],
+    "derived_obligations_carried_from_the_DAG": [
+      { "id": "DO-1", "dag_finding": "OF-DAG-3", "obligation": "The demonstration must state what the consuming process's child processes are and whether any of them retains, forwards or logs the environment.", "status_in_the_DAG": "A DERIVED OBLIGATION OF N05, expressly NOT a sixth condition and expressly NOT an amendment to the five." },
+      { "id": "DO-2", "dag_finding": "OF-DAG-4", "obligation": "The demonstration must state whether the vault read itself is audited or logged, and where, because neither the echo prohibition nor the ALTER ROLE log clause reaches a credential-manager audit trail.", "status_in_the_DAG": "A DERIVED OBLIGATION OF N05." }
+    ],
+    "WHAT_N05_MUST_PRODUCE_carried_verbatim": [
+      "A NAMED mechanism, described by what it does rather than by a product name alone.",
+      "A demonstration, per condition WCM-C1 through WCM-C5, performed on a NON-SECRET SENTINEL VALUE and never on a real credential, showing the condition holds.",
+      "A statement of the consuming process's child-process topology, per OF-DAG-3.",
+      "A statement of whether the vault read is audited or logged, and where, per OF-DAG-4.",
+      "An explicit STOP_SECRET_DELIVERY_NONCOMPLIANT if any single condition cannot be demonstrated. A missed observation is preferable to a leaked credential."
+    ],
+    "WHAT_IS_OUT_OF_SCOPE_OF_THE_FIVE_CONDITIONS": {
+      "rule": "Stated so that no lane silently widens the conditions and no lane silently assumes a property the conditions do not carry.",
+      "items": [
+        "The five conditions govern the DELIVERY of the value into a process environment. They do NOT govern how the value entered the custody store, and they do NOT govern the custody store's own at-rest protection beyond OD-2's selection of a DPAPI-backed vault.",
+        "MECHANISM_1, a user-scope persistent variable, is not evaluated against these conditions because v1.0.1 SECTION_A7 rules it NOT ACCEPTABLE, ABSOLUTE, AND NOT AN OWNER ELECTION, and v1.0.2 SPC102-1 removes it from the selectable set. It appears in this artifact only as a prohibition.",
+        "The conditions say nothing about the LIFETIME of the vault entry, which is governed instead by SECRET_ROTATION_CONTRACT and by OD-1's post-final-witness rotation."
+      ]
+    }
+  },
+
+  "DOES_ANY_CURRENT_REPOSITORY_MECHANISM_SATISFY_THEM": {
+    "question": "Independently re-derived in this lane, at this lane's own tree, with a STRICTLY WIDER search than the one the DAG performed. A negative capability claim is verified, not accepted, and an authority's count is frozen against ITS tree, not against the live base.",
+    "why_the_DAG_s_own_result_could_not_simply_be_carried": "The DAG measured at AS_OF_TREE cf3a77d26608f08d6bde4a8c88e5072362909f2b. This lane's tree is 66cbcee0d7a849c4ac7305f7f40f02b4aa058988. Between them the DAG authority, the DAG amendment, the DAG manifest and a ratification amendment were added, every one of which NAMES the vault. Carrying the DAG's raw_result of two files forward would have produced a stale count and an unearned confidence.",
+    "method_1_exact_replication": {
+      "alternation": "credential.?manager, cmdkey, dpapi, ProtectedData, Get-StoredCredential, keytar, wincred, credui",
+      "command_shape": "git grep -l -i -E over the whole tree at HEAD",
+      "raw_result": "SIX files matched, not two.",
+      "classification_of_each_match": [
+        { "path": "db/hosted/authority/certification/prechain-requirements.ts", "blob": "46ba15d8b502ccf1d6ea7c7fcacd17e10af102ec", "classification": "FALSE POSITIVE, RE-CONFIRMED IN THIS LANE. The alternation member keytar matches case-insensitively inside the identifier foreignKeyTargets. No credential-vault code of any kind." },
+        { "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json", "classification": "NAMES THE VAULT, IMPLEMENTS NOTHING. The OD-2 ratification." },
+        { "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json", "classification": "NAMES THE VAULT, IMPLEMENTS NOTHING. NEW SINCE THE DAG'S MEASUREMENT." },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json", "classification": "NAMES THE VAULT, IMPLEMENTS NOTHING. NEW SINCE THE DAG'S MEASUREMENT: it is the measuring artifact itself, which did not exist in its own measured tree." },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json", "classification": "NAMES THE VAULT, IMPLEMENTS NOTHING. NEW SINCE THE DAG'S MEASUREMENT." },
+        { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json", "classification": "NAMES THE VAULT, IMPLEMENTS NOTHING. NEW SINCE THE DAG'S MEASUREMENT." }
+      ],
+      "reconciliation": "The count rose from two to six and the SUBSTANCE did not change: the four new matches are the governance artifacts written between the two trees, each of which names the vault in order to govern it. Zero of the six is a mechanism. The DAG's verdict survives its own count going stale, which is the only reason the stale count is not itself a defect."
+    },
+    "method_2_widened_alternation": {
+      "why": "The DAG's eight-member alternation has no coverage for the Win32 credential API entry points, for the PowerShell secure-string and serialized-credential idioms, for the generic vault and keyring vocabulary, or for the prohibited persistence verb itself. A negative claim is only as strong as the widest search that failed to falsify it.",
+      "alternation": "the original eight PLUS CredRead, CredWrite, CredEnumerate, secretstorage, vault, keyring, keychain, SecretClient, Export-Clixml, ConvertTo-SecureString, SecureString, setx",
+      "raw_result": "SEVENTEEN files matched: the six above plus eleven more.",
+      "classification_of_the_eleven_additional_matches": [
+        { "count": 9, "paths": "artifacts/hosted-b0-observation.json, db/hosted/baseline-postconditions.ts, db/baseline/README.md, db/prepared/stella_0005b_admin_bootstrap.sql, docs/ops/DATABASE_CAPABILITY_MODEL.md, docs/ops/DATABASE_ROLE_MODEL.md, scripts/capability-baseline-verify.sh, scripts/capability-dry-run.sh, tests/database-role-safety.test.ts", "classification": "THE POSTGRESQL SCHEMA NAMED vault. Every one of these nine hits is the Supabase in-database extension schema, appearing in a list of internal Supabase schemas alongside auth, storage, realtime, graphql and extensions. An in-database schema is not an OS credential vault, and none of these files reads or writes one." },
+        { "count": 1, "paths": "supabase/config.toml", "classification": "A COMMENTED-OUT db.vault configuration stanza. Inert, and again the in-database schema." },
+        { "count": 1, "paths": ".claude/skills/ui-ux-pro-max/data/_sync_all.py", "classification": "A COLOUR-PALETTE LABEL reading Vault dark blue, in a design-token table. Not code, not credentials." }
+      ],
+      "setx_specifically": "The prohibited verb setx occurs NOWHERE in the tree as a command. The only lexical hits are the React identifier setX in a skill data CSV, and quotations of the word inside the governance artifacts that prohibit it. There is therefore no existing usage to remove and no legacy caller to migrate; the prohibition is satisfied vacuously at AS_OF_TREE, and the readiness contract's job is to keep it that way rather than to repair anything."
+    },
+    "VERDICT": "CONFIRMED BY INDEPENDENT MEASUREMENT AT THIS LANE'S OWN TREE, UNDER A STRICTLY WIDER SEARCH THAN THE ONE IT REPLICATES. There is NO Windows Credential Manager reader, NO DPAPI wrapper, NO Win32 credential API call site, NO PowerShell secure-string or serialized-credential custody idiom, and NO OS-credential-vault integration of any kind anywhere in the repository at AS_OF_TREE 66cbcee0d7a849c4ac7305f7f40f02b4aa058988. NO CURRENT REPOSITORY MECHANISM SATISFIES WCM-C1 THROUGH WCM-C5, because no candidate mechanism exists to be evaluated.",
+    "what_this_measurement_does_NOT_prove": "Carried unchanged from the DAG, because it remains exactly true: it does not prove that no compliant mechanism exists OUTSIDE the repository, on the owner's workstation or in the owner's tooling. The prerequisite is discharged by DEMONSTRATION against the five conditions, not by the presence of a repository file, and a mechanism that lives entirely outside the tree can discharge it. This artifact's readiness contract is written so that an out-of-tree mechanism can satisfy it without ever becoming a repository file."
+  },
+
+  "MEASURED_EXECUTION_SURFACE": {
+    "rule": "A readiness contract that specifies tests without measuring where those tests can run produces a contract nobody can discharge. Each fact below was measured in this lane at AS_OF_TREE.",
+    "facts": [
+      {
+        "id": "ES-1",
+        "fact": "EVERY CONTINUOUS-INTEGRATION RUNNER IN THE REPOSITORY IS ubuntu-latest. THERE IS NO WINDOWS RUNNER AND NO MATRIX.",
+        "method": "Enumerated all nine workflow files under .github/workflows/ and read every runs-on key. Nine occurrences, nine ubuntu-latest. A case-insensitive grep of the whole workflow directory for windows, macos and matrix returned ZERO lines.",
+        "pins": [
+          { "path": ".github/workflows/ci.yml", "blob": "d8b9b53c9360308c18f721f2bfd508bdaa7898d9" },
+          { "path": ".github/workflows/ce3-entitlement-grants-real-pg-gate.yml", "blob": "09775d8c5b046dc175eabf011143c6ba29805151" },
+          { "path": ".github/workflows/cl1-legal-acceptance-real-pg-gate.yml", "blob": "9d73ae83453a3e967cd87b6cbbb28de63b25e2f4" },
+          { "path": ".github/workflows/golden-journey.yml", "blob": "904f5c007f05bb3ef739d1094c8ebb32dbce4061" },
+          { "path": ".github/workflows/l1-organization-commercial-acceptance-real-pg-gate.yml", "blob": "acb0bb47c4c4c098be664ded585ff7ef9930b915" },
+          { "path": ".github/workflows/m2-real-pg-gate.yml", "blob": "3d5c797c8b65a7125c2948d7368a61f0a6232d14" },
+          { "path": ".github/workflows/p1a-bootstrap-gate.yml", "blob": "f952a6a6e693995777b559c9a4925f4240cf491f" },
+          { "path": ".github/workflows/p1a-validation.yml", "blob": "1be638e08a0adfcc7ae81b39f2113f92f0fe1a75" },
+          { "path": ".github/workflows/s3-refusal-real-pg-gate.yml", "blob": "13157254a2b32449940294e254196f9b2d3f2ae3" }
+        ],
+        "consequence_for_N05": "N05's plane is WORKSTATION and its subject is a Windows-only, DPAPI-backed OS facility. NO EXISTING CI WORKFLOW CAN EXECUTE A BEHAVIOURAL N05 DEMONSTRATION. This is a capability fact about the repository, not a defect of the DAG, and the test contract below is built around it rather than pretending it away."
+      },
+      {
+        "id": "ES-2",
+        "fact": "THE REPOSITORY HAS AN ESTABLISHED CAPABILITY-GATED TEST-SKIP IDIOM, AND IT IS THE EXACT SHAPE THAT WOULD MAKE AN N05 TEST PASS VACUOUSLY.",
+        "method": "git grep for describe.skipIf across tests/ returned many call sites gated on a LIVE capability flag, for example in tests/authenticated-database-context.test.ts and tests/database-default-privileges.test.ts.",
+        "consequence_for_N05": "A platform-gated N05 test written as skipIf of a non-Windows platform would SKIP on the only runner that exists and report the suite green. A skipped control and a passing control are indistinguishable in a summary line. This is the pass-path-only failure mode in a new shape: not a test that only exercises the success branch, but a test that exercises NO branch and is still counted. The test contract below makes a silently-skipped platform control an explicit RED condition rather than a quiet one."
+      },
+      {
+        "id": "ES-3",
+        "fact": "THE CONSUMING SURFACE READS THE PROCESS ENVIRONMENT AND NOTHING ELSE.",
+        "method": "Re-read db/safety/resolve-capability-database-url.ts at blob 14ff0a01ce331d6453686935f5c026e116b0107e. AUDITOR_DATABASE_URL_ENV_VAR is the literal UELLIX_AUDITOR_DATABASE_URL. resolveAuditorDatabaseUrl delegates to resolveForRole with an EnvironmentSource parameter defaulting to process.env. The module performs no file read and imports no dotenv loader.",
+        "consequence_for_N05": "The delivery target is unambiguous and is a pure environment read. A mechanism satisfies the SHAPE requirement if and only if the value is present in that one process's environment under that exact name. No file, no argument and no configuration surface is an alternative path into the consumer."
+      },
+      {
+        "id": "ES-4",
+        "fact": "TWO EXISTING SCRIPTS WRITE A FILE AT A PATH THE DELIVERY CONTRACT NAMES AS ABSOLUTELY PROHIBITED, FOR A DIFFERENT AND LEGITIMATE PURPOSE.",
+        "method": "git grep located the dot-env audit-local filename written by scripts/m2-disposable-pg-bootstrap.ts at blob a91154166155c37a14e904fbbebf9949f051b61c and referenced by scripts/p1a-bootstrap-gate.ts at blob e3d7f5a7b65ff010415f82fd87201521826cfb81. Both are the DISPOSABLE and LOCAL PostgreSQL harness, and the file they write is gitignored.",
+        "adjudication": "NOT A VIOLATION. SECRET_DELIVERY_CONTRACT.ABSOLUTELY_PROHIBITED_MECHANISMS bars writing THE HOSTED AUDITOR CREDENTIAL to that path. These scripts write a LOCAL DISPOSABLE credential for a throwaway container. The prohibition and the scripts are about different values.",
+        "consequence_for_N05": "IT IS A COLLISION HAZARD AND IS RECORDED AS ONE. A future implementer reaching for the nearest existing pattern would find a working, gitignored, in-tree env-file delivery path at exactly the filename the contract prohibits, and reusing it for the hosted credential would breach the contract while looking like reuse of an established convention. The readiness contract therefore forbids that reuse by name rather than leaving it to judgement. Flagged OF-N05-5."
+      },
+      {
+        "id": "ES-5",
+        "fact": "THE REPOSITORY SECRET SCANNER DETECTS A POSTGRESQL CONNECTION SCHEME CARRYING USERINFO, AND SIX OTHER FAMILIES BESIDES.",
+        "method": "Read scripts/scan-secrets.ts at blob 0d3e601e1cb26dd8488a88596afd0d4081ee5eaa and ENUMERATED the DETECTORS array rather than sampling it. It holds SEVEN detector families, named by their own kind fields: PG_DSN_EMBEDDED_PASSWORD, which matches a postgres or postgresql scheme followed by a colon-separated userinfo pair and an at-sign and which additionally suppresses a password under six characters and an unmistakable placeholder; JWT_LIKE; GOOGLE_API_KEY; SUPABASE_SECRET_KEY; SUPABASE_PERSONAL_ACCESS_TOKEN; OPENAI_STYLE_KEY; and PRIVATE_KEY_BLOCK, which matches PEM armour and is annotation-gated or nothing. The enumeration is recorded in full because a sweep that names two families where seven exist is the same defect as a vocabulary sweep that finds six loci where there are seven: the count, not the finding, is what goes wrong, and only an enumeration can be checked.",
+        "consequence_for_N05": "The sentinel SENT-DAG-1 must be SHAPED like the real value for the WCM-C2 and WCM-C5 checks to mean anything, and the real value is a connection string. A correctly shaped sentinel would therefore TRIP the repository secret scanner if it ever landed inside the working tree. That is a feature, not an obstacle: it yields the derived obligation that the N05 demonstration must run with its working directory OUTSIDE the repository working tree, and it yields a positive control proving the scanner fires on the sentinel."
+      }
+    ]
+  },
+
+  "READINESS_CONTRACT": {
+    "rule": "This is the minimum contract. Each item states WHAT MUST BE PROVEN, the STANDARD OF PROOF, and WHAT DOES NOT COUNT AS PROOF. The third field is the load-bearing one: every condition below has a plausible cheap demonstration that proves nothing, and naming it is how a certifier can tell a discharge from a gesture. An item that cannot be discharged fires STOP_SECRET_DELIVERY_NONCOMPLIANT, which is the token the DAG already places at N05. NO NEW FAIL-CLOSED TOKEN IS CREATED BY THIS ARTIFACT.",
+    "universal_preconditions": [
+      "THE DEMONSTRATION RUNS ON A NON-SECRET SENTINEL ONLY. No real credential enters any step of it, at any point, on any path. This is not a preference; WHAT_N05_MUST_PRODUCE states it as the manner of the demonstration.",
+      "THE DEMONSTRATION RUNS BEFORE MR-2. N05 is hoisted precisely so the proof precedes the irreversible mint. A demonstration performed after N11 has not discharged N05; it has documented a fait accompli.",
+      "THE DEMONSTRATION'S WORKING DIRECTORY IS OUTSIDE THE REPOSITORY WORKING TREE, per ES-5, so that neither a sentinel nor a transcript can land in the tree, inflate ods:scope or redden the untracked arm.",
+      "THE MECHANISM IS NAMED BY WHAT IT DOES. A product name alone does not discharge WHAT_N05_MUST_PRODUCE's first item, which requires the mechanism to be described by its behaviour."
+    ],
+    "items": [
+      {
+        "id": "RC-1",
+        "binds": "WHAT_N05_MUST_PRODUCE item 1.",
+        "must_be_proven": "A single, named mechanism exists, and the demonstration describes: what reads the custody store; what process receives the value; under exactly which environment-variable name; and whether the reader lives inside or outside the repository tree.",
+        "standard_of_proof": "A description from which an independent reader could identify the same mechanism again, and could tell whether a second demonstration used the same one.",
+        "what_does_NOT_count": "A product name alone. A class name such as an OS credential vault. A description of the CUSTODY STORE, which OD-2 already selected, offered in place of a description of the READER, which OD-2 did not select.",
+        "on_failure": "STOP_SECRET_DELIVERY_NONCOMPLIANT."
+      },
+      {
+        "id": "RC-2",
+        "binds": "WCM-C1.",
+        "must_be_proven": "The variable is present in the environment of the single consuming command, and DOES NOT PERSIST TO A NEW SHELL.",
+        "standard_of_proof": "TWO observations, not one. First, the value is observed present inside the consuming process, by the consumer's own successful resolution of it and not by printing it. Second, AFTER the demonstration, a FRESHLY LAUNCHED shell, started from the ordinary user session and not from the demonstration's process tree, is checked for the variable name and reports it ABSENT. The second observation is what the condition actually asserts.",
+        "what_does_NOT_count": "Reading the setting code and concluding it is process-scoped. Checking the same shell that ran the demonstration, which cannot distinguish process scope from session scope. Checking the persistent user environment store while the originating session is still open, which can be stale in either direction.",
+        "on_failure": "STOP_SECRET_DELIVERY_NONCOMPLIANT."
+      },
+      {
+        "id": "RC-3",
+        "binds": "WCM-C2.",
+        "must_be_proven": "The value is READ from the secret store INTO the process environment, and at no point is it carried as a command-line argument by any process in the demonstration.",
+        "standard_of_proof": "The command line of EVERY process in the demonstration's process tree is observed FROM OUTSIDE those processes, while they are running, and none contains the sentinel. The observation must cover the process that performs the vault read, the process that sets the environment, and the consuming process, even where those are the same process.",
+        "what_does_NOT_count": "A process inspecting and reporting its OWN command line, which is a self-report by the party under examination. An assertion that the mechanism does not use arguments, unaccompanied by an external observation. Inspecting only the consuming process, which is the one least likely to carry the value and the one whose innocence was never in doubt.",
+        "derived_note": "This item also reaches the CUSTODY DEPOSIT question at OF-N05-2. A vault-write performed by a command carrying the value as an argument would re-introduce exactly the disclosure WCM-C2 exists to prevent, one step earlier in the chain and outside any node of the DAG.",
+        "on_failure": "STOP_SECRET_DELIVERY_NONCOMPLIANT."
+      },
+      {
+        "id": "RC-4",
+        "binds": "WCM-C3.",
+        "must_be_proven": "Shell history is disabled for the session, OR the session is a fresh non-persisting one.",
+        "standard_of_proof": "TWO parts. First, the demonstration ENUMERATES BY NAME every history-persisting facility of the session it runs in, and states for each whether it is disabled or non-persisting. Second, AFTER the run, every enumerated history sink is searched for the sentinel and each search returns no match.",
+        "what_does_NOT_count": "A blanket statement that history is off, without enumerating what was checked. Enumerating the interactive command history while omitting a separately-configured line-editor history file, or a terminal-application scrollback that persists independently of the shell. Asserting a fresh session without stating what makes it non-persisting.",
+        "STRUCTURAL_NOTE": "WCM-C3 IS A PROPERTY OF THE SESSION, NOT OF THE MECHANISM. Unlike WCM-C1, C2, C4 and C5, no mechanism can satisfy it intrinsically: the same mechanism invoked from a history-persisting session fails it and from a fresh session passes it. N05 asks for a demonstration that THE MECHANISM satisfies all five conditions, which for C3 can only mean that the mechanism carries an INVOCATION CONTRACT that imposes the session property, and that the contract is ENFORCED rather than documented. The readiness contract therefore requires the demonstration to state HOW the session property is enforced at every future invocation, not merely that it held once. Flagged OF-N05-3.",
+        "on_failure": "STOP_SECRET_DELIVERY_NONCOMPLIANT."
+      },
+      {
+        "id": "RC-5",
+        "binds": "WCM-C4.",
+        "must_be_proven": "The value is removed IMMEDIATELY after the consuming process exits, on BOTH the success path and the failure path.",
+        "standard_of_proof": "The demonstration is run AT LEAST TWICE: once with the consuming process exiting successfully, and once with it exiting in failure. Removal is verified after each. The failure run must be a REAL failure of the consuming process, induced by making the consumer fail, not simulated by asserting what would happen.",
+        "what_does_NOT_count": "A single successful run plus a reading of the teardown code. A failure run where the failure is injected AFTER removal, which exercises the success path wearing a failure label. Inferring the failure path from the presence of a teardown construct in the source.",
+        "derived_gap": "The condition names two paths. A consuming process that is KILLED, or a session that terminates abruptly, is on NEITHER, and no teardown construct in the consumer runs at all. The authority's two-path text does not reach it. This artifact does NOT add a third path as a binding requirement, because adding a condition the authority does not carry is the error OF-DAG-3 exists to flag. It records the gap at OF-N05-4 and requires the demonstration to STATE the mechanism's behaviour under abrupt termination, as a statement rather than as a pass criterion.",
+        "on_failure": "STOP_SECRET_DELIVERY_NONCOMPLIANT."
+      },
+      {
+        "id": "RC-6",
+        "binds": "WCM-C5.",
+        "must_be_proven": "Absence after removal is asserted FROM A CHECK, and recorded as a BOOLEAN.",
+        "standard_of_proof": "The absence check must be DEMONSTRATED CAPABLE OF RETURNING FALSE. The demonstration runs the SAME check once while the sentinel is deliberately still present, and it must report PRESENT; then after removal, and it must report ABSENT. Both results are recorded. A check exercised only on the path where it is expected to pass has proven nothing about itself.",
+        "what_does_NOT_count": "A boolean recorded as true with no negative exercise of the check that produced it. Absence inferred from the fact that a removal command was issued, which the condition prohibits in terms. A check that reads a different scope from the one the value was set in, which returns absent for the wrong reason and is the most dangerous false pass available here.",
+        "on_failure": "STOP_SECRET_DELIVERY_NONCOMPLIANT."
+      },
+      {
+        "id": "RC-7",
+        "binds": "DO-1, from OF-DAG-3.",
+        "must_be_proven": "The consuming process's child-process topology is STATED, and for each child it is stated whether it retains, forwards or logs the environment.",
+        "standard_of_proof": "An enumeration of the actual children observed during the demonstration, not a list of children the consumer is believed to spawn. Where the consumer spawns none, that is stated as a measured observation.",
+        "what_does_NOT_count": "A statement that the consumer has no children, unaccompanied by an observation. An enumeration drawn from reading the consumer's source, which cannot see children spawned by libraries, tooling hooks or the runtime itself.",
+        "binding_status": "This is a DERIVED obligation of N05 under the DAG, NOT a sixth condition. It is DISCHARGED BY STATEMENT. It does not, by itself, fire STOP_SECRET_DELIVERY_NONCOMPLIANT unless the statement reveals a child that retains, forwards or logs the value, in which case WCM-C1's own scope is breached and the token fires on that ground.",
+        "on_failure": "Absence of the statement is an INCOMPLETE N05, not a compliant one. The node's exit condition names the statement explicitly."
+      },
+      {
+        "id": "RC-8",
+        "binds": "DO-2, from OF-DAG-4.",
+        "must_be_proven": "Whether the VAULT READ ITSELF is audited or logged, and WHERE.",
+        "standard_of_proof": "A statement naming the audit surface if one exists, or stating that none was found and by what means that was checked. If an audit entry exists, the statement must say whether it records the ENTRY HANDLE, because a handle recorded in an audit trail is a custody question under SSL-06 that the evidence contract does not otherwise reach.",
+        "what_does_NOT_count": "A statement that the value is not logged, which answers a different question. The absence of a log the demonstration never looked for.",
+        "binding_status": "DERIVED obligation, DISCHARGED BY STATEMENT, exactly as RC-7.",
+        "on_failure": "Absence of the statement is an INCOMPLETE N05."
+      }
+    ],
+    "EXIT_CONDITION_OF_N05_carried_verbatim_from_the_DAG": "All five conditions demonstrated, the child-process topology stated, and the vault read's own logging behaviour stated.",
+    "THE_CONJUNCTION_IS_TOTAL": "All eight items must hold. WHAT_N05_MUST_PRODUCE's last line binds: an explicit STOP_SECRET_DELIVERY_NONCOMPLIANT if ANY SINGLE condition cannot be demonstrated. Seven of eight is a stop, not a partial pass, and no item may be discharged by the strength of another."
+  },
+
+  "SENTINEL_CONTRACT": {
+    "binds_to": "SENT-DAG-1 of the certified DAG's companion manifest at blob e9b843c6761b38473ad1080b8b21680c99741b93. This artifact BINDS TO that sentinel and does not create a competing one for the same purpose.",
+    "carried_properties": [
+      "A fabricated, non-functional, credential-SHAPED string that is NOT a real credential and resolves to nothing.",
+      "FRESHLY GENERATED PER DEMONSTRATION RUN, so a later match cannot be confused with a stale leak from a previous run.",
+      "NEVER a real credential."
+    ],
+    "derived_properties_this_artifact_adds": [
+      { "id": "SP-1", "property": "SHAPED LIKE THE REAL VALUE, which is a connection string carrying userinfo. A sentinel of a different shape would leave the WCM-C2 command-line search and the WCM-C5 absence check searching for a pattern the real value does not have, which is a check that cannot fail for the right reason.", "derived_because": "Neither the DAG nor the capability authority states the sentinel's SHAPE, only that it is credential-shaped and non-functional. Flagged OF-N05-6." },
+      { "id": "SP-2", "property": "IT MUST NOT BE WRITTEN INTO THIS OR ANY OTHER AUTHORITY ARTIFACT, AND NO EXAMPLE OF ITS SHAPE APPEARS ANYWHERE IN THIS WRITE SET. A correctly shaped sentinel trips the repository secret scanner by design, per ES-5.", "derived_because": "Follows directly from ES-5 and from SSL-08." },
+      { "id": "SP-3", "property": "THE DEMONSTRATION RUNS OUTSIDE THE REPOSITORY WORKING TREE, so a freshly generated sentinel cannot land in the tree even transiently.", "derived_because": "Follows from SP-1 and ES-5 together." },
+      {
+        "id": "SP-4",
+        "property": "THE SENTINEL MUST NOT BE SUPPRESSED BY THE REPOSITORY SECRET SCANNER. It must carry NO fixture marker in its own body and its password component must be at least six characters, so that the scanner classifies it exactly as it would classify the real credential.",
+        "why": "Measured at ES-5. scan-secrets suppresses a PG_DSN_EMBEDDED_PASSWORD finding when the password component is under six characters or matches isUnmistakablePlaceholder, which is a union of a placeholder-literal pattern and a FIXTURE_MARKER pattern matching any value containing not-a-real, placeholder, example, sample, fake, synthetic, dummy, fixture or redacted. The obvious way to make a sentinel visibly non-real is to embed one of exactly those words, and doing so makes the repository's own gate stop seeing it.",
+        "why_it_matters": "The sentinel's whole purpose is to stand in for the real value across the WCM-C2 command-line search, the WCM-C3 history-sink search and the WCM-C5 absence check. A sentinel the repository's secret gate treats DIFFERENTLY from the real value is a stand-in that diverges from its subject at exactly the surface the programme uses to catch leaks, and the divergence runs in the unsafe direction: it makes the sentinel invisible to the one control that would catch a transcript landing in the tree.",
+        "derived_because": "SENT-DAG-1 as declared says fabricated and non-functional and says nothing about scanner visibility. This property is DERIVED from ES-5 and is not in the authority's own words. Flagged OF-N05-6."
+      }
+    ],
+    "NO_SECRET_VALUE_IN_THIS_WRITE_SET": "ABSOLUTE. No credential, no sentinel, no connection string, no userinfo, no hash, no vault handle, no entry key and no lookup token appears anywhere in this artifact or its companion manifest, in any form, redacted or not."
+  },
+
+  "THE_SUBSEQUENT_IMPLEMENTATION_LANE": {
+    "why_it_is_derived_here": "The lane mandate directs that, where authority precedent does not make N05 itself an implementation lane, the subsequent implementation lane is DERIVED rather than executed. IS_N05_AN_IMPLEMENTATION_LANE establishes that it does not. This section names the lane; it does not open it, authorize it, schedule it or perform any part of it.",
+    "ordering_stated_precisely": "In AUTHORING order this lane is SUBSEQUENT to the present one. In EXECUTION order it is a PREDECESSOR of N05, because N05 demonstrates a mechanism that this lane must first produce. Both statements are true and neither is a re-sequencing of the certified graph: the DAG has no node for this work at all, which is the gap OF-N05-1 records.",
+    "proposed_lane_id": "CV1-D1-AUDITOR-WCM-MECHANISM-SELECTION-AND-IMPLEMENTATION-R1",
+    "id_status": "PROPOSED ONLY. This artifact invents, reserves and implies NO ODS, HPO or W2 identifier, and the string above is a descriptive lane label in this lane's own naming style, not an allocated id.",
+    "its_mandate_as_derived": [
+      "SELECT the concrete vault-read mechanism, within the class OD-2 ratified and SPC102-1 bounds: process-scoped delivery from a DPAPI-backed OS credential vault. A user-scope persistent variable is not selectable.",
+      "BUILD or CONFIGURE it, to the minimum extent needed for it to be demonstrable.",
+      "CARRY the invocation contract RC-4 requires, so that the session property WCM-C3 asserts is enforced at every invocation rather than held once.",
+      "PRODUCE the NAMED description RC-1 requires.",
+      "WRITE the deterministic, secret-free controls this artifact's companion manifest specifies, and the platform-guard fail-loud control ES-2 makes necessary.",
+      "STOP at the boundary of the demonstration. Running the demonstration is N05 and belongs to the execution lane under the DAG, not to the lane that builds the mechanism. A builder who also certifies the build has produced a self-report."
+    ],
+    "what_it_may_NOT_do": [
+      "NO real credential is read, written, generated, rotated or handled, at any point.",
+      "NO Windows Credential Manager entry carrying a real value is created. A sentinel entry created and removed within the lane is the only vault interaction its mandate can support, and whether even that is authorized is a question for its own gate, not for this artifact.",
+      "NO hosted PostgreSQL connection, no GRANT, no REVOKE, no role mutation, no VALID UNTIL computation.",
+      "NO custody-inventory file is created or populated. That is N06 and the ratification record expressly withholds it.",
+      "NO reuse of the in-tree env-file delivery pattern measured at ES-4 for the hosted auditor credential, at the dot-env audit-local path or at any other path under the repository working tree.",
+      "It does NOT discharge N05. Building a mechanism is not demonstrating one.",
+      "It does NOT open, authorize or schedule PRECHECK-R2."
+    ],
+    "its_own_entry_gate": "Independent certification of THIS artifact and its companion manifest. A lane that builds a secret-bearing mechanism against an uncertified readiness contract is building to a standard nobody has checked.",
+    "the_second_derived_lane_or_amendment": {
+      "why": "OF-N05-2 records that no node of the certified DAG deposits the minted credential into the custody store. That gap is NOT closed by the implementation lane above, which produces a READER.",
+      "what_is_needed": "Either a successor AMENDMENT to the provisioning DAG adding the custody-deposit act as a node between N11 and N23 with its own conditions, or an adjudication that the deposit is subsumed by an existing node. THIS ARTIFACT TAKES NEITHER DECISION. It records the gap, states that it is upstream of N05's usefulness, and leaves the ruling to the certifier."
+    }
+  },
+
+  "EVIDENCE_CONTRACT_FOR_THE_N05_DEMONSTRATION": {
+    "rule": "The demonstration's own record. Every field below is REQUIRED and is present AS A FIELD, so that its later absence is a HOLE rather than a silence. This mirrors EVIDENCE_MATERIALIZATION's own rule in the capability authority and invents no new evidence path.",
+    "where_it_lives": "NOT FIXED BY THIS ARTIFACT. The capability authority's EVIDENCE_MATERIALIZATION declines to fix a filename, and DAG node N07 declines likewise, on the stated ground that fixing a filename in an authority pins a name nobody has checked against the directory's convention at the time it lands. This artifact declines for the same reason.",
+    "required_fields": [
+      "mechanism_named_by_behaviour, per RC-1.",
+      "sentinel_freshly_generated, a boolean. NEVER the sentinel itself.",
+      "wcm_c1_fresh_shell_absent, a boolean from the fresh-shell observation of RC-2.",
+      "wcm_c2_external_command_line_observation_clean, a boolean, plus the enumeration of which processes were observed.",
+      "wcm_c3_history_sinks_enumerated, a list of NAMES; and wcm_c3_all_sinks_clean, a boolean.",
+      "wcm_c3_invocation_contract_enforcement, a statement per RC-4's structural note.",
+      "wcm_c4_success_path_removed and wcm_c4_failure_path_removed, two separate booleans. A single combined boolean is a hole wearing a value.",
+      "wcm_c4_abrupt_termination_behaviour, a statement per RC-5's derived gap. NOT a pass criterion.",
+      "wcm_c5_check_returned_present_when_present, a boolean, the negative exercise.",
+      "wcm_c5_check_returned_absent_after_removal, a boolean.",
+      "child_process_topology, an enumeration, per RC-7.",
+      "vault_read_audit_surface, a statement, per RC-8; and vault_read_audit_records_handle, a boolean or the literal NOT_APPLICABLE.",
+      "demonstration_preceded_MR_2, a boolean. The hoist is the whole point and a demonstration that cannot assert this has not discharged the hoisted node.",
+      "working_directory_outside_the_repository_tree, a boolean, per the universal preconditions."
+    ],
+    "MUST_NEVER_CONTAIN": "The credential in any form redacted or not. The sentinel value. Any connection string, userinfo, host string, password hash or rolpassword value. Any vault handle, entry key or lookup token, carried from DAG node N06's derived prohibition at OF-DAG-6. Any driver error message that has not passed through redactForHostedLog. Any row of any application or tenant table."
+  },
+
+  "FAIL_CLOSED_TOKENS": {
+    "rule": "NO NEW FAIL-CLOSED TOKEN IS CREATED BY THIS ARTIFACT. The certified DAG's companion manifest asserts at control DP5 that the token set is TOTAL over the outcomes the graph can produce and that a DAG which invented a token would be amending that set. A subordinate readiness contract is under the same bar, a fortiori.",
+    "the_only_token_this_artifact_places": {
+      "token": "STOP_SECRET_DELIVERY_NONCOMPLIANT",
+      "node": "N05",
+      "source": "Already placed at N05 by the DAG's FAIL_CLOSED_TOKEN_PLACEMENT, with the note that it is placed at N05 as well as N23 because of the hoist, and that a missed observation is preferable to a leaked credential. This artifact carries the placement; it does not create it."
+    },
+    "what_happens_to_an_outcome_no_existing_token_names": "It is recorded as an OPEN FINDING against this artifact and the lane STOPS under RULE_FAIL_CLOSED_ON_UNKNOWN. It is NOT given a new token name. Inventing a token to describe an unanticipated outcome is how a token set stops being total without anyone deciding that it should."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Each line is a thing this write set does NOT do and does NOT authorize any other lane to do on its strength.",
+    "items": [
+      "NO secret of any kind is generated, read, written, transported, echoed, stored or handled. No sentinel value exists in this write set.",
+      "NO Windows Credential Manager entry is created, read, written, enumerated or deleted, and no custody-store interaction of any kind occurs.",
+      "NO DPAPI call is made and no Win32 credential API is invoked.",
+      "NO implementation of any WCM reader, DPAPI wrapper or vault integration is invented, named, designed, sketched or recommended. Carried verbatim from the DAG's own prohibition.",
+      "NO PostgreSQL connection is opened, hosted or local, and no SQL is written or executed.",
+      "NO provisioning occurs. NO credential is minted or rotated. NO GRANT, REVOKE, CREATE ROLE, ALTER ROLE or DROP ROLE is issued.",
+      "NO VALID UNTIL value is computed, set, mutated or estimated, and no UTC timestamp implementing OD-3 appears anywhere in this artifact.",
+      "NO custody-inventory file is created, populated or given a schema at docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json or anywhere else.",
+      "NO code is written. NO test file is written. NO script, SQL file or migration is written. NO db path, db/schema.ts, db/migrations/**, db/prepared/**, db/baseline/**, application code, workflow, runtime code, Vercel configuration or Supabase configuration is touched.",
+      "NO CI workflow is added, modified or proposed for modification. ES-1 is a MEASUREMENT of the runner surface, not a request to change it.",
+      "NO Supabase project configuration is contacted or mutated, and no Vercel mutation of any kind occurs on any project or environment.",
+      "NO act of any kind against ctaxtgujyyprgynmnvtq, including a read.",
+      "NO node, edge, token, phase, condition or open finding of the certified provisioning DAG is added, removed, reworded, reordered, narrowed or widened. This artifact is SUBORDINATE to it.",
+      "It does NOT resolve, compose, interpolate, normalize, abbreviate or evaluate either canonical literal, and neither appears anywhere in it.",
+      "It does NOT close N05, N06, N07, N08 or N09, and it does not move the graph's frontier. The DAG amendment's BLOCKED_AT_N05_N06_N07_N09 state is UNCHANGED by this artifact.",
+      "It does NOT open, authorize or schedule PRECHECK-R2, at any stage, by any lane.",
+      "It does NOT invent, reserve or imply any ODS, HPO or W2 identifier, and it claims no protected-authority id. The lane label proposed at THE_SUBSEQUENT_IMPLEMENTATION_LANE is descriptive and unallocated.",
+      "It does NOT relax any fail-closed token, any machine gate, the EXECUTE prohibition, any human confirmation or any privilege model, and it creates no new token.",
+      "It does NOT establish a production analogue of anything, and it creates no precedent, template or runbook for production.",
+      "It does NOT self-certify, and its own certification is a gate it cannot satisfy."
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-N05-1",
+      "severity": "BLOCKING_FOR_N05_REACHABILITY",
+      "finding": "THE ACT THAT CHOOSES AND BUILDS THE VAULT-READ MECHANISM IS NOT A NODE OF THE CERTIFIED DAG. N05 demonstrates a CHOSEN mechanism; its sole precondition N03 is the OD-1..OD-6 ratification gate, which ratifies a custody store and a delivery class but selects no mechanism. All twenty-eight nodes were enumerated in this lane and none produces one.",
+      "why_it_is_blocking": "N05 cannot be attempted at all. An execution lane reaching N05 has no subject to demonstrate, and an empty node is the kind that gets marked satisfied by default rather than failed honestly.",
+      "disposition": "Recorded, and the missing lane is DERIVED at THE_SUBSEQUENT_IMPLEMENTATION_LANE without being opened. This artifact does NOT add a node to the certified DAG.",
+      "what_a_certifier_should_press": "Whether the missing act should become a new DAG node by successor amendment, or whether it is correctly outside the DAG as an owner-plane or workstation-plane prerequisite the graph is entitled to presuppose. If the latter, press whether N05's precondition list should nonetheless name it, so that its absence is visible at the frontier rather than discovered on arrival."
+    },
+    {
+      "id": "OF-N05-2",
+      "severity": "BLOCKING_FOR_THE_DELIVERY_CHAIN",
+      "finding": "NO NODE OF THE CERTIFIED DAG DEPOSITS THE MINTED CREDENTIAL INTO THE CUSTODY STORE. N11 sets a fresh credential on the hosted management plane. N23 places the credential into the consuming process's environment BY THE N05-DEMONSTRATED MECHANISM, which is a vault READ. N12 updates the custody INVENTORY, which is a repository record of names and roles and expressly never a value. The value's path from the management plane into the Windows Credential Manager is performed by no node.",
+      "method": "All twenty-eight node objects were serialized and searched in this lane. Exactly two mention a vault: N05, which names a vault-READ mechanism, and N06, which names the inventory. A targeted search for deposit, store-the-credential and place-into-the-vault phrasings across the whole artifact returned nothing.",
+      "why_it_matters_to_N05_specifically": "A readiness demonstration for a READER is of bounded value if the corresponding WRITE is both unnoded and unconditioned. RC-3 records the sharper form: a vault-write performed by a command that carries the value as an argument would reintroduce the exact disclosure WCM-C2 exists to prevent, one step earlier in the chain and outside any node's conditions.",
+      "the_narrower_question_this_artifact_declines_to_decide": "Whether SECRET_DELIVERY_CONTRACT.ABSOLUTELY_PROHIBITED_MECHANISMS item 2, passing it as a command-line argument, BINDS the custody-deposit act. Read flatly it does, and the deposit would be constrained. Read in the scope of its parent clause, whose stated requirement is how the value reaches the EXECUTING PROCESS, it governs DELIVERY and the deposit is not delivery. This artifact does NOT resolve the ambiguity, because resolving it either way changes what a future lane may do and that is an adjudication, not a derivation.",
+      "disposition": "Recorded. A successor amendment or an adjudication is named as needed at THE_SUBSEQUENT_IMPLEMENTATION_LANE.the_second_derived_lane_or_amendment. Neither is performed here.",
+      "what_a_certifier_should_press": "Which reading of ABSOLUTELY_PROHIBITED_MECHANISMS item 2 is correct, and whether the custody deposit requires its own node, its own conditions and its own fail-closed placement before N23 can be reached."
+    },
+    {
+      "id": "OF-N05-3",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "WCM-C3 IS A PROPERTY OF THE SESSION, NOT OF THE MECHANISM. The other four conditions are properties a mechanism can carry intrinsically. C3 is satisfied or failed by the session the mechanism is invoked from, so the same compliant mechanism passes from one session and fails from another.",
+      "why_it_matters": "N05 requires a demonstration that THE MECHANISM satisfies all five. For C3 that can only mean the mechanism carries an enforced invocation contract. A demonstration that runs once in a clean session and reports C3 satisfied has proven a fact about that session and nothing about the mechanism, and the same evidence would be produced by a mechanism with no invocation contract at all.",
+      "disposition": "RC-4 requires the demonstration to state HOW the session property is enforced at every future invocation, not merely that it held once. That requirement is DERIVED and is not in the authority's own words.",
+      "what_a_certifier_should_press": "Whether requiring an enforcement statement is legitimate interpretation of what DEMONSTRATE THAT THE MECHANISM SATISFIES means for a session-scoped condition, or whether it attaches an obligation the five conditions do not contain, which is the same question OF-DAG-3 raises about the child-process obligation. Additionally, whether RC-4's requirement to enumerate history-persisting facilities BY NAME crosses from requirement interpretation into mechanism design, which this artifact is absolutely barred from."
+    },
+    {
+      "id": "OF-N05-4",
+      "severity": "NON_BLOCKING",
+      "finding": "WCM-C4 NAMES TWO PATHS, SUCCESS AND FAILURE. A consuming process that is killed, or a session that terminates abruptly, is on neither, and no teardown construct in the consumer runs at all. The condition's text does not reach that case.",
+      "disposition": "NO THIRD PATH IS ADDED AS A BINDING REQUIREMENT. RC-5 requires the demonstration to STATE the mechanism's behaviour under abrupt termination, as a statement and not as a pass criterion. Adding a condition the authority does not carry is precisely the error OF-DAG-3 exists to flag, and this artifact declines to commit it in a new place.",
+      "what_a_certifier_should_press": "Whether abrupt termination is a genuine gap in MECHANISM_2's conditions requiring a successor amendment to SECRET_DELIVERY_CONTRACT, or whether it is adequately covered because a vault-backed mechanism that never persists the value outside the vault has nothing left behind to remove. If the latter, the statement RC-5 requires is exactly the evidence that settles it."
+    },
+    {
+      "id": "OF-N05-5",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "AN IN-TREE DELIVERY PATTERN EXISTS AT EXACTLY THE FILENAME THE CONTRACT PROHIBITS. scripts/m2-disposable-pg-bootstrap.ts writes the dot-env audit-local file inside the working tree, gitignored, for the disposable local PostgreSQL harness, and scripts/p1a-bootstrap-gate.ts references the same path. This is NOT a violation, because the prohibition binds the hosted auditor credential and these scripts write a local disposable one.",
+      "why_it_matters": "It is the nearest existing pattern an implementer would find, it works, and reusing it for the hosted credential would breach ABSOLUTELY_PROHIBITED_MECHANISMS item 3 while looking like conformity to an established convention. A prohibition is weakest where a compliant-looking counterexample sits next to it.",
+      "disposition": "Named explicitly in the readiness contract and in the derived lane's prohibitions, so the refusal does not depend on an implementer noticing the distinction unaided.",
+      "what_a_certifier_should_press": "Whether the two credentials being written to one filename in one repository is itself worth separating by name, so that a future reader cannot conflate them at all."
+    },
+    {
+      "id": "OF-N05-6",
+      "severity": "NON_BLOCKING",
+      "finding": "NEITHER THE DAG NOR THE CAPABILITY AUTHORITY STATES THE SENTINEL'S SHAPE, only that it is credential-shaped, non-functional and freshly generated. SP-1 adds that it must be shaped like the real value, which is a connection string carrying userinfo. SP-4 adds the sharper constraint that it must not be SUPPRESSED by the repository secret scanner.",
+      "why_it_matters": "A sentinel of a different shape leaves the WCM-C2 command-line search and the WCM-C5 absence check hunting a pattern the real value does not have. The check then cannot fail for the right reason, which is the same defect as a check exercised only on its pass path.",
+      "the_sharper_half_at_SP_4": "SENT-DAG-1's own words, fabricated and non-functional, point an implementer at exactly the construction the repository's scanner suppresses. Measured at ES-5: the FIXTURE_MARKER pattern treats any value containing not-a-real, placeholder, example, sample, fake, synthetic, dummy, fixture or redacted as unmistakably non-secret, and a password component under six characters is suppressed as well. The most natural reading of the authority's own sentinel description therefore produces a sentinel the repository's secret gate cannot see, which is a divergence from the real value at precisely the surface the programme relies on to catch a leak. SP-4 closes it by requiring the sentinel to be scanner-visible, which makes the gate treat sentinel and credential alike.",
+      "disposition": "Carried as DERIVED properties of SENT-DAG-1, not as an amendment to it, and paired with SP-2 and SP-3 so that a scanner-visible sentinel can never land in the working tree. The combination is deliberate: SP-4 makes the sentinel visible to the gate, SP-2 and SP-3 keep it out of the gate's jurisdiction entirely.",
+      "what_a_certifier_should_press": "Whether shape-matching is a derivation from credential-SHAPED or an addition to it; whether requiring the demonstration to run outside the working tree is a necessary consequence or an over-reach; and, on SP-4 specifically, whether requiring a sentinel to be INVISIBLE to the fixture-marker escape hatch conflicts with the scanner's own stated intent, which is to let a suite hold a credential-shaped literal provided the literal says so in its own body. If a certifier rules that the escape hatch is the correct route, SP-4 must be withdrawn and the N05 demonstration's sentinel becomes scanner-suppressed by design, in which case the contract must say so explicitly rather than leave it implied."
+    },
+    {
+      "id": "OF-N05-7",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "NO CI RUNNER IN THE REPOSITORY CAN EXECUTE A BEHAVIOURAL N05 CONTROL. All nine runs-on values across all nine workflow files are ubuntu-latest; there is no Windows runner and no matrix. The subject of N05 is a Windows-only OS facility.",
+      "why_it_matters": "It means the behavioural half of the N05 test contract is, at AS_OF_TREE, WORKSTATION-RECORDED AND NOT CI-GATED. Worse, the repository's established skipIf idiom would render such a control SKIPPED-AND-GREEN on the only runner that exists, which is indistinguishable from PASSED in a summary line.",
+      "disposition": "The companion manifest splits the contract into a platform-independent half that CI can genuinely redden and a platform-dependent half that is workstation-recorded, and adds a mutation control whose whole purpose is to prove that a skipped platform control can never be reported as a pass. NO CI WORKFLOW IS ADDED OR MODIFIED BY THIS ARTIFACT.",
+      "what_a_certifier_should_press": "Whether a workstation-recorded control is acceptable evidence for a hoisted precondition of an irreversible mutation, or whether N05 requires a Windows CI runner to exist first. If the latter, that is a further prerequisite of N05 and belongs in the derived lane's mandate."
+    },
+    {
+      "id": "OF-N05-8",
+      "severity": "NON_BLOCKING",
+      "finding": "THIS ARTIFACT'S RE-DERIVATION OF THE MECHANISM ABSENCE RETURNED SIX FILES WHERE THE DAG RECORDED TWO, under the identical alternation. The substance is unchanged and the verdict survives, because the four additional matches are the governance artifacts written between the two trees.",
+      "why_it_is_recorded_anyway": "A future lane re-running the DAG's documented method will see six and may read the divergence as a contradiction of a certified measurement. Recording the reconciliation here is cheaper than letting it be rediscovered as an alarm. It also demonstrates the general hazard: an authority freezes a count against ITS tree, and the count, not the finding, is what goes stale.",
+      "disposition": "Recorded at DOES_ANY_CURRENT_REPOSITORY_MECHANISM_SATISFY_THEM.method_1_exact_replication.reconciliation. NO correction to the DAG is made or requested; its verdict was and remains correct.",
+      "what_a_certifier_should_press": "Whether the DAG's raw_result should be read as a measurement pinned to its own AS_OF_TREE, which is how this artifact reads it, or as a standing claim about the repository, which would make it now false."
+    }
+  ],
+
+  "self_check": {
+    "rule": "Each check is a statement about THIS artifact that a certifier can verify against it directly. A self-check that cannot be falsified by reading the artifact is decoration.",
+    "checks": [
+      "The five conditions at REQUIREMENTS_AS_READ.conditions are byte-identical to the certified DAG's WCM_READINESS_PREREQUISITE.THE_FIVE_CONDITIONS_THE_MECHANISM_MUST_DEMONSTRATE.conditions, in the same order, with the same ids and the same mandate_phrasing_cross_check values. Verify by field-to-field comparison against blob 7223279f2dbb46ed6e252cd3aa1469ff0b4419d5.",
+      "No sixth condition exists anywhere in this artifact. DO-1 and DO-2 are labelled DERIVED OBLIGATIONS and both are marked DISCHARGED BY STATEMENT at RC-7 and RC-8.",
+      "Exactly one fail-closed token appears in this artifact, STOP_SECRET_DELIVERY_NONCOMPLIANT, and it is carried from the DAG's existing placement at N05 rather than created.",
+      "No secret, sentinel, connection string, userinfo, vault handle, entry key or lookup token appears anywhere in this artifact or its companion manifest.",
+      "No ISO-8601 instant, no Z-suffixed time and no plus-24-hours expression appears anywhere. The only date present is the materialization date 2026-09-22, which is not presented as a VALID UNTIL.",
+      "No reader, wrapper, script, command, API or library implementing a WCM read is named, designed, sketched or recommended. RC-4's requirement to ENUMERATE history-persisting facilities names a class of thing to enumerate and no facility by name; the certifier is asked to press this at OF-N05-3.",
+      "Every blob hash under CONTROLLING_AUTHORITY.pins is re-derivable by git ls-tree -r against the named path at AS_OF_TREE 66cbcee0d7a849c4ac7305f7f40f02b4aa058988. Each is the hash of a COMMITTED object; none is the hash of a pre-commit working-copy draft of any file of this write set, and this artifact pins no file of its own write set.",
+      "The AS_OF_TREE recorded here is this lane's OWN tree, measured before this write set existed, and is deliberately DIFFERENT from the DAG's AS_OF_TREE cf3a77d26608f08d6bde4a8c88e5072362909f2b. Both appear, and the divergence is reconciled at OF-N05-8.",
+      "Every count asserted in this artifact is enumerated rather than stated: nine workflow files and nine runs-on values at ES-1, six files at method_1 with six classifications, seventeen files at method_2 with eleven additional matches classified in three groups of nine, one and one, twenty-eight DAG nodes at OF-N05-2, eight readiness items RC-1 through RC-8, and eight open findings OF-N05-1 through OF-N05-8.",
+      "The artifact does not close any DAG node. The words BLOCKED_AT_N05_N06_N07_N09 appear at EXPLICIT_NON_AUTHORIZATIONS as UNCHANGED."
+    ]
+  },
+
+  "required_independent_review": {
+    "rule": "The certifier re-derives; it does not accept.",
+    "it_MUST_re_derive": [
+      "The five conditions, from the base authority through SECTION_A7 through the DAG, rather than from this artifact's summary of that chain.",
+      "The mechanism-absence measurement, at its own tree, with its own alternation. It may NOT accept this lane's six-file or seventeen-file result, nor the classifications attached to them.",
+      "The CI runner claim. Nine files, nine runs-on values, zero Windows. This is the load-bearing fact behind OF-N05-7 and behind the whole shape of the test contract.",
+      "The twenty-eight-node enumeration behind OF-N05-2. If ANY node deposits the credential into the custody store, OF-N05-2 is wrong and must be withdrawn.",
+      "Every blob pin, by git ls-tree."
+    ],
+    "it_MUST_rule_on": [
+      "OF-N05-1: whether the missing selection-and-build act belongs in the DAG as a node, or is correctly outside it.",
+      "OF-N05-2: which reading of ABSOLUTELY_PROHIBITED_MECHANISMS item 2 governs the custody deposit, and whether the deposit needs its own node.",
+      "OF-N05-3: whether RC-4's enforcement requirement and its enumeration requirement are interpretation or over-reach.",
+      "OF-N05-7: whether a workstation-recorded control is acceptable evidence for a hoisted precondition of an irreversible mutation."
+    ],
+    "it_MUST_NOT": [
+      "Accept this artifact's negative capability claim on this lane's assertion. A negative capability claim is verified, not accepted, and that rule binds a certifier reading this artifact exactly as it bound this artifact reading the DAG.",
+      "Treat the eight RC items as severable. THE_CONJUNCTION_IS_TOTAL, and seven of eight is a stop.",
+      "Certify this artifact together with the mechanism it governs. This artifact must be certified BEFORE the implementation lane opens, per THE_SUBSEQUENT_IMPLEMENTATION_LANE.its_own_entry_gate."
+    ]
+  },
+
+  "final_state": "FIBDB053_D1_AUDITOR_N05_WCM_READINESS_CONTRACT_DERIVED__NOT_CERTIFIED__NO_MECHANISM_SELECTED__NO_MECHANISM_IMPLEMENTED__NO_DEMONSTRATION_PERFORMED__N05_REMAINS_OPEN__DAG_FRONTIER_UNCHANGED_AT_N05_N06_N07_N09",
+
+  "next_gate": "INDEPENDENT CERTIFICATION of this readiness authority and its companion manifest, before any WCM implementation or readiness proof is attempted. The certification must re-derive the five conditions through their four-hop provenance chain, re-derive the mechanism absence at its own tree with its own alternation, re-derive the nine-runner CI measurement, re-derive the twenty-eight-node enumeration behind OF-N05-2, and rule on OF-N05-1, OF-N05-2, OF-N05-3 and OF-N05-7. Only after that certification passes may the derived selection-and-implementation lane open. N05 itself may be attempted only after that lane delivers a named mechanism. No hosted PostgreSQL connection, no credential, no sentinel, no custody-store write, no GRANT, no VALID UNTIL computation and no Supabase or Vercel act is authorized by this artifact at any point, by any lane."
+}
