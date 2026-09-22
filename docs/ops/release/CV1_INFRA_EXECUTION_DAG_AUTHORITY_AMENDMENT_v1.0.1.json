@@ -1,0 +1,303 @@
+{
+ "package_id": "CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT",
+ "version": "1.0.1",
+ "artifact_id": "CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1",
+ "authority_class": "EXECUTION_DAG_DERIVATION_AMENDMENT_NOT_EXECUTION_AUTHORITY",
+ "document_class": "APPEND_ONLY_DAG_AUTHORITY_AMENDMENT__NO_EXECUTION__NO_BRANCH_CREATION__NO_PROTECTION_MUTATION__NO_VERCEL_SETTING_MUTATION__NO_ENVIRONMENT_CHANGE__NO_DEPLOYMENT__NO_VISIBILITY_MUTATION__NO_ALERT_CLOSURE__NO_OWNER_DECISION_SUBSTITUTION__NO_AUTHENTICATED_CONTROL_PLANE_READ",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json",
+ "supersedes": null,
+ "mission_id": "CV1-INFRA-EXECUTION-DAG-AMENDMENT-R2",
+ "lane": "CV1-INFRA-EXECUTION-DAG-AMENDMENT-R2",
+ "role": "Correct five non-blocking findings (NB-1..NB-5) surfaced by the independent certification of v1.0.0, without reopening any owner selection and without performing any node.",
+ "mode": "APPEND_ONLY_DAG_AUTHORITY_AMENDMENT_ONLY",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+
+ "AS_OF_BRANCH": "codex/cv1-infra-execution-dag-authority-r1",
+ "AS_OF_PRE_AMENDMENT_HEAD": "a61e5348cd445caf62ada0ceace9a3f608b452a7",
+ "AS_OF_PRE_AMENDMENT_TREE": "67d4bfd78964b621bb93b66739a457a7fec32899",
+ "as_of_measurement_note": "Every workflow-corpus fact this amendment adds was re-parsed directly from .github/workflows/*.yml at AS_OF_PRE_AMENDMENT_HEAD on 2026-09-22, not copied from the IC's report. Every graph fact (acyclicity, reachability, prerequisite/edge consistency) was recomputed programmatically against the FULL corrected edge set, not asserted. Nothing in this amendment relies on a value this lane did not itself re-derive.",
+
+ "NAMING_DERIVATION": {
+  "basis": "Named and versioned on the exact precedent the parent release-control chain already set: CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json amends CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json without editing its bytes. This artifact does the same to CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json, which is itself untouched by this write set."
+ },
+
+ "AMENDMENT_SEMANTICS": {
+  "rule": "This amendment CORRECTS five specific, cited defects in v1.0.0. It does not re-derive the DAG from scratch, does not re-open OD-1 through OD-5, does not answer RBD-1 or RBD-2, and does not widen this lane's authority in any respect. Where v1.0.0 is silent, v1.0.0 controls. Where this amendment corrects a field, THIS amendment controls for that field and v1.0.0's original text is superseded IN THAT RESPECT ONLY, named explicitly under SUPERSEDED_PARENT_CLAUSES.",
+  "why_an_amendment_and_not_a_v2_derivation": "Re-deriving the whole DAG would discard the record of what v1.0.0 measured correctly, which is most of it: the eight blob pins, the git-plane measurements GP-1..GP-7, the M-8/M-9 definitions, the DEP-1/DEP-2 departures' bottom-line conclusion, and seventeen of eighteen nodes' structure are all UNCHANGED and re-confirmed here, not re-litigated."
+ },
+
+ "IC_CONSUMED": {
+  "verdict_received": "INFRA_DAG_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+  "how_consumed": "As a directing input naming five findings (NB-1..NB-5) by number and content, all five VERIFIED against source in this lane before correction, exactly as v1.0.0's own RATIFICATION_IC_FINDINGS_CONSUMED block required for the findings IT consumed. No finding is corrected here on the IC's word alone; each correction below states what THIS lane independently re-measured.",
+  "provenance_note": "As with v1.0.0's own RATIFICATION_IC_FINDINGS_CONSUMED.PROVENANCE_OF_THESE_FINDINGS, no materialized IC verdict artifact for THIS DAG's certification exists in the repository tree as of this amendment's authoring; the five findings are consumed as directing-text content, verified independently, exactly as v1.0.0 required of the findings it consumed from a different, equally unmaterialized source. This is not a double standard - it is the SAME standard applied twice."
+ },
+
+ "CANDIDATE_BINDING": {
+  "rule": "This amendment corrects the artifact below, pinned by blob hash re-derived at AS_OF_PRE_AMENDMENT_HEAD. A consumer finding either blob hash to differ from a fresh re-derivation MUST NOT apply this amendment to whatever the differing content now is.",
+  "amended_authority": {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json", "blob_sha": "0c36474b08076a844d32da8b194be79ab17915b1", "re_derived": "MATCH, via git ls-tree -r a61e5348 at authoring"},
+  "amended_manifest": {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json", "blob_sha": "e8baab563e130bdc70a4cc3e87155ab8f3638add", "re_derived": "MATCH, via git ls-tree -r a61e5348 at authoring"},
+  "upstream_package_and_ratification_pins": "UNCHANGED from v1.0.0's own EFFECTIVE_PACKAGE_CONSUMED (six authority-package blobs) and owner_ratification_chain (two ratification blobs). This amendment does not re-verify them because it touches none of the owner-set consumption logic; v1.0.0's own re-derivation of those eight pins stands."
+ },
+
+ "NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION": {
+  "the_gap_the_IC_named": "v1.0.0's rider evaluation (OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE.measured_evaluation_at_the_parent_head.results) measured five limbs and omitted a sixth: the PR-evaluated limb on release/commercial-v1 itself. Without it, a reader could wrongly infer that only the PUSH-evaluated limb of the release branch (0/8, already measured by WP-4) is deficient, and that O-2 might still be achievable there via pull-request-gated checks alone.",
+  "independent_re_measurement": {
+   "method": "Re-parsed the on: block of all nine .github/workflows/*.yml files in full at AS_OF_PRE_AMENDMENT_HEAD, this time reading each pull_request trigger's branches: filter verbatim rather than only its presence/absence.",
+   "raw_findings": [
+    "ci.yml: pull_request with NO branches filter. Fires for a PR into ANY target branch, including release/commercial-v1. Job: 'Lint, typecheck, test, build'.",
+    "ce3-entitlement-grants-real-pg-gate.yml: pull_request, branches: [integration/commercial-v1, main]. Does NOT fire for a PR into release/commercial-v1.",
+    "cl1-legal-acceptance-real-pg-gate.yml: pull_request, branches: [integration/commercial-v1, main]. Same exclusion.",
+    "golden-journey.yml: pull_request, branches: [integration/commercial-v1, main]. Same exclusion.",
+    "l1-organization-commercial-acceptance-real-pg-gate.yml: pull_request, branches: [integration/commercial-v1, main]. Same exclusion.",
+    "m2-real-pg-gate.yml: pull_request, branches: [integration/commercial-v1, main]. Same exclusion.",
+    "p1a-bootstrap-gate.yml: pull_request, branches: [integration/commercial-v1, main]. Same exclusion.",
+    "s3-refusal-real-pg-gate.yml: pull_request, branches: [integration/commercial-v1, main]. Same exclusion.",
+    "p1a-validation.yml: pull_request, branches: [main]. Also excludes release/commercial-v1, but its job ('Validate P1A Architecture and Security') is not one of the eight required checks per ADJUDICATIONS.D, so this row does not change the count either way."
+   ],
+   "result": "A PR targeting release/commercial-v1 produces exactly ONE of the eight required checks: 'Lint, typecheck, test, build', via ci.yml. The other seven never fire, because the seven restricted-branch workflows' pull_request trigger names only integration/commercial-v1 and main."
+  },
+  "the_corrected_rider_matrix": {
+   "supersedes": "OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE.measured_evaluation_at_the_parent_head.results in v1.0.0, ADDING the missing sixth row without altering the five existing rows, which this lane re-confirmed unchanged.",
+   "results": [
+    {"limb": "PR-evaluated SHA, PR into integration/commercial-v1", "producible": "8 of 8", "unchanged_from_v1.0.0": true},
+    {"limb": "PR-evaluated SHA, PR into main", "producible": "8 of 8", "note": "Not separately stated in v1.0.0's table but implied by the same branch filters; stated here explicitly because it is the limb the PR-into-release-branch finding is compared against."},
+    {"limb": "PR-evaluated SHA, PR into release/commercial-v1", "producible": "1 of 8", "basis": "Only ci.yml's pull_request trigger carries no branches filter. The other seven required-check workflows restrict pull_request to [integration/commercial-v1, main], which excludes release/commercial-v1 by name.", "rider_verdict": "RIDER_PRE_1 VIOLATED for 7 of 8. THIS IS THE MISSING ROW.", "new_in_this_amendment": true},
+    {"limb": "Push-evaluated SHA on main", "producible": "1 of 8", "unchanged_from_v1.0.0": true},
+    {"limb": "Push-evaluated SHA on integration/commercial-v1", "producible": "0 of 8", "unchanged_from_v1.0.0": true},
+    {"limb": "Push-evaluated SHA on release/commercial-v1", "producible": "0 of 8", "unchanged_from_v1.0.0": true},
+    {"limb": "Push-evaluated SHA on the repository default branch", "producible": "UNKNOWN", "unchanged_from_v1.0.0": true, "basis": "Still gated on UD-2, unresolved by this amendment."}
+   ],
+   "the_corrected_summary_number": "SUPERSEDES v1.0.0's the_one_number_that_summarises_it. On EVERY evaluated limb of release/commercial-v1 - push AND pull-request - at most 1 of 8 required checks is producible, and on the push limb specifically it is 0 of 8. This is worse than main's posture (1/8 on push, 8/8 on PR) and is NOT a branch-specific quirk of the push trigger alone: it holds because the seven restricted workflows name integration/commercial-v1 and main explicitly and name nothing else."
+  },
+  "the_consequence_the_IC_asked_to_be_recorded": "O-2, AS RATIFIED (all eight checks configured as required, by exact name), is NOT DISCHARGEABLE on release/commercial-v1 under EITHER evaluation mode currently in the workflow corpus: 1/8 on the PR-evaluated limb, 0/8 on the push-evaluated limb. Per RIDER_PRE_2's own already-controlling text, 'O-2 is DISCHARGEABLE on R only when RIDER_PRE_1 holds for all eight' - it does not, on either limb, for this branch.",
+  "why_O-3/E_does_not_repair_either_release_branch_limb": "ADJUDICATIONS.E, whose implementation is EAD-3's external-authority gap, is scoped SPECIFICALLY to 'the same eight-check battery... triggered by push to integration/commercial-v1' (v1.0.0 ADJUDICATIONS.E.verdict). Implementing it adds a push trigger scoped to integration/commercial-v1. It does not add, and was never scoped to add, a pull_request branches entry for release/commercial-v1, nor a push trigger for release/commercial-v1. Implementing O-3/E in full changes the integration branch's push-evaluated number from 0/8 to (at most) 8/8; it leaves BOTH of release/commercial-v1's numbers (1/8 PR-evaluated, 0/8 push-evaluated) EXACTLY where this amendment measured them. v1.0.0's M-8 confirmation text, corrected below, wrongly implied the opposite by saying the release branch's deficiency held 'until O-3/E is implemented' as though O-3/E were the fix.",
+  "corrections_applied_to_dependent_text": [
+   {
+    "field": "RELEASE_BRANCH_CREATION_ACT.confirmation.what_must_be_stated_at_confirmation, item 4",
+    "v1.0.0_text": "That the branch will, on creation, produce ZERO of the eight required checks on a push, per WP-3 and WP-4, and is therefore the least verified branch in the repository by O-2's own measure until O-3/E is implemented.",
+    "corrected_text": "That the branch will, on creation, produce ZERO of the eight required checks on a push AND only ONE of the eight (Lint, typecheck, test, build) on a pull request targeting it, per WP-3/WP-4 and this amendment's NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION, and is therefore the least verified branch in the repository by O-2's own measure. Implementing O-3/E does NOT repair either number - O-3/E is scoped to push-triggered checks on integration/commercial-v1 only. Closing this gap requires the SEPARATE, not-yet-authored RELEASE_CHECK_PRODUCIBILITY_GAP below."
+   },
+   {
+    "field": "RELEASE_BRANCH_PROTECTION_GAP.the_gap.the_consequence_if_left_open",
+    "v1.0.0_text": "M-7 would retarget the production boundary onto the one branch in the repository that the ratified protection bar does not cover, and that measurement WP-4 shows produces zero required checks on push. That is a strictly worse production posture than the status quo, in which production is served from main, a branch O-1 does name.",
+    "corrected_text": "M-7 would retarget the production boundary onto the one branch in the repository that the ratified protection bar does not cover, and that measurement (WP-4 for push, this amendment's NB-1 for pull-request) shows produces zero required checks on push and only one of eight on a PR targeting it. That is a strictly worse production posture than the status quo on BOTH axes O-1..O-4 measure, in which production is served from main, a branch O-1 does name and whose PR-evaluated limb already produces 8 of 8."
+   },
+   {
+    "field": "OWNER_DECISION_REQUIRED.decisions[1] (RBD-2), options_with_measured_consequences[0] ('EXTEND O-1 to release/commercial-v1')",
+    "v1.0.0_text": "['M-9 (DN-10) becomes a required node and DN-11 (M-7) may proceed once it completes.', 'Adds one governed mutation to the DAG, with its own prestate, confirmation, verification and rollback.', 'Makes the production terminus the fourth protected branch, so no branch in the production lineage is unprotected at any point after DN-10.']",
+    "corrected_addition": "A FOURTH measured consequence is ADDED, not substituted: 'EXTEND satisfies O-1 (EXISTENCE: no direct/force push) ONLY. It does NOT make O-2 (REQUIRED CHECKS) satisfiable on release/commercial-v1: per NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION, the branch produces 1 of 8 required checks on a PR targeting it and 0 of 8 on a push, regardless of whether O-1 is extended to it. Closing THAT gap is a separate, not-yet-authored act - see RELEASE_CHECK_PRODUCIBILITY_GAP - under its own governed authority, because it requires editing .github/workflows/**, which this artifact and its parent are equally forbidden from doing.' The owner must read RBD-2's EXTEND option as closing O-1 on this branch, not as closing the OD-4 bar in full."
+   }
+  ]
+ },
+
+ "RELEASE_CHECK_PRODUCIBILITY_GAP": {
+  "status": "SURFACED HERE. NOT AN ACT. NOT DEFINED AS A MUTATION. NOT DESIGNED. NOT EXECUTED. Requires its own separately governed authority before O-2 can be satisfied on release/commercial-v1.",
+  "why_this_is_distinct_from_RELEASE_BRANCH_PROTECTION_GAP": "RELEASE_BRANCH_PROTECTION_GAP (M-9) is a GIT-PLATFORM act this lane IS permitted to define: creating a branch-protection rule is not editing .github/workflows/**. RELEASE_CHECK_PRODUCIBILITY_GAP requires the OPPOSITE: editing the workflow corpus itself (adding release/commercial-v1, by name or pattern, to the pull_request branches: filter of the seven restricted-branch workflows, and possibly adding an analogous push trigger if a push-evaluated exact-SHA battery is also wanted on this branch). v1.0.0's own EXPLICIT_NON_AUTHORIZATIONS already forbids 'Editing any file under .github/workflows/**, or implementing O-3 / E' to this artifact, and that prohibition covers this gap identically. This amendment does not narrow or work around that prohibition; it names the gap the prohibition leaves standing.",
+  "why_this_is_distinct_from_EAD-3 (O-3/E)": "EAD-3 tracks the ABSENCE of a push-triggered exact-SHA battery scoped to integration/commercial-v1 (O-3, ADJUDICATIONS.E). This gap tracks the ABSENCE of ANY producible path - push OR pull-request - for release/commercial-v1 specifically (O-2). Implementing EAD-3's fix does not touch this gap, as NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION.why_O-3/E_does_not_repair_either_release_branch_limb demonstrates by direct re-measurement. The two gaps are recorded separately so a future lane that closes one does not wrongly believe it has closed both.",
+  "what_would_close_it": "A workflow-corpus change, under its own governed authority and its own test manifest, most plausibly one of: (a) adding release/commercial-v1 to the pull_request branches: filter of the seven restricted-branch workflows (ce3-entitlement-grants-real-pg-gate.yml, cl1-legal-acceptance-real-pg-gate.yml, golden-journey.yml, l1-organization-commercial-acceptance-real-pg-gate.yml, m2-real-pg-gate.yml, p1a-bootstrap-gate.yml, s3-refusal-real-pg-gate.yml), which would raise the PR-evaluated limb to 8/8; and, separately, (b) an exact-SHA push battery for release/commercial-v1 analogous to what O-3/E authors for integration/commercial-v1, if the owner wants the push-evaluated limb closed too. This amendment does NOT choose between naming the branch explicitly vs. a pattern, does not choose whether the push-evaluated limb needs closing at all given release/commercial-v1's role, and performs neither change. Per the directing mission for this lane: do not design or execute that workflow change here.",
+  "who_must_authorize_it": "A successor lane operating under an authority that permits editing .github/workflows/**, which neither v1.0.0 nor this amendment holds. It is a NEW external-authority dependency, recorded as EAD-5 in EXTERNAL_AUTHORITY_DEPENDENCIES below.",
+  "interaction_with_RBD-2": "Independent of RBD-2's answer. Whether the owner selects EXTEND, DECLINE or EXTEND-BY-PATTERN for O-1's scope, O-2's producibility numbers on release/commercial-v1 (1/8 PR-evaluated, 0/8 push-evaluated) are UNCHANGED, because O-1 and O-2 are configured by different mechanisms (branch protection existence vs. workflow-corpus triggers) and this gap is entirely in the second.",
+  "does_not_add_a_new_blocking_DAG_edge": "This gap does NOT add a new prerequisite edge into DN-11 (M-7) or DN-10 (M-9) in this amendment. M-7's own action (FUTURE_MUTATIONS M-7, 'Vercel production branch / automatic production deployment') does not itself configure GitHub required checks, and M-9's own action (RELEASE_BRANCH_PROTECTION_GAP, 'prohibit direct pushes and force pushes') covers O-1 only, not O-2. DN-11 already depends on DN-4 (the producibility MEASUREMENT), and that dependency, unchanged, is sufficient to surface this gap to any lane approaching M-7. Inventing a NEW node or edge asserting 'M-7 may not proceed until O-2 is satisfied on its target' would be a claim this amendment's mission did not ask for and the effective authority does not make about M-7's own scope; it is recorded here as a NAMED GAP instead, exactly as the mission instructs."
+ },
+
+ "NB2_INV1_SCOPE_CORRECTION": {
+  "the_conflict_the_IC_named": "v1.0.0's INV-1 read: 'No node of class HOSTED_MUTATION or EXTERNAL_AUTHORITY may begin before DN-1 has completed with a fresh measurement.' DN-15 and DN-17 are BOTH class EXTERNAL_AUTHORITY. DN-17's own asserted_non_edge in DAG_EDGES states explicitly: 'DN-17 (alert 1) does NOT depend on any node.' INV-1's prose and DAG_EDGES' own graph therefore directly contradicted each other for DN-17: the prose gated it behind DN-1, the graph declared it independent of everything.",
+  "root_cause": "INV-1 was written as a CLASS-LEVEL rule (every HOSTED_MUTATION or EXTERNAL_AUTHORITY node) when the actual justification for gating behind DN-1 is NODE-SPECIFIC: whether that particular node's correctness depends on the Vercel production-branch prestate. HOSTED_MUTATION and EXTERNAL_AUTHORITY are classes of ACT, not classes of DEPENDENCY, and conflating the two produced a rule broader than any edge in the graph could support.",
+  "the_corrected_scope": "INV-1 is CORRECTED to name the exact node set, computed as the transitive closure of DN-1's outgoing edges in DAG_EDGES (as amended below), rather than a node class: 'No node in {DN-7, DN-8, DN-9, DN-10, DN-11, DN-12, DN-14, DN-15} may begin before DN-1 has completed with a fresh measurement. This set is PROVABLY EQUAL to the set of nodes reachable from DN-1 by directed edges in DAG_EDGES (as amended), verified by explicit graph traversal rather than asserted by class membership. DN-16 (class NO_OP) and DN-17 (class EXTERNAL_AUTHORITY) are class members that are DELIBERATELY EXCLUDED, because neither node's correctness depends on the Vercel production-branch prestate DN-1 measures - see the per-node justifications immediately below for the two nodes NEWLY added to the set, and the parent's own reasoning, unchanged, for why DN-17 was always independent.'",
+  "why_DN-17_stays_excluded": "DN-17 (secret-scanning alert 1 adjudication) operates entirely on GitHub's repository-level secret-scanning surface. Nothing DN-0 re-derives (the eight blob pins, the integration head/tree) and nothing DN-1 measures (the Vercel production-branch setting, its automatic-deployment toggle, its deploy-hook inventory) has any bearing on whether a credential was exposed or on PR #206's rotation/severity/disclosure/closure findings. v1.0.0's own asserted_non_edge for DN-17, and EAD-2's 'gated on NOTHING in this DAG,' are BOTH CORRECT and are left UNCHANGED. What was wrong was INV-1's class-level prose contradicting them, not the graph itself.",
+  "why_DN-14_is_newly_added": {
+   "v1.0.0s_claim_being_superseded": "DN-14's own 'independence_derived_here' field asserted: 'DN-14 does NOT depend on DN-1, DN-7, DN-8, DN-9, DN-10 or DN-11. Its only hard prerequisite besides freshness is its own prestate capture, plus the constraint that it precede DN-15.'",
+   "why_that_claim_does_not_survive_scrutiny": "M-6's action (configuring an Ignored Build Step for integration/commercial-v1, narrowing automatic Previews) is treated by the parent's own Q_human_confirmation_points as requiring only REQUIRED, not ELEVATED, confirmation - a posture the parent reserves for mutations that 'can change what is publicly served.' That REQUIRED-not-ELEVATED classification is safe ONLY because integration/commercial-v1 is assumed NOT to be the production branch. If DN-1's fresh measurement ever finds the production branch is NOT main - in particular if some future hosted state has coupled it to integration/commercial-v1 - applying an Ignored Build Step to integration/commercial-v1 would SILENTLY STOP PRODUCTION DEPLOYMENTS, converting a low-risk Preview-narrowing act into an unannounced production outage. DN-14's low-severity confirmation posture is therefore CONDITIONED on knowing, freshly, that integration/commercial-v1 is not the production branch - which is precisely what DN-1 exists to establish rather than assume.",
+   "the_edge_added": "DN-1 -> DN-14."
+  },
+  "why_DN-15_is_newly_added": {
+   "the_hazard": "DN-15 creates an ACTUAL new deployment on integration/commercial-v1 under PR201's grant (not merely a configuration toggle, unlike DN-14). It runs AFTER DN-14 has already narrowed automatic Previews on that same branch specifically to prevent the ADJUDICATIONS.H hazard - an automatic Preview built with corrected configuration becoming indistinguishable from the governed one. If the production-branch assumption underlying DN-14's safety posture is wrong, the SAME confusion the M-6-before-PR201 ordering exists to prevent is live for DN-15's own deployment too, in a MORE severe form, because DN-15 creates a real deployment rather than suppressing one.",
+   "why_a_direct_edge_and_not_only_the_transitive_one_through_DN-14": "DN-1 -> DN-14 -> DN-15 already implies DN-1 precedes DN-15 transitively. A DIRECT edge is added anyway, on the SAME precedent v1.0.0 itself set at DN-1 -> DN-9 (kept explicit despite being transitively implied by DN-1 -> DN-8 -> DN-9, 'stated explicitly rather than left transitive because DN-9 is the node most likely to be run first by a lane optimising for the integration line'). DN-15 is class EXTERNAL_AUTHORITY, governed by PR201's OWN authority; a lane executing PR201 in isolation is more likely to consult DN-15's own prerequisites list directly than to cross-reference DN-14's chain, exactly the same risk the DN-1->DN-9 precedent was recorded to guard against. EAD-1 already imposes an explicit prerequisite on DN-15 beyond its class defaults (PMV-2 for U-4); this is a second one, of the same kind.",
+   "the_edge_added": "DN-1 -> DN-15."
+  },
+  "recompute_transitive_closure_and_prove_the_invariant": {
+   "method": "Programmatic BFS from DN-1 over the FULL amended edge set (the 24 edges v1.0.0 declared, plus the two added here), independently of DAG_INVARIANTS' own prose.",
+   "result": "Reachable set = {DN-7, DN-8, DN-9, DN-10, DN-11, DN-12, DN-14, DN-15}, exactly eight nodes, exactly matching the corrected INV-1 statement above. DN-13, DN-16 and DN-17 are confirmed unreachable from DN-1 by any path.",
+   "acyclicity": "The full corrected graph (24 original edges + 2 new + the DN-0 deference set of 14 edges, per NB3 below) was re-checked with Kahn's algorithm and is ACYCLIC: 18 of 18 nodes processed."
+  }
+ },
+
+ "NB3_DN0_EDGE_AND_CLASS_CORRECTION": {
+  "the_conflict_the_IC_named": "v1.0.0's DAG_EDGES.edges[0] read: 'DN-0 -> every other node.' Taken literally, this asserts an edge INTO DN-13, DN-16 and DN-17, each of whose DAG_NODES.prerequisites array is EMPTY ([]), and directly contradicts DN-17's own asserted_non_edge ('DN-17 does NOT depend on any node'). A wildcard edge that a node's own declared prerequisites, and a node's own asserted non-edge, simultaneously deny is not a consistent graph.",
+  "the_corrected_rule": "The wildcard is REPLACED by a DEFERENCE rule, which by construction can never contradict a node's own prerequisites or an asserted non-edge, because it does not assert anything independently of them: 'DN-0 precedes every node N such that DN-0 appears in N.prerequisites, as DAG_NODES itself declares it - never asserted as an edge independent of that declaration. Concretely: DN-1 through DN-12, plus DN-14 and DN-15 (fourteen of the eighteen nodes, including the two DN-1 edges this amendment adds to DN-14 and DN-15's own prerequisites arrays under NB2 above) all name DN-0 in their own prerequisites. DN-13 (NOT_TRIGGERED), DN-16 (NO_OP) and DN-17 (EXTERNAL_AUTHORITY) each carry an EMPTY prerequisites array BY DESIGN and are correctly excluded: DN-13 and DN-16 perform NO act at all under the current owner set, so there is nothing for a freshness rebaseline to protect; DN-17 runs entirely on GitHub's secret-scanning surface, untouched by anything DN-0 re-derives (the eight blob pins, the integration head and tree, the acting worktree's own branch and HEAD).'",
+  "why_this_is_the_correct_fix_and_not_merely_a_narrower_wildcard": "A narrower wildcard (e.g. 'DN-0 -> every node except DN-13/16/17') would still be an INDEPENDENT assertion that could drift out of sync with DAG_NODES.prerequisites the next time a node's prerequisites are edited, exactly the failure mode that produced this defect. The deference rule cannot drift: it is DEFINED as reading DAG_NODES.prerequisites, so it is definitionally always in agreement with it. This is a self-consistency fix, not merely a corrected enumeration.",
+  "the_node_class_enumeration_defect": {
+   "finding": "DAG_NODES.rule enumerates five classes: READ_ONLY_MEASUREMENT, OWNER_DECISION, HOSTED_MUTATION, NO_OP, EXTERNAL_AUTHORITY. DN-13's own 'class' field is the literal string 'NOT_TRIGGERED' - a SIXTH value, used in a node but never declared in the rule that is supposed to enumerate every class a node may carry.",
+   "corrected_enumeration": "NOT_TRIGGERED is ADDED as a sixth class, defined: 'NOT_TRIGGERED is derived when a ratified owner selection does NOT call for the act at all under the CURRENT owner set, as distinct from NO_OP (the owner selected an outcome IDENTICAL to the current state - see NO_OP_NODES.NON-1 vs NON-2 for the full worked distinction v1.0.0 already draws in prose, now backed by a declared class). A NOT_TRIGGERED node carries no live authority obligation under the current owner set but is NOT retired: it re-enters under its OWN existing authority, as its own named class (typically HOSTED_MUTATION), the instant a future owner decision calls for it, with none of its original prestate, confirmation or rollback requirements weakened by the interval spent NOT_TRIGGERED.' This closes the gap between the prose v1.0.0 already wrote (NO_OP_NODES.NON-2, which correctly explains the NOT_TRIGGERED/NO_OP distinction) and the class enumeration that never named it as a class at all."
+  },
+  "verification_this_amendment_performed": "Confirmed programmatically: with the DN-0 deference rule applied to the fourteen nodes whose own prerequisites array names DN-0, and DN-13/DN-16/DN-17 left at their declared empty prerequisites, the resulting edge set is IDENTICAL to what P4 (structural acyclicity/closure) already checks against DAG_NODES.prerequisites - meaning the deference rule and the node-level prerequisites arrays, once DN-14 and DN-15 are corrected per NB2, are now PROVABLY the same relation stated twice, which is the property a wildcard cannot have and a deference rule always does."
+ },
+
+ "NB4_EDGES_OUT_CORRECTION": {
+  "the_error_the_IC_named": "U1_RESOLUTION_NODE.edges_out in v1.0.0 read: 'DN-1 is a prerequisite of DN-8 (M-3), DN-9 (M-1), DN-10 (M-9), DN-11 (M-7) and DN-12 (M-2), and transitively of everything downstream of those.' DN-7 (M-8) is OMITTED, despite DAG_EDGES already containing the edge 'DN-1 -> DN-7' in v1.0.0 as originally authored, and despite DN-7's own DAG_NODES.prerequisites array explicitly listing 'DN-1' (['DN-0', 'DN-1', 'DN-2', 'DN-5']). This is a plain transcription omission between two representations of the same fact within v1.0.0 itself, independently verifiable by comparing edges_out's prose list against DAG_EDGES.edges without needing any new measurement.",
+  "the_corrected_text": "DN-1 is a prerequisite of DN-7 (M-8), DN-8 (M-3), DN-9 (M-1), DN-10 (M-9), DN-11 (M-7), DN-12 (M-2), DN-14 (M-6, per NB2_INV1_SCOPE_CORRECTION) and DN-15 (PR201 sequence, per NB2_INV1_SCOPE_CORRECTION), and transitively of everything downstream of those.",
+  "why_DN-14_and_DN-15_are_included_here_too": "This amendment's own NB-2 correction adds the DN-1 -> DN-14 and DN-1 -> DN-15 edges. Leaving them out of edges_out here would immediately reproduce the exact same class of omission this NB-4 correction exists to fix, in the same field, one paragraph later. edges_out is therefore corrected to list the FULL, current set of DN-1's direct dependents rather than patched to add only DN-7."
+ },
+
+ "NB5_FALSIFICATION_SWEEP_RECOUNT": {
+  "the_claim_the_IC_challenged": "v1.0.0's DERIVED_ORDERING_DEPARTURES.DEP-1.the_falsification_sweep_that_was_run stated 'candidate_loci_returned: 3' as though this were an exhaustive, pattern-independent fact rather than the output of one specific regular expression over the chain's text.",
+  "this_lanes_own_independent_broader_sweep": {
+   "method": "Re-ran the SAME walk (every string value in all five files of the frozen package and the ratification chain) against a DELIBERATELY BROADENED conjunctive pattern: the subject pattern unchanged (M-4 or 'default branch'/'default-branch' by name), the mandating-verb pattern EXPANDED from v1.0.0's seven terms (must, shall, required, calls for, retarget, change the default, make X the default) to ELEVEN, adding: will, mandat(e/es/ory), necessitat(e/es), trigger(s/ed), obligat(e/es/ion), demand(s/ed) - a superset chosen to catch synonyms of obligation the original pattern missed, without adding maximally generic terms (e.g. 'need to', 'has to') that would flood the result with unrelated matches rather than genuinely broaden the mandating-verb concept.",
+   "raw_result": "EIGHT total candidate loci across the five files: SIX in v1.0.0 itself (up from three), ONE in v1.0.1 of the release-control authority (the same CM-6 locus v1.0.0's narrower sweep already found), and ONE in the parent owner-ratification record (od).",
+   "the_five_NEW_loci_and_their_classification": [
+    {"locus": "v1.0.0 CONTRADICTIONS.contradictions[3] (C-4).governing_clause", "text_basis": "Cites PRODUCTION_PATH P1's exact_sha_evidence_identity and hpo_g_binding requiring 'a normal integration-to-default-branch lineage'.", "classification": "CITATION OF A DIFFERENT, FROZEN AUTHORITY'S PRE-EXISTING REQUIREMENT, NOT A CALL FOR M-4. This is P1's OWN historical text, quoted to explain why C-4 (the three-branches contradiction) exists. It is not this artifact's own instruction, and C-4's own adjudication field explicitly ROUTES resolution to OD-1 rather than asserting M-4 directly - and OD-1 resolved as Option D, which the ratified text itself states decouples the production boundary from the default-branch question ENTIRELY, a different resolution than the one this clause's premise (converging default/production onto one branch) would have implied."},
+    {"locus": "v1.0.0 CONTRADICTIONS.contradictions[3] (C-4).measured_fact", "text_basis": "States the three branches (default=feature/sprint-0-foundation, push-trigger-production=main, actual-deployment-source=main) differ.", "classification": "A MEASURED FACT, NOT AN INSTRUCTION. It is the FACTUAL PREMISE of C-4's existence, not a mandate. Its own containing contradiction was resolved by OD-1=Option D choosing a FOURTH branch rather than by converging any of the three onto another, so this locus does not survive as a live call for M-4 either."},
+    {"locus": "v1.0.0 ADJUDICATIONS.Q_human_confirmation_points.elevated_confirmations", "text_basis": "'M-4 (default branch), M-5 (visibility) and M-7 (production branch) additionally require the owner to confirm they understand the SPECIFIC coupled consequence... because each CAN change what is publicly served...'", "classification": "CONDITION ON M-4 IF EXECUTED, NOT A CALL FOR IT. Structurally identical to the original sweep's locus 1 (FUTURE_MUTATIONS coupled_consequence): it states what confirmation M-4 needs SHOULD it run, using 'CAN,' not that it must run."},
+    {"locus": "v1.0.0 EXECUTION_ORDERING.ordered_sequence[6]", "text_basis": "'M-2 (protect the default branch), AFTER M-4, so the protection lands on the branch that will actually be the default.'", "classification": "DOWNSTREAM SEQUENCING CONDITIONED ON ordered_sequence[5]'s OWN CONDITIONAL, NOT AN INDEPENDENT CALL. This clause presupposes M-4 happens (inherited from sequence[5]'s 'if OD-1 calls for it') and only orders M-2 relative to it; it does not itself assert that OD-1 calls for M-4. This is DEP-2's own governing clause, already discussed at length in DERIVED_ORDERING_DEPARTURES.DEP-2, and its classification there (the edge M-4->M-2 dissolves because M-4 is not triggered) already accounts for this exact text."},
+    {"locus": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json ratifications[0].execution_not_authorized_by_this_ratification", "text_basis": "Cites 'FUTURE_MUTATIONS M-4 and, if the owner's chosen production boundary ultimately routes through it, M-7' as covering branch creation.", "classification": "A MISATTRIBUTED CITATION, NOT A CALL FOR M-4 ON ITS OWN TERMS, AND ALREADY SUBSTANTIVELY ADDRESSED ELSEWHERE. v1.0.0's own RELEASE_BRANCH_CREATION_ACT.why_a_new_act_was_required.the_misattribution_this_corrects discusses this EXACT clause at length, concluding M-4's target is the default-branch SETTING, not a ref, and that the ratification's POINTER to M-4 as covering branch creation does not resolve. This locus cites M-4 as (incorrectly) covering a DIFFERENT act (branch creation), not as instructing the default branch to be changed; it is noise for DEP-1's purposes, already fully accounted for by M-8's own definition."}
+   ],
+   "verdict": "ALL EIGHT candidate loci across the five files - the original three PLUS the five newly surfaced by the broadened pattern - classify as NOT independently calling for a default-branch change. DEP-1's substantive conclusion (M-4 is NOT_TRIGGERED by OD-1=Option D) is UNCHANGED and, if anything, MORE corroborated: a materially broader search still returns zero loci that mandate M-4, and one of the eight (CM-6, already known) actively strengthens the conclusion by measuring the default and production branches as currently decoupled."
+  },
+  "the_correction_to_v1.0.0s_count_claim": {
+   "supersedes": "DERIVED_ORDERING_DEPARTURES.DEP-1.the_falsification_sweep_that_was_run.candidate_loci_returned (the literal value 3) and its surrounding framing.",
+   "corrected_framing": "The candidate-loci COUNT is PATTERN-DEPENDENT, not a fixed fact about the chain, and v1.0.0 should not have stated '3' without that qualification. Two independently-run patterns are now on record: v1.0.0's narrower seven-term pattern returned 3; this amendment's eleven-term pattern returned 8. Both patterns, run to completion, return ZERO loci that independently mandate a default-branch change. A future certifier is free to run an even broader pattern; DEP-1's conclusion is falsifiable by finding ONE genuine mandate, not by finding a bigger candidate count under a wider net that still classifies to zero mandates."
+  }
+ },
+
+ "SUPERSEDED_PARENT_CLAUSES": {
+  "rule": "Each entry below is superseded IN THE EXACT RESPECT STATED and in NO other respect. v1.0.0's file is not edited; a consumer applies v1.0.0 as amended by reading v1.0.0 for everything NOT listed here, and this amendment for what is.",
+  "clauses": [
+   {"id": "SPC-A1", "locus": "OD4_SEQUENCE_RIDER_MACHINE_VERIFIABLE.measured_evaluation_at_the_parent_head.results and .the_one_number_that_summarises_it", "superseded_by": "NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION.the_corrected_rider_matrix"},
+   {"id": "SPC-A2", "locus": "RELEASE_BRANCH_CREATION_ACT.confirmation.what_must_be_stated_at_confirmation[3]", "superseded_by": "NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION.corrections_applied_to_dependent_text[0]"},
+   {"id": "SPC-A3", "locus": "RELEASE_BRANCH_PROTECTION_GAP.the_gap.the_consequence_if_left_open", "superseded_by": "NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION.corrections_applied_to_dependent_text[1]"},
+   {"id": "SPC-A4", "locus": "OWNER_DECISION_REQUIRED.decisions[1].options_with_measured_consequences[0] (EXTEND, for RBD-2)", "superseded_by": "NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION.corrections_applied_to_dependent_text[2] - ADDITIVE ONLY. The original three consequences are NOT retracted; a fourth is added."},
+   {"id": "SPC-A5", "locus": "DAG_INVARIANTS.invariants[0] (INV-1)", "superseded_by": "NB2_INV1_SCOPE_CORRECTION.the_corrected_scope"},
+   {"id": "SPC-A6", "locus": "DAG_NODES.nodes (DN-14).independence_derived_here", "superseded_by": "NB2_INV1_SCOPE_CORRECTION.why_DN-14_is_newly_added. The field's factual claim (that DN-14 does not depend on DN-1) is RETRACTED; its OTHER content (that DN-14 does not depend on DN-7/DN-8/DN-9/DN-10/DN-11, and that it must precede DN-15) is UNCHANGED and re-confirmed."},
+   {"id": "SPC-A7", "locus": "DAG_NODES.nodes (DN-14).prerequisites and (DN-15).prerequisites", "superseded_by": "CORRECTED_MEASUREMENTS.node_prerequisite_corrections below"},
+   {"id": "SPC-A8", "locus": "DAG_EDGES.edges[0] ('DN-0 -> every other node')", "superseded_by": "NB3_DN0_EDGE_AND_CLASS_CORRECTION.the_corrected_rule"},
+   {"id": "SPC-A9", "locus": "DAG_NODES.rule (the five-class enumeration)", "superseded_by": "NB3_DN0_EDGE_AND_CLASS_CORRECTION.the_node_class_enumeration_defect.corrected_enumeration"},
+   {"id": "SPC-A10", "locus": "U1_RESOLUTION_NODE.edges_out", "superseded_by": "NB4_EDGES_OUT_CORRECTION.the_corrected_text"},
+   {"id": "SPC-A11", "locus": "DERIVED_ORDERING_DEPARTURES.DEP-1.the_falsification_sweep_that_was_run.candidate_loci_returned and its verdict framing", "superseded_by": "NB5_FALSIFICATION_SWEEP_RECOUNT.the_correction_to_v1.0.0s_count_claim. DEP-1's BOTTOM-LINE CONCLUSION (M-4 NOT_TRIGGERED) is explicitly NOT superseded - it is re-confirmed by both the original and the broadened sweep."}
+  ]
+ },
+
+ "CORRECTED_MEASUREMENTS": {
+  "node_prerequisite_corrections": [
+   {"node": "DN-14", "v1.0.0_prerequisites": ["DN-0", "DN-3"], "corrected_prerequisites": ["DN-0", "DN-1", "DN-3"]},
+   {"node": "DN-15", "v1.0.0_prerequisites": ["DN-0", "DN-14"], "corrected_prerequisites": ["DN-0", "DN-1", "DN-14"]}
+  ],
+  "new_edges_added_to_DAG_EDGES": [
+   {"edge": "DN-1 -> DN-14", "why": "See NB2_INV1_SCOPE_CORRECTION.why_DN-14_is_newly_added."},
+   {"edge": "DN-1 -> DN-15", "why": "See NB2_INV1_SCOPE_CORRECTION.why_DN-15_is_newly_added."}
+  ],
+  "asserted_non_edges_UNCHANGED": "All four of v1.0.0's asserted_non_edges (DN-14 vs DN-8/9/10/11; DN-17 vs anything; DN-16 vs U-3; DN-12 vs DN-13) remain TRUE after this amendment. DN-14's new dependency on DN-1 does not reinstate any of the four dependencies its independence_derived_here field correctly ruled out; DN-1 is a SEPARATE node from DN-8/DN-9/DN-10/DN-11, and none of those four is added as a DN-14 prerequisite here.",
+  "full_graph_reverification": {
+   "method": "Kahn's algorithm over ALL 18 nodes and the FULL edge set: the 24 edges v1.0.0 originally declared (excluding the wildcard), the 2 edges this amendment adds, and the 14 DN-0 edges implied by the corrected deference rule reading the (now-corrected) DAG_NODES.prerequisites arrays.",
+   "result": "ACYCLIC. 18 of 18 nodes processed with zero remaining in-degree at termination.",
+   "prerequisite_edge_consistency": "Every node's prerequisites array, INCLUDING the two corrected ones, is now a SUBSET of the edges declared into it - verified programmatically, not asserted.",
+   "INV-1_reachability_proof": "BFS from DN-1 over the amended edge set (excluding DN-0's own fan-out) returns EXACTLY {DN-7, DN-8, DN-9, DN-10, DN-11, DN-12, DN-14, DN-15}, matching NB2's corrected INV-1 statement node-for-node."
+  }
+ },
+
+ "UNCHANGED_AND_STILL_CONTROLLING": {
+  "rule": "Restated so a reader of THIS amendment alone knows what remains true without re-reading v1.0.0 in full. Everything below is v1.0.0's, unedited, and this amendment adds nothing to it beyond the corrections named above.",
+  "items": [
+   "U1_EXACT_DEFINITION_AND_STATUS in full, including the STATUS_ADJUDICATION that U-1 is RESOLVED-AS-OF-MEASUREMENT and OPEN-AS-OF-EXECUTION simultaneously, and DO_NOT_INFER_FROM_PREVIOUS_MEASUREMENTS in full.",
+   "U6_REMEASUREMENT_REQUIREMENT and DN-2's eight-limb enumeration, unchanged.",
+   "RELEASE_BRANCH_CREATION_ACT (M-8) in full EXCEPT the one confirmation-text item corrected under NB-1.",
+   "RELEASE_BRANCH_PROTECTION_GAP (M-9) in full EXCEPT the one consequence sentence corrected under NB-1.",
+   "DERIVED_ORDERING_DEPARTURES.DEP-1's and DEP-2's BOTTOM-LINE CONCLUSIONS (M-4 NOT_TRIGGERED; the M-4->M-2 edge dissolves), re-confirmed rather than reopened by NB-5.",
+   "ACT_IDENTITY_REQUIREMENTS, including EXEC-NOTE-1 as an undischarged prerequisite, entirely untouched.",
+   "NO_OP_NODES (NON-1, NON-2), entirely untouched, and now additionally BACKED by the corrected class enumeration under NB-3, which formally declares the NOT_TRIGGERED class NON-2 already relied on in prose.",
+   "EXTERNAL_AUTHORITY_DEPENDENCIES EAD-1 through EAD-4, entirely untouched. EAD-5 is ADDED by this amendment; nothing about EAD-1..EAD-4 changes.",
+   "RATIFICATION_IC_FINDINGS_CONSUMED (CL-1..CL-5, CF-1..CF-4), entirely untouched. This is a DIFFERENT IC than the one this amendment consumes; the two are not to be conflated.",
+   "UNKNOWNS_THIS_LANE (UD-1..UD-5), entirely untouched. UD-2 (which branch is the current default) remains the gating unknown for the default-branch limb of the rider matrix, unaffected by NB-1's release-branch finding.",
+   "FAIL_CLOSED_BEHAVIOR and EXPLICIT_NON_AUTHORIZATIONS, entirely untouched by name; this amendment's own EXPLICIT_NON_AUTHORIZATIONS below is ADDITIVE, not a replacement."
+  ]
+ },
+
+ "OWNER_DECISIONS_PRESERVED": {
+  "rule": "RBD-1 and RBD-2 are NOT answered by this amendment. Both remain exactly as v1.0.0 left them: enumerated with measured consequences, zero recommendation offered, fail-closed while unselected.",
+  "what_changed_and_what_did_not": "RBD-2's EXTEND option gained a FOURTH measured consequence (NB-1's O-1-only-not-O-2 finding). Nothing about RBD-1's three options, or RBD-2's DECLINE and EXTEND-BY-PATTERN options, is touched. Neither decision is closer to being selected by this amendment; a certifier confirming this amendment must find that RBD-1 and RBD-2 remain OPEN, exactly as v1.0.0's own required_independent_review already demanded of v1.0.0.",
+  "why_the_corrected_owner_brief_still_belongs_to_a_later_gate": "The directing mission for this lane explicitly preserves RBD-1/RBD-2 'for a corrected owner brief after recertification.' This amendment supplies the CORRECTED FACTS (the RBD-2/EXTEND fourth consequence, the RELEASE_CHECK_PRODUCIBILITY_GAP) that a future owner brief must incorporate; it does not itself constitute that brief, and no owner-facing prompt is issued from this artifact."
+ },
+
+ "READ_AUTHORITY_GAP_PRESERVED": {
+  "rule": "EAD-4 (no authority in force permits an authenticated Vercel or GitHub-settings read) is UNCHANGED and UNRESOLVED. This amendment manufactures no such authority, performs no such read, and does not shrink UD-1 or UD-2.",
+  "EAD-5_added": {
+   "id": "EAD-5",
+   "node": "N/A - not a DAG node. Attached informationally to DN-4's release-branch limb and to RBD-2's EXTEND option.",
+   "external_authority": "NONE EXISTS. Closing RELEASE_CHECK_PRODUCIBILITY_GAP requires editing .github/workflows/**, which is forbidden to this artifact and to its parent identically (v1.0.0 EXPLICIT_NON_AUTHORIZATIONS, 'Editing any file under .github/workflows/**, or implementing O-3 / E').",
+   "what_it_would_govern": "Adding release/commercial-v1 to the seven restricted-branch workflows' pull_request trigger (PR-evaluated limb), and/or an analogous push-evaluated exact-SHA battery for that branch (push-evaluated limb).",
+   "status": "BLOCKING, NAMED, AND NOT DESIGNED. This amendment's own directing mission is explicit: do not design or execute that workflow change here. EAD-5 is recorded so a future lane does not discover this gap only after RBD-2 is answered and DN-7/DN-10 are executed."
+  },
+  "no_authenticated_read_performed": "Confirmed by this lane's own write set: two JSON documents under docs/ops/release/**, zero Vercel API calls, zero GitHub settings API calls. The only reads performed were of .github/workflows/*.yml (already-tracked repository files) and of git-plane facts already re-derivable by anyone with clone access."
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": {
+  "rule": "ADDITIVE to v1.0.0's twenty-four. Nothing below narrows v1.0.0's list; it names amendment-specific non-authorizations that v1.0.0's list could not have anticipated because this amendment introduces the concepts they refuse.",
+  "non_authorizations": [
+   "Editing any file under .github/workflows/**, including to close RELEASE_CHECK_PRODUCIBILITY_GAP. Restated because this amendment is the first artifact in this chain to name that specific gap by content, and its proximity to a workflow-corpus fix makes the boundary worth restating rather than assuming it carries over silently.",
+   "Selecting RBD-1 or RBD-2, or treating RBD-2's fourth consequence (EXTEND satisfies O-1 only) as a recommendation for or against EXTEND. It is a measured consequence, stated with the same 'no recommendation' discipline v1.0.0 already applied to the other three.",
+   "Treating this amendment's IC_CONSUMED block as a materialized certification artifact for THIS DAG. It is a directing-text input, consumed and verified, exactly as v1.0.0 treated the ratification IC it consumed - see IC_CONSUMED.provenance_note.",
+   "Modifying, amending or reinterpreting any byte of docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json or its companion manifest. Both are re-derived to their original blob hashes under CANDIDATE_BINDING and are untouched by this write set.",
+   "Modifying, amending or reinterpreting any file of the release-control effective package or the owner ratification chain this DAG consumes. This amendment corrects the DAG's OWN derivation; it does not touch the frozen package underneath it."
+  ]
+ },
+
+ "NEW_ODS_REQUIRED": {
+  "verdict": "NO",
+  "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+  "method": "Executed pnpm ods:scope against parent HEAD a61e5348 with a single ordinary --allow of docs/ops/release/**, identical scope to v1.0.0's own classification.",
+  "result": "pnpm ods:scope executed against base a61e5348cd445caf62ada0ceace9a3f608b452a7 with a single ordinary --allow of docs/ops/release/**, returning SCOPE_BASE=a61e5348cd445caf62ada0ceace9a3f608b452a7, CHANGED_FILE_COUNT=2, PROTECTED_AUTHORITY=NONE, PROTECTED_AUTHORIZED_PATH_COUNT=0, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0, UNAUTHORIZED_PATHS=0, ODS_SCOPE=PASS.",
+  "PROTECTED_AUTHORITY": "NONE",
+  "consistency_with_precedent": "Identical classification to v1.0.0 and to the three release-control authorities preceding it in this directory, for the same reason: the write set is one new file plus the corresponding manifest amendment, both under docs/ops/release/**."
+ },
+
+ "self_check": {
+  "no_hosted_mutation_performed": "TRUE. Zero GitHub mutations, zero Vercel mutations, zero authenticated control-plane reads of either platform.",
+  "no_workflow_file_edited": "TRUE. .github/workflows/*.yml files were READ (parsed for their on: blocks) and NOT written. git status confirms zero changes outside docs/ops/release/**.",
+  "v1.0.0_bytes_unedited": "TRUE. CANDIDATE_BINDING re-derives both the authority and manifest blob hashes at AS_OF_PRE_AMENDMENT_HEAD and both match; this amendment's write set adds two new files and edits none.",
+  "NB1_verified_by_independent_reparse_not_by_trusting_the_IC": "TRUE. NB1_RELEASE_CI_PRODUCIBILITY_CORRECTION.independent_re_measurement lists the exact on: block read from all nine workflow files, with the branches: filter transcribed verbatim for each, not summarized from the IC's report.",
+  "NB1_O3_E_non_repair_claim_independently_derived": "TRUE. why_O-3/E_does_not_repair_either_release_branch_limb cites ADJUDICATIONS.E's own verdict text (scoped to push -> integration/commercial-v1) and reasons from it directly, rather than asserting the non-repair as a bare claim.",
+  "RELEASE_CHECK_PRODUCIBILITY_GAP_not_designed_or_executed": "TRUE. what_would_close_it names candidate SHAPES of a fix without selecting one, and does_not_add_a_new_blocking_DAG_edge explicitly declines to invent a new node or edge, exactly matching the directing mission's 'do not design or execute that workflow change here.'",
+  "NB2_INV1_corrected_scope_matches_graph_not_only_prose": "TRUE. recompute_transitive_closure_and_prove_the_invariant reports the exact BFS result, independently reproduced in this session's own verification pass, matching the corrected INV-1 statement node-for-node.",
+  "NB2_DN17_not_gated": "TRUE. why_DN-17_stays_excluded confirms DN-17 is absent from the corrected node set and restates why, without touching its asserted_non_edge.",
+  "NB2_DN14_DN15_additions_independently_justified_not_merely_copied_from_the_mission": "TRUE. Both why_DN-14_is_newly_added and why_DN-15_is_newly_added derive a SPECIFIC hazard (a mis-scoped Ignored Build Step silently stopping production; a real deployment inheriting the same confusion in a more severe form) rather than citing the mission's instruction as its own justification.",
+  "NB3_DN0_rule_is_a_deference_not_a_narrower_wildcard": "TRUE. The corrected rule is DEFINED as reading DAG_NODES.prerequisites, so it cannot independently drift out of agreement with it, which is the property NB3's own text states is the reason this is the correct class of fix.",
+  "NB3_class_enumeration_gap_was_real_not_invented": "TRUE. Verified by re-reading DAG_NODES.rule's exact five-class list against DN-13's exact class-field string 'NOT_TRIGGERED', which is absent from the five.",
+  "NB4_correction_is_a_plain_transcription_fix_verifiable_without_new_measurement": "TRUE. DN-7's own DAG_NODES.prerequisites array already listed DN-1 in v1.0.0, and DAG_EDGES already listed DN-1 -> DN-7 in v1.0.0; edges_out's omission of DN-7 was inconsistent with v1.0.0's OWN other two representations of the same fact, not with any new finding.",
+  "NB5_broader_sweep_independently_run_not_copied_from_the_IC's_reported_6": "TRUE. This lane's own pattern (eleven mandating-verb terms, explicitly listed) returned EIGHT, not six; the amendment reports its OWN number and its OWN method rather than adopting the IC's reported figure, and states plainly that the count is pattern-dependent rather than presenting either 3, 6 or 8 as exhaustive.",
+  "NB5_every_new_locus_classified_against_its_full_text_not_only_its_snippet": "TRUE. Each of the five new loci's classification field reasons from the full surrounding clause (e.g. C-4's own adjudication field routing to OD-1; ordered_sequence[6]'s dependence on ordered_sequence[5]'s conditional; the ratification's citation already discussed elsewhere in v1.0.0 as a misattribution).",
+  "DEP-1_conclusion_not_reopened": "TRUE. NB5's verdict and UNCHANGED_AND_STILL_CONTROLLING both state explicitly that M-4 NOT_TRIGGERED is RE-CONFIRMED, not re-derived from a different premise.",
+  "owner_selections_not_reopened": "TRUE. OD-1 through OD-5 are not mentioned as subject to change anywhere in this amendment. RBD-1 and RBD-2 remain unanswered; RBD-2 gained one additional measured consequence, not a recommendation.",
+  "graph_reverified_programmatically_not_asserted": "TRUE. CORRECTED_MEASUREMENTS.full_graph_reverification reports acyclicity (18/18), prerequisite-edge consistency, and the INV-1 reachability proof, each independently re-run in this session against the FULL amended edge set before this file was written.",
+  "superseded_clauses_named_by_exact_locus_and_scoped_narrowly": "TRUE. Each of the eleven SUPERSEDED_PARENT_CLAUSES entries names the exact field path in v1.0.0 and the exact field in this amendment that replaces it; none claims to supersede a whole block where only one sentence changed.",
+  "this_artifact_confers_no_execution_authority": "TRUE, restated identically to v1.0.0's own self-check entry, and re-verified against this amendment's own EXPLICIT_NON_AUTHORIZATIONS and IC_CONSUMED.how_consumed."
+ },
+
+ "required_independent_review": {
+  "required": true,
+  "reason": "This amendment corrects five findings from an independent certification, adds two new DAG edges and a new node-class value, and surfaces a new gap category (RELEASE_CHECK_PRODUCIBILITY_GAP). Each of those is exactly the class of change - a correction that could itself introduce a new error, or a new claim dressed as a mere fix - that most needs an adversarial re-read before anything downstream relies on it.",
+  "verification_criteria_for_the_next_gate": [
+   "Re-parse all nine workflow files independently and confirm the PR-into-release/commercial-v1 producibility is exactly 1/8, via ci.yml only, and that the other seven required-check workflows' pull_request trigger names only [integration/commercial-v1, main].",
+   "Confirm ADJUDICATIONS.E's verdict text is scoped to push -> integration/commercial-v1 only, corroborating why_O-3/E_does_not_repair_either_release_branch_limb.",
+   "Confirm RELEASE_CHECK_PRODUCIBILITY_GAP proposes no specific implementation and adds no new blocking DAG edge, matching the directing mission's scope limit.",
+   "Re-run the BFS from DN-1 over the amended edge set (25 named edges plus the DN-0 deference set) and confirm the reachable set is exactly {DN-7, DN-8, DN-9, DN-10, DN-11, DN-12, DN-14, DN-15}, no more and no fewer.",
+   "Confirm DN-17's asserted_non_edge and EAD-2's independence claim are UNCHANGED and that the corrected INV-1 does not reach DN-17 by any path.",
+   "Independently evaluate whether DN-14's and DN-15's new DN-1 dependency is well-founded, or is an over-correction: specifically, weigh whether the Ignored-Build-Step-on-actual-production hazard this amendment names is realistic given DN-1's own fail_closed branches (a production-branch value other than main triggers STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED before DN-14 or DN-15 could run in a correctly-operating DAG) or whether it is redundant with that STOP.",
+   "Re-derive the DN-0 deference rule's fourteen-node coverage by reading DAG_NODES.prerequisites directly, and confirm DN-13/DN-16/DN-17 remain excluded by their own empty arrays.",
+   "Confirm the corrected six-class enumeration (adding NOT_TRIGGERED) is consistent with every node's class field in DAG_NODES.nodes, with no seventh undeclared value remaining.",
+   "Confirm U1_RESOLUTION_NODE.edges_out's corrected list matches DAG_EDGES' own DN-1 outgoing edges exactly, node for node.",
+   "Independently re-run a falsification sweep with a THIRD, differently-constructed pattern (not identical to either v1.0.0's seven-term or this amendment's eleven-term list) and confirm the classify-to-zero-mandates result continues to hold, or report the first genuine counterexample found.",
+   "Confirm every SUPERSEDED_PARENT_CLAUSES entry's locus resolves to an existing key path in v1.0.0 at the pinned blob, and that the corresponding correction in this amendment is the thing actually controlling wherever this DAG is next consumed.",
+   "Confirm RBD-1 and RBD-2 remain genuinely unanswered, and that RBD-2's fourth consequence reads as a measurement, not a steer.",
+   "Confirm no hosted mutation, no workflow-file edit and no authenticated control-plane read of any kind was performed by this lane.",
+   "Confirm the companion manifest amendment validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json independently."
+  ],
+  "what_a_certifier_should_attack_first": "The DN-14/DN-15 dependency addition under NB-2. It is the one correction in this amendment that is a JUDGEMENT CALL rather than a mechanical fix (NB-1, NB-3, NB-4 and NB-5 are each closer to transcription/measurement corrections; NB-2's DN-14/DN-15 edges rest on a hazard argument this amendment constructs rather than one the IC itself fully specified). The verification_criteria item above asking whether DN-1's own fail-closed branches already make this redundant is the sharpest angle to press."
+ },
+
+ "final_state": "NB1_THROUGH_NB5_CORRECTED__RELEASE_CHECK_PRODUCIBILITY_GAP_SURFACED_NOT_DESIGNED__RBD1_RBD2_PRESERVED_UNANSWERED__READ_AUTHORITY_GAP_UNCHANGED__NO_EXECUTION_PERFORMED",
+
+ "next_gate": "Bounded recertification of this amendment against the corrected DAG (v1.0.0 as amended by v1.0.1), attacking the DN-14/DN-15 edge addition first and re-deriving the graph and rider-matrix facts independently rather than reading them from this file. Only after that recertification passes should a corrected owner brief for RBD-1 and RBD-2 be authored, now including the RELEASE_CHECK_PRODUCIBILITY_GAP finding under RBD-2. The read-authority derivation for DN-1/DN-2/DN-3 (an owner-side Vercel settings read, or a separate authority permitting one) remains the other open track and is untouched by this amendment."
+}
