@@ -1,0 +1,295 @@
+{
+  "package_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "authority_class": "DERIVED_EXECUTION_SEQUENCING_AUTHORITY_AMENDMENT",
+  "document_class": "PROVISIONING_DAG_AMENDMENT__N02_RESOLUTION__RECONCILIATION_ONLY__NO_EXECUTION__NO_HOSTED_POSTGRESQL_CONNECTION__NO_CREDENTIAL_GENERATION__NO_WCM_WRITE__NO_SQL__NO_VALID_UNTIL_COMPUTATION__NO_PRECHECK_R2",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "SUPERSEDES four specific clauses (N02's OLD_STATE fields, and N02's own required_resolution.what_it_must_establish first item) and adds new sections. Does NOT edit the v1.0.0 file, which remains byte-identical at blob 7223279f2dbb46ed6e252cd3aa1469ff0b4419d5. Read the pair together: v1.0.0 for every node, edge, contract and token except where this amendment names a specific supersession below; this amendment for N02's current state and the reachability it changes.",
+  "mission_id": "CV1-D1-AUDITOR-PROVISIONING-DAG-RECONCILIATION-R2",
+  "lane": "CV1-D1-AUDITOR-PROVISIONING-DAG-RECONCILIATION-R2",
+  "role": "PROVISIONING_DAG_RECONCILIATION_AND_AMENDMENT_AUTHOR",
+  "mode": "RECONCILIATION_PLUS_APPEND_ONLY_DAG_AMENDMENT_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+
+  "RECONCILIATION_RECORD": {
+    "rule": "PR #210's branch (codex/cv1-d1-auditor-provisioning-dag-authority-r1) was forked from bee14e0a. The parent branch (codex/cv1-d1-auditor-capability-adjudication-aw-r1, PR #207) advanced past bee14e0a to 2ff84822 while PR #210 was open, landing the owner-level certification-occurrence amendment PR #210's own N02 named as its required resolution. This section records how that divergence was reconciled, per the PROVISIONING_DAG_RECONCILIATION_REQUIREMENT the new parent commit itself states.",
+    "PREVIOUS_HEAD": "c2ddf764c8068e70c806cfd5cf238e09e382ae6a",
+    "UPDATED_PARENT_HEAD": "2ff84822cee15df79778721ead47f44374386231",
+    "METHOD": "A normal non-destructive merge commit of origin/codex/cv1-d1-auditor-capability-adjudication-aw-r1 into PR #210's own branch. NO force-push, NO rebase, NO history rewrite. git merge --no-ff, producing a merge commit with two parents.",
+    "RECONCILIATION_COMMIT": "5677cdcdab265cdfca02e267a0f0efb615d49c28",
+    "CONFLICTS": "NONE. The two branches touch disjoint files: PR #210's branch adds two files under docs/ops/release/ (the DAG authority and its manifest); the parent's new commit adds one file under docs/ops/owner-ratifications/ (the certification-occurrence amendment). Confirmed by the merge completing with a fast, conflict-free three-way merge (`ort` strategy) and zero conflict markers in the resulting tree.",
+    "ANCESTRY_VERIFIED": {
+      "method": "git merge-base --is-ancestor <sha> HEAD, run for both parent heads after the merge.",
+      "2ff84822_is_ancestor_of_new_HEAD": true,
+      "bee14e0a_is_ancestor_of_new_HEAD": true,
+      "c2ddf764_is_ancestor_of_new_HEAD": true,
+      "conclusion": "The merge is additive and non-destructive. No commit this lane previously authored, and no commit the parent branch previously authored, was rewritten, dropped or force-replaced."
+    },
+    "WHY_A_MERGE_RATHER_THAN_A_REBASE": "The lane mandate names a merge as the preferred mechanism and explicitly forbids a force-push 'merely for neatness'. PR #210's own history (the DAG derivation commit c2ddf764) is itself an artifact independent certifiers may already be examining; rewriting its SHA via rebase would silently invalidate any citation of that SHA made before this reconciliation, which is exactly the kind of silent, cosmetic disruption RULE_NO_GATE_WEAKENING-adjacent discipline in this repository consistently refuses."
+  },
+
+  "CANDIDATE_BINDING_EXTENDED": {
+    "rule": "This amendment introduces ONE new binding, to the artifact that resolves N02, and RE-CONFIRMS every binding v1.0.0 already made, re-derived at the new reconciled HEAD rather than assumed carried-forward.",
+    "NEW_BINDING": {
+      "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json",
+      "blob_sha": "e639396719e6d2701f7894a50bc51056741bfa92",
+      "introduced_by_commit": "2ff84822cee15df79778721ead47f44374386231",
+      "re_derivation_method": "git ls-tree -r HEAD -- <path>, executed in this lane at the reconciled HEAD.",
+      "match": true,
+      "note_on_exactness": "This is the EXACT path, not a paraphrase or an assumed filename. It was confirmed by git diff --name-only bee14e0a 2ff84822 before being cited anywhere in this amendment, and re-confirmed by git ls-tree at the reconciled HEAD after the merge. A prior draft of this reconciliation risked citing a guessed filename before the diff was run; that risk is recorded here rather than silently avoided, because the same mistake is the class of error OWNER_RATIFICATION_IC_FINDINGS_CONSUMED.NB-3 below exists to name."
+    },
+    "RE_CONFIRMED_UNCHANGED_BINDINGS": {
+      "method": "git hash-object <working-tree path> compared against git rev-parse <known-good commit>:<path>, for every append-only artifact in the full lineage, re-run at the reconciled HEAD.",
+      "result": "ALL NINE PRIOR ARTIFACTS BYTE-UNCHANGED: the six original capability effective-package files, the parent owner-ratification record (blob fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f), and this lane's own v1.0.0 DAG authority (blob 7223279f2dbb46ed6e252cd3aa1469ff0b4419d5) and its companion manifest. No STOP_RATIFICATION_BINDING_MISMATCH fires on any of the nine.",
+      "the_v1.0.0_DAG_files_specifically": "Re-verified separately from the other eight because they are THIS lane's own prior output and the ones most at risk of an inadvertent edit during a reconciliation session: git hash-object on the working-tree copy equals git rev-parse c2ddf764:<path> exactly, for both files, confirming the merge touched neither."
+    }
+  },
+
+  "OWNER_RATIFICATION_IC_FINDINGS_CONSUMED": {
+    "rule": "The successor owner record on PR #207 (the new binding above) has itself been independently certified: CERT_OCCURRENCE_RECORD_IC_PASS_WITH_NONBLOCKING_FINDINGS, five non-blocking findings NB-1..NB-5. That IC's verdict is NOT materialized in the repository at the reconciled HEAD — a repository sweep for any certification-verdict artifact under this exact name returns none — and is consumed here as OWNER-SUPPLIED LANE INPUT, exactly as NB-IC-1..6 were consumed in v1.0.0's own OWNER_RATIFICATION_IC_FINDINGS_CONSUMED block. The same discipline applies: independently re-derive whatever is re-derivable rather than accept it on the IC's authority alone, and record without inventing substance for whatever this lane was not given.",
+    "provenance_disclosure": "Four of the five findings were supplied to this lane with enough specificity to independently verify and act on. The fifth was named only as part of the range NB-1..NB-5; its own substance was not supplied, and none is invented here.",
+    "dispositions": [
+      {
+        "id": "NB-1",
+        "substance_as_supplied": "The vocabulary sweep both 2ff84822's SUPERSEDED_PARENT_CLAUSES and PR #210's own OWNER_NOTE_DEPENDENCY performed against the parent ratification record found SEVEN outstanding-vocabulary loci, not six.",
+        "disposition": "CONSUMED AND INDEPENDENTLY RE-DERIVED. This lane re-ran the identical grep alternation (outstanding, has NOT yet occurred, not yet, also passes, re-?certification) against the parent record at blob fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f and confirmed SEVEN line hits: lines 63, 191, 192, 230, 236, 245, 249. Six of the seven were already classified (OSC-1..4 in 2ff84822, matching ORS-1..4 in this lane's own v1.0.0; PRESERVED-X1/X2 in 2ff84822, matching ORS-X1/X2 in v1.0.0). The seventh, at line 230, is inside self_check.checks: the string 'OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD is present and non-empty'. See PRESERVED_NOT_SUPERSEDED_EXTENDED below for its classification.",
+        "effect_on_this_amendment": "Materialized as PRESERVED-X3 below. Does NOT change N02's resolution: the seventh locus, like X1 and X2, asserts nothing false and needs no supersession."
+      },
+      {
+        "id": "NB-2",
+        "substance_as_supplied": "PRESERVED-X2's scope deserves closer attention than 2ff84822's own classification gave it.",
+        "disposition": "CONSUMED AND INDEPENDENTLY EXAMINED. This lane's own v1.0.0 (ORS-X2) classified the identical clause as MIXED, not fully accurate-as-written: it flagged that the clause's first limb ('confirm ... not mischaracterized ... as complete'), read literally by a future mechanical reviewer without qualification, would instruct that reviewer to treat an ACCURATE statement of completion (which the certification-occurrence amendment itself now correctly makes) as a defect. 2ff84822's own PRESERVED-X2 classification resolves this by reading the clause NARROWLY — 'confirming the record is not mischaracterized as claiming completeness it does not itself establish' — which is a sound reading of the clause's INTENT (guard against overclaiming, not forbid true statements of completion) but is NOT the clause's bare literal wording.",
+        "adjudication": "This amendment ADOPTS 2ff84822's narrowed reading as CONTROLLING for any future citation of PRESERVED-X2, and treats it as SUPERSEDING this lane's own prior MIXED classification (ORS-X2) — the caveat ORS-X2 raised is RESOLVED, not left open, because the narrowing correctly identifies what the clause exists to prevent. This is recorded as an explicit adoption rather than a silent one: a future certifier who cites PRESERVED-X2's bare parent_verbatim text without the narrowing gloss is citing an INCOMPLETE reading, and should be pointed to this paragraph and to 2ff84822's own why_accurate_as_written field, not to the bare parent text alone.",
+        "effect_on_this_amendment": "ORS-X2's MIXED classification in v1.0.0 is SUPERSEDED by this paragraph as to its residual caveat. v1.0.0 itself is not edited; this supersession lives here, in the amendment, exactly as N02's own resolution does."
+      },
+      {
+        "id": "NB-3",
+        "substance_as_supplied": "The new binding must cite the exact parent path, not an assumed or paraphrased one.",
+        "disposition": "DISCHARGED AT CANDIDATE_BINDING_EXTENDED.NEW_BINDING above, which names docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json, confirmed by git diff --name-only BEFORE being cited, and re-confirmed by git ls-tree at the reconciled HEAD.",
+        "effect_on_this_amendment": "No further action. The risk this finding names is the one CANDIDATE_BINDING_EXTENDED.NEW_BINDING.note_on_exactness already discloses and guards against."
+      },
+      {
+        "id": "NB-4",
+        "substance_as_supplied": "A typographic difference between a curly apostrophe (used throughout the source documents) and a straight apostrophe (used in this lane's own v1.0.0 verbatim_fragment excerpts) is non-semantic and must not be treated as a citation defect.",
+        "disposition": "CONSUMED. Independently re-derived: this lane's own v1.0.0 ORS-1..4/ORS-X1/X2 entries each carry a field explicitly named 'verbatim_fragment' — a deliberately partial, illustrative excerpt, never claimed as a byte-exact full-field quotation — and each uses a straight apostrophe where the source uses U+2019 (RIGHT SINGLE QUOTATION MARK). 2ff84822's OWN full parent_verbatim quotations, by contrast, were re-derived in this lane and confirmed BYTE-EXACT against the live parent record, curly apostrophe included, at all six loci (OSC-1..4, PRESERVED-X1/X2). The apostrophe divergence exists ONLY between this lane's own abbreviated fragments and the source; it does not exist within 2ff84822's own citations, and it never rose to the level of a defect because a 'fragment' field was never held to the byte-exact standard a 'parent_verbatim' field is held to.",
+        "effect_on_this_amendment": "No correction is made to v1.0.0's ORS entries, which remain byte-unchanged. This amendment adopts the discipline going forward: any NEW byte-exact quotation in this document is copied directly from source (preserving whatever apostrophe glyph the source uses) rather than retyped, and any comparison performed in this lane's own verification work normalizes U+2018/U+2019 to U+0027 before asserting equality, so a typographic difference is never mistaken for a substantive one in either direction."
+      },
+      {
+        "id": "NB-5",
+        "substance_as_supplied": "Named only as part of the range NB-1..NB-5. No independent substance was supplied to this lane.",
+        "disposition": "RECORDED AS CONSUMED WITHOUT INDEPENDENT SUBSTANCE, consistent with how v1.0.0 recorded NB-IC-6 under the identical circumstance. No fifth finding is invented to fill the slot.",
+        "effect_on_this_amendment": "None asserted. Flagged as OF-DAG-12 below. If NB-5 carries substance this amendment has not addressed, a certifier should treat that as an open gap against this amendment, not as satisfied."
+      }
+    ]
+  },
+
+  "PRESERVED_NOT_SUPERSEDED_EXTENDED": {
+    "rule": "2ff84822's own PRESERVED_NOT_SUPERSEDED lists two entries (X1, X2). NB-1's independent re-derivation found a seventh vocabulary locus neither 2ff84822 nor this lane's own v1.0.0 classified. This section supplies that missing classification, in the same shape 2ff84822 uses, so the full seven-locus partition is complete and citable.",
+    "entries": [
+      {
+        "id": "PRESERVED-X3",
+        "parent_path": "self_check.checks[15]",
+        "parent_verbatim": "OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD is present and non-empty",
+        "why_accurate_as_written": "This is a STRUCTURAL self-check requirement — it asserts only that a NAMED FIELD (OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD) exists in the document and is non-empty. It does not itself assert anything about WHETHER the certification occurred; it asserts only that the FIELD carrying that discussion is present. Under either fact pattern — the pre-amendment belief that the recertification had not occurred, or the corrected fact that it had — the field IS present in the append-only parent record (it is never removed, only superseded in substance by OSC-1's replacement text in 2ff84822) and IS non-empty (it carries 666 characters of text, confirmed by direct measurement of the live parent blob). The self-check therefore remains MECHANICALLY TRUE under both fact patterns and needs no supersession.",
+        "why_it_was_missed_by_both_prior_sweeps": "It matches the swept vocabulary ('outstanding' as a substring of a FIELD NAME being referenced, not as a fresh prose assertion) in a way a naive text sweep would find but a sweep implicitly scoped to 'prose sentences describing the recertification's status' would pass over, because it reads as a structural checklist item rather than a claim. This is the same class of miss this repository's own history has recorded before, under a different name, for a vocabulary sweep that missed a structural alias rather than a fresh restatement — the lesson generalizes: a sweep for describing-vocabulary can both under- and over-catch depending on whether a hit is a fresh assertion or a structural reference to a field's own name, and each hit must be individually classified rather than counted.",
+        "disposition": "PRESERVED. Not superseded. Recorded here so the seven-locus partition (four superseded, three preserved) is complete, where 2ff84822's own six-locus partition (four superseded, two preserved) was short by exactly this one."
+      }
+    ],
+    "revised_partition_total": "SEVEN vocabulary loci across the parent record: FOUR superseded (OSC-1..4, unchanged from 2ff84822), THREE preserved (PRESERVED-X1, PRESERVED-X2 as narrowed by NB-2's adjudication above, and PRESERVED-X3 newly classified here)."
+  },
+
+  "N02_RESOLUTION": {
+    "rule": "This is the substantive act of this amendment. N02's OLD_STATE, as v1.0.0 recorded it, is superseded by NEW_STATE below, on the strength of the certified mechanism bound at CANDIDATE_BINDING_EXTENDED.NEW_BINDING.",
+    "N02_OLD_STATE": {
+      "quoted_from": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json, DAG_NODES.nodes[N02] and OWNER_NOTE_DEPENDENCY, byte-unchanged, quoted here for the record rather than paraphrased.",
+      "exit_condition": "The contradiction is RESOLVED BY A CERTIFIED MECHANISM. Half A of PHASE_P0_PREREQUISITE.gate is satisfied on the record as well as in fact.",
+      "status_before_this_amendment": "OPEN. No mechanism had been supplied. Every hosted node was unreachable and the graph's terminal state was BLOCKED_AT_N02.",
+      "what_it_must_establish_ORIGINALLY_INCLUDED": "That the bounded recertification of v1.0.2's five new clauses OCCURRED, on what date, by which lane, with what verdict. [Three further items, UNCHANGED and not touched by this amendment: evidence-governance disclosure; supersession of ORS-1..4 without reopening OD-1..6 or editing the append-only record; PHASE_P0_PREREQUISITE.gate satisfied in both halves.]",
+      "this_first_item_is_itself_partially_superseded_below": "See THE_BY_WHICH_LANE_ADJUDICATION."
+    },
+    "N02_NEW_STATE": {
+      "status": "SATISFIED / CLOSED.",
+      "certified_mechanism": {
+        "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json",
+        "blob_sha": "e639396719e6d2701f7894a50bc51056741bfa92",
+        "commit": "2ff84822cee15df79778721ead47f44374386231"
+      },
+      "CERTIFICATION_OCCURRED": true,
+      "VERDICT": "BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+      "VERDICT_ARTIFACT": "NOT_RETROACTIVELY_MATERIALIZED",
+      "why_non_materialization_is_not_non_occurrence": "Quoted from the certified mechanism's own why_no_verdict_artifact_is_created_here_or_ever_for_this_instance: the v1.0.2 recertification predates OD-6's own ratification (which occurred in the same parent record this mechanism amends), so it falls permanently on the near side of OD-6's going-forward boundary. This satisfies N02_OLD_STATE.what_it_must_establish[1] (the evidence-governance-consequence item, unchanged and not touched by this amendment) exactly as that item required.",
+      "THE_MECHANISM_ITSELF_HAS_BEEN_INDEPENDENTLY_CERTIFIED": "CERT_OCCURRENCE_RECORD_IC_PASS_WITH_NONBLOCKING_FINDINGS, five non-blocking findings NB-1..NB-5, consumed above. This closes the residual concern N02's own ALTERNATIVE_MECHANISM_IS_NOT_FORECLOSED clause anticipated — that a certified mechanism, once supplied, would still need ITS OWN independent verification before N02 could be treated as closed on the record as well as in fact. That verification has now occurred, and this amendment is the record of it.",
+      "ORS_1_THROUGH_4_SUPERSESSION": {
+        "rule": "N02_OLD_STATE's third what_it_must_establish item required that ORS-1, ORS-2, ORS-3 and ORS-4 be superseded as to their factual assertion of non-occurrence, WITHOUT reopening OD-1..OD-6 and WITHOUT editing the append-only ratification record. Both conditions are satisfied.",
+        "mapping": "Verified by direct JSON-path resolution, not by re-reading: this lane's own ORS-1..4 (v1.0.0, OWNER_NOTE_DEPENDENCY.THE_FOUR_OVER_RESTRICTIVE_STATEMENTS.ASSERTING_NON_OCCURRENCE) and 2ff84822's OSC-1..4 (SUPERSEDED_PARENT_CLAUSES.clauses) cite IDENTICAL json_paths into the parent record: OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD, explicit_non_authorizations[16], required_independent_review.reason, next_gate, in that order. Programmatically confirmed: every one of 2ff84822's four parent_verbatim strings resolves BYTE-EXACT against the live parent record at those exact paths.",
+        "OD_1_through_OD_6_reopened": false,
+        "append_only_ratification_record_edited": false,
+        "disposition": "SATISFIED. All four superseded by 2ff84822's own OSC-1..4 replacement text, which this amendment adopts by reference rather than re-quoting in full (2ff84822 remains the controlling text for its own replacement language; re-quoting it here would create a second, potentially-diverging copy)."
+      }
+    },
+    "THE_BY_WHICH_LANE_ADJUDICATION": {
+      "question": "Does PHASE_P0_PREREQUISITE require reviewer/lane identity as part of what makes a certification count, or only that independent certification occurred and passed?",
+      "controlling_text_quoted_verbatim": {
+        "source": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, FUTURE_EXECUTION_PHASES.PHASE_P0_PREREQUISITE.gate — the base authority's own words, re-derived directly from the live file rather than from any intermediate quotation, and unchanged by either v1.0.1 or v1.0.2 of that authority (both re-quote it verbatim, confirmed by direct comparison of all three occurrences).",
+        "text": "This authority and its companion manifest must be INDEPENDENTLY CERTIFIED, and every owner decision OD-1..OD-6 must be RATIFIED, before P1 opens."
+      },
+      "search_for_any_lane_identity_requirement": {
+        "method": "grep -n -i -E for 'reviewing lane', 'reviewer identity', 'certifying lane', 'certified by', and 'independent(ly)? certif' across the full effective capability package (base authority plus both amendments).",
+        "result": "No occurrence, anywhere in the controlling package, conditions a certification's SUFFICIENCY on recording who performed it. Every occurrence of 'independently certified' or its variants states only the ACT required (certification occurs, and passes), never an identity requirement."
+      },
+      "ADJUDICATION": "THE CONTROLLING AUTHORITY DOES NOT REQUIRE LANE IDENTITY. PHASE_P0_PREREQUISITE.gate's own two conditions are binary — certified-or-not, ratified-or-not — and name no third condition about WHO certified. N02's own what_it_must_establish[0], as v1.0.0 wrote it, added 'on what date, by which lane' as requirements this lane imposed on ITSELF, exceeding what the controlling parent authority itself demands of a qualifying certification.",
+      "SUPERSESSION": {
+        "old_text": "That the bounded recertification of v1.0.2's five new clauses OCCURRED, on what date, by which lane, with what verdict.",
+        "new_text": "That the bounded recertification of v1.0.2's five new clauses OCCURRED, with what verdict. A date, where evidenced, may be recorded as CORROBORATION rather than required as direct owner testimony — exactly the treatment 2ff84822 itself already gives its own date field. No lane identity is required by the controlling authority, and none is fabricated by any consumer of this requirement; a lane identity, if one is later supplied by an owner or by repository evidence, may be ADDED as further corroboration, but its absence does not leave this requirement unmet.",
+        "scope": "This supersession touches ONLY N02_OLD_STATE.what_it_must_establish[0] as recorded in v1.0.0. It does not touch what_it_must_establish[1], [2] or [3] (evidence-governance disclosure, ORS-1..4 supersession, PHASE_P0_PREREQUISITE.gate satisfaction), none of which named a lane-identity requirement and none of which this amendment alters.",
+        "no_lane_name_is_invented_here": "ABSOLUTE. This amendment does not name, guess, infer or assign any historical lane identifier for the v1.0.2 recertification. 2ff84822's own OWNER_CONFIRMATION.what_was_NOT_confirmed_and_is_therefore_NOT_recorded already states plainly: 'No specific reviewing lane identifier was supplied, and none is invented here.' This amendment adopts that same discipline rather than filling the gap 2ff84822 correctly left open."
+      },
+      "why_this_does_not_reopen_OD_1_through_OD_6": "This adjudication concerns only N02's own self-imposed evidentiary checklist, a construct of THIS DAG authority, not any of the six owner decisions. OD-1..OD-6 remain exactly as ratified in bee14e0a, untouched by this section."
+    },
+    "PHASE_P0_PREREQUISITE_EFFECT": {
+      "rule": "Quoted and applied from the certified mechanism's own PHASE_P0_EFFECT, cross-checked against the base authority's gate text directly above.",
+      "limb_1_independent_certification": "SATISFIED. v1.0.2's own focused independent re-certification OCCURRED, per N02_NEW_STATE above, with verdict BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS.",
+      "limb_2_owner_ratification": "SATISFIED. OD-1 through OD-6, ratified in full by bee14e0a, unchanged.",
+      "COMBINED": "BOTH LIMBS OF PHASE_P0_PREREQUISITE.gate ARE NOW SATISFIED ON THE RECORD AS WELL AS IN FACT. N02's own exit condition — 'the contradiction resolved by a certified mechanism' — is met.",
+      "what_this_amendment_does_NOT_do": "It does NOT itself authorize PHASE_P1 hosted execution, and it does NOT declare any node past N04 traversable. PHASE_P0_PREREQUISITE.gate being satisfied removes ONE precondition among several PHASE_P1 and the MR-2 edge still require. See DOWNSTREAM_REACHABILITY_RECOMPUTATION below for exactly which others remain unmet."
+    }
+  },
+
+  "DOWNSTREAM_REACHABILITY_RECOMPUTATION": {
+    "rule": "N02 closing changes the SATISFIED/UNSATISFIED state of exactly one node. This section recomputes reachability from that single change, without executing anything, and states plainly which nodes remain blocked and why — an amendment that let N02's closure be read as 'now everything can proceed' would overclaim, and this section exists to foreclose that reading.",
+    "N02_ITSELF": "SATISFIED, subject to N01 (freshness) passing at the execution lane's OWN base, exactly as N02's own precondition always required. This amendment's own re-derivation (CANDIDATE_BINDING_EXTENDED) is provenance for THIS reconciliation, not a standing substitute for the execution lane's own N01 re-derivation.",
+    "EDGE_E_02_10_now_traversable_in_principle": "E-02-10 (N02 -> N10, the HC-1 confirmation node) is no longer blocked ON N02's account. This is the sum total of what changes.",
+    "NODES_STILL_BLOCKING_N10_UNCHANGED_BY_THIS_AMENDMENT": {
+      "rule": "N10's own precondition list (v1.0.0, DAG_EDGES: E-02-10, E-03-10, E-04-10, E-05-10, E-06-10, E-07-10, E-09-10) names SEVEN preconditions. This amendment closes exactly one (N02). The other six are UNCHANGED and this amendment performs NO act toward closing any of them.",
+      "still_open": [
+        { "node": "N03", "state": "SATISFIED (unchanged) — all six OD-1..OD-6 ratified and blob-bound, re-confirmed at the reconciled HEAD.", "blocks_N10": false },
+        { "node": "N04", "state": "REQUIRES EXECUTION-TIME RE-DERIVATION — target-identity arm A is not a standing fact; it must be re-verified by the execution lane at ITS own base, exactly as v1.0.0 always required.", "blocks_N10": "conditionally, pending that re-derivation" },
+        { "node": "N05", "state": "NOT SATISFIED. No WCM process-scoped delivery mechanism has been demonstrated against the five MECHANISM_2 conditions. Nothing in this amendment touches N05; the independently-verified absence recorded in v1.0.0 (WCM_READINESS_PREREQUISITE.measured_absence) stands unchanged.", "blocks_N10": true },
+        { "node": "N06", "state": "NOT SATISFIED. The custody inventory file at docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json remains ABSENT — re-confirmed: no such path exists in the working tree at the reconciled HEAD.", "blocks_N10": true },
+        { "node": "N07", "state": "NOT SATISFIED. No evidence-artifact skeleton has been created; no filename has been derived from the docs/ops/staging/evidence/ precedent.", "blocks_N10": true },
+        { "node": "N09", "state": "NOT SATISFIED, because its own precondition N08 (a concrete planned FINAL WITNESS timestamp) remains unsupplied. No such timestamp was supplied to this reconciliation lane, and none is invented, estimated or defaulted here. EXEC-NOTE-1's rule — MR-2 remains BLOCKED absent a concrete planned witness time — is unchanged and this amendment does not relax it.", "blocks_N10": true }
+      ]
+    },
+    "CONCLUSION": "N10 (HC-1) REMAINS UNREACHABLE. N11 (MR-2) and every node downstream of it REMAIN UNREACHABLE. The graph's non-traversability past N04 is UNCHANGED by this amendment; only the SPECIFIC BLOCKING NODE at the frontier has moved, from N02 (now closed) to the conjunction {N05, N06, N07, N09-via-N08} (all still open). A terminal-state label of 'BLOCKED_AT_N02' is no longer accurate and is superseded by 'BLOCKED_AT_N05_N06_N07_N09' below.",
+    "TERMINAL_STATE_SUPERSESSION": {
+      "old": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_DERIVED__NOT_EXECUTED__HOSTED_EXECUTION_BLOCKED_AT_N02_PENDING_CERTIFICATION_OCCURRENCE_RESOLUTION",
+      "new": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_DERIVED__NOT_EXECUTED__N02_SATISFIED__HOSTED_EXECUTION_BLOCKED_AT_N05_N06_N07_N09_PENDING_WCM_DEMONSTRATION_CUSTODY_INVENTORY_EVIDENCE_SKELETON_AND_A_CONCRETE_PLANNED_WITNESS_TIME"
+    }
+  },
+
+  "PRESERVED_EXECUTION_GATES": {
+    "rule": "Enumerated so no reader mistakes N02's closure for a relaxation of anything else. Every item below is UNCHANGED, UNTOUCHED and UNAUTHORIZED-TO-CHANGE by this amendment.",
+    "preserved": [
+      "WCM_READINESS_PREREQUISITE and its five MECHANISM_2 conditions WCM-C1..WCM-C5, byte-identical to v1.0.0, which are byte-identical to the effective capability authority's own SECRET_DELIVERY_CONTRACT text.",
+      "HC1_CONTRACT's six mandatory statements, unchanged.",
+      "OD3_TIME_MATERIALIZATION's five-step chain and its absolute prohibition on any invented, estimated or defaulted VALID UNTIL — unchanged; no timestamp is computed anywhere in this amendment.",
+      "MR2_CONTRACT's nine preconditions on the edge into MR-2 — unchanged in COUNT and unchanged in SUBSTANCE for eight of the nine; MR2-PRE-2 (N02) is the one now satisfied, per this amendment.",
+      "MR3_CONDITIONAL_PATH's three-way trigger conjunction and its package-only delivery channel — unchanged.",
+      "PRECHECK_R2_ENTRY_CONTRACT, including the ten-entry forbidden-substitution list and the requirement that N01 through N26 all be satisfied before PRECHECK-R2 may open — unchanged; N26 (independent poststate certification of an EXECUTED provisioning) is not affected by this amendment, which certifies only that the DERIVATION's own N02 blocker was resolved, not that any hosted act occurred.",
+      "TARGET_IDENTITY's ref-only selection rule and its two-arm split — unchanged.",
+      "All twenty-three fail-closed tokens, their placements and their governing RULE_FAIL_CLOSED_ON_UNKNOWN — unchanged; none added, none reworded, none narrowed.",
+      "MR1_REACHABILITY_DERIVATION's conclusion that MR-1 (node N16) is DECLARED_UNREACHABLE under the ratified OD-2 — unchanged. This amendment does not reopen OD-2 and does not re-elect the operator prestate read.",
+      "Every one of OF-DAG-1 through OF-DAG-11 from v1.0.0 — unchanged, none resolved, none withdrawn by this amendment. This amendment adds OF-DAG-12 (NB-5's unsupplied substance) to that list, below."
+    ]
+  },
+
+  "PARENT_CHILD_INTEGRITY": {
+    "v1_0_0_DAG_authority_byte_unchanged": { "blob": "7223279f2dbb46ed6e252cd3aa1469ff0b4419d5", "verified": true },
+    "v1_0_0_DAG_manifest_byte_unchanged": { "verified": true },
+    "all_nine_prior_lineage_artifacts_byte_unchanged": { "verified": true, "method": "git hash-object vs git rev-parse <commit>:<path>, enumerated in CANDIDATE_BINDING_EXTENDED.RE_CONFIRMED_UNCHANGED_BINDINGS" },
+    "new_owner_record_amendment_blob_re_derived": { "blob": "e639396719e6d2701f7894a50bc51056741bfa92", "verified": true },
+    "reconciliation_merge_non_destructive": { "verified": true, "method": "git merge-base --is-ancestor for all three prior heads against the new reconciled HEAD" }
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Identical in force to v1.0.0's own list. Restated rather than incorporated by reference, because an amendment that silently relied on 'see the base document' for its own non-authorizations would be exactly the kind of thinning a reconciliation act should not introduce.",
+    "non_authorizations": [
+      "This amendment does NOT authorize any hosted act by any lane. It is RECONCILIATION PLUS APPEND-ONLY AMENDMENT ONLY.",
+      "It does NOT edit v1.0.0 of this DAG authority or its companion manifest, both of which remain byte-identical.",
+      "It does NOT edit any of the nine prior append-only artifacts in the full lineage, all of which remain byte-identical.",
+      "NO hosted PostgreSQL connection is opened. NO credential is generated, minted, rotated, read or exposed.",
+      "NO Windows Credential Manager entry is created, read or written.",
+      "NO custody-inventory file is created or populated.",
+      "NO VALID UNTIL value is computed, set or estimated. No UTC timestamp implementing OD-3 appears anywhere in this amendment.",
+      "NO GRANT is issued. NO REVOKE is issued. NO ALTER ROLE, CREATE ROLE or DROP ROLE is issued.",
+      "NO protected-surface allocation is granted, reserved or implied. NO db/prepared/** package is authored.",
+      "NO PRECHECK-R2 is opened, executed or authorized.",
+      "NO retroactive certification-verdict artifact is created for the v1.0.2 recertification or for the CERT_OCCURRENCE_RECORD_IC. Both remain NOT_RETROACTIVELY_MATERIALIZED / not materialized, per OD-6.",
+      "NO historical lane identity is invented for the v1.0.2 recertification, anywhere in this amendment.",
+      "NO force-push, rebase or history rewrite was performed. The reconciliation is a single additive merge commit; every prior commit on every branch remains reachable.",
+      "NO OD-1..OD-6 decision is reopened, reinterpreted or re-ratified.",
+      "NO node past N04 is declared traversable. N10 and everything downstream remain UNREACHABLE, per DOWNSTREAM_REACHABILITY_RECOMPUTATION.",
+      "NO fail-closed token is added, reworded, reordered or narrowed.",
+      "NO code, test, script or SQL file is written. NO db path is touched."
+    ]
+  },
+
+  "OPEN_FINDINGS_ADDED": [
+    {
+      "id": "OF-DAG-12",
+      "severity": "NON_BLOCKING",
+      "finding": "NB-5 was named by the reconciliation mandate only as part of the range NB-1..NB-5, with no independent substance supplied to this lane. Four of the five findings (NB-1 through NB-4) were independently verifiable and are consumed with method and result recorded above; NB-5's own content is unknown to this lane.",
+      "disposition": "Recorded as consumed without invented substance, matching the established treatment of NB-IC-6 in v1.0.0.",
+      "what_a_certifier_should_press": "Whether NB-5 carries substance this amendment has not addressed. If so, that is an open gap against this amendment, not a satisfied finding."
+    },
+    {
+      "id": "OF-DAG-13",
+      "severity": "NON_BLOCKING",
+      "finding": "The 'by which lane' adjudication supersedes N02's own self-imposed evidentiary checklist item, not any clause of the controlling capability authority. A future reader who conflates 'this DAG authority relaxed its own bar' with 'the controlling authority's bar was relaxed' would be reading this amendment incorrectly — no clause of FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json or either of its two amendments is touched, cited-for-change, or reinterpreted by THE_BY_WHICH_LANE_ADJUDICATION.",
+      "disposition": "Stated plainly in THE_BY_WHICH_LANE_ADJUDICATION.why_this_does_not_reopen_OD_1_through_OD_6, and restated here as a standalone finding so it survives independently of that section's own framing.",
+      "what_a_certifier_should_press": "Whether the base authority's PHASE_P0_PREREQUISITE.gate text, re-quoted here, was re-derived correctly and completely, or whether some OTHER clause of the effective package (outside the four files this amendment grepped) imposes a lane-identity requirement this amendment missed."
+    }
+  ],
+
+  "self_check": {
+    "note": "Re-derivable by inspection and by the tool calls this lane actually ran, recorded so a certifier can re-run each one.",
+    "reconciliation_merge_is_additive_only_no_force_push": true,
+    "all_three_prior_heads_remain_ancestors_of_new_HEAD": true,
+    "no_conflict_markers_in_resulting_tree": true,
+    "v1_0_0_DAG_authority_and_manifest_byte_unchanged_post_merge": true,
+    "all_nine_prior_lineage_artifacts_byte_unchanged_post_merge": true,
+    "new_owner_record_amendment_path_confirmed_by_git_diff_before_citation": true,
+    "new_owner_record_amendment_blob_re_derived_by_git_ls_tree_at_new_HEAD": true,
+    "seven_locus_vocabulary_sweep_independently_re_run_against_the_parent_blob": true,
+    "PRESERVED_X3_is_a_genuinely_new_classification_not_present_in_2ff84822_or_v1_0_0": true,
+    "ORS_1_through_4_to_OSC_1_through_4_mapping_verified_by_programmatic_json_path_resolution_not_by_re_reading": true,
+    "all_four_OSC_parent_verbatim_strings_confirmed_byte_exact_against_the_live_parent_record": true,
+    "PHASE_P0_PREREQUISITE_gate_text_re_derived_directly_from_the_base_authority_file_not_from_an_intermediate_quotation": true,
+    "grep_for_lane_identity_requirement_returned_zero_hits_across_the_full_effective_package": true,
+    "no_historical_lane_name_invented_anywhere_in_this_amendment": true,
+    "no_UTC_timestamp_implementing_OD_3_appears_anywhere_in_this_amendment": true,
+    "no_node_past_N04_declared_traversable": true,
+    "reachability_recomputation_names_all_six_of_N10s_own_preconditions_not_only_the_one_that_changed": true,
+    "no_fail_closed_token_added_reworded_reordered_or_narrowed": true,
+    "no_secret_shaped_string_appears_anywhere_in_this_amendment": true,
+    "worktree_clean_including_untracked_before_this_amendment_was_authored": true
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment closes the single node the prior independent-review cycle flagged as the entire remaining blocker (N02), reinterprets one of this lane's own prior clauses (ORS-X2, via NB-2) as resolved rather than left open, and narrows another of this lane's own prior clauses (N02's what_it_must_establish[0]) against the controlling authority's own text. Each of these is a place where a reconciliation could quietly widen what was authorized, and none may be taken on this lane's word alone.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Is the merge genuinely non-destructive? Re-run git merge-base --is-ancestor for all three prior heads against the reconciled HEAD independently.",
+      "Does the new owner-record amendment (2ff84822) actually say what N02_RESOLUTION claims it says? Re-read CERTIFICATION_OCCURRENCE_AND_VERDICT and PHASE_P0_EFFECT directly rather than trusting this amendment's paraphrase.",
+      "Is PRESERVED-X3's classification correct? Could the self_check line at parent record line 230 be read as ITSELF asserting non-occurrence, contrary to this amendment's 'structural, not substantive' reading?",
+      "Is the NB-2 adjudication of PRESERVED-X2 sound, or does it paper over a genuine ambiguity this lane should instead have left flagged as MIXED, unresolved, exactly as v1.0.0 originally left it?",
+      "Is THE_BY_WHICH_LANE_ADJUDICATION's grep complete? Could a lane-identity requirement exist in a part of the effective package this amendment's four-file grep did not cover (for example, in the ODS controller authority or a maintenance addendum)?",
+      "Does DOWNSTREAM_REACHABILITY_RECOMPUTATION correctly and completely enumerate every node still blocking N10, or does it overclaim N02's closure's downstream effect in some way this review has not caught?",
+      "Is OF-DAG-12's honesty about NB-5 sufficient, or should this lane have sought the specific NB-5 content before materializing an amendment that claims to consume NB-1..NB-5?"
+    ],
+    "what_a_certifier_may_NOT_do": [
+      "It may NOT treat this amendment's own certification as satisfying anything it certifies. A certification of this amendment is not an owner statement about a past act.",
+      "It may NOT invent NB-5's substance to make the consumption appear complete.",
+      "It may NOT accept the merge's non-destructiveness, the byte-integrity claims, or the seven-locus count on this lane's assertion alone — each is independently re-derivable and should be re-derived."
+    ]
+  },
+
+  "final_state": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_v1_0_0_PLUS_v1_0_1_RECONCILED__N02_SATISFIED__NOT_EXECUTED__HOSTED_EXECUTION_BLOCKED_AT_N05_N06_N07_N09",
+
+  "next_gate": "Independent certification of the fully reconciled provisioning DAG (v1.0.0 plus this v1.0.1 amendment together), against their companion manifests and against the effective capability package. This gate must independently verify the reconciliation's non-destructiveness, the seven-locus sweep, the NB-2 adjudication, and the by-which-lane grep, not merely accept this amendment's self-report. After that certification passes, N05 (WCM demonstration), N06 (custody inventory), N07 (evidence skeleton) and N08 (a concrete planned FINAL WITNESS time, feeding N09) remain the open preconditions before HC-1 may be asked. No hosted mutation, no credential, no GRANT, no custody-store write and no Supabase or Vercel act is authorized by this amendment at any point."
+}
