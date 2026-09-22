@@ -1,0 +1,65 @@
+{
+  "manifest_id": "M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.1",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1.json -- the authority amendment materialized by the same act, mission CV1-M11-STAGING-PRINCIPAL-AUTHORITY-AMENDMENT-R2, at AS_OF_HEAD 964e3028e7203fe22686f6348894e892a20c5b6c / tree 3253658516c4f761641c4101fb6a4d95eb839da5, base integration/commercial-v1 = 537487ac7b102d51f553fcb8f5cfe19614e113d8. That amendment supersedes eleven clauses of the frozen parent docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json (SPC-1 through SPC-11: PD-2, PD-3, PD-4, OD-P1, OD-P5, AUTH_RLS_MODEL failure semantics, MG4 inherited-verbatim label, two citations, OD-P6 option B, and PRE-1's disposition) and adds MGP-PD2, PROXY_REFRESH_FOOTPRINT, CUSTODY_CONTRACT_ADDENDA, REVOCATION_LOCATOR_REQUIREMENT, QUIESCE_INCONCLUSIVE_REASON and PRE-1B. || FORM: this document is a SEPARATE COMPANION MANIFEST AMENDMENT, following the repository-native precedent docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json, docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_AMENDMENT_v1.0.1.json and docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json -- a schema-valid test manifest in its own right that carries ONLY the DELTA controls. It is NOT a replacement manifest: docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json is left BYTE-UNCHANGED at blob d2ee6274b48a9a1e12e718bacc2133ec42ff3c52, is NOT edited by this act, and remains controlling for 14 of its 15 controls (6 positive, 8 of 9 negative, 4 mutation). No M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.1.json exists or is authorized. || WHAT THIS AMENDMENT SUPERSEDES: exactly one base control, NC-P8, which asserted a live-HTTP distinction between EP-2's two 503 answers. F-M11-16 (controlling, cited not reopened) measures the AUTH_UNAVAILABLE branch of that distinction UNREACHABLE over real HTTP -- the control as written could never be exercised by a live runner and would either be permanently unexercisable or would silently coach a future implementer to build a code path for a state that cannot occur. NC-P8 is RE-SCOPED here, keeping its id, from a live-HTTP runner control to an OFFLINE/unit-level control over the discriminator taxonomy in identity.ts and the route handlers, which is the level at which the body-shape distinction genuinely and stably exists in source. || WHAT THIS AMENDMENT ADDS: five DELTA controls -- PC-P7 (MGP-PD2 resolution precedes any PD-2 reliance), PC-P8 (revocation locator kept out of ordinary evidence), NC-P10 (NULL-email creation refused at the database layer, trigger-conditional), NC-P11 (proxy-layer Set-Cookie never leaks into ordinary observation evidence, not only sign-in evidence), and MC-P5 (removing that redaction on ordinary observation responses is caught). || ID DISJOINTNESS: the parent's 19 ids are PC-P1..PC-P6, NC-P1..NC-P9 and MC-P1..MC-P4. The four new ids were derived mechanically as max+1 per series (PC-P7 and PC-P8 continue PC-P6; NC-P10 and NC-P11 continue NC-P9; MC-P5 continues MC-P4) and intersect that set in the EMPTY SET. NC-P8 is deliberately NOT renumbered: it is the base id, retained so that no control is removed and no frozen count changes, only re-scoped. || STATUS: NO control here is PASS. All are STATUS=FUTURE_MATERIALIZATION -- nothing they name exists at this base: there is no observation runner, no principal, no creation script capable of the hosted act. test_file is 'UNKNOWN' throughout per the schema's own sanctioned representation. This amendment makes the test contract CORRECT with respect to B-1 and B-2; it does not make it GREEN. || ANTI-VACUITY RULE (binding on every control below, carried from the base manifest): a control must assert its comparands as FROZEN STRINGS or FROZEN FACT CITATIONS (F-M11-07, F-M11-15, F-M11-16, the trigger SQL), never by re-deriving them from the implementation with the same transformation the implementation uses.",
+  "dependencies": [
+    "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0 -- the frozen parent authority, blob be24f91a4405c689e1740628dbcc2ab7dd85c38b. Controlling for every clause except the eleven named in the amendment's SUPERSEDED_PARENT_CLAUSES. NOT edited by this act.",
+    "M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0 -- the frozen base manifest, blob d2ee6274b48a9a1e12e718bacc2133ec42ff3c52. Controlling for its own 19 controls except NC-P8, superseded by this amendment. NOT edited by this act.",
+    "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1 -- this manifest's own controlling authority, added by the same act.",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json -- source of F-M11-07, F-M11-14, F-M11-15, F-M11-16 (AUTH_FAILURE_TAXONOMY, PLATFORM_PRE_HANDLER_FAILURE_RULE). BLOCKING for NC-P8's re-scope and for NC-P3's continued validity: any future amendment to these facts requires re-deriving both.",
+    "supabase/migrations/20260716000000_auth_trigger.sql -- source of the on_auth_user_created / handle_new_user trigger SQL that PC-P7 and NC-P10 assert against. Repository-plane presence only; hosted-plane application status is MGP-PD2, UNKNOWN."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SEN-P4",
+      "purpose": "A fictional UUID-shaped canary standing in for the principal's subject id when testing the REVOCATION LOCATOR RECORD (PC-P8) -- distinct from SEN-P2/SEN-P3 because this canary is EXPECTED to appear in the restricted locator record and its test asserts the opposite boundary: that it appears THERE and ONLY there, never in ordinary per-run evidence."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-P7",
+      "description": "Before any control or evidence record relies on PD-2 ('no public.users row'), LIFECYCLE phase 2 verification resolves MGP-PD2 for the ACTUAL created subject -- by a trigger-presence query or by an immediate post-creation row check -- and records one of TRIGGER_ACTIVE / TRIGGER_ABSENT / TRIGGER_INAPPLICABLE. A verification record that asserts PD-2 true without this resolution recorded alongside it is REJECTED as incomplete. Proves PD-2's CONDITIONAL status (authority amendment SPC-1) is enforced procedurally, not merely stated in prose.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-P8",
+      "description": "A revocation-locator record (subject UUID and/or email, bound to the principal LABEL) exists in the CUSTODY-ADJACENT inventory store selected at OD-P3, separate from the per-run evidence stream, and a successful revocation is performed using ONLY that record's locator -- never by searching per-run evidence for an identifying value. Proves REVOCATION_LOCATOR_REQUIREMENT's design is exercisable, not merely asserted.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-P8",
+      "description": "RE-SCOPED (authority amendment SPC-6, F-M11-16): OFFLINE / UNIT-LEVEL control, not a live-HTTP runner control. Driving getVerifiedAuthIdentityResult and the two route handlers in process (the same technique F-M11-14/F-M11-15 themselves used) over the five discriminator scenarios of F-M11-15, the two 503-shaped outcomes remain distinguishable BY BODY SHAPE in source: an AUTH_UNAVAILABLE-classified failure produces { error: 'Unavailable' } with no payload, while a divergent or unobservable runtime-identity observation produces the full payload with verified false. This control freezes that source-level property as a regression test. It explicitly does NOT assert, and no successor control may assert, that a LIVE HTTP runner will ever observe the AUTH_UNAVAILABLE-shaped 503 -- F-M11-16 measures that branch UNREACHABLE over real HTTP, and a live-runner control built to expect it would be permanently unexercisable, which is indistinguishable from a passing test that proves nothing.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P10",
+      "description": "TRIGGER-CONDITIONAL: if MGP-PD2 resolves TRIGGER_ACTIVE for the target hosted project, a creation attempt (under whichever OD-P1 channel is later selected) that supplies no email value at all is REFUSED at the DATABASE layer with the exact exception text raised by supabase/migrations/20260716000000_auth_trigger.sql:13-15, and is classified a CREATION FAILURE -- never silently retried with a synthesized email, and never treated as a partial success. If MGP-PD2 resolves otherwise, this control is INAPPLICABLE and must be recorded as such, not silently skipped.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P11",
+      "description": "PROXY REFRESH FOOTPRINT (authority amendment PROXY_REFRESH_FOOTPRINT): a captured AUTHENTICATED observation response -- EP-2 or EP-3 answering 200 or 503 to the principal's session, not only the initial sign-in exchange -- carries no Set-Cookie header, or any Set-Cookie value present is stripped before the record is emitted. Extends NC-P5 to the case NC-P5 did not separately name: a cookie mutation produced by lib/supabase/proxy.ts's own getUser() refresh call on an ORDINARY observation request, not only on a request the runner itself recognizes as a sign-in.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MC-P5",
+      "description": "Removing the redaction that strips a proxy-refreshed Set-Cookie from an ORDINARY observation response (as opposed to an explicit sign-in response) must be CAUGHT by NC-P11: a fixture in which the proxy issues a refreshed Set-Cookie on an authenticated EP-2 call, with that specific redaction path deleted, must make the suite fail rather than emit a clean-looking evidence record. Distinct from MC-P3, which covers only the runner's OWN error path.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}

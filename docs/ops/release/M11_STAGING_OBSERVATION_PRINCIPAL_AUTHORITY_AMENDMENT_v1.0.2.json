@@ -1,0 +1,296 @@
+{
+  "package_id": "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_SPECIFICATION_AUTHORITY_AMENDMENT",
+  "document_class": "AUTHORITY_ONLY__NO_PRINCIPAL_CREATION__NO_CREDENTIAL_GENERATION__NO_GRANT__NO_SUPABASE_MUTATION__NO_SQL_CONNECTION__NO_DEPLOYMENT__NO_HOSTED_ACT_OF_ANY_KIND",
+  "append_only": true,
+  "mission_id": "CV1-M11-STAGING-PRINCIPAL-AUTHORITY-CONSUMER-PROPAGATION-R3",
+  "lane": "codex/cv1-m11-staging-principal-authority-r1",
+  "role": "M11_AUTHENTICATED_OBSERVATION_PRINCIPAL_AUTHORITY_WRITER",
+  "mode": "APPEND_ONLY_AUTHORITY_AMENDMENT_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "amends": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json",
+  "amended_blob_at_AS_OF_HEAD": "be24f91a4405c689e1740628dbcc2ab7dd85c38b",
+  "predecessor_amendment": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "predecessor_amendment_blob_at_AS_OF_HEAD": "cddb64f91a579610b51b486f00b95e58ff6f8cc3",
+  "companion_manifest": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json",
+  "companion_manifest_blob_at_AS_OF_HEAD": "d2ee6274b48a9a1e12e718bacc2133ec42ff3c52",
+  "companion_manifest_amendment_v101": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+  "companion_manifest_amendment_v101_blob_at_AS_OF_HEAD": "2f24ef1390d2d822e3c90f10b1cafdd7ca2b4227",
+  "companion_manifest_amendment_v102": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+
+  "AS_OF_BRANCH": "codex/cv1-m11-staging-principal-authority-r1",
+  "AS_OF_HEAD": "e8d5f6e42aa17e17fd4ad93cdd267f9e6f0a5324",
+  "AS_OF_TREE": "415d46c30aabfdeb2c98efe9b6fc2413349ddc94",
+  "AS_OF_BASE": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "method": "git fetch origin --prune, then git rev-parse origin/integration/commercial-v1 and its tree, re-derived at this amendment's materialization. UNCHANGED across all three artifacts in this chain - no base drift separates v1.0.2 from v1.0.1 or from the v1.0.0 parent."
+  },
+  "AS_OF_PRESTATE": "pnpm ods:prestate -- --branch codex/cv1-m11-staging-principal-authority-r1 --head e8d5f6e42aa17e17fd4ad93cdd267f9e6f0a5324 --tree 415d46c30aabfdeb2c98efe9b6fc2413349ddc94 --clean : PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS. pnpm authority:seal:verify : ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS, AUTHORITY_SEAL_VERIFY=PASS.",
+
+  "CONSUMED_RECERTIFICATION": {
+    "source": "Bounded independent recertification of docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1.json (and its companion manifest amendment), dated 2026-09-22, read-only, performed in a dedicated worktree (uellix-cv1-m11-staging-principal-v101-recert) with HEAD detached at e8d5f6e4, tree 415d46c30a, clean. Materialized as a note on this lane's own project memory rather than as a repository artifact - a SECOND instance of the OCCURRED/MATERIALIZED distinction v1.0.1's SPC-11 introduced for PRE-1, now recurring one level up. See PRE-2 correction below.",
+    "verdict": "M11_PRINCIPAL_V101_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+    "blocking_findings_count": 0,
+    "non_blocking_findings_count": 14,
+    "primary_finding_this_amendment_closes": "F-1: reclassifying PD-2 to CONDITIONAL in its defining clause did not propagate to that same property's CONSUMERS - LIFECYCLE.phases[1].must_prove[1] and the companion manifest's PC-P5 kept controlling PD-2's absence VERBATIM, unqualified, under v1.0.1's own reading rule (silence retains the parent clause in full). MINIMUM_PRIVILEGES.axes[3]'s surviving sentence and axes[6] were never touched by SPC-9's citation-only fix and rest on the same unconditional premise. The manifest's NC-P4 and NC-P9 repeat the same pre-B-1 causality (avoiding the app's own flows sufficing to preserve PD-2, and PD-2 jointly with PD-3 producing containment, when PD-3 alone is the unconditional basis).",
+    "what_the_recertifier_confirmed_correct_and_independently_remeasured": [
+      "All four external blob pins correct at v1.0.1's own AS_OF_HEAD, with no self-pin defect of the kind measured in a sibling lane (PR #209 BF-R1).",
+      "The v1.0.1 lane's diff from v1.0.0 is exactly two files, both additions, both under docs/.",
+      "All eleven SPC verbatim_parent_text quotations are byte-exact field-by-field (four are labelled condensations, each condensed value itself exact).",
+      "PD-3 is even stronger than its own SPC-2 warrant claims: a full database-plane sweep (every CREATE TRIGGER on auth.users or public.users in the tree) confirms none writes organization membership - the only membership INSERTs live in application capability functions.",
+      "A full sweep of the base manifest's 19 controls found NC-P8 to be the ONLY one asserting an impossible live-HTTP must-fail; it was correctly re-scoped and no sibling control shared the defect.",
+      "PRE-1's corrected text makes no false 'did not occur' claim, and remains genuinely UNSATISFIED on its own 'and materialized' clause - the correction strengthens the gate rather than relabelling it away."
+    ]
+  },
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "Same repository-native amendment precedent as v1.0.1, extended one increment: docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json is the closest sibling precedent for a SECOND amendment in a chain, and its predecessor_amendment / SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES / SUPERSEDED_PARENT_CLAUSES split is adopted verbatim in structure here.",
+    "form": "A SEPARATE APPEND-ONLY AMENDMENT. Both v1.0.0 and v1.0.1 are left BYTE-UNCHANGED at their tracked blobs and remain historical and canonical for everything this amendment does not name. This amendment corrects clauses in EITHER ancestor, and each entry below states explicitly which one it targets."
+  },
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. Both ancestors are left byte-unchanged. This amendment supersedes clauses ONLY in the single respect each entry states; every other word of the same clause continues to control.",
+    "how_to_read_the_three_together": "Where this amendment is silent, v1.0.1 controls where it speaks, and v1.0.0 controls where v1.0.1 is also silent. Where this amendment names a v1.0.0 clause under SUPERSEDED_V100_CLAUSES, that clause is superseded ONLY in the stated respect - INCLUDING a v1.0.0 clause v1.0.1 never touched. Where this amendment names a v1.0.1 clause under SUPERSEDED_V101_CLAUSES, that clause is superseded ONLY in the stated respect. A reader who stops at v1.0.1 is reading a document that correctly reclassified PD-2 in its DEFINITION but left several of PD-2's CONSUMERS uncorrected; a reader who has only this amendment has a delta, not a contract. All three documents are required.",
+    "what_this_amendment_does": [
+      "(1) PRIMARY FIX: propagates PD-2's CONDITIONAL status to every surviving consumer this lane can locate by grep - LIFECYCLE.phases[1].must_prove[1], the manifest's PC-P5, MINIMUM_PRIVILEGES.axes[3] and axes[6], and the manifest's NC-P4 and NC-P9 - without weakening PD-3 (no membership), PD-4 (is_super_admin false), the zero-PostgreSQL-grant finding, or MG-4.",
+      "(2) Corrects the false attribution of F-M11-07 to the v1.0.1 amendment; F-M11-07 is a v1.0.0 MEASURED_FACTS entry.",
+      "(3) Completes the OD5 restatement quotation SPC-7 introduced, which itself dropped a leading clause and truncated a trailing one.",
+      "(4) Resolves the contradiction between REVOCATION_LOCATOR_REQUIREMENT and custody_invariants_regardless_of_option's 'no subject id' rule without exposing a subject id in the general inventory row, and corrects OF-P9's claim that no inventory mechanism exists when LIFECYCLE phases 1/4/7 already require one.",
+      "(5) Introduces PRE-2's analogous materialization prerequisite, PRE-2B, on the same governing precedent PRE-1B established - the recertification this amendment consumes has the identical OCCURRED/MATERIALIZED gap PRE-1 had.",
+      "(6) Removes the unweakened PD-2-dependence from MINIMUM_PRIVILEGES that SPC-9 did not reach, and disentangles the two distinct files both informally called 'proxy.ts' inside PROXY_REFRESH_FOOTPRINT.",
+      "(7) Corrects two source-citation slips: 'six-line' comment that is five lines, and a null-check return range that included the if-statement's own line.",
+      "(8) Reconciles SPC-10's stated OD-P6 technical_recommendation status with the premise SPC-10 itself touched.",
+      "(9) Widens MGP-PD2's measurement scope to name the sibling on_auth_user_updated trigger, and states why it does not change PD-2 or PD-4's conclusions.",
+      "(10) Corrects CG-Q4/G-2's citation to name it as an EXTERNAL identifier from a sibling, unmerged lane, not as an in-tree fact of this branch, and replaces the unstable '(NB-1 through NB-9)' shorthand with addressable section names.",
+      "(11) Qualifies UNAVOIDABLE_WRITE_DISCLOSURE.bounding_rules[2]'s 'countable rather than estimated' claim against the proxy's own uncounted refresh write.",
+      "It does NOT answer OD-P1 through OD-P6. It does NOT perform any hosted read. It does NOT create, promote or provision anything."
+    ]
+  },
+
+  "SUPERSEDED_V100_CLAUSES": {
+    "rule": "Each entry names ONE clause of the v1.0.0 PARENT - a clause v1.0.1 never touched - quotes it verbatim, and states the single respect in which it no longer controls.",
+    "entries": [
+      {
+        "id": "S2-1",
+        "location": "LIFECYCLE.phases[1] (VERIFICATION).must_prove[1]",
+        "verbatim_parent_text": "It has no public.users profile row (negative).",
+        "respect_in_which_superseded": "Unqualified must-prove item asserting PD-2's UNCONDITIONAL truth. v1.0.1's SPC-1 reclassified PD-2 to CONDITIONAL on MGP-PD2 in its DEFINING clause (PRINCIPAL_DESIGN.defining_properties[1]) but this SEPARATE consumer clause was never named by any v1.0.1 SUPERSEDED_PARENT_CLAUSES entry, so v1.0.1's own reading rule ('where this amendment is silent, the parent controls verbatim') left it asserting the pre-correction premise.",
+        "corrected_text": "Branches on MGP-PD2's resolution for the actual created subject, per v1.0.1's own NEW_MEASUREMENT_GAPS_RECORDED.MGP-PD2.how_to_measure, which this LIFECYCLE step already performs: (a) TRIGGER_ABSENT or TRIGGER_INAPPLICABLE resolved -> must prove 'It has no public.users profile row (negative)', exactly as the parent stated. (b) TRIGGER_ACTIVE resolved -> the negative proof named here is INAPPLICABLE_WITH_TRIGGER_ACTIVE and is NOT to be attempted or recorded as failed; verification instead proves the NARROWER properties that survive a trigger-created row: is_super_admin is false on it (PD-4 basis 2), it carries no organization membership (PD-3, independent basis), and it holds no database role or grant beyond what the other five must_prove items already require. A verification record that proves (b)'s narrower set may still assert the OVERALL principal is minimally provisioned; it may NOT assert the literal absent-row property the parent's sentence named.",
+        "everything_else_continues": "The other five must_prove items (session obtainable, no organization membership, no database role or grant, cannot reach an organization-scoped surface, no production-project credential) and the note ('the negative proofs are the point...') are untouched."
+      },
+      {
+        "id": "S2-2",
+        "location": "MINIMUM_PRIVILEGES.axes[3] (RLS BEHAVIOUR).detail",
+        "verbatim_parent_text": "A subject with no profile row and no membership matches no tenant row, so every tenant policy yields zero rows.",
+        "respect_in_which_superseded": "v1.0.1's SPC-9 corrected only the FIRST sentence of this field (the request.jwt.claims citation). This second sentence, in the SAME field, still asserts 'no profile row' unconditionally - the exact premise SPC-1 made conditional, uncorrected here.",
+        "corrected_text": "A subject with no organization membership (PD-3, which SPC-2 establishes independently of MGP-PD2's answer) matches no tenant row through the membership-keyed policies, so every membership-gated tenant policy yields zero rows regardless of whether a public.users profile row exists. Where PD-2 additionally holds (MGP-PD2 resolves TRIGGER_ABSENT or TRIGGER_INAPPLICABLE), any policy keyed on the profile row directly is ALSO never matched; where PD-2 does not hold, such a policy is evaluated against a row that carries is_super_admin false (PD-4 basis 2) and no organization-scoped attribute, which is the containment PD-3 already supplies by a different route.",
+        "everything_else_continues": "The axis's required/minimum/positively_excluded fields, containment_note, and the third sentence ('NEITHER health endpoint enters an identity context at all...') are untouched."
+      },
+      {
+        "id": "S2-3",
+        "location": "MINIMUM_PRIVILEGES.axes[6] (PROHIBITED WRITE CAPABILITIES).detail",
+        "verbatim_parent_text": "Follows from the SCHEMA/TABLE axis (no grants) and PD-2/PD-3 (no profile, no membership). Every governed write path in this application transits an organization context this principal cannot enter.",
+        "respect_in_which_superseded": "Cites PD-2 as a co-equal, unconditional basis alongside PD-3. PD-2 is now conditional (SPC-1); citing it as a co-equal basis for a PROHIBITED-capabilities claim overstates what is unconditionally true.",
+        "corrected_text": "Follows from the SCHEMA/TABLE axis (no grants, unconditional) and PD-3 (no organization membership, unconditional per SPC-2 - independent of MGP-PD2's answer). Every governed write path in this application transits an organization context this principal cannot enter, on PD-3's basis alone. Where PD-2 additionally holds, the principal ALSO cannot reach the narrower set of single-tenant, profile-keyed write surfaces that do not require organization membership; where PD-2 does not hold (MGP-PD2 resolves TRIGGER_ACTIVE), that narrower exclusion is not established by this axis and rests instead on the same absence-of-grant and absence-of-membership reasoning that excludes every OTHER write path.",
+        "everything_else_continues": "The axis's required field and one_unavoidable_write_is_disclosed_separately are untouched."
+      },
+      {
+        "id": "S2-4",
+        "location": "SEQUENCING_PRECONDITIONS.preconditions[1] (PRE-2)",
+        "verbatim_parent_text": "condition: 'This artifact has passed an INDEPENDENT ADVERSARIAL CERTIFICATION performed by a reviewer that did not author it.' state_at_AS_OF_HEAD: 'NOT_PERFORMED. This artifact is newly authored.'",
+        "respect_in_which_superseded": "state_at_AS_OF_HEAD is stale. Two certifications of this artifact chain have in fact occurred since v1.0.0 was authored: the initial independent IC of v1.0.0 (verdict M11_PRINCIPAL_AUTHORITY_IC_FAIL, consumed by v1.0.1's CONSUMED_CERTIFICATION) and the bounded recertification of v1.0.1 (verdict M11_PRINCIPAL_V101_RECERT_PASS_WITH_NONBLOCKING_FINDINGS, consumed by this amendment's CONSUMED_RECERTIFICATION above). Both are exactly the OCCURRED-but-NOT-MATERIALIZED situation SPC-11 corrected for PRE-1 - the same governing precedent applies here, one level up, on the analogous artifact.",
+        "corrected_text": {
+          "state_at_AS_OF_HEAD": "OCCURRED_TWICE__VERDICT_ARTIFACTS_NOT_MATERIALIZED_IN_TREE. (i) Initial IC of v1.0.0, verdict M11_PRINCIPAL_AUTHORITY_IC_FAIL, two blocking findings (B-1, B-2), consumed and closed by v1.0.1. (ii) Bounded recertification of v1.0.1, verdict M11_PRINCIPAL_V101_RECERT_PASS_WITH_NONBLOCKING_FINDINGS, zero blocking findings, fourteen non-blocking, consumed by this amendment. Neither verdict exists as a repository-resident artifact - both are recorded only in this lane's project memory, external to the tree this authority governs.",
+          "PRE-2_is_satisfied_for_v101_but_not_closed": "The SUBSTANCE PRE-2 asks for - a passing independent review - has been obtained for the v1.0.1 state of this artifact. What remains open is identical in KIND to PRE-1B: durable, in-tree materialization. This is registered as PRE-2B below rather than silently treated as closing PRE-2, for the same reason PRE-1B was not absorbed into PRE-1."
+        },
+        "everything_else_continues": "PRE-3, PRE-4 and PRE-5 are untouched by this entry."
+      },
+      {
+        "id": "S2-5",
+        "location": "UNAVOIDABLE_WRITE_DISCLOSURE.bounding_rules[2]",
+        "verbatim_parent_text": "The number of sign-ins is bounded by the number of runs and is recorded in evidence, so the write footprint is countable rather than estimated.",
+        "respect_in_which_superseded": "Overstates what is countable. v1.0.1's PROXY_REFRESH_FOOTPRINT establishes that the proxy layer performs its OWN getUser() call, and possibly its own token-refresh write, on every matched request - a write this bounding rule's 'countable' claim does not account for, because it is not a sign-in and is not recorded in the per-run evidence fields NC-P4/PC-P4 name.",
+        "corrected_text": "The number of SIGN-INS (initial credential presentations) is bounded by the number of runs and is recorded in evidence, so THAT footprint is countable rather than estimated. The proxy's own getUser() round trip on every matched request - and any token refresh it may transparently perform - is NOT separately counted or recorded by anything in this specification; PROXY_REFRESH_FOOTPRINT discloses it as a bound write whose FREQUENCY is bounded by the number of authenticated requests in a run (a value the runner already knows) but whose OCCURRENCE on any given request is not confirmed or recorded either way. A successor lane that wants a fully countable write footprint owes a mechanism for this; none is specified here.",
+        "everything_else_continues": "bounding_rules[0] and [1] are untouched."
+      }
+    ]
+  },
+
+  "SUPERSEDED_V101_CLAUSES": {
+    "rule": "Each entry names ONE clause of the PREDECESSOR AMENDMENT (v1.0.1, not the v1.0.0 parent) by its path inside that document, quotes it verbatim, and states the single respect in which it no longer controls. v1.0.1's bytes are unchanged; only these named clauses are read down.",
+    "entries": [
+      {
+        "id": "P2-1",
+        "predecessor_path": "SUPERSEDED_PARENT_CLAUSES.entries[SPC-6].respect_in_which_superseded",
+        "verbatim": "Both are measured UNREACHABLE in production by the CONTROLLING frozen facts F-M11-07, F-M11-15 and F-M11-16 of docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json, which this authority may not reopen",
+        "superseded_in_this_respect": "F-M11-07 does NOT live in M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json. Independently re-verified: F-M11-07 is docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json MEASURED_FACTS[6] ('The comment at lib/auth/identity.ts:121-123 is FALSIFIED...'). Only F-M11-15 and F-M11-16 are v1.0.1 NEW_MEASURED_FACTS entries; F-M11-17 (cited elsewhere in the same SPC-6 entry) is also a v1.0.1 NEW_MEASURED_FACTS entry.",
+        "corrected_text": "Both are measured UNREACHABLE in production by the CONTROLLING frozen facts: F-M11-07 (docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json MEASURED_FACTS[6]) and F-M11-15, F-M11-16 (docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json NEW_MEASURED_FACTS), which this authority may not reopen",
+        "everything_else_continues": "The rest of SPC-6 - its corrected_text tables and operational_rule_preserved_unchanged - is untouched; every OTHER citation of F-M11-07 inside SPC-6 already names it bare (without a false single-source attribution) and is unaffected."
+      },
+      {
+        "id": "P2-2",
+        "predecessor_path": "SUPERSEDED_PARENT_CLAUSES.entries[SPC-7].corrected_text.OD5_restatement_quoted_separately_in_full",
+        "verbatim": "'the endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5.' (M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[4].constraint_inherited_not_reopened)",
+        "superseded_in_this_respect": "Labelled 'quoted_separately_in_full' but is NOT the full clause. Re-verified against the live source (M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[4].constraint_inherited_not_reopened): the actual text is 'MG-4 also records that the endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5, and this amendment does not make it one.' The predecessor quotation dropped the leading 'MG-4 also records that ' and truncated the trailing ', and this amendment does not make it one.' An entry created specifically to fix a false 'verbatim' label introduced its own incomplete 'in full' label - the identical class of defect, one level down.",
+        "corrected_text": "'MG-4 also records that the endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5, and this amendment does not make it one.' (M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[4].constraint_inherited_not_reopened, re-verified against the live source at this amendment's AS_OF_HEAD)",
+        "everything_else_continues": "SPC-7's MG4_own_text_quoted_in_full sibling field was independently re-verified against the live source and IS byte-exact; it is untouched. SPC-7's conclusion field is untouched."
+      },
+      {
+        "id": "P2-3",
+        "predecessor_path": "SUPERSEDED_PARENT_CLAUSES.entries[SPC-8].respect_in_which_superseded",
+        "verbatim": "EP-2's gate carries a six-line explanatory comment inside the if-block (route.ts:52-56, the outage/logout-storm rationale) that EP-3's gate does not carry at all... (1) The EP-3 line range :67-75 is one line too wide: the gate block is :67-74 (call at :67, the four-line null-check return at :69-73, closing brace at :74)",
+        "superseded_in_this_respect": "Two arithmetic slips in the same correction. (1) route.ts:52-56 is FIVE lines (52, 53, 54, 55, 56), not six - re-verified against the live source. (2) EP-3's return statement is lines :70-73 (four lines: 70, 71, 72, 73); line :69 is the 'if (!identity) {' guard itself, not part of the return. The 'null-check return' phrase conflated the guard with the return it guards.",
+        "corrected_text": "EP-2's gate carries a five-line explanatory comment inside the if-block (route.ts:52-56, the outage/logout-storm rationale) that EP-3's gate does not carry at all... (1) The EP-3 line range :67-75 is one line too wide: the gate block is :67-74 (call at :67, the null check opening at :69, its four-line return at :70-73, closing brace at :74)",
+        "everything_else_continues": "SPC-8's corrected_text field (the controlling replacement) already used the correct :67-74 range for the whole gate and did not repeat the six-line error there - only this respect_in_which_superseded explanation carried both slips, now corrected to match its own remedy."
+      },
+      {
+        "id": "P2-4",
+        "predecessor_path": "SUPERSEDED_PARENT_CLAUSES.entries[SPC-10].everything_else_continues",
+        "verbatim": "Option A and the technical_recommendation's own reasoning are untouched.",
+        "superseded_in_this_respect": "SPC-10 supersedes option B's consequence text on the ground that 'permanently unobservable' overstates the outcome. The parent's technical_recommendation for OD-P6 recommends option A partly BECAUSE option B's consequence (as originally, incorrectly stated) sounded severe; declaring the recommendation's reasoning 'untouched' while its premise about option B was touched is an unexamined claim, not a verified one.",
+        "corrected_text": "Option A's own description is untouched. The technical_recommendation's CONCLUSION (option A recommended) is unaffected, because SPC-10 narrows option B's consequence rather than reversing its direction - a cycling unavailable/pending BLOCKING cell remains a real operational cost the parent's recommendation is entitled to weigh against option A's standing-footprint cost, even though it is no longer a PERMANENT loss. The recommendation's STATED REASONING is therefore reconciled, not merely declared untouched: it continues to favour option A on the corrected, narrower version of option B's consequence, and this amendment records that reconciliation explicitly rather than assuming it holds.",
+        "everything_else_continues": "Nothing else in SPC-10 changes."
+      },
+      {
+        "id": "P2-5",
+        "predecessor_path": "NEW_MEASUREMENT_GAPS_RECORDED.gaps[MGP-PD2].gap",
+        "verbatim": "Whether the hosted staging project (bvyzblhqymxruxdguaee) currently has the effective on_auth_user_created AFTER INSERT ON auth.users trigger (EXECUTE FUNCTION public.handle_new_user()) active, per supabase/migrations/20260716000000_auth_trigger.sql.",
+        "superseded_in_this_respect": "Names only ONE of the two triggers the SAME migration installs. supabase/migrations/20260716000000_auth_trigger.sql:76-80 ALSO installs on_auth_user_updated, an AFTER UPDATE OF email, raw_user_meta_data trigger calling public.handle_update_user() (:48-67), which UPDATEs public.users WHERE id = new.id and, like handle_new_user(), raises on new.email IS NULL (:53-55). Naming only the INSERT trigger under-scopes what MGP-PD2 measures, even though re-derivation below shows the omission does not change PD-2's or PD-4's conclusion.",
+        "corrected_text": "Whether the hosted staging project (bvyzblhqymxruxdguaee) currently has EITHER effective trigger from supabase/migrations/20260716000000_auth_trigger.sql active: on_auth_user_created (AFTER INSERT ON auth.users, :42-44, EXECUTE FUNCTION public.handle_new_user() :8-33) and/or on_auth_user_updated (AFTER UPDATE OF email, raw_user_meta_data ON auth.users, :76-80, EXECUTE FUNCTION public.handle_update_user() :48-67). WHY on_auth_user_updated DOES NOT CHANGE THIS ARTIFACT'S CONCLUSIONS: it is an UPDATE trigger with a WHERE id = new.id clause and no INSERT branch - it can only write a row that already exists, never create one, so it cannot by itself violate PD-2 the way on_auth_user_created can. Its WHEN clause fires only when auth.users' email or metadata CHANGES after the initial insert, which an observation run - a single static sign-in against an unmodified subject - never triggers. It is recorded here for MEASUREMENT COMPLETENESS, not because it alters PD-2's or PD-4's analysis.",
+        "everything_else_continues": "MGP-PD2's measured_at_repository_plane, unmeasured_at_hosted_plane, bears_on, how_to_measure and classification_note fields are untouched in substance; how_to_measure's trigger-presence query should now check both trigger names, which is a mechanical widening of an already-open action, not a new one."
+      },
+      {
+        "id": "P2-6",
+        "predecessor_path": "QUIESCE_INCONCLUSIVE_REASON.known_interaction",
+        "verbatim": "CG-Q4's G-2 names GoTrue as a writer that a QUIESCE empty-write window would exclude",
+        "superseded_in_this_respect": "CG-Q4 and G-2 are real identifiers, but NOT of this tree. git grep across the full working tree at this amendment's AS_OF_TREE finds CG-Q4 and G-2 in NO tracked file - they are artifacts of the sibling lane CV1-STAGING-QUIESCE-MECHANISM (PR #208), on a branch this lane's git history does not include. Citing them as though they were in-tree facts this reader could look up here is a defect this amendment corrects with the same discipline PRE-1B applied to an occurred-but-unmaterialized fact: name the source as EXTERNAL rather than implying local traceability.",
+        "corrected_text": "An EXTERNAL finding (CG-Q4's G-2, from the sibling lane CV1-STAGING-QUIESCE-MECHANISM / PR #208, NOT part of this branch's git history and NOT independently re-verified by this lane) names GoTrue as a writer that a QUIESCE empty-write window would exclude",
+        "everything_else_continues": "The rest of QUIESCE_INCONCLUSIVE_REASON - the new_reason_code, extends, rule and open_dependency fields - is untouched; open_dependency already states the detection capability does not exist here, which is consistent with treating CG-Q4 as external rather than controlling."
+      },
+      {
+        "id": "P2-7",
+        "predecessor_path": "AMENDMENT_SEMANTICS.what_this_amendment_does[5]",
+        "verbatim": "(6) Records the proxy's own independent getUser() round trip and its cookie-mutation risk, corrects a false 'verbatim' label, corrects two citations, and records a GitHub-masking limitation, a revocation-locator design requirement, and a quiesce-specific INCONCLUSIVE reason code (NB-1 through NB-9).",
+        "superseded_in_this_respect": "'(NB-1 through NB-9)' reads as a citation to nine addressable, lookup-able identifiers. git grep across the tree at this amendment's AS_OF_TREE finds that string in NO file except v1.0.1 itself. It was shorthand from the authoring continuation's own instructions, never a stable identifier of anything in this document or any other - the identical class of defect as P2-6, inside the same amendment.",
+        "corrected_text": "(6) Records the proxy's own independent getUser() round trip and its cookie-mutation risk (PROXY_REFRESH_FOOTPRINT), corrects a false 'verbatim' label (SPC-7) and two citations (SPC-8, SPC-9), and records a GitHub-masking limitation (CUSTODY_CONTRACT_ADDENDA), a revocation-locator design requirement (REVOCATION_LOCATOR_REQUIREMENT), and a quiesce-specific INCONCLUSIVE reason code (QUIESCE_INCONCLUSIVE_REASON) - nine corrections in total, addressed here by their own section names rather than by an unstable shorthand.",
+        "everything_else_continues": "The rest of AMENDMENT_SEMANTICS is untouched."
+      },
+      {
+        "id": "P2-8",
+        "predecessor_path": "REVOCATION_LOCATOR_REQUIREMENT",
+        "verbatim": "design_requirement: '...it is a CUSTODY-ADJACENT INVENTORY ARTIFACT, visible only to the named accountable holder CUSTODY_CONTRACT.custody_invariants_regardless_of_option already requires...'",
+        "superseded_in_this_respect": "Cites custody_invariants_regardless_of_option as ALREADY requiring the holder this new artifact is visible to, without acknowledging that the SAME clause's own text ('An inventory row exists recording:... No secret VALUE, no subject id.') FORBIDS the locator's own content (a subject id) from that SAME inventory row - creating an unreconciled contradiction between two things this amendment chain calls 'the inventory' without distinguishing them. OF-P9, in the same document, compounds this by claiming 'no custody-adjacent inventory mechanism... is specified', when LIFECYCLE phases 1, 4 and 7 (v1.0.0, untouched) already require an inventory row to exist, be updated on rotation, and be closed on revocation.",
+        "corrected_text": "REVOCATION_LOCATOR_REQUIREMENT names a SEPARATE artifact from CUSTODY_CONTRACT.custody_invariants_regardless_of_option's inventory row, not an unstated extension of it. TWO distinct custody-adjacent records exist under this specification: (a) THE INVENTORY ROW, per custody_invariants_regardless_of_option, carrying the fields already listed there and explicitly EXCLUDING any subject id or secret value, reviewable by whoever the custody process permits to review inventory state; and (b) THE LOCATOR RECORD, introduced here, carrying ONLY the UUID and/or email bound to the principal LABEL, visible SOLELY to the named accountable holder - a strictly narrower audience than (a) - and consulted ONLY for a revocation or rotation act, never for routine inventory review. custody_invariants_regardless_of_option's 'no subject id' rule is NOT superseded and continues to govern the inventory row (a) in full; it was never intended to, and does not, govern the locator record (b), which is created for the express purpose that rule exists to keep the locator out of.",
+        "everything_else_continues": "REVOCATION_LOCATOR_REQUIREMENT's problem and scope fields are untouched."
+      },
+      {
+        "id": "P2-9",
+        "predecessor_path": "NEW_OPEN_FINDINGS[OF-P9].finding",
+        "verbatim": "Revocation requires a locator (UUID or email) that ordinary evidence is forbidden from carrying, and no custody-adjacent inventory mechanism for that locator is specified beyond the design requirement in REVOCATION_LOCATOR_REQUIREMENT.",
+        "superseded_in_this_respect": "'no custody-adjacent inventory mechanism... is specified' is inaccurate: the GENERAL inventory-row mechanism IS specified, at CUSTODY_CONTRACT.custody_invariants_regardless_of_option and at LIFECYCLE phases 1, 4 and 7 (all v1.0.0, untouched). What was actually missing, and is closed by P2-8, is the distinction between that mechanism and the NARROWER locator record the revocation act needs.",
+        "corrected_text": "Revocation requires a locator (UUID or email) that ordinary evidence is forbidden from carrying, and that the general inventory row (custody_invariants_regardless_of_option) is ALSO forbidden from carrying. P2-8 introduces the locator record as a SEPARATE, narrower-audience artifact rather than an extension of the inventory row, resolving the contradiction; what remains open is only the OPERATIONAL mechanism (a specific storage location, access control implementation, and creation/consumption tooling) for that now-distinct locator record - a successor lane's work, not a definitional gap.",
+        "everything_else_continues": "OF-P9's disposition field is untouched."
+      },
+      {
+        "id": "P2-10",
+        "predecessor_path": "PROXY_REFRESH_FOOTPRINT.measured",
+        "verbatim": "lib/supabase/proxy.ts:29-101 (updateSession), matched by proxy.ts:48-51 for /api/health/* like every non-excluded path, calls supabase.auth.getUser() at :76 - its OWN call, on its OWN createServerClient instance (lib/supabase/proxy.ts:47-70), independent of and PRIOR TO the handler's own call inside getVerifiedAuthIdentityResult() (lib/supabase/server.ts:22, lib/auth/identity.ts:113). updateSession() runs UNCONDITIONALLY for every matched path at proxy.ts:10, before the rate-limit block that is the only part of proxy.ts actually gated on the /api/ prefix (proxy.ts:12-15).",
+        "superseded_in_this_respect": "Uses bare 'proxy.ts' to mean TWO DIFFERENT FILES within a single field without disambiguating each occurrence: this repository has both a ROOT proxy.ts (the Next.js middleware entry, defining `proxy()` and its `config.matcher`) and lib/supabase/proxy.ts (the helper defining updateSession, applySecurityHeaders and extractClientIp). ':48-51' (the matcher), ':10' (the call site) and ':12-15' (the rate-limit block) are all in the ROOT file; ':76' (the getUser() call), ':47-70' (the createServerClient construction) and ':29-101' (updateSession's own definition) are all in lib/supabase/proxy.ts. The field cites both under one unqualified name.",
+        "corrected_text": "lib/supabase/proxy.ts:29-101 defines updateSession, which lib/supabase/proxy.ts:76 calls supabase.auth.getUser() from - its OWN call, on its OWN createServerClient instance (lib/supabase/proxy.ts:47-70), independent of and PRIOR TO the handler's own call inside getVerifiedAuthIdentityResult() (lib/supabase/server.ts:22, lib/auth/identity.ts:113). The ROOT proxy.ts (the Next.js middleware entry, a separate file) calls updateSession() UNCONDITIONALLY at ROOT proxy.ts:10 for every path its config.matcher matches (ROOT proxy.ts:48-51), before the rate-limit block that is the only part of the ROOT file actually gated on the /api/ prefix (ROOT proxy.ts:12-15). Health paths are matched because the matcher excludes only Next.js internals and static image extensions.",
+        "everything_else_continues": "PROXY_REFRESH_FOOTPRINT's consequence, cookie_mutation_risk, evidence_discipline and why_this_does_not_change_minimum_privileges fields already correctly qualified their OWN 'proxy.ts' references in context and are untouched; only the measured field's mixed usage is corrected."
+      },
+      {
+        "id": "P2-11",
+        "predecessor_path": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.1.json.authority_reference (the COMPANION MANIFEST amendment's own descriptive text, not the authority amendment named elsewhere in this array)",
+        "verbatim": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json is left BYTE-UNCHANGED at blob d2ee6274b48a9a1e12e718bacc2133ec42ff3c52, is NOT edited by this act, and remains controlling for 14 of its 15 controls (6 positive, 8 of 9 negative, 4 mutation).",
+        "superseded_in_this_respect": "Arithmetic error. The same field's own ID DISJOINTNESS section, two sentences later, correctly states 'the parent's 19 ids are PC-P1..PC-P6, NC-P1..NC-P9 and MC-P1..MC-P4' - 6 positive, 9 negative, 4 mutation, NINETEEN total, not fifteen. Re-scoping one control (NC-P8) out of nineteen leaves EIGHTEEN controlling verbatim, not fourteen; the parenthetical '(6 positive, 8 of 9 negative, 4 mutation)' sums to 18 and is itself internally correct - only the leading 'remains controlling for 14 of its 15 controls' headline figure disagrees with its own parenthetical and with the ID DISJOINTNESS section three sentences later, in the same document.",
+        "corrected_text": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json is left BYTE-UNCHANGED at blob d2ee6274b48a9a1e12e718bacc2133ec42ff3c52, is NOT edited by this act, and remains controlling for 18 of its 19 controls (6 positive, 8 of 9 negative, 4 mutation).",
+        "everything_else_continues": "The rest of that field, including its own correct ID DISJOINTNESS arithmetic, is untouched. This entry corrects only the headline figure to agree with the parenthetical and the disjointness section that were already correct in the same document."
+      }
+    ]
+  },
+
+  "MANIFEST_CONSUMER_PROPAGATION": {
+    "rule": "Additive to, and re-scoping two entries of, the base manifest docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json. Full detail lives in the companion manifest amendment v1.0.2; this entry states the AUTHORITY-side rationale each manifest change implements.",
+    "PC-P5_reconciliation": "The base manifest's PC-P5 ('asserts all six properties of LIFECYCLE phase 2... no profile row...') inherits S2-1's correction: it now asserts the BRANCH-AWARE set of properties LIFECYCLE.phases[1].must_prove yields after S2-1, not the unconditional six. Re-scoped in the manifest amendment, id retained.",
+    "NC-P4_reconciliation": "The base manifest's NC-P4 cited 'PD-2 and PD-3' jointly as producing containment. Per S2-2/S2-3, PD-3 alone is the unconditional basis; PD-2 is an ADDITIONAL, conditional layer where it holds. Re-scoped in the manifest amendment, id retained.",
+    "NC-P9_reconciliation": "The base manifest's NC-P9 asserted that avoiding the application's own login/signup/onboarding/callback flows would 'break PD-2 irreversibly... with no error raised' - true of the APPLICATION's additional write, silent on the DATABASE-plane trigger B1_TRIGGER_ANALYSIS identified, which no application-layer avoidance prevents. Re-scoped in the manifest amendment, id retained.",
+    "NC-P6_and_the_fourth_reason_code": "QUIESCE_INCONCLUSIVE_REASON added a fourth INCONCLUSIVE reason code in v1.0.1 but the base manifest's NC-P6 still says 'each of the three' and no control exercises the fourth. NC-P6 is re-scoped to name its three ORIGINAL codes explicitly rather than 'the three', and a new manifest control (NC-P12) is added for the fourth, marked FUTURE-DEPENDENT on the quiesce-detection capability QUIESCE_INCONCLUSIVE_REASON.open_dependency already names as not yet specified."
+  },
+
+  "NEW_OPEN_FINDINGS": [
+    {
+      "id": "OF-P10",
+      "finding": "S2-1's branch-aware LIFECYCLE.must_prove[1] and S2-3's narrowed axes[6] both depend on PD-4's basis (2) - the trigger's explicit is_super_admin=false write - continuing to hold for EVERY future revision of supabase/migrations/20260716000000_auth_trigger.sql. Neither this amendment nor v1.0.1 pins that migration's content by hash; a future migration could alter handle_new_user() without this specification noticing.",
+      "disposition": "OPEN. Recorded rather than closed - pinning a migration file's content is a mechanism this artifact does not currently specify, and inventing one here would exceed this amendment's PRIMARY FIX scope."
+    },
+    {
+      "id": "OF-P11",
+      "finding": "P2-8's two-artifact distinction (inventory row vs. locator record) is a DESIGN clarification, not a built mechanism. No control in the companion manifest yet proves the two are kept in genuinely SEPARATE stores rather than merely described as separate in prose.",
+      "disposition": "OPEN. PC-P8 (v1.0.1 manifest amendment) already asserts the locator record is 'separate from the per-run evidence stream'; it does not yet assert separation FROM the general inventory row specifically, which P2-8 makes a distinct claim. A successor manifest amendment owes this control."
+    }
+  ],
+
+  "SEQUENCING_PRECONDITIONS_ADDENDUM": {
+    "rule": "Additive to the parent's SEQUENCING_PRECONDITIONS.preconditions array and to v1.0.1's SEQUENCING_PRECONDITIONS_ADDENDUM, inserted conceptually after PRE-2.",
+    "new_precondition": {
+      "id": "PRE-2B",
+      "condition": "A repository-resident record of PRE-2's occurred outcomes (per S2-4) - both the initial IC's FAIL verdict and the bounded recertification's PASS_WITH_NONBLOCKING_FINDINGS verdict - is MATERIALIZED.",
+      "state_at_AS_OF_HEAD": "UNSATISFIED, on the same governing precedent as PRE-1B. Neither verdict exists as a durable, in-tree artifact a future certifier without this session's transcript could re-derive.",
+      "why_this_is_its_own_precondition_and_not_absorbed_into_PRE-2": "PRE-2 (corrected) now asks whether the independent reviews OCCURRED. PRE-2B asks whether that occurrence is DURABLY RECORDED. Conflating the two is the exact defect S2-4 corrects, mirroring SPC-11/PRE-1B one level up; this precondition exists so the correction does not reintroduce the same gap on its own artifact.",
+      "on_unsatisfied": "PRE-5 (a successor execution authority) may not be authored while PRE-2B is unsatisfied, in addition to PRE-1B and the parent's own conjunctive rule."
+    }
+  },
+
+  "REAFFIRMED_NON_AUTHORIZATIONS": [
+    "This amendment does NOT create, promote, elevate or modify any principal, in any project.",
+    "This amendment does NOT generate, mint, request, receive, store or rotate any credential.",
+    "This amendment does NOT issue, request or imply any GRANT, on any object, in any schema.",
+    "This amendment does NOT open, or authorize opening, any SQL connection to any database.",
+    "This amendment does NOT perform, and does NOT authorize, the hosted read that would resolve MGP-PD2 (either trigger) or MGP-1 through MGP-6.",
+    "This amendment does NOT authorize any Vercel mutation, environment change, deployment, promotion or platform read.",
+    "This amendment does NOT authorize any hosted smoke execution or any observation run.",
+    "This amendment does NOT authorize any repository code change, including to supabase/migrations/20260716000000_auth_trigger.sql, either proxy.ts file, scripts/create-test-user.ts, any route, or any workflow.",
+    "This amendment does NOT lower, relax, qualify or create an exception to the authentication boundary of any endpoint. MG-4 is inherited unchanged.",
+    "This amendment does NOT edit, amend, supersede or reinterpret any of the four M11 artifacts, the owner ratification record, RELEASE_GATE_LEDGER_v1.0.0.json, or any FIB/PC-01B/IM-01B frozen authority. F-M11-07, F-M11-15, F-M11-16 and F-M11-17 are CITED and correctly re-attributed, never reopened.",
+    "This amendment does NOT edit, amend, supersede or reinterpret CG-Q4 or any artifact of the sibling lane CV1-STAGING-QUIESCE-MECHANISM (PR #208); P2-6 corrects only how it is CITED here, from an unattributed in-tree-sounding reference to an explicitly external one.",
+    "This amendment does NOT change any gate's state, ownership or disposition.",
+    "This amendment does NOT answer OD-P1 through OD-P6. It corrects their surviving consumers' content; it does not select among their options.",
+    "This amendment does NOT satisfy PRE-1, PRE-1B, PRE-2, PRE-2B, PRE-3, PRE-4 or PRE-5.",
+    "External hosted mutations performed by this amendment: NONE. External hosted reads performed by this amendment: NONE. Secrets exposed: NONE. Credentials generated: NONE."
+  ],
+
+  "self_check": {
+    "checks": [
+      { "check": "F-1 (PRIMARY FIX) is closed by propagating PD-2's conditionality to every surviving consumer independently located: LIFECYCLE must_prove, manifest PC-P5, MINIMUM_PRIVILEGES axes[3] and axes[6], manifest NC-P4 and NC-P9.", "result": "PASS - S2-1, S2-2, S2-3, MANIFEST_CONSUMER_PROPAGATION." },
+      { "check": "The propagation does not weaken PD-3, PD-4, the zero-grant finding, or MG-4.", "result": "PASS - every corrected_text in this amendment cites PD-3/PD-4 as UNCONDITIONAL bases and MG-4 is not touched anywhere in this document." },
+      { "check": "F-M11-07's attribution is corrected to its true source without restating or contradicting its content.", "result": "PASS - P2-1." },
+      { "check": "The OD5 restatement quotation is completed to match the live source exactly.", "result": "PASS - P2-2, re-verified against the live source at this amendment's AS_OF_HEAD." },
+      { "check": "The locator-vs-inventory contradiction is resolved without exposing a subject id in the general inventory row.", "result": "PASS - P2-8: the locator record is a SEPARATE, narrower-audience artifact; custody_invariants_regardless_of_option's 'no subject id' rule is unweakened for the inventory row." },
+      { "check": "PRE-2's stale NOT_PERFORMED status is corrected on the same governing precedent as PRE-1, and the analogous materialization prerequisite is registered rather than silently absorbed.", "result": "PASS - S2-4, PRE-2B." },
+      { "check": "The two distinct proxy.ts files are disambiguated everywhere PROXY_REFRESH_FOOTPRINT cited either bare.", "result": "PASS - P2-10." },
+      { "check": "The five-line/six-line and :69-73/:70-73 citation slips are corrected to match SPC-8's own already-correct controlling text.", "result": "PASS - P2-3, independently re-verified against the live route source." },
+      { "check": "SPC-10's 'untouched' claim about the technical_recommendation's reasoning is reconciled against the premise SPC-10 itself touched, rather than left as an unexamined assertion.", "result": "PASS - P2-4." },
+      { "check": "MGP-PD2 is widened to name both triggers the same migration installs, with an explicit reason the second does not change PD-2/PD-4's conclusions.", "result": "PASS - P2-5, independently re-verified against the live migration source (handle_update_user is UPDATE-only, WHERE id = new.id, cannot create a row)." },
+      { "check": "CG-Q4/G-2 is re-cited as an external, sibling-lane identifier rather than an implied in-tree fact.", "result": "PASS - P2-6." },
+      { "check": "The unstable '(NB-1 through NB-9)' shorthand is replaced with addressable section names.", "result": "PASS - P2-7." },
+      { "check": "The uncounted proxy refresh write is reconciled against the 'countable rather than estimated' bounding rule.", "result": "PASS - S2-5." },
+      { "check": "The manifest amendment v1.0.1's own internally-inconsistent control count ('14 of its 15' vs. its own correct 18/19 parenthetical and ID DISJOINTNESS section) is corrected to agree with itself.", "result": "PASS - P2-11." },
+      { "check": "No hosted read was performed to produce any correction in this amendment.", "result": "PASS - every correction is a repository-plane re-measurement (the migration's second trigger, the route comment line count, the two proxy.ts files, a tree-wide grep for CG-Q4/NB-1..NB-9) or a re-reading of already-controlling frozen facts and this amendment's own predecessor." },
+      { "check": "No secret value, and no placeholder shaped like one, appears anywhere in this amendment.", "result": "PASS." },
+      { "check": "Both ancestors (v1.0.0 and v1.0.1) are left byte-unchanged.", "result": "PASS - amended_blob_at_AS_OF_HEAD and predecessor_amendment_blob_at_AS_OF_HEAD both match tracked blobs; this is a new file, not an edit." }
+    ]
+  },
+
+  "required_independent_review": "This amendment requires a SHORT BOUNDED RECERTIFICATION of v1.0.2 only - the already-confirmed-correct findings of v1.0.0 and v1.0.1 (minimum-capability derivation, cookie-only transport, MG-4 falsifiability, PD-3's database-plane-swept independence, PRE-1's corrected disposition, the eleven v1.0.1 SPC quotations other than the two P2-2/P2-3 name) are not to be re-litigated. The bounded review is asked to attack, at minimum: (a) whether S2-1/S2-2/S2-3 leave any OTHER PD-2 consumer uncorrected - this lane located its set by grep, which can miss a structural reference the way an earlier sweep in this programme missed one; (b) whether P2-8's inventory-row/locator-record split is itself internally consistent, or introduces a new gap between the two; (c) whether PRE-2B's wording actually mirrors PRE-1B's governing precedent or drifts from it; (d) whether the manifest amendment v1.0.2's re-scoped NC-P4/NC-P9/NC-P6 and new NC-P12 are schema-valid and internally consistent with this amendment's corrected_text; (e) whether this amendment's own corrections introduce a new citation error while fixing an old one, as P2-2 and P2-3 found within v1.0.1 itself.",
+
+  "final_state": "AMENDMENT_AUTHORED__F1_CONSUMER_PROPAGATION_CLOSED__FOURTEEN_NONBLOCKING_FINDINGS_ADDRESSED__PRINCIPAL_STILL_NOT_CREATED__NO_OWNER_DECISION_TAKEN__NO_HOSTED_ACT_PERFORMED",
+
+  "next_gate": "SHORT_BOUNDED_RECERTIFICATION_OF_V1_0_2_ONLY. Only after that recertification may OWNER_DECISIONS_REQUIRED (OD-P1 through OD-P6) be opened as M11_PRINCIPAL_OWNER_DECISION_BRIEF, and only after that, AND after PRE-1B AND PRE-2B are separately materialized, may a successor EXECUTION authority be authored to grant the creation act."
+}

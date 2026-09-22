@@ -1,0 +1,55 @@
+{
+  "manifest_id": "M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.2",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.2.json -- the authority amendment materialized by the same act, mission CV1-M11-STAGING-PRINCIPAL-AUTHORITY-CONSUMER-PROPAGATION-R3, at AS_OF_HEAD e8d5f6e42aa17e17fd4ad93cdd267f9e6f0a5324 / tree 415d46c30aabfdeb2c98efe9b6fc2413349ddc94, base integration/commercial-v1 = 537487ac7b102d51f553fcb8f5cfe19614e113d8. That amendment closes the primary finding (F-1) of the bounded recertification of v1.0.1: PD-2's CONDITIONAL reclassification (v1.0.1 SPC-1) was never propagated to its surviving CONSUMERS, including three controls in this manifest's own v1.0.0 base (PC-P5, NC-P4, NC-P9) that v1.0.1's manifest amendment left untouched. || FORM: this document is a SEPARATE COMPANION MANIFEST AMENDMENT, a schema-valid test manifest in its own right carrying ONLY the DELTA and the re-scoped controls, following the same repository-native precedent as v1.0.1 (docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json et al.). Neither docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json (blob d2ee6274b48a9a1e12e718bacc2133ec42ff3c52) nor docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.1.json (blob 2f24ef1390d2d822e3c90f10b1cafdd7ca2b4227) is edited by this act; both are left BYTE-UNCHANGED. No M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.1.json or _v1.0.2.json (replacement manifests) exist or are authorized. || WHAT THIS AMENDMENT SUPERSEDES: FOUR base-manifest (v1.0.0) controls -- PC-P5, NC-P4, NC-P6, NC-P9 -- each re-scoped here, ids retained, per the authority amendment's MANIFEST_CONSUMER_PROPAGATION section. NONE of v1.0.1's own five delta controls (PC-P7, PC-P8, NC-P8 re-scope, NC-P10, NC-P11, MC-P5) is touched -- the bounded recertification found no defect in them. || WHAT THIS AMENDMENT ADDS: one delta control, NC-P12, for the fourth INCONCLUSIVE reason code (IDENTITY_PROVIDER_INTENTIONALLY_UNAVAILABLE) v1.0.1's authority amendment introduced but no control in v1.0.1's manifest amendment exercised. || ID DISJOINTNESS: the combined base+v1.0.1 id set is PC-P1..PC-P8, NC-P1..NC-P11 and MC-P1..MC-P5 (24 ids total: 8 positive, 11 negative, 5 mutation). NC-P12 is the mechanical max+1 of the negative series and intersects that set in the EMPTY SET. PC-P5, NC-P4, NC-P6 and NC-P9 are deliberately NOT renumbered: they are base ids, retained so that no control is removed and no frozen count changes, only re-scoped. || STATUS: NO control here is PASS. All are STATUS=FUTURE_MATERIALIZATION, consistent with v1.0.1. test_file is 'UNKNOWN' throughout per the schema's own sanctioned representation, honestly preserved rather than backfilled with a plausible-looking path. || ANTI-VACUITY RULE (binding on every control below, carried unchanged from the base manifest and v1.0.1): a control must assert its comparands as FROZEN STRINGS or FROZEN FACT CITATIONS, never by re-deriving them from the implementation with the same transformation the implementation uses.",
+  "dependencies": [
+    "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0 -- the frozen grandparent authority, blob be24f91a4405c689e1740628dbcc2ab7dd85c38b. NOT edited by this act.",
+    "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1 -- the frozen predecessor authority amendment, blob cddb64f91a579610b51b486f00b95e58ff6f8cc3. NOT edited by this act.",
+    "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.2 -- this manifest's own controlling authority, added by the same act. Its SUPERSEDED_V100_CLAUSES (S2-1) and MANIFEST_CONSUMER_PROPAGATION sections are the source of the re-scopes below.",
+    "M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0 -- the frozen base manifest, blob d2ee6274b48a9a1e12e718bacc2133ec42ff3c52. Controlling for its own 19 controls except PC-P5, NC-P4, NC-P6 and NC-P9, superseded by this amendment. NOT edited by this act.",
+    "M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.1 -- the frozen predecessor manifest amendment, blob 2f24ef1390d2d822e3c90f10b1cafdd7ca2b4227. Controlling for its own five delta controls, none superseded here. NOT edited by this act.",
+    "supabase/migrations/20260716000000_auth_trigger.sql -- source of both triggers (on_auth_user_created and on_auth_user_updated) the widened MGP-PD2 names. Repository-plane presence only."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [],
+  "positive_controls": [
+    {
+      "id": "PC-P5",
+      "description": "RE-SCOPED (authority amendment S2-1): a verification record for the provisioned principal asserts the BRANCH-AWARE property set LIFECYCLE.phases[1].must_prove yields after MGP-PD2 is resolved for the actual subject -- one positive (a session can be obtained) and, depending on that resolution: (a) TRIGGER_ABSENT/TRIGGER_INAPPLICABLE -- the original five negatives (no profile row, no membership, no database role or grant, no organization-scoped surface reachable, no production-project credential); or (b) TRIGGER_ACTIVE -- the NARROWER four negatives that survive a trigger-created row (is_super_admin false on it, no membership, no database role or grant, no organization-scoped surface reachable, no production-project credential), with the absent-row claim explicitly marked INAPPLICABLE_WITH_TRIGGER_ACTIVE rather than attempted or silently dropped. A verification record missing the MGP-PD2 resolution that decides which branch applies is REJECTED as incomplete, matching PC-P7's own procedural requirement -- this control and PC-P7 are companions, not duplicates: PC-P7 proves the resolution HAPPENS, PC-P5 proves the RIGHT property set is asserted once it has.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-P4",
+      "description": "RE-SCOPED (authority amendment S2-2/S2-3): the principal cannot reach any organization-scoped surface: a request carrying its session to a tenant-scoped route is refused. Proves PD-3 (no organization membership) produces real containment on its own, UNCONDITIONALLY -- exercised with MGP-PD2 in BOTH resolutions (a fixture where the trigger is simulated active and a fixture where it is simulated absent), asserting the refusal holds identically in either case. Where PD-2 ALSO holds (no profile row), the control additionally asserts there is no row to have granted a narrower single-tenant surface either; where PD-2 does not hold, the control asserts containment rests on PD-3 and PD-4 alone and does not depend on the absent-row claim.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P6",
+      "description": "RE-SCOPED (authority amendment MANIFEST_CONSUMER_PROPAGATION.NC-P6_and_the_fourth_reason_code): a 302 from Deployment Protection, a 429 from the global rate limiter, and a transport error -- the THREE ORIGINAL reason codes -- are each recorded as INCONCLUSIVE with a distinct reason code, and are never collapsed into PASS or FAIL (M11-SC-6). Each of these three is exercised, not just asserted in prose. The fourth reason code, IDENTITY_PROVIDER_INTENTIONALLY_UNAVAILABLE, is NOT covered by this control -- see NC-P12.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P9",
+      "description": "RE-SCOPED (authority amendment S2-1/B1_TRIGGER_ANALYSIS): the observation path never invokes the application's login, signup, onboarding or OAuth-callback flows. Asserted structurally against the four measured syncUserProfile call sites, because traversing any of them would perform an ADDITIONAL profile write beyond whatever the database-plane trigger does, on the first run, with no error raised. This control proves the APPLICATION-layer discipline holds; it does NOT by itself prove PD-2, which additionally depends on MGP-PD2's hosted-trigger resolution (PC-P7). A test asserting this control passing therefore may NOT be read, on its own, as proof that no public.users row was created.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P12",
+      "description": "FOURTH INCONCLUSIVE REASON CODE (authority amendment QUIESCE_INCONCLUSIVE_REASON): a sign-in attempt failing while a governed QUIESCE or recovery posture has intentionally made GoTrue unreachable is recorded INCONCLUSIVE with reason code IDENTITY_PROVIDER_INTENTIONALLY_UNAVAILABLE, and is NEVER collapsed into FAIL. FUTURE-DEPENDENT: exercising this control requires a capability to ask whether a quiesce posture is CURRENTLY declared for the project, which QUIESCE_INCONCLUSIVE_REASON.open_dependency records as unspecified here. Until that capability exists, this control's positive exercise is STATUS=FUTURE_MATERIALIZATION with an unresolved dependency, distinct from the other three reason codes' FUTURE_MATERIALIZATION (which depends only on the runner existing); an offline/unit-level exercise against a SIMULATED quiesce-declared response is permitted and does not require the dependency to be resolved first.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}

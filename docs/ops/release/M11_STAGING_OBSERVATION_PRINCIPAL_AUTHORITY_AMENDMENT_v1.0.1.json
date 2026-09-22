@@ -1,0 +1,345 @@
+{
+  "package_id": "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_SPECIFICATION_AUTHORITY_AMENDMENT",
+  "document_class": "AUTHORITY_ONLY__NO_PRINCIPAL_CREATION__NO_CREDENTIAL_GENERATION__NO_GRANT__NO_SUPABASE_MUTATION__NO_SQL_CONNECTION__NO_DEPLOYMENT__NO_HOSTED_ACT_OF_ANY_KIND",
+  "append_only": true,
+  "mission_id": "CV1-M11-STAGING-PRINCIPAL-AUTHORITY-AMENDMENT-R2",
+  "lane": "codex/cv1-m11-staging-principal-authority-r1",
+  "role": "M11_AUTHENTICATED_OBSERVATION_PRINCIPAL_AUTHORITY_WRITER",
+  "mode": "APPEND_ONLY_AUTHORITY_AMENDMENT_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "amends": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json",
+  "amended_blob_at_AS_OF_HEAD": "be24f91a4405c689e1740628dbcc2ab7dd85c38b",
+  "companion_manifest": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json",
+  "companion_manifest_amendment": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+  "companion_manifest_blob_at_AS_OF_HEAD": "d2ee6274b48a9a1e12e718bacc2133ec42ff3c52",
+
+  "AS_OF_BRANCH": "codex/cv1-m11-staging-principal-authority-r1",
+  "AS_OF_HEAD": "964e3028e7203fe22686f6348894e892a20c5b6c",
+  "AS_OF_TREE": "3253658516c4f761641c4101fb6a4d95eb839da5",
+  "AS_OF_BASE": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "method": "git fetch origin --prune, then git rev-parse origin/integration/commercial-v1 and its tree, re-derived at this amendment's materialization. UNCHANGED from the parent authority's AS_OF_BASE - no base drift separates this amendment from what it amends."
+  },
+  "AS_OF_PRESTATE": "pnpm ods:prestate -- --branch codex/cv1-m11-staging-principal-authority-r1 --head 964e3028e7203fe22686f6348894e892a20c5b6c --tree 3253658516c4f761641c4101fb6a4d95eb839da5 --clean : PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS. pnpm authority:seal:verify : ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS, AUTHORITY_SEAL_VERIFY=PASS.",
+
+  "CONSUMED_CERTIFICATION": {
+    "source": "Independent adversarial certification of docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json, dated 2026-09-22, read-only, materialized as a note on this lane's own project memory (project_pr212_m11_staging_observation_principal_authority.md) rather than as a repository artifact - itself an instance of the OCCURRED/MATERIALIZED distinction this amendment applies to PRE-1 below.",
+    "verdict": "M11_PRINCIPAL_AUTHORITY_IC_FAIL",
+    "blocking_findings": ["B-1 (public.users trigger unknown)", "B-2 (unreachable failure states presented as live)"],
+    "non_blocking_findings_count": 9,
+    "what_the_certifier_confirmed_correct_and_independently_remeasured": [
+      "The minimum-capability derivation: cookies + GoTrue-verified subject + staging ref + ZERO PostgreSQL privilege.",
+      "Cookie-only transport: no global.headers option at either createServerClient call site.",
+      "MG-4 preservation and its falsifiability via the anonymous control call.",
+      "EP-3's NON_BLOCKING_RECORDED disposition, and that zero test coverage is never claimed for it.",
+      "That OD-P6 option B must be CONDITIONED, not removed."
+    ]
+  },
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "The repository-native amendment precedent: docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json for authority amendments, and docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json / docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_AMENDMENT_v1.0.1.json for manifest amendments carrying ONLY delta controls.",
+    "form": "A SEPARATE APPEND-ONLY AMENDMENT, not an edit. docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json is left BYTE-UNCHANGED at blob be24f91a4405c689e1740628dbcc2ab7dd85c38b and remains historical and canonical for everything this amendment does not name."
+  },
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. The parent is left byte-unchanged. This amendment supersedes clauses ONLY in the single respect each SUPERSEDED_PARENT_CLAUSES entry states; every other word of the same clause continues to control.",
+    "how_to_read_the_two_together": "Where this amendment is silent, the parent controls verbatim. Where this amendment names a parent clause under SUPERSEDED_PARENT_CLAUSES, that clause is superseded ONLY in the stated respect. A reader who has only the parent is reading a specification that was correct on B-1/B-2's premises and is now incomplete on two material points; a reader who has only this amendment is reading a delta and not a contract. Both are required.",
+    "what_this_amendment_does": [
+      "(1) Registers MGP-PD2 - whether the hosted staging project's on_auth_user_created / handle_new_user trigger is active - as a new, unresolved measurement gap, and reclassifies PD-2 as CONDITIONAL on it (B-1).",
+      "(2) Re-derives PD-3 and PD-4 on bases independent of PD-2's conditionality, strengthening rather than weakening either.",
+      "(3) Corrects OD-P1's creation-channel options to remove a profile-write discriminator that does not survive B-1, preserving the genuine discriminators (operator credential, SSL-06, evidence strength, revocability, automation-fit).",
+      "(4) Records OD-P5's email=NULL incompatibility with the repository trigger.",
+      "(5) Corrects AUTH_RLS_MODEL's failure-semantics table to align with the CONTROLLING frozen facts F-M11-07, F-M11-15 and F-M11-16, separating REACHABLE-over-real-HTTP states from NAMED-BUT-UNREACHABLE ones, without reopening those facts (B-2).",
+      "(6) Records the proxy's own independent getUser() round trip and its cookie-mutation risk, corrects a false 'verbatim' label, corrects two citations, and records a GitHub-masking limitation, a revocation-locator design requirement, and a quiesce-specific INCONCLUSIVE reason code (NB-1 through NB-9).",
+      "(7) Corrects PRE-1's disposition from an occurrence question to a materialization question, per owner direction, and adds PRE-1B as the artifact that closes it.",
+      "It does NOT answer OD-P1 through OD-P6. It does NOT perform any hosted read. It does NOT create, promote or provision anything."
+    ]
+  },
+
+  "B1_TRIGGER_ANALYSIS": {
+    "measured": {
+      "source": "supabase/migrations/20260716000000_auth_trigger.sql:8-44.",
+      "what_it_does": "public.handle_new_user(), SECURITY DEFINER, is installed as an AFTER INSERT trigger named on_auth_user_created on auth.users (:39-44). On every insert it INSERTS into public.users (id, email, full_name, avatar_url, is_super_admin) with is_super_admin hardcoded false (:17-24), and ON CONFLICT (id) DO UPDATE updates only email, full_name, avatar_url and updated_at - never is_super_admin (:25-29). At :13-15 it RAISES an exception if new.email IS NULL, before the insert.",
+      "what_is_measured_and_what_is_not": "The migration's PRESENCE in this repository's tracked tree, at this SHA, is measured. Its EFFECTIVE, APPLIED status on the exact hosted staging project (bvyzblhqymxruxdguaee) at any future execution time is NOT measured by this lane and is NOT inferable from the repository baseline - db/baseline/stella_g2_schema.sql and supabase/config.toml describe the LOCAL container, per an existing lesson of this programme, and a tracked migration file is evidence that a migration was AUTHORED, not evidence that it was ever APPLIED to a specific hosted project."
+    },
+    "why_the_parent_specification_is_wrong_on_this_point": "The parent's PD-2 ('It has NO row in public.users') was derived SOLELY from an application-plane grep of syncUserProfile's four call sites. That grep is silent on the DATABASE plane: a trigger firing on auth.users INSERT writes public.users from INSIDE the database, reached by EVERY creation channel (dashboard, Admin API, direct GoTrue signup all insert into auth.users), with no application code in the path at all. An application-layer discipline (never call the four syncUserProfile sites) cannot prevent a database-layer trigger from firing.",
+    "consequence": "PD-2, PD-3, PD-4 and OD-P1 are corrected below. MGP-PD2 is registered as a new measurement gap."
+  },
+
+  "SUPERSEDED_PARENT_CLAUSES": {
+    "rule": "Each entry names one parent clause, quotes it verbatim, and states the SINGLE respect in which it no longer controls. Every other word of the clause continues to control. The corrected_text supplied by each entry is CONTROLLING going forward, in place of the superseded respect only.",
+    "entries": [
+      {
+        "id": "SPC-1",
+        "location": "PRINCIPAL_DESIGN.defining_properties[1] (PD-2)",
+        "verbatim_parent_text": "It has NO row in public.users. It holds no application profile.",
+        "respect_in_which_superseded": "Presented as an UNCONDITIONAL property, derived only from application-plane call-site inspection (why_this_is_achievable), which is silent on the database-plane trigger identified in B1_TRIGGER_ANALYSIS.",
+        "corrected_text": {
+          "property": "CONDITIONAL on MGP-PD2. It has no row in public.users ONLY IF the hosted on_auth_user_created trigger is absent, inapplicable, or its write is independently avoided by a separately governed mechanism that does not lower MG-4's boundary. Where the trigger is hosted-active - the repository's own default baseline - EVERY auth.users INSERT, through ANY creation channel, causes public.users to gain a row via public.handle_new_user(), a database-layer effect no application-layer discipline (avoiding /login, /auth/callback, onboarding) can prevent.",
+          "why_this_is_achievable_corrected": "The syncUserProfile call-site grep proves only that the APPLICATION never performs a SECOND, redundant profile write. It proves nothing about whether a FIRST write already happened at the database layer. The two claims were conflated in the parent.",
+          "operational_consequence_corrected": "The prohibition on authenticating through /login, /auth/callback or any browser-driven journey remains in force as a FLOOR - it is still necessary, because the application's own signup action performs an ADDITIONAL profile write beyond whatever the trigger does (app/(public)/login/actions.ts:113) - but it is no longer SUFFICIENT on its own to guarantee PD-2. LIFECYCLE phase 2 VERIFICATION must resolve MGP-PD2 for the created subject specifically before PD-2 may be asserted true of it."
+        },
+        "everything_else_continues": "PD-2's role as 'the single largest privilege reduction available... obtained by a NEGATIVE discipline' is untouched where the trigger is in fact absent or inapplicable. Nothing about PD-1, PD-5, PD-6 or PD-7 is affected."
+      },
+      {
+        "id": "SPC-2",
+        "location": "PRINCIPAL_DESIGN.defining_properties[2] (PD-3)",
+        "verbatim_parent_text": "Follows from PD-2 for any membership model keyed on the profile row, and is independently asserted as a provisioning-time check.",
+        "respect_in_which_superseded": "PD-3's stated derivation from PD-2 is unsound now that PD-2 is CONDITIONAL (SPC-1). A property whose only stated basis is a now-conditional property is itself only as strong as that condition, which understates what is actually true of PD-3.",
+        "corrected_text": "INDEPENDENT of PD-2's outcome. Even where the trigger inserts a public.users row, organization membership requires an affirmative row in the organization-membership relation, and none of the three OD-P1 creation channels (dashboard, Admin API createUser, direct GoTrue signup) ever writes one - membership is created exclusively by the application's invite/onboarding actions (lib/auth/session.ts, app/(authenticated)/app/onboarding/actions.ts), none of which principal creation traverses under any channel. PD-3 therefore holds REGARDLESS of MGP-PD2's answer, on a basis stronger than the parent's, and remains independently asserted as a provisioning-time check as before.",
+        "everything_else_continues": "The provisioning-time check requirement is unchanged."
+      },
+      {
+        "id": "SPC-3",
+        "location": "PRINCIPAL_DESIGN.defining_properties[3] (PD-4)",
+        "verbatim_parent_text": "Follows from PD-2, since is_super_admin is read from public.users - which app/api/health/runtime-identity/route.ts:30-33 names as exactly the wrong gate to depend on for this endpoint.",
+        "respect_in_which_superseded": "Deriving PD-4 solely from PD-2's (now conditional) row-absence is no longer the strongest available basis, and a basis independent of PD-2 exists directly in the trigger's own text measured under B1_TRIGGER_ANALYSIS.",
+        "corrected_text": "PD-4 holds on TWO independent bases, either sufficient alone. (1) If MGP-PD2 resolves to trigger-absent or inapplicable, PD-2 holds and PD-4 follows from it as the parent stated. (2) If the trigger is hosted-active, supabase/migrations/20260716000000_auth_trigger.sql:17-24 shows public.handle_new_user() EXPLICITLY inserts is_super_admin as the literal false on every INSERT, and its ON CONFLICT branch at :25-29 updates only email, full_name, avatar_url and updated_at - is_super_admin is untouched by any conflict path. A row created by this trigger is therefore never super admin at creation and cannot be flipped true by a repeated insert. Basis (2) is the STRONGER of the two: it holds even when PD-2 does not, and rests on the row (if one exists) carrying the correct value by construction, not on a row's absence.",
+        "everything_else_continues": "Nothing else about PD-4 changes."
+      },
+      {
+        "id": "SPC-4",
+        "location": "OWNER_DECISIONS_REQUIRED.decisions[0] (OD-P1)",
+        "verbatim_parent_text": "option C: 'Direct GoTrue self-signup with the public anon key.' consequence: 'No operator credential at all. But it depends on signups being enabled on the staging project (MGP-1, UNKNOWN) and on the email-confirmation posture (MGP-2, UNKNOWN), and the subject is self-created rather than owner-created, which weakens the creation evidence. It must be the DIRECT GoTrue endpoint, never the application's signup action, which writes a profile row at app/(public)/login/actions.ts:113 and would break PD-2 immediately.'",
+        "respect_in_which_superseded": "The final sentence implies that using the DIRECT GoTrue endpoint (as opposed to the application's signup action) AVOIDS breaking PD-2. That implication is FALSE wherever the hosted trigger is active: the trigger fires on the auth.users INSERT regardless of which HTTP-level channel produced it, so options A, B and C all cause the IDENTICAL public.users write when the trigger is hosted-active. Profile-row avoidance is therefore NOT a valid discriminator among A/B/C, contingent on MGP-PD2 - not a property of which channel was chosen.",
+        "corrected_text": {
+          "option_C_consequence_corrected": "No operator credential at all. But it depends on signups being enabled on the staging project (MGP-1, UNKNOWN) and on the email-confirmation posture (MGP-2, UNKNOWN), and the subject is self-created rather than owner-created, which weakens the creation evidence. It must be the DIRECT GoTrue endpoint rather than the application's signup action - the application's own action performs an ADDITIONAL profile write beyond whatever the database trigger does (app/(public)/login/actions.ts:113), so using it is strictly worse - but going direct does NOT by itself guarantee PD-2 where the hosted trigger (B1_TRIGGER_ANALYSIS) is active; see PROFILE_ROW_OUTCOME_IS_NOT_A_DISCRIMINATOR below.",
+          "PROFILE_ROW_OUTCOME_IS_NOT_A_DISCRIMINATOR": "Whichever of A/B/C is selected, LIFECYCLE phase 2 (VERIFICATION) must independently measure whether the created subject has a public.users row - resolving MGP-PD2 for that principal specifically, never by inference from which channel created it. PD-2's applicability is decided by that measurement, not by the OD-P1 answer.",
+          "technical_recommendation_ground_restated": "Option A remains the technical recommendation, on grounds unaffected by B-1: it is the only option that creates the principal without holding an operator credential (SSL-06 stays unengaged for the creation act) and without depending on the two hosted-signup unknowns MGP-1/MGP-2. The parent's additional ground ('without... depending on two unmeasured hosted settings, and the act is performed exactly once') is retained for options A vs C on those merits; the profile-write ground is withdrawn as a basis for preferring any option over another."
+        },
+        "everything_else_continues": "Options A and B's own consequence texts, and the residual-risk analyses of OD-P3's custody options, are untouched."
+      },
+      {
+        "id": "SPC-5",
+        "location": "OWNER_DECISIONS_REQUIRED.decisions[4] (OD-P5)",
+        "verbatim_parent_text": "hard_prohibition: 'NOT lorenzo@thebalancecorp.org, and not any address that already has application state in the staging project. Such an address carries an existing membership, which violates PD-3 the moment the principal is created.'",
+        "respect_in_which_superseded": "Not contradicted - ADDED TO. OD-P5 did not previously record that supabase/migrations/20260716000000_auth_trigger.sql:13-15 RAISES an exception when new.email IS NULL, which is a hosted-trigger-conditional constraint on what OD-P5 may select, independent of the existing hard_prohibition.",
+        "corrected_text": {
+          "email_null_incompatibility": "supabase/migrations/20260716000000_auth_trigger.sql:13-15: IF new.email IS NULL THEN RAISE EXCEPTION. If MGP-PD2 resolves to trigger-active, ANY creation attempt supplying no email value at all fails at the DATABASE layer with a raised exception, regardless of the OD-P1 channel selected. This does NOT rule out OD-P5 option B (a synthetic, non-deliverable address is still a non-NULL string) - both options A and B name a present address, one deliverable, one not. It forecloses a design neither option proposed - a 'no email' or phone-only principal - so that a future reader does not rediscover the constraint by way of a failed creation attempt."
+        },
+        "everything_else_continues": "The existing hard_prohibition and coupling_note are unchanged and continue to control in full."
+      },
+      {
+        "id": "SPC-6",
+        "location": "AUTH_RLS_MODEL.failure_semantics_that_the_runner_must_encode",
+        "verbatim_parent_text": "source: 'lib/auth/identity.ts:66-74 and app/api/health/runtime-identity/route.ts:51-61.' NO_SESSION: '401. The conformant answer for an anonymous caller. Never a failure.' SESSION_REJECTED: '401. Indistinguishable at the transport from NO_SESSION - the adjudication records this collapse at CALLER_TAXONOMY CC-2. A 401 when the runner BELIEVED it was authenticated therefore means the credential is wrong, expired, or minted by the wrong project; it does NOT mean the deployment is unhealthy and must never be recorded as a health FAIL.' MALFORMED_SUBJECT: '401.' AUTH_UNAVAILABLE: '503 with body Unavailable. Distinct from the 503 the handler returns for a divergent runtime identity, which carries the full payload. A runner that reads only the status code cannot tell those two 503s apart and must read the body shape to classify.' coherence_failure: '500, not 401 and not 503, raised at lib/supabase/proxy.ts:39 before any handler runs. A 500 on a health path is a deployment-wide coherence refusal, not an endpoint verdict.'",
+        "respect_in_which_superseded": "Presents NO_SESSION and the auth-caused branch of AUTH_UNAVAILABLE as LIVE, runner-observable outcomes over real HTTP. Both are measured UNREACHABLE in production by the CONTROLLING frozen facts F-M11-07, F-M11-15 and F-M11-16 of docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json, which this authority may not reopen (parent EXPLICIT_NON_AUTHORIZATIONS: 'does NOT reopen... any measured fact F-M11-01 through F-M11-20'). Naming an unreachable state as a live outcome a runner might encounter contradicts those facts without citing them, which this amendment treats as a defect to correct rather than a reopening.",
+        "corrected_text": {
+          "reachable_over_real_http": [
+            {
+              "state": "SESSION_REJECTED",
+              "wire": "401, body exactly { error: 'Unauthorized' }.",
+              "corrected_meaning": "The ONLY reachable classification for BOTH a cookie-less caller and a caller presenting a genuinely wrong, expired or cross-project session. F-M11-02/F-M11-07: getUser() with no cookie returns AuthSessionMissingError (status 400, ZERO outbound attempts to GoTrue), and identity.ts:124 classifies this SESSION_REJECTED because data.error is truthy - the comment at identity.ts:121-123 claiming an absent session produces no error is FALSIFIED (F-M11-07). The two source situations are TRANSPORT-INDISTINGUISHABLE: identical status, identical body. OPERATIONAL RULE, UNCHANGED: a 401 from EP-2/EP-3 to a runner that believed it was authenticated means a credential/session fault - expired, revoked, cookie-less, or minted by the wrong project - and is NEVER recorded as a deployment-health FAIL."
+            },
+            {
+              "state": "MALFORMED_SUBJECT",
+              "wire": "401.",
+              "corrected_meaning": "Unchanged from the parent. Reachable in principle per F-M11-15's discriminator table; never observed in practice (route prose: 'Never seen; still refused')."
+            },
+            {
+              "state": "PLATFORM_PRE_HANDLER_FAILURE",
+              "wire": "Numeral DERIVED, NOT MEASURED over HTTP by this lane or by the controlling amendment (F-M11-17.wire_status: 'An uncaught throw in middleware is served as a 500 by the framework, and the repository's own comment asserts 500... does not freeze the numeral as measured'). A throw of SupabaseProjectCoherenceError at lib/supabase/proxy.ts:39, inside updateSession, BEFORE any handler executes.",
+              "corrected_meaning": "Per PLATFORM_PRE_HANDLER_FAILURE_RULE (M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json), this affects EVERY matched health path IDENTICALLY and is recorded ONCE per deployment observation as INCONCLUSIVE for every endpoint under M11-SC-6 - never as three separate endpoint verdicts, never as a PASS, never as a FAIL."
+            }
+          ],
+          "named_but_unreachable_over_real_http": [
+            {
+              "state": "NO_SESSION",
+              "corrected_meaning": "Named in AuthIdentityFailure and in identity.ts's own comment at :121-123, but F-M11-07 measures that comment FALSIFIED for the cookie-less case: getUser() ALWAYS returns a truthy error for a cookie-less caller, so identity.ts:124's branch on data.error's truthiness NEVER selects NO_SESSION in practice. UNREACHABLE in production per F-M11-07. A runner or evidence tool that reserves a code path for NO_SESSION as a distinct live outcome is dead code."
+            },
+            {
+              "state": "AUTH_UNAVAILABLE (auth-caused branch)",
+              "wire_if_it_could_occur": "503, body exactly { error: 'Unavailable' }.",
+              "corrected_meaning": "Reachable ONLY from a throw inside createClient() or getUser() (identity.ts:103-116). F-M11-15 measures that getUser() NEVER throws for any of the four measured auth failure states - it always RETURNS. createClient()'s only throw source is the coherence guard, which by F-M11-17 fires in the PROXY before the handler is ever reached over HTTP. F-M11-16's own conclusion: 'the auth-caused 503 of EP-2 and EP-3 is UNREACHABLE over real HTTP.' A runner MUST NOT be built to expect this branch as a live outcome, and evidence tooling MUST NOT classify an observed 503 as this branch by elimination against 'the payload-carrying 503' - the reachable 503 for EP-2 comes from the STRUCTURALLY DIFFERENT DIVERGENT_RUNTIME_IDENTITY / observation-failure path (the try/catch around observeRuntimeIdentityReport at route.ts:63-78), not from the getVerifiedAuthIdentityResult failure branch at all."
+            }
+          ],
+          "operational_rule_preserved_unchanged": "If the runner believes it authenticated and EP-2 or EP-3 answers 401, that is a credential/session fault and is NEVER recorded as a deployment-health FAIL. This rule does not change. Only the STATE NAME attached to that 401 is corrected - from a mix of NO_SESSION and SESSION_REJECTED to SESSION_REJECTED alone, because NO_SESSION never actually fires."
+        },
+        "everything_else_continues": "chain_for_a_tenant_route, chain_for_EP_2_and_EP_3, and the RLS containment consequence are untouched."
+      },
+      {
+        "id": "SPC-7",
+        "location": "MG4_PRESERVATION_CONTRACT.inherited_verbatim",
+        "verbatim_parent_text": "The endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5, and neither this artifact nor any successor to it makes it one.",
+        "respect_in_which_superseded": "Labeled inherited_verbatim but is a COMPOSITE of two different sources, neither quoted whole. The first sentence is MG-4's own not_a_reason_to_lower_the_boundary text, whose actual second sentence ('db/runtime-identity-report.ts is explicit that the boundary was chosen to survive the failure it observes.') was dropped. The second sentence is instead v1.0.1's OD-5.constraint_inherited_not_reopened restatement of the same rule. A field claiming verbatim status must quote ONE source exactly, or must not claim verbatim.",
+        "corrected_text": {
+          "field_renamed_to": "inherited_in_substance",
+          "MG4_own_text_quoted_in_full": "'The endpoints' auth requirement must NOT be relaxed to make measurement convenient. db/runtime-identity-report.ts is explicit that the boundary was chosen to survive the failure it observes.' (FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json MEASUREMENT_GAPS_RECORDED.gaps[3].not_a_reason_to_lower_the_boundary)",
+          "OD5_restatement_quoted_separately_in_full": "'the endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5.' (M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[4].constraint_inherited_not_reopened)",
+          "conclusion": "Both quoted whole and separately, neither edited into the other. Neither this artifact nor any successor to it makes lowering the boundary an option."
+        },
+        "everything_else_continues": "what_this_artifact_does_to_MG_4, prohibited_accommodations and preservation_is_MEASURED_not_asserted are untouched."
+      },
+      {
+        "id": "SPC-8",
+        "location": "REQUIRED_OBSERVATION_CAPABILITY.derivation_chain[2] (step 3)",
+        "verbatim_parent_text": "app/api/health/runtime-identity/route.ts:49 calls getVerifiedAuthIdentityResult() and, at :51-61, returns 401 (or 503 when failure is AUTH_UNAVAILABLE) if identity is null. It reads NO other property of the caller. app/api/health/stella-preconditions/route.ts:67-75 is byte-for-byte the same gate.",
+        "respect_in_which_superseded": "Two defects, both narrow. (1) The EP-3 line range :67-75 is one line too wide: the gate block is :67-74 (call at :67, the four-line null-check return at :69-73, closing brace at :74); :75 is the following blank line. (2) 'byte-for-byte the same' is FALSE: EP-2's gate carries a six-line explanatory comment inside the if-block (route.ts:52-56, the outage/logout-storm rationale) that EP-3's gate does not carry at all. The two gates are LOGICALLY identical - same call, same condition, same two-branch status/body mapping - but not byte-identical.",
+        "corrected_text": "app/api/health/runtime-identity/route.ts:49 calls getVerifiedAuthIdentityResult() and, at :51-61, returns 401 (or 503 when failure is AUTH_UNAVAILABLE) if identity is null - the 503 branch being UNREACHABLE over real HTTP per F-M11-16; see SPC-6's corrected AUTH_RLS_MODEL reachability table. It reads NO other property of the caller. app/api/health/stella-preconditions/route.ts:67-74 implements the LOGICALLY IDENTICAL gate - the same call, the same null check, the same two-branch status/body mapping - but is not byte-identical to EP-2's: EP-2 carries a six-line explanatory comment inside the if-block (route.ts:52-56) that EP-3's gate omits. The logical identity is what this artifact's minimum-capability derivation and the inseparability finding both depend on; the byte-difference is cosmetic and weakens neither.",
+        "everything_else_continues": "Steps 1, 2, 4, 5 and 6 of the derivation chain are untouched."
+      },
+      {
+        "id": "SPC-9",
+        "location": "MINIMUM_PRIVILEGES.axes[3] (RLS BEHAVIOUR).detail",
+        "verbatim_parent_text": "For tenant-scoped surfaces the application sets request.jwt.claims from the verified subject and RLS evaluates auth.uid() against it (lib/auth/identity.ts:20-28).",
+        "respect_in_which_superseded": "The citation lib/auth/identity.ts:20-28 is WRONG. Those lines are prose comments explaining WHY getUser() is used instead of getSession(); they mention the phrase request.jwt.claims but do not set it. The actual set_config('request.jwt.claims', ..., true) call, measured by grep, is at db/identity-context.ts:176, orchestrated by lib/auth/database-context.ts - which AUTH_RLS_MODEL.chain_for_a_tenant_route, in the SAME artifact, already cites correctly for this same step. The two fields disagreed with each other inside one document.",
+        "corrected_text": "For tenant-scoped surfaces, lib/auth/database-context.ts orchestrates a call into db/identity-context.ts, which sets request.jwt.claims from the verified subject via set_config('request.jwt.claims', ..., true) at db/identity-context.ts:176; RLS policies then evaluate auth.uid() against it. lib/auth/identity.ts:21-27 explains WHY the verified subject is obtained via getUser() rather than getSession() (the cookie is attacker-supplied and getSession() would let it choose its own sub) but is not itself the site that sets the claim.",
+        "everything_else_continues": "The axis's required/minimum/positively_excluded fields and containment_note are untouched."
+      },
+      {
+        "id": "SPC-10",
+        "location": "OWNER_DECISIONS_REQUIRED.decisions[5] (OD-P6), options[1] (option B).consequence",
+        "verbatim_parent_text": "Smallest standing footprint. But M11's EP-2 cell is BLOCKING under ratified OD-2 and the gate retests on every deploy, so revoking the principal after Track B would leave a BLOCKING cell permanently unobservable - which is a gate change, not a credential change.",
+        "respect_in_which_superseded": "'permanently unobservable' overstates the consequence. This same option's own text, and TRACK_A_INDEPENDENCE elsewhere in the parent, both record that a fresh authority MAY re-establish the principal - so the cell does not become PERMANENTLY unobservable, only unavailable/pending until re-established, exactly the recording rule TRACK_A_INDEPENDENCE already uses for the pre-Track-B period ('EP-2's BLOCKING disposition under OD-2 is recorded as unavailable/pending until this principal exists - never silently passed, and never a reason to delay Track A').",
+        "corrected_text": "Smallest standing footprint. M11's EP-2 cell is BLOCKING under ratified OD-2 and the gate retests on every deploy, so revoking the principal after Track B returns that cell to the SAME unavailable/pending recording rule TRACK_A_INDEPENDENCE already states for the pre-Track-B period - never silently passed, always recorded - until a fresh authority re-establishes the principal, per this option's own re-establishment clause. This is a RECURRING gate-recording consequence, not a permanent loss, but it remains a consequence the owner should weigh: a BLOCKING cell that cycles between observed and unavailable/pending on a revocation schedule is a different operational posture than one that stays continuously observed, and OF-P6 remains open on whether that cycling is itself acceptable under OD-2 without the owner adjudicating it directly.",
+        "everything_else_continues": "Option A and the technical_recommendation's own reasoning are untouched."
+      },
+      {
+        "id": "SPC-11",
+        "location": "SEQUENCING_PRECONDITIONS.preconditions[0] (PRE-1)",
+        "verbatim_parent_text": "state_at_AS_OF_HEAD: 'NOT_EVIDENCED_IN_TREE.' disposition_of_this_lane_authoring_anyway: 'RECORDED, NOT RESOLVED, and NOT SELF-ABSOLVED. The owner directed this authoring lane explicitly, and this lane performs no hosted act, so authoring is consistent with the ratification's own distinction between OPENING a lane and EXECUTING it. The unsatisfied precondition is nevertheless carried forward as a BLOCKING gate on provisioning, and the independent certifier required by PRE-2 is asked to adjudicate whether authoring ahead of PRE-1 is itself a defect. A lane does not adjudicate a question about its own legitimacy in its own favour.'",
+        "respect_in_which_superseded": "Conflates TREE-ABSENCE with NON-OCCURRENCE. The parent's how_measured field (unchanged, reconfirmed below) proves only that no MATERIALIZED VERDICT ARTIFACT for the ratification's own required verification exists in the tree. It does not prove, and was never entitled to conclude, that the verification did not OCCUR. Per owner direction carried through this amendment's own authorizing continuation (mission CV1-M11-STAGING-PRINCIPAL-AUTHORITY-AMENDMENT-R2), the independent bounded verification the parent ratification requires of itself OCCURRED and PASSED; what remains true, and what remains a real gate, is that its verdict is not yet a durable, repository-resident record a future certifier could re-derive without this session's transcript.",
+        "corrected_text": {
+          "state_at_AS_OF_HEAD": "OCCURRED_AND_PASSED_PER_OWNER_DIRECTION__VERDICT_ARTIFACT_NOT_MATERIALIZED_IN_TREE. The tree-absence finding is independently RECONFIRMED unchanged at this amendment's AS_OF_HEAD (identical grep and git log -S commands, identical one-file, one-commit result) - that finding is a fact about the REPOSITORY, not a finding about whether the verification occurred.",
+          "disposition_of_this_lane_authoring_anyway_corrected": "RECORDED, NARROWED, and NOT SELF-ABSOLVED. The ORIGINAL objection - that authoring proceeded while the ratification's own required verification might never have happened - is corrected to a NARROWER objection: authoring proceeded while that verification's occurrence was affirmed only through this session's own owner direction, not yet through a durable artifact an independent party could check without trusting this lane's account of that direction. This narrower gap is what PRE-1B below exists to close. The independent certifier required by PRE-2 is still asked to adjudicate whether authoring ahead of PRE-1B is itself a defect; this amendment does not adjudicate that question in its own favour any more than the parent did."
+        },
+        "everything_else_continues": "The parent's source and how_measured fields are RECONFIRMED, not superseded - they remain accurate as tree-state findings; only the CONCLUSION drawn from them is corrected."
+      }
+    ]
+  },
+
+  "QUALIFIED_CLAUSES_NOT_SUPERSEDED": {
+    "rule": "These parent clauses continue to control in full. This amendment records only how they are to be read alongside the corrections above.",
+    "entries": [
+      {
+        "location": "UNAVOIDABLE_WRITE_DISCLOSURE.bounding_rules[0]",
+        "text": "ONE sign-in per observation run, not one per endpoint.",
+        "how_to_read_it_now": "Remains TRUE as a count of INITIAL CREDENTIAL PRESENTATIONS (password or refresh-token grants). It is NOT a count of GoTrue round trips or of possible cookie mutations within a run - see PROXY_REFRESH_FOOTPRINT below, which adds detail without contradicting this bound."
+      },
+      {
+        "location": "PRINCIPAL_DESIGN.defining_properties[0] (PD-1), [4] (PD-5), [5] (PD-6), [6] (PD-7)",
+        "text": "Unchanged.",
+        "how_to_read_it_now": "None of B-1's findings touch existence-in-staging-only, JWT role, email dedication, or single-purpose use. They stand as the parent states them."
+      }
+    ]
+  },
+
+  "NEW_MEASUREMENT_GAPS_RECORDED": {
+    "rule": "Additive to the parent's MEASUREMENT_GAPS_RECORDED.gaps array. None is closed by inference, by a local container, or by provider documentation. This amendment performs no hosted read to close it.",
+    "gaps": [
+      {
+        "id": "MGP-PD2",
+        "gap": "Whether the hosted staging project (bvyzblhqymxruxdguaee) currently has the effective on_auth_user_created AFTER INSERT ON auth.users trigger (EXECUTE FUNCTION public.handle_new_user()) active, per supabase/migrations/20260716000000_auth_trigger.sql.",
+        "measured_at_repository_plane": "The migration DEFINING this trigger is present and tracked at AS_OF_TREE (B1_TRIGGER_ANALYSIS).",
+        "unmeasured_at_hosted_plane": "Its APPLIED status on the exact hosted staging project is UNKNOWN to this lane. MODE forbids the hosted read that would close it.",
+        "bears_on": ["PD-2 (SPC-1)", "PD-3 (SPC-2, confirmatory only - PD-3 holds regardless)", "PD-4 (SPC-3, confirmatory only - PD-4 holds regardless via the stronger basis)", "OD-P1 (SPC-4, removes a false discriminator)", "OD-P5 (SPC-5, email-null exclusion)", "LIFECYCLE phase 2 (VERIFICATION)"],
+        "how_to_measure": "Query information_schema.triggers or pg_trigger for on_auth_user_created on auth.users, OR - structurally equivalent and at the SAME privilege level LIFECYCLE phase 2 already requires - attempt creation of the principal and immediately check for a corresponding public.users row, as part of phase 2's own must_prove list. This doubles as MGP-PD2's closure for that specific principal; no separate hosted read beyond what LIFECYCLE already requires is owed.",
+        "classification_note": "CONDITIONAL is the correct description of THIS SPECIFICATION's posture on PD-2 - it states what is true under either resolution. UNSATISFIED is the correct posture for any ACT (provisioning, an owner decision that assumes PD-2 holds) that depends on PD-2 before MGP-PD2 is resolved for the actual created subject."
+      }
+    ]
+  },
+
+  "PROXY_REFRESH_FOOTPRINT": {
+    "measured": "lib/supabase/proxy.ts:29-101 (updateSession), matched by proxy.ts:48-51 for /api/health/* like every non-excluded path, calls supabase.auth.getUser() at :76 - its OWN call, on its OWN createServerClient instance (lib/supabase/proxy.ts:47-70), independent of and PRIOR TO the handler's own call inside getVerifiedAuthIdentityResult() (lib/supabase/server.ts:22, lib/auth/identity.ts:113). updateSession() runs UNCONDITIONALLY for every matched path at proxy.ts:10, before the rate-limit block that is the only part of proxy.ts actually gated on the /api/ prefix (proxy.ts:12-15).",
+    "consequence": "Each HTTP request the observation runner makes to EP-2 or EP-3 with a session cookie attached causes AT LEAST TWO getUser() round trips to the staging project's GoTrue - one in the proxy, one in the handler - not one. This does not contradict UNAVOIDABLE_WRITE_DISCLOSURE's ONE-sign-in bound (see QUALIFIED_CLAUSES_NOT_SUPERSEDED), which counts CREDENTIAL PRESENTATIONS, not round trips.",
+    "cookie_mutation_risk": "@supabase/ssr's getUser(), when the access token is near or past expiry, transparently exchanges the refresh token and calls the cookies adapter's setAll - at the PROXY layer, lib/supabase/proxy.ts:55-66, which writes the refreshed cookie onto the response via NextResponse.next()'s cookies.set. An authenticated request to EP-2 or EP-3 can therefore carry a Set-Cookie header in its RESPONSE, produced by the proxy layer, wholly outside the observation principal's own session-minting step.",
+    "evidence_discipline": "DELIVERY_CONTRACT.evidence_emission_allowlist.forbidden_fields already forbids 'any Set-Cookie or Cookie header' - no new prohibition is needed. This entry corrects the RUNNER'S OWN ASSUMPTION: evidence capture must not assume Set-Cookie appears only on an explicit sign-in call. It must be stripped from EVERY captured response in a run, including the ordinary EP-2/EP-3 observation responses.",
+    "why_this_does_not_change_minimum_privileges": "The proxy's getUser() call authenticates using the SAME cookie the runner already holds; it requires no additional privilege and mints no new session - it is the standard @supabase/ssr refresh mechanism every authenticated request in this application already undergoes. REQUIRED_OBSERVATION_CAPABILITY and MINIMUM_PRIVILEGES are unaffected. Only the write/round-trip COUNT implicit in UNAVOIDABLE_WRITE_DISCLOSURE is corrected."
+  },
+
+  "CUSTODY_CONTRACT_ADDENDA": {
+    "CU-A-ADD-1": {
+      "id": "GITHUB_SECRET_MASKING_DOES_NOT_COVER_DERIVED_VALUES",
+      "text": "GitHub Actions automatically masks in logs only the LITERAL STRING VALUE of a value registered as a repository or environment secret (or explicitly passed to ::add-mask::). The access token GoTrue issues in EXCHANGE for the password, and the cookie value @supabase/ssr assembles from it, are DERIVED strings the platform has never seen as a registered secret and therefore CANNOT mask automatically. A workflow selecting CU-A MUST explicitly mask (via ::add-mask:: or equivalent) every derived token or cookie value BEFORE it can appear in any log line, and MUST NOT rely on the registered password secret's automatic masking to protect them.",
+      "why_this_is_recorded_here": "This is a control on the RUNNER'S OWN IMPLEMENTATION, not on the custody mechanism itself. CU-A's residual_risk analysis in the parent did not separate 'the registered secret is masked' from 'everything derived from it is masked' - they are not the same guarantee, and conflating them is exactly the kind of gap a masking assumption hides until a log leaks."
+    }
+  },
+
+  "REVOCATION_LOCATOR_REQUIREMENT": {
+    "problem": "Revoking or rotating the principal - deleting the auth subject, or targeting a password/token reset - requires a way to LOCATE it, by subject UUID or by email, per the Admin API's or dashboard's own addressing.",
+    "constraint_preserved": "DELIVERY_CONTRACT.evidence_emission_allowlist forbids the subject UUID and the email address from ORDINARY per-run evidence (why_the_subject_uuid_is_forbidden_even_though_it_is_not_a_credential). That prohibition is NOT weakened by this requirement.",
+    "design_requirement": "Locating the principal for revocation requires a SEPARATE, RESTRICTED-ACCESS RECORD - held alongside the custody store selected at OD-P3, never inside the ordinary evidence stream - carrying the locator (UUID and/or email) bound to the principal LABEL (M11_OBSERVER). This record is NOT evidence and is not subject to EVIDENCE_CONTRACT's per-run rules; it is a CUSTODY-ADJACENT INVENTORY ARTIFACT, visible only to the named accountable holder CUSTODY_CONTRACT.custody_invariants_regardless_of_option already requires, and is covered by the SAME 'never in the repository working tree' rule as the credential itself.",
+    "scope": "Recorded as a DESIGN REQUIREMENT for LIFECYCLE phase 1 (CREATION, which must produce this record) and phase 5 (REVOCATION/EXPIRY, which must consume it). This artifact does not create the record; creating one remains a hosted-adjacent act no artifact in this lane authorizes."
+  },
+
+  "QUIESCE_INCONCLUSIVE_REASON": {
+    "new_reason_code": "IDENTITY_PROVIDER_INTENTIONALLY_UNAVAILABLE",
+    "extends": "EVIDENCE_CONTRACT.per_run_evidence's existing INCONCLUSIVE reason codes (302 protection, 429 rate limit, transport error) with a fourth.",
+    "rule": "If a governed QUIESCE or recovery posture has intentionally made GoTrue unreachable for the staging project at observation time, the run's sign-in attempt fails not because of a deployment fault but because of a DELIBERATE, GOVERNED posture change. This MUST be recorded INCONCLUSIVE with this specific reason code, NEVER FAIL - a FAIL would misattribute a governance decision to a deployment defect and would redden the M11 gate during a properly authorized maintenance window.",
+    "known_interaction": "CG-Q4's G-2 names GoTrue as a writer that a QUIESCE empty-write window would exclude; UNAVOIDABLE_WRITE_DISCLOSURE.interaction_with_any_quiesce_or_read_only_posture already records that this principal's sign-in CONTRADICTS such a posture and that the observation must not run - this reason code is what the EVIDENCE looks like if a run is attempted anyway, or is attempted without the runner knowing a posture is active.",
+    "open_dependency": "Detecting this reason code requires the runner to be able to ask whether a quiesce posture is CURRENTLY declared for the project - a capability this artifact does not specify. Until it exists, an operator reviewing a failed run must manually cross-check an active quiesce declaration before classifying a sign-in failure as this reason rather than as a genuine outage. This is carried forward alongside OF-P4, not resolved by it."
+  },
+
+  "NEW_OPEN_FINDINGS": [
+    {
+      "id": "OF-P8",
+      "finding": "PD-2 is CONDITIONAL on MGP-PD2, an unresolved hosted measurement. Neither this artifact nor its parent has resolved whether the hosted staging on_auth_user_created trigger is active.",
+      "disposition": "OPEN. Closure is LIFECYCLE phase 2's own verification step for the actual created principal (NEW_MEASUREMENT_GAPS_RECORDED.MGP-PD2.how_to_measure), not a separate hosted read this artifact performs."
+    },
+    {
+      "id": "OF-P9",
+      "finding": "Revocation requires a locator (UUID or email) that ordinary evidence is forbidden from carrying, and no custody-adjacent inventory mechanism for that locator is specified beyond the design requirement in REVOCATION_LOCATOR_REQUIREMENT.",
+      "disposition": "OPEN. A design requirement, not a resolved design - a successor lane owes the mechanism."
+    }
+  ],
+
+  "SEQUENCING_PRECONDITIONS_ADDENDUM": {
+    "rule": "Additive to the parent's SEQUENCING_PRECONDITIONS.preconditions array, inserted conceptually after PRE-1.",
+    "new_precondition": {
+      "id": "PRE-1B",
+      "condition": "A repository-resident record of PRE-1's occurred-and-passed outcome (per SPC-11) is MATERIALIZED.",
+      "state_at_AS_OF_HEAD": "UNSATISFIED. Owner direction carried through this amendment's own authorizing continuation is sufficient to correct THIS ARTIFACT's posture on PRE-1 - it is the mechanism by which this amendment exists - but it is not itself the durable, independently reviewable artifact a FUTURE certifier without access to this session's transcript could re-derive.",
+      "why_this_is_its_own_precondition_and_not_absorbed_into_PRE-1": "PRE-1 (corrected) now asks whether the parent ratification's own verification OCCURRED. PRE-1B asks a narrower, different question: whether that occurrence is DURABLY RECORDED where a stranger to this session could find it. Conflating the two is the exact defect SPC-11 corrects; this precondition exists so the correction does not reintroduce it one level up.",
+      "on_unsatisfied": "PRE-5 (a successor execution authority) may not be authored while PRE-1B is unsatisfied, in addition to the parent's own conjunctive rule."
+    }
+  },
+
+  "REAFFIRMED_NON_AUTHORIZATIONS": [
+    "This amendment does NOT create, promote, elevate or modify any principal, in any project.",
+    "This amendment does NOT generate, mint, request, receive, store or rotate any credential.",
+    "This amendment does NOT issue, request or imply any GRANT, on any object, in any schema.",
+    "This amendment does NOT open, or authorize opening, any SQL connection to any database.",
+    "This amendment does NOT perform, and does NOT authorize, the hosted read that would resolve MGP-PD2 or MGP-1 through MGP-6.",
+    "This amendment does NOT authorize any Vercel mutation, environment change, deployment, promotion or platform read.",
+    "This amendment does NOT authorize any hosted smoke execution or any observation run.",
+    "This amendment does NOT authorize any repository code change, including to supabase/migrations/20260716000000_auth_trigger.sql, scripts/create-test-user.ts, any route, proxy.ts, or any workflow.",
+    "This amendment does NOT lower, relax, qualify or create an exception to the authentication boundary of any endpoint. MG-4 is inherited unchanged, per SPC-7.",
+    "This amendment does NOT edit, amend, supersede or reinterpret any of the four M11 artifacts, the owner ratification record, RELEASE_GATE_LEDGER_v1.0.0.json, or any FIB/PC-01B/IM-01B frozen authority. F-M11-07, F-M11-15, F-M11-16 and F-M11-17 are CITED, never reopened.",
+    "This amendment does NOT change any gate's state, ownership or disposition.",
+    "This amendment does NOT answer OD-P1 through OD-P6. It corrects their content; it does not select among their options.",
+    "This amendment does NOT satisfy PRE-1, PRE-1B, PRE-2, PRE-3, PRE-4 or PRE-5.",
+    "External hosted mutations performed by this amendment: NONE. External hosted reads performed by this amendment: NONE. Secrets exposed: NONE. Credentials generated: NONE."
+  ],
+
+  "self_check": {
+    "checks": [
+      { "check": "B-1 is resolved by reclassification and new-gap registration, not by silent assumption in either direction.", "result": "PASS - PD-2 is CONDITIONAL, not asserted true or false; MGP-PD2 names exactly what would close it." },
+      { "check": "PD-3 and PD-4 are re-derived on bases independent of PD-2, and PD-4 is recognized as STRENGTHENED by the trigger's explicit is_super_admin=false write.", "result": "PASS - SPC-2, SPC-3." },
+      { "check": "OD-P1's three channels are corrected to remove the false profile-write discriminator while genuine discriminators (operator credential, SSL-06, evidence strength, hosted-setting dependency) are preserved.", "result": "PASS - SPC-4." },
+      { "check": "OD-P5 records the email=NULL trigger constraint without silently ruling out option B.", "result": "PASS - SPC-5." },
+      { "check": "B-2 is resolved by separating reachable from unreachable failure states against the CONTROLLING frozen facts, without reopening them.", "result": "PASS - SPC-6, citing F-M11-07/15/16/17 without restating or contradicting their content." },
+      { "check": "The operational rule (401-while-authenticated is never a health FAIL) survives the B-2 correction unchanged.", "result": "PASS - SPC-6.operational_rule_preserved_unchanged." },
+      { "check": "NC-P8 is re-scoped away from an unreachable live-HTTP must-fail rather than silently dropped or left contradicting F-M11-16.", "result": "PASS - see companion manifest amendment." },
+      { "check": "The false 'verbatim' label and the two wrong citations are corrected with the actual sources quoted or cited in full.", "result": "PASS - SPC-7, SPC-8, SPC-9." },
+      { "check": "The proxy's own getUser() round trip and cookie-mutation risk are disclosed without weakening MINIMUM_PRIVILEGES or contradicting the one-sign-in bound.", "result": "PASS - PROXY_REFRESH_FOOTPRINT, QUALIFIED_CLAUSES_NOT_SUPERSEDED." },
+      { "check": "OD-P6 option B's consequence is corrected from a false permanence claim to the same unavailable/pending semantics used elsewhere in the parent.", "result": "PASS - SPC-10." },
+      { "check": "PRE-1 is corrected from an occurrence claim to a materialization gap, and the materialization gap is itself registered as a new precondition rather than absorbed.", "result": "PASS - SPC-11, PRE-1B." },
+      { "check": "No hosted read was performed to produce any correction in this amendment.", "result": "PASS - every correction is either a repository-plane measurement (the trigger SQL, the proxy source, the route sources, the citation targets) or a re-reading of already-controlling frozen facts." },
+      { "check": "No secret value, and no placeholder shaped like one, appears anywhere in this amendment.", "result": "PASS." },
+      { "check": "The parent is left byte-unchanged.", "result": "PASS - amended_blob_at_AS_OF_HEAD matches the tracked blob; this is a new file, not an edit." }
+    ]
+  },
+
+  "required_independent_review": "This amendment requires BOUNDED RECERTIFICATION of v1.0.1 only - the parent's already-certified-correct findings (minimum-capability derivation, cookie-only transport, MG-4 falsifiability, EP-3's non-blocking disposition and non-zero coverage, OD-P6 option B's conditioning) are not to be re-litigated from scratch. The bounded review is asked to attack, at minimum: (a) whether MGP-PD2's registration and PD-2/PD-3/PD-4's reclassification are internally consistent and whether any OTHER parent clause silently depended on the now-conditional PD-2 without being caught here; (b) whether the corrected AUTH_RLS_MODEL table is faithful to F-M11-07/15/16/17 and introduces no NEW unreachable-state claim; (c) whether PRE-1's corrected disposition and PRE-1B together actually close the gap the original IC found, or merely relabel it; (d) whether OD-P1's corrected options still expose every genuine discriminator, now that the false one is withdrawn; (e) whether any of the nine non-blocking cleanups introduces a new citation error while correcting the old one.",
+
+  "final_state": "AMENDMENT_AUTHORED__B1_AND_B2_ADDRESSED_BY_RECLASSIFICATION_AND_CORRECTION__NINE_NONBLOCKING_CLEANUPS_APPLIED__PRINCIPAL_STILL_NOT_CREATED__NO_OWNER_DECISION_TAKEN__NO_HOSTED_ACT_PERFORMED",
+
+  "next_gate": "BOUNDED_RECERTIFICATION_OF_V1_0_1_ONLY. Only after that recertification may the owner be asked to answer OD-P1 through OD-P6, and only after both, AND after PRE-1B is separately materialized, may a successor EXECUTION authority be authored to grant the creation act."
+}

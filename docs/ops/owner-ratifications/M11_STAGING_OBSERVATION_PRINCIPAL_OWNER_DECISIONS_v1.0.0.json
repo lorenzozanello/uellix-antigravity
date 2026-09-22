@@ -1,0 +1,270 @@
+{
+  "package_id": "M11_STAGING_OBSERVATION_PRINCIPAL_OWNER_DECISIONS",
+  "version": "1.0.0",
+  "artifact_id": "M11_STAGING_OBSERVATION_PRINCIPAL_OWNER_DECISIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_DECISION_RATIFICATION_PLUS_PREEXECUTION_CLOSURE_RECORD__NO_PRINCIPAL_CREATION__NO_CREDENTIAL_GENERATION__NO_GRANT__NO_SUPABASE_MUTATION__NO_SQL_CONNECTION__NO_HOSTED_ACT_OF_ANY_KIND",
+  "append_only": true,
+  "mission_id": "CV1-M11-PRINCIPAL-PREEXECUTION-CLOSURE-AW-R1",
+  "lane": "codex/cv1-m11-staging-principal-authority-r1",
+  "role": "M11_AUTHENTICATED_OBSERVATION_PRINCIPAL_AUTHORITY_WRITER",
+  "mode": "CLOSURE_FIRST__DOCS_AUTHORITY_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "companion_authorities": [
+    { "role": "CANDIDATE_SPECIFICATION", "path": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json", "blob": "be24f91a4405c689e1740628dbcc2ab7dd85c38b" },
+    { "role": "CANDIDATE_AMENDMENT_1_CLOSES_B1_B2", "path": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "cddb64f91a579610b51b486f00b95e58ff6f8cc3" },
+    { "role": "CANDIDATE_AMENDMENT_2_CLOSES_F1_AND_CONSUMER_PROPAGATION", "path": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.2.json", "blob": "8c9b05b80a6168dbd4d38ee8c92a3f9f90aa8ff6" },
+    { "role": "CANDIDATE_MANIFEST", "path": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json", "blob": "d2ee6274b48a9a1e12e718bacc2133ec42ff3c52" },
+    { "role": "CANDIDATE_MANIFEST_AMENDMENT_1", "path": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "2f24ef1390d2d822e3c90f10b1cafdd7ca2b4227" },
+    { "role": "CANDIDATE_MANIFEST_AMENDMENT_2", "path": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_AMENDMENT_v1.0.2.json", "blob": "770cffd43058d0a41f1dc7ffba7223ad91bbf5cc" }
+  ],
+
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty), HEAD 7fd3e73349cb9db8893b9d6a07d6054387dadef7, tree 1caa511cdcc389532e11b60d0756161a78443c9f."
+  },
+
+  "CANDIDATE_BINDING": {
+    "rule": "This record ratifies owner decisions OD-P1 through OD-P6 AGAINST ONE EXACT EFFECTIVE PACKAGE, identified by the lane HEAD commit SHA and, independently, by the git blob SHA of each of the six companion_authorities artifacts above. Both must be re-derivable by inspection at any later time. If either check fails, the correct response is STOP_RATIFICATION_BINDING_MISMATCH - this record does not apply to a different candidate and must not be read as ratifying one.",
+    "candidate_commit_sha": "7fd3e73349cb9db8893b9d6a07d6054387dadef7",
+    "candidate_commit_verification": "git rev-parse HEAD, on branch codex/cv1-m11-staging-principal-authority-r1, at materialization.",
+    "verification_method": "git rev-parse <candidate_commit_sha>:<artifact path>, compared against each companion_authorities[].blob, for each of the six artifacts.",
+    "on_mismatch": "STOP_RATIFICATION_BINDING_MISMATCH. Any later amendment to any of the six artifacts (v1.0.3 or beyond, or a new manifest amendment) requires a SUCCESSOR ratification record binding to the new candidate; it does not retroactively apply to this one."
+  },
+
+  "OWNER_AUTHORITY_SOURCE": {
+    "statement": "The selections recorded under ratifications below were made by the human product owner (Lorenzo Zanello), explicitly, communicated through this session's authorizing continuation instruction (mission CV1-M11-PRINCIPAL-PREEXECUTION-CLOSURE-AW-R1) - the same channel this lane's own governing precedent (SPC-11 of the v1.0.1 amendment, itself carried into v1.0.2's S2-4) already treats as legitimate owner direction for correcting this artifact's own posture. They are NOT selections Claude made, inferred, or defaulted to.",
+    "what_claude_authored": "The prior three artifacts' (v1.0.0, v1.0.1, v1.0.2) technical_recommendation content, and this record's transcription, cross-referencing, coherence-checking and independent verification of the owner's selections against that prior content, plus the CERTIFICATION_OCCURRENCE_REGISTRY and OF_P10_HASH_PIN sections below. Claude's own recommendations are recorded as RECOMMENDATION_NOT_RATIFICATION throughout the prior chain and remain non-binding; only the owner_selected_decision fields below carry ratifying force.",
+    "three_distinct_concepts": {
+      "technical_recommendation": "What v1.0.0's OWNER_DECISIONS_REQUIRED offered as its own non-binding recommendation for each OD-P*, quoted verbatim in each ratifications[] entry below.",
+      "owner_selected_decision": "The human owner's binding choice, recorded below. This is the ONLY one of the two that ratifies anything. Where the owner's selection matches the technical recommendation, both are stated so the agreement is visible rather than assumed; none of the six diverges from its technical recommendation."
+    },
+    "provenance_honesty_note": "This record does NOT claim a separate, out-of-band confirmation channel (a signature, a ticket, a recorded call) beyond the session continuation instruction itself. 'SIGNED = YES' in that instruction is recorded here as the owner's own characterization of the act, not independently corroborated by any artifact this lane can point to beyond the instruction's own text. A future certifier who wants stronger provenance than a session transcript owes that as its own closure, exactly as PRE-1B/PRE-2B below record for the certification-occurrence class."
+  },
+
+  "purpose": "Ratify OD-P1 through OD-P6 of docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json OWNER_DECISIONS_REQUIRED (as corrected by v1.0.1 SPC-4/SPC-5/SPC-10 and reconciled by v1.0.2 P2-4), and in the same act: (a) satisfy PRE-3 by that ratification; (b) materialize PRE-1B's target as an explicit CERTIFICATION_OCCURRED record, re-derived from this chain's own already-established provenance rather than freshly invented; (c) replace the two-item PRE-2B enumeration with an open CERTIFICATION_OCCURRENCE_REGISTRY class and populate it with every certification event known to this chain; (d) close OF_P10 by hash-pinning the exact git blob of the trigger migration PD-4's stronger basis depends on. It does NOT authorize principal creation, credential generation, or any hosted act. PRE-4 and PRE-5 are explicitly NOT satisfied by this record.",
+
+  "precedence_note": "This record is canonical for the product owner's intent on OD-P1 through OD-P6, and for the closure of PRE-3, PRE-1B, PRE-2B (as a class) and OF-P10, ONLY. It does NOT override, weaken, or reinterpret any FIB/PC-01B/IM-01B frozen authority, any ODS HPO decision, MG-4's prohibition on lowering the endpoints' authentication boundary, or PRE-4's requirement that every hosted-setting-dependent MGP be resolved by measurement before it is relied upon. Where this record is silent, the six companion_authorities control.",
+
+  "reopening_rule": "THIS IS NOT A RE-ADJUDICATION. It does not reopen B-1, B-2, F-1, or any measured fact F-M11-01 through F-M11-20. It does not reopen PD-2's CONDITIONAL status, PD-3, PD-4, MINIMUM_PRIVILEGES, AUTH_RLS_MODEL, or any SUPERSEDED_V100_CLAUSES / SUPERSEDED_V101_CLAUSES entry of v1.0.1 or v1.0.2. It answers the six owner decisions those artifacts left open, closes the two artifact-internal precondition gaps named above, and pins one migration blob. Nothing else about the effective package is reconsidered.",
+
+  "ratifications": [
+    {
+      "id": "OD-P1",
+      "domain": "CREATION_CHANNEL",
+      "question_ratified": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json OWNER_DECISIONS_REQUIRED.decisions[0].question: 'Through which channel is the principal created in project bvyzblhqymxruxdguaee?'",
+      "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option A. It is the only option that creates the principal without either holding an operator credential or depending on two unmeasured hosted settings, and the act is performed exactly once.",
+      "owner_selected_decision": {
+        "option_selected": "A - Supabase dashboard, by the owner, by hand.",
+        "concurs_with_technical_recommendation": true,
+        "effective_meaning": "No operator credential enters automation and none is held by this programme's tooling. SSL-06 is not engaged by the creation act. Creation is evidenced by owner attestation plus a subsequent successful grant (LIFECYCLE phase 2 VERIFICATION), rather than by a scripted, re-runnable act."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER"
+    },
+    {
+      "id": "OD-P2",
+      "domain": "CREDENTIAL_FORM",
+      "question_ratified": "decisions[1].question: 'What material does the runner hold?'",
+      "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option A, on the ground that it has exactly one secret and one rotation mechanism, and that its rotation does not depend on an unmeasured hosted setting.",
+      "owner_selected_decision": {
+        "option_selected": "A - The principal's password; the runner performs a password grant each run.",
+        "concurs_with_technical_recommendation": true,
+        "effective_meaning": "One secret, rotatable by changing the password, and the grant is a clean per-run act (PROXY_REFRESH_FOOTPRINT's corrected bound: one CREDENTIAL PRESENTATION per run, not one GoTrue round trip). The password is a long-lived secret in the custody store selected at OD-P3."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER"
+    },
+    {
+      "id": "OD-P3",
+      "domain": "CUSTODY_AND_RUNNER_LOCATION",
+      "question_ratified": "decisions[2].question: 'Which custody option from CUSTODY_CONTRACT is selected?'",
+      "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: CU-A, with the trusted-trigger controls it mandates, on the ground that it requires no new external trust anchor. The residual risk it carries is stated in full and is the owner's to accept or refuse.",
+      "owner_selected_decision": {
+        "option_selected": "CU-A - GitHub Actions Environment Secret.",
+        "concurs_with_technical_recommendation": true,
+        "effective_meaning": "The residual risk CU-A's own entry states - 'repository write access therefore becomes equivalent to holding this credential' - is ACCEPTED by this ratification. Selecting CU-A ACTIVATES, as now-binding (not merely conditional-on-selection) controls: CUSTODY_CONTRACT.custody_options[CU-A].controls_that_become_mandatory_if_selected (no repository-secret exposure to an untrusted-context trigger; a trusted, deployment-tied trigger, not yet built per OF-P7; never sharing golden-journey.yml's trigger) and CUSTODY_CONTRACT_ADDENDA.CU-A-ADD-1 (GITHUB_SECRET_MASKING_DOES_NOT_COVER_DERIVED_VALUES - the runner must explicitly mask every derived access token or cookie value; GitHub's automatic masking of the registered password secret does not extend to them)."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER"
+    },
+    {
+      "id": "OD-P4",
+      "domain": "ROTATION_CADENCE",
+      "question_ratified": "decisions[3].question: 'What is the scheduled rotation cadence, independent of the triggers?'",
+      "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option B, as the cadence that is long enough not to make the gate fragile and short enough that a rotation is a practised act rather than an emergency one.",
+      "owner_selected_decision": {
+        "option_selected": "B - 90 days.",
+        "concurs_with_technical_recommendation": true,
+        "effective_meaning": "A scheduled 90-day rotation, independent of and IN ADDITION TO ROTATION_EXPIRY_REVOCATION.rotation.triggers_regardless_of_cadence (suspected exposure, holder change, CI-environment compromise, a repository-permission widening under CU-A, staging-project recreation/re-keying, any use outside AUTHORIZED_USE_BOUNDARY). This ratification does NOT relax, suspend, or make optional any of those six triggers - they remain binding regardless of where the 90-day clock stands."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER"
+    },
+    {
+      "id": "OD-P5",
+      "domain": "PRINCIPAL_IDENTITY",
+      "question_ratified": "decisions[4].question: 'What email address identifies the principal?'",
+      "technical_recommendation": "NOT_RATIFIED_AT_V1_0_0. v1.0.0 offered no technical_recommendation for OD-P5; only a hard_prohibition and a coupling_note with OD-P1.",
+      "owner_selected_decision": {
+        "option_selected": "B - A dedicated, non-deliverable synthetic address.",
+        "concurs_with_technical_recommendation": "NOT_APPLICABLE - none was offered.",
+        "coupling_check_performed": "OD-P5 option B's own consequence text warns it 'constrains OD-P1 to a channel that can mark it confirmed - which option A of OD-P1 can do and option C cannot.' OD-P1 = A is ratified above. The two selections are therefore COHERENT by the authority's own prior analysis, not merely coincidentally compatible - the owner's OD-P1 selection is exactly the one OD-P5's own text names as necessary for OD-P5 option B to be provisionable.",
+        "effective_meaning": "The exact address is NOT recorded in this document and MUST NOT enter ordinary per-run evidence (DELIVERY_CONTRACT.evidence_emission_allowlist.forbidden_fields already forbids it; this ratification does not weaken that). The address must be dedicated EXCLUSIVELY to this principal, must carry no pre-existing application state in the staging project, and MUST NOT be lorenzo@thebalancecorp.org (OD-P5's existing hard_prohibition, unweakened). Where the address is later recorded for revocation purposes, it belongs in the SEPARATE, narrower-audience locator record P2-8 (v1.0.2) defines - never in the general custody inventory row, and never in ordinary evidence."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER"
+    },
+    {
+      "id": "OD-P6",
+      "domain": "STANDING_SCOPE",
+      "question_ratified": "decisions[5].question: 'Is the principal standing until revoked, or bounded to Track B with revocation on completion?'",
+      "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option A. Option B's consequence appears to contradict OD-2's ratified BLOCKING disposition for EP-2, and this artifact has no authority to resolve that - if the owner prefers B, the contradiction with OD-2 must be adjudicated first.",
+      "owner_selected_decision": {
+        "option_selected": "A - Standing, with scheduled review.",
+        "concurs_with_technical_recommendation": true,
+        "effective_meaning": "M11 keeps its authenticated cells (EP-2 BLOCKING, EP-3 NON_BLOCKING_RECORDED) continuously after Track B closes, subject to the OD-P4 rotation schedule and the ROTATION_EXPIRY_REVOCATION.expiry.scheduled_review / end_of_life_trigger mechanism. Because option B was NOT selected, the contradiction the technical_recommendation flagged (option B's cycling consequence against OD-2's ratified BLOCKING disposition) never arises under this ratification - see OPEN_FINDINGS_DISPOSITION.OF-P6 below."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER"
+    }
+  ],
+
+  "CERTIFICATION_OCCURRENCE_REGISTRY": {
+    "rule": "An OPEN, APPEND-ONLY REGISTRY of every independent certification or recertification event this artifact chain has undergone, REPLACING the fixed two-item enumeration v1.0.1's PRE-1B and v1.0.2's PRE-2B each introduced. A future certification of ANY successor artifact in this chain is a NEW entry appended here by a later ratification or closure record; it is never a reason to redesign this registry's shape. Each entry records exactly what is KNOWN and marks the rest UNKNOWN - no field is backfilled with a plausible-looking value.",
+    "entry_schema": ["event_id", "target_artifact_version", "verdict", "blocking_findings", "non_blocking_findings_count", "provenance", "materialization_status"],
+    "events": [
+      {
+        "event_id": "CERT-1",
+        "target_artifact_version": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json",
+        "verdict": "M11_PRINCIPAL_AUTHORITY_IC_FAIL",
+        "blocking_findings": ["B-1 (public.users trigger unknown, corrupts PD-2 and the OD-P1 discriminator)", "B-2 (AUTH_RLS_MODEL presented unreachable failure states as live)"],
+        "non_blocking_findings_count": 9,
+        "provenance": {
+          "source_channel": "Reported to this lane via its own authorizing session continuation (mission CV1-M11-STAGING-PRINCIPAL-AUTHORITY-AMENDMENT-R2), and independently corroborated by this lane's own project memory record dated 2026-09-22.",
+          "reviewer": "Reported as Opus 5, read-only.",
+          "date": "2026-09-22.",
+          "worktree_or_run_detail": "UNKNOWN beyond 'read-only'. No dedicated worktree name was recorded for this specific run, unlike CERT-2 below."
+        },
+        "materialization_status": "OCCURRED_PER_REPORTED_CHANNEL__NARRATIVELY_RECORDED_IN_V1_0_1_CONSUMED_CERTIFICATION__NO_FREESTANDING_VERDICT_ARTIFACT."
+      },
+      {
+        "event_id": "CERT-2",
+        "target_artifact_version": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "verdict": "M11_PRINCIPAL_V101_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+        "blocking_findings": [],
+        "non_blocking_findings_count": 14,
+        "provenance": {
+          "source_channel": "Reported to this lane via its own authorizing session continuation (mission CV1-M11-STAGING-PRINCIPAL-AUTHORITY-CONSUMER-PROPAGATION-R3), and independently corroborated by this lane's own project memory record dated 2026-09-22, which additionally names the primary finding (F-1: PD-2's conditionality not propagated to consumers) this chain's v1.0.2 amendment then closed.",
+          "reviewer": "Reported as Opus 5, read-only.",
+          "date": "2026-09-22.",
+          "worktree_or_run_detail": "Reported as a dedicated worktree (uellix-cv1-m11-staging-principal-v101-recert), HEAD detached at e8d5f6e4, tree 415d46c30a, clean."
+        },
+        "materialization_status": "OCCURRED_PER_REPORTED_CHANNEL__NARRATIVELY_RECORDED_IN_V1_0_2_CONSUMED_RECERTIFICATION__NO_FREESTANDING_VERDICT_ARTIFACT."
+      },
+      {
+        "event_id": "CERT-3",
+        "target_artifact_version": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "verdict": "M11_PRINCIPAL_V102_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+        "blocking_findings": [],
+        "non_blocking_findings_count": "UNKNOWN. Reported to this lane via its own authorizing session continuation (mission CV1-M11-PRINCIPAL-PREEXECUTION-CLOSURE-AW-R1) as a bare verdict string only - no finding count, no finding content, no worktree, no reviewer identity and no run timestamp beyond this session's own materialization_date were supplied. This lane's own project memory contains NO independent record of this event (verified by reading the project memory file in full immediately before authoring this registry entry); this entry is the FIRST repository-resident trace of CERT-3's existence.",
+        "provenance": {
+          "source_channel": "Session continuation instruction only, this record's own authorizing act.",
+          "reviewer": "UNKNOWN - not supplied.",
+          "date": "UNKNOWN beyond 'reported within this session, 2026-09-22'.",
+          "worktree_or_run_detail": "UNKNOWN - not supplied."
+        },
+        "materialization_status": "REPORTED_OCCURRENCE__NOT_INDEPENDENTLY_WITNESSED_BY_THIS_LANE__NOT_CORROBORATED_BY_ANY_PRIOR_MATERIALIZED_RECORD__RECORDED_HERE_AS_A_BARE_CLAIM_WITH_ITS_EVIDENTIARY_GAPS_STATED_EXPLICITLY_RATHER_THAN_FILLED."
+      }
+    ],
+    "why_CERT-3_is_recorded_despite_the_gap": "The instruction directing this record explicitly distinguishes fabrication (inventing a reviewer, timestamp, or verdict file that was never recorded) from recording a REPORTED occurrence honestly, including recording that it is UNDER-EVIDENCED. This entry does the second, not the first: every field the instruction did not supply is marked UNKNOWN rather than inferred from CERT-1/CERT-2's pattern. A future independent certification of THIS closure record itself is expected to either corroborate CERT-3 (locate its actual verdict artifact or transcript) or flag it as unverifiable - that adjudication is NOT performed here."
+  },
+
+  "OF_P10_HASH_PIN": {
+    "target": "supabase/migrations/20260716000000_auth_trigger.sql",
+    "pinned_blob_sha1": "9133624da441e6e7e9a17c9808c9179be9a1398e",
+    "verification_method": "git rev-parse <candidate_commit_sha>:supabase/migrations/20260716000000_auth_trigger.sql, compared against pinned_blob_sha1.",
+    "what_this_closes": "OF-P10's repository-drift concern: PD-4 basis (2) depends on public.handle_new_user() literally inserting is_super_admin as false on every INSERT and never touching it in its ON CONFLICT branch (v1.0.1 SPC-3, re-verified at v1.0.2 P2-5). Pinning this blob means any FUTURE change to this migration's tracked content is DETECTABLE by a trivial hash comparison, rather than requiring a fresh manual re-read to notice the safety basis moved.",
+    "what_this_does_NOT_close": "MGP-PD2 (whether EITHER trigger this migration defines is APPLIED on the exact hosted staging project bvyzblhqymxruxdguaee) remains UNKNOWN and is NOT touched by this pin. A hash pin proves the TRACKED FILE'S CONTENT is unchanged; it says nothing about whether that content was ever, or is currently, applied to the hosted database. Hosted-application status remains PRE-4's responsibility, not this pin's.",
+    "disposition": "OF-P10 is CLOSED for the repository-drift-detection concern it named. A residual, narrower concern - that this pin itself must be re-verified at every future amendment, and re-pinned if the migration is legitimately revised - is not a new open finding; it is the ordinary maintenance burden any hash pin carries, and is not separately tracked."
+  },
+
+  "PRE_STATUS_AFTER_THIS_RECORD": {
+    "rule": "Restates every precondition SEQUENCING_PRECONDITIONS (v1.0.0) and its two addenda (v1.0.1's PRE-1B, v1.0.2's PRE-2B) name, with its status AFTER this record. This table is descriptive of the EFFECT of this record; it does not itself satisfy PRE-4 or PRE-5.",
+    "PRE-1": "OCCURRED_AND_PASSED_PER_OWNER_DIRECTION (v1.0.1 SPC-11, unchanged by this record). Re-derived, not re-decided: this record's OWNER_AUTHORITY_SOURCE.provenance_honesty_note applies the identical honesty discipline to ITS OWN act that SPC-11 already applied to the ratification's required verification.",
+    "PRE-1B": "MATERIALIZED_PENDING_INDEPENDENT_CERTIFICATION_OF_THIS_RECORD. CERT-1's occurrence is now registered in CERTIFICATION_OCCURRENCE_REGISTRY, a repository-resident location - narrower than a freestanding verdict artifact, but no longer solely a claim inside the very document (v1.0.1) it corrects. PRE-1B's own governing standard (a durable record a stranger to this session could find) is satisfied for LOCATION; whether it is satisfied for SUFFICIENCY is exactly what next_gate's independent certification is asked to decide.",
+    "PRE-2": "OCCURRED_TWICE_PER_OWNER_DIRECTION, PLUS THIS RECORD'S OWN CERT-3 CLAIM (v1.0.2 S2-4, extended here by CERT-3). Unchanged in kind by this record.",
+    "PRE-2B": "SUPERSEDED IN FORM by CERTIFICATION_OCCURRENCE_REGISTRY above, which generalizes the fixed two-item enumeration into an open class per this record's own governing instruction. Populated with three known events (CERT-1, CERT-2, CERT-3), the third explicitly under-evidenced rather than fabricated. MATERIALIZED_PENDING_INDEPENDENT_CERTIFICATION_OF_THIS_RECORD, same standard as PRE-1B.",
+    "PRE-3": "SATISFIED_BY_OWNER_DECISIONS. The owner has answered every decision in OWNER_DECISIONS_REQUIRED - all six ratifications above - through this record's own authorizing act. This satisfaction is EFFECTIVE FROM THIS RECORD, not retroactive to any earlier point.",
+    "PRE-4": "UNSATISFIED. Explicitly NOT touched by this record. Every MGP the owner's selected design depends on - MGP-1 (signup enablement, now moot given OD-P1=A), MGP-2 (email-confirmation posture, relevant to OD-P5=B's confirmability via OD-P1=A), MGP-3 (cookie serialization, closed by construction per its own how_to_measure, not by a hosted read), MGP-4 (JWT/refresh-token settings, relevant to OD-P2=A only as a rotation-adjacent fact since option A was chosen over B), MGP-5 (Deployment Protection), MGP-6 (rate-limiter arming), MGP-PD2 (either trigger's hosted-applied status) - remains UNKNOWN and MUST be resolved by measurement against the exact staging project before being relied upon, and re-measured at execution time per each MGP's own re-measure-at-execution obligation. This record performs NO hosted read of any kind.",
+    "PRE-5": "ABSENT. No successor EXECUTION authority exists or is created by this record. Nothing in this record grants, names a channel for, or binds a hosted act. PRE-5 remains the explicit gate on any creation act, in addition to PRE-1B and PRE-2B both being satisfied to a future certifier's standard, not merely this record's own."
+  },
+
+  "OPEN_FINDINGS_DISPOSITION": {
+    "rule": "Restates every OPEN_FINDINGS / NEW_OPEN_FINDINGS entry of v1.0.0, v1.0.1 and v1.0.2, and states whether this record's owner ratifications close, moot, or leave each one open. An entry not named here is UNCHANGED by this record.",
+    "closed_or_mooted_by_this_record": [
+      {
+        "id": "OF-P3",
+        "prior_text": "If OD-P1 selects option B, an operator credential (service_role key or personal access token) is held for the duration of the creation act, engaging SSL-06 for that credential even though the principal it creates is not privileged.",
+        "disposition": "MOOT_UNDER_OD_P1_A. OD-P1 = A is ratified above; option B was never selected. The contingent condition this finding depends on cannot now arise for this candidate. CUSTODY_CONTRACT's unconditional inventory-row requirement (custody_invariants_regardless_of_option) is untouched and still applies to the SECRET this principal holds under OD-P2/OD-P3, which is a separate, non-operator credential."
+      },
+      {
+        "id": "OF-P6",
+        "prior_text": "OD-P6 option B may contradict ratified OD-2's BLOCKING disposition for EP-2: revoking the principal after Track B would leave a BLOCKING cell permanently unobservable.",
+        "disposition": "MOOT_UNDER_OD_P6_A. OD-P6 = A is ratified above; option B was never selected. The contradiction this finding flagged, and v1.0.1's SPC-10 correction of option B's overstated 'permanently unobservable' consequence, both concerned a branch that does not apply to this candidate. Neither SPC-10 nor P2-4 is reopened by this disposition - they remain the controlling text for anyone who later asks what option B would have meant.",
+        "OF-P10": "See OF_P10_HASH_PIN above. CLOSED for the repository-drift-detection concern it named; hosted-application status remains open under PRE-4/MGP-PD2."
+      }
+    ],
+    "explicitly_preserved_unchanged": [
+      "OF-P1 - addressed, not closed, by PRE-1B's registry-location change above; not a re-adjudication of B-1/B-2.",
+      "OF-P2 - the principal's reachable surface is still defined by a MOVING set of every present and future session-only-gated route. Unaffected by any OD-P* selection.",
+      "OF-P4 - this principal's sign-in still contradicts any active QUIESCE posture. Unaffected by any OD-P* selection; OD-P2=A (password grant per run) does not reduce the write count below what UNAVOIDABLE_WRITE_DISCLOSURE already bounds.",
+      "OF-P5 - scripts/create-test-user.ts still cannot create this principal. OD-P1=A means the script is NOT NEEDED for creation (manual dashboard), which makes OF-P5 practically irrelevant to THIS candidate's creation path without closing the underlying finding - the script's own posture is unchanged and the finding is preserved as instructed.",
+      "OF-P7 - no trusted, deployment-tied observation runner or workflow trigger exists yet. OD-P3=CU-A makes this finding MORE load-bearing, not less: CU-A's mandatory controls (now binding per OD-P3's ratification above) depend on exactly the trusted trigger OF-P7 says does not exist.",
+      "OF-P8 - PD-2 remains CONDITIONAL on MGP-PD2, unresolved. No OD-P* selection touches PD-2's conditionality.",
+      "OF-P9 - the revocation locator record P2-8 (v1.0.2) designs remains an unbuilt mechanism. OD-P5=B sharpens WHY it is needed (the synthetic address is the very thing that must never enter ordinary evidence) without building it.",
+      "OF-P11 - no control yet proves the inventory row and the locator record are mechanically separate stores rather than merely described as separate in prose. Unaffected by any OD-P* selection."
+    ]
+  },
+
+  "explicit_non_authorizations": [
+    "This record does NOT authorize creating the staging test principal.",
+    "This record does NOT authorize generating, minting, requesting, receiving, storing or rotating any credential.",
+    "This record does NOT authorize any GRANT, on any object, in any schema.",
+    "This record does NOT authorize any SQL connection, any Supabase mutation, or any Supabase read - MGP-PD2 and every other MGP remain UNKNOWN and unresolved by this act.",
+    "This record does NOT authorize any Vercel mutation, environment change, deployment, promotion, or platform read.",
+    "This record does NOT authorize the GitHub Actions workflow, environment, or secret that OD-P3's ratification of CU-A will eventually require - naming the custody option is not creating it.",
+    "This record does NOT authorize any repository code change, including to supabase/migrations/20260716000000_auth_trigger.sql (OF_P10_HASH_PIN reads and pins it; it does not touch it), scripts/create-test-user.ts, any route, either proxy.ts file, or any workflow.",
+    "This record does NOT lower, relax, qualify or create an exception to the authentication boundary of any endpoint. MG-4 is inherited unchanged.",
+    "This record does NOT edit, amend, supersede or reinterpret docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json, its v1.0.1 or v1.0.2 amendments, either companion manifest, or any FIB/PC-01B/IM-01B frozen authority. All six are left BYTE-UNCHANGED.",
+    "This record does NOT reopen B-1, B-2, F-1, or any measured fact F-M11-01 through F-M11-20.",
+    "This record does NOT change any gate's state, ownership or disposition.",
+    "This record does NOT satisfy PRE-4 or PRE-5.",
+    "This record does NOT independently verify CERT-3's occurrence; it records the claim and its evidentiary gaps.",
+    "External hosted mutations performed by this record: NONE. External hosted reads performed by this record: NONE. Secrets exposed: NONE. Credentials generated: NONE."
+  ],
+
+  "self_check": {
+    "checks": [
+      { "check": "OD-P1 through OD-P6 are ratified faithfully against their v1.0.0 (as corrected by v1.0.1/v1.0.2) text, with no seventh decision invented.", "result": "PASS - six ratifications, each quoting its exact question path and technical_recommendation verbatim." },
+      { "check": "OD-P5's coupling_note with OD-P1 is checked against the actual selections, not assumed compatible.", "result": "PASS - OD-P1=A is exactly the channel OD-P5 option B's own text names as necessary; the coherence is the authority's own prior analysis, not asserted fresh here." },
+      { "check": "OD-P4's 90-day cadence is stated as ADDITIONAL to, not a replacement of, the unconditional rotation triggers.", "result": "PASS." },
+      { "check": "PRE-3 is satisfied EFFECTIVE FROM this record, not retroactively.", "result": "PASS." },
+      { "check": "PRE-1B is re-derived from this chain's own already-established provenance (SPC-11), not freshly invented.", "result": "PASS - PRE_STATUS_AFTER_THIS_RECORD.PRE-1 cites SPC-11 directly and adds no new claim about the underlying event." },
+      { "check": "PRE-2B is generalized into an open, extensible registry rather than preserved as a closed two-item enumeration.", "result": "PASS - CERTIFICATION_OCCURRENCE_REGISTRY is explicitly APPEND-ONLY and OPEN by rule." },
+      { "check": "No certification detail (reviewer, timestamp, verdict file, worktree) is fabricated for any event, including the under-evidenced CERT-3.", "result": "PASS - every field not supplied by its source channel is marked UNKNOWN; CERT-3's gaps are stated, not filled." },
+      { "check": "This lane's own project memory was checked for a prior CERT-3 record before treating it as under-evidenced.", "result": "PASS - grepped in full immediately before authoring CERT-3; none found." },
+      { "check": "OF-P10 is closed by a verifiable hash pin, not by asserting the hosted trigger's status.", "result": "PASS - pinned_blob_sha1 is the tracked file's content hash; MGP-PD2 is explicitly stated as untouched." },
+      { "check": "OF-P3 and OF-P6 are closed only as MOOT under the specific ratified option, not declared resolved on their merits.", "result": "PASS - both dispositions name the exact option selection that moots the contingent condition." },
+      { "check": "Every OF item the authorizing instruction named as 'remains open' is in fact left open here.", "result": "PASS - OF-P2, OF-P4, OF-P5, OF-P7, OF-P9, OF-P11 all appear under explicitly_preserved_unchanged; OF-P8 added on the same basis (no instruction named it, but nothing closes it either)." },
+      { "check": "PRE-4 and PRE-5 are stated as explicitly NOT satisfied, not silently passed over.", "result": "PASS - PRE_STATUS_AFTER_THIS_RECORD names both UNSATISFIED / ABSENT with their remaining content stated." },
+      { "check": "No secret value, and no placeholder shaped like one, appears anywhere in this record - including no synthetic email address for OD-P5.", "result": "PASS - OD-P5's ratification names the OPTION and its constraints, never an address." },
+      { "check": "All six companion_authorities are left byte-unchanged.", "result": "PASS - this is a new file under docs/ops/owner-ratifications/, not an edit to any of the six." }
+    ]
+  },
+
+  "required_independent_review": "This record requires INDEPENDENT CERTIFICATION before any successor EXECUTION authority (PRE-5) may be authored, bounded to: (a) whether the six ratifications faithfully transcribe the owner's stated selections against the exact candidate bound above; (b) whether CERT-3's under-evidenced entry is handled honestly - neither silently upgraded to a fully-corroborated event nor dropped; (c) whether the CERTIFICATION_OCCURRENCE_REGISTRY's generalization actually satisfies PRE-1B/PRE-2B's governing standard (a durable, stranger-findable record) or only relocates the same gap one file over; (d) whether OF-P3/OF-P6's MOOT dispositions are correctly scoped to the ratified option and do not silently close anything beyond it; (e) whether OF_P10_HASH_PIN's pinned_blob_sha1 is correct and whether its stated non-closure of MGP-PD2 is faithfully preserved elsewhere in this record.",
+
+  "final_state": "OWNER_DECISIONS_MATERIALIZED__PRE1B_MATERIALIZED_PENDING_IC__PRE2B_CLASS_MATERIALIZED_PENDING_IC__PRE3_SATISFIED__PRE4_UNSATISFIED__PRE5_ABSENT__PRINCIPAL_NOT_CREATED",
+
+  "next_gate": "ONE INDEPENDENT CERTIFICATION OF THIS ENTIRE CLOSURE PACKAGE - not separate certifications of the owner decisions, PRE-1B, and PRE-2B. Only after that certification, AND after PRE-4's every MGP is resolved by measurement against the exact staging project (never inferred), may a successor EXECUTION authority be authored to grant the creation act OD-P1 names."
+}

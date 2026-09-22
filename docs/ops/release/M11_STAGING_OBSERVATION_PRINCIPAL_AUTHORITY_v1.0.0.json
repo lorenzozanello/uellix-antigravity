@@ -1,0 +1,833 @@
+{
+  "package_id": "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0",
+  "authority_class": "SPECIFICATION_AUTHORITY_NOT_EXECUTABLE_UNTIL_ITS_OWN_PRECONDITIONS_ARE_SATISFIED",
+  "document_class": "DURABLE_STAGING_OBSERVATION_PRINCIPAL_SPECIFICATION__NO_PRINCIPAL_CREATION__NO_CREDENTIAL_GENERATION__NO_GRANT__NO_SUPABASE_MUTATION__NO_SQL_CONNECTION__NO_DEPLOYMENT__NO_HOSTED_ACT_OF_ANY_KIND",
+  "append_only": true,
+  "mission_id": "CV1-M11-STAGING-PRINCIPAL-AUTHORITY-R1",
+  "lane": "codex/cv1-m11-staging-principal-authority-r1",
+  "role": "M11_AUTHENTICATED_OBSERVATION_PRINCIPAL_AUTHORITY_WRITER",
+  "mode": "AUTHORITY_AUTHORING_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/cv1-m11-staging-principal-authority-r1",
+  "AS_OF_HEAD": "26bc0f0c3c7e9e65f965920d23584d1df75b418e",
+  "AS_OF_TREE": "03fe382430e4ff8dfba9a2934f93a14f5658f7fc",
+  "AS_OF_BASE": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "method": "git fetch origin --prune, then git rev-parse origin/integration/commercial-v1 and its tree, at materialization. Identical to the BASE the consumed owner ratification records under materialized_at_base, so no base drift separates this authority from the decision it implements."
+  },
+  "AS_OF_PRESTATE": "pnpm ods:prestate -- --branch codex/cv1-m11-staging-principal-authority-r1 --head 26bc0f0c3c7e9e65f965920d23584d1df75b418e --tree 03fe382430e4ff8dfba9a2934f93a14f5658f7fc --clean : PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS. pnpm authority:seal:verify : ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS, AUTHORITY_SEAL_VERIFY=PASS.",
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "The repository convention carried from FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json NAMING_DERIVATION: an artifact is named for the NODE it governs and placed beside the domain authority it refines.",
+    "node": "FIS-M11-06 - 'A durable staging test principal, under a separate authority', named at docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json FUTURE_IMPLEMENTATION_SURFACE.items[5].",
+    "why_not_named_for_OD_5": "OD-5 is the owner DECISION that authorized opening this lane; FIS-M11-06 is the SURFACE the lane governs. Naming an authority for a decision identifier would make the filename wrong if the decision were ever renumbered - which is exactly what happened to the parent's OD-3 when v1.0.1 split its provisioning half out as OD-5.",
+    "why_OBSERVATION_PRINCIPAL_and_not_TEST_PRINCIPAL": "The upstream artifacts call it a 'staging test principal'. That phrase is carried verbatim wherever those artifacts are quoted, but the artifact name says OBSERVATION because the principal's sole authorized purpose is to OBSERVE a health surface. A name containing TEST invites the reading that it may be used by any test, which is precisely the scope creep AUTHORIZED_USE_BOUNDARY below forbids.",
+    "placement_adjudication": {
+      "question": "docs/ops/release/**, docs/ops/owner-ratifications/**, or docs/ops/staging/**?",
+      "verdict": "docs/ops/release/**",
+      "grounds": [
+        "The permission this artifact specifies was WITHHELD by a release-domain artifact. MG-4 lives at docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json MEASUREMENT_GAPS_RECORDED.gaps[3], and its prohibition is restated at that artifact's DEPLOYMENT_AUTHORIZATION_BOUNDARY.authorized[3].constraint. A permission is authored where the permission was withheld.",
+        "The cells this principal unlocks are release-domain cells: ENDPOINT_BY_CALLER_MATRIX.cells[12] (EP-2 x CC-6) and its EP-3 counterpart in docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json, as corrected by docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json CORRECTED_MATRIX_CELL_REACHABILITY.",
+        "docs/ops/owner-ratifications/** holds DECISION RECORDS. Measured by directory listing at AS_OF_HEAD: four files, every one an owner-decision transcript, none a grant or a specification. This artifact is neither a transcript nor a decision.",
+        "docs/ops/staging/** holds hosted evidence and ACL-apply authorities. This artifact governs no act against the database's contents and emits no evidence of its own."
+      ],
+      "evidence_location_is_not_authority_location": "Evidence produced under a successor to this authority lands wherever the M11 runner's evidence is sited. FIS-M11-04 has not sited it. That is a future lane's decision and is not pre-empted here."
+    }
+  },
+
+  "PURPOSE": "Specify the MINIMUM durable staging principal sufficient for an authenticated observation of the M11 health endpoints that require a verified session - EP-2 (/api/health/runtime-identity) above all, and EP-3 (/api/health/stella-preconditions) inseparably with it - and state, before any hosted act exists, the custody, delivery, rotation, revocation, evidence and lifecycle contract that principal is held under. This artifact is the SEPARATE AUTHORITY that ratified owner decision OD-5 authorized to be OPENED. It creates nothing.",
+
+  "CONTROLLING_AUTHORITY": {
+    "rule": "Every clause below is subordinate to the artifacts named here. Where this artifact is silent, they control. Where this artifact would conflict with them, this artifact is wrong and fails closed.",
+    "controlling": [
+      {
+        "path": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json",
+        "blob_at_AS_OF_HEAD": "62c6db45b3dc9609f7a4020aa5820a754fb99123",
+        "clause": "ratifications[OD-5], its required_scope_of_the_separate_authority list, its hard_constraint_preserved, and its sequencing clause."
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+        "clause": "MEASUREMENT_GAPS_RECORDED.gaps[3] (MG-4), inherited unchanged including not_a_reason_to_lower_the_boundary; DEPLOYMENT_AUTHORIZATION_BOUNDARY.authorized[3] (AUTH-4) and its constraint; SECRET_CUSTODY_CONTRACT as PRECEDENT ONLY, not as an inherited decision."
+      },
+      {
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+        "blob_at_AS_OF_HEAD": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+        "clause": "ENDPOINT_INVENTORY, CALLER_TAXONOMY.classes[5] (CC-6), ENDPOINT_BY_CALLER_MATRIX, M11_SUCCESS_CONTRACT."
+      },
+      {
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+        "blob_at_AS_OF_HEAD": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+        "clause": "OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-5]; FUTURE_IMPLEMENTATION_SURFACE.items[4] (FIS-M11-05) and items[5] (FIS-M11-06)."
+      },
+      {
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+        "blob_at_AS_OF_HEAD": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b",
+        "clause": "CORRECTED_MATRIX_CELL_REACHABILITY; CORRECTED_EP3_FREEZE_SCOPE."
+      },
+      {
+        "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3.json",
+        "blob_at_AS_OF_HEAD": "8f340096615dbaecaa790af8c926bfeceb3c61cf",
+        "clause": "CORRECTED_EP2_TEST_CITATION."
+      },
+      {
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+        "clause": "SECURITY_STOP_LINES SSL-06, SSL-07, SSL-08, SSL-09."
+      },
+      {
+        "path": "docs/ops/CREDENTIAL_HYGIENE.md",
+        "clause": "Section 1 (no real credential enters the repository) and section 2 (what is secret and what is not - the Supabase project ref and the publishable/anon key are explicitly NOT secret; a signed JWT explicitly IS)."
+      }
+    ]
+  },
+
+  "CONSUMED_OWNER_RATIFICATION": {
+    "record": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json",
+    "decision_consumed": "OD-5 = YES_AUTHORIZE_UNDER_SEPARATE_AUTHORITY",
+    "what_it_authorized": "Opening a separate, subsequent governance lane to establish a durable staging test principal sufficient for observing M11's authenticated cells (EP-2 and EP-3 under CC-6). Its own effective_meaning continues: 'This ratification record does NOT itself create, specify, or provision that principal.'",
+    "what_it_did_not_authorize": [
+      "Creating the staging test principal.",
+      "Specifying who the principal is, what role it holds, or how it authenticates. That specification is the work THIS artifact performs - and performing it is still not creating it.",
+      "Relaxing MG-4 or any existing authentication boundary in any respect."
+    ],
+    "ratifying_a_posture_is_not_authorizing_its_mechanism": "OD-5 ratified a POSITION (a principal may be established under separate authority). It did not authorize the MECHANISM by which one would be established. The mechanism is the subject of OD-P1 below and is left to the owner, not inferred from the position.",
+    "candidate_binding_reverified_by_this_lane": {
+      "rule_source": "That record's CANDIDATE_BINDING.verification_method: git rev-parse <candidate_commit_sha>:<artifact path>, compared against expected_blob_sha1, for each of the four artifacts.",
+      "candidate_commit_sha": "c9f42a33d922c7dfe2b10f07ad43ba07db9852c5",
+      "result": "PASS, 4 of 4. Additionally re-derived at AS_OF_HEAD to show the package has not drifted between the ratification's candidate commit and this lane's parent.",
+      "measured": [
+        { "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json", "expected_blob_sha1": "1b267e4a6cc76cc643dc868baec24a506ee25a30", "at_candidate": "1b267e4a6cc76cc643dc868baec24a506ee25a30", "at_AS_OF_HEAD": "1b267e4a6cc76cc643dc868baec24a506ee25a30" },
+        { "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json", "expected_blob_sha1": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7", "at_candidate": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7", "at_AS_OF_HEAD": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7" },
+        { "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json", "expected_blob_sha1": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b", "at_candidate": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b", "at_AS_OF_HEAD": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b" },
+        { "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3.json", "expected_blob_sha1": "8f340096615dbaecaa790af8c926bfeceb3c61cf", "at_candidate": "8f340096615dbaecaa790af8c926bfeceb3c61cf", "at_AS_OF_HEAD": "8f340096615dbaecaa790af8c926bfeceb3c61cf" }
+      ],
+      "on_mismatch": "STOP_RATIFICATION_BINDING_MISMATCH, per that record's own on_mismatch clause. No mismatch was measured."
+    }
+  },
+
+  "SEQUENCING_PRECONDITIONS": {
+    "rule": "This artifact may be AUTHORED, reviewed and amended now. The hosted act it specifies may NOT be performed until every precondition below is SATISFIED and evidenced. A precondition merely believed satisfied is UNSATISFIED. This is a conjunction: satisfying four of five is zero authority.",
+    "preconditions": [
+      {
+        "id": "PRE-1",
+        "condition": "The INDEPENDENT BOUNDED VERIFICATION that the consumed owner ratification requires OF ITSELF has been performed and materialized.",
+        "source": "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json next_gate and required_independent_review: 'Only after that verification may TRACK_A (M11 core implementation) and, separately, TRACK_B (the staging-principal authority lane) be opened.'",
+        "state_at_AS_OF_HEAD": "NOT_EVIDENCED_IN_TREE.",
+        "how_measured": "grep -rln over docs/ for the strings M11_HEALTH_CONTRACT_OWNER_DECISIONS and INDEPENDENT_BOUNDED_VERIFICATION_OF_M11 returns exactly one file - the ratification record itself. git log --oneline -S 'M11_HEALTH_CONTRACT_OWNER_DECISIONS' --all returns exactly one commit, 26bc0f0c, the commit that created the record. The negative claim was grepped across the tree AND across commit bodies before being stated, rather than inferred from a missing filename.",
+        "disposition_of_this_lane_authoring_anyway": "RECORDED, NOT RESOLVED, and NOT SELF-ABSOLVED. The owner directed this authoring lane explicitly, and this lane performs no hosted act, so authoring is consistent with the ratification's own distinction between OPENING a lane and EXECUTING it. The unsatisfied precondition is nevertheless carried forward as a BLOCKING gate on provisioning, and the independent certifier required by PRE-2 is asked to adjudicate whether authoring ahead of PRE-1 is itself a defect. A lane does not adjudicate a question about its own legitimacy in its own favour."
+      },
+      {
+        "id": "PRE-2",
+        "condition": "This artifact has passed an INDEPENDENT ADVERSARIAL CERTIFICATION performed by a reviewer that did not author it.",
+        "state_at_AS_OF_HEAD": "NOT_PERFORMED. This artifact is newly authored."
+      },
+      {
+        "id": "PRE-3",
+        "condition": "The owner has answered every decision in OWNER_DECISIONS_REQUIRED below.",
+        "why": "An unanswered decision leaves the principal's shape undetermined, and an undetermined principal cannot be provisioned to a specification. OD-P1 in particular selects between channels whose SECURITY POSTURES differ, not merely their convenience.",
+        "state_at_AS_OF_HEAD": "UNANSWERED. Six decisions are open."
+      },
+      {
+        "id": "PRE-4",
+        "condition": "Each UNKNOWN under MEASUREMENT_GAPS_RECORDED that the owner's selected design depends on has been RESOLVED BY MEASUREMENT against the exact staging project, not by inference from a local container or from documentation.",
+        "state_at_AS_OF_HEAD": "UNRESOLVED. This lane performed no hosted read; MODE forbids it.",
+        "why_this_is_its_own_precondition": "A resolved UNKNOWN whose value is a HOSTED SETTING is resolved at the moment it is measured and open again at the moment it is acted upon, because the setting can change in between. Each such UNKNOWN therefore carries a re-measure-at-execution obligation, not a one-time answer."
+      },
+      {
+        "id": "PRE-5",
+        "condition": "A successor EXECUTION authority exists that grants the specific hosted act, names its channel, binds it to the exact target ref, and carries its own human confirmation.",
+        "state_at_AS_OF_HEAD": "ABSENT.",
+        "why": "THIS artifact is a specification. A specification of a minimum privilege is not a grant of it, in the same way that MG-4's description of the circularity was never a licence to resolve it."
+      }
+    ],
+    "on_any_precondition_unsatisfied": "STOP. No principal is created, no credential is generated, no GRANT is issued, no Supabase configuration is touched, no session is minted."
+  },
+
+  "TARGET_IDENTITY_CONTRACT": {
+    "rule": "The target is selected by PROJECT REF, never by project NAME or by any label a dashboard displays.",
+    "authorized_target_ref": "bvyzblhqymxruxdguaee",
+    "authorized_target_provenance": "db/hosted/target-identity.ts:215, KNOWN_STAGING_PROJECT_REF. A compile-time constant of this repository, not a value this artifact introduces.",
+    "vetoed_target_ref": "ctaxtgujyyprgynmnvtq",
+    "vetoed_target_provenance": "db/hosted/target-identity.ts:201, KNOWN_PRODUCTION_IDENTIFIERS.projectRefs[0], checked FIRST by the classifier and refusing regardless of what else is declared.",
+    "why_selection_by_name_is_forbidden": "Selection by display name has been MEASURED in this programme to select the wrong project: the production-vetoed ref is the one whose display name reads like the staging one. A name is a label a human can change; a ref is the value every URL the project serves already carries.",
+    "ref_is_not_a_secret": "docs/ops/CREDENTIAL_HYGIENE.md section 2 classifies the Supabase project ref as NOT SECRET and records that redactForHostedLog preserves it deliberately, because it is the most useful thing an operator can see when diagnosing a wrong destination. Writing both refs here is compliant, not a leak.",
+    "production_principal_prohibition": "No principal specified by this artifact may exist in, be created in, be copied to, or hold any credential valid against ctaxtgujyyprgynmnvtq. A principal that authenticates against both projects is not a staging principal.",
+    "coherence_dependency": "SYS-03 (lib/supabase/project-coherence.ts) pins the deployment's Auth project to its Postgres project. A session minted by a DIFFERENT project's GoTrue is not merely useless against the staging deployment - lib/auth/identity.ts classifies it SESSION_REJECTED and the endpoint answers 401. The target ref of the principal and the target ref of the deployment under observation must be the same value, and the observation runner must prove they are rather than assume it."
+  },
+
+  "REQUIRED_OBSERVATION_CAPABILITY": {
+    "method": "Derived from the runtime source at AS_OF_TREE, top-down from the request boundary to the handler, and NOT from what a principal would conveniently have. Every step names the file and line that establishes it.",
+    "question": "What is the least a caller must hold for /api/health/runtime-identity to answer 200-or-503 with its real payload rather than 401?",
+    "derivation_chain": [
+      {
+        "step": 1,
+        "surface": "Platform boundary (Vercel Deployment Protection)",
+        "measured": "NOT MEASURED BY THIS LANE. Recorded upstream as MG-5 (UNKNOWN) and as FIS-M11-05, which names Protection Bypass for Automation as a DEPENDENCY of M11 automation and states that a bypass credential is a secret whose provisioning is a separate authority ADJACENT TO OD-5.",
+        "consequence_for_this_principal": "NONE. A protection bypass is a DIFFERENT credential of a DIFFERENT system (the hosting platform, not the application's identity provider). This authority neither specifies nor authorizes one, and the principal it does specify cannot substitute for one. A 302 from Deployment Protection is INCONCLUSIVE per M11-SC-6 and must never be recorded as a health verdict."
+      },
+      {
+        "step": 2,
+        "surface": "proxy.ts (the Next.js proxy/middleware)",
+        "measured": "proxy.ts:48-51 matches every path except Next.js internals and static image extensions, so /api/health/* IS matched. proxy.ts:12-39 applies a global sliding-window limit of 60 requests per minute keyed on client IP to every path beginning with /api/, but ONLY when both KV_REST_API_URL and KV_REST_API_TOKEN are present. lib/supabase/proxy.ts:78-88 redirects only the /app and /admin prefixes, so a health request passes through to its handler with no auth decision taken here.",
+        "consequence_for_this_principal": "The proxy imposes NO identity requirement on a health request. It imposes a shared per-IP budget (F-M11-10) and a coherence assertion (lib/supabase/proxy.ts:39) that throws - and therefore answers 500, not 401 - if the deployment's Auth and Postgres projects disagree. Neither is satisfiable or avoidable by choosing a different principal."
+      },
+      {
+        "step": 3,
+        "surface": "The handler's gate",
+        "measured": "app/api/health/runtime-identity/route.ts:49 calls getVerifiedAuthIdentityResult() and, at :51-61, returns 401 (or 503 when failure is AUTH_UNAVAILABLE) if identity is null. It reads NO other property of the caller. app/api/health/stella-preconditions/route.ts:67-75 is byte-for-byte the same gate.",
+        "consequence_for_this_principal": "The entire admission test is 'identity is non-null'. No organisation, no profile, no role, no claim, no header."
+      },
+      {
+        "step": 4,
+        "surface": "What makes identity non-null",
+        "measured": "lib/auth/identity.ts:101-141. createClient() must not throw; supabase.auth.getUser() must not throw; data.data.user must be non-null; and authUser.id must match UUID_PATTERN (:86). emailVerified is DERIVED at :139 but is NOT consulted by either health route.",
+        "consequence_for_this_principal": "A GoTrue-verified subject with a syntactically valid UUID id is sufficient. Email confirmation is NOT required by the endpoint. The adjudication states the same independently: CALLER_TAXONOMY CC-3 records 'No health route branches on emailVerified. CC-3 and CC-4 therefore receive identical responses on all three endpoints.'"
+      },
+      {
+        "step": 5,
+        "surface": "How the session must be transported",
+        "measured": "lib/supabase/server.ts:22-46 builds the request-scoped client with a cookies adapter over next/headers cookies() and passes NO global headers option. supabase.auth.getUser() is called at lib/auth/identity.ts:114 with NO argument, so it reads the session from that cookie-backed storage.",
+        "consequence_for_this_principal": "THE SESSION MUST ARRIVE AS COOKIES. An Authorization: Bearer header does NOT authenticate against these endpoints, because nothing in the server client reads request headers for a token. Any runner design that plans to present a bearer token is designing for an endpoint this repository does not have.",
+        "why_this_matters_more_than_it_looks": "The convenient design - mint a token, set an Authorization header - fails CLOSED with a 401 that is indistinguishable from 'wrong principal'. A lane that had not measured this would have concluded the principal was misconfigured and escalated its privileges to fix a transport defect."
+      },
+      {
+        "step": 6,
+        "surface": "What the caller's identity does NOT reach",
+        "measured": "app/api/health/runtime-identity/route.ts:64-66 observes the report over getDefaultDatabaseClient().sql - the deployment's OWN pool, as the route prose states at :13-16. The caller's subject is never used to open a connection, never becomes a PostgreSQL login role, and is never set as a claim on that query.",
+        "consequence_for_this_principal": "THE PRINCIPAL REQUIRES ZERO POSTGRESQL PRIVILEGE. Not SELECT, not USAGE, not CONNECT, not a role, not a GRANT. The question 'what database privileges does the observation principal need' has the measured answer NONE, and any design that grants it one has exceeded the requirement rather than met it."
+      }
+    ],
+    "minimum_capability_statement": "Hold a GoTrue-verified session, in project bvyzblhqymxruxdguaee, presented as cookies. That is the whole requirement.",
+    "what_this_capability_is_NOT": [
+      "It is not a database capability. See step 6.",
+      "It is not an authorization capability. Neither endpoint performs an authorization check of any kind - the route prose at app/api/health/runtime-identity/route.ts:28-37 explains that a stricter gate would remove the diagnostic exactly when the failure it observes occurs.",
+      "It is not a platform capability. See step 1.",
+      "It is not an operator capability. See HARD_SEPARATION below."
+    ]
+  },
+
+  "PRINCIPAL_DESIGN": {
+    "kind": "A Supabase Auth (GoTrue) end-user subject in auth.users of project bvyzblhqymxruxdguaee. An APPLICATION END-USER identity - the same kind of thing any ordinary user of the product is - deliberately NOT a PostgreSQL role, NOT a platform operator identity, and NOT a service identity.",
+    "designation": "M11_OBSERVER. A label used in evidence and inventory. The label is NOT the credential and NOT the subject id.",
+    "durability": "DURABLE in the sense OD-5 used: it persists between observation runs rather than being minted per run. Durable does not mean permanent - see ROTATION_EXPIRY_REVOCATION and the end-of-life trigger.",
+    "defining_properties": [
+      {
+        "id": "PD-1",
+        "property": "It exists in auth.users of the staging project and NOWHERE ELSE.",
+        "verification": "A successful password grant against the staging GoTrue token endpoint, plus a failed grant against no other project because no other project is ever contacted."
+      },
+      {
+        "id": "PD-2",
+        "property": "It has NO row in public.users. It holds no application profile.",
+        "why_this_is_achievable": "syncUserProfile is called from exactly four sites, measured by grep across app/ and lib/: app/(public)/login/actions.ts:41 (login), app/(public)/login/actions.ts:113 (signup), app/(authenticated)/app/onboarding/actions.ts:49, and app/auth/callback/route.ts:19. NONE of them is the proxy, and none is a health route. A subject that authenticates DIRECTLY against GoTrue and never traverses the app's login, signup, onboarding or OAuth-callback flows never acquires a profile row.",
+        "why_it_matters": "The profile row is the gateway to the application's authorization model. Without it, loadRequestPrincipal finds nothing and every profile-dependent surface refuses. This is the single largest privilege reduction available, it costs nothing, and it is obtained by a NEGATIVE discipline (do not use the login page) rather than by a positive grant.",
+        "operational_consequence_that_must_be_stated": "The observation runner MUST NOT authenticate through /login, /auth/callback, or any browser-driven journey. Doing so would silently create the profile row and enlarge the principal, and would do so on the FIRST such run, irreversibly, without any error."
+      },
+      {
+        "id": "PD-3",
+        "property": "It is a member of NO organization and holds NO organization role.",
+        "verification": "Follows from PD-2 for any membership model keyed on the profile row, and is independently asserted as a provisioning-time check."
+      },
+      {
+        "id": "PD-4",
+        "property": "It is NOT super admin. It carries no is_super_admin true anywhere.",
+        "note": "Follows from PD-2, since is_super_admin is read from public.users - which app/api/health/runtime-identity/route.ts:30-33 names as exactly the wrong gate to depend on for this endpoint."
+      },
+      {
+        "id": "PD-5",
+        "property": "Its JWT role claim is the ordinary authenticated role. It is NEVER a service_role token and is never minted from a service_role or anon key acting as an identity.",
+        "note": "lib/supabase/server.ts:27-29 records the principle this depends on: a key authorises, it does not decide identity."
+      },
+      {
+        "id": "PD-6",
+        "property": "Its email address is dedicated to this purpose and is used by no human and no other principal.",
+        "measured_prohibition": "The address lorenzo@thebalancecorp.org MUST NOT be used. It is an existing organization member in this programme's live data, so a principal bound to it would inherit a membership and violate PD-3 on creation. Reusing an address that already has application state is the most likely way this design is accidentally broken.",
+        "open": "Which address is used is OD-P5."
+      },
+      {
+        "id": "PD-7",
+        "property": "It is used for the M11 authenticated health observation and for nothing else.",
+        "see": "AUTHORIZED_USE_BOUNDARY."
+      }
+    ]
+  },
+
+  "MINIMUM_PRIVILEGES": {
+    "rule": "Stated along SEPARATE axes, because collapsing them is how a principal acquires a privilege nobody decided to give it. An axis whose answer is NONE is stated as NONE rather than omitted.",
+    "axes": [
+      {
+        "axis": "LOGIN / AUTHENTICATION",
+        "required": "The ability to obtain a GoTrue session for this subject in project bvyzblhqymxruxdguaee, by the grant type selected in OD-P2.",
+        "minimum": "One grant type. Not several. A principal that can authenticate three ways has three credentials to rotate and three to leak.",
+        "depends_on_hosted_settings": "Whether a password grant succeeds depends on the project's email-confirmation posture and on whether the subject is confirmed. Recorded as MGP-1 and MGP-2 (UNKNOWN), to be measured, not assumed.",
+        "explicitly_not_required": "Email confirmation is not required BY THE ENDPOINT (see REQUIRED_OBSERVATION_CAPABILITY step 4). It may still be required by GoTrue to issue a session at all. These are two different requirements and must not be collapsed."
+      },
+      {
+        "axis": "ORGANIZATION MEMBERSHIP / TENANT CONTEXT",
+        "required": "NONE.",
+        "positively_excluded": true,
+        "basis": "app/api/health/runtime-identity/route.ts:37 - 'No second auth system, no organisation requirement, no profile requirement.' The adjudication records the same at ENDPOINT_INVENTORY EP-2 authorization_requirement_today: 'NONE beyond a verified session. No organisation and no profile, deliberately.'"
+      },
+      {
+        "axis": "SCHEMA / TABLE PRIVILEGES",
+        "required": "NONE. Zero GRANT of any kind, on any object, in any schema.",
+        "positively_excluded": true,
+        "basis": "REQUIRED_OBSERVATION_CAPABILITY step 6. The observed query runs on the deployment's own pool as the runtime role; the caller's identity never becomes a PostgreSQL login role.",
+        "consequence": "There is no role to create, no GRANT to issue, and therefore no DDL and no SQL connection anywhere in this principal's lifecycle. A design that proposes a GRANT has mis-derived the requirement."
+      },
+      {
+        "axis": "RLS BEHAVIOUR",
+        "required": "The DEFAULT behaviour for an authenticated subject with no application state.",
+        "detail": "For tenant-scoped surfaces the application sets request.jwt.claims from the verified subject and RLS evaluates auth.uid() against it (lib/auth/identity.ts:20-28). A subject with no profile row and no membership matches no tenant row, so every tenant policy yields zero rows. NEITHER health endpoint enters an identity context at all, so for EP-2 and EP-3 the question does not arise.",
+        "containment_note": "RLS is the containment for this principal, and it requires NO special configuration to provide it. Nothing is switched on; something is simply never granted."
+      },
+      {
+        "axis": "API / JWT BEHAVIOUR",
+        "required": "An ordinary authenticated-role access token issued by the staging project's GoTrue, transported as cookies in the format @supabase/ssr expects.",
+        "version_pinned": "@supabase/ssr ^0.12.0 and @supabase/supabase-js ^2.108.2, per package.json:127-128.",
+        "construction_rule": "The runner MUST obtain the cookie representation FROM THE LIBRARY ITSELF (for example by driving createServerClient with an in-memory cookie adapter and capturing what setAll writes) rather than hand-rolling a cookie name or encoding. The exact serialization - name, prefix, chunking threshold - is an internal detail of @supabase/ssr 0.12.x and is recorded as MGP-3 (UNKNOWN). Hand-rolling it would make the observation fail with a 401 that looks exactly like an authentication failure.",
+        "explicitly_prohibited": "Presenting the token as an Authorization header. It does not authenticate here (step 5) and an implementation that relies on it is measuring nothing."
+      },
+      {
+        "axis": "ABILITY TO REACH EP-2",
+        "required": "Network reachability of the deployment under observation, past Deployment Protection if enabled.",
+        "not_supplied_by_this_principal": "A Deployment Protection bypass is a separate credential under FIS-M11-05, adjacent to OD-5 and NOT authorized here. Where protection blocks the runner, the outcome is INCONCLUSIVE under M11-SC-6, never FAIL and never PASS.",
+        "rate_limit_interaction": "F-M11-10: 429 is reachable on all three health endpoints via the shared per-IP budget. A 429 is INCONCLUSIVE under M11-SC-6 and OD-4. The principal does not and must not exempt itself from the limiter - an exemption would be a boundary change, which MG-4 forbids."
+      },
+      {
+        "axis": "PROHIBITED WRITE CAPABILITIES",
+        "required": "The principal must hold no capability to write application data.",
+        "detail": "Follows from the SCHEMA/TABLE axis (no grants) and PD-2/PD-3 (no profile, no membership). Every governed write path in this application transits an organization context this principal cannot enter.",
+        "one_unavoidable_write_is_disclosed_separately": "See UNAVOIDABLE_WRITE_DISCLOSURE. Claiming this principal performs zero writes would be false."
+      }
+    ]
+  },
+
+  "PROHIBITED_PRIVILEGES": {
+    "rule": "Each entry is a prohibition on the PRINCIPAL, independent of whether anyone currently intends to grant it. A prohibition that only forbids what nobody planned is not doing work.",
+    "prohibited": [
+      "ANY PostgreSQL role membership, of any kind, including a role created solely for it.",
+      "ANY GRANT on any schema, table, view, function, sequence or type.",
+      "BYPASSRLS, SUPERUSER, CREATEROLE, CREATEDB, or any attribute of that class.",
+      "The uellix_app runtime credential, or any reuse of it.",
+      "The uellix_auditor credential, or any reuse of it. It is a DIFFERENT capability, under a DIFFERENT authority, for a DIFFERENT observation.",
+      "The uellix_migrator credential, or any reuse of it.",
+      "postgres, supabase_admin, or any administrative database login.",
+      "A Supabase service_role key, in any form, held by the principal or used to impersonate it at observation time.",
+      "A Supabase personal access token (sbp_), which is an OPERATOR credential and engages SSL-06 wherever it is held.",
+      "is_super_admin true, or any platform-administration flag.",
+      "Membership of any organization, or any organization role.",
+      "A Vercel account, team membership, or any Vercel API token.",
+      "A Vercel Deployment Protection bypass token. Separate credential, separate authority (FIS-M11-05).",
+      "Any credential valid against project ctaxtgujyyprgynmnvtq.",
+      "Any exemption from the global API rate limiter.",
+      "Any capability obtained by MODIFYING an endpoint, a middleware, a policy or a test to accommodate the principal."
+    ],
+    "no_reuse_rule": "No existing governed credential may be adopted for this purpose merely because it exists and already works. The existence of a governed role is evidence that somebody adjudicated THAT role for THAT purpose, not evidence that it is appropriate for this one."
+  },
+
+  "HARD_SEPARATION": {
+    "rule": "This principal is a NEW, DEDICATED identity. It is not any of the following, and may not be made to be any of them later without a fresh authority.",
+    "separations": [
+      { "from": "uellix_auditor", "why_distinct": "A PostgreSQL login role for a read-only catalog observation under FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json. It observes the DATABASE directly. This principal never opens a database connection at all. Different plane, different capability, different authority." },
+      { "from": "the runtime credential (uellix_app)", "why_distinct": "It is the identity EP-2 EXISTS TO OBSERVE. A principal that held it would be the subject of the measurement rather than its caller, which is the definition of a circular observation." },
+      { "from": "uellix_migrator", "why_distinct": "A DDL capability. Nothing in an observation is a schema change." },
+      { "from": "postgres / supabase_admin", "why_distinct": "Administrative. REQUIRED_OBSERVATION_CAPABILITY step 6 measured the required database privilege as NONE, so any administrative login exceeds the requirement by an unbounded margin." },
+      { "from": "an operator credential", "why_distinct": "An operator credential administers the PLATFORM. This principal is an ordinary end user of the APPLICATION. Where an operator credential is nonetheless required to CREATE it, that is a property of the creation CHANNEL and is adjudicated at OD-P1 - it does not travel to the principal itself." },
+      { "from": "service_role", "why_distinct": "service_role bypasses RLS entirely. It would satisfy the endpoint's gate, which is exactly why it must be refused: it would make the observation pass while removing the containment that makes the principal safe to hold. It is admissible only if independently PROVEN minimally necessary - it is measurably not, since an ordinary authenticated subject satisfies the gate (REQUIRED_OBSERVATION_CAPABILITY step 4) - and separately owner-approved. Both conditions, not either." }
+    ],
+    "vocabulary_hazard_recorded": {
+      "hazard": "The M11 caller taxonomy names this class CC-6 OPERATOR_AUTHENTICATED.",
+      "why_it_is_a_hazard": "The label reads as a privilege claim and is not one. CC-6's own definition is 'A human or automated prober holding a verified staging test principal' - an ordinary verified session. A reader who takes the LABEL as the specification would provision an operator, which this artifact forbids in PROHIBITED_PRIVILEGES.",
+      "disposition": "The label is used unchanged when CC-6 is cited, because renaming a frozen taxonomy identifier is not this lane's authority. The hazard is recorded so a successor reads the definition rather than the name."
+    }
+  },
+
+  "AUTH_RLS_MODEL": {
+    "chain_for_a_tenant_route": "cookie -> @supabase/ssr createServerClient (lib/supabase/server.ts:22-46) -> auth.getUser() verified by GoTrue over the network (lib/auth/identity.ts:21-27 records why getSession is refused: the cookie is attacker-supplied and getSession would let it choose its own sub) -> verified subject -> lib/auth/database-context.ts sets request.jwt.claims -> RLS policies evaluate auth.uid().",
+    "chain_for_EP_2_and_EP_3": "The chain STOPS at the verified subject. Neither route enters an identity context, sets a claim, or reads public.users. EP-2 then queries the deployment's own pool; EP-3 makes no query and no network call at all.",
+    "consequence": "This principal's RLS posture is: subject to every policy, matching nothing. It is contained by the ABSENCE of application state rather than by any policy written for it, which means no policy has to be authored, reviewed or maintained for this principal to stay contained.",
+    "failure_semantics_that_the_runner_must_encode": {
+      "source": "lib/auth/identity.ts:66-74 and app/api/health/runtime-identity/route.ts:51-61.",
+      "NO_SESSION": "401. The conformant answer for an anonymous caller. Never a failure.",
+      "SESSION_REJECTED": "401. Indistinguishable at the transport from NO_SESSION - the adjudication records this collapse at CALLER_TAXONOMY CC-2. A 401 when the runner BELIEVED it was authenticated therefore means the credential is wrong, expired, or minted by the wrong project; it does NOT mean the deployment is unhealthy and must never be recorded as a health FAIL.",
+      "MALFORMED_SUBJECT": "401.",
+      "AUTH_UNAVAILABLE": "503 with body Unavailable. Distinct from the 503 the handler returns for a divergent runtime identity, which carries the full payload. A runner that reads only the status code cannot tell those two 503s apart and must read the body shape to classify.",
+      "coherence_failure": "500, not 401 and not 503, raised at lib/supabase/proxy.ts:39 before any handler runs. A 500 on a health path is a deployment-wide coherence refusal, not an endpoint verdict."
+    }
+  },
+
+  "MG4_PRESERVATION_CONTRACT": {
+    "inherited_verbatim": "The endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5, and neither this artifact nor any successor to it makes it one.",
+    "what_this_artifact_does_to_MG_4": "It RESOLVES MG-4's circularity in the only way MG-4 itself left open - by supplying a principal that already exists at the moment of observation - and it does so without touching the boundary. MG-4 is not amended, weakened, closed or superseded by this artifact; it is satisfied on its own terms.",
+    "prohibited_accommodations": [
+      "Making EP-2 or EP-3 answer an anonymous caller.",
+      "Adding a header, query parameter, shared secret or allowlist that admits an unauthenticated runner.",
+      "Weakening getVerifiedAuthIdentityResult, including replacing getUser with getSession.",
+      "Exempting the health paths from the rate limiter to make a run cleaner.",
+      "Relaxing SYS-03 coherence so a token from another project would be accepted.",
+      "Changing tests/runtime-identity-observability.test.ts:1046 or :1049-1051 so a different anonymous answer would pass."
+    ],
+    "preservation_is_MEASURED_not_asserted": {
+      "rule": "Every observation run MUST include an ANONYMOUS control call to EP-2 in the same run, from the same runner, against the same deployment, and MUST record its status.",
+      "expected": "401 with body exactly { error: 'Unauthorized' }.",
+      "on_anything_else": "STOP and raise. A non-401 anonymous answer means the boundary moved, and that is a security finding, not a health result.",
+      "why": "A prohibition that is only ever restated in prose cannot be falsified. This control makes 'we did not lower the boundary' a per-run measurement. It also gives the run a case that MUST fail if the boundary is ever weakened - without it the run would exercise only the path that is expected to pass, which proves nothing about the property the prohibition is protecting."
+    }
+  },
+
+  "UNAVOIDABLE_WRITE_DISCLOSURE": {
+    "claim_that_would_be_false": "That this principal performs no write against the staging database.",
+    "measured_truth": "Obtaining a GoTrue session is a WRITE. A password grant causes the identity provider to persist session and refresh-token state and to update last-sign-in state for the subject. This is a property of authenticating at all, not of this principal's design, and no choice of principal avoids it.",
+    "why_it_cannot_be_designed_away": "The endpoints are session-gated by deliberate design (MG-4's not_a_reason_to_lower_the_boundary). A session is state. An observation that requires a session therefore requires state to be created. The only alternative is to lower the boundary, which is prohibited.",
+    "bounding_rules": [
+      "ONE sign-in per observation run, not one per endpoint. The same session is reused across EP-2 and EP-3 within a run.",
+      "The session's lifetime is bounded to the run. The runner does not persist it between runs, and does not cache it to a file.",
+      "The number of sign-ins is bounded by the number of runs and is recorded in evidence, so the write footprint is countable rather than estimated."
+    ],
+    "interaction_with_any_quiesce_or_read_only_posture": {
+      "rule": "If a QUIESCE, read-only, or no-writer posture is in force for the staging project at observation time, this principal's sign-in CONTRADICTS it and the observation must not run.",
+      "why_this_is_stated_here": "A session-gated health endpoint cannot serve a read-only observation, because the login that reaches it is itself a write to the identity provider's own tables. Any lane that treats this principal as read-only has made an error of category, not of degree.",
+      "disposition": "The precedence between an active quiesce posture and an M11 observation run is NOT adjudicated here. It is raised as OF-P4 and belongs to whichever authority holds the quiesce posture."
+    }
+  },
+
+  "CUSTODY_CONTRACT": {
+    "independence_statement": "The custody decisions of the D-1 auditor lane (FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json SECRET_CUSTODY_CONTRACT) and of the runtime binding lane are treated as PRECEDENT to be argued with, not as decisions inherited by default. They govern a PostgreSQL DSN consumed by a local operator process. This governs an end-user password or refresh token consumed by an automated runner. The threat models differ, so each clause below is either adopted WITH ITS REASON RESTATED for this capability, or deliberately not adopted.",
+    "classification": "The principal's authentication material - the password under OD-P2 option A, or the refresh token under option B - IS SECRET-BEARING. Its VALUE is not contained in this artifact, must not be added to it by any successor citing it, and must not be written into any repository authority, manifest, evidence artifact, commit message, PR body, log line, test fixture or retained terminal transcript.",
+    "binds_to": "SSL-08: 'No secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever.' Carried without qualification, because it is a property of evidence artifacts and evidence artifacts are the same kind of thing in both lanes.",
+    "ssl_06_analysis": {
+      "question": "Does holding this principal engage SSL-06 (no privileged credential may be held without an inventory recording who and what holds it)?",
+      "answer_for_the_principal_itself": "NOT ENGAGED ON ITS FACE. The principal is least-privileged by construction: no database privilege, no membership, no profile, no platform capability. It is not a privileged credential.",
+      "answer_for_the_creation_channel": "ENGAGED IF OD-P1 selects a channel that requires holding a service_role key or a personal access token. Those ARE operator credentials, and the fact that they are used only briefly, only to create a low-privilege subject, does not un-privilege them while they are held.",
+      "disposition": "An INVENTORY ROW IS REQUIRED REGARDLESS. It is required unconditionally for the operator credential if OD-P1 selects a channel that needs one, and it is required as a matter of this artifact's own discipline for the principal, because 'not formally privileged' is a weak reason to hold a standing credential with no record of who holds it. Meeting a stop line's requirement where the stop line does not strictly compel it costs one row."
+    },
+    "custody_options": [
+      {
+        "id": "CU-A",
+        "option": "GitHub Actions secret, scoped to a GitHub Environment with the repository's own protection rules.",
+        "fits_because": "M11-SC-2 requires an automated runner on every deployment, and M11-SC-5 binds each observation to a deployment id and the SHA actually served. A CI runner is where both are naturally available.",
+        "controls_that_become_mandatory_if_selected": [
+          "The observation workflow must not expose the secret to a job that checks out or executes code from an untrusted ref. GitHub does not pass repository secrets to workflows triggered by pull_request from a FORK, but it does pass them to same-repository branches and to pull_request_target. Both of those are untrusted-code paths for this purpose.",
+          "The trigger must be a trusted-context event tied to a deployment, not a code-review event. Measured at AS_OF_TREE: nine workflows exist under .github/workflows/ and NONE uses deployment_status or workflow_run, so this trigger does not exist yet and is part of FIS-M11-04's work.",
+          "golden-journey.yml is measured to trigger on pull_request and to key its concurrency on the PR head SHA. The observation workflow must not be added to that file or share its trigger."
+        ],
+        "residual_risk": "Anyone who can modify a workflow file on a branch that the trusted trigger runs can exfiltrate the secret. Repository write access therefore becomes equivalent to holding this credential."
+      },
+      {
+        "id": "CU-B",
+        "option": "Vercel environment variable, consumed by a scheduled function inside the deployment.",
+        "fits_poorly_because": "An observation performed by the deployment against itself is not an independent smoke. A runtime-identity check that runs inside the process whose identity is in question can report success while the externally-served deployment is broken, and it cannot observe Deployment Protection at all.",
+        "residual_risk": "It also places an authentication credential into the very deployment whose posture is being measured, which couples the credential's blast radius to the deployment's."
+      },
+      {
+        "id": "CU-C",
+        "option": "A dedicated external secret manager, with the runner authenticating to it per run.",
+        "fits_because": "It gives real rotation, real revocation and a real audit trail for access to the secret itself.",
+        "cost": "No such integration exists in this repository at AS_OF_TREE. Selecting it means adopting a new external dependency and a new trust anchor, and the credential that opens the secret manager then becomes the thing that needs custody."
+      },
+      {
+        "id": "CU-D",
+        "option": "Human-held, entered per run.",
+        "fails_because": "M11's enforcement is MACHINE and its retest cadence is every deploy. A credential a human must type cannot satisfy M11-SC-2, and a gate that silently degrades to manual is the failure mode M11-SC-6 exists to prevent."
+      }
+    ],
+    "custody_invariants_regardless_of_option": [
+      "A NAMED, ACCOUNTABLE HOLDER is recorded. 'The team' is not a holder.",
+      "An inventory row exists recording: the principal label, the target project ref, the custody location, the named holder, the creation date, the creation channel, the last rotation date, the next review date, and the revocation state. No secret VALUE, no subject id.",
+      "The secret never enters the repository working tree, tracked or untracked, gitignored or not. A gitignore is a filter on one tool, not a property of a file, and a scratch path inside the worktree has been MEASURED in this programme to inflate ods:scope.",
+      "The secret is never passed as a command-line argument, where a process table or a shell history retains it.",
+      "The secret is never echoed, printed or included in retained command output, at any verbosity.",
+      "The access token, refresh token and assembled cookie value are treated as secret VALUES exactly as the password is. docs/ops/CREDENTIAL_HYGIENE.md section 2 classifies any signed JWT as secret, and the cookie is a container for one."
+    ]
+  },
+
+  "DELIVERY_CONTRACT": {
+    "rule": "Process-scoped delivery only.",
+    "permitted": [
+      "The secret reaches the runner process as an ENVIRONMENT VARIABLE injected by the custody mechanism selected at OD-P3, for the lifetime of that process only.",
+      "The session is minted in memory, held in memory, and discarded when the process exits.",
+      "The cookie representation is produced by @supabase/ssr itself and never written to disk."
+    ],
+    "forbidden": [
+      "Writing the secret, the token, or the cookie to any file.",
+      "vercel env pull. It writes real values to .env.local inside the working tree. Carried unchanged from the two predecessor custody contracts: it is not an implied convenience, and if a successor believes it needs it, that is a separate adjudication.",
+      "Passing any of them as a process argument.",
+      "Logging any of them, including on a failure path. A failure path is exactly where a token is most likely to be printed while debugging.",
+      "Emitting a request or response dump that includes the Cookie header."
+    ],
+    "evidence_emission_allowlist": {
+      "rule": "Evidence emits ONLY derived, non-reversing facts. The list is a CEILING, not a target: a field being permitted is not a reason to emit it.",
+      "permitted_fields": [
+        "the principal LABEL (M11_OBSERVER)",
+        "the target project ref (public)",
+        "the deployment id and the SHA actually served",
+        "the endpoint path",
+        "the caller class (CC-1 for the anonymous control, CC-6 for the authenticated observation)",
+        "the HTTP status",
+        "the verdict (PASS / FAIL / INCONCLUSIVE) and, for INCONCLUSIVE, its reason code",
+        "for EP-2, the payload's own fields, which the endpoint already returns to any authenticated caller by design: status, verified, runtime.sessionUser, runtime.currentUser, runtime.isSuperuser, runtime.bypassesRls, runtime.canCreateRole, runtime.canSetOwnerRole, runtime.canCreateInPublic, target.projectRefProven, failures, observedAt",
+        "a run nonce",
+        "boolean presence of the credential"
+      ],
+      "forbidden_fields": [
+        "the password",
+        "the access token, the refresh token, or any JWT",
+        "the assembled cookie, in whole or in part, redacted or not",
+        "the principal's subject UUID",
+        "the principal's email address",
+        "any Set-Cookie or Cookie header",
+        "any GoTrue error body that has not been reduced to a stable code"
+      ],
+      "why_the_subject_uuid_is_forbidden_even_though_it_is_not_a_credential": "lib/auth/identity.ts:40-41 records the rule this follows: the module refuses to log the subject because a user id is a stable identifier. The principal is synthetic, so the privacy reason is weaker - but the id is also a durable correlator that makes the principal's activity linkable across any surface that logs subjects, and the LABEL serves every legitimate evidentiary purpose the id would. Emitting it buys nothing.",
+      "why_the_EP_2_payload_is_permitted": "It is the observation. The endpoint already discloses exactly these fields to any authenticated caller by deliberate design, and db/runtime-identity-report.ts:167-182 fixes the shape. The adjudication separately records that this body is NOT public (response_may_be_public: NO), so the evidence artifact inherits that: it may be committed only where the repository already commits deployment-posture evidence, and never published to an anonymous surface."
+    }
+  },
+
+  "ROTATION_EXPIRY_REVOCATION": {
+    "rotation": {
+      "cadence": "OPEN - OD-P4.",
+      "triggers_regardless_of_cadence": [
+        "Any suspected exposure of the secret, including exposure of the custody store itself.",
+        "Any change of the named accountable holder.",
+        "Any compromise, or suspected compromise, of the CI environment that holds it.",
+        "Any repository-permission change that widens who can modify the observation workflow, if CU-A is selected.",
+        "Recreation or re-keying of the staging Supabase project.",
+        "Any use of the principal outside AUTHORIZED_USE_BOUNDARY, whether accidental or not."
+      ],
+      "rotation_is_not_redaction": "Removing a value from a document does not rotate it. If the secret is ever written anywhere it should not have been, the remediation is ROTATE FIRST, then clean up. Cleaning up without rotating leaves the credential live and the record misleading."
+    },
+    "expiry": {
+      "measured_constraint": "A GoTrue end-user subject has NO native expiry. There is no TTL to set on the principal itself. Stating a expiry date without a mechanism would be decorative, and a decorative control is worse than a documented absence because it stops anyone looking.",
+      "therefore": "Expiry is implemented as a SCHEDULED REVIEW plus an END-OF-LIFE TRIGGER, both of which are acts a human or a job must perform, and both of which are recorded in the inventory row.",
+      "scheduled_review": "A next-review date is carried in the inventory row and is part of what the review checks. A review that finds the principal still needed records that; a review that does not happen is a finding.",
+      "end_of_life_trigger": "When Track B's authenticated EP-2/EP-3 coverage is complete AND no successor purpose has been authorized, the principal is REVOKED rather than left standing. A durable principal with no current purpose is a standing, unmonitored access path, which is precisely what OD-5's required scope asked to be prevented.",
+      "token_lifetimes_are_hosted_settings": "JWT expiry and refresh-token rotation behaviour are project settings of the staging project, not properties of this design. Recorded as MGP-4 (UNKNOWN). They must be read at provisioning time and re-read at execution time, not assumed from defaults."
+    },
+    "revocation": {
+      "mechanism_options": "Deleting the auth subject; or rotating its password and revoking its outstanding refresh tokens. Which of these is available depends on the channel selected at OD-P1 - a principal created through the dashboard is revoked through the dashboard, and one created through the Admin API can be revoked the same way.",
+      "revocation_must_be_verified_not_assumed": "After revocation, an affirmative check must show the credential no longer authenticates - a grant attempt that FAILS. Absence of access is asserted from a failed attempt, never from the fact that a delete was issued.",
+      "password_rotation_alone_does_not_revoke_a_live_session": "An already-issued access token remains valid until it expires, and a refresh token remains usable unless it is explicitly revoked. A rotation performed in response to a suspected exposure must therefore ALSO revoke outstanding tokens, or the rotation closes the front door while leaving the session open."
+    }
+  },
+
+  "LIFECYCLE": {
+    "rule": "Seven phases. Each names what must be true before it starts and what it must leave behind. NONE of them is authorized by this artifact.",
+    "phases": [
+      {
+        "phase": "1. CREATION",
+        "preconditions": "All of SEQUENCING_PRECONDITIONS satisfied; OD-P1, OD-P2, OD-P5 answered; a successor execution authority in force.",
+        "act": "Create exactly one subject, in project bvyzblhqymxruxdguaee, by the channel selected at OD-P1.",
+        "leaves_behind": "An inventory row; an owner-attested creation record naming who created it, when, and through which channel; the secret placed directly into the custody store selected at OD-P3, having never existed in the repository or in a transcript.",
+        "measured_capability_gap": "The in-repository mechanism for creating a test user, scripts/create-test-user.ts, CANNOT perform this act. At :37-41 it calls assertSupabaseApiOperationAllowed with capability local_seed and a pinned local API port, and that guard fails closed on any non-local target. This is a genuine capability gap, not an oversight to route around: the script is correct to refuse, and a successor that widens it is making a security change, not a convenience change."
+      },
+      {
+        "phase": "2. VERIFICATION",
+        "act": "Prove the principal is what the specification says, BEFORE it is used for any observation.",
+        "must_prove": [
+          "It can obtain a session in the staging project (positive).",
+          "It has no public.users profile row (negative).",
+          "It is a member of no organization (negative).",
+          "It holds no database role and no grants (negative).",
+          "It cannot reach an organization-scoped surface (negative).",
+          "It does not authenticate against the production project - by never attempting it, and by the creation channel having been pinned to the staging ref (structural, not by probing production)."
+        ],
+        "note": "The negative proofs are the point. A verification that only showed the principal CAN reach EP-2 would prove the capability exists and nothing at all about its minimality."
+      },
+      {
+        "phase": "3. USE",
+        "act": "One sign-in per observation run; observe EP-2 and EP-3; issue the anonymous control call required by MG4_PRESERVATION_CONTRACT; discard the session.",
+        "bounded_by": "AUTHORIZED_USE_BOUNDARY."
+      },
+      { "phase": "4. ROTATION", "act": "Per ROTATION_EXPIRY_REVOCATION. Each rotation updates the inventory row and is itself evidenced." },
+      { "phase": "5. REVOCATION / EXPIRY", "act": "Per ROTATION_EXPIRY_REVOCATION, with the failed-grant verification." },
+      { "phase": "6. EVIDENCE", "act": "Per EVIDENCE_CONTRACT. Evidence is emitted at creation, at each run, at each rotation, and at revocation." },
+      { "phase": "7. CLEANUP", "act": "On end-of-life: revoke, verify revocation by a failed grant, close the inventory row with its terminal state, and retain the historical evidence. The inventory row is CLOSED, never deleted - a deleted row makes the history unauditable, which is the opposite of what an inventory is for." }
+    ]
+  },
+
+  "AUTHORIZED_USE_BOUNDARY": {
+    "rule": "The principal is authorized for ONE purpose and is prohibited from every other, including purposes that would be harmless.",
+    "authorized": "Authenticated observation of /api/health/runtime-identity and /api/health/stella-preconditions on a staging deployment, as caller class CC-6, under M11.",
+    "prohibited_uses": [
+      "Any other endpoint of the application, health or otherwise.",
+      "Any browser journey, including the Golden Journey batteries.",
+      "Any integration or e2e test suite.",
+      "Manual exploration of the running application.",
+      "Satisfying any gate other than M11's authenticated cells.",
+      "Any use against a deployment that is not the staging target."
+    ],
+    "why_a_harmless_extra_use_is_still_prohibited": "Each additional use adds a surface on which the principal could acquire application state - a profile row, a membership, a preference - and PD-2 and PD-3 are properties that hold only as long as nothing creates that state. The minimality of this principal is maintained by what it never does, so the boundary is the control."
+  },
+
+  "EVIDENCE_CONTRACT": {
+    "creation_evidence": {
+      "must_record": ["principal label", "target project ref", "creation channel as selected at OD-P1", "creation date", "the named accountable holder", "who performed the creation"],
+      "must_not_record": ["any secret value", "the subject UUID", "the email address"],
+      "proof_of_existence": "A successful grant, recorded as a boolean plus a timestamp. Not a screenshot, and not an attestation alone - an attestation that a principal exists is a claim about the world, and the grant is a measurement of it."
+    },
+    "per_run_evidence": {
+      "must_record": [
+        "run nonce",
+        "deployment id",
+        "the SHA actually served, not the SHA requested (M11-SC-5)",
+        "for each of EP-2 and EP-3: caller class CC-6, HTTP status, verdict, and for EP-2 the payload fields on the emission allowlist",
+        "the anonymous control call to EP-2: caller class CC-1, HTTP status, and whether it equalled 401",
+        "for any INCONCLUSIVE outcome, its reason code (302 protection, 429 rate limit, transport error), never collapsed into PASS or FAIL (M11-SC-6)"
+      ],
+      "every_endpoint_every_run": "M11-SC-3: a skipped endpoint is a FAIL, not a partial PASS. An endpoint skipped because the credential was missing is a FAIL of the run, recorded as such, not an absence."
+    },
+    "state_evidence": "The inventory row, reviewed on its scheduled date, with its rotation history.",
+    "revocation_evidence": "The revocation act, plus the FAILED grant that verifies it.",
+    "ssl_08_binding": "No evidence artifact produced under this authority contains a secret value, at any stage, ever."
+  },
+
+  "EP2_EP3_UNLOCK": {
+    "rule": "Stated as what this principal makes OBSERVABLE, and bounded by what it does not.",
+    "EP-2": {
+      "endpoint": "/api/health/runtime-identity",
+      "cell": "ENDPOINT_BY_CALLER_MATRIX.cells[12], EP-2 x CC-6, m11_consumes_this_cell true.",
+      "blocking_disposition": "BLOCKING, per ratified OD-2.",
+      "what_becomes_observable": "The payload fixed at db/runtime-identity-report.ts:167-182: status, verified, and the runtime block carrying sessionUser, currentUser, isSuperuser, bypassesRls, canCreateRole, canSetOwnerRole, canCreateInPublic, plus target.projectRefProven, failures and observedAt. Status is 200 when verified and 503 when any observed property diverges or the observation throws.",
+      "why_this_is_the_strongest_signal_M11_can_carry": "It is the only cell in the matrix where the deployment SHOWS the answer rather than implying it. Everything that proved the runtime identity before was inferential - the bootstrap gate refuses to serve on a wrong role, so a deployment that answers at all has passed it once - and the route prose at :5-11 states precisely why that is not the same statement as 'current_user is the runtime role and it does not hold BYPASSRLS'.",
+      "relationship_to_M11_SC_8": "It supplies a SECOND independently failable cell. It is NOT required to make M11 non-vacuous: OD-5's own sequencing clause records that OD-1's A2 selection already gives EP-1 a genuinely failable anonymous cell, so M11-SC-8 is satisfiable without this principal. Claiming otherwise would make Track B a prerequisite for Track A, which the ratification explicitly forbids."
+    },
+    "EP-3": {
+      "endpoint": "/api/health/stella-preconditions",
+      "cell": "EP-3 x CC-6.",
+      "blocking_disposition": "NON_BLOCKING_RECORDED, per ratified OD-2. Observed and recorded, never unobserved.",
+      "what_becomes_observable": "The payload at app/api/health/stella-preconditions/route.ts:82-118: schema, environment, the master block (stellaEnabled, geminiApiKeyPresent as a PRESENCE boolean only, canUseStella), the model block (requested, repositoryTarget, matchesRepositoryTarget, maxOutputTokens, requestTimeoutMs), capabilities, rateLimit, and ready. Status 200 when ready and 503 otherwise, subject to ratified OD-3's split for the intentional-off case.",
+      "test_coverage_statement": {
+        "accurate_claim": "EP-3's RESPONSE CONTRACT is not frozen by a dedicated route test at AS_OF_TREE - tests/ contains health-auth-route.test.ts, runtime-identity-observability.test.ts and database-runtime-identity.test.ts, and no stella-preconditions route test. FIS-M11-03 is owed for exactly this reason.",
+        "claim_that_must_not_be_made": "That EP-3 has ZERO test coverage. It is measurably covered by the entry-point census at tests/database-runtime-entrypoints.test.ts:717-722, which asserts that adding this route moves the inventoried count without moving the reaching count - an assertion that would fail if the route quietly began touching tenant data.",
+        "upstream_corroboration": "M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json CORRECTED_EP3_FREEZE_SCOPE records which EP-3 cells carry no test citation and which do, and explicitly preserves EP-2's genuine citation, corrected to tests/runtime-identity-observability.test.ts:1046 and :1049-1051 by v1.0.3 CORRECTED_EP2_TEST_CITATION."
+      }
+    },
+    "inseparability_finding": {
+      "measured": "EP-2 and EP-3 gate IDENTICALLY - the same call, the same null check, the same status mapping, at app/api/health/runtime-identity/route.ts:49-61 and app/api/health/stella-preconditions/route.ts:67-75.",
+      "consequence": "There is NO principal that unlocks EP-2 without also unlocking EP-3. The minimum principal for EP-2 is exactly the minimum principal for EP-3, and for every other surface in this application whose only requirement is a verified session.",
+      "standing_risk": "Any FUTURE route gated on a verified session alone becomes reachable by this principal on the day it is merged, with no change to the principal and no decision by anyone. This is not a defect of the design - it is the consequence of a session being the unit of admission - but it means the principal's blast radius is defined by a moving set.",
+      "control": "A review trigger: whenever a new route is added whose only gate is getVerifiedAuthIdentityResult, the reviewer checks whether it is acceptable that M11_OBSERVER can reach it. Raised as OF-P2."
+    }
+  },
+
+  "TRACK_A_INDEPENDENCE": {
+    "rule": "Nothing in this artifact is a prerequisite for Track A.",
+    "source": "The consumed ratification's OD-5 sequencing clause: 'The separate principal authority MAY be opened, but creating the principal itself must NOT be made a prerequisite for landing the initial OD-1-A2-based M11 implementation (Track A).'",
+    "consequences_stated_positively": [
+      "The A2 discriminator, the bounded provider-health touch, the AS-2 response semantics, the OD-3 status split, the OD-4 rate-limit semantics and their committed controls may all be implemented and landed with no principal in existence.",
+      "EP-2's BLOCKING disposition under OD-2 is recorded as unavailable/pending until this principal exists - never silently passed, and never a reason to delay Track A.",
+      "A Track A implementation that blocked on this authority would be inverting the ratified sequence."
+    ]
+  },
+
+  "OWNER_DECISIONS_REQUIRED": {
+    "rule": "Each decision below has at least two materially different answers with different security consequences. This artifact states the consequences and does not choose. Where a technical recommendation exists it is marked RECOMMENDATION_NOT_RATIFICATION and carries no binding force.",
+    "decisions": [
+      {
+        "id": "OD-P1",
+        "domain": "CREATION_CHANNEL",
+        "question": "Through which channel is the principal created in project bvyzblhqymxruxdguaee?",
+        "options": [
+          {
+            "option": "A - Supabase dashboard, by the owner, by hand.",
+            "consequence": "No operator credential enters automation and none is held by this programme's tooling. SSL-06 is not engaged by the creation act. The cost is that creation is evidenced by owner attestation plus a subsequent successful grant, rather than by a scripted, re-runnable act."
+          },
+          {
+            "option": "B - Supabase Admin API (auth.admin.createUser), through a new governed script.",
+            "consequence": "Scriptable, re-runnable and precisely evidenced - and it requires holding a service_role key or a personal access token, which ARE operator credentials and DO engage SSL-06 while held. It also requires a new script: scripts/create-test-user.ts:37-41 is pinned to a local target by assertSupabaseApiOperationAllowed and fails closed against the hosted project. Widening it, or authoring a sibling, is a security change requiring its own review."
+          },
+          {
+            "option": "C - Direct GoTrue self-signup with the public anon key.",
+            "consequence": "No operator credential at all. But it depends on signups being enabled on the staging project (MGP-1, UNKNOWN) and on the email-confirmation posture (MGP-2, UNKNOWN), and the subject is self-created rather than owner-created, which weakens the creation evidence. It must be the DIRECT GoTrue endpoint, never the application's signup action, which writes a profile row at app/(public)/login/actions.ts:113 and would break PD-2 immediately."
+          }
+        ],
+        "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option A. It is the only option that creates the principal without either holding an operator credential or depending on two unmeasured hosted settings, and the act is performed exactly once."
+      },
+      {
+        "id": "OD-P2",
+        "domain": "CREDENTIAL_FORM",
+        "question": "What material does the runner hold?",
+        "options": [
+          { "option": "A - The principal's password; the runner performs a password grant each run.", "consequence": "One secret, rotatable by changing the password, and the grant is a clean per-run act. The password is a long-lived secret in the custody store." },
+          { "option": "B - A long-lived refresh token; the runner exchanges it for an access token.", "consequence": "No password in CI. But a refresh token is bearer material of equivalent power for this principal, rotation depends on the project's refresh-token rotation behaviour (MGP-4, UNKNOWN), and a token that rotates on use makes a stored copy go stale in ways a CI secret store handles badly." },
+          { "option": "C - Both held; password as the recovery path.", "consequence": "Two secrets to rotate, two to leak. Rejected unless a reason appears that A or B alone cannot meet." }
+        ],
+        "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option A, on the ground that it has exactly one secret and one rotation mechanism, and that its rotation does not depend on an unmeasured hosted setting."
+      },
+      {
+        "id": "OD-P3",
+        "domain": "CUSTODY_AND_RUNNER_LOCATION",
+        "question": "Which custody option from CUSTODY_CONTRACT is selected?",
+        "options": ["CU-A GitHub Actions environment secret", "CU-B Vercel environment variable", "CU-C external secret manager", "CU-D human-held"],
+        "consequence_note": "CU-D is measurably incompatible with M11-SC-2. CU-B is measurably a weaker observation. The real choice is between CU-A and CU-C, and it is a choice about whether repository write access should be equivalent to holding this credential.",
+        "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: CU-A, with the trusted-trigger controls it mandates, on the ground that it requires no new external trust anchor. The residual risk it carries is stated in full and is the owner's to accept or refuse."
+      },
+      {
+        "id": "OD-P4",
+        "domain": "ROTATION_CADENCE",
+        "question": "What is the scheduled rotation cadence, independent of the triggers?",
+        "options": ["A - 30 days", "B - 90 days", "C - No scheduled cadence; trigger-driven rotation only, with a scheduled REVIEW instead"],
+        "consequence_note": "Option C is not 'no rotation' - the triggers remain binding. It is a judgement that a scheduled rotation of a least-privileged staging observer buys less than the operational risk of a rotation that silently breaks the gate between deployments.",
+        "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option B, as the cadence that is long enough not to make the gate fragile and short enough that a rotation is a practised act rather than an emergency one."
+      },
+      {
+        "id": "OD-P5",
+        "domain": "PRINCIPAL_IDENTITY",
+        "question": "What email address identifies the principal?",
+        "options": [
+          { "option": "A - A dedicated, deliverable address the owner controls.", "consequence": "Email confirmation and password recovery are possible. The address is real mail that a human will receive." },
+          { "option": "B - A dedicated, non-deliverable synthetic address.", "consequence": "No inbox to secure. But if the project requires email confirmation (MGP-2) it cannot be confirmed through the normal flow, so option B constrains OD-P1 to a channel that can mark it confirmed - which option A of OD-P1 can do and option C cannot." }
+        ],
+        "hard_prohibition": "NOT lorenzo@thebalancecorp.org, and not any address that already has application state in the staging project. Such an address carries an existing membership, which violates PD-3 the moment the principal is created.",
+        "coupling_note": "OD-P5 and OD-P1 are COUPLED. Answering them independently can produce a combination that cannot be provisioned - specifically OD-P1 option C with OD-P5 option B, if confirmation is required."
+      },
+      {
+        "id": "OD-P6",
+        "domain": "STANDING_SCOPE",
+        "question": "Is the principal standing until revoked, or bounded to Track B with revocation on completion?",
+        "options": [
+          { "option": "A - Standing, with scheduled review.", "consequence": "M11 keeps its authenticated cells after Track B. The principal remains a standing access path between reviews." },
+          { "option": "B - Bounded to Track B; revoked on completion; re-established under a fresh authority if M11 is to keep observing authenticated cells.", "consequence": "Smallest standing footprint. But M11's EP-2 cell is BLOCKING under ratified OD-2 and the gate retests on every deploy, so revoking the principal after Track B would leave a BLOCKING cell permanently unobservable - which is a gate change, not a credential change." }
+        ],
+        "technical_recommendation": "RECOMMENDATION_NOT_RATIFICATION: option A. Option B's consequence appears to contradict OD-2's ratified BLOCKING disposition for EP-2, and this artifact has no authority to resolve that - if the owner prefers B, the contradiction with OD-2 must be adjudicated first."
+      }
+    ]
+  },
+
+  "MEASUREMENT_GAPS_RECORDED": {
+    "rule": "Each gap is UNKNOWN at AS_OF_TREE because this lane's MODE forbids the hosted read that would close it. None is closed by inference, by a local container, or by provider documentation. Each names how it would be measured.",
+    "gaps": [
+      {
+        "id": "MGP-1",
+        "gap": "Whether self-service signup is enabled on project bvyzblhqymxruxdguaee.",
+        "bears_on": "OD-P1 option C. If disabled, option C is not merely disfavoured - it is unavailable.",
+        "how_to_measure": "Read the project's auth configuration at provisioning time. A local supabase/config.toml describes the LOCAL container and is not evidence about the hosted project."
+      },
+      {
+        "id": "MGP-2",
+        "gap": "The project's email-confirmation posture, and therefore whether an unconfirmed subject can obtain a session at all.",
+        "bears_on": "OD-P1 and OD-P5, jointly. The endpoint does not require a confirmed email; GoTrue may still require one to issue the session.",
+        "how_to_measure": "Read the project's auth configuration, and confirm by an actual grant attempt for the created subject."
+      },
+      {
+        "id": "MGP-3",
+        "gap": "The exact cookie serialization @supabase/ssr 0.12.x produces for a session - name, prefix and chunking behaviour.",
+        "bears_on": "The runner's transport. A wrong guess produces a 401 indistinguishable from a wrong credential.",
+        "how_to_measure": "Do not measure it in order to reproduce it. Obtain the representation FROM the library at runtime, per MINIMUM_PRIVILEGES API/JWT axis. The gap is recorded so that no successor hand-rolls the format from memory."
+      },
+      {
+        "id": "MGP-4",
+        "gap": "JWT expiry and refresh-token rotation settings on the staging project.",
+        "bears_on": "OD-P2 option B and the rotation design.",
+        "how_to_measure": "Read the project's auth settings at provisioning time, and re-read at execution time - a hosted setting resolved once is open again when it is acted upon."
+      },
+      {
+        "id": "MGP-5",
+        "gap": "Whether Deployment Protection is enabled on the deployment M11 will observe, and whether an automation bypass exists or may be provisioned.",
+        "bears_on": "Whether the observation reaches the handler at all.",
+        "inherited": "This is MG-5 and FIS-M11-05, not a new gap. Recorded here because a successor planning a run must treat it as live, and because a bypass credential is a SEPARATE authority that this one neither contains nor implies.",
+        "how_to_measure": "A platform read, under whatever authority governs platform reads. NOT authorized here."
+      },
+      {
+        "id": "MGP-6",
+        "gap": "Whether the deployment under observation has KV_REST_API_URL and KV_REST_API_TOKEN present, which determines whether the global rate limiter is armed at all.",
+        "bears_on": "Whether 429 is reachable for a given run. proxy.ts:14-15 makes the limiter conditional on both being present.",
+        "note": "SSL-07 is relevant and is NOT satisfied by this observation: the limiter's catch at proxy.ts:40-42 logs and proceeds, so it fails OPEN. A fail-open limiter must not be relied on as a control, and nothing in this artifact relies on it. It is recorded because a runner that sees no 429 must not conclude the limiter is working.",
+        "how_to_measure": "An environment-row enumeration reading NAME, SCOPE and PRESENCE only, under whatever authority governs platform reads. NOT authorized here."
+      }
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-P1",
+      "finding": "PRE-1 is unsatisfied: the independent bounded verification that the consumed ratification requires of itself is not evidenced in the tree, and this lane was nevertheless directed to open.",
+      "disposition": "RECORDED AND CARRIED. Authoring performs no hosted act, and the ratification distinguishes opening a lane from executing it. Whether authoring ahead of PRE-1 is itself a defect is referred to the independent certifier required by PRE-2, not decided here."
+    },
+    {
+      "id": "OF-P2",
+      "finding": "The principal's reachable surface is defined by a MOVING set: every current and future route whose only gate is a verified session.",
+      "disposition": "OPEN. Control proposed at EP2_EP3_UNLOCK.inseparability_finding - a review trigger on any new session-only route. The control is proposed, not established; establishing it is a successor lane's work."
+    },
+    {
+      "id": "OF-P3",
+      "finding": "If OD-P1 selects option B, an operator credential (service_role key or personal access token) is held for the duration of the creation act, engaging SSL-06 for that credential even though the principal it creates is not privileged.",
+      "disposition": "OPEN, contingent on OD-P1. The inventory requirement in CUSTODY_CONTRACT is written to cover it unconditionally so that the answer to OD-P1 cannot silently leave it uncovered."
+    },
+    {
+      "id": "OF-P4",
+      "finding": "This principal's sign-in is a WRITE to the identity provider, which contradicts any quiesce, read-only or no-writer posture in force for the staging project.",
+      "disposition": "OPEN, and NOT adjudicated here. The precedence between an active quiesce posture and an M11 observation run belongs to whichever authority holds that posture. Recorded so that neither side assumes the other yielded."
+    },
+    {
+      "id": "OF-P5",
+      "finding": "scripts/create-test-user.ts cannot create this principal - it is pinned to a local target and fails closed. There is therefore NO in-repository mechanism for the creation act.",
+      "disposition": "RECORDED AS A CAPABILITY GAP, not a defect. The script's refusal is correct. Any successor that widens it is making a security change and owes its own review."
+    },
+    {
+      "id": "OF-P6",
+      "finding": "OD-P6 option B may contradict ratified OD-2's BLOCKING disposition for EP-2: revoking the principal after Track B would leave a BLOCKING cell permanently unobservable.",
+      "disposition": "OPEN. Flagged to the owner inside OD-P6 rather than resolved, because resolving it would mean reinterpreting a ratified decision."
+    },
+    {
+      "id": "OF-P7",
+      "finding": "No M11 observation runner exists, and no workflow trigger suitable for one exists. Measured at AS_OF_TREE: nine workflows under .github/workflows/, none using deployment_status or workflow_run, consistent with F-M11-12.",
+      "disposition": "NOT THIS ARTIFACT'S WORK. It is FIS-M11-04. Recorded because the custody controls in CU-A constrain how that runner may be triggered, so the two lanes are coupled even though they are separate."
+    }
+  ],
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "This artifact does NOT create, promote, elevate or modify any principal, in any project.",
+    "This artifact does NOT generate, mint, request, receive, store or rotate any credential.",
+    "This artifact does NOT issue, request or imply any GRANT, on any object, in any schema.",
+    "This artifact does NOT open, or authorize opening, any SQL connection to any database.",
+    "This artifact does NOT authorize any Supabase mutation of any kind, including any auth configuration change.",
+    "This artifact does NOT authorize any Supabase read, including reading a project setting. Every hosted value it needs is recorded as UNKNOWN.",
+    "This artifact does NOT authorize any Vercel mutation, environment change, deployment or promotion.",
+    "This artifact does NOT authorize any Vercel or platform read.",
+    "This artifact does NOT authorize any hosted smoke execution or any observation run.",
+    "This artifact does NOT authorize any repository code change, including to scripts/create-test-user.ts, to any route, to proxy.ts, or to any workflow.",
+    "This artifact does NOT authorize a Deployment Protection bypass credential, which is FIS-M11-05 and a separate authority.",
+    "This artifact does NOT lower, relax, qualify or create an exception to the authentication boundary of any endpoint. MG-4 is inherited unchanged.",
+    "This artifact does NOT edit, amend, supersede or reinterpret any of the four M11 artifacts, the owner ratification record, RELEASE_GATE_LEDGER_v1.0.0.json, or any FIB/PC-01B/IM-01B frozen authority.",
+    "This artifact does NOT reopen OD-1, OD-2, OD-3, OD-4 or any measured fact F-M11-01 through F-M11-20.",
+    "This artifact does NOT change any gate's state, ownership or disposition.",
+    "This artifact does NOT make itself a prerequisite for Track A.",
+    "This artifact does NOT satisfy its own SEQUENCING_PRECONDITIONS.",
+    "External hosted mutations performed by this lane: NONE. External hosted reads performed by this lane: NONE. Secrets exposed: NONE. Credentials generated: NONE."
+  ],
+
+  "self_check": {
+    "checks": [
+      { "check": "Every clause is derived from a measured source at AS_OF_TREE or from a cited controlling authority.", "result": "PASS" },
+      { "check": "The minimum privilege is DERIVED from the runtime source, not assumed.", "result": "PASS - REQUIRED_OBSERVATION_CAPABILITY gives a six-step chain, each step naming file and line." },
+      { "check": "No database privilege is requested anywhere.", "result": "PASS - the requirement is measured as NONE at step 6 and restated as NONE on the schema/table axis." },
+      { "check": "The six privilege axes OD-5 asked to be separated are separated and each is answered, including where the answer is NONE.", "result": "PASS" },
+      { "check": "MG-4 is preserved, and preservation is falsifiable rather than merely asserted.", "result": "PASS - the anonymous control call makes it a per-run measurement." },
+      { "check": "The D1 auditor custody decisions are argued rather than inherited.", "result": "PASS - CUSTODY_CONTRACT.independence_statement states why the threat models differ and each adopted clause restates its own reason." },
+      { "check": "No secret value, and no placeholder shaped like one, appears anywhere in this artifact.", "result": "PASS" },
+      { "check": "The target is selected by ref, and the production ref is recorded as vetoed.", "result": "PASS" },
+      { "check": "EP-3 is NOT claimed to have zero test coverage.", "result": "PASS - EP2_EP3_UNLOCK.EP-3.test_coverage_statement states the accurate claim and names the claim that must not be made." },
+      { "check": "Track B is NOT made a prerequisite for Track A.", "result": "PASS - TRACK_A_INDEPENDENCE, and EP-2's relationship to M11-SC-8 is stated as a second failable cell rather than a necessary one." },
+      { "check": "Materially different viable designs are exposed as owner decisions rather than chosen silently.", "result": "PASS - six decisions, each with consequences; recommendations marked RECOMMENDATION_NOT_RATIFICATION." },
+      { "check": "An unsatisfied upstream precondition is recorded rather than absorbed.", "result": "PASS - PRE-1 and OF-P1, referred to the independent certifier rather than self-adjudicated." },
+      { "check": "A claim of absence was grepped across the tree AND commit bodies before being made.", "result": "PASS - PRE-1.how_measured." },
+      { "check": "The one unavoidable write is disclosed rather than hidden behind a read-only framing.", "result": "PASS - UNAVOIDABLE_WRITE_DISCLOSURE." },
+      { "check": "This artifact authorizes no hosted act.", "result": "PASS - EXPLICIT_NON_AUTHORIZATIONS, and PRE-5 records that an execution authority does not yet exist." }
+    ]
+  },
+
+  "required_independent_review": "This artifact requires INDEPENDENT ADVERSARIAL CERTIFICATION by a reviewer that did not author it, BEFORE the owner answers OWNER_DECISIONS_REQUIRED and before any provisioning act is contemplated. The review is asked to attack, at minimum: (a) whether the minimum-privilege derivation is complete or whether a surface between the request boundary and the handler was missed; (b) whether authoring ahead of PRE-1 is a defect; (c) whether the cookie-transport finding is correct, since the whole runner design depends on it; (d) whether PD-2's profile-row absence is genuinely achievable and genuinely durable, or whether some path not found by grep creates the row; (e) whether the six owner decisions are exhaustive, or whether a material design remains unstated; (f) whether the emission allowlist leaks anything by combination rather than by field.",
+
+  "final_state": "SEPARATE_AUTHORITY_AUTHORED__PRINCIPAL_NOT_CREATED__NO_OWNER_DECISION_TAKEN__NO_HOSTED_ACT_PERFORMED",
+
+  "next_gate": "INDEPENDENT_ADVERSARIAL_CERTIFICATION_OF_THIS_AUTHORITY. Only after that certification may the owner be asked to answer OD-P1 through OD-P6, and only after both may a successor EXECUTION authority be authored to grant the creation act. PRE-1 remains separately unsatisfied and is not closed by this artifact's own certification."
+}
