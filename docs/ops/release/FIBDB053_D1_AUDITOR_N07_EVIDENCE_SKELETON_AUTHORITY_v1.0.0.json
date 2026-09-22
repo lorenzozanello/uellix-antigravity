@@ -1,0 +1,254 @@
+{
+  "package_id": "FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_AUTHORITY_v1.0.0.json",
+  "authority_class": "DERIVED_EVIDENCE_STRUCTURE_AUTHORITY",
+  "document_class": "N07_EVIDENCE_SKELETON_DERIVATION__NO_EXECUTION__NO_HOSTED_POSTGRESQL_CONNECTION__NO_CREDENTIAL_GENERATION__NO_CREDENTIAL_MATERIAL__NO_MEASURED_FACT__NO_SECRET_FIELD__NO_UTC_TIMESTAMP__NO_GRANT__NO_REVOKE__NO_CUSTODY_INVENTORY_WRITE__NO_FILENAME_FIXED_FOR_THE_REAL_DATED_EVIDENCE_ARTIFACT__NO_DAG_NODE_STATUS_CLOSURE_ASSERTED",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-N07-EVIDENCE-SKELETON-AUTHORITY-R1",
+  "lane": "CV1-D1-AUDITOR-N07-EVIDENCE-SKELETON-AUTHORITY-R1",
+  "role": "N07_EVIDENCE_SKELETON_DERIVATION_AUTHORITY_WRITER",
+  "mode": "AUTHORITY_AND_SKELETON_AUTHORING_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_files": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEST_MANIFEST_v1.0.0.json"
+  ],
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-evidence-skeleton-authority-r1",
+  "AS_OF_PARENT_SHA": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+  "AS_OF_TREE": "66cbcee0d7a849c4ac7305f7f40f02b4aa058988",
+  "AS_OF_WORKTREE_STATE": "CLEAN at derivation. git status --branch --short returned only the branch/upstream line before any write in this lane.",
+  "NAMING_DERIVATION": {
+    "rule_followed": "Carried from the DAG authority's own NAMING_DERIVATION: FIBDB053 names the node lineage; the subject segment names what THIS artifact governs, distinct from its subject-matter parents.",
+    "subject_derivation": "D1_AUDITOR_N07_EVIDENCE_SKELETON. Not D1_AUDITOR_PROVISIONING_DAG (that package's own append-only lineage is not amended here) and not D1_AUDITOR_CAPABILITY_PROVISIONING (this artifact governs neither the capability nor the DAG's ordering, only the structure of ONE artifact the DAG's node N07 requires to exist before MR-2 is reachable).",
+    "placement_adjudication": {
+      "chosen": "docs/ops/release/",
+      "reason": "Beside the DAG authority and the capability package it derives from, per the DAG authority's own OF-DAG-7 resolution: a reader who resolves the DAG authority finds this pair's derivation in the same directory listing.",
+      "the_counter_argument_is_carried_not_dismissed": "OF-DAG-7 itself, carried unchanged, records that docs/ops/staging/** is the domain where hosted role/ACL authorities and the future capability evidence will land, and that a certifier may reasonably prefer that domain instead. Not adopted here for the same reason OF-DAG-7 was not adopted for the DAG package: this artifact's SUBJECT is a governance structure derived from the DAG's own text, not a hosted fact.",
+      "no_protected_surface": "docs/ops/release/ is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, re-derived at AS_OF_TREE (see FRESHNESS_RE_DERIVATION)."
+    },
+    "why_the_populated_evidence_artifact_is_NOT_placed_here_either": "N25's own act names docs/ops/staging/evidence/** as the eventual home of the POPULATED instance, under a filename the execution lane derives from that directory's dated-attempt precedent at ITS OWN base. This artifact produces only the UNPOPULATED TEMPLATE, which is reusable governance structure, not a dated attempt record, and therefore belongs beside its schema and authority rather than inside the evidence directory. See FILENAME_NON_FIXATION below."
+  },
+  "PURPOSE": {
+    "statement": "Materialize, as an explicit, holed, non-secret document set, the evidence skeleton that DAG_NODES.N07 requires to exist — with every REQUIRED_CONTENTS field present as an explicit hole, and the three MUTATION_ROLLBACK_CONTRACT statements pre-written and reviewed — so that MR2-PRE-7 can be checked by a future execution lane instead of composed under the pressure of an irreversible act already in progress.",
+    "what_this_artifact_is": "A structure derivation. It reads N07's exact act and exit_condition, reads EVIDENCE_MATERIALIZATION's REQUIRED_CONTENTS and MUST_NEVER_CONTAIN, reads the ten section names the lane mandate requires kept separate, and produces a JSON Schema plus a schema-validating template instance that together ARE the N07 deliverable.",
+    "what_this_artifact_is_NOT": [
+      "It is NOT an execution of any DAG node past N07. N08 (planned witness intake), N09 (VALID UNTIL computation), N10 (HC-1) and every node after it are untouched.",
+      "It is NOT an amendment of the DAG authority, its v1.0.1 amendment, the capability package, or the owner-ratification record. All remain byte-identical; see FRESHNESS_RE_DERIVATION.",
+      "It is NOT a declaration that DAG node N07 is CLOSED. Per the DAG's own MR1_REACHABILITY_DERIVATION-style discipline and 'node 2 cannot be performed by the lane that wrote node 1', this artifact offers itself as N07's candidate discharge; whether it is SUFFICIENT is for the independent certification this artifact's next_gate names, and formal closure of N07 in the DAG package's own node-status ledger is a separate, later, append-only act this lane does not perform.",
+      "It is NOT the custody inventory (N06), the WCM readiness demonstration (N05), the planned witness intake (N08), or the VALID UNTIL computation (N09). Each remains a distinct open node, listed as still-blocking in the DAG's own v1.0.1 amendment (DOWNSTREAM_REACHABILITY_RECOMPUTATION.still_open).",
+      "It is NOT the POPULATED evidence artifact. It is the reusable, unpopulated skeleton a future execution lane instantiates and fills."
+    ]
+  },
+  "CONTROLLING_AUTHORITY": {
+    "precedence": "The effective capability package and the DAG authority package control every FACT, MECHANISM and ORDERING. This artifact controls only the STRUCTURE of one evidence document, and where any reading of it could be taken to alter a fact, add a field the sources do not require, or omit one they do, the sources control and this artifact is wrong.",
+    "read_order": [
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json — DAG_NODES.N07, EVIDENCE_MATERIALIZATION (via MR2_CONTRACT.THE_PRECONDITIONS...MR2-PRE-7), HC1_CONTRACT, OD3_TIME_MATERIALIZATION, MR2_CONTRACT, MR3_CONDITIONAL_PATH, PRECHECK_R2_ENTRY_CONTRACT, TARGET_IDENTITY, DAG_NODES.N01..N28, DAG_EDGES",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json — N02 closure, DOWNSTREAM_REACHABILITY_RECOMPUTATION confirming N07 is still open and still blocks N10",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json — EVIDENCE_MATERIALIZATION.REQUIRED_CONTENTS and .MUST_NEVER_CONTAIN (the ground-truth field list), HOSTED_STATE_UNKNOWN_REGISTER (HU-1..HU-13), POSTSTATE_VERIFICATION (PV-1..PV-34, cited by row id, not transcribed)",
+      "docs/ops/staging/evidence/README.md — the dated-attempt naming precedent EVIDENCE_MATERIALIZATION points to, and the promoted-evidence precedent (no connection block; server-side assertions and identity verdicts only) that MUST_NEVER_CONTAIN's host-string prohibition already reflects",
+      "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json — the schema this artifact's companion test manifest validates against"
+    ],
+    "conflict_rule": "STOP_FOR_AUTHORITY_CONFLICT, carried unchanged. Where this artifact and any of the above could be read to disagree, the lane stops and escalates rather than picking the more convenient source."
+  },
+  "FRESHNESS_RE_DERIVATION": {
+    "rule": "RULE_OBSERVATION_FRESHNESS binds, carried from the DAG package. This lane does not carry forward the DAG amendment's own blob table as a standing fact; it re-derives all of it at ITS OWN base.",
+    "method": "git ls-tree -r 173fabce180b71fe49f65e5c7290ca9f20d85572, executed in this lane, against the eleven paths of the full effective lineage (six CANDIDATE_BINDING paths, the DAG authority and its manifest, the DAG amendment v1.0.1, and both owner-ratification records).",
+    "result": "ALL ELEVEN MATCH the values the DAG amendment v1.0.1 itself recorded. No drift between the DAG amendment's own base (2ff84822 / merge 5677cdcd) and this lane's base (173fabce), which is exactly the DAG amendment's own commit.",
+    "re_derived": [
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json", "blob": "eb77f0954495625d110be3791053a6850ba2b590" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json", "blob": "2790f3530ce44fd77e12ecdf49430d93ec7a4a70" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "b233bd1f947fd6c49e0416279a2f98a260a6d5de" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "f4a9956012c471044a6044efd9f3a79bedc77cee" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json", "blob": "f7387d720eb8e6ec439ae968ff11661aa1c53e47" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.2.json", "blob": "1433789381483733502d503a8f55c23a05185bb4" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json", "blob": "7223279f2dbb46ed6e252cd3aa1469ff0b4419d5" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_TEST_MANIFEST_v1.0.0.json", "blob": "e9b843c6761b38473ad1080b8b21680c99741b93" },
+      { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "d18cf2a654945c1fc2efdb3ff52abd70b76c22dd" },
+      { "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json", "blob": "fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f" },
+      { "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json", "blob": "e639396719e6d2701f7894a50bc51056741bfa92" }
+    ],
+    "N07_STATUS_AT_THIS_BASE": "NOT_SATISFIED, per the DAG amendment's own DOWNSTREAM_REACHABILITY_RECOMPUTATION.still_open entry for N07: 'No evidence-artifact skeleton has been created; no filename has been derived from the docs/ops/staging/evidence/ precedent.' N02 closed in the same commit that recorded this; N07 did not. This artifact is the response to exactly that recorded gap, and no other.",
+    "protected_pattern_re_derivation": "scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, read directly at AS_OF_TREE, is exactly ['docs/ops/fib/**', 'docs/ops/pc01b/**', 'docs/ops/im01b/**', 'db/migrations/**', 'db/prepared/**', 'db/baseline/**', 'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. docs/ops/release/** matches none of them."
+  },
+  "N07_SOURCE_TEXT": {
+    "quoted_from": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json, DAG_NODES.nodes, id N07",
+    "id": "N07",
+    "name": "EVIDENCE PACKAGE AND ROLLBACK READINESS",
+    "plane": "REPOSITORY",
+    "canonical_phase": "Derived prerequisite of MR-2, from EVIDENCE_MATERIALIZATION and MUTATION_ROLLBACK_CONTRACT.rule",
+    "act_verbatim": "Derive the evidence artifact filename from the docs/ops/staging/evidence/ dated attempt-scoped precedent AT THE EXECUTION LANE'S OWN BASE. Create the skeleton with every REQUIRED_CONTENTS field present as an explicit hole. Pre-write and review the exact rollback statements: ALTER ROLE uellix_auditor NOLOGIN for MR-1, REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor for MR-3, and record that MR-2 has NO rollback and that its compensating action is ROTATE AGAIN or ALTER ROLE uellix_auditor PASSWORD NULL.",
+    "preconditions": ["N03"],
+    "exit_condition_verbatim": "Every REQUIRED_CONTENTS field is present as a field, so its later absence is a hole rather than a silence. Every rollback statement is exact and pre-reviewed rather than composed under failure.",
+    "tokens": [],
+    "the_filename_clause_and_why_this_artifact_does_not_discharge_it": "N07's act names TWO acts: deriving the DATED filename, and creating the skeleton. This artifact performs only the second, and structurally CANNOT perform the first: 'AT THE EXECUTION LANE'S OWN BASE' names an act to be taken by the lane that eventually executes MR-2 and files N25, against ITS OWN git state, not this lane's. A filename derived here would be exactly the DM38 mutant the DAG's own companion manifest already anticipates. See FILENAME_NON_FIXATION.",
+    "MUST_NEVER_CONTAIN_verbatim": "The credential in any form redacted or not, the full DSN or userinfo, any token or key or query string carrying a credential, the host string as distinct from the mechanism enum, any password hash or rolpassword value, any driver error message that has not passed through redactForHostedLog, any row of any application or tenant table, and any resolution of either canonical literal."
+  },
+  "MR2_PRE_7_BINDING": {
+    "quoted_from": "MR2_CONTRACT.THE_PRECONDITIONS_THIS_DAG_ATTACHES_TO_THE_EDGE_INTO_MR_2.preconditions, id MR2-PRE-7",
+    "condition": "N07 passed. The evidence artifact skeleton exists with every REQUIRED_CONTENTS field present, and the exact rollback statements are pre-written and reviewed.",
+    "source": "EVIDENCE_MATERIALIZATION and MUTATION_ROLLBACK_CONTRACT.rule.",
+    "why_this_matters_to_every_design_choice_below": "MR-2 is IRREVERSIBLE AS TO THE PRIOR SECRET (MR2_CONTRACT.rollback: NONE IS POSSIBLE). A skeleton assembled after the mint, under the pressure of a failure already in progress, is a skeleton written by someone who needs it to already exist. Every hole in the companion template is therefore a field this artifact commits to being present NOW, at authoring time, so its absence later is legible as a hole and not mistaken for silence."
+  },
+  "REQUIRED_CONTENTS_SOURCE": {
+    "quoted_from": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, EVIDENCE_MATERIALIZATION",
+    "namespace": "docs/ops/staging/evidence/**, following the precedent of the existing dated attempt-scoped documents in that directory. The exact filename is derived by the successor from that precedent at ITS base, not fixed here.",
+    "REQUIRED_CONTENTS_verbatim_15_items": [
+      "lane identifier, base SHA and base tree",
+      "target project REF, and an explicit statement that selection was by ref and not by name",
+      "verifyStagingTarget verdict and the signal names it returned",
+      "ConnectionMechanism enum value — direct-db — and NOT the host string",
+      "server-observed current_user and session_user",
+      "the full PV-1..PV-34 assertion table, each row with expected, actual and pass or fail",
+      "for each of MR-1, MR-2, MR-3: whether it fired, its recorded prestate (or the explicit UNKNOWN with its reason, for MR-2), its poststate, and its verification result",
+      "the three human confirmations, each with its timestamp and the act it covered",
+      "the credential custody entry reference, BY NAME ONLY",
+      "the credential delivery mechanism, BY NAME ONLY",
+      "the credential removal verification, as a boolean from a POSITIVE ABSENCE CHECK",
+      "the engine version observed on the hosted target",
+      "every HOSTED_STATE_UNKNOWN entry that remained unknown after the phase",
+      "SQLSTATE values for every refusal encountered",
+      "an explicit statement that neither canonical literal was resolved in this lane"
+    ],
+    "precedent_is_stricter_than_the_ceiling": "docs/ops/staging/evidence/README.md records that the four promoted att_5878e6da documents carry NO connection block at all, because the SERVER-SIDE probe output was promoted rather than the assembled envelope. This artifact's schema follows that precedent: connection_mechanism carries the enum only, never the host string, matching MUST_NEVER_CONTAIN item 4."
+  },
+  "SECTION_ORDERING_DERIVATION": {
+    "rule": "The lane mandate lists ten concepts to keep separate: PRESTATE, HC-1, VALID UNTIL computation, MR-2, post-MR2 verification, conditional MR-3, post-MR3 verification, credential-delivery confirmation, PRECHECK-R2, final rotation/cleanup. Read as a literal word order, this places PRESTATE before HC-1 and HC-1 before VALID UNTIL, which the DAG's own precondition graph contradicts: N09 (VALID UNTIL) is a precondition of N10 (HC-1) — HC1-S4 is the VALID UNTIL value shown DURING HC-1 — and N14 (the node literally named PHASE P1 PRESTATE OBSERVATION) has precondition N13, which has precondition N11 (MR-2). PRESTATE, in the DAG's own vocabulary, is prestate for the P2 remediation decision, measured AFTER the credential that makes the session possible, not before it.",
+    "the_derived_resolution": "This artifact orders the ten mandated sections by DAG precondition order, not by the mandate's list order: VALID_UNTIL_COMPUTATION (N08, N09), HC_1 (N10), MR_2 (N11), POST_MR2_VERIFICATION (N12, N13), PRESTATE (N14), MR_3_CONDITIONAL (N15..N20), POST_MR3_VERIFICATION (N21, N22), CREDENTIAL_DELIVERY_CONFIRMATION (N23, N24), PRECHECK_R2 (N26, N27, the two freshness loops), FINAL_ROTATION_CLEANUP (N28). All ten names from the mandate are present, byte-identical in spirit, as section keys; none is renamed, merged or dropped.",
+    "why_this_is_a_derivation_and_not_a_substitution": "The mandate's own sentence says 'It must separate' the ten, not 'it must present them in this order.' Ordering by DAG precondition is the reading that keeps every section internally coherent with the DAG text it cites, rather than forcing PRESTATE to mean something the DAG nowhere means by that word.",
+    "flagged": "OF-N07-1, so a certifier may reject this ordering and require the mandate's literal word order instead. Rejecting it does not change which fields exist, only where they sit."
+  },
+  "FIELD_ALLOCATION_TABLE": {
+    "rule": "Every one of the 15 REQUIRED_CONTENTS items, plus the two register/log fields EVIDENCE_MATERIALIZATION names as ongoing rather than per-phase, is allocated to exactly one home in the schema. No item is duplicated as a hole in two places; where a fact is genuinely measured twice by the DAG for different purposes (e.g. current_user/session_user at both MR-2's own poststate and KP-1), both occurrences are named explicitly so neither is mistaken for the other.",
+    "allocation": [
+      { "item": "lane identifier, base SHA, base tree", "home": "execution_context.lane_identifier / base_sha / base_tree" },
+      { "item": "target project REF + by-ref statement", "home": "execution_context.target_project_ref / target_selected_by_ref_not_name (arm A, N04)" },
+      { "item": "verifyStagingTarget verdict + signal names", "home": "sections.post_mr2_verification.n13_first_authenticated_session.target_identity_arm_b_sentinel_verdict (arm B, N13 — the verdict only completes once the sentinel is read, which requires the session MR-2 opens)" },
+      { "item": "ConnectionMechanism enum, not host string", "home": "execution_context.connection_mechanism" },
+      { "item": "server-observed current_user/session_user", "home": "TWO distinct occurrences: sections.mr_2.mutation.poststate (N11's own mint verification) and sections.post_mr2_verification.n13_first_authenticated_session.kp1_current_user / kp1_session_user (KP-1, a separate assertion)" },
+      { "item": "full PV-1..PV-34 table", "home": "sections.post_mr3_verification.n22_full_poststate_table (N22 runs on EITHER the SKIP or the FIRE path; see POST_MR3_VERIFICATION_UNCONDITIONALITY below)" },
+      { "item": "MR-1/MR-2/MR-3 fired/prestate/poststate/verification", "home": "MR-1: sections.mr_3_conditional.n16_mr1_record (DECLARED_UNREACHABLE, retained per N16). MR-2: sections.mr_2.mutation. MR-3: sections.mr_3_conditional.n20_mutation plus sections.post_mr3_verification.n21_three_boolean_assertion" },
+      { "item": "three human confirmations, timestamp + act covered", "home": "HC-1: sections.hc_1.confirmation (N10). HC-2: sections.mr_3_conditional.n19_hc2_confirmation (N19). HC-3: sections.mr_3_conditional.n16_mr1_record.hc_3 (embedded in N16's unreachable act, no dedicated node id)" },
+      { "item": "credential custody entry reference, BY NAME ONLY", "home": "THREE occurrences across its lifecycle: execution_context.custody_pre_mint_entry_ref (N06, pre-mint), sections.post_mr2_verification.n12_custody_post_mint_update (N12, update not append), sections.final_rotation_cleanup.custody_entry_closed (N28, closure)" },
+      { "item": "credential delivery mechanism, BY NAME ONLY", "home": "TWO occurrences: execution_context.wcm_delivery_mechanism_readiness_ref (N05, readiness demonstrated on a sentinel) and sections.credential_delivery_confirmation.n23_delivery.mechanism_by_name_only (N23, the real delivery)" },
+      { "item": "credential removal verification, positive-absence boolean", "home": "TWO occurrences, each its own DAG node: sections.credential_delivery_confirmation.n24_removal_and_positive_absence (N24, after PRECHECK-R2/FINAL WITNESS delivery) and sections.final_rotation_cleanup.removal_and_positive_absence (N28, after the mandatory post-witness rotation). Never asserted from the fact that a removal command was issued — mutant M26, control DN26/DM37 in the DAG's own manifest." },
+      { "item": "engine version observed", "home": "execution_context.engine_version_observed" },
+      { "item": "every HOSTED_STATE_UNKNOWN entry, HU-1..HU-13", "home": "hosted_state_unknown_register, cross-cutting, fixed at exactly 13 entries" },
+      { "item": "SQLSTATE for every refusal", "home": "refusals_and_sqlstate_log, cross-cutting, append-as-encountered, empty array a valid explicit state" },
+      { "item": "statement neither canonical literal was resolved", "home": "canonical_literal_non_resolution_statement" }
+    ]
+  },
+  "POST_MR3_VERIFICATION_UNCONDITIONALITY": {
+    "rule": "N22 (PHASE P3 POSTSTATE VERIFICATION AND READ-ONLY PROOF) has precondition 'N15 decided SKIP, or N21 passed' — it runs on BOTH paths, not only when MR-3 fires. Housing it under the section named post_mr3_verification could be misread as conditional on MR-3 having fired.",
+    "disposition": "The schema's own description on section_post_mr3.n22_full_poststate_table states this explicitly: 'Runs UNCONDITIONALLY once N15 decided SKIP or N21 passed.' N21 (the three-boolean assertion), which IS conditional on N20 firing, sits in the same section and is documented separately as NOT_APPLICABLE, not omitted, when N15 decided SKIP.",
+    "why_not_moved_elsewhere": "The mandate names exactly ten sections and no eleventh 'phase P3' section. N22 is the closing verification of the whole P2 remediation phase, and MR-3 is the LAST mutation P2 can perform; housing N22's full table at the end of the MR-2/MR-3 arc, immediately before delivery, matches both the DAG's own edge order (N21->N22->N23) and the mandate's own placement of 'post-MR3 verification' immediately before 'credential-delivery confirmation'.",
+    "flagged": "Carried as part of OF-N07-1; a certifier who rejects the DAG-order reading of the ten sections should also re-examine this placement."
+  },
+  "ROLLBACK_STATEMENTS_PRE_WRITTEN": {
+    "rule": "N07's own act requires these three pre-written and reviewed NOW, not composed under failure. Reproduced byte-identical in the companion schema as JSON Schema const values, so a later edit of the template cannot silently drift from what this authority reviewed.",
+    "MR1": { "statement": "ALTER ROLE uellix_auditor NOLOGIN", "for": "MR-1 (N16), DECLARED_UNREACHABLE under the ratified OD-2 but retained, per MUTATION_ROLLBACK_CONTRACT.rule, because the node is retained and not deleted." },
+    "MR2": { "rollback": "NONE. NONE IS POSSIBLE, per MR2_CONTRACT.rollback: 'A prior credential cannot be restored because it was never known and its hash is not reversible.'", "compensating_action_options": ["ROTATE AGAIN", "ALTER ROLE uellix_auditor PASSWORD NULL"] },
+    "MR3": { "statement": "REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor", "condition": "Issued ONLY if the recorded prestate (KP-5, has_schema_privilege for USAGE) was false. MR3_CONDITIONAL_PATH's own rollback rule: revoking after a measured true prestate would remove a privilege this act did not create (DN22 in the DAG's manifest)." },
+    "none_of_the_three_is_a_secret": "Role name uellix_auditor and schema name uellix_stella_ops are structural identifiers, not credential material. Their presence here does not violate MUST_NEVER_CONTAIN, which bars the credential, the DSN/userinfo, password hashes and rolpassword values — none of which appear in any of the three statements."
+  },
+  "DISPOSITION_STATE_MODEL": {
+    "rule": "Per the lane mandate: 'Unknown/unexecuted fields must have explicit NOT_EXECUTED / UNKNOWN states, never blanks interpreted as PASS.' Every leaf in the companion schema is typed to make a blank, a null, or an omitted key a SCHEMA VIOLATION rather than a silently-accepted default.",
+    "the_two_holes_are_distinct_and_not_interchangeable": {
+      "NOT_EXECUTED": "The act that would produce this fact has not yet occurred. It is expected to resolve once its DAG node runs. Used for the template's default state throughout.",
+      "UNKNOWN": "The fact is not, or may not be, measurable at all from the identity this lane may hold — the same sense EVIDENCE_MATERIALIZATION and HOSTED_STATE_UNKNOWN_REGISTER use it in. Used as the template's default for the 13 HU register entries (their own rule: 'Each entry is UNKNOWN and stays UNKNOWN' until a specific measurement resolves it, RULE_FAIL_CLOSED_ON_UNKNOWN governing what happens when it cannot) and for MR-2's own prestate (rolpassword existence, declared UNKNOWN per E-9, never guessed)."
+    },
+    "additionalProperties_false_everywhere": "Enforced at every object level in the schema. A field this authority did not anticipate cannot be added to a populated instance without failing schema validation, which is the intended effect: an unanticipated field in an evidence document is exactly as suspect as a missing one."
+  },
+  "FILENAME_NON_FIXATION": {
+    "rule": "EVIDENCE_MATERIALIZATION declines to fix the POPULATED instance's filename, and the DAG's own companion manifest control DM38 rules that 'this derivation has no better claim to that name than its parent did.' This artifact, one further remove from the DAG, has no better claim than either.",
+    "what_this_artifact_does_instead": "It publishes the UNPOPULATED TEMPLATE under a stable, versioned, non-dated name in docs/ops/release/ — a governance artifact, not an attempt record — exactly as UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sits beside UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json in docs/ops/ods/. The execution lane, at N25, copies this template's structure into a new file under docs/ops/staging/evidence/, named by the directory's own dated-attempt convention at ITS OWN base, and sets template_status to POPULATED_INSTANCE as it fills each hole.",
+    "why_a_copy_and_not_an_edit_in_place": "docs/ops/staging/evidence/README.md's own stated policy: consumed, attempt-scoped measurements are never overwritten by a later attempt. A single mutable template file filled in place across multiple provisioning attempts would reproduce the exact defect the README describes losing the att_34fd431f witness to."
+  },
+  "WHAT_THIS_ARTIFACT_DOES_NOT_DO": [
+    "It does not open a hosted PostgreSQL connection or contact the Supabase management plane in any way.",
+    "It does not generate, rotate, read, print or request any credential.",
+    "It does not compute, set or estimate any UTC timestamp implementing OD-3. VALID_UNTIL_COMPUTATION's value_utc field is a hole, not a value.",
+    "It does not create or populate the custody inventory file at N06's path. custody_pre_mint_entry_ref is a reference structure and a hole, not the inventory entry itself.",
+    "It does not issue any GRANT, REVOKE, ALTER ROLE, CREATE ROLE or DROP ROLE.",
+    "It does not seek, reserve or imply any protected-surface allocation, and touches no path under db/prepared/**.",
+    "It does not open, execute or authorize CV1-D1-OLDDB-PRECHECK-EXEC-R2.",
+    "It does not resolve, quote, or carry either canonical literal (SQ-6, SQ-7).",
+    "It does not declare DAG node N07 CLOSED in the DAG package's own lineage. That ledger entry is a separate, later, append-only act.",
+    "It does not fix the filename of the eventual POPULATED evidence artifact."
+  ],
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-N07-1",
+      "severity": "NON_BLOCKING",
+      "finding": "The lane mandate's ten section names are read in DAG precondition order rather than in the mandate's own listed word order, because the listed order (PRESTATE before HC-1 before VALID UNTIL) contradicts the DAG's own preconditions (N09 before N10, N14 after N11/N13).",
+      "disposition": "SECTION_ORDERING_DERIVATION above states the reasoning and the resulting order. All ten names are present; only their sequence and their precise DAG-node scope are this lane's derivation.",
+      "what_a_certifier_should_press": "Whether 'must separate' in the mandate was meant only as a completeness requirement (as read here) or also as a literal ordering requirement. If the latter, the schema's `sections` object key order is cosmetic in JSON regardless and would need to be re-justified by name-only correspondence, which SECTION_ORDERING_DERIVATION already provides."
+    },
+    {
+      "id": "OF-N07-2",
+      "severity": "NON_BLOCKING",
+      "finding": "PV-1..PV-34's expected values are NOT transcribed into the skeleton; each row carries a fixed pointer to POSTSTATE_VERIFICATION in the capability authority instead, to be transcribed by the execution lane at fill time.",
+      "disposition": "N07's own exit_condition requires every field present AS A HOLE, and does not require expected values pre-populated; pre-populating 34 rows transcribed from a large source section this lane would need to re-quote in full carries real transcription-drift risk (the DAG's own DP7/DM28 controls exist precisely because this repository has already measured a restatement lane producing incomplete quotations on a first attempt) with no requirement forcing it.",
+      "what_a_certifier_should_press": "Whether a stricter reading of REQUIRED_CONTENTS' 'each row with expected, actual and pass or fail' requires the expected column populated now. If so, the correction is additive — populate 34 const values byte-verified against the source — and does not change any other part of this artifact."
+    },
+    {
+      "id": "OF-N07-3",
+      "severity": "NON_BLOCKING",
+      "finding": "HC-3 (the confirmation gating a reachable MR-1) has no DAG node id of its own; DAG_NODES.N16's act says 'under HC-3' without naming a separate node. This artifact's schema records HC-3 inside n16_mr1_record rather than inventing a node id for it.",
+      "disposition": "Consistent with MR1_REACHABILITY_DERIVATION: MR-1 is DECLARED_UNREACHABLE, so HC-3 is not currently askable. The field exists as a hole for completeness, matching the DAG's own choice to retain N16 rather than delete it.",
+      "what_a_certifier_should_press": "Whether a future amendment reopening MR-1 (an owner re-election of the operator prestate read under OD-2) should also assign HC-3 a numbered node, at which point this schema's placement should move to match."
+    }
+  ],
+  "self_check": {
+    "note": "Each is a statement this lane asserts about its OWN conduct. A certifier should treat any one of them as falsifiable.",
+    "write_set_is_exactly_four_new_documents_all_under_docs_ops_release": true,
+    "no_existing_file_was_edited_amended_or_superseded": true,
+    "eleven_lineage_blob_hashes_re_derived_by_git_ls_tree_and_all_matching": true,
+    "no_hosted_postgresql_connection_was_opened": true,
+    "no_supabase_management_plane_act_was_performed": true,
+    "no_credential_was_created_rotated_resolved_read_printed_or_requested": true,
+    "no_secret_value_or_prohibited_content_class_is_present_anywhere_in_any_of_the_four_files": true,
+    "verified_by_grep_for_postgres_connection_scheme_userinfo_and_base64url_32_byte_runs_zero_hits": true,
+    "no_windows_credential_manager_entry_was_created_read_or_written": true,
+    "no_custody_inventory_file_was_created_or_populated": true,
+    "no_utc_timestamp_implementing_OD_3_appears_anywhere_in_any_of_the_four_files": true,
+    "no_grant_or_revoke_was_executed_anywhere": true,
+    "no_role_was_created_altered_or_dropped_anywhere": true,
+    "the_three_pre_written_rollback_statements_name_only_role_and_schema_identifiers_never_credential_material": true,
+    "no_protected_surface_allocation_was_granted_reserved_requested_or_implied": true,
+    "no_db_prepared_package_was_written_named_or_numbered": true,
+    "no_protected_path_was_touched_and_the_write_set_is_entirely_under_docs_ops_release": true,
+    "neither_canonical_literal_appears_anywhere_in_any_of_the_four_files": true,
+    "no_precheck_r2_opened_executed_or_authorized": true,
+    "the_DAG_packages_own_append_only_lineage_was_not_edited_and_N07_was_not_declared_closed_in_it": true,
+    "the_populated_evidence_artifacts_eventual_filename_was_not_fixed_by_this_artifact": true,
+    "the_template_instance_validates_against_its_own_schema_by_a_real_JSON_Schema_draft_07_validator_ajv_cli_not_by_inspection": true,
+    "every_one_of_the_fifteen_REQUIRED_CONTENTS_items_is_allocated_to_exactly_one_schema_home_per_FIELD_ALLOCATION_TABLE": true,
+    "every_hole_in_the_populated_template_is_the_literal_string_NOT_EXECUTED_or_UNKNOWN_never_a_blank_or_null": true,
+    "prestate_gate_re_derived_and_passed_worktree_clean_at_authoring": true
+  },
+  "required_independent_review": {
+    "required": true,
+    "reason": "This artifact re-derives ordering for a mandate whose literal word order the DAG's own preconditions contradict, allocates every field of a governing REQUIRED_CONTENTS list to a specific schema location, and makes a design choice (PV expected values as pointers, not transcriptions) the mandate does not explicitly settle. Each is a place a derivation could quietly omit a required field or misplace one required elsewhere, and none may be taken on this lane's word.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Does every one of the 15 REQUIRED_CONTENTS items actually appear, as a hole, at the schema location FIELD_ALLOCATION_TABLE claims? Re-derive independently from the schema file rather than from this table.",
+      "Does the schema's additionalProperties:false discipline hold at EVERY object level, with no silent gap through which an unanticipated field, including a credential-shaped one, could pass validation?",
+      "Is OF-N07-1's DAG-precondition ordering the correct reading of 'must separate', or does the mandate require the literal listed order?",
+      "Does any const or enum value in the schema, when re-read against its cited DAG source, drift by even one word? DP7/DP8/DM28 in the DAG's own manifest exist because this repository has already measured that exact failure mode once.",
+      "Is the PV-1..PV-34 pointer design (OF-N07-2) a legitimate hole, or does REQUIRED_CONTENTS' 'each row with expected' require the 34 expected values transcribed now?",
+      "Does the template's must_never_contain_attestation.prohibited array match MUST_NEVER_CONTAIN's eight items byte-for-byte, by programmatic comparison?",
+      "Is the three-way rollback-statement set (ALTER ROLE ... NOLOGIN, no rollback for MR-2, REVOKE USAGE ...) exact and complete against MUTATION_ROLLBACK_CONTRACT, with no fourth statement invented and none softened?"
+    ],
+    "what_a_certifier_may_NOT_do": [
+      "It may NOT treat this artifact's structure as authority for any hosted act. No act is authorized by this artifact at any point.",
+      "It may NOT treat this artifact's existence as satisfying N05, N06, N08 or N09, each of which remains a distinct, open, unsatisfied node per the DAG amendment's own DOWNSTREAM_REACHABILITY_RECOMPUTATION.",
+      "It may NOT treat certification of this artifact as CLOSING N07 in the DAG package's own append-only lineage. That is a separate, later, governed act — the DAG package cannot be amended by a certification of a different package.",
+      "It may NOT accept the eleven blob-hash matches, the grep-based must_never_contain self-check, or the schema validation on this lane's assertion alone. Each is re-derivable and each should be re-derived."
+    ]
+  },
+  "final_state": "FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_MATERIALIZED__NOT_EXECUTED__N07_CANDIDATE_DISCHARGE_OFFERED__DAG_STILL_BLOCKED_AT_N05_N06_N08_N09_PENDING_WCM_DEMONSTRATION_CUSTODY_INVENTORY_AND_A_CONCRETE_PLANNED_WITNESS_TIME",
+  "next_gate": "INDEPENDENT CERTIFICATION of this N07 evidence skeleton's readiness, against its companion schema, template and test manifest, and against the DAG authority's own N07 text and EVIDENCE_MATERIALIZATION.REQUIRED_CONTENTS. After that certification passes, the correct next act is NOT hosted execution: N05 (WCM delivery-mechanism readiness), N06 (custody inventory pre-mint entry) and N08 (planned FINAL WITNESS timestamp intake, owner-supplied) each remain open and each independently blocks N10. Formal closure of DAG node N07 in the DAG package's own append-only lineage is a separate act this artifact does not perform. No hosted mutation, no credential, no GRANT, no custody-store write and no Supabase or Vercel act is authorized by this artifact at any point."
+}
