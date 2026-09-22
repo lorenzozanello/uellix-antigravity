@@ -1,0 +1,739 @@
+{
+  "package_id": "CV1-STAGING-QUIESCE-MECHANISM",
+  "version": "1.0.1",
+  "artifact_id": "STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "AUTHORITY_AMENDMENT",
+  "document_class": "AMENDMENT",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-QUIESCE-MECHANISM-AUTHORITY-AMENDMENT-R2",
+  "lane": "CV1-STAGING-QUIESCE-MECHANISM-AUTHORITY-AMENDMENT-R2",
+  "role": "AUTHOR / ADJUDICATOR",
+  "mode": "AUTHORITY_AMENDMENT_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Opus 5 (Claude Code Desktop), HPO-ODS-01 primary development executor",
+  "repository": "lorenzozanello/uellix",
+
+  "SECTION_B0_FRESHNESS": {
+    "parent_recovery_sha": "4df9e6d37de19a15560993f1d67331bfa498008b",
+    "amended_from_head": "c34b92ad6ea8772dfaa979b0f09d292ea6534a2c",
+    "branch": "codex/cv1-staging-quiesce-mechanism-authority-r1",
+    "pr": "#208, DRAFT, base codex/cv1-staging-recovery-authority-r1, NOT merged",
+    "hosted_mutations": "NONE. No Vercel act, no Supabase act, no database connection, no deployment, no backup, no restore, no DDL, no environment-variable act, no scale change, no write lock, no credential generation.",
+    "live_control_plane_reads": "NONE. This amendment, like v1.0.0, performed zero live management-plane reads. Its new external evidence is PUBLIC VENDOR DOCUMENTATION, fetched read-only and quoted with its URL, plus repository evidence. No document below is evidence about the live state of the governed project."
+  },
+
+  "BASE_AUTHORITY": {
+    "artifact": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+    "blob_sha": "633d4d68173e590d7980d9317cf47c8757d7e8fb",
+    "byte_unchanged": "MANDATORY AND VERIFIED. This amendment does not edit v1.0.0. It supersedes named clauses by appending, exactly as the Recovery amendment v1.0.1 did to its own parent.",
+    "companion_manifest_amendment": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "base_manifest": {
+      "artifact": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+      "blob_sha": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f",
+      "byte_unchanged": true
+    }
+  },
+
+  "CERTIFICATION_CONSUMED": {
+    "verdict": "CERTIFICATION_FAIL",
+    "blocking_findings": 2,
+    "disposition": "BOTH ACCEPTED IN FULL. Neither is editorial. Finding 1 invalidates the artifact's central adjudication; Finding 2 proves its proof primitive unsound. This amendment does not argue with either, does not preserve the substitution in any restated form, and does not retain the unsound primitive as a PASS contract anywhere.",
+    "self_criticism_recorded_once": "v1.0.0's OF-Q2 nominated this exact adjudication as the right target for adversarial review. The certifier took that invitation and the answer was that the adjudication was wrong. The flag was correct; the adjudication it flagged was not."
+  },
+
+  "SECTION_B1_OWNER_INTENT_CORRECTION": {
+    "closes": "BLOCKING FINDING 1.",
+    "the_parent_definition_verbatim": {
+      "source": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json, blob 154c3d1d396784ae7189b8088669b0ef8231de67, ADJUDICATIONS.I_maximum_permitted_age.THE_LIVE_RUNTIME_COMPLICATION.consequence",
+      "quoted_in_full": "The execution lane MUST establish the no-intervening-mutation predicate POSITIVELY rather than assume it. Two postures are possible and the choice is an OWNER decision (OD-3): QUIESCE, in which the runtime is made non-writing for the window and that is evidenced; or ACCEPT, in which writes in the window are accepted as lost on restore and that acceptance is recorded in writing with a bounded rationale.",
+      "the_operative_clause": "QUIESCE, in which the runtime is made non-writing for the window and that is evidenced",
+      "grammatical_reading": "This is a CONJUNCTION of two limbs joined by 'and'. LIMB 1 is PREVENTION: the runtime IS MADE non-writing. LIMB 2 is EVIDENCE: that condition is evidenced. Limb 2 evidences limb 1. It does not replace it, and it is not satisfiable in limb 1's absence, because there would be no condition for it to evidence."
+    },
+    "what_v1_0_0_did_wrong": {
+      "the_substitution": "v1.0.0's SECTION_D asserted that what OD-3 'actually requires is not that the writers be disabled' but only that the predicate be 'established POSITIVELY', and on that basis replaced LIMB 1 with a detection mechanism. It then argued the result was 'strictly inside QUIESCE'.",
+      "why_it_is_wrong": "The phrase 'established POSITIVELY' belongs to the SENTENCE BEFORE the definition and governs BOTH postures — it forbids assuming the predicate under either. It is not a definition of QUIESCE and it does not license dropping limb 1. The parent defines QUIESCE in the very next clause, and that definition contains the word 'made'.",
+      "why_the_inside_QUIESCE_argument_fails": "v1.0.0 argued that because detect-and-void never accepts a lost write, it is inside QUIESCE rather than beside it. That argument compares the mechanism only against ACCEPT. QUIESCE and ACCEPT are not the only two states of the world: a third state is A WINDOW THAT IS NEITHER PREVENTED NOR ACCEPTED, which is exactly what the parent's own fail_closed clause addresses — 'If neither posture is established, S8 is NOT satisfied.' Detect-and-void lands in that third state, not inside QUIESCE.",
+      "the_honest_name_for_what_v1_0_0_proposed": "A VERIFICATION-ONLY posture. It is a coherent engineering idea. It is not the posture the owner ratified, and naming it QUIESCE misrepresented it to the owner who would have to confirm it."
+    },
+    "the_correction": {
+      "rule": "BINDING. Detection may be SUPPLEMENTAL EVIDENCE serving limb 2. It may NEVER be offered as, counted as, or named QUIESCE unless limb 1 — actual prevention — is independently satisfied and separately evidenced.",
+      "consequence_for_this_artifact": "Every clause of v1.0.0 that relies on the substitution is superseded by SECTION_B9. The adjudication of SECTION_D does not survive in any form.",
+      "no_third_interpretation_is_created": "This amendment does not propose a new reading of OD-3. It restores the parent's reading verbatim and measures whether it can be satisfied."
+    }
+  },
+
+  "SECTION_B2_XID_WITNESS_UNSOUNDNESS": {
+    "closes": "BLOCKING FINDING 2.",
+    "the_claim_that_was_false": {
+      "v1_0_0_said": "PostgreSQL assigns a transaction id only to a transaction that actually writes; read-only transactions never consume one. A pair of read-only observations of the database's transaction-id frontier, taken at the two boundaries of the window, therefore answers 'did ANYTHING write in this interval'.",
+      "and_at_PQ_8_said": "such a write advances the frontier and voids the window, which is the correct outcome.",
+      "the_defect": "The first sentence is true and the inference from it is INVALID. That a writing transaction is ASSIGNED an id does not entail that its COMMIT advances a scalar frontier."
+    },
+    "the_counterexample_ACCEPTED": {
+      "source": "Independent certification of PR #208.",
+      "construction": [
+        "A write transaction is assigned a low XID, call it 100, and remains OPEN at W0.",
+        "Between W0 and W1, transactions with higher XIDs (101, 102, ...) start and complete, so the frontier has already advanced past 100 and then settles.",
+        "The low-XID transaction 100 COMMITS inside the window.",
+        "latestCompletedXid is only advanced by a committing transaction whose id EXCEEDS it. 100 does not exceed 102, so it does not move.",
+        "A scalar frontier read at W1 therefore equals the read at W0 for that quantity.",
+        "Yet a write committed after the recovery snapshot and before the DDL."
+      ],
+      "classification": "PROVEN FALSE NEGATIVE. The witness reports a clean window when a write committed in it. This is the one direction of error that v1.0.0 claimed was impossible.",
+      "why_this_is_fatal_rather_than_a_caveat": "v1.0.0's entire acceptance of the mechanism rested on the assertion that its error could only run toward false POSITIVES, i.e. fail-closed. A demonstrated false negative inverts that and makes the contract fail-open. A fail-open proof is worse than no proof, because it manufactures confidence."
+    },
+    "the_disposition": {
+      "scalar_frontier": "REMOVED. No scalar transaction-id frontier is retained anywhere in this chain as a PASS contract, as a verdict input, or as evidence of absence of writes.",
+      "PQ_3": "SUPERSEDED IN FULL. The equality PASS condition W1 == W0 is void.",
+      "PQ_4": "SUPERSEDED IN FULL. See also SECTION_B10.CL-6 — its validation test could not have detected this defect.",
+      "PQ_8": "ITS ASSERTION IS SUPERSEDED. The sentence asserting that an in-flight write 'advances the frontier and voids the window' is FALSE and is withdrawn. PQ-8's OTHER content — that a maintenance page is not proof, and that a request past a barrier completes normally — is TRUE, is not touched by this finding, and is PRESERVED.",
+      "M_11": "SUPERSEDED IN FULL as a mechanism. It is re-entered in SECTION_B6 only as a REJECTED supplemental-witness candidate."
+    },
+    "a_second_independent_unsoundness_found_by_this_lane": {
+      "id": "B2-X2",
+      "finding": "Even a witness with NO false negative on committed heap writes would still not prove absence of writes, because durable state advances without allocating a transaction id at all.",
+      "measured": "PostgreSQL 17 documentation, https://www.postgresql.org/docs/17/sql-set-transaction.html, enumerates what a READ ONLY transaction disallows and then states verbatim: 'This is a high-level notion of read-only that does not prevent all writes to disk.' The enumeration contains INSERT, UPDATE, DELETE, MERGE, COPY FROM, CREATE, ALTER, DROP, COMMENT, GRANT, REVOKE, TRUNCATE, EXPLAIN ANALYZE and EXECUTE. It contains NO sequence operation.",
+      "consequence": "See SECTION_B5. This is an independent ground for removing the primitive, and it survives even if the certifier's counterexample were somehow answered."
+    }
+  },
+
+  "SECTION_B3_PREVENTION_MECHANISM_MATRIX": {
+    "question": "Is there any mechanism that genuinely MAKES the effective writer classes non-writing for the window, and evidences it?",
+    "method": "Each candidate is assessed on the eight axes the lane brief names. UNKNOWN FAILS CLOSED. No candidate was executed; none may be.",
+    "standing_authority_fact": {
+      "rule": "APPLIES TO EVERY ROW BELOW AND IS DECISIVE ON ITS OWN.",
+      "measured": "PR #201's DEPLOYMENT_AUTHORIZATION_BOUNDARY.not_authorized contains verbatim 'ANY Supabase configuration mutation of any kind', 'ANY database DDL' and 'ANY database DML'. The Recovery authority's AUTHORIZED_OPERATIONS is conjunctive and exhaustive at AO-1..AO-9 and contains no configuration act, no role act and no ACL act. The owner-ratification record's explicit_non_authorizations states 'NO quiesce mechanism is authorized, named or pre-approved'.",
+      "consequence": "NO candidate below is held by current authority. Even a candidate that were technically sound would require a NEW grant. The technical assessment continues anyway, because the owner needs to know whether such a grant COULD work before being asked whether to issue one."
+    },
+    "candidates": [
+      {
+        "id": "P-1",
+        "candidate": "ALTER DATABASE <db> SET default_transaction_read_only = on.",
+        "exact_privilege_needed": "Ownership of the database, or a role with ALTER DATABASE on it. On managed Supabase the postgres role is not superuser; whether it may alter the database's GUC defaults is UNMEASURED by this lane.",
+        "exact_hosted_mutation": "A privileged DDL-class statement on the live database.",
+        "authority_holds_it": "NO.",
+        "existing_sessions_escape": "YES. ALTER DATABASE ... SET takes effect for NEW sessions. Every session already connected at the moment of the change keeps its current value.",
+        "privileged_or_service_roles_override": "YES, AND SO DOES EVERY OTHER ROLE. This is the decisive defect. default_transaction_read_only is a USERSET-class parameter: any client may turn it off for itself in one statement. Supabase's own documentation publishes the escape — see the MEASURED_PROVIDER_EVIDENCE below.",
+        "prevents_auth_storage_api_writes": "NO in principle and NO in practice. GoTrue, PostgREST and Storage connect as their own roles and are unaffected by a default they can override; and where they do NOT override it, the effect is that the service ERRORS rather than that it is quiesced — see P-9.",
+        "backup_remains_possible": "YES. pg_dump is read-only.",
+        "rollback": "Set it back. But the rollback is only as reliable as the forward act, and the forward act does not reach existing sessions.",
+        "evidence_contract": "NONE AVAILABLE. A GUC that any session may override cannot evidence that no session overrode it, short of auditing every session — which is the original problem.",
+        "verdict": "REJECTED. ADVISORY, NOT ENFORCING."
+      },
+      {
+        "id": "P-2",
+        "candidate": "ALTER ROLE <each writer role> SET default_transaction_read_only = on.",
+        "repository_precedent_measured": "This exact pattern already exists in this stack. db/baseline/stella_g2_roles.sql, blob 1867395de452084012e555ad39885669bc3b76ba, line 161 sets it for supabase_read_only_user and line 182 for uellix_auditor. Measured absence: the application role uellix_app has search_path, statement_timeout 30s and idle_in_transaction_session_timeout 60s configured at lines 174-176 and NO read-only default.",
+        "exact_privilege_needed": "CREATEROLE with ADMIN on the target role, or superuser. For provider-managed roles such as supabase_auth_admin and authenticator, this is provider-owned territory.",
+        "authority_holds_it": "NO.",
+        "existing_sessions_escape": "YES, identically to P-1.",
+        "privileged_or_service_roles_override": "YES. Same USERSET defect. Additionally, a per-role setting is overridden by a per-database-per-role setting and by any explicit SET.",
+        "prevents_auth_storage_api_writes": "NO. Reaching them means altering provider-managed roles, which breaks the services rather than quiescing them.",
+        "backup_remains_possible": "YES.",
+        "rollback": "Reversible, with the same asymmetry as P-1.",
+        "evidence_contract": "NONE. Same as P-1.",
+        "verdict": "REJECTED. ADVISORY, NOT ENFORCING."
+      },
+      {
+        "id": "P-3",
+        "candidate": "The provider's own read-only mode, as a deliberately requested operator state.",
+        "MEASURED_PROVIDER_EVIDENCE": {
+          "what_it_is": "Supabase documents a read-only mode at https://supabase.com/docs/guides/platform/database-size: 'In some cases Supabase may put your database into read-only mode to prevent your database from exceeding the billing or disk limitations.' In that mode 'clients will encounter errors such as cannot execute INSERT in a read-only transaction.'",
+          "how_it_is_implemented": "By the same GUC as P-1. The documentation's own remedy is to run 'set default_transaction_read_only = off'.",
+          "the_published_escape_hatch": "The same page publishes a one-line per-session override: 'set session characteristics as transaction read write;'. The vendor therefore documents, as supported usage, precisely the act that defeats the control.",
+          "the_decisive_control_plane_fact": "The Supabase Management API exposes a readonly surface consisting of a status read and POST /v1/projects/{ref}/readonly/temporary-disable, documented at https://supabase.com/docs/reference/api/v1-disable-readonly-mode-temporarily as 'Disables project's readonly mode for the next 15 minutes'. THERE IS NO ENDPOINT TO ENABLE READ-ONLY MODE. The provider exposes read-only as an enforcement state it imposes on the project, and as something an operator may temporarily DISABLE. It is not an operator-initiable maintenance control.",
+          "evidence_class": "PUBLIC VENDOR DOCUMENTATION, read-only, quoted with URL. NOT a measurement of the governed project."
+        },
+        "authority_holds_it": "NOT APPLICABLE — the act does not exist to be held.",
+        "verdict": "REJECTED. THE CONTROL DOES NOT EXIST IN THE REQUIRED DIRECTION. An operator cannot ask this provider to enter read-only mode; and if the project entered it by itself, the same documentation shows any client can step around it."
+      },
+      {
+        "id": "P-4",
+        "candidate": "Terminate all sessions, e.g. pg_terminate_backend over pg_stat_activity.",
+        "exact_privilege_needed": "pg_signal_backend membership or superuser.",
+        "authority_holds_it": "NO.",
+        "existing_sessions_escape": "Terminated sessions do not escape, but NOTHING PREVENTS IMMEDIATE RECONNECTION. Termination is an event, not a state. Absent a connection barrier it yields a gap of milliseconds.",
+        "prepared_transactions_escape": "YES, DECISIVELY. See SECTION_B4.IF-2.",
+        "prevents_auth_storage_api_writes": "NO. GoTrue, PostgREST and Storage reconnect from their pools automatically.",
+        "backup_remains_possible": "YES, but a termination sweep that included the backup's own session would abort the dump.",
+        "rollback": "Not applicable; the act is not a state.",
+        "evidence_contract": "A session list at one instant. It evidences nothing about the next instant.",
+        "verdict": "REJECTED. AN EVENT, NOT A BARRIER. Sound only in combination with a connection barrier that this chain does not have."
+      },
+      {
+        "id": "P-5",
+        "candidate": "Revoke CONNECT, or ALTER DATABASE ... WITH ALLOW_CONNECTIONS false.",
+        "exact_privilege_needed": "Database ownership, or grantor rights on CONNECT.",
+        "authority_holds_it": "NO.",
+        "existing_sessions_escape": "YES. Neither act touches an established session.",
+        "privileged_or_service_roles_override": "Roles with an explicit CONNECT grant are unaffected by a revoke from PUBLIC, and provider services hold their own grants.",
+        "prevents_auth_storage_api_writes": "Only by breaking those services outright, which is P-9's objection.",
+        "backup_remains_possible": "NO, if applied before the backup's connection is established; ALLOW_CONNECTIONS false also cannot be set on the database one is connected to.",
+        "rollback": "Reversible.",
+        "evidence_contract": "Weak and not total.",
+        "verdict": "REJECTED. Does not reach existing sessions, and interferes with the backup it exists to protect."
+      },
+      {
+        "id": "P-6",
+        "candidate": "Revoke table-level and schema-level write privileges from the writer roles.",
+        "exact_privilege_needed": "Ownership of every object, or superuser.",
+        "authority_holds_it": "NO. It is also DDL, which two adjacent authorities forbid verbatim.",
+        "existing_sessions_escape": "Privilege checks are re-evaluated per statement, so this DOES reach existing sessions for NEW statements — the only candidate in this matrix with that property.",
+        "in_flight_escape": "A statement already executing, and a transaction already holding the rows it will write, are not stopped. See SECTION_B4.",
+        "privileged_or_service_roles_override": "YES. Table owners and roles with BYPASSRLS or ownership are unaffected by REVOKE. supabase_admin-class roles retain access.",
+        "prevents_auth_storage_api_writes": "Only by revoking from supabase_auth_admin and supabase_storage_admin, i.e. by breaking provider services.",
+        "backup_remains_possible": "YES.",
+        "rollback": "A large, error-prone re-grant across every object. The rollback risk exceeds the act's benefit.",
+        "evidence_contract": "A catalog diff could evidence the grant state. It could NOT evidence that no owner-privileged role wrote.",
+        "verdict": "REJECTED. Unheld authority, does not bind owners, and a rollback whose failure mode is a silently broken staging environment."
+      },
+      {
+        "id": "P-7",
+        "candidate": "Supabase network restrictions — narrow the allowed CIDR set.",
+        "prevents": "Direct external PostgreSQL connections: W-1, W-12, W-15.",
+        "does_not_prevent": "W-4, W-5, W-6, W-7, W-16. GoTrue, PostgREST, Storage, Realtime and the dashboard reach the database from inside the platform and do not traverse the external restriction.",
+        "authority_holds_it": "NO — 'ANY Supabase configuration mutation of any kind'.",
+        "existing_sessions_escape": "UNMEASURED and therefore FAILS CLOSED. Whether narrowing the CIDR set terminates established connections or only refuses new ones is not asserted by this lane.",
+        "backup_remains_possible": "Only by allowlisting the operator's egress address, which reintroduces W-15 as a permitted writer.",
+        "verdict": "REJECTED. Partial by construction, self-interfering, unheld, and with an unmeasured effect on existing sessions."
+      },
+      {
+        "id": "P-8",
+        "candidate": "Supabase project pause.",
+        "verdict": "REJECTED, UNCHANGED FROM v1.0.0 AND ON THE SAME GROUND. A paused project cannot serve the logical backup, and cannot serve the DDL either. The mechanism destroys the acts it exists to make safe.",
+        "additional_measured_note": "Vendor documentation at https://supabase.com/docs/guides/platform/free-project-pausing describes pausing as a Free-plan inactivity behaviour; the search surface for this lane indicates Pro projects cannot be paused on demand. UNMEASURED for the governed project and FAILS CLOSED either way."
+      },
+      {
+        "id": "P-9",
+        "candidate": "Accept service breakage as quiescence — let GoTrue, PostgREST and Storage fail their writes under a read-only default.",
+        "the_reasoning_tested": "If a service cannot write, it is non-writing, so limb 1 is satisfied.",
+        "why_it_fails_on_the_evidence_limb": "The failure is per-statement and client-visible. A GoTrue write that errors may be RETRIED by the client after the window, and the service's internal state may diverge from the database's. More decisively, a mechanism whose evidence is 'the service returned errors' cannot distinguish 'no write was attempted' from 'a write was attempted, errored, and will be replayed' — and it cannot evidence that NO statement slipped through before, between or after.",
+        "why_it_fails_on_the_prevention_limb": "It rests on P-1 or P-2, which are advisory. A service that issues 'set session characteristics as transaction read write' — the vendor's own documented remedy — writes normally.",
+        "verdict": "REJECTED. It is breakage, not quiescence, and it is still overridable."
+      },
+      {
+        "id": "P-10",
+        "candidate": "ORDERING / ABSTENTION — carry the window before PR #201's AUTH-1 and AUTH-2 execute, so no bound runtime exists during it. (v1.0.0's M-1, re-assessed under the corrected definition.)",
+        "is_this_genuine_prevention": "YES, AND IT IS THE ONLY CANDIDATE IN THIS MATRIX THAT IS. A runtime that has not been created is non-writing, and abstaining from creating it is the act that makes it so. This is limb 1, not detection.",
+        "evidence_contract": "SOUND AND AVAILABLE. Read-only control-plane enumeration: no branch-scoped Preview binding exists for the three PR #201 variables on integration/commercial-v1, and no deployment's runtime-identity endpoint reports the governed staging ref. PR #201's own PMV-3 already defines the first check.",
+        "exact_privilege_needed": "None. Abstention is not an act.",
+        "exact_hosted_mutation": "NONE.",
+        "authority_holds_it": "YES — abstention needs no grant. This is the only row where that is true.",
+        "existing_sessions_escape": "Not applicable; there is no runtime and therefore no session.",
+        "prevents_auth_storage_api_writes": "NO. This is its whole limitation.",
+        "backup_remains_possible": "YES.",
+        "coverage": "W-1, W-2 and W-3 ONLY — three of sixteen classes.",
+        "verdict": "ACCEPTED AS GENUINE BUT PARTIAL PREVENTION. Sufficient for limb 1 under a RUNTIME-ONLY scope. NOT sufficient under the all-writer scope that SECTION_B of v1.0.0 adjudicated and that this amendment preserves.",
+        "the_honest_consequence": "The capability gap declared in SECTION_B7 is a consequence OF THE ALL-WRITER SCOPE. Under scope option 1 there would be no gap. This is stated because it is true and because the owner must see it to decide SECTION_B8 — NOT as a route back to option 1, which this amendment does not take and may not take."
+      },
+      {
+        "id": "P-11",
+        "candidate": "Disable the Data API by emptying the project's exposed schemas.",
+        "prevents": "W-5 only, and only for schemas removed from exposure.",
+        "does_not_prevent": "W-4 GoTrue, W-6 Storage, W-16 the dashboard, and every direct connection.",
+        "authority_holds_it": "NO — a Supabase configuration mutation.",
+        "existing_sessions_escape": "UNMEASURED. Whether PostgREST drains in-flight requests on a schema-config reload is not asserted here. FAILS CLOSED.",
+        "verdict": "REJECTED. Partial, unheld, and with unmeasured in-flight behaviour."
+      },
+      {
+        "id": "P-12",
+        "candidate": "Any documented managed-Supabase maintenance or read-only mechanism other than P-3.",
+        "search_performed": "Vendor documentation was searched for an operator-initiable maintenance mode, an Auth-service disable, and an API-gateway write barrier.",
+        "result": "NONE FOUND. The search surfaced project pausing (P-8), read-only mode (P-3), and role documentation. No documented control disables the Auth service, and none imposes a write barrier at the API gateway.",
+        "classification": "ABSENCE OF EVIDENCE IN PUBLIC DOCUMENTATION. It is NOT a measurement that no such control exists. It FAILS CLOSED: this lane does not assert a capability it could not find, and equally does not assert its non-existence as measured.",
+        "verdict": "REJECTED AS UNPROVEN. Recorded as measurement gap MG-Q4."
+      },
+      {
+        "id": "P-13",
+        "candidate": "Set max_prepared_transactions to zero to eliminate the prepared-transaction escape of SECTION_B4.IF-2.",
+        "exact_privilege_needed": "A postmaster-level configuration change; the parameter requires a SERVER RESTART.",
+        "authority_holds_it": "NO, and a restart is itself a hosted mutation of the highest blast radius.",
+        "measured_repository_state": "No occurrence of max_prepared_transactions exists anywhere in db/, supabase/, scripts/ or docs/ops/release/. Its value on the governed project is UNMEASURED.",
+        "verdict": "REJECTED. Requires a restart, is unheld, and its necessity is itself unmeasured. Recorded as measurement gap MG-Q5."
+      }
+    ],
+    "matrix_result": {
+      "candidates_assessed": 13,
+      "rejected": 12,
+      "accepted_as_genuine_prevention": 1,
+      "the_one_accepted": "P-10, covering W-1..W-3 only.",
+      "coverage_of_the_effective_writer_set": "3 of 16 classes. The 13 remaining classes include three measured KNOWN_WRITERs that no candidate reaches at all — W-4 GoTrue, W-15 direct operator sessions, W-16 the dashboard SQL editor — and six UNKNOWN classes that fail closed.",
+      "conclusion": "NO COMBINATION OF CANDIDATES SATISFIES LIMB 1 OVER THE EFFECTIVE WRITER SET, AND NO CANDIDATE THAT PARTIALLY SATISFIES IT CARRIES A SOUND EVIDENCE CONTRACT FOR LIMB 2 EXCEPT P-10."
+    }
+  },
+
+  "SECTION_B4_IN_FLIGHT_TRANSACTION_ANALYSIS": {
+    "rule": "A prevention mechanism is INCOMPLETE unless it proves that each class below is drained, terminated or voided BEFORE the recovery snapshot is taken.",
+    "classes": [
+      {
+        "id": "IF-1",
+        "class": "A write transaction already open before the quiesce act.",
+        "reached_by": "P-6 partially, for its NEXT statement only. No other candidate.",
+        "residual": "Rows it has already written are in its snapshot and will commit unless it is terminated. P-1, P-2, P-3, P-5 and P-7 do not touch it at all.",
+        "bounded_by_anything_measured": "PARTIALLY AND ONLY FOR ONE ROLE. db/baseline/stella_g2_roles.sql line 176 sets idle_in_transaction_session_timeout to 60s for uellix_app, so an IDLE-in-transaction session of that role is terminated after a minute. It does NOT bound a transaction that is actively executing, and it binds no other role.",
+        "status": "NOT DRAINED BY ANY AVAILABLE MECHANISM."
+      },
+      {
+        "id": "IF-2",
+        "class": "A prepared transaction (two-phase commit).",
+        "measured": "PostgreSQL 17 documentation, https://www.postgresql.org/docs/17/sql-prepare-transaction.html, states verbatim that after PREPARE TRANSACTION 'the transaction is no longer associated with the current session; instead, its state is fully stored on disk, and there is a very high probability that it can be committed successfully, even if a database crash occurs before the commit is requested', that COMMIT PREPARED or ROLLBACK PREPARED 'can be issued from any session, not only the one that executed the original transaction', and that 'the transaction continues to hold whatever locks it held'.",
+        "consequence": "A PREPARED TRANSACTION SURVIVES SESSION TERMINATION AND SERVER RESTART, AND MAY BE COMMITTED BY ANY SESSION AT ANY LATER TIME. P-4's termination sweep cannot drain it. A read-only default cannot stop its COMMIT PREPARED, because the write already happened at PREPARE time.",
+        "status": "NOT DRAINED BY ANY AVAILABLE MECHANISM. This is the single hardest in-flight class and it defeats the strongest candidate in the matrix.",
+        "residual_measurement_gap": "Whether max_prepared_transactions is non-zero on the governed project is UNMEASURED — MG-Q5. If it is zero, this class is empty. FAILS CLOSED until measured."
+      },
+      {
+        "id": "IF-3",
+        "class": "A transaction that writes BEFORE W0 and commits AFTER W0.",
+        "effect_on_the_recovery_point": "Its write is NOT in the dump's snapshot, because the snapshot sees only transactions committed at snapshot time. It IS in the live database after it commits. Restoring the dump therefore loses it.",
+        "why_v1_0_0_missed_it": "This is precisely the certifier's counterexample, and PQ-8 asserted it would be caught.",
+        "status": "NOT PREVENTED AND, UNDER THE REMOVED PRIMITIVE, NOT DETECTED EITHER."
+      },
+      {
+        "id": "IF-4",
+        "class": "A transaction that begins before the prevention act and commits during the window.",
+        "status": "Same as IF-1 and IF-3. Not reached by any advisory GUC, since its transaction_read_only was fixed at BEGIN from the then-current default."
+      },
+      {
+        "id": "IF-5",
+        "class": "A transaction that writes BEFORE W1 and commits AFTER W1.",
+        "why_it_matters": "v1.0.0's window boundary was defined at the two observation instants. A transaction straddling W1 has its write inside the window and its commit outside it. Any boundary defined on COMMIT timing misclassifies it, and any boundary defined on WRITE timing cannot observe it.",
+        "correction": "The window boundary must be expressed on the DURABLE STATE of the recovery point, not on observation instants. v1.0.0's PQ-1 and PQ-2 anchored W0 correctly to the dump snapshot; PQ-2's anchoring of W1 to 'immediately before the first DDL statement' is preserved, but the claim that a pair of observations at those instants BOUNDS the set of in-window writes is withdrawn.",
+        "status": "RECORDED AS AN OPEN DEFECT OF ANY OBSERVATION-PAIR CONTRACT."
+      }
+    ],
+    "conclusion": "IF-1 through IF-5 are unaddressed by every candidate in SECTION_B3 except, vacuously, by P-10 — under which none of these transactions exists for W-1..W-3 because no runtime exists. For every other writer class they remain open. PREVENTION IS THEREFORE INCOMPLETE ON THE LANE BRIEF'S OWN TEST."
+  },
+
+  "SECTION_B5_SEQUENCE_AND_SPECIAL_STATE": {
+    "rule": "BINDING. No claim of 'no writes' may be derived from transaction-id behaviour.",
+    "findings": [
+      {
+        "id": "SS-1",
+        "state": "Sequence state.",
+        "measured": "The PostgreSQL 17 SET TRANSACTION documentation enumerates the commands a READ ONLY transaction disallows and the enumeration contains NO sequence operation. The same paragraph states verbatim: 'This is a high-level notion of read-only that does not prevent all writes to disk.'",
+        "consequence": "nextval advances a sequence's durable state and emits WAL, and sequence advancement is NOT rolled back. It is therefore durable state change that (a) a fully-enforced read-only transaction does not prevent, and (b) an observer of transaction-id behaviour is not entitled to assume it would see.",
+        "why_it_matters_for_a_restore": "A restored dump carries the sequence values captured at snapshot time. Advancement during the window is lost on restore exactly as a row is, and can produce duplicate-key collisions after the restore rather than merely missing data.",
+        "status": "NOT COVERED BY ANY MECHANISM IN SECTION_B3 AND NOT OBSERVABLE BY THE REMOVED PRIMITIVE."
+      },
+      {
+        "id": "SS-2",
+        "state": "Other write-like state not guaranteed to allocate the observed primitive.",
+        "enumerated_without_claiming_exhaustiveness": [
+          "Temporary-table writes, which the documentation's 'if the table they would write to is not a temporary table' qualifier expressly permits under READ ONLY.",
+          "Hint-bit setting and page dirtying caused by ordinary reads.",
+          "Autovacuum and anti-wraparound freezing, which write and may consume ids without user DML.",
+          "Cumulative statistics and any provider-side telemetry relation.",
+          "WAL emitted by checkpoints and background activity."
+        ],
+        "classification": "This list is ILLUSTRATIVE, NOT EXHAUSTIVE, and is recorded as such. An exhaustive enumeration of non-transactional durable state is not attempted, because an incomplete list presented as complete is how v1.0.0's primitive came to be trusted.",
+        "consequence": "The correct posture toward a witness is that it may CORROBORATE prevention and may never SUBSTITUTE for it."
+      },
+      {
+        "id": "SS-3",
+        "state": "Cluster-global scope of transaction ids.",
+        "finding": "Transaction ids are allocated cluster-wide, not per database. Activity in any other database of the same cluster moves the frontier without any write to the governed database.",
+        "direction_of_error": "FALSE POSITIVE. This one is fail-closed and was omitted from v1.0.0 rather than misstated.",
+        "status": "RECORDED. It does not rescue the primitive, because SECTION_B2's defect is a false NEGATIVE."
+      }
+    ]
+  },
+
+  "SECTION_B6_SUPPLEMENTAL_WITNESS_DISPOSITION": {
+    "framing": "A witness may now serve only limb 2, and only where limb 1 is independently satisfied. Since SECTION_B7 finds limb 1 unsatisfiable over the effective writer set, NO WITNESS IS ADOPTED BY THIS AMENDMENT. The candidates are assessed so that a future lane does not re-propose them as settled.",
+    "candidates": [
+      {
+        "id": "SW-1",
+        "primitive": "A scalar transaction-id frontier.",
+        "disposition": "PROHIBITED. Not rejected pending better evidence — prohibited, on the proven false negative of SECTION_B2. No future lane in this chain may re-adopt it."
+      },
+      {
+        "id": "SW-2",
+        "primitive": "The full pg_current_snapshot() triple, xmin:xmax:xip_list.",
+        "what_it_would_add": "Unlike a scalar frontier, the in-progress list would show that a transaction open at W0 is no longer open at W1, which is the certifier's counterexample.",
+        "why_it_is_still_not_adopted": [
+          "It cannot distinguish a COMMIT from an ABORT, so it can only ever yield a conservative VOID, never a clean PASS, for any transaction that was open at W0.",
+          "It does not observe SS-1 sequence advancement at all.",
+          "It remains subject to SS-3 cluster-global false positives.",
+          "Its privilege requirements and its exact semantics on the governed engine build are UNMEASURED by this lane — MG-Q3 remains open.",
+          "Most importantly: it is a DETECTION primitive, and SECTION_B1 forbids detection from standing in for prevention. Adopting it while limb 1 is unsatisfied would repeat v1.0.0's error in a better-instrumented form."
+        ],
+        "disposition": "CANDIDATE ONLY. NOT ACCEPTED. Explicitly not endorsed for a future lane without its own measurement and its own certification."
+      },
+      {
+        "id": "SW-3",
+        "primitive": "WAL LSN progression, e.g. pg_current_wal_lsn.",
+        "assessment": "The LSN advances on checkpoints, autovacuum, hint bits and background activity, so it is overwhelmingly false-positive; and it is cluster-scoped, not database-scoped. It would observe SS-1 sequence advancement, which is its one advantage over SW-1 and SW-2.",
+        "privilege_note": "Reading it requires privileges this lane has not measured, and on a managed provider its availability to a non-superuser role is UNMEASURED.",
+        "disposition": "CANDIDATE ONLY. NOT ACCEPTED."
+      }
+    ],
+    "the_honest_statement_the_brief_asked_for": "NO WITNESS AVAILABLE TO THIS CHAIN CAN PROVE TOTAL ABSENCE OF WRITES. SW-2 and SW-3 can, at best, prove that SOMETHING MAY HAVE HAPPENED — a conservative void signal. Neither can prove that nothing did. This lane states that plainly rather than selecting the least-bad primitive and describing it as a proof."
+  },
+
+  "SECTION_B7_CAPABILITY_GAP": {
+    "id": "CG-Q4",
+    "declaration": "CAPABILITY GAP. No currently-authorized or control-plane mechanism can satisfy the ratified QUIESCE semantics — prevention AND evidence — over the effective writer set of the governed staging target.",
+    "the_three_independent_grounds": [
+      {
+        "id": "G-1",
+        "ground": "AUTHORITY. Every candidate in SECTION_B3 except P-10 requires a Supabase configuration mutation, a database DDL/DML act, or a privileged role act. All three are forbidden verbatim by PR #201's not_authorized list, are absent from the Recovery authority's exhaustive AO-1..AO-9, and are expressly withheld by the owner-ratification record. This ground alone is dispositive and requires no technical argument."
+      },
+      {
+        "id": "G-2",
+        "ground": "TECHNICAL REACH. Even with unlimited authority, no documented control makes W-4 GoTrue non-writing. The only database-level read-only control is default_transaction_read_only, which the vendor's own documentation shows is overridable per session in one statement; and the vendor's Management API exposes read-only status and a temporary DISABLE, with no enable. W-15 and W-16 are likewise unreachable."
+      },
+      {
+        "id": "G-3",
+        "ground": "IN-FLIGHT COMPLETENESS. Even granting G-1 and G-2, IF-2 prepared transactions survive session termination and server restart and may be committed from any session at any later time. No candidate drains them, and whether the class is even non-empty on the governed project is unmeasured."
+      }
+    ],
+    "what_would_be_required_to_close_it": [
+      "A hard, non-overridable read-only state. In PostgreSQL the only such state is hot-standby recovery, which managed Supabase does not expose as an operator control. UNMEASURED whether any equivalent exists — MG-Q4.",
+      "A provider-side control that stops GoTrue, PostgREST and Storage from writing while leaving the database reachable for pg_dump and for the DDL. No such control is documented.",
+      "A measured determination that max_prepared_transactions is zero, or a mechanism that drains prepared transactions — MG-Q5.",
+      "A new authority conferring Supabase-plane and database-plane mutation rights, which no artifact in this chain holds and which the owner has not been asked for."
+    ],
+    "what_is_NOT_claimed": "It is NOT claimed that no such capability exists anywhere. P-12's search found none in public documentation, and absence of documentation is not a measurement. The gap is declared on what is HELD and what is PROVEN, which is the fail-closed posture.",
+    "consequence": "IG-1 is NOT CLOSED and cannot be closed by authorship. Under the parent's own fail_closed clause — 'If neither posture is established, S8 is NOT satisfied' — S8 remains unsatisfiable under QUIESCE, and Stage-A remains blocked."
+  },
+
+  "SECTION_B8_OWNER_READJUDICATION": {
+    "status": "ESCALATED TO THE OWNER. This is NOT a cost preference and is NOT presented as one. v1.0.0's OD-Q3 framed this choice as an operational-cost trade and that framing is SUPERSEDED. The question is whether a ratified posture can stand given that it has been measured unexecutable.",
+    "id": "OD-Q5",
+    "question": "Recovery OD-3 was ratified as QUIESCE. QUIESCE has now been measured to be unexecutable over the effective writer set, on three independent grounds. Does the owner KEEP QUIESCE, or CHANGE THE RECOVERY POSTURE?",
+    "why_the_owner_and_not_the_author": "The owner ratified OD-3. Only the owner may reopen it. An author who quietly reinterpreted it to something executable would be doing exactly what v1.0.0 did, and what the owner-ratification record's own reopening_rule exists to prevent.",
+    "options": [
+      {
+        "id": "KEEP QUIESCE",
+        "statement": "The owner maintains that staging writes must be PREVENTED for the window, at the all-writer scope, and that prevention must be evidenced.",
+        "measured_consequences": [
+          "Stage-A stays BLOCKED for as long as the gap is open. S8 cannot be satisfied and no pre-DDL recovery point can be taken under a valid posture.",
+          "A NEW authority lane is required to confer Supabase-plane and database-plane mutation rights that no artifact in this chain holds, and the owner would be asked to grant them on a live target.",
+          "Even with those rights, G-2 measures that GoTrue cannot be provably prevented by any documented control. The lane would likely terminate in a PROVIDER capability request, whose outcome is outside the programme's control.",
+          "MG-Q4 and MG-Q5 must be closed first, each by its own read-only authority."
+        ],
+        "what_it_does_NOT_require": "It does not require accepting any lost write. That is the whole point of keeping it."
+      },
+      {
+        "id": "CHANGE RECOVERY POSTURE",
+        "statement": "The owner reopens OD-3 and selects a different posture, or a different recovery model that does not need this predicate.",
+        "enumerated_sub_options_with_consequences": [
+          {
+            "sub_id": "C-1",
+            "option": "Select ACCEPT, the parent's other ratified posture.",
+            "consequence": "Writes in the window are accepted as lost on restore, and the parent requires that acceptance to be recorded in writing with a bounded rationale and a stated exposure. The owner previously declined this explicitly: 'The owner does NOT accept intentional loss of writes in that window.' Selecting it now is a reversal and must be recorded as one.",
+            "unblocks": "S8 immediately, with no new authority and no hosted mutation."
+          },
+          {
+            "sub_id": "C-2",
+            "option": "Narrow the QUIESCE scope to the PR #201-bound runtime only, i.e. reopen the SECTION_B scope adjudication in the owner's favour of option 1.",
+            "consequence": "P-10 alone then satisfies both limbs — genuine prevention by abstention, with a sound read-only evidence contract and zero hosted mutation. The residual exposure is that W-4, W-15, W-16 and six UNKNOWN classes may write in the window and be lost on restore, UNDETECTED. In substance this is a partial ACCEPT whose exposure has not been quantified, and it must be labelled as such rather than as a narrower QUIESCE.",
+            "unblocks": "S8, at the cost of an unquantified residual.",
+            "authoring_note": "This amendment does NOT take this route on its own initiative. SECTION_B of v1.0.0 adjudicated the all-writer scope on the parent's text and the lane brief directs that it be preserved. Only the owner may narrow it."
+          },
+          {
+            "sub_id": "C-3",
+            "option": "Change the recovery model so the predicate is not needed — for example, make the window empty by construction by completing the backup and the DDL before any client of any kind exists against the governed project.",
+            "consequence": "This is the only sub-option that satisfies the SPIRIT of QUIESCE at full scope without new authority, and it is viable ONLY while PR #201 remains unexecuted. It requires MG-Q1 and MG-Q2 to be closed first, because 'no client exists' is currently UNKNOWN, not measured. If the census finds an exposed Auth surface with live sessions, C-3 collapses back into the gap.",
+            "unblocks": "Potentially everything, contingent on a census this lane is not authorized to perform.",
+            "ordering_dependency": "Hard. See the preserved DEP-1."
+          }
+        ]
+      }
+    ],
+    "recommendation": {
+      "primary": "Close MG-Q1 and MG-Q2 under a narrow read-only census authority BEFORE answering. The census is cheap, mutates nothing, and determines whether C-3 is available — which is the only branch that preserves the owner's stated intent at full scope without new mutation authority.",
+      "if_the_census_shows_no_live_writers": "C-3, and QUIESCE stands as ratified.",
+      "if_the_census_shows_live_provider_writers": "The real choice is between KEEP QUIESCE with Stage-A blocked indefinitely, and C-1 ACCEPT with a quantified exposure. C-2 is not recommended, because it delivers an unquantified partial acceptance under a name that suggests prevention.",
+      "what_is_NOT_recommended": "Adopting any detection-only posture under the name QUIESCE. That is what this amendment exists to withdraw."
+    },
+    "what_remains_blocked_until_answered": "Everything. No execution lane may open, IG-1 stays open, S8 stays unsatisfiable, and Stage-A stays blocked."
+  },
+
+  "SECTION_B9_SUPERSEDED_CLAUSES": {
+    "sweep_method": "A SEMANTIC walk of every string leaf of both v1.0.0 artifacts against four defect patterns — detection-as-QUIESCE, the transaction-id-frontier PASS contract, the everything-that-writes-moves-it claim, and the inside-QUIESCE claim — rather than a grep for clause ids. This follows the measured lesson that superseding a clause by name does not disable its restatements in consequent blocks. The sweep returned 24 hits across 18 distinct loci. A complementary identifier sweep over 95 loci confirmed that no locus outside the 18 carries the defective SEMANTICS; the remainder are ids, cross-references, or clauses that survive unchanged.",
+    "superseded_in_full": [
+      {
+        "clause": "SECTION_D_PREFERRED_MECHANISM, in its entirety, including adjudication, the_reframe_that_makes_this_possible with all four sub-keys, why_not_a_bare_capability_gap and what_remains_genuinely_gapped.",
+        "ground": "Finding 1. Its adjudication IS the substitution."
+      },
+      {
+        "clause": "SECTION_C_CANDIDATE_MECHANISMS.mechanisms[10], the whole of M-11, including mechanism, prevents, proves, why_this_reaches_what_no_prevention_mechanism_reaches, evidence_available, known_conservatism and verdict.",
+        "ground": "Findings 1 and 2. Re-entered only as SW-1, PROHIBITED."
+      },
+      {
+        "clause": "SECTION_E contract[2], PQ-3, including its on_void and fail_closed sub-keys.",
+        "ground": "Finding 2. The equality PASS condition is void."
+      },
+      {
+        "clause": "SECTION_E contract[3], PQ-4, including its constraint, verification and engine_build_note.",
+        "ground": "Finding 2, and SECTION_B10.CL-6."
+      },
+      {
+        "clause": "SECTION_J_OWNER_DECISIONS.decisions[1], OD-Q2, in full.",
+        "ground": "MOOT. It asked the owner to accept a conservatism property of a primitive that is now prohibited."
+      },
+      {
+        "clause": "SECTION_J_OWNER_DECISIONS.decisions[2], OD-Q3, in full, including its question, both options, measured_consequences, recommendation and not_a_third_posture.",
+        "ground": "Finding 1. It framed prevention-versus-detection as a cost preference. REPLACED BY OD-Q5, which frames it as a re-adjudication of a ratified posture."
+      },
+      {
+        "clause": "SECTION_H_HUMAN_CONFIRMATION.confirmations[1], HCQ-2, in full.",
+        "ground": "It confirmed the PQ-3 verdict rule, which no longer exists."
+      },
+      {
+        "clause": "SECTION_G what_this_would_authorize_if_certified_and_ratified[1], AQ-2.",
+        "ground": "Finding 2. The two witness observations are no longer a proof of anything and are not authorized."
+      },
+      {
+        "clause": "SECTION_K capability_gaps[1], CG-Q2, and its status 'CLOSED BY THIS ARTIFACT'.",
+        "ground": "IG-2 is NOT closed. The attestation shape it claimed to supply depended on the removed primitive. CORRECTED to PARTIALLY_ADDRESSED in SECTION_B11."
+      },
+      {
+        "clause": "SECTION_A writers[11] (W-12) disposition, in the part reading 'and provable only by the negative witness of SECTION_E'.",
+        "ground": "Finding 2. W-12's classification as a KNOWN_WRITER is PRESERVED; only its claimed proof is withdrawn."
+      }
+    ],
+    "superseded_in_part": [
+      {
+        "clause": "SECTION_E contract[7], PQ-8.",
+        "superseded": "The sentence asserting that an in-flight write 'advances the frontier and voids the window, which is the correct outcome'.",
+        "preserved": "That a maintenance page is NOT proof, and that a request past a barrier completes normally. Both remain TRUE and BINDING."
+      },
+      {
+        "clause": "SECTION_E contract[0] PQ-1 and contract[1] PQ-2.",
+        "superseded": "Their 'recorded' fields, insofar as they name the negative witness as the recorded value.",
+        "preserved": "THE ANCHORING ITSELF. W0 at the dump snapshot and W1 immediately before the first DDL statement are CORRECT and are expressly preserved, per the lane brief's preservation of recovery-snapshot anchoring. Only the quantity recorded at those instants is withdrawn. See also SECTION_B4.IF-5."
+      },
+      {
+        "clause": "SECTION_E contract[4], PQ-5.",
+        "superseded": "Its sub-key why_it_is_still_required_when_the_witness_is_total, whose premise is false.",
+        "preserved": "The disposition-table requirement itself, which is STRENGTHENED: it is now the primary evidence artifact rather than a diagnostic adjunct."
+      },
+      {
+        "clause": "SECTION_E what_this_contract_deliberately_does_not_claim[0] and [2].",
+        "superseded": "Their framing as limits on an accepted witness.",
+        "preserved": "Their substance, which was accurate."
+      },
+      {
+        "clause": "SECTION_E status, and SECTION_E's claim to close IG-2.",
+        "superseded": "The IG-2 closure claim.",
+        "preserved": "That the contract is not executable until certified — now more strongly true."
+      },
+      {
+        "clause": "SECTION_K measurement_gaps[1] mitigation_in_the_meantime.",
+        "superseded": "'M-11's witness is indifferent to this gap' — false, and in any case M-11 is gone.",
+        "preserved": "MG-Q2 itself."
+      },
+      {
+        "clause": "SECTION_F the_dependency_stated_explicitly.",
+        "superseded": "The clause 'M-11 still proves the predicate'.",
+        "preserved": "DEP-1 ITSELF, which is not merely preserved but STRENGTHENED: with detection withdrawn, ordering is now the ONLY genuine prevention available, so executing PR #201 first forecloses the last viable branch C-3."
+      },
+      {
+        "clause": "OPEN_FINDINGS[1], OF-Q2.",
+        "superseded": "Its disposition as a non-blocking flag.",
+        "preserved": "The finding text, which correctly identified the defect. It is now VINDICATED AND CLOSED — the certifier tested exactly what it nominated and found the adjudication wrong."
+      },
+      {
+        "clause": "SECTION_J decisions[0] OD-Q1 and decisions[3] OD-Q4.",
+        "superseded": "Their consequence clauses insofar as they reference the witness.",
+        "preserved": "BOTH DECISIONS REMAIN OPEN AND LIVE. OD-Q1's scope question is now subsumed as sub-option C-2 of OD-Q5 and must not be answered separately; OD-Q4's ordering question is unchanged and sharpened."
+      },
+      {
+        "clause": "self_check.checks[13] and required_independent_review and next_gate.",
+        "superseded": "Insofar as they present the SECTION_D adjudication as merely contestable rather than as failed.",
+        "preserved": "The principle that the writing lane does not certify its own output."
+      }
+    ],
+    "completeness_statement": "Every one of the 18 defect-bearing loci returned by the semantic sweep is disposed of above, either in full or in part. This amendment does NOT assert that the list is complete merely because a sweep was run; the sweep's patterns are recorded in the companion manifest as PC-A5 so a certifier can re-run them and look for a nineteenth."
+  },
+
+  "SECTION_B10_CORRECTED_COUNTS_AND_CLAIMS": {
+    "corrections": [
+      {
+        "id": "CL-1",
+        "defect": "v1.0.0's SECTION_C was described as 'Eleven candidates assessed, eight rejected' in the PR narrative, and SECTION_D's prose implied the same.",
+        "re_derived": "A machine tally of the verdict field of SECTION_C_CANDIDATE_MECHANISMS.mechanisms returns: assessed 11, rejected 9 (M-2 through M-10), accepted 2 (M-1, M-11).",
+        "correction": "ELEVEN ASSESSED, NINE REJECTED, TWO ACCEPTED — as v1.0.0 stood. UNDER THIS AMENDMENT M-11 becomes rejected, giving TEN REJECTED AND ONE ACCEPTED of eleven; and SECTION_B3 assesses THIRTEEN prevention candidates of which TWELVE are rejected."
+      },
+      {
+        "id": "CL-2",
+        "defect": "W-2 was recorded as '72 files carry a leading use server directive'. The figure is not reproducible.",
+        "re_derived_under_three_exact_definitions": {
+          "A_first_non_empty_line_is_the_directive": 28,
+          "B_directive_anchored_at_column_zero_anywhere_in_file": 69,
+          "C_the_substring_appears_anywhere_including_tests_and_comments": 91
+        },
+        "operative_definition": "B. A Server Action module is a .ts or .tsx file under app/, lib/ or components/ carrying a module-level 'use server' directive at column zero. Definition A undercounts because a leading path comment is permitted before the directive; definition C overcounts because it matches test files and prose.",
+        "correction": "W-2 IS 69, NOT 72. The definition is now stated with the count, so the figure is reproducible rather than asserted.",
+        "note": "C minus B is 22 files, all of which are pages, test files or modules mentioning the directive in a comment or string. None is a Server Action module."
+      },
+      {
+        "id": "CL-3",
+        "defect": "The nextval/XID overclaim — v1.0.0 asserted that a write necessarily allocates the observed primitive.",
+        "correction": "WITHDRAWN. See SECTION_B5.SS-1, grounded in the vendor sentence 'This is a high-level notion of read-only that does not prevent all writes to disk.'"
+      },
+      {
+        "id": "CL-4",
+        "defect": "The W1 / post-W1 commit boundary was not addressed.",
+        "correction": "ADDED as SECTION_B4.IF-5. The window boundary is a property of the recovery point's durable state, not of two observation instants."
+      },
+      {
+        "id": "CL-5",
+        "defect": "The cluster-global false-positive caveat was omitted. v1.0.0's known_conservatism named only autovacuum.",
+        "correction": "ADDED as SECTION_B5.SS-3. Transaction ids are cluster-wide, so activity in another database of the same cluster moves the frontier."
+      },
+      {
+        "id": "CL-6",
+        "defect": "THE VALIDATION TEST COULD NOT DISTINGUISH A SOUND WITNESS FROM AN UNSOUND ONE. v1.0.0's PQ-4 required demonstrating that 'two consecutive observations across a genuinely idle interval return EQUAL values'.",
+        "why_it_was_vacuous": "That test detects exactly one failure mode — a witness that consumes a transaction id on each observation. It passes identically for a sound witness and for the unsound scalar frontier, because on an IDLE interval nothing writes and both return equal values. The test never exercises the counterexample, which requires a transaction open ACROSS the interval. A test that only exercises the quiet case cannot certify a primitive whose defect lives in the busy case.",
+        "correction": "The test is SUPERSEDED with PQ-4. Recorded as a general lesson: a validation that only demonstrates the expected-PASS path proves nothing about soundness. Any future witness validation in this chain MUST include the SECTION_B2 counterexample as a required failing case."
+      }
+    ]
+  },
+
+  "SECTION_B11_PRESERVED_UNCHANGED": {
+    "rule": "The following are NOT touched by this amendment and remain fully controlling. They are listed individually and were each re-read against the two findings to confirm neither contaminates them. This list is NOT a blanket reaffirmation — a measured lesson in this programme is that an UNCHANGED_AND_STILL_CONTROLLING list can silently re-bless a defect.",
+    "preserved": [
+      {
+        "item": "SECTION_A_WRITER_INVENTORY, W-1 through W-16.",
+        "with_corrections": "W-2's count to 69 per CL-2; W-12's disposition loses its witness clause per SECTION_B9. Every classification is otherwise unchanged, and the six UNKNOWN classes still fail closed.",
+        "checked_against_the_findings": "The inventory is a measurement of writer classes. Neither finding concerns it."
+      },
+      {
+        "item": "THE_TREE_VALIDITY_CAVEAT.",
+        "checked": "Independent of both findings, and now more load-bearing, since the disposition table of PQ-5 is the primary evidence artifact."
+      },
+      {
+        "item": "SECTION_B_QUIESCE_SCOPE_ADJUDICATION — the all-writer scope, with grounds SB-1 through SB-4.",
+        "checked": "PRESERVED IN FULL AND NOT NARROWED. It is the reason the gap in SECTION_B7 exists, and narrowing it to escape the gap is available only to the owner, as sub-option C-2 of OD-Q5."
+      },
+      {
+        "item": "The PR #201 NOT_EXECUTED fact and its blob pin 6549cd9c.",
+        "checked": "A verbatim re-read of a declared final_state. Untouched."
+      },
+      {
+        "item": "SECTION_C mechanisms M-1 through M-10 and their rejections.",
+        "checked": "Each rejection was re-read. All nine stand, and several are STRENGTHENED by SECTION_B3's evidence — in particular M-6 and M-7, whose rejections are now corroborated by the vendor documentation on read-only overridability."
+      },
+      {
+        "item": "SECTION_F PR201 relationship, including DEP-1.",
+        "checked": "Strengthened, not weakened. See SECTION_B9."
+      },
+      {
+        "item": "SECTION_I target identity, the staging ref bvyzblhqymxruxdguaee, the absolute production veto on ctaxtgujyyprgynmnvtq, and PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER.",
+        "checked": "Untouched by both findings and restated as binding."
+      },
+      {
+        "item": "The authority boundary: SECTION_G's what_this_expressly_does_NOT_authorize, and EXPLICIT_NON_AUTHORIZATIONS in full.",
+        "checked": "Untouched and reinforced. No silent expansion into backup, restore, DDL or Stage-A occurs in this amendment. AQ-1, AQ-3, AQ-4 and AQ-5 survive as descriptions but are NOT EXECUTABLE, because SECTION_B7 finds the posture they served unexecutable."
+      },
+      {
+        "item": "Recovery snapshot anchoring: PQ-1's W0 at the dump snapshot and PQ-2's W1 immediately before the first DDL statement.",
+        "checked": "Expressly preserved per the lane brief. Only the recorded quantity is withdrawn."
+      },
+      {
+        "item": "PQ-5 disposition table, PQ-6 delayed and retried work, PQ-7 already-open sessions, PQ-9 explicit resumption, PQ-10 attestation contents minus the witness fields.",
+        "checked": "All five survive. PQ-7 is STRENGTHENED by SECTION_B4 and by the measured idle_in_transaction_session_timeout of 60s on uellix_app, which bounds one narrow sub-case and no other."
+      },
+      {
+        "item": "The stacking discipline: DRAFT, base codex/cv1-staging-recovery-authority-r1, no retarget to integration, no duplication of the Recovery files.",
+        "checked": "Unchanged."
+      },
+      {
+        "item": "MG-Q1, MG-Q2 and MG-Q3.",
+        "checked": "All three remain open. MG-Q1 and MG-Q2 are now ELEVATED: they gate sub-option C-3, the only branch that preserves the owner's intent at full scope."
+      }
+    ],
+    "corrected_rather_than_preserved": [
+      {
+        "item": "CG-Q2, which claimed IG-2 CLOSED.",
+        "corrected_to": "PARTIALLY_ADDRESSED. PQ-5, PQ-6, PQ-7, PQ-9 and PQ-10 do constitute part of an attestation shape and survive. PQ-3, PQ-4 and PQ-8's central assertion do not. IG-2 is therefore not closed, and no artifact in this chain yet specifies a complete quiesce-attestation shape."
+      },
+      {
+        "item": "CG-Q3, which stated IG-1 ADDRESSED_NOT_CLOSED.",
+        "corrected_to": "NOT_CLOSED_AND_NOT_CURRENTLY_CLOSABLE. The change is material: v1.0.0 held that IG-1 awaited only certification and ratification. It now awaits a capability that has been measured absent."
+      }
+    ]
+  },
+
+  "SECTION_B12_PRECEDENCE": {
+    "rule": "Where this amendment and v1.0.0 conflict, THIS AMENDMENT CONTROLS. Where this amendment is silent, v1.0.0 controls unamended.",
+    "no_reinterpretation_of_the_parent": "This amendment does not edit, reinterpret or narrow the Recovery authority, its amendment, the owner-ratification record, or PR #201. It quotes the Recovery parent verbatim and measures against it.",
+    "byte_integrity": "v1.0.0's authority blob 633d4d68 and manifest blob 0478c7fa are unchanged by this lane, as are the four blobs pinned in v1.0.0's CONTROLLING_AUTHORITY."
+  },
+
+  "SECTION_B13_SELF_CHECK": {
+    "checks": [
+      "Both blocking findings are accepted in full; neither is argued with, and neither is preserved in a restated form.",
+      "The parent's QUIESCE definition is quoted verbatim, in full, with its blob SHA and JSON path.",
+      "No clause of this amendment offers detection as, or in place of, QUIESCE.",
+      "No scalar transaction-id frontier survives anywhere as a PASS contract, a verdict input, or evidence of absence; SW-1 is PROHIBITED, not merely rejected.",
+      "Full pg_current_snapshot() and WAL LSN are recorded as CANDIDATES ONLY and are expressly NOT adopted.",
+      "The lane brief's instruction 'If no witness can prove total absence, say so' is discharged in terms at SECTION_B6.the_honest_statement_the_brief_asked_for.",
+      "Exactly two outcomes were available and OUTCOME B is taken. No third interpretation of OD-3 is invented; the C-1/C-2/C-3 sub-options are enumerations of what CHANGE could mean, offered to the owner, not authorial reinterpretations.",
+      "The re-adjudication is framed as KEEP QUIESCE versus CHANGE RECOVERY POSTURE and is expressly NOT disguised as a cost preference; v1.0.0's OD-Q3 cost framing is superseded.",
+      "Thirteen prevention candidates are assessed on all eight brief-mandated axes; twelve are rejected with a stated ground; the one accepted is scoped to three of sixteen writer classes.",
+      "All five in-flight classes IF-1..IF-5 are addressed, including prepared transactions, with the vendor sentence that defeats session termination quoted.",
+      "Sequence state is addressed at SS-1 with the vendor sentence 'does not prevent all writes to disk', and the SS-2 list is labelled ILLUSTRATIVE rather than exhaustive.",
+      "All six cleanup items in the lane brief are discharged at CL-1..CL-6, each with a re-derivation rather than an assertion.",
+      "The residual sweep is SEMANTIC over string leaves, not a grep for ids; its 18 loci are each disposed of, and its patterns are published in the manifest so a certifier can hunt a nineteenth.",
+      "The preserved list is itemised and each item was re-read against both findings, rather than reaffirmed in bulk.",
+      "IG-1 is NOT closed and is downgraded to NOT_CLOSED_AND_NOT_CURRENTLY_CLOSABLE; IG-2's claimed closure is withdrawn to PARTIALLY_ADDRESSED.",
+      "No hosted mutation, no database connection and no live management-plane read were performed. The only new external evidence is public vendor documentation, quoted with URLs, and it is classified as documentation rather than as measurement of the governed project.",
+      "No credential, DSN, token, key or environment-variable value appears anywhere; the production ref appears only in veto contexts.",
+      "final_state declares a CAPABILITY GAP and does not force a fake executable authority."
+    ],
+    "self_check_is_not_certification": "These are the author's own checks on an artifact whose predecessor failed independent certification on exactly the clause its own self-check had passed. They are recorded for a certifier to test, not as a substitute for one."
+  },
+
+  "SECTION_B14_WRITE_SET": {
+    "files_created": [
+      "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+    ],
+    "files_modified": "NONE.",
+    "effective_package": "STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0 + AMENDMENT_v1.0.1 + TEST_MANIFEST_v1.0.0 + TEST_MANIFEST_AMENDMENT_v1.0.1, read together under SECTION_B12 precedence."
+  },
+
+  "RISKS_AND_OPEN_FINDINGS": [
+    {
+      "id": "OF-A1",
+      "finding": "The capability gap rests partly on absence of evidence in public vendor documentation (P-12, P-3's no-enable-endpoint observation).",
+      "disposition": "Classified as such in terms, and recorded as MG-Q4 rather than asserted as a measurement. A certifier with authority to perform read-only control-plane reads could strengthen or overturn it.",
+      "blocking": false
+    },
+    {
+      "id": "OF-A2",
+      "finding": "Whether max_prepared_transactions is non-zero on the governed project is unmeasured, so IF-2 may be an empty class.",
+      "disposition": "MG-Q5. Fails closed. G-3 is the weakest of the three grounds for the gap and the easiest to close; G-1 and G-2 are independently dispositive, so the gap does not depend on it.",
+      "blocking": false
+    },
+    {
+      "id": "OF-A3",
+      "finding": "Sub-option C-2 would let the owner escape the gap by narrowing the scope this amendment preserves. An owner reading quickly could take it as the cheap fix.",
+      "disposition": "Labelled in terms as a partial ACCEPT with an unquantified residual, and expressly NOT recommended. Flagged because the failure mode is that it looks like a smaller QUIESCE and is not.",
+      "blocking": false,
+      "severity_note": "This is the clause most likely to be misread, and therefore the one a certifier should test hardest."
+    },
+    {
+      "id": "OF-A4",
+      "finding": "OD-Q5 is blocking, and OD-Q1 is now subsumed into it as sub-option C-2 rather than remaining separately answerable.",
+      "disposition": "Stated so that no lane answers OD-Q1 in isolation and thereby decides OD-Q5 by a side door.",
+      "blocking": true
+    },
+    {
+      "id": "OF-A5",
+      "finding": "v1.0.0's OF-Q2 nominated the failed adjudication and the self_check nevertheless passed it.",
+      "disposition": "Recorded once, as evidence that a self-check cannot test a premise the author holds. It is an argument for independent certification, not for a longer self-check.",
+      "blocking": false
+    }
+  ],
+
+  "required_independent_review": "This amendment and its companion manifest amendment require INDEPENDENT adversarial certification as ONE effective package with v1.0.0. The certifier should specifically test: whether any clause of v1.0.0 restating the detection substitution survives SECTION_B9 unswept; whether SECTION_B3's rejection of P-1, P-2 and P-3 correctly characterises default_transaction_read_only as advisory; whether SECTION_B8's sub-option C-2 is adequately fenced against being read as a narrower QUIESCE; and whether OUTCOME B is genuinely forced or whether a prevention mechanism was missed.",
+
+  "final_state": "CAPABILITY_GAP__QUIESCE_NOT_EXECUTABLE__OWNER_READJUDICATION_OF_RECOVERY_OD_3_REQUIRED",
+
+  "next_gate": "OWNER RE-ADJUDICATION OF RECOVERY OD-3 via OD-Q5: KEEP QUIESCE or CHANGE RECOVERY POSTURE. Recommended first step is a narrow READ-ONLY census authority closing MG-Q1 and MG-Q2, because it determines whether sub-option C-3 is available and it mutates nothing. No execution lane may open, no quiesce act is authorized, no witness observation is authorized, IG-1 remains OPEN and NOT CURRENTLY CLOSABLE, IG-2 is PARTIALLY_ADDRESSED, and S8 remains unsatisfiable under the QUIESCE posture."
+}
