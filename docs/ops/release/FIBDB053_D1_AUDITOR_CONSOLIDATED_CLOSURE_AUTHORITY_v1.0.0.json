@@ -1,0 +1,438 @@
+{
+  "package_id": "FIBDB053-D1-AUDITOR-CONSOLIDATED-CLOSURE",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_CONSOLIDATED_CLOSURE_AUTHORITY_v1.0.0",
+  "authority_class": "DERIVED_CONSOLIDATION_AUTHORITY",
+  "document_class": "APPEND_ONLY_AUTHORITY",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1",
+  "lane": "CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1",
+  "role": "CLOSURE-FIRST AUTHORITY AUTHORING",
+  "mode": "DOCS_ONLY_NO_EXECUTION",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Opus 5, under the CV1-D1-AUDITOR-CONSOLIDATED-CLOSURE-AW-R1 lane mandate",
+  "repository": "uellix",
+
+  "companion_files": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CONSOLIDATED_CLOSURE_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.1.json",
+    "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json"
+  ],
+
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-consolidated-closure-r1",
+  "AS_OF_BASE_SHA": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+  "AS_OF_BASE_TREE": "66cbcee0d7a849c4ac7305f7f40f02b4aa058988",
+  "AS_OF_MERGE_HEAD": "00b7efc8970e38354555b39e2aae5cc2874daa69",
+  "AS_OF_MERGE_TREE": "6e8723261a198eaa496ab7bf89ed458a8712b854",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the base and at each of the three merge commits.",
+  "AS_OF_BASE_BRANCH_FOR_THE_STACKED_PR": "codex/cv1-d1-auditor-provisioning-dag-authority-r1",
+
+  "PURPOSE": {
+    "rule": "ONE consolidated successor package for the D-1 auditor capability, replacing what would otherwise have become three more parallel authority chains.",
+    "what_it_consolidates": "The three independently certified child packages for DAG nodes N05, N06 and N07, merged non-destructively and byte-intact, plus the three certification occurrences those reviews produced, plus the repair of three gaps in the certified provisioning DAG that the reviews exposed.",
+    "what_it_deliberately_is_NOT": "It is not an execution lane, not an implementation, not a provisioning act, and not a closure of any DAG node. It makes previously structureless gaps EXECUTABLE and prepares ONE later custody-realization sequence. It performs no part of that sequence.",
+    "why_consolidation_rather_than_three_successors": "Each child package independently recorded findings about the SAME graph. Three separate successor chains would each have had to re-derive the same DAG, and a gap that appears in two of them would have been repaired twice, differently. One package repairs it once."
+  },
+
+  "INTEGRATION_RECORD": {
+    "method": "Three non-destructive merges in the deterministic order the lane mandate fixes. No rebase, no force-push, no cherry-pick, no squash. Each child branched directly from the same base and touched a disjoint path set, so each merge is a PURE UNION.",
+    "BASE_HEAD": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+    "merges": [
+      {
+        "order": 1,
+        "subject": "N05 WCM readiness authority",
+        "source_branch": "origin/codex/cv1-d1-auditor-wcm-readiness-authority-r1",
+        "source_sha": "36b87dc420a971e919c0855f319b66d52a56f233",
+        "merge_base_with_our_base": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+        "merge_commit": "471173a28e20d88f57b03e298fc84a95525dc02b",
+        "files_added": 4,
+        "conflicts": "NONE"
+      },
+      {
+        "order": 2,
+        "subject": "N06 custody inventory authority",
+        "source_branch": "origin/codex/cv1-d1-auditor-custody-inventory-authority-r1",
+        "source_sha": "d4a71cad0e568d81b752fe97251407bbb6ebcd44",
+        "merge_base_with_our_base": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+        "merge_commit": "56ecc4831b6a696d6bc064f83411379cf17dab2b",
+        "files_added": 2,
+        "conflicts": "NONE"
+      },
+      {
+        "order": 3,
+        "subject": "N07 evidence skeleton authority",
+        "source_branch": "origin/codex/cv1-d1-auditor-evidence-skeleton-authority-r1",
+        "source_sha": "e50be7778dc42fe13fe8a67b9a34e3c0ccc50b53",
+        "merge_base_with_our_base": "173fabce180b71fe49f65e5c7290ca9f20d85572",
+        "merge_commit": "00b7efc8970e38354555b39e2aae5cc2874daa69",
+        "files_added": 4,
+        "conflicts": "NONE"
+      }
+    ],
+    "NEW_HEAD_AFTER_MERGES": "00b7efc8970e38354555b39e2aae5cc2874daa69",
+    "UNION_PURITY_PROOF": {
+      "method": "git diff --name-status between the base and the merge head.",
+      "FILES_CHANGED": 10,
+      "ADDITIONS": 10,
+      "MODIFICATIONS": 0,
+      "DELETIONS": 0,
+      "verdict": "PURE UNION. Not one file present at the base was modified or removed by the merges."
+    },
+    "CHILD_BLOB_BYTE_IDENTITY": {
+      "method": "Git blob OIDs for all ten child artifacts were captured from the three source commits BEFORE the merges and compared against the same paths at the merge head. A blob OID is the hash of the exact bytes, so an OID match IS byte equality — and it is immune to the CRLF round-tripping this repository's Windows checkouts perform, because the stored blob is LF either way.",
+      "ARTIFACTS_COMPARED": 10,
+      "ARTIFACTS_BYTE_IDENTICAL": 10,
+      "ARTIFACTS_DIVERGENT": 0,
+      "verdict": "10/10 BYTE-IDENTICAL."
+    },
+    "SEMANTIC_CONFLICT_CHECK": {
+      "question": "The lane mandate requires a STOP on semantic or path conflict. Was there one?",
+      "path_conflict": "NONE. The three children's path sets are pairwise disjoint.",
+      "semantic_conflict": "NONE FOUND. The three packages make claims about the same graph but none contradicts another. Where two of them touch the same subject — N05's readiness and N06's delivery-mechanism field — the N06 entry already carries the caveat that recording the ratified mechanism choice is not a claim that N05 has closed, which is exactly what the N05 package independently concludes.",
+      "verdict": "NO STOP CONDITION. Proceeded."
+    },
+    "CHILD_PRS_ARE_NOT_CLOSED_BY_THIS_PACKAGE": "PR #215, PR #216 and PR #217 remain OPEN. They become candidates to close as superseded ONLY after this consolidated package passes independent certification, and closing them is a separate act this authority does not perform."
+  },
+
+  "CERTIFICATION_OCCURRENCES": {
+    "rule": "Materialized in ONE minimal registry, not restated here.",
+    "registry": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+    "occurrences": 3,
+    "verdicts": [
+      "N05_WCM_READINESS_V101_RECERT_PASS_WITH_PROGRAM_BLOCKERS",
+      "N06_CUSTODY_INVENTORY_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "N07_EVIDENCE_SKELETON_IC_PASS_WITH_NONBLOCKING_FINDINGS"
+    ],
+    "nodes_closed_by_them": 0,
+    "what_is_NOT_fabricated": "Reviewer identity, exact timestamps and historical verdict documents are explicit holes in the registry, never invented values. See the registry's own WHAT_IS_NOT_FABRICATED_HERE clause."
+  },
+
+  "DAG_GAP_REPAIRS": {
+    "rule": "Three gaps, three governed acts, one amendment. The amendment is the operative artifact; this section states what it does and why, and does not duplicate its node text.",
+    "amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "DAG_GAP_A": {
+      "gap": "N05 requires a CHOSEN vault-read mechanism and no node of the certified DAG selects or builds one.",
+      "closed_by_node": "N29, WCM VAULT-READ MECHANISM SELECTION AND BUILD",
+      "placement": "Upstream of N05, downstream of N03.",
+      "bounded_to_the_ratified_class": "Selection is confined to what OD-2 already ratified — process-scoped delivery from a DPAPI-backed OS credential vault — as corrected by v1.0.2 SPC102-1, which leaves user-scope persistent variables unselectable.",
+      "NO_INSECURE_IMPLEMENTATION_CHOSEN_TO_CLOSE_THE_NODE": "No reader, wrapper, script, command, API or library is named. The node authorizes a FUTURE technical lane under hard constraints: no secret in argv, no secret in logs, no secret in the repository tree, no persistent user environment, no invented secret.",
+      "THE_BUILDER_MUST_NOT_SELF_CERTIFY_N05": "N29's exit condition stops at a built, invocable, named mechanism with its invocation contract enforced. Demonstrating WCM-C1..WCM-C5 is N05 and belongs to a different actor. A builder who also certifies the build has produced a self-report."
+    },
+    "DAG_GAP_B": {
+      "gap": "N11 mints the credential, N23 READS it from the vault, and no node deposits it into the vault between them.",
+      "closed_by_node": "N30, CREDENTIAL DEPOSIT INTO THE RATIFIED CUSTODY STORE",
+      "placement": "Strictly between N11 and N23, machine-verified by REACHABILITY over the edge set (N30 reachable from N11, N23 reachable from N30) rather than by position in a topological order, which is not unique and would not have proven the dependency.",
+      "KEPT_SEPARATE_FROM_SELECTION_AND_BUILD": "N29 produces a READER; N30 performs a WRITE. The two semantics are NOT fused. Fusing them would let one lane both place a secret and certify the mechanism that retrieves it.",
+      "KEPT_SEPARATE_FROM_N12": "N12 updates the custody INVENTORY, a names-and-roles repository record. N30 writes a VALUE into an OS credential vault. Neither substitutes for the other.",
+      "invariants_preserved": [
+        "Inventory stays metadata-only.",
+        "NEVER_A_VALUE holds absolutely.",
+        "No vault handle or lookup token in N06.",
+        "No credential on any command line.",
+        "No secret evidence: the deposit is recorded by mechanism name only."
+      ],
+      "the_concrete_deposit_mechanism_is_NOT_chosen": "Current authority fixes the custody STORE but no artifact measures a deposit path into it, so a concrete command or API is not yet a purely technical detail. The future choice is authorized under six constraints and no owner policy is invented."
+    },
+    "DAG_GAP_C": {
+      "gap": "N06 requires planned_removal_date and no node of the certified DAG produces it.",
+      "corpus_search_performed_first": "As the lane mandate directs. The effective authority corpus was searched for any ratified or derived removal rule that deterministically produces the field. Result: SECRET_CUSTODY_CONTRACT.CONSEQUENT_BINDING_REQUIREMENT REQUIRES the field; the DAG's SSL06_INVENTORY_PREREQUISITE lists it among the seven pre-mint fields but gives it no source, while sourcing its sibling 'the expiry' to N09 explicitly; HC1_CONTRACT's HC1-S6 sources it to 'N06 planned removal date', which is the consuming node itself; and the N06 package's own FIELD_DISPOSITION gives it closure_path 'Same as expiry_exact_utc', resolving to N09, whose act computes VALID UNTIL. NO DETERMINISTIC PRODUCER EXISTS.",
+      "closed_by_node": "N31, PLANNED REMOVAL DATE INTAKE",
+      "placement": "Downstream of N08, upstream of N06.",
+      "CLASSIFICATION": "HUMAN_SUPPLIED_EXECUTION_DATUM, not a mechanically derived schedule datum.",
+      "why_not_mechanically_derived": "A derivation needs a ratified offset from a known instant, and none exists. OD-1 fixes that removal is POST-WITNESS but fixes no interval. OD-3's twenty-four hours is ratified for VALID UNTIL, a different quantity; borrowing it would be taking a numeral ratified for another purpose.",
+      "why_it_is_NOT_turned_into_a_policy_decision": "The policy is already ratified at OD-1 and is not reopened. Only the concrete instant implementing it is missing — the same relationship N08 bears to OD-3.",
+      "NO_DATE_IS_INVENTED": "No UTC timestamp is computed, defaulted or recorded anywhere in this package.",
+      "NOT_SILENTLY_EQUATED_TO_expiry_exact_utc": "The two are distinct fields with distinct meanings and no controlling authority requires equality. The one derivable binding bound is NOT EARLIER THAN the planned FINAL WITNESS. Whether it must also fall at or before the expiry is carried as an OPEN OWNER INPUT, not resolved by inference."
+    }
+  },
+
+  "N06_EXECUTION_CRITICAL_CORRECTIONS": {
+    "rule": "APPEND-ONLY correction of execution-relevant issues only. The N06 authority at blob 5408cc7cc00cceb3816e5c43ad09678fddc81aa1 is NOT edited; the two of its clauses these corrections supersede are recorded here. The inventory INSTANCE is corrected in place, because OD-2 fixes its path and DAG node N12 already updates that same file by design.",
+    "instance_path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json",
+    "instance_blob_before": "28c2379fa1d4918c259d3f0b92ea3939f23022d0",
+    "instance_blob_after": "d99d19a19f12aaad23d38c5168be313321641f31",
+    "CORRECTION_1_PROCESSES_OR_ENVIRONMENTS_IS_AN_EXPLICIT_HOLE": {
+      "what_it_was": "processes_or_environments: []",
+      "why_it_was_wrong": "An empty array is a RESOLVED VALUE meaning 'no process or environment will hold this credential'. That is materially false: N23 places the value into exactly one process environment and N30 deposits it into the custody store. Every other hole in the entry is expressed as null; this single field broke the convention in the one direction that reads as a satisfied constraint rather than an open one.",
+      "what_it_is_now": "processes_or_environments: null, with its hole reason retained and its closure path re-stated through N29 then N05.",
+      "why_this_is_execution_relevant": "N06's exit condition requires all seven pre-mint fields PRESENT. A machine or a reader checking that condition against [] would find a present, well-formed, resolved value and mark the field satisfied."
+    },
+    "CORRECTION_2_EXPIRY_CLOSURE_SEQUENCING_RESPECTS_THE_N06_TO_N10_HARD_ORDERING": {
+      "the_clause_superseded": "N06 authority FIELD_DISPOSITION.explicit_holes[expiry_exact_utc].closure_path, and by reference the planned_removal_date entry whose closure_path is 'Same as expiry_exact_utc'.",
+      "its_text_as_certified": "Owner supplies a concrete planned FINAL WITNESS timestamp (N08); DAG node N09 computes the exact UTC instant; that value is shown to the owner at HC-1 (N10) and recorded here only then.",
+      "why_it_cannot_be_executed_as_written": "Edge E-06-10 is HARD. Under DAG_EDGES.rule, an edge from A to B means B MAY NOT BEGIN until A's exit condition is satisfied. N06's exit condition requires all seven pre-mint fields present, and the expiry is one of the seven. A field first recorded at N10 could never have been present at N06, so N06's exit condition could never be met and N10 could never legitimately begin. The clause makes the node unsatisfiable by its own graph.",
+      "the_corrected_sequence": "N09 computes the exact UTC instant; N06 RECORDS it in the inventory; only then may N10 begin, and HC1-S4 STATES the already-recorded value to the owner. HC-1 states this record; it does not create it. The same correction applies to planned_removal_date via N31 and HC1-S6.",
+      "what_is_NOT_weakened": "EXEC-NOTE-1 is untouched: if no concrete planned FINAL WITNESS time is available, MR-2 remains BLOCKED and no default, estimate or open-ended value is substituted. The correction changes WHEN a known value is recorded, never whether an unknown one may be guessed."
+    },
+    "CORRECTION_3_BOTH_CHAIN_GAPS_ARE_SURFACED_IN_THE_INVENTORY": {
+      "what_was_added": "A custody_chain_gaps_surfaced block naming the READ_AND_BUILD_GAP (OF-N05-1, now node N29) and the DEPOSIT_GAP (OF-N05-2, now node N30), each with its status OPEN.",
+      "why_it_is_execution_relevant": "The inventory is the record an execution lane consults to know how custody is arranged. An inventory naming a custody store that nothing writes into, and a delivery mechanism that nothing builds, describes an arrangement that cannot happen."
+    },
+    "CORRECTION_4_METADATA_ONLY_SEMANTICS_PRESERVED": {
+      "rule": "UNCHANGED AND UNWEAKENED. NEVER_A_VALUE holds absolutely, and the vault-handle prohibition of OF-DAG-6 is carried in full.",
+      "what_changed_and_what_did_not": "The corrections changed hole REPRESENTATION, hole ATTRIBUTION and RECORDING SEQUENCE. No field was populated, no hole was closed, no value was supplied, and no added field can hold a secret. lifecycle_state remains PLANNED_NOT_PROVISIONED."
+    },
+    "WHAT_WAS_DELIBERATELY_NOT_DONE": "The whole document was not polished. Cosmetic envelope symmetry, family grouping and line-number pins were left exactly as certified, because no machine control depends on them and the lane mandate scopes this work to execution-relevant issues."
+  },
+
+  "N07_EXECUTION_CRITICAL_CORRECTIONS": {
+    "rule": "Only the mechanically important schema gaps are closed, so that N25 can fill the evidence artifact against a schema that actually constrains it. The v1.0.0 schema, template, authority and test manifest are PRESERVED BYTE-INTACT; corrections land in SUCCESSOR files at v1.0.1.",
+    "successors": {
+      "schema": { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.1.json", "blob_sha": "1c3995be16c3d276a438dfd18e509bd1a076f23f" },
+      "template": { "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.1.json", "blob_sha": "154c86e833d3cde8b7460a6bc6571b8098ca38b5" }
+    },
+    "DERIVATION_METHOD": "v1.0.1 is DERIVED from v1.0.0 by a script that applies exactly four corrections and changes nothing else. The eight prohibited-content strings are READ from EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN in the capability authority rather than retyped, and the thirty-four PV ids are GENERATED from the range rather than enumerated by hand. A transcription this lane does not perform is a transcription that cannot drift.",
+    "CORRECTION_A_PV_IDENTITY_IS_PINNED_NOT_ONLY_CARDINALITY": {
+      "what_v1_0_0_constrained": "minItems 34, maxItems 34, and a per-row pv_id PATTERN matching PV-1..PV-34.",
+      "why_that_is_insufficient": "A pattern plus a count fixes the SIZE of the set and the SHAPE of each member. It does not fix the set's IDENTITY. A table carrying PV-1 twice and no PV-2 has thirty-four rows, each matching the pattern.",
+      "MEASURED_NOT_ASSERTED": "A mutant of the certified template with row 2 replaced by a copy of row 1 — thirty-four rows, PV-1 twice, PV-2 absent — was validated against the v1.0.0 schema with ajv-cli 5 in draft-07 mode. Result: VALID. The weakness is measured, not inferred.",
+      "what_v1_0_1_adds": "Thirty-four contains clauses, one per id, each requiring a row whose pv_id equals that exact id, alongside the retained minItems/maxItems 34. Thirty-four slots that must each hold a distinct required id can hold each id exactly once.",
+      "MUTANT_NOW_RED": "The same mutant validated against v1.0.1 fails on keyword 'contains'."
+    },
+    "CORRECTION_B_PROHIBITED_CONTENT_IS_ANCHORED_NOT_COUNTED": {
+      "what_v1_0_0_constrained": "An array of strings, minItems 8, maxItems 8.",
+      "why_that_is_insufficient": "Eight arbitrary strings satisfy it. The attestation then asserts that eight things are prohibited without asserting WHICH, which is precisely the content the attestation exists to carry.",
+      "MEASURED_NOT_ASSERTED": "A mutant replacing the eight prohibited classes with the strings x1..x8 validated against the v1.0.0 schema. Result: VALID.",
+      "what_v1_0_1_adds": "Eight positional const clauses derived from EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN, plus additionalItems false. Exact content and exact order are pinned.",
+      "MUTANT_NOW_RED": "The same mutant fails on keyword 'const'."
+    },
+    "CORRECTION_C_THE_expected_COLUMN_HAS_A_HOME": {
+      "the_conflict": "EVIDENCE_MATERIALIZATION.REQUIRED_CONTENTS item 5 requires 'the full PV-1..PV-34 assertion table, each row with expected, actual and pass or fail'. The v1.0.0 populated-instance schema defines pv_row with properties pv_id, expected_source_ref, actual and status, and additionalProperties false. There is no property able to hold the expected VALUE, and adding one at fill time is a validation error rather than a completion.",
+      "MEASURED_NOT_ASSERTED": "A mutant adding an expected field to PV-1 validated against the v1.0.0 schema. Result: INVALID, 'must NOT have additional properties'. The conflict is real and it bites at exactly the moment N25 would try to satisfy REQUIRED_CONTENTS.",
+      "what_v1_0_1_adds": "A required expected property on pv_row, typed as the same hole_string every other unfilled field uses, pre-populated NOT_EXECUTED in the template.",
+      "why_expected_source_ref_is_RETAINED_ALONGSIDE_IT": "The lane mandate asks for a traceable representation that avoids copy drift. Keeping the structured pointer beside the resolved value means a transcription that drifts from its source is DETECTABLE rather than authoritative — the resolved value can always be checked back against the row the pointer names. Replacing the pointer with the value would have closed the conflict and lost the traceability in the same move.",
+      "REQUIRED_CONTENTS_IS_NOT_WEAKENED": "Nothing is removed from REQUIRED_CONTENTS and no item of it is made optional. The correction adds a place to satisfy item 5; it does not lower item 5.",
+      "MUTANT_NOW_RED": "A mutant deleting expected from PV-1 fails on keyword 'required'."
+    },
+    "CORRECTION_D_UTC_REPRESENTATION_IS_MECHANICALLY_ENFORCED": {
+      "what_v1_0_0_constrained": "value_utc was a hole_string: any non-empty string.",
+      "why_that_is_insufficient": "DAG node N09's exit condition requires 'one exact UTC instant, expressed in UTC and not in a local Windows time zone'. A schema accepting any non-empty string cannot tell the two apart, on a programme whose execution surface is a Windows workstation.",
+      "MEASURED_NOT_ASSERTED": "A mutant setting value_utc to a local Windows time-zone string validated against the v1.0.0 schema. Result: VALID.",
+      "what_v1_0_1_adds": "A utc_instant definition: either the literal NOT_EXECUTED, or the literal UNKNOWN, or an RFC3339 instant with a literal Z and optional fractional seconds. The two pre-population literals are preserved so an unfilled hole stays a hole rather than becoming a violation.",
+      "no_policy_is_invented": "The constraint expresses a requirement the DAG already states. It fixes no expiry, no offset and no date.",
+      "APPLIED_ALSO_TO_timestamp_utc_AND_WHY_THAT_IS_DISCLOSED": "The lane mandate scoped this correction to value_utc. The same definition is also applied to human_confirmation.timestamp_utc, which REQUIRED_CONTENTS item 7 requires for each of the three human confirmations. The rationale is that it is the identical mechanical constraint on an identically named quantity, and a confirmation timestamp recorded in local Windows time corrupts the non-transferability audit that HC-1's own clauses depend on. It is recorded here as a DELIBERATE EXTENSION BEYOND THE STATED SCOPE rather than folded in silently, so a certifier can reject it as scope creep if it disagrees. See OF-CONS-3.",
+      "MUTANTS_NOW_RED": "A mutant setting value_utc to a local time string, and a mutant setting hc_1 timestamp_utc to a local time string, both fail on keyword 'const' within the utc_instant oneOf."
+    },
+    "WHAT_IS_PRESERVED_UNCHANGED": {
+      "N07_IS_NOT_SATISFIED": "N07 remains OPEN. A corrected schema is not a filled evidence artifact.",
+      "THE_FILENAME_IS_STILL_NOT_FIXED": "The execution-time evidence filename must still be derived from the docs/ops/staging/evidence/ dated attempt-scoped precedent AT THE EXECUTION LANE'S OWN BASE. Neither v1.0.1 file fixes it, and the template remains a versioned governance file rather than a dated attempt record.",
+      "the_baseline_stays_green": "Template v1.0.1 validates against schema v1.0.1. The corrections tighten the schema without making the honest pre-population state invalid."
+    },
+    "WHAT_WAS_DELIBERATELY_NOT_DONE": "OF-N07-1's section-ordering question and OF-N07-3's HC-3 node-id question are NOT resolved. Neither is depended on by a machine control and both are carried forward as open findings."
+  },
+
+  "HYGIENE_DELIBERATELY_NOT_FIXED": {
+    "rule": "The lane mandate forbids spending this lane on non-blocking hygiene unless a machine control depends on it. Three named classes were left alone, and this clause records that the omission is a decision rather than an oversight.",
+    "N05_optional_count_and_group_prose": "NOT TOUCHED. OF-N05-8's six-versus-two reconciliation is already recorded by the child package and no control consumes the numeral.",
+    "N06_cosmetic_envelope_symmetry": "NOT TOUCHED.",
+    "N07_lineage_numeral_prose": "NOT TOUCHED.",
+    "the_one_place_a_machine_control_DID_depend_on_prose": "The N07 test manifest's DP7 control asserts the prohibited list is byte-identical to its source. v1.0.1's correction B makes that assertion enforceable by the schema itself rather than by a re-derivation step, so the control gets stronger without the prose being edited."
+  },
+
+  "NODE_STATUS_AFTER_THIS_PACKAGE": {
+    "rule": "No node is closed by this package. Each status below is stated so that a PASS on this package cannot be read as progress through the graph.",
+    "N05": "OPEN, NOT SATISFIED, UNEXECUTED. Its subject now exists as node N29 rather than as an absence. No mechanism has been selected, built or demonstrated.",
+    "N06": "OPEN, NOT SATISFIED, UNEXECUTED. planned_removal_date now has a producer (N31) and processes_or_environments is now an honest hole, but N05, N09 and N31 are all open and human_custodian still has no producer node at all.",
+    "N07": "OPEN, NOT SATISFIED, UNEXECUTED. The schema now constrains what N25 will fill, but nothing is filled and the execution-time filename is still to be derived at the execution lane's own base.",
+    "N29": "OPEN, NEWLY DECLARED, UNEXECUTED.",
+    "N30": "OPEN, NEWLY DECLARED, UNEXECUTED.",
+    "N31": "OPEN, NEWLY DECLARED, UNEXECUTED, datum unsupplied.",
+    "N08": "OPEN, UNCHANGED. Terminal state BLOCKED_AT_N08 remains live.",
+    "N10_and_every_hosted_node": "UNREACHABLE, UNCHANGED. N11 is the first hosted act in the graph and nothing upstream of it has closed."
+  },
+
+  "FUTURE_EXECUTION_SHAPE": {
+    "rule": "DERIVED AND DESCRIBED, NOT OPENED. This section names the shape of the next major real-work lane so that the three gaps are not each picked up separately. It opens nothing, schedules nothing, allocates no identifier and authorizes no act.",
+    "the_desired_next_lane": "ONE custody-realization IMPLEMENTATION lane.",
+    "proposed_lane_label": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-IMPLEMENTATION-R1",
+    "id_status": "PROPOSED LABEL ONLY. No ODS, HPO or W2 identifier is invented, reserved or implied.",
+    "its_scope_as_derived": [
+      "N29: select and build the vault-read mechanism within the ratified class, with its invocation contract enforced at every invocation.",
+      "N30: implement the credential deposit into the custody store, under the six constraints the DAG amendment binds.",
+      "A demonstration HARNESS for N05, exercised on a NON-SECRET SENTINEL only."
+    ],
+    "WHY_THE_THREE_TRAVEL_TOGETHER": "They share one subject — the custody mechanism — and splitting them across lanes would have each lane building against the other's unfinished half. One lane builds the reader, the writer and the harness that proves them.",
+    "WHAT_IT_MAY_NOT_DO": [
+      "It does NOT run the N05 demonstration as a discharge. Building a mechanism is not demonstrating one, and a builder who certifies its own build has produced a self-report.",
+      "It does NOT handle a real credential. No mint, no rotation, no deposit of a live value, no hosted connection.",
+      "It does NOT populate the custody inventory. That is N06.",
+      "It does NOT supply any owner datum.",
+      "It does NOT open PRECHECK-R2."
+    ],
+    "CERTIFICATION_STAYS_SEPARATE": "Independent certification of that lane is a distinct act by a distinct actor. This is the same separation N29's own clause enforces at the node level, applied at the lane level.",
+    "IT_IS_NOT_EXECUTED_HERE": "No part of it is performed, begun or prepared beyond this description."
+  },
+
+  "OPEN_OWNER_INPUTS": [
+    {
+      "id": "OOI-1",
+      "input": "A concrete planned FINAL WITNESS timestamp (DAG node N08).",
+      "status": "UNSUPPLIED. Terminal state BLOCKED_AT_N08 is live.",
+      "blocks": "N09, N31, N06, N10, and therefore every hosted node."
+    },
+    {
+      "id": "OOI-2",
+      "input": "The planned removal date (DAG node N31).",
+      "status": "UNSUPPLIED. Its producer node now exists; the datum does not.",
+      "blocks": "N06's exit condition, and therefore N10.",
+      "note": "Bounded below by the planned FINAL WITNESS instant. Not equated to the expiry."
+    },
+    {
+      "id": "OOI-3",
+      "input": "The human custodian named in the custody inventory.",
+      "status": "UNSUPPLIED, AND WITHOUT A PRODUCER NODE EVEN AFTER THIS AMENDMENT. See OF-CONS-2.",
+      "blocks": "N06's exit condition, and therefore N10."
+    },
+    {
+      "id": "OOI-4",
+      "input": "Whether planned_removal_date must fall at or before expiry_exact_utc.",
+      "status": "UNDECIDED. Arguable both ways from OD-1's mandatory-rotation posture, and settled by no ratified clause.",
+      "why_it_is_not_decided_here": "Deciding it by inference would create owner policy. It is recorded as an owner question instead."
+    }
+  ],
+
+  "OPEN_EXECUTION_FACTS": [
+    {
+      "id": "OEF-1",
+      "fact": "No vault-read mechanism has been selected or built. N29 is declared and unexecuted."
+    },
+    {
+      "id": "OEF-2",
+      "fact": "No deposit path into Windows Credential Manager has been measured anywhere in this repository, which is why N30's concrete command or API is left to an authorized future technical choice rather than fixed."
+    },
+    {
+      "id": "OEF-3",
+      "fact": "No CI runner in this repository can execute a behavioural N05 control. All nine runs-on values across all nine workflow files are ubuntu-latest, with no Windows runner and no matrix, while N05's subject is a Windows-only OS facility. The established skipIf idiom would render such a control SKIPPED-AND-GREEN on the only runner that exists, which is indistinguishable from PASSED in a summary line. Re-derived at this lane's own base and unchanged from OF-N05-7."
+    },
+    {
+      "id": "OEF-4",
+      "fact": "The repository has no JSON Schema validator wired into any standing gate. Schema validation for this package's controls was performed with ajv-cli 5 invoked against the working tree, exactly as the N07 child package recorded for its own controls. The controls are therefore RE-DERIVABLE BY COMMAND and NOT CI-GATED."
+    },
+    {
+      "id": "OEF-5",
+      "fact": "The child PRs #215, #216 and #217 are OPEN and their branches are unmerged upstream. This package supersedes them in content but closes none of them."
+    }
+  ],
+
+  "MACHINE_DERIVED_COUNTS": {
+    "rule": "Every numeral in this package that could be derived, was. None is hand-counted.",
+    "CHILD_PACKAGES_MERGED": 3,
+    "CHILD_ARTIFACTS_MERGED": 10,
+    "CHILD_ARTIFACTS_BYTE_IDENTICAL": 10,
+    "MERGE_CONFLICTS": 0,
+    "FILES_CHANGED_BASE_TO_MERGE_HEAD": 10,
+    "MODIFICATIONS_BASE_TO_MERGE_HEAD": 0,
+    "CERTIFICATION_OCCURRENCES": 3,
+    "DAG_NODE_COUNT_BEFORE": 28,
+    "DAG_NODE_COUNT_AFTER": 31,
+    "DAG_EDGE_COUNT_BEFORE": 35,
+    "DAG_EDGE_COUNT_AFTER": 42,
+    "DAG_NEW_NODES": 3,
+    "DAG_NEW_EDGES": 7,
+    "DAG_HARD_EDGES_AFTER": 34,
+    "DAG_CONDITIONAL_EDGES_AFTER": 8,
+    "DAG_ACYCLIC": true,
+    "DAG_DUPLICATE_NODE_IDS": 0,
+    "DAG_DUPLICATE_EDGE_IDS": 0,
+    "DAG_ORPHANS_BEFORE": 1,
+    "DAG_ORPHANS_AFTER": 1,
+    "DAG_ORPHAN_DELTA": 0,
+    "PV_IDS_PINNED_BY_IDENTITY": 34,
+    "PROHIBITED_CONTENT_CLASSES_PINNED_BY_VALUE": 8,
+    "REQUIRED_CONTENTS_ITEMS": 15,
+    "HU_REGISTER_ENTRIES": 13,
+    "NODES_CLOSED_BY_THIS_PACKAGE": 0,
+    "derivation_commands": "DAG counts by topological sort and reachability sweep over the union of v1.0.0's forward edges and the v1.0.2 amendment's; merge and blob facts by git diff --name-status and git ls-tree blob OID comparison; PV, prohibited-content, REQUIRED_CONTENTS and HU counts by reading the arrays in the capability authority and the v1.0.1 schema rather than by counting prose."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO credential value is generated, minted, rotated, read, written, deposited, echoed or handled anywhere in this package.",
+    "NO Windows Credential Manager access of any kind occurs.",
+    "NO PostgreSQL connection is opened, and no SQL is executed.",
+    "NO hosted mutation is performed or authorized. No GRANT, no REVOKE, no role mutation, no VALID UNTIL.",
+    "NO principal is provisioned.",
+    "NO external mutation of any kind is performed.",
+    "NO DAG node is declared satisfied or closed.",
+    "NO owner policy is created, widened or reinterpreted, and no owner decision is reopened.",
+    "NO UTC timestamp is computed, defaulted, estimated or recorded.",
+    "NO implementation of any WCM reader, DPAPI wrapper, vault integration or deposit command is invented, named, designed or sketched.",
+    "NO append-only artifact is edited. v1.0.0 and v1.0.1 of the DAG authority, the three child authorities, and the N07 v1.0.0 schema, template and test manifest are all byte-intact.",
+    "NO child PR is closed.",
+    "This package does NOT open, authorize, schedule or arm the custody-realization implementation lane it describes."
+  ],
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-CONS-1",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "This package CORRECTS an artifact that was independently certified three days into its own lifetime: the custody inventory instance at the OD-2-fixed path, certified at blob 28c2379f and now at blob d99d19a1.",
+      "why_it_is_not_a_violation": "The instance is a MUTABLE record by its own design — DAG node N12 updates it after the mint and N28 closes it — and OD-2 fixes its path, so a superseding copy at a second path would create the two-entry condition SECRET_ROTATION_CONTRACT.rotation_mechanics forbids. Its governing AUTHORITY, which is append-only, is byte-intact.",
+      "what_a_certifier_should_press": "Whether correcting a just-certified instance in place, rather than through a governed update act, sets a precedent that would let a later lane edit an instance whose mutability is less clearly established. The certification occurrence registry deliberately pins the PRE-correction blob for this reason."
+    },
+    {
+      "id": "OF-CONS-2",
+      "severity": "BLOCKING_FOR_N06_EXIT",
+      "finding": "human_custodian, one of the seven pre-mint fields N06's exit condition requires, has NO PRODUCER NODE in the amended graph. It is the same class of gap as DAG_GAP_C and it is NOT closed here.",
+      "why_it_is_not_closed": "The lane mandate named three gaps. Adding a fourth node on this lane's own initiative would be scope expansion; leaving it unmentioned would repeat exactly the omission DAG_GAP_C records. It is surfaced with a named remedy instead.",
+      "the_named_remedy": "Either an owner intake node alongside N31, or an explicit statement that the custodian is supplied at the same owner beat as N08 and N31. A successor amendment or this package's independent certification should settle which.",
+      "consequence_if_left": "N06 cannot meet its exit condition, N10 cannot be asked, and MR-2 stays BLOCKED — the same terminal posture as BLOCKED_AT_N08, reached by a different missing datum.",
+      "also_recorded_as": "OF-DAG-8 in the DAG amendment v1.0.2."
+    },
+    {
+      "id": "OF-CONS-3",
+      "severity": "NON_BLOCKING",
+      "finding": "Correction D was applied to human_confirmation.timestamp_utc in addition to value_utc, which the lane mandate scoped it to.",
+      "why_it_was_done": "It is the identical mechanical constraint on an identically named quantity that REQUIRED_CONTENTS item 7 independently requires, and a confirmation timestamp in local Windows time would corrupt the HC non-transferability audit.",
+      "disposition": "Disclosed as a deliberate extension beyond the stated scope rather than folded in silently, so a certifier can reject it as scope creep. Reverting it would require regenerating the schema without that one assignment and would not affect corrections A, B or C.",
+      "what_a_certifier_should_press": "Whether a lane that widens its own mandate for a good reason, and says so, is preferable to one that does not widen it at all."
+    },
+    {
+      "id": "OF-CONS-4",
+      "severity": "NON_BLOCKING",
+      "finding": "N29's and N30's concrete mechanisms are both left to authorized future technical choices under constraint lists. Two of the three repaired gaps therefore close with a CONSTRAINED HOLE rather than with a named act.",
+      "why_it_is_accepted": "Naming either mechanism would require a feasibility measurement no artifact in this repository has performed, and the lane mandate forbids choosing an insecure implementation merely to close a node. A node that says 'a future lane will choose X under these constraints' is honest; a node naming an unmeasured mechanism would look more closed and be less true.",
+      "what_a_certifier_should_press": "Whether the constraint lists are jointly sufficient to exclude every leaking path, or whether a path satisfies all of them and still exposes the value — for instance through a tooling layer that logs its own inputs."
+    },
+    {
+      "id": "OF-CONS-5",
+      "severity": "NON_BLOCKING",
+      "finding": "The N07 v1.0.0 test manifest's controls DP1..DP11, DN1..DN7 and DM1..DM6 all carry test_file UNKNOWN, and this package's own schema controls are in the same position: they are re-derivable by command and gated by no standing CI job.",
+      "disposition": "Carried forward unchanged and not resolved. Wiring a JSON Schema validator into a repository gate would be a new machine surface, which is outside a closure-first authoring lane's mandate.",
+      "what_a_certifier_should_press": "Whether a package whose central corrections are schema constraints should be allowed to land before any gate can re-run those constraints automatically."
+    },
+    {
+      "id": "OF-CONS-6",
+      "severity": "NON_BLOCKING_BUT_MATERIAL",
+      "finding": "THREE OF THIS PACKAGE'S OWN NEGATIVE CONTROLS WERE FIRST WRITTEN SO THAT THEY WOULD HAVE REDDENED ON CLEAN ARTIFACTS. Running them exposed the flaw in the controls rather than a defect in the write set.",
+      "the_three_cases": [
+        "CN3 grepped the write set for the phrase 'N31 is SATISFIED'. The manifest carrying that control is itself inside the write set, so the control matched its own description. Rewritten as a structural assertion over named fields.",
+        "CN4 grepped for concrete mechanism names and called any hit RED. Every hit was a name appearing inside a PROHIBITION ('never setx'). A control that reddens on its own prohibitions forces the constraint lists to be written vaguely, which is the opposite of what they are for. Rewritten to classify each hit as SELECTION or PROHIBITION.",
+        "CN6 grepped for SQ-6 and SQ-7. Those strings are the canonical literals' IDENTIFIERS, and REQUIRED_CONTENTS item 14 positively REQUIRES a statement that neither literal was resolved — which cannot be written without naming them. Rewritten to target resolutions rather than identifiers."
+      ],
+      "the_generalizable_lesson": "A grep-based control that scans a file set including the file that describes it will always find itself; and a control that counts hits rather than classifying them cannot distinguish naming-to-forbid from naming-to-select. Both produce a RED that looks like a finding and is an artefact of the control.",
+      "why_it_is_recorded_rather_than_quietly_fixed": "The same defect class already has repository precedent in a vocabulary sweep that miscounted because it did not classify its hits individually. Recording it here is cheaper than letting the next lane rediscover it as an alarm.",
+      "what_a_certifier_should_press": "Whether any OTHER control in this manifest, or in the three child manifests, counts hits where it should classify them — the N07 child manifest's DN2 and DN3 are worth reading with that question in mind."
+    }
+  ],
+
+  "self_check": {
+    "one_package_not_three_chains": "One consolidated authority, one companion manifest, one occurrence registry, one DAG amendment in the EXISTING DAG lineage, and two successor companion files in the EXISTING N07 lineage. No new authority chain is created for N05, N06 or N07.",
+    "merges_non_destructive": "Three --no-ff merges, no rebase, no force-push, no squash. Pure union proven by git diff --name-status: ten files changed, ten additions, zero modifications, zero deletions.",
+    "child_blobs_byte_identical": "10 of 10, proven by blob OID comparison before and after.",
+    "no_append_only_artifact_edited": "Machine-checkable: git diff of every append-only path against the merge head must be empty. The ONE file this package modifies is the custody inventory INSTANCE, which is mutable by design and is disclosed at OF-CONS-1.",
+    "no_node_closed": "NODES_CLOSED_BY_THIS_PACKAGE is zero, and NODE_STATUS_AFTER_THIS_PACKAGE states every relevant node as OPEN.",
+    "no_secret_value": "No credential, DSN, userinfo, password hash, host string, vault handle, entry key or lookup token appears in any file of this write set.",
+    "no_utc_timestamp": "No computed UTC instant appears in any authored file. The only dates are materialization_date literals, which are neither expiries nor removal dates. The UTC pattern added to the v1.0.1 schema is a FORMAT constraint and fixes no instant.",
+    "every_gap_verdict_derived_from_the_graph": "GAP_A, GAP_B and GAP_C closure claims are each machine-checked against the amended edge set rather than asserted, and the results are recorded in the DAG amendment's RECOMPUTED_GRAPH.",
+    "orphan_result_reported_honestly": "The recomputation's orphan result is N28, before and after. It is reported as measured and then explained as the graph's own declared external segment, in that order, rather than explained away."
+  },
+
+  "required_independent_review": "MANDATORY. ONE independent adversarial certification of this consolidated package, covering the integration, the occurrence registry, the three DAG gap repairs, the N06 corrections and the N07 schema corrections together. No part of this package may be cited as satisfying any DAG node until that certification passes.",
+
+  "final_state": "CONSOLIDATED_CLOSURE_PACKAGE_AUTHORED_THREE_GAPS_MADE_EXECUTABLE_ZERO_NODES_CLOSED_ZERO_EXTERNAL_MUTATIONS",
+
+  "next_gate": "ONE independent adversarial certification of the consolidated package. On PASS, PR #215, PR #216 and PR #217 become CANDIDATES to close as superseded by this consolidated lineage — closing them is a separate act. No provisioning is authorized on PASS, and the custody-realization implementation lane is described but not opened."
+}

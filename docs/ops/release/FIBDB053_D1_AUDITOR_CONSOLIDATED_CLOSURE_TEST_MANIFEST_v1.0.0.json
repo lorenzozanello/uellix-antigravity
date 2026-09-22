@@ -1,0 +1,198 @@
+{
+  "manifest_id": "FIBDB053-D1-AUDITOR-CONSOLIDATED-CLOSURE",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_CONSOLIDATED_CLOSURE_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "FIBDB053-D1-AUDITOR-PROVISIONING-DAG",
+    "FIBDB053-D1-AUDITOR-N05-WCM-READINESS",
+    "FIBDB053-D1-AUDITOR-N06-CUSTODY-INVENTORY",
+    "FIBDB053-D1-AUDITOR-N07-EVIDENCE-SKELETON",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+    "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [],
+  "known_conditions": [
+    "DAG nodes N05, N06 and N07 are ALL OPEN and NOT SATISFIED at this lane's base and remain so at its head. This package closes no node and may not be cited as satisfying one.",
+    "DAG nodes N29, N30 and N31 are NEWLY DECLARED by this package's DAG amendment v1.0.2 and are OPEN and UNEXECUTED from the moment they exist.",
+    "Terminal state BLOCKED_AT_N08 remains live: no concrete planned FINAL WITNESS timestamp has been supplied.",
+    "human_custodian has NO PRODUCER NODE even after the amendment. Recorded as OF-CONS-2 and OF-DAG-8; deliberately not closed by this lane.",
+    "N28 is an ORPHAN and UNREACHABLE from N01 both BEFORE and AFTER the amendment. This is v1.0.0's own declared external segment between N27 and N28, not a regression, and the amendment introduces zero new orphans.",
+    "The repository has NO JSON Schema validator wired into any standing gate: no ajv or jsonschema dependency in package.json and no validator script under scripts/. Every schema control below is re-derivable BY COMMAND with ajv-cli 5 and is NOT CI-gated. Same posture the N07 child manifest recorded for its own controls.",
+    "All nine CI runs-on values across all nine workflow files are ubuntu-latest, with no Windows runner and no matrix. No behavioural control over a Windows-only OS facility can be CI-gated in this repository, and the established skipIf idiom would render such a control SKIPPED-AND-GREEN, indistinguishable from PASSED.",
+    "This lane MODIFIES one previously certified file: the custody inventory instance at the OD-2-fixed canonical path. It is mutable by design (DAG node N12 updates it, N28 closes it). Its append-only governing AUTHORITY is byte-intact. Disclosed at OF-CONS-1.",
+    "PR #215, #216 and #217 remain OPEN. This package supersedes them in content and closes none of them."
+  ],
+  "positive_controls": [
+    {
+      "id": "CC1",
+      "description": "THE THREE MERGES ARE A PURE UNION. git diff --name-status between base 173fabce180b71fe49f65e5c7290ca9f20d85572 and merge head 00b7efc8970e38354555b39e2aae5cc2874daa69 must report exactly TEN entries, every one of status A. Zero M, zero D, zero R. Measured at authoring time: 10 files changed, 2362 insertions, 0 deletions.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC2",
+      "description": "ALL TEN CHILD ARTIFACT BLOBS ARE BYTE-IDENTICAL ACROSS THE MERGES. Capture the blob OIDs of the ten child paths from 36b87dc4, d4a71cad and e50be777, capture them again at the merge head, and require the sorted sets to be equal. A blob OID is the hash of the exact bytes, so OID equality IS byte equality, and it is immune to the CRLF round-tripping this repository's Windows checkouts perform. Measured at authoring time: 10/10 identical.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC3",
+      "description": "THE AMENDED DAG IS ACYCLIC, WITH 31 NODES AND 42 EDGES. Rebuild the graph as the union of v1.0.0's 35 forward edges and v1.0.2's 7, run a Kahn topological sort, and require: topological order length equal to node count (31), zero nodes in a cycle, zero duplicate node ids, zero duplicate edge ids, zero duplicate from-to pairs, and zero edge endpoints that are not declared nodes. Every numeral re-derived, never transcribed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC4",
+      "description": "EACH OF THE THREE GAP CLOSURES IS TRUE OF THE GRAPH, NOT MERELY CLAIMED. Require: an edge N29 -> N05 exists (GAP A, N05 now has a producer); N30 is REACHABLE FROM N11 and N23 is REACHABLE FROM N30 (GAP B, the deposit sits strictly between the mint and the read); an edge N31 -> N06 exists (GAP C, planned_removal_date now has a producer). Measured at authoring time: all three true. METHOD NOTE: GAP B is tested by REACHABILITY over the edge set, NOT by comparing positions in a topological order. A topological order is not unique, so 'N11 appears before N30 in this linearization' is compatible with there being no dependency between them at all. This control was first written positionally and the error was caught by CM7, which failed for the right reason against a wrong oracle; both were corrected to reachability.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC5",
+      "description": "THE N06 -> N10 HARD ORDERING SURVIVES THE AMENDMENT. Edge E-06-10 must still be present with kind HARD in the amended edge set. This is the ordering the N06 expiry-sequencing correction depends on; an amendment that dissolved it would silently invalidate that correction.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC6",
+      "description": "THE AMENDMENT WIDENS PRECONDITION SETS AND NARROWS NONE. For every node of v1.0.0, its incoming-edge set in the amended graph must be a SUPERSET of its incoming-edge set in v1.0.0. A widening can only make a node harder to reach; a narrowing would be a weakening this amendment forbids itself.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC7",
+      "description": "TEMPLATE v1.0.1 VALIDATES AGAINST SCHEMA v1.0.1, BY A REAL VALIDATOR. Run: npx ajv-cli@5 validate -s docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.1.json -d docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.1.json --spec=draft7 . Measured at authoring time: valid. The four corrections tighten the schema WITHOUT making the honest pre-population state invalid.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC8",
+      "description": "THE v1.0.1 SCHEMA PINS THIRTY-FOUR PV IDS BY IDENTITY. Count the contains clauses under the n22_full_poststate_table allOf: exactly 34, each requiring a distinct pv_id const from PV-1 to PV-34, alongside the retained minItems/maxItems 34. Derive the expected id set from the range, never from a hand-written list.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC9",
+      "description": "THE v1.0.1 SCHEMA PINS THE EIGHT PROHIBITED CONTENT CLASSES BY VALUE. Each of the eight positional const values under must_never_contain_attestation.prohibited.items must be byte-identical to the corresponding entry of EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN in the capability authority, compared programmatically and in order, with additionalItems false. The v1.0.1 file was GENERATED by reading that source rather than by transcribing it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC10",
+      "description": "REQUIRED_CONTENTS IS NOT WEAKENED, AND ITS ITEM 5 NOW HAS A HOME. EVIDENCE_MATERIALIZATION.REQUIRED_CONTENTS must still hold exactly FIFTEEN items, byte-unchanged in the capability authority; and pv_row.required in schema v1.0.1 must contain expected alongside pv_id, expected_source_ref, actual and status. expected_source_ref must be RETAINED, so the resolved value stays traceable to its source.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC11",
+      "description": "THE PRE-POPULATION LITERALS STILL VALIDATE UNDER THE UTC CONSTRAINT. Every value_utc and timestamp_utc in template v1.0.1 holds NOT_EXECUTED and validates. A UTC constraint that made an unfilled hole invalid would have converted honest holes into violations and pressured the execution lane to invent an instant.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC12",
+      "description": "EVERY APPEND-ONLY ARTIFACT UPSTREAM OF THIS LANE IS BYTE-UNCHANGED. git diff between the merge head and the candidate head, restricted to the DAG authority v1.0.0, the DAG amendment v1.0.1, the three child authorities and their manifests, and the N07 v1.0.0 schema, template and test manifest, must be EMPTY. Exactly ONE previously existing file may differ: the custody inventory instance, which is mutable by design and disclosed at OF-CONS-1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CC13",
+      "description": "THE MACHINE GATES PASS ON THE CANDIDATE TREE: pnpm typecheck, pnpm secrets:scan, pnpm authority:seal:verify, and pnpm ods:scope with --allow docs/ops/release/** --allow docs/ops/staging/** reporting zero protected-path violations and zero unauthorized paths; then pnpm ods:poststate AFTER the commit.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "CN1",
+      "description": "NO SECRET VALUE ANYWHERE IN THE WRITE SET. Grep every authored and modified file for a postgres connection-scheme prefix, a URL userinfo segment carrying a colon-separated secret before an at-sign, a password hash or rolpassword value, a direct host string as distinct from the ConnectionMechanism enum, and any vault handle, entry key or lookup token. Any hit is RED. pnpm secrets:scan must also report no credential material on the full tree.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CN2",
+      "description": "NO COMPUTED UTC TIMESTAMP ANYWHERE. Grep every authored file for an ISO-8601 instant or Z-suffixed time presented as a VALID UNTIL, an expiry or a removal date. Only materialization_date literals (2026-09-22) may appear, and never as a computed value. The UTC PATTERN in schema v1.0.1 is a format constraint and fixes no instant; it must not be mistaken for one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CN3",
+      "description": "NO NODE IS DECLARED SATISFIED OR CLOSED. Assert STRUCTURALLY, not by grep: the consolidated authority's NODE_STATUS_AFTER_THIS_PACKAGE must give every one of N05, N06, N07, N29, N30, N31 a status beginning OPEN; MACHINE_DERIVED_COUNTS.NODES_CLOSED_BY_THIS_PACKAGE must read 0; and the occurrence registry's DERIVED_FACTS.NODES_CLOSED_BY_THESE_CERTIFICATIONS must read 0. SELF-MATCH NOTE: a grep formulation of this control matches its own description text — this manifest is inside the write set the control scans, so the phrase it hunts for is a phrase it contains. Structural assertion over named fields has no such blind spot. Measured at authoring time: all six statuses OPEN, both counts 0.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CN4",
+      "description": "NO CONCRETE WCM READER, DPAPI WRAPPER, DEPOSIT COMMAND OR VAULT API IS SELECTED. Grep the write set for cmdkey, CredRead, CredWrite, CredentialManager API symbols, PowerShell credential cmdlets, setx and named libraries, then CLASSIFY each hit individually rather than counting them: a hit is RED only if it names a mechanism the lane SELECTS or RECOMMENDS. A hit inside a PROHIBITION ('never setx'), or inside this control's own description, is GREEN — the DAG's constraint lists must be able to forbid a mechanism by name, and a control that reddened on its own prohibitions would force the constraints to be written vaguely. Measured at authoring time: eight hits, all eight classified GREEN — five inside this description, three inside 'never setx' prohibitions of which one is inherited byte-unchanged from the certified inventory. Zero selections.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CN5",
+      "description": "THE CUSTODY INVENTORY HOLDS NO RESOLVED-LOOKING HOLE. No field of the inventory entry may be an empty array or an empty string. Every unsupplied field must be null with a stated hole reason. This is the machine form of the correction that replaced [] with null: a re-introduced [] would restore exactly the defect.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CN6",
+      "description": "NEITHER CANONICAL LITERAL IS RESOLVED, in whole or composed from parts, in any authored or modified file. The control targets the literals' RESOLUTIONS, never their IDENTIFIERS: the strings SQ-6 and SQ-7 are the names by which the authority chain refers to them, and REQUIRED_CONTENTS item 14 positively REQUIRES an explicit statement that neither was resolved — a statement that cannot be written without naming them. Measured at authoring time: six identifier occurrences, all six inside that required non-resolution statement, of which the schema and template occurrences are inherited byte-unchanged from the certified v1.0.0 files. Zero resolutions.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CN7",
+      "description": "THE CERTIFICATION OCCURRENCE REGISTRY FABRICATES NOTHING. All three reviewer_identity fields and all three exact_timestamp_utc fields must be null with stated hole reasons. Any non-null value is RED: it would be an attributed reviewer or an invented instant that no artifact evidences.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CN8",
+      "description": "THE REGISTRY PINS THE PRE-CORRECTION INVENTORY BLOB. CERT-OCC-N06's certified_artifacts entry for the custody inventory must pin 28c2379fa1d4918c259d3f0b92ea3939f23022d0, the blob AS CERTIFIED, and NOT the corrected blob. Re-pinning to the corrected blob would report that the corrected file is what was certified, which is false.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "CM1",
+      "description": "MUTANT — DUPLICATE A PV ROW AND DROP ITS SIBLING (row 2 replaced by a copy of row 1: thirty-four rows, PV-1 twice, PV-2 absent). Against schema v1.0.0: measured VALID — this is the defect correction A exists to fix, proven rather than asserted. Against schema v1.0.1: measured RED on keyword contains. The GREEN-to-RED flip IS the proof that identity, not merely cardinality, is now pinned.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM2",
+      "description": "MUTANT — REPLACE THE EIGHT PROHIBITED CONTENT CLASSES WITH x1..x8. Against schema v1.0.0: measured VALID. Against schema v1.0.1: measured RED on keyword const. Proves the attestation now asserts WHICH classes are prohibited and not merely how many.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM3",
+      "description": "MUTANT — DELETE expected FROM A PV ROW. Against schema v1.0.1: measured RED on keyword required. The mirror-image measurement is also recorded: ADDING expected to a row under schema v1.0.0 was measured RED on additionalProperties, which is the conflict with REQUIRED_CONTENTS item 5 that correction C resolves.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM4",
+      "description": "MUTANT — SET value_utc TO A LOCAL WINDOWS TIME-ZONE STRING. Against schema v1.0.0: measured VALID. Against schema v1.0.1: measured RED within the utc_instant oneOf. Proves the UTC representation is now mechanically enforced on the one field DAG node N09's exit condition names.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM5",
+      "description": "MUTANT — SET A HUMAN CONFIRMATION timestamp_utc TO A LOCAL-FORMAT STRING. Against schema v1.0.1: measured RED. This control covers the DELIBERATE EXTENSION disclosed at OF-CONS-3 and exists so that a certifier rejecting the extension knows exactly which control to withdraw with it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM6",
+      "description": "MUTANT — REMOVE EDGE E-31-06 FROM THE AMENDED EDGE SET. Expected: RED at control CC4, because planned_removal_date loses its producer and GAP C reopens. Guards against a successor amendment dissolving the repair while leaving the prose that claims it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM7",
+      "description": "MUTANT — MOVE N30 OFF N11 ONTO N10 (replace edge E-11-30 with E-10-30). Expected: RED at control CC4, because N30 becomes UNREACHABLE from N11 and the deposit is no longer ordered after the mint that produces the value it deposits. Measured RED at authoring time. Guards the one ordering property GAP B exists to establish. This mutant earned its place: run against a positional oracle it reported PASS-shaped nonsense, which is how the positional flaw in CC4 was found. A mutation control whose oracle is weaker than the property it guards will pass a graph that has lost the property.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM8",
+      "description": "MUTANT — RESTORE processes_or_environments TO []. Expected: RED at control CN5. The four corrections to the inventory are all textual except this one, and this one is the only inventory defect a machine can catch; the control exists so it stays caught.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM9",
+      "description": "MUTANT — DECLARE N28 AS A NEWLY INTRODUCED ORPHAN (assert ORPHAN_DELTA of 1 instead of 0). Expected: RED at control CC3's orphan comparison, which measures the orphan set BEFORE and AFTER and compares them rather than reporting only the after-state. Guards the disclosure against being quietly restated as a regression or quietly dropped.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CM10",
+      "description": "MUTANT — POINT template v1.0.1's schema_ref AT THE v1.0.0 SCHEMA. Expected: RED on const. Recorded because this is the one mutation this lane actually produced and caught during its own authoring: the first derivation updated the template's schema_ref but not the schema's own self-referential const, and the pair failed to validate until both moved together.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

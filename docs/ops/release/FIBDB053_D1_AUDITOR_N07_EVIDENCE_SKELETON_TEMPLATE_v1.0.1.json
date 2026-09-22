@@ -1,0 +1,560 @@
+{
+  "schema_ref": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.1.json",
+  "artifact_kind": "N07_EVIDENCE_SKELETON",
+  "template_status": "UNPOPULATED_TEMPLATE",
+  "must_never_contain_attestation": {
+    "source": "EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN, docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+    "prohibited": [
+      "the credential, in any form, redacted or not",
+      "the full DSN, or the userinfo in any form",
+      "any token, key or query string carrying a credential",
+      "the host string, as distinct from the mechanism enum",
+      "any password hash or any rolpassword value",
+      "any driver error message that has not passed through redactForHostedLog",
+      "any row of any application or tenant table",
+      "any resolution of either canonical literal"
+    ],
+    "self_check_no_prohibited_pattern_present": true
+  },
+  "execution_context": {
+    "lane_identifier": "NOT_EXECUTED",
+    "base_sha": "NOT_EXECUTED",
+    "base_tree": "NOT_EXECUTED",
+    "target_project_ref": "NOT_EXECUTED",
+    "target_selected_by_ref_not_name": "Selection was by ref, per TARGET_IDENTITY.SELECTION_IS_BY_REF_AND_NEVER_BY_NAME. The management-plane display name is never a selector.",
+    "connection_mechanism": "NOT_EXECUTED",
+    "engine_version_observed": "NOT_EXECUTED",
+    "wcm_delivery_mechanism_readiness_ref": {
+      "dag_node": "N05",
+      "demonstrated": "NOT_EXECUTED"
+    },
+    "custody_pre_mint_entry_ref": {
+      "dag_node": "N06",
+      "path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json",
+      "entry_exists_by_name_only": "NOT_EXECUTED"
+    }
+  },
+  "hosted_state_unknown_register": [
+    {
+      "id": "HU-1",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-2",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-3",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-4",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-5",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-6",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-7",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-8",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-9",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-10",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-11",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-12",
+      "disposition_after_this_phase": "UNKNOWN"
+    },
+    {
+      "id": "HU-13",
+      "disposition_after_this_phase": "UNKNOWN"
+    }
+  ],
+  "rollback_statements_pre_written": {
+    "mr1_rollback": {
+      "statement": "ALTER ROLE uellix_auditor NOLOGIN",
+      "applicable": "MR-1 is DECLARED_UNREACHABLE under the ratified OD-2 (DAG_NODES.N16). This statement is pre-written and retained per MUTATION_ROLLBACK_CONTRACT.rule regardless, because the node is retained, not deleted.",
+      "issued": "NOT_EXECUTED"
+    },
+    "mr2_compensating_action": {
+      "rollback_possible": false,
+      "statement_options": [
+        "ROTATE AGAIN",
+        "ALTER ROLE uellix_auditor PASSWORD NULL"
+      ],
+      "action_taken": "NOT_EXECUTED"
+    },
+    "mr3_rollback": {
+      "statement": "REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor",
+      "condition": "Issued ONLY if the recorded prestate (has_schema_privilege for USAGE, KP-5) was false. Never issued against a measured true prestate.",
+      "issued": "NOT_EXECUTED"
+    }
+  },
+  "sections": {
+    "valid_until_computation": {
+      "n08_planned_final_witness_intake": {
+        "supplied": "NOT_EXECUTED",
+        "if_absent": "MR-2 remains BLOCKED. No default, estimate or open-ended VALID UNTIL is substituted (EXEC-NOTE-1)."
+      },
+      "n09_computed_valid_until_utc": {
+        "value_utc": "NOT_EXECUTED",
+        "constraint": "UTC only, never a local Windows time zone. Computed as planned FINAL WITNESS + 24 hours, never invented, estimated or defaulted."
+      }
+    },
+    "hc_1": {
+      "confirmation": {
+        "dag_node": "N10",
+        "act_covered": "Setting or rotating the LOGIN credential of uellix_auditor on project bvyzblhqymxruxdguaee.",
+        "mandatory_statements": [
+          {
+            "id": "HC1-S1",
+            "source_ref": "HC1_CONTRACT.THE_SIX_MANDATORY_STATEMENTS_BEFORE_ASKING[0] — ref, and ref-not-name",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "HC1-S2",
+            "source_ref": "HC1_CONTRACT.THE_SIX_MANDATORY_STATEMENTS_BEFORE_ASKING[1] — the exact role",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "HC1-S3",
+            "source_ref": "HC1_CONTRACT.THE_SIX_MANDATORY_STATEMENTS_BEFORE_ASKING[2] — replaces any existing credential, HU-4",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "HC1-S4",
+            "source_ref": "HC1_CONTRACT.THE_SIX_MANDATORY_STATEMENTS_BEFORE_ASKING[3] — exact UTC VALID UNTIL, sections/valid_until_computation/n09",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "HC1-S5",
+            "source_ref": "HC1_CONTRACT.THE_SIX_MANDATORY_STATEMENTS_BEFORE_ASKING[4] — storage and delivery mechanism, N05/N06",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "HC1-S6",
+            "source_ref": "HC1_CONTRACT.THE_SIX_MANDATORY_STATEMENTS_BEFORE_ASKING[5] — when removed, N06 planned removal date",
+            "stated": "NOT_EXECUTED"
+          }
+        ],
+        "given": "NOT_EXECUTED",
+        "timestamp_utc": "NOT_EXECUTED",
+        "not_transferable": "Spent when its act completes or its lane stops. Silence is not consent. A different act, including a re-rotation, requires a FRESH confirmation."
+      }
+    },
+    "mr_2": {
+      "mutation": {
+        "dag_node": "N11",
+        "fired": "NOT_EXECUTED",
+        "prestate": "UNKNOWN, DECLARED AND NOT GUESSED — rolpassword existence is unobservable from the only identity this lane may hold (E-9); reading pg_authid is prohibited.",
+        "mutation_statement_ref": "Management-plane password set is PREFERRED. If SQL is used instead, the set_config bound-parameter pattern is MANDATORY so no literal is logged.",
+        "poststate": "NOT_EXECUTED",
+        "verification": "NOT_EXECUTED",
+        "token_fired": []
+      },
+      "rollback_or_compensating_action_ref": "sections/rollback_statements_pre_written/mr2_compensating_action"
+    },
+    "post_mr2_verification": {
+      "n12_custody_post_mint_update": {
+        "updated_not_appended": "NOT_EXECUTED",
+        "mint_date_recorded": "NOT_EXECUTED"
+      },
+      "n13_first_authenticated_session": {
+        "kp1_current_user": "NOT_EXECUTED",
+        "kp1_session_user": "NOT_EXECUTED",
+        "kp2_transaction_read_only": "NOT_EXECUTED",
+        "target_identity_arm_b_sentinel_verdict": "NOT_EXECUTED"
+      }
+    },
+    "prestate": {
+      "kp3_schema_exists": "NOT_EXECUTED",
+      "kp5_usage_privilege_prestate": "NOT_EXECUTED",
+      "transaction_shape": "ONE BEGIN READ ONLY transaction, closed by an unconditional ROLLBACK.",
+      "full_prestate_measured": "NOT_EXECUTED"
+    },
+    "mr_3_conditional": {
+      "n15_trigger_evaluation": {
+        "mr3_t1": "NOT_EXECUTED",
+        "mr3_t2": "NOT_EXECUTED",
+        "mr3_t3": "NOT_EXECUTED",
+        "decision": "NOT_EXECUTED"
+      },
+      "n16_mr1_record": {
+        "status": "DECLARED_UNREACHABLE under the ratified OD-2. See MR1_REACHABILITY_DERIVATION.",
+        "hc_3": {
+          "dag_node": "N16 — HC-3 carries no dedicated confirmation node of its own; embedded in N16's act, unreachable unless OD-2's operator-prestate-read election changes",
+          "act_covered": "ALTER ROLE uellix_auditor LOGIN, if and only if P1 measured rolcanlogin = false.",
+          "mandatory_statements": [],
+          "given": "NOT_EXECUTED",
+          "timestamp_utc": "NOT_EXECUTED",
+          "not_transferable": "Spent when its act completes or its lane stops. Silence is not consent. A different act, including a re-rotation, requires a FRESH confirmation."
+        },
+        "rollback_ref": "sections/rollback_statements_pre_written/mr1_rollback"
+      },
+      "n17_protected_surface_allocation": "NOT_EXECUTED",
+      "n18_package_authored": "NOT_EXECUTED",
+      "n19_hc2_confirmation": {
+        "dag_node": "N19",
+        "act_covered": "GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_auditor;, conditional on N18 having closed.",
+        "mandatory_statements": [
+          {
+            "id": "hc2-measured-privilege-value",
+            "source_ref": "DAG_NODES.N19.act — the measured has_schema_privilege value",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "hc2-schema-exists-confirmed",
+            "source_ref": "DAG_NODES.N19.act — schema confirmed to EXIST so the grant is not issued into a 3F000",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "hc2-exact-statement",
+            "source_ref": "DAG_NODES.N19.act — the exact GRANT statement in full",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "hc2-scope-six-functions-no-tables",
+            "source_ref": "DAG_NODES.N19.act — name resolution only, over a schema measured to contain six functions and no tables",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "hc2-execute-not-granted",
+            "source_ref": "DAG_NODES.N19.act — EXECUTE is NOT granted and is prohibited",
+            "stated": "NOT_EXECUTED"
+          },
+          {
+            "id": "hc2-exact-revoke",
+            "source_ref": "DAG_NODES.N19.act — the exact REVOKE that reverses it, sections/rollback_statements_pre_written/mr3_rollback",
+            "stated": "NOT_EXECUTED"
+          }
+        ],
+        "given": "NOT_EXECUTED",
+        "timestamp_utc": "NOT_EXECUTED",
+        "not_transferable": "Spent when its act completes or its lane stops. Silence is not consent. A different act, including a re-rotation, requires a FRESH confirmation."
+      },
+      "n20_mutation": {
+        "dag_node": "N20",
+        "fired": "NOT_EXECUTED",
+        "prestate": "has_schema_privilege for USAGE = false, recorded as a boolean at N14 (KP-5), together with to_regnamespace IS NOT NULL = true (KP-3).",
+        "mutation_statement_ref": "GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_auditor;, in its own transaction, delivered ONLY through the N18 governed db/prepared/** package — no ad-hoc SQL.",
+        "poststate": "NOT_EXECUTED",
+        "verification": "NOT_EXECUTED",
+        "token_fired": []
+      }
+    },
+    "post_mr3_verification": {
+      "n21_three_boolean_assertion": {
+        "usage_true": "NOT_EXECUTED",
+        "create_false": "NOT_EXECUTED",
+        "execute_false": "NOT_EXECUTED"
+      },
+      "n22_full_poststate_table": [
+        {
+          "pv_id": "PV-1",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-2",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-3",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-4",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-5",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-6",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-7",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-8",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-9",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-10",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-11",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-12",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-13",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-14",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-15",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-16",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-17",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-18",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-19",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-20",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-21",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-22",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-23",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-24",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-25",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-26",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-27",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-28",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-29",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-30",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-31",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-32",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-33",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        },
+        {
+          "pv_id": "PV-34",
+          "expected_source_ref": "POSTSTATE_VERIFICATION in docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json, same row id. Transcribed by the execution lane at fill time from that source, never invented here.",
+          "actual": "NOT_EXECUTED",
+          "status": "NOT_EXECUTED",
+          "expected": "NOT_EXECUTED"
+        }
+      ],
+      "n22_read_only_proof": "NOT_EXECUTED"
+    },
+    "credential_delivery_confirmation": {
+      "n23_delivery": {
+        "variable_name": "UELLIX_AUDITOR_DATABASE_URL",
+        "mechanism_by_name_only": "NOT_EXECUTED",
+        "single_process_only": "NOT_EXECUTED"
+      },
+      "n24_removal_and_positive_absence": {
+        "removed": "NOT_EXECUTED",
+        "absence_verified_by_check": "NOT_EXECUTED"
+      }
+    },
+    "precheck_r2": {
+      "n26_independent_poststate_certification": {
+        "performed_by_a_different_lane": "NOT_EXECUTED",
+        "verdict": "NOT_EXECUTED",
+        "materialized_per_od6": "NOT_EXECUTED"
+      },
+      "n27_entry_conditions": {
+        "all_upstream_n01_through_n26_satisfied": "NOT_EXECUTED",
+        "no_hc_carried_forward": "None of HC-1, HC-2 or HC-3 is offered to PRECHECK-R2. It obtains its own under the parent's HUMAN_CONFIRMATION."
+      },
+      "freshness_loops": {
+        "e_slip_taken": "NOT_EXECUTED",
+        "e_fresh_taken": "NOT_EXECUTED"
+      }
+    },
+    "final_rotation_cleanup": {
+      "precondition": "The FINAL WITNESS is recorded (macro-chain node 9, outside this DAG).",
+      "mandatory_rotation": {
+        "dag_node": "N28",
+        "fired": "NOT_EXECUTED",
+        "prestate": "NOT_EXECUTED",
+        "mutation_statement_ref": "Identical rotation mechanics to the initial mint — same entropy, encoding and prohibited paths; requires its OWN fresh HC-1, because confirmations are not transferable.",
+        "poststate": "NOT_EXECUTED",
+        "verification": "NOT_EXECUTED",
+        "token_fired": []
+      },
+      "removal_and_positive_absence": {
+        "removed": "NOT_EXECUTED",
+        "absence_verified_by_check": "NOT_EXECUTED"
+      },
+      "custody_entry_closed": "NOT_EXECUTED"
+    }
+  },
+  "refusals_and_sqlstate_log": [],
+  "canonical_literal_non_resolution_statement": {
+    "required_statement": "Neither canonical literal (SQ-6 nor SQ-7) was resolved in this lane. Resolving either is mutant M20 and is reserved to the PRECHECK it names.",
+    "attested": "NOT_EXECUTED"
+  }
+}
