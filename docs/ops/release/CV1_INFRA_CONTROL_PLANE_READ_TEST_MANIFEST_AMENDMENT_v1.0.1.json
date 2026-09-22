@@ -1,0 +1,133 @@
+{
+ "manifest_id": "CV1-INFRA-CONTROL-PLANE-READ-RECONCILIATION",
+ "node_or_batch": "node",
+ "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json",
+ "dependencies": [
+  "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json, blob a5a6d196f24b792eee723391f782c161149ee7d8)",
+  "CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0.json, blob 1c24f1f54fd451f21b3721da175135abd8ffa2fe)",
+  "CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0 (docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json, blob 27c58a8c0a8294e6883d07e277cd115ffe09b8dc)"
+ ],
+ "protected_surfaces": [],
+ "protected_authority": null,
+ "sentinels": [
+  {
+   "id": "SEN-A1",
+   "purpose": "PARENT UNCHANGED. v1.0.0's own two committed files (the authority and its manifest) must be byte-identical before and after this amendment's merge and commit. Any diff falsifies append-only and must STOP the lane rather than be reconciled silently."
+  },
+  {
+   "id": "SEN-A2",
+   "purpose": "ARMED STAYS FALSE. WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED in v1.0.0 must read false in the tree this amendment produces. Any tree in which it reads true, without a materialized independent-certification verdict artifact committed alongside it, is a tree in which this reconciliation quietly armed a read authority it was explicitly told not to arm."
+  },
+  {
+   "id": "SEN-A3",
+   "purpose": "MERGE ANCESTRY. 6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2 must be an ancestor of the final committed HEAD of this branch. Absence means the reconciliation this amendment claims to have performed did not actually happen."
+  },
+  {
+   "id": "SEN-A4",
+   "purpose": "CANDIDATE BINDING HOLDS. The owner-ratification's CANDIDATE_BINDING.candidate_sha must equal v1.0.0's own AS_OF_PARENT_HEAD. If a re-derivation ever finds them unequal, OWNER_RATIFICATION_CONSUMED's cross-check is void and the amendment must not be relied upon without a fresh reconciliation."
+  }
+ ],
+ "known_conditions": [],
+ "positive_controls": [
+  {
+   "id": "PA-1",
+   "description": "AUTHORING ARM. v1.0.0's authority and manifest files are byte-identical (git diff, zero output) between the pre-merge commit feadb429 and the final committed head of this branch.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PA-2",
+   "description": "AUTHORING ARM. The merge commit's parents include both the pre-merge PR #214 head (feadb429) and the advanced parent branch head (6f747e86), and git merge-base --is-ancestor 6f747e86 <final head> returns true.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PA-3",
+   "description": "AUTHORING ARM. The RNA-3 correction's parent_text_verbatim field, when compared character-for-character against v1.0.0's actual committed GAPS_NOT_CLOSED.gaps[3] object, matches exactly.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PA-4",
+   "description": "AUTHORING ARM. The owner-ratification's blob_sha (27c58a8c0a8294e6883d07e277cd115ffe09b8dc) re-derives via git rev-parse HEAD:<path> at the final committed head, and its CANDIDATE_BINDING.candidate_sha (2d25b65c) equals v1.0.0's AS_OF_PARENT_HEAD.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PA-5",
+   "description": "AUTHORING ARM. The read-set partition recomputed directly from the merged tree's raw file content (not from v1.0.0's own self_check) equals: 9 reads, 18 nodes, 12 with reads / 6 without, PLANE-V=6/PLANE-G=7/PLANE-X=2, 42 failure tokens.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PA-6",
+   "description": "AUTHORING ARM. Both new documents (this amendment and its manifest amendment) parse as JSON and the manifest amendment validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PA-7",
+   "description": "AUTHORING ARM. git grep for the string INFRA_CONTROL_PLANE_READ_AUTHORITY_IC across the full tree, excluding this lane's own four files, returns nothing -- corroborating PRIOR_CERTIFICATION_STATUS.materialization_check.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "negative_controls": [
+  {
+   "id": "NA-1",
+   "description": "RNA-3's CORRECTION IS REFUSED AS AUTHORIZATION FOR M-8 OR M-9. Any reading of SUPERSEDED_PARENT_CLAUSES.corrections[0] that treats RBD-1/RBD-2 being ratified as DN-7 or DN-10 being executable must be REFUSED. The correction states an owner decision is settled; it states nothing about either mutation's prestate, confirmation, verification, or rollback.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NA-2",
+   "description": "THE REPORTED IC IS REFUSED AS GROUNDS TO SET ARMED = TRUE. Any commit that sets WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED to true, citing PRIOR_CERTIFICATION_STATUS.reported_verdict as its basis, without a materialized independent-certification verdict artifact also present in the tree, must be REFUSED.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NA-3",
+   "description": "A REBASE OR FORCE-PUSH IN PLACE OF THE MERGE IS REFUSED. Any reconciliation that rewrites this branch's history instead of merging the advanced parent non-destructively must be REFUSED, per the directing mission's explicit prohibition and per CLAUDE.md's git branch discipline.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NA-4",
+   "description": "992 COMMITS (OR ANY OTHER RATIFICATION-CARRIED NUMBER) CITED AS THIS AUTHORITY'S OWN MEASURED FACT IS REFUSED. Any read's evidence_record populated with a commit-distance or other figure copied from the owner-ratification record, rather than freshly re-derived by the read itself when executed, must be REFUSED.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NA-5",
+   "description": "A MISMATCHED CANDIDATE_BINDING IS REFUSED. If a future re-derivation finds the ratification's CANDIDATE_BINDING.candidate_sha no longer equal to v1.0.0's AS_OF_PARENT_HEAD (for instance because v1.0.0 itself is later superseded by a v1.0.2), citing OWNER_RATIFICATION_CONSUMED as still valid without a fresh cross-check must be REFUSED with STOP_RATIFICATION_BINDING_MISMATCH.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NA-6",
+   "description": "A CHANGED READ ATTRIBUTED TO THIS RECONCILIATION IS REFUSED. Any addition, removal, or scope change to V-R1..V-R4, G-R1..G-R4, or X-R1, committed as part of this amendment or attributed to it, must be REFUSED. RBD_CONSEQUENCES_CARRIED_FORWARD states explicitly that neither ratified decision adds, removes, or loosens any read requirement."
+  }
+ ],
+ "mutation_controls": [
+  {
+   "id": "MA-1",
+   "description": "Delete SUPERSEDED_PARENT_CLAUSES entirely, leaving v1.0.0's stale RNA-3 as the only text on RBD-1/RBD-2's status. Control NA-1 must still be POSABLE (the corrected text must exist to test against), and PA-3 must REDDEN (nothing to compare). If both stay green, the correction was never load-bearing.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MA-2",
+   "description": "Change WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED to true in v1.0.0 as part of this amendment's commit, with no materialized IC artifact added. Sentinel SEN-A2 and control NA-2 must both REDDEN. If either stays green, the reconciliation can arm the grant on a report alone.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MA-3",
+   "description": "Perform the parent reconciliation via git rebase instead of merge. Control NA-3 must REDDEN, and PA-2's ancestor check must fail differently (the pre-merge feadb429 commit would no longer be reachable by its original SHA). If it stays green, history rewriting on a shared branch went undetected.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MA-4",
+   "description": "Add a tenth read to READS in v1.0.0, or alter one existing read's field allowlist, as part of this amendment's write set. PA-5's recomputed partition must REDDEN against the recorded 9/18/12-6/6-7-2/42 baseline, and NA-6 must trigger. If both stay green, a scope change slipped in under a reconciliation label.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MA-5",
+   "description": "Change OWNER_RATIFICATION_CONSUMED.candidate_binding_cross_check.result to EQUAL without the two SHA values actually matching. PA-4 must REDDEN when independently re-derived. If it stays green, the cross-check is decorative.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "exit_gates": [
+  "typecheck",
+  "secrets_scan",
+  "authority_seal_verify",
+  "ods_scope",
+  "ods_poststate"
+ ]
+}

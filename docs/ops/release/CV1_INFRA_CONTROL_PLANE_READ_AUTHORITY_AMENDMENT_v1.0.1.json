@@ -1,0 +1,259 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.1",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1",
+ "authority_class": "READ_AUTHORITY_RECONCILIATION_AMENDMENT__NOT_A_NEW_GRANT__NOT_AN_EXECUTION_AUTHORITY",
+ "document_class": "APPEND_ONLY_READ_AUTHORITY_AMENDMENT__NO_READ_PERFORMED__NO_MUTATION__NO_M8__NO_M9__NO_ARMING_ACT",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "supersedes": null,
+ "mission_id": "CV1-INFRA-CONTROL-PLANE-READ-AUTHORITY-RECONCILIATION-R2",
+ "lane": "CV1-INFRA-CONTROL-PLANE-READ-AUTHORITY-RECONCILIATION-R2",
+ "role": "Reconcile PR #214's authority against the owner's ratification of RBD-1 and RBD-2, which moved the parent branch head past this artifact's AS_OF_PARENT_HEAD pin. Correct the one stale premise the ratification makes false (RNA-3). Perform no read of either control plane and no arming act.",
+ "mode": "RECONCILIATION_APPEND_ONLY_AMENDMENT_ONLY",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+ "AS_OF_BRANCH": "codex/cv1-infra-control-plane-read-authority-r1",
+ "AS_OF_PRE_AMENDMENT_HEAD": "feadb429afadfc0689c9137ba3fa97a93b9a83cd",
+ "AS_OF_PRE_AMENDMENT_TREE": "0a7bcded2887201a9bdf7e10f7585b59bdff32d8",
+ "as_of_measurement_note": "Every fact this amendment records was derived in the git plane from already-tracked repository files, exactly as v1.0.0 was. ZERO authenticated reads of either control plane were performed. The merge described in RECONCILIATION_MERGE is a git-plane act (fetch + non-destructive merge of a sibling branch already pushed to origin by another lane), not a control-plane read and not the git ref-plane read X-R1 authorizes; it reads no hosted state and writes no hosted state.",
+
+ "NAMING_DERIVATION": {
+  "convention": "Consistent with docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json: an append-only amendment named <parent_id>_AMENDMENT_v1.0.1.json, correcting named clauses of the v1.0.0 parent by exact path rather than editing it.",
+  "why_amendment_rather_than_v1.0.1_of_the_base_file": "v1.0.0's own append_only field is true, and CLAUDE.md Section 5 prohibits editing sealed authority content. This amendment extends the FUTURE_MUTATIONS-style precedent already used twice in this chain (v1.0.1 of the execution-DAG authority correcting NB-1..NB-5; v1.0.1/v1.0.2 of the release-control authority correcting earlier findings) without touching v1.0.0's bytes."
+ },
+
+ "AMENDMENT_SEMANTICS": {
+  "what_this_amendment_does": [
+   "Reconciles the stale parent-head premise: v1.0.0 was authored against parent HEAD 2d25b65c; the parent branch has since advanced to 6f747e86 by an owner-ratification commit that is NOT this artifact's parent DAG authority and does not touch any of v1.0.0's nine pinned paths.",
+   "Corrects ONE clause of v1.0.0 that the ratification makes stale: RNA-3 (GAPS_NOT_CLOSED.gaps[3]), which reads RBD-1 and RBD-2 as open owner decisions. They are now RATIFIED. The correction is recorded here, by exact path, and v1.0.0's own text is left byte-identical.",
+   "Records the owner-ratification artifact's blob pin and confirms its CANDIDATE_BINDING is bound to exactly the parent state v1.0.0 was itself derived from, so no STOP_RATIFICATION_BINDING_MISMATCH is triggered by consuming it here.",
+   "Re-derives the nine-read / three-plane read set against the merged tree and confirms it is UNCHANGED in count, membership and per-plane partition.",
+   "Preserves, unchanged, every item the ratification itself states it does not resolve: RELEASE_CHECK_PRODUCIBILITY_GAP, EAD-5, the HPO-G-08/P1 lineage conflict, and UD-5.",
+   "Records the prior independent certification of v1.0.0 as REPORTED, not as a materialized artifact, because none exists in the tree, and does not flip ARMED on that report's strength."
+  ],
+  "what_this_amendment_does_NOT_do": [
+   "Does not perform any authenticated read of the Vercel or GitHub control plane.",
+   "Does not change the read set: no read added, removed, or altered in scope, allowlist, freshness class, or failure token.",
+   "Does not authorize M-8 (DN-7) or M-9 (DN-10). RBD-1 and RBD-2's ratification supplies a source ref and a scope decision; it does not capture either mutation's prestate, confirm it, verify it, or authorize its execution, exactly as the owner-ratification record itself states.",
+   "Does not set WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED to true. v1.0.0's ARMED field is untouched and reads false in the committed tree; this amendment neither edits it nor claims authority to.",
+   "Does not reopen, re-weigh, or re-derive any DAG node, edge, invariant, or the OD-4 sequencing rider.",
+   "Does not treat any number the owner-ratification carries as a hosted fact of this authority's own. The '992 commits ahead' figure and any other dated measurement the ratification restates are that record's evidence, not this one's; nothing here imports them as standing facts. See WORDING_AND_FRESHNESS_CONFIRMATION."
+  ]
+ },
+
+ "RECONCILIATION_MERGE": {
+  "rule": "A normal, non-destructive git merge of the advanced parent branch into this branch. No rebase, no force-push for cleanliness, no history rewrite.",
+  "why_needed": "PR #214's branch (codex/cv1-infra-control-plane-read-authority-r1) was created from PR #211's branch (codex/cv1-infra-execution-dag-authority-r1) at commit 2d25b65c. The owner then ratified RBD-1/RBD-2 in a new commit on that SAME parent branch, advancing it to 6f747e86. PR #214's branch did not contain that commit until this merge.",
+  "commits_between_old_and_new_parent_head": {
+   "range": "2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61..6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2",
+   "commit_count": 1,
+   "commits": ["6f747e86 docs(release): record owner ratification of RBD-1 and RBD-2"],
+   "files_touched": ["docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json (new file, add-only)"],
+   "overlap_with_this_lanes_write_set": "NONE. Verified by git diff of the range restricted to this lane's own two paths before merging: zero output.",
+   "why_this_matters": "A single new file, added (never modified or deleted), with zero path overlap against this lane's write set, is the precondition that makes a merge conflict-free by construction rather than by luck."
+  },
+  "merge_execution": {
+   "command": "git merge origin/codex/cv1-infra-execution-dag-authority-r1 --no-edit",
+   "result": "Merge made by the 'ort' strategy. 1 file changed, 234 insertions(+). No conflicts.",
+   "merge_commit": "afc076c9ddffabfb32e822b3f9a87604f67e4853",
+   "merge_tree": "502759b902dd5abc73e249f42767d0d20df65784",
+   "ancestry_verified": "git merge-base --is-ancestor 6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2 <merge_head> returned true. 6f747e86 IS an ancestor of the resulting PR #214 HEAD.",
+   "this_lanes_files_unchanged_by_the_merge": "git diff feadb429 <merge_head> -- <this lane's two paths> returned zero output. Neither file was touched by the merge itself; the amendment files in this commit are additions on top of it."
+  },
+  "AS_OF_PARENT_RECONCILIATION": {
+   "old_parent_head": {"value": "2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61", "classification": "HISTORICALLY_CORRECT", "why": "This was the exact, correctly-measured HEAD of the parent branch at the instant v1.0.0 was authored and committed. It is not being retracted, denied, or relabelled as an error. Per CLAUDE.md Section 5, no historical evidence is rewritten."},
+   "effective_parent_head": {"value": "6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2", "classification": "EFFECTIVELY_SUPERSEDED_BY_PARENT_RECONCILIATION", "why": "The parent branch PR #211 advanced past v1.0.0's pin through a commit outside this lane's control, containing content (an owner ratification) that is directing text for exactly one clause of v1.0.0 (RNA-3) and touches nothing else this authority pins or derives from."},
+   "the_distinction_that_matters": "v1.0.0's own AS_OF_PARENT_HEAD field (2d25b65c) is NOT edited by this amendment and remains a true historical statement of what v1.0.0 was authored against. A consumer reading v1.0.0 alone, without this amendment, has an artifact that is historically accurate but describes a parent state the branch has since moved past. This amendment is the record of that movement and of the one clause it affects; v1.0.0's own text needs no correction beyond RNA-3, per SUPERSEDED_PARENT_CLAUSES.",
+   "precedent_this_follows": "The same historically-correct/effectively-superseded distinction v1.0.0 itself drew for U-1 (RESOLVED-AS-OF-MEASUREMENT and simultaneously OPEN-AS-OF-EXECUTION, per the grandparent DAG authority's U1_EXACT_DEFINITION_AND_STATUS.STATUS_ADJUDICATION). Two true statements under two different readings, neither discarded."
+  }
+ },
+
+ "OWNER_RATIFICATION_CONSUMED": {
+  "path": "docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json",
+  "blob_sha": "27c58a8c0a8294e6883d07e277cd115ffe09b8dc",
+  "derivation": "git rev-parse HEAD:<path> at this amendment's own merge commit afc076c9.",
+  "candidate_binding_cross_check": {
+   "rule": "The ratification's own CANDIDATE_BINDING.candidate_sha must equal the parent HEAD v1.0.0 (this authority's base) was itself authored against, or citing it here would bind two different candidate states together silently.",
+   "ratification_candidate_sha": "2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61",
+   "this_authoritys_AS_OF_PARENT_HEAD": "2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61",
+   "result": "EQUAL. The ratification is bound to exactly the parent state v1.0.0 was derived from. No STOP_RATIFICATION_BINDING_MISMATCH is triggered by this amendment consuming it.",
+   "what_this_does_not_establish": "That the ratification's own four effective_package blob pins (naming the execution-DAG authority and its v1.0.1 amendment, and their manifests) still re-derive at THIS amendment's own head. That is the ratification's own STOP_RATIFICATION_BINDING_MISMATCH obligation, owed by any consumer of the RATIFICATION, and is independent of this amendment's obligation to bind correctly to the ratification's blob."
+  },
+  "what_is_consumed_from_it": "RBD-1's disposition (RATIFIED_A_MAIN, source_ref_contract) and RBD-2's disposition (RATIFIED_EXTEND, pattern_extension_prohibition), plus its own explicit preservation of RELEASE_CHECK_PRODUCIBILITY_GAP, HPO_G08_P1_OPEN_OBSERVATION, UD5_PROMOTION_PATH_STATUS and PR214_INTERACTION, all cited by exact field path below rather than restated as a fresh adjudication.",
+  "what_is_not_consumed_from_it": "Any authorization for M-8, M-9, a GitHub setting change, a workflow-file edit, a Vercel setting change, or a control-plane read. The ratification's own EXECUTION_AUTHORITY_BOUNDARY.explicit_non_authorizations enumerates these identically to this amendment's own prohibitions; the two documents agree rather than one relaxing the other.",
+  "PR214_INTERACTION_field_cross_checked": "The ratification's own PR214_INTERACTION.measured_fact states it independently re-derived this authority's AS_OF_PARENT_HEAD/AS_OF_PARENT_TREE pins from feadb429 and found them to equal 2d25b65c / 65ea2a54, BEFORE this amendment existed. That is corroborated here: this amendment's own AS_OF_PRE_AMENDMENT_HEAD is feadb429, the exact commit the ratification named. The two artifacts' measurements of the same fact agree."
+ },
+
+ "SUPERSEDED_PARENT_CLAUSES": {
+  "rule": "Exactly one clause of v1.0.0 is superseded by this amendment. v1.0.0's own text at that path is UNCHANGED; this block is what a consumer must read INSTEAD of it going forward.",
+  "corrections": [
+   {
+    "id": "RC-1_RNA-3_RATIFIED",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json GAPS_NOT_CLOSED.gaps[3]",
+    "parent_text_verbatim": "{\"id\": \"RNA-3\", \"node\": \"DN-5, DN-6\", \"status\": \"NOT A READ GAP. RECORDED SO IT IS NOT MISTAKEN FOR ONE.\", \"what\": \"RBD-1 and RBD-2 remain OPEN OWNER DECISIONS. X-R1 supplies the measured consequences DN-5 needs; it does not supply a selection.\", \"why_recorded\": \"Once the reads are armed and executed, the DAG's measurement nodes can discharge and it may appear ready to proceed. It will not be: DN-7 is blocked on RBD-1 and DN-10 on RBD-2, and neither is a measurement.\"}",
+    "why_it_is_now_stale": "RBD-1 and RBD-2 are no longer open. The owner ratified both in docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json, disposition RATIFIED_A_MAIN and RATIFIED_EXTEND respectively, status RATIFIED_BY_PRODUCT_OWNER on both.",
+    "corrected_text": {
+     "id": "RNA-3",
+     "node": "DN-5, DN-6",
+     "status": "RATIFIED. NOT A READ GAP AND NOT AN OPEN OWNER DECISION EITHER, AS OF THIS AMENDMENT. RECORDED SO A CONSUMER DOES NOT RE-OPEN A CLOSED QUESTION.",
+     "what": "RBD-1 = RATIFIED_A_MAIN (SOURCE = refs/heads/main, a MOVING_REF re-derived immediately before M-8) and RBD-2 = RATIFIED_EXTEND (O-1 extended to refs/heads/release/commercial-v1 exactly, NOT to any pattern), per docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json ratifications[0] and ratifications[1]. X-R1 continues to supply the measured consequences DN-5 exists to give the owner, and now ADDITIONALLY supplies the fresh re-derivation of main's head that RBD-1's MOVING_REF contract requires immediately before M-8 -- a sharper role, not a new one; X-R1's field allowlist, freshness classes and target-identity requirements are unchanged by this correction.",
+     "why_recorded": "Once the reads authorized by v1.0.0 are armed and executed, and DN-1 through DN-4 discharge, the DAG's remaining blockers on DN-7 (M-8) and DN-10 (M-9) are no longer the owner decisions -- those are settled -- but each mutation's OWN prestate, confirmation, verification and rollback, none of which any read authorized by v1.0.0 or by this amendment performs, and none of which the owner's ratification performs either. A lane that reads 'RBD-1/RBD-2 ratified' as 'M-8/M-9 authorized' has made exactly the substitution both the ratification's own EXECUTION_AUTHORITY_BOUNDARY and this amendment's AMENDMENT_SEMANTICS refuse."
+    },
+    "what_does_not_change": "DN-5 and DN-6 remain the correct node ids for this content in NODE_TO_READ_MAP; DN-5 still carries X-R1 and DN-6 still carries no read. Neither node's row in NODE_TO_READ_MAP.map is altered by this correction, and the coverage_check partition (12 nodes with reads, 6 without) is unchanged. See READ_SET_REDERIVATION."
+   }
+  ]
+ },
+
+ "RBD_CONSEQUENCES_CARRIED_FORWARD": {
+  "rule": "Restated here, by citation to the ratification's own fields, so a reader of this amendment does not need to hold both documents open to know what changed operationally for this authority's own nodes.",
+  "RBD-1": {
+   "disposition": "RATIFIED_A_MAIN",
+   "SOURCE_KIND": "MOVING_REF",
+   "SOURCE_REF": "refs/heads/main",
+   "locus": "docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json ratifications[0].source_ref_contract",
+   "effect_on_this_authoritys_reads": "NONE on the read set itself. X-R1's target_identity requirements (TI-23..TI-26) already require re-deriving each candidate source ref's head from origin immediately before use (F-IMMEDIATE for DN-7). RBD-1's ratification narrows WHICH candidate that is (main, not integration/commercial-v1 or a frozen SHA) but does not add, remove, or loosen any requirement X-R1 already carries.",
+   "the_moving_ref_constraint_restated": "The ratification's own stale_prestate_rule is carried forward unweakened: if main's head at M-8's confirmation-immediately-before-mutation moment differs from the head X-R1 captured at confirmation, M-8 must not proceed on the stale value and must re-prestate. This amendment does not perform that re-derivation; it records that X-R1, once armed and executed, is the read that will."
+  },
+  "RBD-2": {
+   "disposition": "RATIFIED_EXTEND",
+   "exact_scope": "refs/heads/release/commercial-v1, ONE named branch",
+   "prohibited_translations": ["release/*", "release/**", "any pattern or namespace form"],
+   "locus": "docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json ratifications[1].pattern_extension_prohibition",
+   "effect_on_this_authoritys_reads": "NONE on the read set itself. G-R2's limb D (the ruleset PATTERN inspection DF-4 requires for the pre-creation question) was already written to search MULTIPLE pattern forms, including the exact name and wildcard forms, precisely because the parent authority had not yet fixed which of those applies. RBD-2's ratification narrows the target the search must find or not find (a match on release/commercial-v1 specifically, or on any pattern that would cover it) but does not change G-R2's field allowlist, its three-limb requirement, or its failure tokens.",
+   "what_remains_open_regardless": "O-2 (required checks) on release/commercial-v1. RBD-2 = EXTEND satisfies O-1 (existence protection) only, per the ratification's own owner_selected_decision and per RELEASE_CHECK_PRODUCIBILITY_GAP_STATUS below. This authority's G-R2 limb E (required-checks union) and G-R4 (check-run corroboration) are unaffected in scope; what they will FIND if executed is a separate, unmeasured fact this amendment does not predict."
+  },
+  "no_read_added_or_removed": "Neither disposition adds a new read, removes an existing one, or changes any read's field allowlist, freshness class, target identity, evidence-record requirement, or failure token. See READ_SET_REDERIVATION for the recomputed proof."
+ },
+
+ "OPEN_ITEMS_PRESERVED_UNCHANGED": {
+  "rule": "Four items the owner-ratification record itself states it does NOT resolve. This amendment imports none of them as newly closed, and asserts no new fact about any of them beyond citing where they are preserved.",
+  "items": [
+   {
+    "id": "RELEASE_CHECK_PRODUCIBILITY_GAP",
+    "status": "OPEN, UNCHANGED",
+    "the_two_numbers": "PR -> release/commercial-v1 = 1/8 (via ci.yml only). push -> release/commercial-v1 = 0/8.",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json RELEASE_CHECK_PRODUCIBILITY_GAP_STATUS, which states both numbers UNCHANGED after RBD-2 = EXTEND and that PROTECTED (O-1) does not mean CHECK-PRODUCIBLE (O-2).",
+    "relation_to_this_authority": "G-R2 limb E and G-R4 are the reads that would MEASURE these numbers at a future SHA if executed. Neither is authorized to run by this amendment, and neither number above is treated as a value either read may skip re-deriving."
+   },
+   {
+    "id": "EAD-5",
+    "status": "STILL NONE EXISTS, UNCHANGED",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json RELEASE_CHECK_PRODUCIBILITY_GAP_STATUS.EAD-5_STATUS, restating v1.0.1 of the execution-DAG authority's own EAD-5. No workflow-corpus authority is authored, designed, or implied by anything in this amendment.",
+    "relation_to_this_authority": "This authority's own GAPS_NOT_CLOSED.gaps[0] already carries EAD-5 as unchanged and not designed. This amendment adds nothing to it."
+   },
+   {
+    "id": "HPO-G-08_AND_P1_LINEAGE_CONFLICT",
+    "status": "OPEN, UNRECONCILED",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json HPO_G08_P1_OPEN_OBSERVATION, naming a conflict between the ratified release/commercial-v1 lineage (OD-1 + RBD-1) and docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json's HPO-G-08 and P1 clauses, which read as requiring an integration-to-default-branch lineage.",
+    "relation_to_this_authority": "This authority declares no read against STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json and takes no position on the conflict. It is recorded here only because the ratification's own routing field says it must not be relied upon by a PRODUCTION_READY declaration until reconciled, and a future execution lane consuming this authority's reads should not encounter that conflict for the first time downstream."
+   },
+   {
+    "id": "UD-5_PROMOTION_PATH",
+    "status": "OPEN, NOW LOAD-BEARING FOR THE FIRST RELEASE",
+    "locus": "docs/ops/owner-ratifications/CV1_INFRA_EXECUTION_DAG_OWNER_DECISIONS_v1.0.0.json UD5_PROMOTION_PATH_STATUS, which states RBD-1 = A_MAIN selects the specific branch of the original UD-5 unknown that requires a promotion path integration -> release for the FIRST release, not only for subsequent ones, and that no mechanism is designed, inferred, or authorized by the ratification.",
+    "relation_to_this_authority": "No read in this authority's set targets a promotion mechanism, and this amendment infers none. The escalation from 'load-bearing for later releases' to 'load-bearing for the first release' is the ratification's own finding, imported here by citation only."
+   }
+  ]
+ },
+
+ "WORDING_AND_FRESHNESS_CONFIRMATION": {
+  "rule": "Three wording risks the reconciliation mission named explicitly. Each was checked against the committed text of v1.0.0 rather than assumed absent.",
+  "checks": [
+   {
+    "risk": "Under-describing PR #214's scope as covering only DN-1/DN-2/DN-3.",
+    "method": "git grep for the literal substring 'DN-1, DN-2, DN-3' across both of this lane's committed files.",
+    "result": "The substring occurs only inside PURPOSE.the_scope_correction_this_lane_measured and DERIVED_FINDINGS DF-8, in BOTH cases describing what EAD-4 (the PARENT's gap entry) names, immediately followed by the correction that this authority's own coverage is 12 of 18 nodes across three planes, not three. No locus describes PR #214's OWN scope as three nodes. No correction to v1.0.0 is needed on this point; this amendment records that the check was performed and found nothing to fix, rather than silently agreeing."
+   },
+   {
+    "risk": "Implying the read authority covers only nine reads without acknowledging the full node map.",
+    "method": "Re-read NODE_TO_READ_MAP.map and its coverage_check block.",
+    "result": "v1.0.0 already states the count both ways in the same place: 9 reads (READS.reads, 9 entries) mapped onto 18 nodes, 12 with at least one read and 6 without, per NODE_TO_READ_MAP.coverage_check's computed partition. No locus states 'nine reads' without the node map beside it. No correction needed."
+   },
+   {
+    "risk": "Treating '992 commits ahead' as a permanently fresh fact.",
+    "method": "git grep for '992' across both of this lane's committed files.",
+    "result": "ZERO occurrences. This authority never asserted that figure. It appears only in the owner-ratification record (ratifications[0].owner_selected_decision and RELEASE_BRANCH_CREATION_ACT's own GP-5 in the grandparent authority), both of which frame it as a DATED measurement, not a standing fact. This amendment does not import it. Any future read of this authority's own (X-R1, re-executed) that needed a commit-distance figure would re-derive it from a fresh git operation, never cite the ratification's number."
+   }
+  ],
+  "conclusion": "All three risks were checked and found already absent from the committed text. This block exists as the record of having checked, not as a correction, because a reconciliation that asserts 'no wording issue exists' without showing the check is exactly the kind of unverified negative-capability claim this programme's own feedback record (see the session's own git-grep discipline) exists to prevent."
+ },
+
+ "READ_SET_REDERIVATION": {
+  "rule": "The nine-read, three-plane structure is recomputed against the MERGED tree (afc076c9 / 502759b9), not re-asserted from v1.0.0's own text, so a certifier can trust the count rather than the memory of it.",
+  "method": "git show <merge_tree>:<path> for both of this lane's files, re-parsed and re-partitioned exactly as SC-23 specifies, independently of v1.0.0's own self_check block.",
+  "recomputed_facts": {
+   "read_count": 9,
+   "read_ids": ["V-R1", "V-R2", "V-R3", "V-R4", "G-R1", "G-R2", "G-R3", "G-R4", "X-R1"],
+   "node_count": 18,
+   "nodes_with_reads": 12,
+   "nodes_without_reads": 6,
+   "plane_partition": {"PLANE-V": {"count": 6, "nodes": ["DN-1", "DN-2", "DN-3", "DN-7", "DN-11", "DN-14"]}, "PLANE-G": {"count": 7, "nodes": ["DN-4", "DN-7", "DN-8", "DN-9", "DN-10", "DN-11", "DN-12"]}, "PLANE-X": {"count": 2, "nodes": ["DN-5", "DN-7"]}},
+   "failure_token_registry_count": 42,
+   "field_content_diff_against_pre_merge": "ZERO. Both files are byte-identical between feadb429 and the merge commit afc076c9, per RECONCILIATION_MERGE.merge_execution.this_lanes_files_unchanged_by_the_merge."
+  },
+  "result": "IDENTICAL to v1.0.0's own self_check SC-23 and NODE_TO_READ_MAP.coverage_check. READ_SET_CHANGED_OR_UNCHANGED = UNCHANGED.",
+  "why_recomputed_rather_than_cited": "This is the same discipline SC-23 itself exists to enforce: a partition stated as prose, even a correct one, is unverifiable without recomputation. Citing v1.0.0's own coverage_check as proof it is still correct after a merge would be exactly the kind of self-referential check DERIVED_FINDINGS elsewhere in this chain (the 'a control whose oracle is the artifact under test is circular' finding) warns against. This block's oracle is the merged tree's raw file content, read fresh."
+ },
+
+ "PRIOR_CERTIFICATION_STATUS": {
+  "rule": "The prior independent certification of v1.0.0 is recorded as REPORTED, consistent with the identical provenance-honesty pattern the owner-ratification record itself uses for the certifications IT consumes (companion_certifications_consumed.provenance_caveat: REPORTED_NOT_MATERIALIZED).",
+  "reported_verdict": "INFRA_CONTROL_PLANE_READ_AUTHORITY_IC_PASS_WITH_NONBLOCKING_FINDINGS, reported against v1.0.0 at feadb429 vs parent 2d25b65c: 0 blocking findings, 14 nonblocking findings.",
+  "materialization_check": "git grep across the full tree at this amendment's own head for the string 'INFRA_CONTROL_PLANE_READ_AUTHORITY_IC', excluding this lane's own two authority/manifest files, returns NOTHING. No independent-certification verdict artifact for this lane exists anywhere in the repository.",
+  "classification": "REPORTED_NOT_MATERIALIZED. The reported verdict is conversation-level content (source-of-truth hierarchy level 5 per CLAUDE.md Section 2), not repository evidence (level 3) and not a sealed authority (level 1). It is recorded here so a successor does not have to re-derive that the report existed, and so it is not silently promoted to a materialized fact by omission.",
+  "effect_on_ARMED": "NONE. WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED in v1.0.0 is untouched by this amendment and reads false in the committed tree at this amendment's own head, verified by re-reading it after the merge. This amendment does not claim authority to arm the grant on the strength of an unmaterialized report, per the directing mission's explicit instruction not to invent a retroactive artifact. If the reported verdict is to arm the grant, that requires either a materialized verdict artifact to be committed under an independent certification lane's own authority, or the bounded reconciliation recertification this amendment's own next_gate names.",
+  "what_this_block_does_not_do": "It does not dispute the reported verdict's substance (0 blocking / 14 nonblocking), does not re-litigate the four nonblocking findings the reported verdict's own session record names as heaviest (V-R2 step_4's boundary wording against RNA-1, G-R2's coverage-vs-efficacy gap, the org-level ruleset blind spot pre-creation, and DF-9's under-enumeration of what it threatens), and does not claim they were addressed by this amendment. This reconciliation is scoped to the stale parent-head premise and RNA-3 only, per the directing mission's explicit scope limit; those four findings, if they still apply, remain for whatever lane the bounded reconciliation recertification or a future correction amendment addresses them under."
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": {
+  "rule": "Restates v1.0.0's own EXPLICIT_NON_AUTHORIZATIONS in full for this amendment, since an amendment that adds content but is silently read as narrower in its prohibitions would be a scope expansion by omission.",
+  "non_authorizations": [
+   "Every prohibition v1.0.0's own EXPLICIT_NON_AUTHORIZATIONS enumerates, unchanged and unrelaxed: no HTTP method but GET; no mutation of any Vercel or GitHub setting; no deployment; no git ref creation, deletion or update; no execution of M-1 through M-9 on the strength of any read; no reading of any secret-bearing field; no Supabase contact; no read serving DN-15 or DN-17; no edit to .github/workflows/**; no local state written by a read; no selecting RBD-1 or RBD-2 (moot now, but the prohibition on THIS class of lane performing that selection is unaffected by the owner having done so elsewhere); no reopening OD-1 through OD-5.",
+   "Additionally, specific to this amendment: no performing the merge as a vehicle for any control-plane read. The merge in RECONCILIATION_MERGE touches only already-tracked repository files already pushed to origin by another lane's git-plane commit; it is not, and must never be cited as, a git ref-plane READ of the kind X-R1 authorizes.",
+   "No treating RNA-3's correction as authorization for DN-7 (M-8) or DN-10 (M-9). The correction states the OWNER DECISION is no longer open; it does not state either mutation's prestate, confirmation, verification, or rollback obligation is discharged.",
+   "No setting WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED to true. See PRIOR_CERTIFICATION_STATUS.effect_on_ARMED.",
+   "No modification to v1.0.0's own bytes. Verified by this amendment's own write set: one new file (this amendment) plus its companion manifest amendment, zero changes to CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json or CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0.json."
+  ]
+ },
+
+ "NEW_ODS_REQUIRED": {
+  "verdict": "NO",
+  "confidence": "TO_BE_MECHANICALLY_MEASURED_AT_POSTSTATE",
+  "method": "This lane's write set is this amendment plus its companion manifest amendment, both under docs/ops/release/**, identical pattern classification to v1.0.0 and to every prior authority in this directory.",
+  "PROTECTED_AUTHORITY": null,
+  "reversal_condition": "If pnpm ods:scope finds this lane's write set requires ANY protected path, this verdict is void and the lane stops and escalates."
+ },
+
+ "self_check": {
+  "SC-R1": "PASS — v1.0.0's own bytes are unmodified. Verified: this amendment's write set is exactly two new files under docs/ops/release/**.",
+  "SC-R2": "PASS — Exactly one clause of v1.0.0 is superseded (RNA-3 / GAPS_NOT_CLOSED.gaps[3]), cited by exact path, with the parent's verbatim text quoted before the correction.",
+  "SC-R3": "PASS — The ratification's CANDIDATE_BINDING.candidate_sha (2d25b65c) is verified equal to this authority's own AS_OF_PARENT_HEAD (2d25b65c), so no STOP_RATIFICATION_BINDING_MISMATCH applies to consuming it here.",
+  "SC-R4": "PASS — The read set is recomputed from the merged tree's raw file content (9 reads, 18 nodes, 12/6 split, V=6/G=7/X=2, 42 tokens), not re-asserted from v1.0.0's self_check, and found byte-identical to the pre-merge state.",
+  "SC-R5": "PASS — ARMED is confirmed false in the post-merge, post-amendment tree by direct re-read, and this amendment states in terms that it does not and cannot flip it.",
+  "SC-R6": "PASS — No materialized IC artifact for this lane was found by git grep across the full tree; the reported verdict is classified REPORTED_NOT_MATERIALIZED rather than promoted.",
+  "SC-R7": "PASS — All four items the ratification itself leaves open (RELEASE_CHECK_PRODUCIBILITY_GAP, EAD-5, HPO-G-08/P1, UD-5) are preserved by citation, none newly closed.",
+  "SC-R8": "PASS — The three wording risks the mission named were checked by git grep against the committed text, not assumed; all three returned clean, and the checks (not just the conclusions) are recorded.",
+  "SC-R9": "PASS — Merge ancestry independently verified: git merge-base --is-ancestor 6f747e86 <new HEAD> returns true.",
+  "SC-R10": "PASS — No control-plane read, no M-8, no M-9, no GitHub or Vercel mutation, no workflow-file edit, and no Supabase contact was performed by this lane."
+ },
+
+ "required_independent_review": {
+  "required": true,
+  "reason": "This amendment reconciles a moved parent and corrects a stale clause; both the merge's cleanliness and the correction's exactness deserve independent verification before any execution lane treats the DAG as ready to proceed to M-8/M-9 prestate.",
+  "verification_criteria_for_the_next_gate": [
+   "Re-verify the merge is conflict-free and non-destructive: no rebase, no force-push, 6f747e86 an ancestor of the resulting head.",
+   "Re-verify v1.0.0's own two files are byte-identical before and after the merge and after this amendment's commit.",
+   "Re-verify the RNA-3 correction's parent_text_verbatim matches v1.0.0's actual committed text exactly, character for character.",
+   "Re-verify the ratification's CANDIDATE_BINDING.candidate_sha equals this authority's AS_OF_PARENT_HEAD.",
+   "Independently recompute the read-set partition against the merged tree and confirm it matches READ_SET_REDERIVATION.recomputed_facts.",
+   "Confirm ARMED is unchanged (false) in the final committed tree.",
+   "Confirm no read, mutation, M-8, M-9, or control-plane contact was performed anywhere in this amendment's authoring.",
+   "Confirm the four OPEN_ITEMS_PRESERVED_UNCHANGED entries are not, anywhere in this amendment, treated as newly resolved."
+  ]
+ },
+
+ "final_state": "PARENT_RECONCILED__RNA3_CORRECTED_APPEND_ONLY__READ_SET_UNCHANGED__ARMED_STILL_FALSE__RBD1_RBD2_RATIFIED_NOT_EXECUTED__RELEASE_CHECK_PRODUCIBILITY_GAP_EAD5_HPOG08P1_UD5_ALL_STILL_OPEN",
+ "next_gate": "Short bounded reconciliation recertification of this amendment only (not a full re-derivation of v1.0.0), confirming the merge, the RNA-3 correction, and the unchanged read set. Only after that PASS may actual DN-0/DN-1 control-plane read execution open, and only if the same or a separate certification also confirms ARMED should be set true -- an act this amendment does not perform."
+}
