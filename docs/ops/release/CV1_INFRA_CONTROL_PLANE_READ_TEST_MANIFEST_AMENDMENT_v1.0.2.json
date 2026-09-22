@@ -1,0 +1,205 @@
+{
+ "manifest_id": "CV1-INFRA-CONTROL-PLANE-READ-CLOSURE-ARMING",
+ "node_or_batch": "node",
+ "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json",
+ "dependencies": [
+  "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json, blob a5a6d196f24b792eee723391f782c161149ee7d8)",
+  "CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0.json, blob 1c24f1f54fd451f21b3721da175135abd8ffa2fe)",
+  "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json, blob db678bd6706e1b3838119ee44fbdbf710f4bba1d)",
+  "CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.1 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.1.json, blob a2566792aded0eceaea9c98381555622abc29a1f)",
+  "CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json)"
+ ],
+ "protected_surfaces": [],
+ "protected_authority": null,
+ "sentinels": [
+  {
+   "id": "SEN-B1",
+   "purpose": "THE CONJUNCTION IS NOT REDUCIBLE. No locus anywhere in the effective package may state, or be readable as stating, that an independent certification PASS alone arms the grant. SEN-R2 of the v1.0.0 manifest tested only 'a verdict artifact exists in the same tree' and is superseded in scope by this sentinel, which tests all three limbs of AC-1."
+  },
+  {
+   "id": "SEN-B2",
+   "purpose": "EDGE-SET SYMMETRY. The FORWARD edge set (built from every read's serves_nodes) and the REVERSE edge set (built from every NODE_TO_READ_MAP row's reads) must be EQUAL as sets of pairs, after applying the CORROBORATIVE_AUTHORIZED_READ exemption. Equality of the derived COUNTS is explicitly NOT sufficient: the asymmetry this amendment corrects was invisible to every count in the artifact."
+  },
+  {
+   "id": "SEN-B3",
+   "purpose": "NO PLACEHOLDER SURVIVES. No blob_sha in the certification event's EFFECTIVE_PACKAGE_CERTIFIED may carry the drafting suffix __PLACEHOLDER_SEE_NOTE. A committed tree in which one does is a tree whose certification pins were never derived."
+  },
+  {
+   "id": "SEN-B4",
+   "purpose": "PARTIAL STAYS PARTIAL. The certification event's nonblocking-findings enumeration must remain declared PARTIAL with its unsupplied remainder stated. Any successor that presents the five identified remediation targets as the complete set of ten has manufactured closure for five findings nobody in this lineage has seen."
+  },
+  {
+   "id": "SEN-B5",
+   "purpose": "READ SET INVARIANT ACROSS CLOSURE. The nine read ids, the 18/12/6 node partition, the V=6/G=7/X=2 plane partition and the 42-token read-execution registry must all be unchanged by this closure. A closure amendment that silently changed what may be read would be a scope change wearing a reconciliation label."
+  }
+ ],
+ "known_conditions": [],
+ "positive_controls": [
+  {
+   "id": "PB-1",
+   "description": "AUTHORING ARM. v1.0.0's and v1.0.1's four files are byte-identical before and after this closure commit (git diff, zero output). Append-only holds at blob level, not merely by intent.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-2",
+   "description": "AUTHORING ARM. EDGE-SET SYMMETRY AFTER CORRECTION. Rebuilding FORWARD from serves_nodes (with G-R1 corrected to [DN-4] and G-R4 corrected to []) and REVERSE from the map rows yields two IDENTICAL sets of 22 pairs: forward-only empty, reverse-only empty. Verified by set difference in both directions, not by comparing sizes.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-3",
+   "description": "AUTHORING ARM. THE ASYMMETRY WAS REAL BEFORE. Rebuilding both sets from the UNCORRECTED v1.0.0 yields forward 24 / reverse 22 with exactly {(G-R1,DN-12),(G-R4,DN-4)} forward-only and nothing reverse-only. The correction is against a measured defect, not a hypothetical one.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-4",
+   "description": "AUTHORING ARM. COUNTS ARE BLIND. Recomputing the read count, node partition and plane partition on the UNCORRECTED state returns 9 / 18 / 12-6 / 6-7-2 / 42 — all green — while both asymmetric edges are present. This positively demonstrates why BEC-1 is necessary and why PB-2 cannot be replaced by a recount.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-5",
+   "description": "AUTHORING ARM. Every parent_text_verbatim in the v1.0.2 SUPERSEDED_PARENT_CLAUSES (RC-2 next_gate, RC-3 the_grant_is_not_yet_armed, RC-4 what_arming_requires, RC-5 SC-14, RC-6 RC-9.control) matches the committed v1.0.0 source character for character.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-6",
+   "description": "AUTHORING ARM. READ SET INVARIANT. 9 read ids unchanged; 18 nodes with a 12/6 partition unchanged; PLANE-V=6 / PLANE-G=7 / PLANE-X=2 unchanged; 42-token read-execution registry unchanged; no read's field_allowlist, freshness class, target identity or evidence record altered.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-7",
+   "description": "AUTHORING ARM. Both new documents parse as JSON and this manifest amendment validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, including additionalProperties=false and the exit_gates enum.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-8",
+   "description": "AUTHORING ARM. THE CERTIFICATION EVENT IS MATERIALIZED AND PINNED. docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json exists in the committed tree, names candidate 455b5426 with its independently re-derived tree, and carries four machine-derived blob pins with no surviving placeholder.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PB-9",
+   "description": "AUTHORING ARM. THE RC-9 CIRCULARITY IS REAL. RC-9's second sentence requires the permission object 'returned by G-R1'; G-R1 is one of the nine reads gated behind ARMED. Therefore requiring all of RC-9 as an arming precondition makes arming depend on a read that depends on arming. The split into RC-9a/RC-9b is verified to preserve both obligations rather than drop either.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "negative_controls": [
+  {
+   "id": "NB-R12",
+   "description": "SUPERSEDES N-R12 of docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0.json. A READ PERFORMED WHILE UNARMED IS REFUSED, AND 'ARMED' MEANS ALL THREE LIMBS. The superseded N-R12 refused a read performed 'before an independent certification verdict exists', anchoring to LIMB_1 alone. CORRECTED: any read performed while ANY of AC-1's three limbs is unsatisfied must be REFUSED with STOP_READ_AUTHORITY_UNARMED, and the resulting evidence is INADMISSIBLE rather than merely early. A certification PASS with no fresh DN-0, or with no RC-9a provenance, is an UNARMED state and a read taken in it is refused exactly as if no certification existed.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-1",
+   "description": "CERTIFICATION ALONE IS REFUSED AS ARMING. Any artifact, control, or successor lane that treats a materialized certification PASS as sufficient to set ARMED = true must be REFUSED with STOP_ARMING_LIMB1_UNSATISFIED-by-omission. LIMB_1 satisfied plus LIMB_2 or LIMB_3 unsatisfied is an UNARMED state.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-2",
+   "description": "A STALE DN-0 IS REFUSED. Any arming determination whose LIMB_2 evidence reuses blob pins, branch, HEAD, tree or integration identities copied from a prior report — including the v1.0.2 amendment's own AS_OF fields — rather than re-derived at the acting state, must be REFUSED with STOP_STALE_DN0.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-3",
+   "description": "AN INVENTED CREDENTIAL SCOPE IS REFUSED. Any RC-9a record asserting a credential scope that was not established from evidence — including a scope inferred from the fact that some earlier operation happened to succeed — must be REFUSED with STOP_RC9_UNRESOLVED. 'A push worked, therefore the token has scope X' is an inference, not a scope measurement.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-4",
+   "description": "A PARTIAL-PLANE RC-9a IS REFUSED AS DISCHARGING LIMB_3. An RC-9a record covering PLANE-G but not PLANE-V does not discharge LIMB_3 for a read set containing V-R1 through V-R4. Partial provenance is not provenance, for the same reason partial absence is not absence.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-5",
+   "description": "A COUNT-ONLY CONSISTENCY CHECK IS REFUSED AS PROOF OF EDGE SYMMETRY. Any control claiming read/node consistency on the strength of 9 / 18 / 12-6 / 6-7-2 / 42 alone must be REFUSED. Those five figures were all green while two forward-only edges existed. Only BEC-1's set comparison establishes the property.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-6",
+   "description": "G-R4 CITED AS ESTABLISHING PRODUCIBILITY IS REFUSED. G-R4 is CORROBORATIVE_AUTHORIZED_READ. It may falsify the workflow-corpus parse; it may never be cited as establishing PRODUCIBLE(c, S(R)), which is a claim about a SHA under consideration rather than an observation of one past SHA.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-7",
+   "description": "G-R1 OR G-R4 DELETED ON MINIMALITY GROUNDS IS REFUSED. Node-nonminimal is not valueless. G-R1 discharges RC-9b and repository identity; G-R4 is the only non-circular oracle for the corpus parse. Any successor removing either on the strength of the minimality finding must be REFUSED — the finding's disposition is reclassification, explicitly not deletion.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-8",
+   "description": "THE FIVE UNSUPPLIED FINDINGS TREATED AS CLOSED IS REFUSED. Any statement that the effective-authority certification's ten nonblocking findings are all dispositioned must be REFUSED. Five were identified from the directing text; five were never supplied and remain OPEN by construction.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-9",
+   "description": "A READ EXECUTED BY THIS CLOSURE LANE IS REFUSED. Even if an arming determination records ARMED = true, no V-R*, G-R* or X-R1 read may be executed in this lane. Actual reads require the next independent certification of the closure and arming package.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-10",
+   "description": "RC-9b PROMOTED TO AN ARMING PRECONDITION IS REFUSED. Requiring the G-R1 permission object before arming reinstates the circularity the split removed and makes the conjunction permanently unclosable. RC-9b is discharged within the first G-R1 read, never before it.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NB-11",
+   "description": "RC-9b DROPPED ALTOGETHER IS REFUSED. The split disentangles timing; it does not delete an obligation. A first G-R1 read whose evidence record omits the authenticated permission object must be REFUSED with STOP_CREDENTIAL_SCOPE_INSUFFICIENT.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "mutation_controls": [
+  {
+   "id": "MB-1",
+   "description": "DROP LIMB_2 from AC-1, leaving arming as certification AND RC-9a. Controls NB-1, NB-2 and NB-R12 must REDDEN, and any arming determination that previously evaluated ARMED must change its result or its justification. If arming stays reachable unchanged, LIMB_2 was decorative and a stale DN-0 could arm the grant.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-2",
+   "description": "DROP LIMB_3 from AC-1, leaving arming as certification AND DN-0. Controls NB-3, NB-4 and NB-R12 must REDDEN. If arming stays reachable unchanged, the grant can be armed with no idea what credential will exercise it or what that credential could destroy — which is the exact hazard RC-9 exists to surface for an admin-scoped GitHub token.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-3",
+   "description": "Restore the superseded next_gate wording 'On PASS, the grant is ARMED' alongside AC-1. Sentinel SEN-B1 and control NB-1 must REDDEN on the contradiction. If they stay green, the package tolerates two incompatible arming conditions and a successor may cite whichever it prefers.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-4",
+   "description": "Re-add DN-12 to G-R1's serves_nodes without adding G-R1 to the DN-12 map row. SEN-B2 and PB-2 must REDDEN with forward-only = {(G-R1,DN-12)}. Critically, PB-6's counts must all stay GREEN — that co-occurrence is the proof BEC-1 detects what counting cannot.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-5",
+   "description": "Replace BEC-1's set comparison with a count comparison of the two edge sets (24 vs 22 becomes 22 vs 22 after correction, so sizes alone would pass). Introduce one forward-only and one reverse-only edge simultaneously, keeping both sizes equal. The size check stays GREEN; SEN-B2's set equality must REDDEN. If the manifest passes, the control was measuring cardinality and calling it identity.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-6",
+   "description": "Delete the CORROBORATIVE_AUTHORIZED_READ exemption from BEC-1 while leaving G-R4's serves_nodes empty. BEC-1 must REDDEN on G-R4 as an unserved read. This proves the exemption is load-bearing rather than a loophole: without it the corrected state itself fails, and with it any OTHER read with an empty serves_nodes still fails.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-7",
+   "description": "Set ARMED = true in an arming determination while LIMB_3 is recorded unsatisfied. SEN-B1, NB-1 and NB-R12 must all REDDEN. If any stays green, the conjunction can be overridden by the artifact that is supposed to evaluate it.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-8",
+   "description": "Reinstate the unsplit RC-9 as LIMB_3 in full, including its G-R1 permission-object sentence. Control NB-10 must REDDEN and the conjunction must be shown UNCLOSABLE: arming would require G-R1, which requires arming. If nothing reddens, the package cannot detect a precondition that can never be met.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-9",
+   "description": "Present the five identified remediation targets as the complete set of ten nonblocking findings, deleting the unsupplied_remainder block. SEN-B4 and NB-8 must REDDEN. If they stay green, five unseen findings are silently closed by arithmetic nobody checked.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MB-10",
+   "description": "Delete G-R4 from READS entirely, citing the minimality finding. NB-7 must REDDEN, and DN-4's predicate must be shown to lose its only non-circular oracle while its required inputs remain satisfied. This distinguishes 'not required' from 'not valuable', which is the distinction the reclassification encodes.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "exit_gates": [
+  "typecheck",
+  "secrets_scan",
+  "authority_seal_verify",
+  "ods_scope",
+  "ods_poststate"
+ ]
+}
