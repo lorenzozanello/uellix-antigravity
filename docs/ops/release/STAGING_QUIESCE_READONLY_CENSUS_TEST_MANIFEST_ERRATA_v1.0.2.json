@@ -1,0 +1,173 @@
+{
+  "manifest_id": "CV1-STAGING-QUIESCE-READONLY-CENSUS-PIN-ERRATA",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.2.json",
+  "dependencies": [
+    "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json",
+    "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.1.json",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SENT-PIN-IS-COMMITTED-OBJECT",
+      "purpose": "Proves that every blob_sha this pair asserts as a pin equals the object stored at its named path in a NAMED commit (HEAD, or an explicitly named introducing commit), re-derived by git rev-parse at check time -- never a value copied from an earlier draft, an earlier exploration step, or a predecessor artifact's own unverified claim about itself."
+    },
+    {
+      "id": "SENT-CONDENSATION-DISCLOSED-NOT-BYTE-EQUAL",
+      "purpose": "Proves that no control in this pair demands byte-equality of a passage this pair's own text discloses as a condensation, and that every disclosed condensation carries a coverage test instead."
+    },
+    {
+      "id": "SENT-ONE-LIVE-CONTRACT-PER-PROPERTY",
+      "purpose": "Proves that for each of the observation count, traceability, the read-only property and the OBS-V4 boundary, exactly one control across the whole three-layer manifest set (v1.0.0 + v1.0.1 errata + v1.0.2 errata) is LIVE and governing -- every other control touching the same property is explicitly RETIRED or REDEFINED, never left to coexist un-reconciled."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-F1",
+      "description": "The corrected blob SHAs for v1.0.0's authority and manifest (524188090a88d9b2b06890678348b6749564fdfe and 3aa75f5f0fef8e24c723e01342622b2c07af48d2) are each independently re-derived by THREE methods -- git rev-parse HEAD:<path>, git rev-parse <the commit that introduced the file>:<path>, and git hash-object <path> on a clean working tree -- and all three agree for both files. The certifier must run this fresh, not reuse SECTION_C1's own arithmetic.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F2",
+      "description": "The OLD, wrong blob values (2fb950f2b88fd174b06d98a99ab218d13ea0e0f7 and 28393efb19695f2a9bcc0807a7c70d941bc723f2) are confirmed to be REAL git objects reachable in this repository's object store (via git cat-file -t) but NOT equal to git rev-parse HEAD:<path> for either file -- confirming the defect's exact shape (a real-but-superseded draft object, not a fabricated or nonexistent hash).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F3",
+      "description": "Every OTHER blob_sha cited anywhere in the four-file write set (v1.0.0 pair + both errata pairs) is re-derived against its named source path and commit, confirming the certifier's finding that twelve external pins were already correct and that the defect was confined to the two self-pins.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F4",
+      "description": "v1.0.1 SECTION_B11_PRECEDENCE.byte_integrity, as corrected by this errata's SECTION_C1 third locus, no longer contains either wrong blob prefix (2fb950f2 or 28393efb) and contains the corrected prefixes (524188090a, 3aa75f5f0f) instead.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F5",
+      "description": "REPLACES v1.0.1's PC-E6. For each of AF-1 through AF-4 in v1.0.1 SECTION_B3.consumed_audit_evidence_incorporated: (a) the source finding at that id in docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json blob 6549cd9c carries class EXTERNAL_OBSERVATION_NOT_RE_DERIVED; (b) every discrete factual claim in the errata's condensed sentence is traceable, unaltered, to the UNION of that source finding's finding/repository_half_re_derived/consequence fields; (c) no factual claim in the condensed sentence is absent from that union. This control is explicitly NOT a byte-equality test, and a certifier applying byte-equality here has misapplied it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F6",
+      "description": "The disclosure sentence naming AF-1..AF-4 as condensations is present at v1.0.1 SECTION_B3.consumed_audit_evidence_incorporated, prefixed before AF-1, exactly as SECTION_C2.the_correction.disclosure_added_at_the_source_locus specifies.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F7",
+      "description": "All four benign 'fifteen'/'15' homonym loci named in SECTION_C3 are re-located at their stated JSON paths in v1.0.0 and confirmed unaltered by this or the prior errata: two occurrences of the spelled word referring to the readonly-override duration, one occurrence referring to the status enum's cardinality, and one NUMERAL occurrence ('15 minutes') inside a vendor quotation. A certifier re-running a case-insensitive sweep for /fifteen|15 minutes?/ over v1.0.0 must find exactly these four plus the (now corrected) count-bearing loci, and no unaccounted residue.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F8",
+      "description": "Each of MC-C8, PC-C7, NC-C6 and MC-C5 carries exactly one of two dispositions in SECTION_C4 -- RETIRED_SUPERSEDED_BY (naming a live replacement control id) or REDEFINED_REFERENT (with the corrected text stated in full) -- and for the two RETIRED controls, the named replacement (MC-E1 for MC-C8, MC-E1/NC-E4 for MC-C5) is confirmed present and passing in the v1.0.1 manifest errata.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F9",
+      "description": "PC-C7 and NC-C6, as redefined by SECTION_C4, are re-read to confirm their referent is now SECTION_B1.EFFECTIVE_READ_SET_v1_0_1.effective_observation_ids rather than raw SECTION_E, and that OBS-V4 is explicitly excluded from PC-C7's bijection requirement rather than silently failing it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F10",
+      "description": "G-N3's CONDITION field (v1.0.1 SECTION_B7) is confirmed BYTE-IDENTICAL before and after this errata -- this errata touches only the ground text, never the trigger logic. The corrected ground text is confirmed to contain the phrase 'OCCUPANCY UNMEASURED' or equivalent explicit disclaimer, and to NOT contain any phrasing asserting a session was observed, a write occurred, or a writer is present.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F11",
+      "description": "SECTION_H's per-observation evidence-contract wording requirement (SECTION_C5.consequence_for_the_evidence_package) is present, naming the exact verdict string 'EXPOSED -- OCCUPANCY UNMEASURED' for any observation feeding G-N3, distinct from any wording implying a measured writer.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F12",
+      "description": "Both artifacts of this errata pair parse as valid JSON, and this manifest validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json with ZERO violations, checked by an explicit validator run.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-F13",
+      "description": "SECTION_C9.completeness_statement's claim -- BF-R1 and NBF-R1 through NBF-R4 each closed by exactly one SECTION_C clause -- is checked by enumerating SECTION_C1 through SECTION_C5's 'closes' fields and confirming each directive id appears exactly once.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-F1",
+      "description": "NO hosted mutation and NO live control-plane read occurred in this errata lane. Every measurement is a git object read or a repository-text re-read. Verified by PS-F2 and by the absence of any provider-facing tool invocation in the lane transcript.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-F2",
+      "description": "The two wrong blob values (2fb950f2..., 28393efb...) do not appear anywhere in this errata pair EXCEPT inside SECTION_C1's own explicit 'the_wrong_values_this_replaces' and 'the_two_loci_corrected[*].old' fields, where they are historical record, not live pins.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-F3",
+      "description": "No control anywhere in the three-layer manifest set (v1.0.0 + v1.0.1 errata + v1.0.2 errata) still demands byte-equality of AF-1 through AF-4 against their source. PC-E6 is superseded and PC-F5 is the sole live control over that property.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-F4",
+      "description": "No two live controls across the three-layer set simultaneously govern the observation count, traceability, the read-only property, or the OBS-V4 boundary with different referents. SENT-ONE-LIVE-CONTRACT-PER-PROPERTY.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-F5",
+      "description": "G-N3's ground text, as corrected, does not assert or imply that a session currently exists, that a token was in fact refreshed, or that a write was observed. It asserts only that the surface is exposed and that occupancy is unmeasured.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-F6",
+      "description": "This errata does not adjudicate OD-3, does not choose KEEP/CHANGE or C-1/C-2/C-3, and does not narrow the all-writer scope. It touches only pin values, one manifest control, four homonym-accounting entries, four stale-control dispositions, and one paragraph of ground text.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-F7",
+      "description": "No parent artifact outside this errata pair is edited: v1.0.0, its manifest, v1.0.1's errata pair, the Quiesce authority, its amendment, the Recovery authority, its amendment, the owner-ratification record, PR #201 and the D1 observation authority are all confirmed byte-unchanged at their pinned SHAs.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-F8",
+      "description": "No secret value of any class, no ODS ordinal, no HPO-ordinal-class identifier, and no production-ref occurrence outside a veto/finding context appears anywhere in this errata pair.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MC-F1",
+      "description": "Reverting v1.0.1's BASE_AUTHORITY.blob_sha or base_manifest.blob_sha back to the two pre-commit-draft values must be CAUGHT by PC-F1's fresh triple-derivation, which does not trust any prior claim including this errata's own.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-F2",
+      "description": "Re-adding a byte-equality requirement to PC-F5 (reverting it toward PC-E6's shape) must be CAUGHT by NC-F3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-F3",
+      "description": "Deleting the RETIRED disposition from MC-C8 or MC-C5 without pointing at a live replacement, leaving two simultaneous contracts over the same property, must be CAUGHT by PC-F8 and NC-F4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-F4",
+      "description": "Re-inserting occupancy-implying language into G-N3's ground text (e.g. restoring a bare 'writes auth.sessions' without the occupancy disclaimer) must be CAUGHT by PC-F10 and NC-F5. G-N3's CONDITION must remain byte-identical throughout -- a mutant that also changes the condition while fixing the ground text has changed something this errata does not authorize changing, and PC-F10's first clause exists to catch exactly that.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-F5",
+      "description": "Removing any of the four homonym-accounting entries from SECTION_C3, or altering any of the four homonym loci's actual text in v1.0.0, must be CAUGHT by PC-F7.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
