@@ -1,0 +1,158 @@
+{
+  "package_id": "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "IMPLEMENTATION_DAG_DERIVATION_AMENDMENT_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "APPEND_ONLY_DAG_AUTHORITY_AMENDMENT__RECONCILES_TEXT_WITH_IMPLEMENTATION__NO_IMPLEMENTATION__NO_CODE_MODIFICATION__NO_DEPLOYMENT__NO_HOSTED_SMOKE__NO_PROVIDER_CALL__NO_OWNER_DECISION_SUBSTITUTION",
+  "append_only": true,
+  "amends": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "supersedes": null,
+  "mission_id": "CV1-M11-TRACK-A-IMPLEMENTATION-HARDENING-R2",
+  "lane": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "role": "Reconcile four specific fields of v1.0.1's text with what the implementation (commit a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0) actually does, so code and controlling authority no longer contradict each other. Does not reopen architecture.",
+  "mode": "APPEND_ONLY_DAG_AUTHORITY_AMENDMENT_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest_amendment": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+  "AS_OF_BRANCH": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "AS_OF_PRE_AMENDMENT_HEAD": "a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0",
+  "as_of_measurement_note": "Every fact this amendment states about the implementation was re-read directly from the committed source at a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0 in this authoring turn - lib/health/provider-touch.ts, app/api/health/auth/route.ts, vitest.setup.network-guard.ts, tests/health-egress-consumer-set.test.ts - not copied from v1.0.1's own prose or from the directing mission's summary of the certification.",
+  "NAMING_DERIVATION": {
+    "basis": "Continues the same append-only chain v1.0.1 established over v1.0.0, on the same precedent (CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json). This amendment corrects v1.0.1's text; v1.0.1 itself, and v1.0.0 beneath it, remain byte-unchanged."
+  },
+  "AMENDMENT_SEMANTICS": {
+    "rule": "This amendment corrects FOUR specific fields in v1.0.1 where the implementation, once written, was found to diverge from what v1.0.1's text said it would do. It does not reopen OD-1..OD-5, OC-1, OC-2, the EP-1 UNKNOWN owner decision, or any DAG_NODES/DAG_EDGES structure - no node is added, removed or renamed, and no edge changes. Where v1.0.1 is silent, or where the implementation matches v1.0.1's text exactly, v1.0.1 controls unchanged.",
+    "why_the_divergences_exist": "Three of the four (B, C, D below) were DELIBERATE implementation choices, each independently justified in code comments at the point of divergence, made because implementing v1.0.1's text literally would have introduced a new problem (an unenforceable independent-range contradiction for B; a contradiction with the owner's later HT-1/HT-2 ruling for C; a break of an existing test's own assertion for D). The fourth (A) is a genuine coverage gap v1.0.1 left unclosed, found by an independent certification. None required a new owner decision - see each entry's own reasoning."
+  },
+  "IC_CONSUMED": {
+    "verdict_received": "M11_TRACK_A_IMPLEMENTATION_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+    "how_consumed": "As directing input naming eight verifiable findings (NB-IC-1, NB-IC-2, NB-IC-3, NB-IC-5, NB-IC-6, NB-IC-7, NB-IC-8, and the four authority-text limbs A-D this amendment closes), all independently re-verified against live source and against the committed v1.0.1 text before this amendment was written - not accepted on the certification's word alone. See docs/ops/owner-ratifications/M11_TRACK_A_IMPLEMENTATION_CERTIFICATION_OCCURRENCE_v1.0.0.json for the occurrence record and the code-level findings' disposition; this amendment covers ONLY the authority-TEXT reconciliation (limbs A-D), not the code fixes themselves."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "Corrects the artifact below, pinned by blob hash re-derived at AS_OF_PRE_AMENDMENT_HEAD.",
+    "amended_authority": {
+      "path": "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "blob_sha": "17fe0f011376038ba74d84f9b901abd92b539e56",
+      "re_derived": "MATCH, via git rev-parse a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0:<path> at authoring"
+    },
+    "upstream_pins_unchanged": {
+      "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json": "635ce14527774972822f92fc5736986cb50a12f3",
+      "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json": "c4651ea0f35791bc1de4d4e61d8fb4f1d5b39396",
+      "docs/ops/release/M11_TRACK_A_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json": "253c89178a3b853b47d7abe70e5468d6c5e21c99"
+    }
+  },
+  "LIMB_A_TA19_TA14_TA15_COVERAGE": {
+    "closes": "Section 8.A of the hardening mission - NB-R1's TA-19 authority limb.",
+    "what_v101_left_open": "v1.0.1's TEST_EGRESS_CORRECTION.new_edges_added named exactly two new edges (TA-19->TA-13, TA-19->TA-17), leaving TA-14 and TA-15 without a TA-19 precedence edge in the DAG text, even though the SAME section's own consumer_enumeration_corrected already listed all five files (TA-13/14/15/16/17) as the corrected set.",
+    "what_the_implementation_actually_did": "tests/health-egress-consumer-set.test.ts's AST-derived scanner (M11 hardening, NB-IC-3/5) makes the TA-19 precedence requirement a SOURCE-DERIVED, machine-checked invariant that covers TA-13, TA-14, TA-15, TA-16 and TA-17 by CONSTRUCTION - any test file importing one of the five egress-capable modules without a matching mock/injection fails the scanner's own oracle test, regardless of which DAG_EDGES entries exist or do not exist. The two textual edges named in v1.0.1 are therefore no longer the enforcement mechanism for this requirement at all.",
+    "disposition": "SUPERSEDED. TA-19's precedence requirement over TA-14 and TA-15 is satisfied by the AST-derived scanner, not by adding the two missing textual DAG_EDGES entries this amendment could otherwise have added. Adding them would be redundant with, and could drift from, the machine-derived check; the scanner is preferred as the SINGLE source of truth for this specific invariant.",
+    "locus": "DAG_EDGES.new_edges_added (in v1.0.1) - NOT literally re-opened (v1.0.1's own text is not edited), but its COMPLETENESS claim for this specific requirement is superseded by this entry."
+  },
+  "LIMB_B_BUDGET_CONTRACT_CORRECTION": {
+    "closes": "Section 8.B of the hardening mission - NB-R3's budget/TTL contract.",
+    "v101_text_locus": "PROVIDER_REQUEST_BUDGET_CONTRACT.parameters",
+    "v101_text_summary": "Stated BUDGET_WINDOW_MS (default 60000, admissible_range_ms [30000,300000]) and BUDGET_MAX_PROBES_PER_WINDOW (default 10, admissible_range [4,30], with a stated lower_bound_invariant) as TWO independently-tunable parameters, each with its OWN admissible range, connected only by an invariant a future implementer was told to enforce via assertion.",
+    "what_the_implementation_actually_did": "lib/health/provider-touch.ts removes the degree of freedom entirely rather than validating it: `BUDGET_MAX_PROBES_PER_WINDOW = deriveBudgetMaxProbesPerWindow(BUDGET_WINDOW_MS, TTL_MS)`, where `deriveBudgetMaxProbesPerWindow(windowMs, ttlMs) = Math.ceil(windowMs / ttlMs) + BUDGET_HEADROOM` and `BUDGET_HEADROOM = 2` (a fixed positive margin, not independently tunable). BUDGET_MAX_PROBES_PER_WINDOW is NOT an independently-settable constant with its own admissible range at all - it is a computed value. At the actual defaults (BUDGET_WINDOW_MS=60000, TTL_MS=15000) this evaluates to ceil(60000/15000)+2 = 6, NOT the 10 v1.0.1 stated as the default - 10 was v1.0.1's own aspirational number, written before the derivation function existed; the code's actual margin (2) is smaller. A module-load assertion (`if (BUDGET_MAX_PROBES_PER_WINDOW < Math.ceil(BUDGET_WINDOW_MS / TTL_MS)) throw` still exists in the code as a mutation backstop, but for the DERIVED constant it is mathematically unreachable by construction, not a validator of an independently-chosen value the way v1.0.1's text described it.",
+    "disposition": "SUPERSEDED. PROVIDER_REQUEST_BUDGET_CONTRACT.parameters.BUDGET_MAX_PROBES_PER_WINDOW's admissible_range and default_value fields are corrected below.",
+    "corrected_text": {
+      "BUDGET_WINDOW_MS": {
+        "default_value": 60000,
+        "classification": "TECHNICAL_DERIVED_PARAMETER. NOT_OWNER_SELECTED. Independently tunable; no admissible range is enforced by an assertion in code, since only BUDGET_MAX_PROBES_PER_WINDOW (below) is derived FROM it."
+      },
+      "BUDGET_MAX_PROBES_PER_WINDOW": {
+        "NOT_an_independently_settable_constant": true,
+        "formula": "Math.ceil(BUDGET_WINDOW_MS / TTL_MS) + BUDGET_HEADROOM",
+        "BUDGET_HEADROOM": 2,
+        "value_at_defaults": 6,
+        "classification": "DERIVED. NOT_OWNER_SELECTED. NOT_INDEPENDENTLY_TUNABLE - tuning BUDGET_WINDOW_MS or TTL_MS automatically retunes this value; BUDGET_HEADROOM alone may be changed, remaining a fixed positive margin.",
+        "mutation_backstop": "A module-load assertion throws if this value is ever found below its own derivation floor - unreachable for the derivation itself, catches only a future edit that bypasses the derivation."
+      }
+    }
+  },
+  "LIMB_C_HARD_TIMEOUT_SUPERSEDED_BY_HT1_HT2": {
+    "closes": "Section 8.C of the hardening mission - the pre-HT-1/HT-2 hard-timeout engineering proposal.",
+    "v101_text_locus": "UNKNOWN_PRODUCERS.explicitly_excluded_from_UNKNOWN[2]",
+    "v101_text_verbatim": "Any exception the touch's OWN probe logic raises that is not itself a classified transport/provider failure - this MUST fail closed to UNREACHABLE (AS-3), not UNKNOWN. UNKNOWN is reserved exclusively for the two BUDGET/WAIT-based non-observation producers above; it is never a catch-all for an unclassified internal error.",
+    "why_superseded": "This was Claude's own engineering proposal in v1.0.1, authored BEFORE the owner's HT-1/HT-2 decision existed. The owner has since ratified the OPPOSITE rule for exactly this case: docs/ops/owner-ratifications/M11_TRACK_A_HT_HARD_TIMEOUT_OWNER_DECISION_v1.0.0.json HT-1 states 'If PROBE_HARD_TIMEOUT expires WITHOUT affirmative evidence that the provider/upstream is unreachable or faulty: classification = UNKNOWN' - and the probe's own hard-timeout ceiling firing (an AbortError WE caused via our own AbortController) is precisely a case with NO affirmative evidence, not an unclassified internal error of some OTHER kind. Owner decision has higher precedence than an engineering proposal it postdates and directly contradicts.",
+    "disposition": "SUPERSEDED by the owner's ratified HT-1/HT-2 decision, applied verbatim.",
+    "corrected_canonical_producer_set_addition": {
+      "id": "PROBE_HARD_TIMEOUT_NO_AFFIRMATIVE_EVIDENCE",
+      "definition": "The shared probe's own PROBE_HARD_TIMEOUT_MS ceiling fires (an AbortError from OUR OWN AbortController, distinguished by `error.name === 'AbortError'`), with no other evidence the provider itself is at fault. Per the owner's ratified HT-1, this is UNKNOWN. A GENUINE transport failure that is NOT our own abort (DNS, connection refused, TLS, or any other rejection whose `error.name !== 'AbortError'`) remains AS-3/UNREACHABLE per HT-2, unchanged from v1.0.1's own correct treatment of that case.",
+      "implemented_at": "lib/health/provider-touch.ts probeProviderOnce - the AbortError-vs-genuine-failure branch."
+    },
+    "new_technical_parameter_named_but_not_in_v101": {
+      "name": "PROBE_HARD_TIMEOUT_MS",
+      "why_v101_never_named_it": "v1.0.1's UNKNOWN_PRODUCERS.new_technical_parameter named only PROBE_WAIT_BUDGET_MS (the waiter's own patience); the probe's own separate hard ceiling was introduced by NB-R6's closure text in the SAME v1.0.1 document under a different section (module header prose) but never formalised as a named technical parameter the way PROBE_WAIT_BUDGET_MS was.",
+      "classification": "TECHNICAL_DERIVED_PARAMETER. NOT_OWNER_SELECTED - ratified explicitly as such by HT-3: 'PROBE_HARD_TIMEOUT_MS is TECHNICAL_DERIVED_PARAMETER, NOT_OWNER_SELECTED, and the admissible design must mechanically guarantee PROBE_HARD_TIMEOUT_MS > PROBE_WAIT_BUDGET_MS for every admissible configuration.'",
+      "formula": "PROBE_WAIT_BUDGET_MS + PROBE_HARD_TIMEOUT_MARGIN_MS, where PROBE_HARD_TIMEOUT_MARGIN_MS = 5000 (a fixed positive margin).",
+      "value_at_defaults": 8000,
+      "mechanical_guarantee": "Holds by construction (a positive margin added to PROBE_WAIT_BUDGET_MS can never be <= it), backed by a module-load assertion as a mutation backstop."
+    }
+  },
+  "LIMB_D_TA19_EXACT_HOST_LIMB_RETIRED": {
+    "closes": "Section 8.D of the hardening mission - TA-19's exact-host limb.",
+    "v101_text_locus": "TEST_EGRESS_CORRECTION.corrected_TA19_design.host_coverage_measured_precisely",
+    "v101_text_verbatim": "The guard is therefore extended by SUFFIX PATTERN (hostname ends with '.supabase.co'), which covers the configured project's Auth host regardless of which ref is deployed, PLUS the exact host parsed from `process.env.NEXT_PUBLIC_SUPABASE_URL` if set and not itself localhost, as a second independent check that does not depend on the domain convention holding forever.",
+    "what_the_implementation_actually_did": "vitest.setup.network-guard.ts implements the SUFFIX check only. The env-derived exact-host limb was deliberately NOT implemented: tests/no-real-gemini-network-guard.test.ts's own pre-existing assertion (`expect(source).not.toMatch(/process\\.env/)`) requires the guard file to read ZERO environment variables - a property the guard's own header comment states is deliberate, preserved discipline ('There is no ALLOW_REAL_GEMINI_TESTS ... an operator... never unset'). Adding a `process.env.NEXT_PUBLIC_SUPABASE_URL` read to satisfy the env-derived limb would have broken that EXISTING, independently-valuable test property for a limb the suffix check already makes redundant: every possible value of NEXT_PUBLIC_SUPABASE_URL that names a real Supabase project already ends in `.supabase.co` and is therefore ALREADY caught by the suffix check alone.",
+    "disposition": "SUPERSEDED. The env-derived exact-host limb is retired as redundant, not implemented as a second independent check.",
+    "machine_testable_substitute": "tests/no-real-supabase-auth-network-guard.test.ts asserts BOTH properties directly: that the guard still reads no environment variable (retained from the Gemini guard's own precedent) AND that it still blocks a host with NEXT_PUBLIC_SUPABASE_URL deliberately pointed at a DIFFERENT project than the one under test - proving the suffix check alone is sufficient coverage, independent of which specific ref is configured.",
+    "also_closes": "The DNS-trailing-dot hardening (M11 hardening mission section 9): the suffix check now strips a trailing root dot before comparison, so `abc.supabase.co.` cannot bypass a guard aimed at `abc.supabase.co`."
+  },
+  "SUPERSEDED_PARENT_CLAUSES": [
+    {
+      "id": "SPC-12",
+      "locus": "UNKNOWN_PRODUCERS.explicitly_excluded_from_UNKNOWN[2]",
+      "defect": "Pre-HT-1/HT-2 engineering proposal contradicted by the owner's later ratified decision.",
+      "disposition": "SUPERSEDED - see LIMB_C_HARD_TIMEOUT_SUPERSEDED_BY_HT1_HT2 above."
+    },
+    {
+      "id": "SPC-13",
+      "locus": "PROVIDER_REQUEST_BUDGET_CONTRACT.parameters.BUDGET_MAX_PROBES_PER_WINDOW",
+      "defect": "Stated as an independently-tunable constant (default 10, range [4,30]) when the implementation made it a DERIVED value (default 6, no independent range).",
+      "disposition": "SUPERSEDED - see LIMB_B_BUDGET_CONTRACT_CORRECTION above."
+    },
+    {
+      "id": "SPC-14",
+      "locus": "TEST_EGRESS_CORRECTION.corrected_TA19_design.host_coverage_measured_precisely",
+      "defect": "Promised an env-derived exact-host check in ADDITION to the suffix check; the implementation deliberately omits it to preserve an existing test's no-env-read assertion.",
+      "disposition": "SUPERSEDED - see LIMB_D_TA19_EXACT_HOST_LIMB_RETIRED above."
+    }
+  ],
+  "UNCHANGED_AND_STILL_CONTROLLING": [
+    "Every DAG_NODES entry, unchanged - no node added, removed or renamed by this amendment.",
+    "Every DAG_EDGES entry, unchanged - no edge added or removed. Limb A supersedes only the COMPLETENESS CLAIM attached to the existing two edges, not the edges themselves.",
+    "B_IC_1_CLOSURE, the four-row EP-1 transport matrix, and RUNNER_CORRECTION - unchanged and re-confirmed by the implementation (app/api/health/auth/route.ts matches them exactly, plus the AUTH_UNAVAILABLE->UNKNOWN correction the implementation IC named, which is a CODE fix, not an authority-text fix, and is not re-litigated here).",
+    "B_IC_2_CLOSURE (TTL_MS provenance) - unchanged; TTL_MS remains 15000, independently tunable, matching the implementation exactly.",
+    "AS2_AS3_SCOPE_PRESERVED and TRACK_B_BOUNDARY_PRESERVED - unchanged.",
+    "PRE1_STATUS and STALE_COMMENT_DISPOSITION and TA03_CONTROLS - unchanged.",
+    "All eleven of v1.0.1's own SUPERSEDED_PARENT_CLAUSES (SPC-1..SPC-11) against v1.0.0 - unchanged and unaffected by this amendment, which adds three more (SPC-12..SPC-14) against v1.0.1 itself."
+  ],
+  "explicit_non_authorizations": [
+    "This amendment does NOT authorize implementation of any Track A DAG node - none remains unimplemented in SLICE-1's own scope after this hardening pass, and TA-20/Track B remain untouched regardless.",
+    "This amendment does NOT edit any byte of v1.0.0, v1.0.1, or either test manifest - all four re-derived to their exact blob hashes under CANDIDATE_BINDING.",
+    "This amendment does NOT reopen OD-1..OD-5, OC-1, OC-2, the EP-1 UNKNOWN owner decision, or HT-1/HT-2/HT-3.",
+    "This amendment does NOT add, remove or rename any DAG_NODES or DAG_EDGES entry.",
+    "This amendment does NOT authorize any deployment, hosted smoke, provider call, Vercel environment change, Supabase mutation, credential generation or credential rotation.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "self_check": {
+    "expected_superseded_clause_count": 3,
+    "expected_superseded_clause_ids": [
+      "SPC-12",
+      "SPC-13",
+      "SPC-14"
+    ],
+    "checks": [
+      "SUPERSEDED_PARENT_CLAUSES.length == 3, ids exactly expected_superseded_clause_ids.",
+      "Every SUPERSEDED_PARENT_CLAUSES[].locus resolves to an existing key path in the pinned v1.0.1 blob.",
+      "No DAG_NODES or DAG_EDGES entry is added, removed or renamed anywhere in this amendment.",
+      "LIMB_B's stated formula (Math.ceil(BUDGET_WINDOW_MS/TTL_MS)+BUDGET_HEADROOM) and value_at_defaults (6) match lib/health/provider-touch.ts's actual exported BUDGET_MAX_PROBES_PER_WINDOW value, re-derivable by import.",
+      "LIMB_D's claim that vitest.setup.network-guard.ts reads no environment variable is re-verified by grep, not asserted from memory.",
+      "v1.0.0, v1.0.1 and both test manifests remain byte-unchanged."
+    ]
+  },
+  "required_independent_review": "Confirm each of the three superseded clauses' v101_text_verbatim is byte-identical to the pinned v1.0.1 blob, independently re-derived. Confirm LIMB_B's formula against the live provider-touch.ts export. Confirm LIMB_C's HT-1 citation is byte-identical to the HT owner decision record. Confirm LIMB_D's no-env-read claim by an independent grep of vitest.setup.network-guard.ts.",
+  "final_state": "V101_TEXT_RECONCILED_WITH_IMPLEMENTATION__NO_ARCHITECTURE_REOPENED",
+  "next_gate": "ONE independent bounded recertification of the hardening delta (this amendment plus the code changes it documents), attacking LIMB_B's arithmetic and LIMB_D's redundancy claim first. No new architecture lane."
+}

@@ -16,6 +16,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js'
 import {
+  PROBE_WAIT_BUDGET_MS,
   __resetProviderTouchStateForTests,
   __setProviderTouchFetchForTests,
 } from '@/lib/health/provider-touch'
@@ -35,6 +36,19 @@ const REAL_UUID = '11111111-1111-4111-8111-111111111111'
 /** A fetch stub for the touch, so a NO_SESSION anonymous call resolves deterministically. */
 function touchFetch(ok: boolean): typeof fetch {
   return vi.fn(async () => new Response(null, { status: ok ? 200 : 503 })) as unknown as typeof fetch
+}
+
+/** Abort-aware: never settles on its own, only when the probe's own AbortController fires. */
+function hangingTouchFetch(): typeof fetch {
+  return vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+    return new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        const err = new Error('The operation was aborted')
+        err.name = 'AbortError'
+        reject(err)
+      })
+    })
+  }) as unknown as typeof fetch
 }
 
 beforeEach(() => {
@@ -133,15 +147,38 @@ describe('GET /api/health/auth', () => {
     expect(JSON.stringify(body)).not.toContain('sensitive upstream detail')
   })
 
-  it('UNKNOWN (AuthSessionMissingError treated as AS-1, but a genuinely unclassified shape via touch UNKNOWN): 200, unknown body, INCONCLUSIVE-shaped', async () => {
-    // NO_SESSION with the touch itself unable to observe (hard timeout /
-    // budget exhaustion, simulated here via a fetch that never settles and
-    // is never awaited long enough to matter — instead we directly exercise
-    // the pure body builder for the UNKNOWN case, which is the unit that
-    // owns this mapping).
+  it('the pure body-builder maps UNKNOWN to 200/unknown (unit-level check on the helper alone)', () => {
     const { body, status } = buildAnonymousHealthResponse('UNKNOWN')
     expect(status).toBe(200)
     expect(body).toMatchObject({ status: 'unknown', authenticated: false, upstream: 'UNKNOWN' })
+  })
+
+  it('M11 NB-IC-2 — END-TO-END: GET() itself, with the touch genuinely unable to observe (wait-budget exceeded), answers 200/unknown — NEVER 503', async () => {
+    // NOT the pure helper in isolation: this exercises the REAL wiring —
+    // GET() -> getVerifiedAuthIdentityResult() (NO_SESSION) ->
+    // observeProviderHealth() -> a hanging fetch whose wait budget is
+    // exceeded before it ever settles. A mutation inside GET() that maps
+    // UNKNOWN to 503 (or to buildAnonymousHealthResponse('UNREACHABLE'))
+    // MUST turn this test red; a change to only the pure helper, or to
+    // buildAnonymousHealthResponse's own UNKNOWN branch elsewhere, is NOT
+    // sufficient to make it pass — the route's own dispatch has to get it
+    // right too.
+    getUser.mockResolvedValue({ data: { user: null }, error: null })
+    __setProviderTouchFetchForTests(hangingTouchFetch())
+
+    vi.useFakeTimers()
+    try {
+      const responsePromise = GET()
+      await vi.advanceTimersByTimeAsync(PROBE_WAIT_BUDGET_MS)
+      const response = await responsePromise
+      const body = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(response.status).not.toBe(503)
+      expect(body).toMatchObject({ status: 'unknown', authenticated: false, upstream: 'UNKNOWN' })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('MUST FAIL: AS-2 can never produce 503', async () => {
@@ -175,15 +212,16 @@ describe('GET /api/health/auth', () => {
     expect(unhealthy.upstream).toBe('UNREACHABLE')
   })
 
-  it('AUTH_UNAVAILABLE (createClient throws — the direct-invocation, pre-middleware path this unit test itself exercises): 503, degraded body', async () => {
+  it('M11 NB-IC-7/8 — AUTH_UNAVAILABLE (createClient throws — a LOCAL config failure, not affirmative evidence the provider is unreachable): 200, unknown body, NEVER 503', async () => {
     const { createClient } = await import('@/lib/supabase/server')
     vi.mocked(createClient).mockRejectedValueOnce(new Error('coherence failure, never echoed'))
 
     const response = await GET()
     const body = await response.json()
 
-    expect(response.status).toBe(503)
-    expect(body).toMatchObject({ status: 'degraded', authenticated: false, upstream: 'UNREACHABLE' })
+    expect(response.status).toBe(200)
+    expect(response.status).not.toBe(503)
+    expect(body).toMatchObject({ status: 'unknown', authenticated: false, upstream: 'UNKNOWN' })
     expect(JSON.stringify(body)).not.toContain('coherence failure')
   })
 

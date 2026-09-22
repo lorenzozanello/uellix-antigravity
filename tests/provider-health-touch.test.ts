@@ -14,6 +14,8 @@
 // wall-clock sleep would make this file slow and occasionally flaky.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import {
   BUDGET_MAX_PROBES_PER_WINDOW,
   BUDGET_WINDOW_MS,
@@ -24,6 +26,7 @@ import {
   __setProviderTouchFetchForTests,
   deriveBudgetMaxProbesPerWindow,
   observeProviderHealth,
+  probeProviderOnce,
 } from '@/lib/health/provider-touch'
 
 /** An AbortError, shaped exactly like the real Fetch API's abort rejection. */
@@ -36,6 +39,11 @@ function abortError(): Error {
 /** Resolves immediately with the given ok/status. Never inspects `init.signal`. */
 function immediateFetch(ok: boolean): typeof fetch {
   return vi.fn(async () => new Response(null, { status: ok ? 200 : 503 })) as unknown as typeof fetch
+}
+
+/** Resolves immediately with an EXACT status code — for NB-IC-6's per-status classification matrix. */
+function statusFetch(status: number): typeof fetch {
+  return vi.fn(async () => new Response(null, { status })) as unknown as typeof fetch
 }
 
 /** Rejects immediately with a genuine (non-abort) transport error. */
@@ -113,15 +121,62 @@ describe('exported technical parameters', () => {
     expect(2).toBeLessThan(floor) // a naive independently-chosen "2" would violate it
   })
 
-  it('MUST FAIL: does not read either OD-4/KV environment variable', async () => {
+  it('M11 hardening (NB-IC-1) — behaviourally IDENTICAL with and without OD-4/KV env vars set, across every producer including budget exhaustion', async () => {
+    // The prior version of this control installed a hanging-fetch double
+    // that was never wired into the touch at all (`immediateFetch` was
+    // installed instead), so `expect(impl).not.toHaveBeenCalled()` was
+    // guaranteed to pass regardless of what the module actually does with
+    // KV env vars — it proved nothing. This version proves the property
+    // BEHAVIOURALLY: run the EXACT SAME sequence of calls (enough to exhaust
+    // the budget, forcing every internal branch to execute at least once)
+    // twice — once with KV_REST_API_URL/TOKEN unset, once with them set to
+    // values that would be obviously wrong if ever read — and assert the
+    // resulting verdict sequence AND call count are identical. A hidden
+    // KV-conditional branch (e.g. a shared/distributed budget when KV is
+    // present) would make the two runs diverge.
+    async function runSequence(): Promise<{ verdicts: string[]; calls: number }> {
+      __resetProviderTouchStateForTests()
+      // Force cache misses via hard-timeout (never cached, NB-R5) rather
+      // than via TTL expiry: BUDGET_MAX_PROBES_PER_WINDOW (6) x
+      // PROBE_HARD_TIMEOUT_MS (8000ms) = 48000ms stays under
+      // BUDGET_WINDOW_MS (60000ms), where forcing misses via TTL_MS+1
+      // (15001ms) per iteration would itself roll the budget window over
+      // mid-loop and silently prevent exhaustion — the same interaction this
+      // file's own budget-exhaustion helper below was written to avoid.
+      const { impl: hangingImpl } = hangingFetchAbortAware()
+      __setProviderTouchFetchForTests(hangingImpl)
+      const verdicts: string[] = []
+      for (let i = 0; i < BUDGET_MAX_PROBES_PER_WINDOW; i++) {
+        const probe = observeProviderHealth()
+        await vi.advanceTimersByTimeAsync(PROBE_HARD_TIMEOUT_MS)
+        verdicts.push(await probe)
+      }
+      // Budget is now exhausted: these resolve UNKNOWN immediately, with no
+      // further fetch attempt and no additional time advancement needed.
+      verdicts.push(await observeProviderHealth())
+      verdicts.push(await observeProviderHealth())
+      return { verdicts, calls: (hangingImpl as ReturnType<typeof vi.fn>).mock.calls.length }
+    }
+
+    const withoutKv = await runSequence()
+
     vi.stubEnv('KV_REST_API_URL', 'https://should-not-be-read.example.com')
     vi.stubEnv('KV_REST_API_TOKEN', 'should-not-be-read')
-    const { impl } = hangingFetchAbortAware()
-    __setProviderTouchFetchForTests(immediateFetch(true))
-    await observeProviderHealth()
-    // The touch must never branch on KV presence — proven indirectly: it
-    // still made exactly the expected call shape regardless of KV being set.
-    expect(impl).not.toHaveBeenCalled() // this fetch (hanging) was never used
+    const withKv = await runSequence()
+
+    expect(withKv.verdicts).toEqual(withoutKv.verdicts)
+    expect(withKv.calls).toBe(withoutKv.calls)
+    // The budget genuinely does exhaust partway through this sequence in
+    // BOTH runs (BUDGET_MAX_PROBES_PER_WINDOW < BUDGET_MAX_PROBES_PER_WINDOW + 2
+    // attempts), so this comparison exercises the budget-exhaustion branch
+    // too, not only the happy path.
+    expect(withoutKv.verdicts).toContain('UNKNOWN')
+  })
+
+  it('MUST FAIL: static source-level check — the two literal KV variable names never appear in this module', () => {
+    const source = readFileSync(path.join(process.cwd(), 'lib/health/provider-touch.ts'), 'utf8')
+    expect(source).not.toContain('KV_REST_API_URL')
+    expect(source).not.toContain('KV_REST_API_TOKEN')
   })
 })
 
@@ -146,8 +201,98 @@ describe('definitive verdicts', () => {
   })
 })
 
-describe('HT-1 — a hard timeout with no affirmative evidence is UNKNOWN, never UNREACHABLE', () => {
-  it('the underlying probe hard-times-out -> UNKNOWN', async () => {
+// ---------------------------------------------------------------------------
+// M11 hardening (NB-IC-6) — a non-ok HTTP response is proof the provider
+// answered. Only the shared infrastructure-fault status set counts as
+// affirmative evidence; every other status proves reachability, matching the
+// exact AS-2 (AuthApiError)-vs-AS-3 (AuthRetryableFetchError) split
+// identity.ts already makes for the session-check path.
+// ---------------------------------------------------------------------------
+
+describe('M11 hardening — HTTP status classification matrix (NB-IC-6)', () => {
+  it.each([401, 403, 404, 429])(
+    'a %i response -> REACHABLE (the provider answered; not affirmative evidence of unreachability)',
+    async (status) => {
+      __setProviderTouchFetchForTests(statusFetch(status))
+      await expect(observeProviderHealth()).resolves.toBe('REACHABLE')
+    }
+  )
+
+  it.each([500, 502, 503, 520, 530])(
+    'a %i response -> UNREACHABLE (the shared infrastructure-fault status set)',
+    async (status) => {
+      __setProviderTouchFetchForTests(statusFetch(status))
+      await expect(observeProviderHealth()).resolves.toBe('UNREACHABLE')
+    }
+  )
+
+  it('MUST FAIL: 401 must never be classified UNREACHABLE — it is proof of reachability, not its absence', async () => {
+    __setProviderTouchFetchForTests(statusFetch(401))
+    const verdict = await observeProviderHealth()
+    expect(verdict).not.toBe('UNREACHABLE')
+    expect(verdict).toBe('REACHABLE')
+  })
+
+  it('MUST FAIL: 429 (the exact status OD-4 itself can return) must never be classified UNREACHABLE at the touch layer', async () => {
+    __setProviderTouchFetchForTests(statusFetch(429))
+    const verdict = await observeProviderHealth()
+    expect(verdict).not.toBe('UNREACHABLE')
+    expect(verdict).toBe('REACHABLE')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// M11 hardening (section 7 / mutation survival) — DIRECT coverage of
+// `probeProviderOnce`'s own AbortError branch, bypassing
+// `observeProviderHealth`'s waiter race entirely.
+// ---------------------------------------------------------------------------
+//
+// THE BUG THIS CLOSES: the ORIGINAL "HT-1" tests below called
+// `observeProviderHealth()` and advanced the fake clock by
+// `PROBE_HARD_TIMEOUT_MS`. Because `PROBE_WAIT_BUDGET_MS` (3000ms) is
+// strictly LESS than `PROBE_HARD_TIMEOUT_MS` (8000ms) BY CONSTRUCTION, the
+// WAITER's own timeout inside `waitWithBudget` always fires first and
+// resolves the OUTER promise to UNKNOWN — regardless of what
+// `probeProviderOnce`'s own AbortError branch does. Deleting that branch
+// entirely (e.g. making every catch() path return 'UNREACHABLE') left both
+// tests GREEN, because neither one ever actually observed
+// `probeProviderOnce`'s own settled value — only the waiter's. `probeProviderOnce`
+// is now exported specifically so this class of survivor is closed: these
+// tests call it DIRECTLY, with no waiter race in between.
+
+describe('M11 hardening — probeProviderOnce, called DIRECTLY (closes the HT-1 mutation-survivor)', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test-project.supabase.co')
+  })
+
+  it('the probe itself resolves UNKNOWN when ITS OWN hard timeout fires — no waiter involved', async () => {
+    const { impl } = hangingFetchAbortAware()
+    __setProviderTouchFetchForTests(impl)
+
+    const promise = probeProviderOnce('https://test-project.supabase.co')
+    await vi.advanceTimersByTimeAsync(PROBE_HARD_TIMEOUT_MS)
+
+    await expect(promise).resolves.toBe('UNKNOWN')
+  })
+
+  it('MUST FAIL: probeProviderOnce must never report UNREACHABLE for its own hard timeout — proven on the function itself, not on the public API', async () => {
+    const { impl } = hangingFetchAbortAware()
+    __setProviderTouchFetchForTests(impl)
+
+    const promise = probeProviderOnce('https://test-project.supabase.co')
+    await vi.advanceTimersByTimeAsync(PROBE_HARD_TIMEOUT_MS)
+    const verdict = await promise
+
+    expect(verdict).not.toBe('UNREACHABLE')
+    expect(verdict).toBe('UNKNOWN')
+  })
+
+  it('MUST FAIL: probeProviderOnce still reports UNREACHABLE for a GENUINE transport failure (the AbortError branch does not swallow every rejection)', async () => {
+    __setProviderTouchFetchForTests(failingFetch())
+    await expect(probeProviderOnce('https://test-project.supabase.co')).resolves.toBe('UNREACHABLE')
+  })
+
+  it('observeProviderHealth (the public API) still resolves UNKNOWN under the SAME hard-timeout scenario — consistency between the direct and public-API views', async () => {
     const { impl } = hangingFetchAbortAware()
     __setProviderTouchFetchForTests(impl)
 
@@ -156,17 +301,41 @@ describe('HT-1 — a hard timeout with no affirmative evidence is UNKNOWN, never
 
     await expect(promise).resolves.toBe('UNKNOWN')
   })
+})
 
-  it('MUST FAIL: a hard timeout must never be reported as UNREACHABLE/503', async () => {
-    const { impl } = hangingFetchAbortAware()
-    __setProviderTouchFetchForTests(impl)
+// ---------------------------------------------------------------------------
+// M11 hardening — a malformed/unparseable auth URL degrades to UNKNOWN
+// (a local configuration defect), never UNREACHABLE — closes the
+// "TypeError from a bad URL misclassified as a network fault" gap.
+// ---------------------------------------------------------------------------
 
-    const promise = observeProviderHealth()
-    await vi.advanceTimersByTimeAsync(PROBE_HARD_TIMEOUT_MS)
-    const verdict = await promise
+describe('M11 hardening — malformed URL configuration (section 5)', () => {
+  it('an unparseable NEXT_PUBLIC_SUPABASE_URL -> UNKNOWN, no fetch attempted', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'not-a-valid-url-at-all')
+    const fetchImpl = immediateFetch(true)
+    __setProviderTouchFetchForTests(fetchImpl)
 
+    await expect(observeProviderHealth()).resolves.toBe('UNKNOWN')
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
+  it('MUST FAIL: a malformed URL must never be classified UNREACHABLE — it is a config defect, not affirmative provider-unavailability evidence', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '::::not a url::::')
+    const verdict = await observeProviderHealth()
     expect(verdict).not.toBe('UNREACHABLE')
     expect(verdict).toBe('UNKNOWN')
+  })
+
+  it('does not spend budget on a malformed URL', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'not-a-valid-url-at-all')
+    for (let i = 0; i < BUDGET_MAX_PROBES_PER_WINDOW + 3; i++) {
+      await expect(observeProviderHealth()).resolves.toBe('UNKNOWN')
+    }
+    // Recovers IMMEDIATELY once configuration is fixed, proving no budget
+    // was ever consumed by the malformed attempts above.
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test-project.supabase.co')
+    __setProviderTouchFetchForTests(immediateFetch(true))
+    await expect(observeProviderHealth()).resolves.toBe('REACHABLE')
   })
 })
 

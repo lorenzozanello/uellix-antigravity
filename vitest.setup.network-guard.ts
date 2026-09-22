@@ -180,7 +180,11 @@ export const BLOCKED_SUPABASE_AUTH_HOST_SUFFIXES: readonly string[] = ['.supabas
 /** M11 TA-19. Refuse, or return. Never both, never neither. */
 function assertNotSupabaseAuthHost(hostname: string | undefined, method: string): void {
   if (!hostname) return
-  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '')
+  // M11 hardening: strip a trailing DNS root dot (`abc.supabase.co.` names
+  // the exact same host as `abc.supabase.co` per RFC 1034 — a resolver
+  // accepts both) BEFORE the suffix check, so that notation cannot bypass a
+  // guard aimed at the same hostname.
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '')
   for (const suffix of BLOCKED_SUPABASE_AUTH_HOST_SUFFIXES) {
     if (normalized.endsWith(suffix)) {
       throw new TestRealSupabaseAuthNetworkBlockedError(normalized, method.toUpperCase())

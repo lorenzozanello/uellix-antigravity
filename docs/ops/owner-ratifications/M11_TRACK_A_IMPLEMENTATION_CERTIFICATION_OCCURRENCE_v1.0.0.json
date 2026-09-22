@@ -1,0 +1,159 @@
+{
+  "package_id": "M11_TRACK_A_IMPLEMENTATION_CERTIFICATION_OCCURRENCE",
+  "version": "1.0.0",
+  "artifact_id": "M11_TRACK_A_IMPLEMENTATION_CERTIFICATION_OCCURRENCE_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD_COMPANION__CERTIFICATION_OCCURRENCE_NOTE",
+  "document_class": "CERTIFICATION_OCCURRENCE_NOTE__NO_IMPLEMENTATION__NO_HOSTED_ACCESS__NO_RETROACTIVE_VERDICT_ARTIFACT_RECONSTRUCTION__NO_FINDING_FABRICATION",
+  "append_only": true,
+  "mission_id": "CV1-M11-TRACK-A-IMPLEMENTATION-HARDENING-R2",
+  "lane": "codex/cv1-m11-track-a-implementation-dag-authority-r1",
+  "role": "COMMERCIAL_V1_M11_TRACK_A_IMPLEMENTATION_CERTIFICATION_RECORD_KEEPER",
+  "mode": "DOCS_ONLY_CERTIFICATION_OCCURRENCE_RECORD",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "GOVERNING_PRECEDENT": "Same OCCURRED/NOT_RETROACTIVELY_RECONSTRUCTED treatment this chain has applied at every prior certification: docs/ops/release/M11_TRACK_A_IMPLEMENTATION_DAG_AUTHORITY_v1.0.0.json PRE-1, and docs/ops/owner-ratifications/M11_TRACK_A_PREIMPLEMENTATION_CERTIFICATION_OCCURRENCE_v1.0.0.json Parts A/B, both re-verified byte-identical in this record's own materialization turn before being cited again.",
+  "CANDIDATE_BINDING": {
+    "rule": "Certifies commit a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0 (the implementation commit this record's own directing mission names as the candidate) \u2014 the state of the tree BEFORE this record's own hardening pass. This record's own commit is necessarily a descendant of it, not equal to it.",
+    "certified_candidate_commit_sha": "a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0"
+  },
+  "CERTIFICATION_OCCURRENCE_AND_VERDICT": {
+    "OWNER_CONFIRMATION": {
+      "confirmed_by": "The product owner, via this record's own authoring mission (CV1-M11-TRACK-A-IMPLEMENTATION-HARDENING-R2).",
+      "confirms_occurrence": "An independent source-code certification of commit a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0 OCCURRED.",
+      "confirms_verdict": "M11_TRACK_A_IMPLEMENTATION_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "what_was_NOT_confirmed_and_is_therefore_NOT_recorded": [
+        "No reviewing-lane identifier was supplied, and none is invented here.",
+        "No exact calendar timestamp beyond this record's own materialization_date.",
+        "No full enumerated text for all 13 findings was supplied - only findings NB-IC-1, NB-IC-2, NB-IC-3, NB-IC-5, NB-IC-6, NB-IC-7 and NB-IC-8 arrived with enough directing content to independently verify and close in this same hardening pass; NB-IC-4, NB-IC-9, NB-IC-10, NB-IC-11, NB-IC-12 and NB-IC-13 are recorded by IDENTIFIER ONLY below, exactly as this chain's own NB-R1..NB-R8 precedent required for NB-R5's own gap - no content is fabricated for an identifier this lane was not given the substance of."
+      ]
+    },
+    "CERTIFICATION_OCCURRED": true,
+    "VERDICT": "M11_TRACK_A_IMPLEMENTATION_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+    "VERDICT_ARTIFACT": "NOT_RETROACTIVELY_RECONSTRUCTED",
+    "blocking_findings": 0,
+    "nonblocking_findings_count": 13
+  },
+  "NONBLOCKING_FINDINGS": [
+    {
+      "id": "NB-IC-1",
+      "disposition": "The 'does not read OD-4/KV' control installed a hanging-fetch double that was never wired into the touch at all (a DIFFERENT fetch was installed instead), so its assertion was vacuously true regardless of what the module does with KV env vars.",
+      "closed_by": "tests/provider-health-touch.test.ts - replaced with a behavioural comparison (identical verdict sequence and call count with/without KV env vars set, across budget exhaustion) plus a static source-text check. Both independently re-verified in this pass to catch a real KV-short-circuit mutation.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "NB-IC-2",
+      "disposition": "The UNKNOWN contract was only tested against the pure `buildAnonymousHealthResponse` helper, never against a real `GET()` call exercising the actual route dispatch.",
+      "closed_by": "tests/health-auth-route.test.ts - new end-to-end test drives GET() through getVerifiedAuthIdentityResult (NO_SESSION) -> observeProviderHealth() -> a hanging fetch whose wait budget is exceeded, asserting the REAL HTTP response is 200/unknown, never 503.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "NB-IC-3",
+      "disposition": "The source-derived consumer-set scanner used a TEXT regex over whole-file source, which matched its own fixture template literals and its own regex-literal prose, and only matched the `@/` alias import form.",
+      "closed_by": "tests/health-egress-consumer-set.test.ts rewritten to use the TypeScript compiler API (ts.createSourceFile) to extract only real ImportDeclaration/dynamic-import/require AST nodes, resolve both alias and relative specifiers to absolute paths, and assert the result set's exact SIZE (not just membership) - independently re-verified to no longer self-match and to catch a relative-import bypass fixture.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "NB-IC-4",
+      "disposition": "Identifier named by the certification; no directing content supplied to this lane.",
+      "closed_by": "N/A",
+      "status": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+    },
+    {
+      "id": "NB-IC-5",
+      "disposition": "Same root cause as NB-IC-3 (the text-based scanner's own unsoundness) - the two are closed by the same rewrite.",
+      "closed_by": "tests/health-egress-consumer-set.test.ts - see NB-IC-3.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "NB-IC-6",
+      "disposition": "performProbe (now probeProviderOnce) classified ANY non-ok HTTP response as UNREACHABLE, including 4xx responses that are themselves proof the provider answered (401, 403, 404, 429), conflating 'reachable but rejected' with 'unreachable'.",
+      "closed_by": "lib/health/provider-touch.ts - classification now mirrors @supabase/auth-js's own NETWORK_ERROR_CODES set exactly (500,501,502,503,504,520-530 -> UNREACHABLE; every other non-ok status -> REACHABLE), read directly from the installed SDK source. tests/provider-health-touch.test.ts adds a full per-status matrix (401/403/404/429 -> REACHABLE, 500/502/503/520/530 -> UNREACHABLE) plus two must-fail controls.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "NB-IC-7",
+      "disposition": "AUTH_UNAVAILABLE (a local client-construction throw) was mapped to UNREACHABLE/503, which is not affirmative evidence the PROVIDER is unreachable per HT-2 - it is evidence of a local configuration defect.",
+      "closed_by": "app/api/health/auth/route.ts - AUTH_UNAVAILABLE now maps to UNKNOWN/200. No new owner policy was required: this is a direct application of the already-ratified HT-2 'affirmative evidence' test to a case the prior mapping got wrong. Re-verified via a reintroduced-mutation check (reverting the fix makes the test fail as expected).",
+      "status": "CLOSED"
+    },
+    {
+      "id": "NB-IC-8",
+      "disposition": "A malformed/unparseable NEXT_PUBLIC_SUPABASE_URL would reach fetch() and throw a TypeError, which the prior catch block (any non-AbortError) classified UNREACHABLE - the exact 'TypeError misclassified as network fault' hazard the directing mission named.",
+      "closed_by": "lib/health/provider-touch.ts resolveTouchAuthUrl now validates the URL is parseable (via the URL constructor) before ever attempting a fetch; an unparseable URL degrades to UNKNOWN with zero budget spent and zero fetch attempted, exactly as an absent URL already did.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "NB-IC-9",
+      "disposition": "Identifier named by the certification; no directing content supplied to this lane.",
+      "closed_by": "N/A",
+      "status": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+    },
+    {
+      "id": "NB-IC-10",
+      "disposition": "Identifier named by the certification; no directing content supplied to this lane.",
+      "closed_by": "N/A",
+      "status": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+    },
+    {
+      "id": "NB-IC-11",
+      "disposition": "Identifier named by the certification; no directing content supplied to this lane.",
+      "closed_by": "N/A",
+      "status": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+    },
+    {
+      "id": "NB-IC-12",
+      "disposition": "Identifier named by the certification; no directing content supplied to this lane.",
+      "closed_by": "N/A",
+      "status": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+    },
+    {
+      "id": "NB-IC-13",
+      "disposition": "Identifier named by the certification; no directing content supplied to this lane.",
+      "closed_by": "N/A",
+      "status": "CONTENT_NOT_AVAILABLE_TO_THIS_LANE"
+    }
+  ],
+  "SURVIVING_MUTANTS_CLOSED": [
+    {
+      "mutant": "KV_REST_API_URL presence short-circuits the budget check (returns REACHABLE unconditionally)",
+      "previously_survived_because": "NB-IC-1's control never wired its own fetch double into the module.",
+      "now_caught_by": "tests/provider-health-touch.test.ts 'behaviourally IDENTICAL with and without OD-4/KV env vars' - re-verified in this turn by introducing the exact mutant and observing the test go RED, then reverting."
+    },
+    {
+      "mutant": "GET()'s AUTH_UNAVAILABLE branch maps to 503/UNREACHABLE instead of 200/UNKNOWN",
+      "previously_survived_because": "This WAS the shipped behaviour, not a hypothetical mutant - NB-IC-7 named it directly as a defect, not merely as an undertested branch.",
+      "now_caught_by": "tests/health-auth-route.test.ts's corrected AUTH_UNAVAILABLE test - re-verified in this turn by reintroducing the old mapping and observing the test go RED, then reverting."
+    },
+    {
+      "mutant": "A test file importing the touch via a RELATIVE path, never calling the injection hook",
+      "previously_survived_because": "The v1 scanner's regex only matched the `@/` alias import form.",
+      "now_caught_by": "tests/health-egress-consumer-set.test.ts's AST-based resolver, which resolves relative specifiers against the importing file's own directory - proven directly by a dedicated MUST-FAIL fixture in the same file."
+    },
+    {
+      "mutant": "probeProviderOnce's AbortError branch deleted (every catch() path returns UNREACHABLE)",
+      "previously_survived_because": "The only two 'HT-1' tests called observeProviderHealth() and advanced the clock by PROBE_HARD_TIMEOUT_MS; because PROBE_WAIT_BUDGET_MS (3000ms) is strictly less than PROBE_HARD_TIMEOUT_MS (8000ms) by construction, the WAITER's own shorter timeout always resolved the outer promise first, so neither test ever actually observed probeProviderOnce's own settled value.",
+      "now_caught_by": "probeProviderOnce exported specifically so it can be called DIRECTLY, bypassing the waiter race entirely - two new tests in tests/provider-health-touch.test.ts re-verified in this turn to go RED against the exact mutant, then PASS again after reverting."
+    }
+  ],
+  "explicit_non_authorizations": [
+    "This record does NOT fabricate content for NB-IC-4, NB-IC-9, NB-IC-10, NB-IC-11, NB-IC-12 or NB-IC-13.",
+    "This record does NOT reopen HT-1, HT-2, HT-3, OC-1, OC-2, or any owner ratification.",
+    "This record does NOT authorize any deployment, hosted smoke, provider call, or credential action.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "self_check": {
+    "expected_finding_count": 13,
+    "expected_closed_count": 7,
+    "expected_content_unavailable_count": 6,
+    "checks": [
+      "NONBLOCKING_FINDINGS.length == 13",
+      "every finding with status CLOSED names an actual file and an actual re-verification method, not a bare assertion",
+      "no finding for NB-IC-4/9/10/11/12/13 states a disposition beyond 'identifier named, no content supplied'",
+      "SURVIVING_MUTANTS_CLOSED entries were each independently re-introduced and re-verified to fail, then reverted, in this authoring turn"
+    ]
+  },
+  "required_independent_review": "Confirm each CLOSED finding's re-verification claim by independently re-introducing the named mutant and observing the corresponding test fail, then pass again after reverting - do not accept the claim from this record's own prose. Confirm NB-IC-4/9/10/11/12/13 remain honestly marked content-unavailable rather than silently dropped or filled in.",
+  "final_state": "IMPLEMENTATION_CERTIFICATION_RECORDED__HARDENING_APPLIED__NOT_A_NEW_ARCHITECTURE_LANE",
+  "next_gate": "ONE independent bounded recertification of the hardening delta over commit a3d9e8bdc910c8bf3d4834091150eaf2b2e2f4c0. No new architecture lane is opened by this record."
+}

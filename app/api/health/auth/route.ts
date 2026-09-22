@@ -25,8 +25,16 @@
 // above: in production it is caught by `proxy.ts` before this handler ever
 // runs. Reaching this handler with `failure === 'AUTH_UNAVAILABLE'` is the
 // direct-invocation path every unit test in this suite exercises (Vitest
-// calls `GET()` directly, bypassing middleware), and is answered the same
-// degraded/UNREACHABLE shape as AS-3 — see below.
+// calls `GET()` directly, bypassing middleware).
+//
+// M11 HARDENING (NB-IC-7/8): AUTH_UNAVAILABLE is answered UNKNOWN, not
+// UNREACHABLE/503. A client-construction throw (a coherence-check failure,
+// or any other unexpected exception `identity.ts` catches) is evidence OUR
+// OWN configuration is broken — it proves nothing about whether the PROVIDER
+// itself is reachable, which is exactly the distinction HT-2 draws: 503 is
+// reserved for AFFIRMATIVE evidence of provider/upstream unavailability, and
+// a local config throw is not that. Mapping it to UNREACHABLE would be the
+// same category error B-1 already named for AS-2/AS-3, in a third guise.
 //
 // ---------------------------------------------------------------------------
 // WHERE THE UPSTREAM SIGNAL COMES FROM
@@ -116,7 +124,7 @@ export async function GET() {
     }
 
     if (failure === 'AUTH_UNAVAILABLE') {
-      const { body, status } = buildAnonymousHealthResponse('UNREACHABLE')
+      const { body, status } = buildAnonymousHealthResponse('UNKNOWN')
       return NextResponse.json(body, { status })
     }
 

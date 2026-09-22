@@ -61,6 +61,16 @@ describe('the guard blocks any Supabase project host', () => {
     expect(transport).not.toHaveBeenCalled()
   })
 
+  it('M11 hardening — a trailing DNS root dot cannot bypass the guard (abc.supabase.co. names the same host)', () => {
+    const transport = vi.fn()
+    const guarded = guardedFetch(transport as unknown as typeof fetch)
+
+    expect(() => guarded('https://abcdefghijklmnop.supabase.co./auth/v1/health')).toThrow(
+      TestRealSupabaseAuthNetworkBlockedError
+    )
+    expect(transport).not.toHaveBeenCalled()
+  })
+
   it('BLOCKED_SUPABASE_AUTH_HOST_SUFFIXES contains the domain suffix', () => {
     expect(BLOCKED_SUPABASE_AUTH_HOST_SUFFIXES).toContain('.supabase.co')
   })

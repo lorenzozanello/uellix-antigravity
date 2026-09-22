@@ -47,7 +47,7 @@
 //
 // Implemented by distinguishing OUR OWN AbortController firing (`AbortError`
 // — no evidence, just our own ceiling) from every other fetch rejection (a
-// real transport fault — affirmative evidence) — see `performProbe`.
+// real transport fault — affirmative evidence) — see `probeProviderOnce`.
 //
 // ---------------------------------------------------------------------------
 // SINGLE-FLIGHT OWNERSHIP (M11 NB-R6) — THE PROBE OUTLIVES ANY ONE CALLER
@@ -163,14 +163,27 @@ let fetchImpl: typeof fetch = fetch
 /**
  * Read `NEXT_PUBLIC_SUPABASE_URL` as a static member expression — the same
  * inlining-sensitive access form `lib/supabase/project-coherence.ts` uses and
- * explains. Returns `null` (never throws) for absent/blank: a public liveness
- * surface degrades to UNKNOWN on misconfiguration rather than crashing.
+ * explains. Returns `null` (never throws, never attempts a fetch) for
+ * absent/blank/UNPARSEABLE: a malformed URL is a LOCAL CONFIGURATION defect,
+ * not affirmative evidence the PROVIDER is unreachable (HT-2) — `fetch()`
+ * itself would throw a `TypeError` for it (undici constructs the URL before
+ * any socket exists), which the catch block in `probeProviderOnce` would
+ * otherwise be unable to tell apart from a genuine transport failure. A
+ * public liveness surface degrades to UNKNOWN on misconfiguration of any
+ * kind rather than crashing OR reporting a health fact about a provider it
+ * never actually contacted.
  */
 function resolveTouchAuthUrl(): string | null {
   const raw = process.env.NEXT_PUBLIC_SUPABASE_URL
   if (typeof raw !== 'string') return null
   const trimmed = raw.trim()
-  return trimmed.length > 0 ? trimmed : null
+  if (trimmed.length === 0) return null
+  try {
+    new URL(trimmed)
+  } catch {
+    return null
+  }
+  return trimmed
 }
 
 function resetBudgetWindowIfElapsed(nowMs: number): void {
@@ -181,10 +194,31 @@ function resetBudgetWindowIfElapsed(nowMs: number): void {
 }
 
 /**
- * The actual network attempt. Never throws — every branch resolves to a
- * verdict. See the module header for the HT-1/HT-2 AbortError distinction.
+ * The exact status set @supabase/auth-js's own `NETWORK_ERROR_CODES` treats
+ * as an infrastructure fault — throwing `AuthRetryableFetchError` rather than
+ * the ordinary `AuthApiError` — read directly from the installed SDK source
+ * (`node_modules/.../lib/fetch.js`). The touch mirrors this EXACT set rather
+ * than inventing a second, independent status taxonomy: a non-ok response
+ * outside this set (401, 403, 404, 429, ...) is still PROOF the provider
+ * answered — the same "AS-2 proves reachability" logic `classifyUpstreamAuthError`
+ * already applies to `AuthApiError` — and must never be reported as
+ * affirmative evidence of unreachability (HT-2).
  */
-async function performProbe(authUrl: string): Promise<ProviderTouchVerdict> {
+const UPSTREAM_INFRASTRUCTURE_FAULT_STATUSES: ReadonlySet<number> = new Set([
+  500, 501, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530,
+])
+
+/**
+ * ONE raw network attempt against the health endpoint, with no cache, no
+ * budget and no single-flight coalescing — the directly testable unit the
+ * HT-1/HT-2 AbortError-vs-genuine-failure distinction lives in. Exported so a
+ * mutation deleting that distinction can be caught DIRECTLY, without racing
+ * against `observeProviderHealth`'s own `PROBE_WAIT_BUDGET_MS` waiter timeout
+ * (which — being strictly shorter than `PROBE_HARD_TIMEOUT_MS` by
+ * construction — would otherwise resolve the outer call first and mask a
+ * mutation to this function's own AbortError branch). Never throws.
+ */
+export async function probeProviderOnce(authUrl: string): Promise<ProviderTouchVerdict> {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
   const controller = new AbortController()
   const hardTimeout = setTimeout(() => controller.abort(), PROBE_HARD_TIMEOUT_MS)
@@ -195,7 +229,11 @@ async function performProbe(authUrl: string): Promise<ProviderTouchVerdict> {
       signal: controller.signal,
       headers: { apikey: anonKey },
     })
-    return response.ok ? 'REACHABLE' : 'UNREACHABLE'
+    if (response.ok) return 'REACHABLE'
+    // NB-IC-6: a non-ok response is still proof the provider answered. Only
+    // the shared infrastructure-fault status set counts as affirmative
+    // evidence of an upstream health fault.
+    return UPSTREAM_INFRASTRUCTURE_FAULT_STATUSES.has(response.status) ? 'UNREACHABLE' : 'REACHABLE'
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       // HT-1: our own ceiling fired. No affirmative evidence either way.
@@ -203,7 +241,8 @@ async function performProbe(authUrl: string): Promise<ProviderTouchVerdict> {
     }
     // HT-2: the fetch itself failed for a reason that was NOT us aborting it
     // — DNS, connection refused, TLS, or any other genuine transport fault.
-    // That IS affirmative evidence.
+    // (A malformed URL never reaches here: `resolveTouchAuthUrl` refuses to
+    // hand one to this function at all.) That IS affirmative evidence.
     return 'UNREACHABLE'
   } finally {
     clearTimeout(hardTimeout)
@@ -211,7 +250,7 @@ async function performProbe(authUrl: string): Promise<ProviderTouchVerdict> {
 }
 
 function startSharedProbe(authUrl: string): SharedProbe {
-  const promise = performProbe(authUrl).then((verdict) => {
+  const promise = probeProviderOnce(authUrl).then((verdict) => {
     // NB-R5: only a definitive observation is worth caching.
     if (verdict !== 'UNKNOWN') {
       cacheEntry = { verdict, observedAtMs: Date.now() }
