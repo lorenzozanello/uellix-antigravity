@@ -1,0 +1,218 @@
+{
+  "manifest_id": "CV1-STAGING-QUIESCE-READONLY-CENSUS-ERRATA",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json",
+  "dependencies": [
+    "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "db/baseline/stella_g2_roles.sql",
+    "db/baseline/README.md"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SENT-EFFECTIVE-COUNT-FIFTEEN",
+      "purpose": "Proves that the effective, executable observation set defined by SECTION_B1.EFFECTIVE_READ_SET_v1_0_1.effective_observation_ids has EXACTLY fifteen entries, that OBS-V4 is not among them, and that every entry named is an id that actually exists as an object in the base authority's SECTION_E. This is the mechanical replacement for the v1.0.0 count_check prose string that this errata found defective."
+    },
+    {
+      "id": "SENT-NO-LEGACY-SECRET-CLAIM",
+      "purpose": "Proves that no text in this pair asserts GET /v1/projects/{ref}/api-keys/legacy returns secret material, and that the corrected claim ({ enabled: boolean } only, no api_key) appears wherever the endpoint is discussed."
+    },
+    {
+      "id": "SENT-CF1-PATH-AND-COMPLETENESS",
+      "purpose": "Proves that every citation of the owner-ratification record's repository_binding field in this pair uses the path ratifications[0], never ratifications[OD-3], and that the quoted text includes both sentences of the field -- the bound-runtime sentence and the writing-remains-UNKNOWN sentence."
+    },
+    {
+      "id": "SENT-GN3-NO-SIGNIN-CONJUNCT",
+      "purpose": "Proves that G-N3's condition, as stated anywhere in this pair, does not require OBS-S3's sign-in flags as a conjunct -- it fires on Auth reachability and health alone. A reintroduction of the sign-in-flag conjunct is exactly the false-negative defect this errata exists to remove."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-E1",
+      "description": "SECTION_B1.EFFECTIVE_READ_SET_v1_0_1.effective_observation_ids has length exactly 15, checked by a PROGRAMMATIC array-length count, not by reading the prose around it. Every id in the array corresponds to an object that exists in the base authority's SECTION_E under vercel_plane, supabase_control_plane or local_plane, and OBS-V4 is present in superseded_not_effective and ABSENT from effective_observation_ids. A mutant that adds a sixteenth id to effective_observation_ids, or that adds OBS-V4 back into it, MUST fail a length-and-membership check.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E2",
+      "description": "The Management API specification is re-fetched from https://api.supabase.com/api/v1-json and its sha256 is re-derived. It must equal 5b11a7fd32ed31bac59170c02e14f1619d0f0218a78b7fab3be41d3f2d69b600, matching both v1.0.0's pin and this errata's re-fetch. Where it differs (drift), the certifier re-derives GET /v1/projects/{ref}/api-keys/legacy's response schema against the NEW document rather than trusting this errata's cached claim, and records any drift as a finding rather than silently accepting the old figures.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E3",
+      "description": "GET /v1/projects/{ref}/api-keys/legacy's response schema, re-derived from the pinned specification, is exactly { type: object, properties: { enabled: { type: boolean } }, required: [enabled] } -- no api_key property, no secret-bearing property of any kind. GET /v1/projects/{ref}/api-keys (the non-legacy endpoint) is separately re-derived and DOES carry an api_key property; the certifier must confirm the errata's correction is scoped to the legacy suffix only and does not weaken the non-legacy endpoint's classification.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E4",
+      "description": "PUT /v1/projects/{ref}/api-keys/legacy exists in the pinned specification with summary containing 'Disable or re-enable JWT based legacy'. It appears in this pair's CAPABILITY_EVIDENCE_ONLY_NOT_AUTHORIZED_ACTS-equivalent list and in SECTION_F's forbidden list, and nowhere as an authorized act.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E5",
+      "description": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json's ratifications field is confirmed to be a JSON ARRAY (not an object keyed by decision id), and ratifications[0].id equals 'OD-3'. The repository_binding field at that index, read in full, is BYTE-EQUAL under the errata's stated normalization to the quotation in SECTION_B3.repository_binding_quoted_in_full, and that quotation contains BOTH sentences of the field -- the certifier must confirm the second sentence ('Whether that runtime was in fact writing... remains UNKNOWN...') is present verbatim, not paraphrased or dropped.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E6",
+      "description": "AF-1 through AF-4 as quoted in SECTION_B3.consumed_audit_evidence_incorporated are byte-equal (under the errata's normalization) to their sources in docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json blob 6549cd9c, CONSUMED_AUDIT_EVIDENCE.findings, at their stated ids, and each is confirmed to carry class EXTERNAL_OBSERVATION_NOT_RE_DERIVED (not a re-derivation this census lane performed).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E7",
+      "description": "GET /v1/projects/{ref}/health's services query parameter is re-derived from the pinned specification: required=true, enum {auth, db, db_postgres_user, pooler, realtime, rest, storage, pg_bouncer}. SECTION_B4's derived minimum (auth, rest, storage) is checked against SECTION_G's actual G-N3/G-N4/G-N5 conditions to confirm every named service is consumed by at least one rule and no unconsumed service is requested.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E8",
+      "description": "The V1ServiceHealthResponse_Output schema is re-derived and confirmed to mark healthy as deprecated=true with description 'Deprecated. Use status instead', and to define status as enum {COMING_UP, ACTIVE_HEALTHY, UNHEALTHY}. SECTION_B4's field-preference correction (status primary, healthy cross-check only) is checked against every G-N rule reading OBS-S2 to confirm none relies on healthy alone.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E9",
+      "description": "The Supabase OAuth2 documentation quotation in SECTION_B5 is re-fetched from https://supabase.com/docs/reference/api/introduction and checked to still contain the quoted sentences. OD-C3-OPTION-D is confirmed present, its material precondition (Supabase Integration registration) and its unmeasured scope-sufficiency are both stated, and no act toward setting up OAuth2 access is found anywhere in this pair.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E10",
+      "description": "The TARGET SCOPE definition extension in SECTION_B6 does not introduce a fifth recorded field: the certifier confirms OBS-V2's field set is still exactly NAME, TARGET SCOPE, GIT BRANCH SCOPE, PRESENCE, and that the team-vs-project distinction is folded into the existing TARGET SCOPE field's definition rather than added as a new key. MG-C6 is present and its fail-closed disposition (UNKNOWN, not assumed either way) is confirmed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E11",
+      "description": "G-N3's corrected condition is checked to read on OBS-S2's Auth status alone, with NO reference to OBS-S3's sign-in flags as part of the trigger condition. The ground text is checked to cite the token-refresh reach argument already present in v1.0.0's own SECTION_A writer-inventory quotation for W-4, confirming the correction is grounded in text this chain already measured rather than in a new, unverified claim.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E12",
+      "description": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json blob 1abcefc4's top-level keys are re-derived and confirmed to include SECTION_B11_PRESERVED_UNCHANGED (not any 'UNCHANGED_AND_STILL_CONTROLLING' variant), and that key's preserved array is confirmed to hold the MG-Q1/MG-Q2/MG-Q3 entry at index 11 with the exact item and checked text SECTION_B8.NBF-10 cites.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E13",
+      "description": "db/baseline/README.md is re-read and confirmed to document db/baseline/stella_g2_roles.sql as produced by pg_dumpall --roles-only against the local container supabase_db_uellix-stella-g2-local-rehearsal, the same container the schema dump's LOCAL-ONLY caveat already names elsewhere in this chain. Both citations of stella_g2_roles.sql in this pair (U2-4 and ROUTE_R1) are confirmed to carry the LOCAL CONTAINER PROVENANCE caveat after this errata.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E14",
+      "description": "Both artifacts of this errata pair parse as valid JSON, and this manifest validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json with ZERO violations, checked by an explicit validator run rather than inferred from any repository gate.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-E15",
+      "description": "SECTION_B9_SUPERSEDED_CLAUSES.completeness_statement's claim -- that every directive B-C1 and NBF-1 through NBF-11 except the unissued NBF-5 is addressed by exactly one SECTION_B clause -- is checked by enumerating the SECTION_B1 through SECTION_B8 headings and confirming each directive id appears in exactly one 'closes' field, with no directive appearing in zero or in more than one.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-E1",
+      "description": "NO hosted mutation occurred in this errata lane: no Vercel act, no Supabase act, no database connection, no deployment, no environment-variable act, no Supabase Integration/OAuth2 app registration despite SECTION_B5 naming that option, no PUT to any api-keys endpoint. Verified by the absence of any such act in the lane transcript and by PS-E2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E2",
+      "description": "NO live control-plane READ against bvyzblhqymxruxdguaee or any Vercel project occurred. The only external reads were a re-fetch of an already-pinned public specification (identical sha256) and a re-consultation of an already-pinned public documentation page. Verified by PS-E3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E3",
+      "description": "GET /v1/projects/{ref}/api-keys/legacy does NOT appear anywhere in SECTION_E's authorized read set (neither the base nor the effective array), despite being measured safe. SENT-NO-LEGACY-SECRET-CLAIM additionally confirms no text asserts it carries secret material.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E4",
+      "description": "OBS-V4 does not appear in effective_observation_ids, is not described as authorized, executable or consulted anywhere in the corrected pair, and U1-5's closed_by field does not name it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E5",
+      "description": "G-N3's corrected condition contains no conjunction with OBS-S3's sign-in-flag fields. SENT-GN3-NO-SIGNIN-CONJUNCT.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E6",
+      "description": "No citation of the owner-ratification record's repository_binding field anywhere in this pair uses the path form ratifications[OD-3]. Every such citation uses ratifications[0]. SENT-CF1-PATH-AND-COMPLETENESS.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E7",
+      "description": "AF-1 through AF-4, as incorporated into CF-1's correction, are never treated as CURRENT measurement of bvyzblhqymxruxdguaee's writer reach, and never substituted for OBS-V0 through OBS-V3. The freshness caveat naming them as two-day-old EXTERNAL_OBSERVATION_NOT_RE_DERIVED is present wherever they are cited.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E8",
+      "description": "OD-3 is not adjudicated by this errata. KEEP QUIESCE and CHANGE RECOVERY POSTURE are not chosen. C-1, C-2 and C-3 are not chosen. The all-writer scope is not narrowed by any correction in this pair, including the G-N3 broadening, which concerns exposure detection, not writer-class scope.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E9",
+      "description": "No parent artifact outside this errata pair is edited: the Quiesce authority, its amendment, the Recovery authority, its amendment, the owner-ratification record, PR #201 and the D1 observation authority are all confirmed byte-unchanged at their pinned SHAs.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E10",
+      "description": "No ODS ordinal, no HPO-ODS grant id, no migration ordinal and no Controller entry is allocated by this errata pair.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E11",
+      "description": "No secret value of any class appears in either file of this errata pair: no password, DSN, connection string, PAT, access token, anon or publishable key, service-role key, JWT secret, external-provider client secret or environment-variable value, and no hash, prefix, suffix or length of any of them.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-E12",
+      "description": "The production ref ctaxtgujyyprgynmnvtq does not appear anywhere in this errata pair as a target, source, observation subject or request-path substitution -- it is not mentioned at all outside this control's own description, since none of the corrections touch target identity.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MC-E1",
+      "description": "Re-adding OBS-V4 to effective_observation_ids, or restoring the v1.0.0 prose count_check as the operative count, must be CAUGHT by PC-E1's length-and-membership check. This is the single most important mutation test in this pair: it is the exact defect the errata exists to fix, so a checker that cannot catch its reintroduction has not actually fixed anything.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-E2",
+      "description": "Restoring the claim that GET /v1/projects/{ref}/api-keys/legacy returns an api_key property must be CAUGHT by PC-E3 against a freshly re-derived schema.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-E3",
+      "description": "Re-adding the sign-in-flag conjunct to G-N3's condition must be CAUGHT by PC-E11 and NC-E5. Without this control, a well-intentioned future edit that 'restores completeness' by re-adding OBS-S3 to the trigger would silently reopen the exact false-negative risk NBF-8 identified.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-E4",
+      "description": "Reverting CF-1's clause path to ratifications[OD-3], or truncating repository_binding back to its first sentence only, must be CAUGHT by PC-E5 and SENT-CF1-PATH-AND-COMPLETENESS.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-E5",
+      "description": "Removing OBS-S2's services parameter, or requesting a service beyond auth/rest/storage without a corresponding new G-N/G-U rule consuming it, must be CAUGHT by PC-E7's cross-check against SECTION_G's actual conditions.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-E6",
+      "description": "Deleting the LOCAL CONTAINER PROVENANCE caveat from either roles.sql citation must be CAUGHT by PC-E13. Without it, the two citations would again read as if a role default measured in a local rehearsal container were a property of the hosted project.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-E7",
+      "description": "Adding GET /v1/projects/{ref}/api-keys/legacy to SECTION_E's authorized read set on the strength of it now being known-safe, with no corresponding new consuming rule in SECTION_G, must be CAUGHT by NC-E3. Safety alone re-adding an observation is the exact class of defect OBS-V4 was."
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
