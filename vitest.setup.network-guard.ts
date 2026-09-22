@@ -78,6 +78,42 @@
 // (docs/ops/gates/G1_PACKAGE.md) — which does not run under Vitest, loads no
 // setup file, and keeps its own acknowledgements. That split is asserted in
 // tests/no-real-gemini-network-guard.test.ts.
+//
+// ===========================================================================
+// M11 TA-19 — THE SAME GUARD, EXTENDED TO SUPABASE AUTH (NB-IC-1/NB-R1)
+// ===========================================================================
+// `lib/health/provider-touch.ts` (M11 TA-03) is the first surface in this
+// repository whose unit tests could reach a real NON-GEMINI external
+// provider: it calls `fetch` directly against a Supabase Auth host, with no
+// SDK layer in between to mock. `lib/auth/identity.ts` already made this
+// class of test possible for EP-2/EP-3 before M11 (both call
+// `supabase.auth.getUser()`, which reaches the same host), and a
+// consumer-set re-derivation for M11 (NB-R1) found the touch's own tests
+// (TA-16), EP-1's tests (TA-13), the discriminator's tests (TA-15, which
+// CANNOT mock `@/lib/auth/identity` — that module IS the subject under
+// test — and must instead mock one layer below, `@/lib/supabase/server`)
+// and EP-3's tests (TA-14) all capable of the same escape if a mock is
+// missed.
+//
+// A PER-TEST MOCK IS STILL REQUIRED for unit isolation (that is what makes a
+// unit test a unit test) — this guard is the SAME defense-in-depth role
+// `BLOCKED_GEMINI_HOSTNAMES` already plays: the safety net for the mock that
+// was missed, not a substitute for having one.
+//
+// SUFFIX MATCH, NOT AN EXACT SET. Supabase's Auth API has no single fixed
+// public hostname the way Gemini's does — it is per-project,
+// `<ref>.supabase.co` (`lib/supabase/project-coherence.ts`'s own comment:
+// `NEXT_PUBLIC_SUPABASE_URL -> https://<production-ref>.supabase.co`). A
+// `Set.has()` exact match, the mechanism `BLOCKED_GEMINI_HOSTNAMES` uses,
+// cannot express "any ref under this domain" — so this guard adds a SEPARATE
+// suffix check rather than trying to force a per-project host into a fixed
+// Set. Deliberately NOT env-derived: an earlier draft additionally computed
+// the exact configured host from `NEXT_PUBLIC_SUPABASE_URL`, but this file's
+// OWN existing test (`tests/no-real-gemini-network-guard.test.ts`) asserts it
+// reads NO environment variable at all — and the domain-suffix check alone
+// already covers every possible ref, so the extra derivation added risk
+// (coupling the guard to env-resolution machinery) without covering anything
+// the suffix does not.
 
 /** The error a blocked attempt raises. `name` is the greppable contract. */
 export class TestRealGeminiNetworkBlockedError extends Error {
@@ -122,6 +158,33 @@ function assertNotProviderHost(hostname: string | undefined, method: string): vo
   const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '')
   if (BLOCKED_GEMINI_HOSTNAMES.has(normalized)) {
     throw new TestRealGeminiNetworkBlockedError(normalized, method.toUpperCase())
+  }
+}
+
+/** M11 TA-19 — mirrors `TestRealGeminiNetworkBlockedError`'s discipline exactly: hostname and method only. */
+export class TestRealSupabaseAuthNetworkBlockedError extends Error {
+  constructor(hostname: string, method: string) {
+    super(
+      `TEST_REAL_SUPABASE_AUTH_NETWORK_BLOCKED: a Vitest process attempted ${method} to ${hostname}. ` +
+        'Tests must never reach a real Supabase Auth host. Mock @/lib/supabase/server (or ' +
+        '@/lib/auth/identity, if the module under test is not identity.ts itself) at the layer ' +
+        'appropriate for what is being tested.'
+    )
+    this.name = 'TEST_REAL_SUPABASE_AUTH_NETWORK_BLOCKED'
+  }
+}
+
+/** The Supabase Auth host suffix refused. Suffix, not exact — see the M11 TA-19 header block above. */
+export const BLOCKED_SUPABASE_AUTH_HOST_SUFFIXES: readonly string[] = ['.supabase.co']
+
+/** M11 TA-19. Refuse, or return. Never both, never neither. */
+function assertNotSupabaseAuthHost(hostname: string | undefined, method: string): void {
+  if (!hostname) return
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '')
+  for (const suffix of BLOCKED_SUPABASE_AUTH_HOST_SUFFIXES) {
+    if (normalized.endsWith(suffix)) {
+      throw new TestRealSupabaseAuthNetworkBlockedError(normalized, method.toUpperCase())
+    }
   }
 }
 
@@ -170,6 +233,7 @@ export function guardedFetch(originalFetch: typeof fetch): typeof fetch {
   const guarded = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const { hostname, method } = describeFetchTarget(input, init)
     assertNotProviderHost(hostname, method)
+    assertNotSupabaseAuthHost(hostname, method)
     return originalFetch(input as RequestInfo, init)
   }
   return guarded as typeof fetch
@@ -231,6 +295,7 @@ export async function installGeminiNetworkGuard(): Promise<void> {
       target[fn] = function guardedNodeRequest(this: unknown, ...args: unknown[]) {
         const { hostname, method } = describeNodeRequestTarget(args)
         assertNotProviderHost(hostname, method)
+        assertNotSupabaseAuthHost(hostname, method)
         return (original as (...a: unknown[]) => unknown).apply(this, args)
       }
     }

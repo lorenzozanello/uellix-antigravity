@@ -73,9 +73,73 @@ export type AuthIdentityFailure =
   /** Auth itself was unreachable. Distinct from "not logged in". */
   | 'AUTH_UNAVAILABLE'
 
+/**
+ * M11 TA-01 — THE AS-1..AS-4 DISCRIMINATOR, DERIVED FROM THE RETURNED ERROR
+ * VALUE, NOT FROM WHETHER IT WAS THROWN.
+ *
+ * `AuthIdentityFailure` above answers "can EP-2/EP-3 trust this session" and
+ * is unchanged by this type — every existing consumer keeps reading it
+ * exactly as before (M11 TA-02). This is a SEPARATE, additive classification
+ * that only a PUBLIC liveness surface (EP-1) needs: whether the provider
+ * itself gave any evidence about its own reachability.
+ *
+ * `REACHABLE` — the provider definitively answered, whether the caller had a
+ * session or not (AS-1 `AuthSessionMissingError`, AS-2 `AuthApiError`). A
+ * caller with a rejected session is still POSITIVE evidence the provider is
+ * up: the ratified AS-2 disposition treats "rejected" as simply
+ * "not authenticated", never as unhealthy.
+ *
+ * `UNREACHABLE` — AFFIRMATIVE evidence of a transport or provider fault:
+ * `AuthRetryableFetchError`, which the installed SDK constructs ONLY for a
+ * genuine fetch failure (status 0) or a GoTrue-side 5xx in its own
+ * NETWORK_ERROR_CODES list. Nothing else in this module maps here.
+ *
+ * `UNKNOWN` — everything else: an `AuthUnknownError` (the SDK's own catch-all
+ * for a non-2xx response whose body it could not parse) or any other shape
+ * this discriminator does not recognise. Per the owner's HT-1/HT-2 contract,
+ * the ABSENCE of affirmative failure evidence is UNKNOWN, never UNREACHABLE —
+ * this discriminator never guesses UNREACHABLE from an ambiguous shape.
+ */
+export type UpstreamAuthObservation = 'REACHABLE' | 'UNREACHABLE' | 'UNKNOWN'
+
+/**
+ * Pure, exported, and unit-testable on its own (M11 TA-15): given whatever
+ * `data.error` GoTrue's `getUser()` returned, say what it proves about the
+ * PROVIDER — never about the caller's session, which `AuthIdentityFailure`
+ * already answers.
+ *
+ * Reads only `error.name`, exactly as the ratified AS-1..AS-4 taxonomy's own
+ * `discriminator_available_today` fields specify. Never reads `.message`,
+ * never logs the value — the same PII discipline this module states for
+ * everything else it touches.
+ */
+export function classifyUpstreamAuthError(error: unknown): UpstreamAuthObservation {
+  if (error && typeof error === 'object' && 'name' in error) {
+    const name = (error as { name?: unknown }).name
+    if (name === 'AuthSessionMissingError' || name === 'AuthApiError') {
+      return 'REACHABLE'
+    }
+    if (name === 'AuthRetryableFetchError') {
+      return 'UNREACHABLE'
+    }
+  }
+  return 'UNKNOWN'
+}
+
 export interface AuthIdentityResult {
   readonly identity: VerifiedAuthIdentity | null
   readonly failure: AuthIdentityFailure | null
+  /**
+   * M11 TA-01. Populated only when `identity` is null AND the failure was a
+   * RETURNED error (`SESSION_REJECTED`) — see `classifyUpstreamAuthError`.
+   * `null` for `NO_SESSION`, `MALFORMED_SUBJECT`, `AUTH_UNAVAILABLE`, and
+   * whenever `identity` is non-null: none of those states is a provider-
+   * reachability observation. `AUTH_UNAVAILABLE` in particular is a platform
+   * pre-handler concern (PLATFORM_PRE_HANDLER_FAILURE_RULE), not a provider
+   * fact — conflating the two axes is exactly what this field exists to
+   * avoid.
+   */
+  readonly upstreamObservation: UpstreamAuthObservation | null
 }
 
 /**
@@ -105,29 +169,42 @@ export const getVerifiedAuthIdentityResult = cache(async (): Promise<AuthIdentit
   } catch {
     // Misconfigured URL/key, or `cookies()` called outside a request scope.
     // Neither means "logged out", so it must not be reported as such.
-    return { identity: null, failure: 'AUTH_UNAVAILABLE' }
+    return { identity: null, failure: 'AUTH_UNAVAILABLE', upstreamObservation: null }
   }
 
   let data: Awaited<ReturnType<typeof supabase.auth.getUser>>
   try {
     data = await supabase.auth.getUser()
   } catch {
-    return { identity: null, failure: 'AUTH_UNAVAILABLE' }
+    return { identity: null, failure: 'AUTH_UNAVAILABLE', upstreamObservation: null }
   }
 
   const authUser = data.data?.user ?? null
 
   if (!authUser) {
     // `@supabase/ssr` reports both "no cookie at all" and "cookie rejected"
-    // through the same shape. The error object distinguishes them: an absent
-    // session produces no error, a rejected one does.
-    return { identity: null, failure: data.error ? 'SESSION_REJECTED' : 'NO_SESSION' }
+    // through the same shape: `getUser()` catches every AuthError subtype
+    // internally (AuthSessionMissingError, AuthApiError,
+    // AuthRetryableFetchError, AuthUnknownError, ...) and RETURNS it rather
+    // than throwing — confirmed against @supabase/auth-js's own `_getUser`,
+    // which re-throws only a non-AuthError shape. The error object
+    // distinguishes the caller-facing question (absent vs rejected: `.error`
+    // truthy either way today) from the PROVIDER-facing question M11 TA-01
+    // needs — see `classifyUpstreamAuthError`, which reads `error.name`
+    // rather than treating "any returned error" as one undifferentiated
+    // bucket. AS-2 (rejected) and AS-3 (transport/provider fault) both arrive
+    // this way; they are told apart by name, not by presence.
+    return {
+      identity: null,
+      failure: data.error ? 'SESSION_REJECTED' : 'NO_SESSION',
+      upstreamObservation: data.error ? classifyUpstreamAuthError(data.error) : null,
+    }
   }
 
   if (typeof authUser.id !== 'string' || !UUID_PATTERN.test(authUser.id)) {
     // The subject is never echoed — not even a malformed one, which may still
     // be a partially valid identifier.
-    return { identity: null, failure: 'MALFORMED_SUBJECT' }
+    return { identity: null, failure: 'MALFORMED_SUBJECT', upstreamObservation: null }
   }
 
   // PACKET B — PROVIDER_TRUTH_SOURCE.FROZEN_PREDICATE. `email_confirmed_at`
@@ -138,7 +215,11 @@ export const getVerifiedAuthIdentityResult = cache(async (): Promise<AuthIdentit
   // phone-confirmed, email-unconfirmed subject silently.
   const emailVerified = Boolean(authUser.email_confirmed_at)
 
-  return { identity: { userId: authUser.id, emailVerified }, failure: null }
+  return {
+    identity: { userId: authUser.id, emailVerified },
+    failure: null,
+    upstreamObservation: null,
+  }
 })
 
 /**

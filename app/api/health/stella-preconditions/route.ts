@@ -117,8 +117,20 @@ export async function GET() {
     ready: stellaState.canUseStella && rateLimit.satisfied,
   }
 
-  // 503 rather than 200-with-a-flag when a precondition is unmet, matching the
-  // `degraded` convention of the two sibling health routes. A G1-B preflight
-  // that only reads status codes must still get the right answer.
-  return NextResponse.json(payload, { status: payload.ready ? 200 : 503 })
+  // M11 TA-07 — OD-3's ratified status split: a DELIBERATELY DISABLED
+  // subsystem answers 200 (healthy-and-disabled), never 503. 503 remains the
+  // answer only for a subsystem that is EXPECTED to be on and is not. No new
+  // body field: `master.stellaEnabled` and `ready` above already distinguish
+  // the two cases; only this status mapping changes.
+  //
+  // PRECEDENCE: intentional-off DOMINATES. `stellaEnabled: false` with an
+  // unmet precondition (e.g. no distributed rate limiter declared) is STILL
+  // 200 — a switched-off subsystem is not made unhealthy by a precondition of
+  // the thing that is switched off.
+  //
+  // DECLARED CONSEQUENCE: after this split, status 200 no longer implies
+  // `ready: true`. A caller branching on status alone reads intentional-off
+  // as ready, which it is not — `ready` remains the field to branch on.
+  const status = !payload.master.stellaEnabled ? 200 : payload.ready ? 200 : 503
+  return NextResponse.json(payload, { status })
 }
