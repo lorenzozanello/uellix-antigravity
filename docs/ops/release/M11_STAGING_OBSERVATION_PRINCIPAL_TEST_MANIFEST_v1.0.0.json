@@ -1,0 +1,140 @@
+{
+  "manifest_id": "FIS-M11-06",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/M11_STAGING_OBSERVATION_PRINCIPAL_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "docs/ops/owner-ratifications/M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+    "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3.json",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SEN-P1",
+      "purpose": "A fictional password-shaped canary string injected as the principal credential in every offline test of the runner. Every assertion that the credential does not reach evidence, logs, argv or a file is written against this canary, so the property is proven without a real credential ever existing in a test environment."
+    },
+    {
+      "id": "SEN-P2",
+      "purpose": "A fictional JWT-shaped canary standing in for an access token, used to prove that neither the token nor the assembled cookie value appears in any emitted evidence record or error path."
+    },
+    {
+      "id": "SEN-P3",
+      "purpose": "A fictional email-shaped canary standing in for the principal's address, used to prove the address is excluded from evidence even though it is not itself a credential."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-P1",
+      "description": "Given a session that @supabase/ssr itself serialized into cookies, a request to /api/health/runtime-identity carrying those cookies is admitted past the gate at app/api/health/runtime-identity/route.ts:49-61 and receives the runtime-identity payload rather than 401. Proves the minimum capability derived in REQUIRED_OBSERVATION_CAPABILITY is in fact sufficient.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-P2",
+      "description": "The same single session, minted once, is accepted by BOTH /api/health/runtime-identity and /api/health/stella-preconditions within one run. Proves the inseparability finding and proves the one-sign-in-per-run bound in UNAVOIDABLE_WRITE_DISCLOSURE is achievable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-P3",
+      "description": "The cookie representation presented by the runner is the one produced by @supabase/ssr through its own setAll adapter, not a hand-constructed name or encoding. Proves MGP-3 is closed by construction rather than by guessing the serialization.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-P4",
+      "description": "An emitted observation record contains exactly the fields on the evidence emission allowlist and binds the observation to a deployment id and the SHA actually served (M11-SC-5), for each of EP-2 and EP-3 and for the anonymous control, with caller class recorded per record (M11-SC-4).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-P5",
+      "description": "A verification record for the provisioned principal asserts all six properties of LIFECYCLE phase 2 - one positive (a session can be obtained) and five negative (no profile row, no membership, no database role or grant, no organization-scoped surface reachable, no production-project credential). Proves the principal's minimality is verified rather than presumed from how it was created.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-P6",
+      "description": "Revocation is verified by an attempted grant that FAILS. Proves absence of access is asserted from a measurement rather than from the fact that a revocation command was issued.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-P1",
+      "description": "MG-4 PRESERVATION, THE CONTROL THAT MUST FAIL IF THE BOUNDARY MOVES: an anonymous request to /api/health/runtime-identity in the same run, from the same runner, against the same deployment, receives 401 with body exactly { error: 'Unauthorized' }. Anything else STOPS the run and raises a security finding rather than a health verdict. This control exists so that 'the boundary was not lowered' is falsifiable per run instead of restated in prose.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P2",
+      "description": "A request presenting the access token as an Authorization: Bearer header, with no cookies, is REFUSED with 401. Proves the transport finding at REQUIRED_OBSERVATION_CAPABILITY step 5 and prevents a successor from concluding that a 401 on that path indicates a misconfigured principal.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P3",
+      "description": "A session minted by a project ref other than the staging target is REFUSED (SESSION_REJECTED, 401) and is classified as a CREDENTIAL fault, never as a deployment health FAIL. Proves the SYS-03 coupling in TARGET_IDENTITY_CONTRACT and the failure semantics in AUTH_RLS_MODEL.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P4",
+      "description": "The principal cannot reach any organization-scoped surface: a request carrying its session to a tenant-scoped route is refused. Proves PD-2 and PD-3 produce real containment and not merely an absent row.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P5",
+      "description": "None of SEN-P1, SEN-P2 or SEN-P3 appears in any emitted evidence record, any log line at any verbosity, any error path, any process argument, or any file the runner writes. Asserted on the FAILURE paths as well as the success path, because a failure path is where a token is most likely to be printed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P6",
+      "description": "A 302 from Deployment Protection, a 429 from the global rate limiter, and a transport error are each recorded as INCONCLUSIVE with a distinct reason code, and are never collapsed into PASS or FAIL (M11-SC-6). Each of the three is exercised, not just asserted in prose.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P7",
+      "description": "A run in which an endpoint is not observed is recorded as a FAIL of the run, not as a partial PASS and not as an absence (M11-SC-3). Specifically: a missing or unusable credential fails the run rather than silently reducing its scope.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P8",
+      "description": "The two 503 answers of EP-2 are distinguished: AUTH_UNAVAILABLE returns body { error: 'Unavailable' } with no payload, while a divergent or unobservable runtime identity returns the full payload with verified false. A runner reading only the status code conflates them, so the control asserts the body shape decides the classification.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-P9",
+      "description": "The observation path never invokes the application's login, signup, onboarding or OAuth-callback flows. Asserted structurally against the four measured syncUserProfile call sites, because traversing any of them would create the profile row and break PD-2 irreversibly on the first run, with no error raised.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MC-P1",
+      "description": "Deleting NC-P1 - the anonymous control call - must make the contract detectably incomplete: a run that omits it is rejected rather than reported as a pass. A preservation control that can be silently dropped is not a control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-P2",
+      "description": "Removing the fail-closed branch that STOPS a run when the anonymous control answers anything other than 401 must be CAUGHT: with that branch deleted, a fixture in which EP-2 answers 200 anonymously must make the suite fail rather than record a healthy run.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-P3",
+      "description": "Removing the redaction on the runner's error path must be CAUGHT by NC-P5: a fixture that forces a failure after the session exists must not allow SEN-P1 or SEN-P2 into any retained output.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-P4",
+      "description": "Collapsing INCONCLUSIVE into PASS must be CAUGHT: deleting the INCONCLUSIVE branch must make NC-P6 fail rather than produce a green run. A gate that can be made green by never reaching a handler is the failure mode M11-SC-6 exists to prevent.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
