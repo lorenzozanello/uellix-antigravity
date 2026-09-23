@@ -56,13 +56,14 @@ const RELEASE_DIR = join(findRepositoryRoot(), 'docs', 'ops', 'release')
  * one — contributes nothing and is listed anyway so its absence from the union
  * is a measured fact rather than an omission.
  */
-const GRAPH_SOURCES = [
+export const GRAPH_SOURCES = [
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5.json',
+  'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.6.json',
 ] as const
 
 export type GraphSource = (typeof GRAPH_SOURCES)[number]
@@ -82,6 +83,7 @@ function sourcesThrough(through: GraphSource | undefined): readonly GraphSource[
 interface Node {
   readonly id: string
   readonly plane?: string
+  readonly act?: string
   readonly preconditions?: readonly string[]
   readonly source: string
 }
@@ -119,6 +121,7 @@ function collect(through?: GraphSource): { nodes: Node[]; edges: Edge[]; sources
       nodes.push({
         id: String(n.id),
         plane: typeof n.plane === 'string' ? n.plane : undefined,
+        act: typeof n.act === 'string' ? n.act : undefined,
         preconditions: Array.isArray(n.preconditions) ? (n.preconditions as string[]) : [],
         source: file,
       })
@@ -187,6 +190,11 @@ function reachableFrom(start: string, edges: readonly Edge[]): Set<string> {
     }
   }
   return seen
+}
+
+/** Every node the amendment chain declares, with its plane, act and source. */
+export function graphNodes(options: { readonly throughSource?: GraphSource } = {}): ReadonlyArray<{ id: string; plane?: string; act?: string; source: string }> {
+  return collect(options.throughSource).nodes
 }
 
 /**

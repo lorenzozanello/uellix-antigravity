@@ -6,7 +6,7 @@
 // DELIVERIES. A delivery is one process receiving the value by the N05 path
 // (OD-2; N23.ONLY_THIS_PROCESS: "A second consuming process ... requires its
 // OWN delivery"; DAG v1.0.4 HOSTED_SQL_SESSION_DELIVERY_RULE). They are derived
-// from the DAG itself:
+// from the DAG itself, over the WHOLE amendment chain:
 //
 //   - every HOSTED_SQL node whose act is a SESSION as uellix_auditor. A
 //     HOSTED_SQL node whose act is a role or privilege MUTATION (ALTER ROLE,
@@ -24,10 +24,7 @@
 // per delivery. The custody inventory's processes_or_environments must list
 // exactly these; N06 checks it.
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-
-const DAG_V100 = 'docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json'
+import { graphNodes } from './d1-dag-validate'
 
 export type DeliveryId = 'DL-N13' | 'DL-N14' | 'DL-N21' | 'DL-N22' | 'DL-N23' | 'DL-FINAL-WITNESS'
 
@@ -59,18 +56,30 @@ interface DagNode {
 
 const MUTATION_ACT = /^(ALTER ROLE|GRANT|REVOKE)\b/
 
-/** The in-DAG session nodes, by the rule above, from the DAG's own node list. */
-export function deriveSessionNodes(repoRoot: string): { sessions: string[]; excludedMutations: string[] } {
-  const dag = JSON.parse(readFileSync(join(repoRoot, DAG_V100), 'utf8')) as { DAG_NODES: { nodes: DagNode[] } }
-  const hosted = dag.DAG_NODES.nodes.filter((n) => n.plane === 'HOSTED_SQL')
+/**
+ * The session nodes, by the rule above, from a node list. Pure, so a control
+ * can hand it a synthetic successor node and watch the derivation notice it.
+ */
+export function deriveSessionNodesFrom(nodes: readonly DagNode[]): { sessions: string[]; excludedMutations: string[] } {
+  const hosted = nodes.filter((n) => n.plane === 'HOSTED_SQL')
   return {
     sessions: hosted.filter((n) => !MUTATION_ACT.test(n.act ?? '')).map((n) => n.id),
     excludedMutations: hosted.filter((n) => MUTATION_ACT.test(n.act ?? '')).map((n) => n.id),
   }
 }
 
-export function deriveDeliveries(repoRoot: string): { deliveries: Delivery[]; gaps: string[] } {
-  const { sessions } = deriveSessionNodes(repoRoot)
+/**
+ * The in-DAG session nodes across the WHOLE append-only chain (v1.0.0 and every
+ * amendment's NEW_NODES), so no future amendment can add a credential consumer
+ * the matrix silently misses. `repoRoot` is kept for the callers' signature;
+ * the chain is read by d1-dag-validate from the repository it runs in.
+ */
+export function deriveSessionNodes(_repoRoot: string, nodes: readonly DagNode[] = graphNodes()): { sessions: string[]; excludedMutations: string[] } {
+  return deriveSessionNodesFrom(nodes)
+}
+
+export function deriveDeliveries(repoRoot: string, nodes?: readonly DagNode[]): { deliveries: Delivery[]; gaps: string[] } {
+  const { sessions } = deriveSessionNodes(repoRoot, nodes)
   const gaps: string[] = []
   const deliveries: Delivery[] = []
   for (const node of sessions) {

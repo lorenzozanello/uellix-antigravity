@@ -23,7 +23,8 @@ const a = JSON.parse(text) as {
   AUTHORITY_CONFLICT_RULINGS: Record<string, string>
   RECOMPUTED_GRAPH: { NODE_COUNT_TOTAL: number; EDGE_COUNT_TOTAL: number; HARD_EDGE_COUNT: number; CONDITIONAL_EDGE_COUNT: number; ACYCLIC: boolean; REACHABILITY_PROPERTIES_BY_TRAVERSAL: Record<string, boolean> }
 }
-const facts = deriveGraphFacts()
+// Measured through v1.0.5 itself; v1.0.6 has its own file.
+const facts = deriveGraphFacts({ throughSource: 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5.json' })
 const before = deriveGraphFacts({ throughSource: 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json' })
 
 describe('v1.0.5 leaves the graph as v1.0.4 made it', () => {
@@ -54,14 +55,15 @@ describe('v1.0.5 leaves the graph as v1.0.4 made it', () => {
 })
 
 describe('what v1.0.5 declares is what the code does', () => {
-  it('every declared N10 conjunct has a registered evaluator, and every evaluator is declared', () => {
-    expect(a.N10_PRE_HC1_READINESS_CONJUNCTS.map((c) => c.id).sort()).toEqual(Object.keys(CONJUNCT_EVALUATORS).sort())
+  it('every N10 conjunct v1.0.5 declared has a registered evaluator', () => {
+    for (const c of a.N10_PRE_HC1_READINESS_CONJUNCTS) expect(Object.keys(CONJUNCT_EVALUATORS), c.id).toContain(c.id)
   })
   it('the open conflicts are exactly the ones the read set blocks or narrows, and none is ruled here', () => {
     expect(a.AUTHORITY_CONFLICTS_OPEN.map((c) => c.id)).toEqual(AUTHORITY_CONFLICTS.map((c) => c.id))
     expect(a.AUTHORITY_CONFLICT_RULINGS).toEqual({})
-    const blocking = new Set(Object.values(P1_STATEMENTS).map((s) => s.blockedBy).filter((b) => b !== null))
-    expect([...blocking].sort()).toEqual(['AC-1', 'AC-3'])
+    // v1.0.6 ruled them; the statements now carry the ruling that governs them.
+    expect(P1_STATEMENTS.TABLE_PRIVILEGES.ruling).toBe('AC-1')
+    expect(P1_STATEMENTS.FUNCTION_EXECUTE.ruling).toBe('AC-3')
   })
   it('names each Route B delta for ruling', () => {
     for (const d of ROUTE_B_DELTAS) expect(text).toContain(d.id)

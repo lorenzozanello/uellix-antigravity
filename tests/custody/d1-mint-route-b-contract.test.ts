@@ -2,12 +2,15 @@
 // tests/custody/d1-mint-route-b-contract.test.ts
 //
 // ROUTE B: the pinned statements, their provenance, the harness that measures
-// a candidate tool outside the repository, and the detector that keeps a live
-// mint script out of it. No database, no real value.
+// a candidate tool outside the repository, the commit-outcome classification
+// (B-1), and the detector that keeps a live mint script out of the tree. No
+// database, no real value, no real target.
 //
-// Mutation controls carried here: literal password in SQL, string
-// interpolation instead of a bound parameter, secret in argv, secret written
-// to a temp file, secret printed, repository-hosted live mint script.
+// Mutation controls carried here: literal password in SQL, interpolation
+// instead of a bound parameter, secret in argv, secret written to a temp file,
+// secret printed, repository-hosted live mint script, COMMIT ambiguity read as
+// NOT_COMMITTED, COMMIT ambiguity dropping the candidate, the harness naming
+// the real staging host.
 
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
@@ -15,16 +18,20 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 import {
+  COMMIT_UNKNOWN_TOKEN,
   D1_MINT_FORMAT_MARKER,
   FAKE_ONLY_GUARD_MARKER,
   OPERATOR_TOOL_CONTRACT,
   ROUTE_B_DELTAS,
   ROUTE_B_PRECEDENT,
   ROUTE_B_STATEMENTS,
+  classifyCommitOutcome,
+  classifyToolRun,
   findRepositoryHostedLiveMintScripts,
 } from '@/db/custody/mint-route-b-contract'
-import { runMintToolContractHarness, type Scenario } from '@/scripts/custody/d1-mint-tool-contract-harness'
+import { HARNESS_TARGET_HOST, runMintToolContractHarness, type Scenario } from '@/scripts/custody/d1-mint-tool-contract-harness'
 import { renderFakeOnlyMintTool, type ToolVariant } from './support/fake-only-mint-tool'
 
 const REPO = process.cwd()
@@ -36,6 +43,7 @@ function harness(variant: ToolVariant, scenario: Scenario = 'SUCCESS') {
   writeFileSync(tool, renderFakeOnlyMintTool(variant))
   return runMintToolContractHarness({ repoRoot: REPO, toolPath: tool, workRoot: join(dir, 'work'), validUntil: N09, scenario })
 }
+const allPassed = (r: { checks: Readonly<Record<string, string>> }) => Object.values(r.checks).every((v) => v === 'PASSED')
 
 describe('the pinned Route B statements and their provenance', () => {
   it('keeps the precedent\'s set_config bound-parameter shape and GUC names', () => {
@@ -55,28 +63,41 @@ describe('the pinned Route B statements and their provenance', () => {
     expect(ROUTE_B_STATEMENTS.DO_BLOCK).not.toMatch(/PASSWORD\s+'/)
     expect(ROUTE_B_STATEMENTS.DO_BLOCK.match(/current_setting\('uellix\.rotating_/g)?.length).toBe(3)
   })
-  it('names a measurement for every clause it can measure', () => {
-    expect(OPERATOR_TOOL_CONTRACT.filter((c) => c.measuredBy !== null).length).toBeGreaterThanOrEqual(10)
+  it('names a measurement for every clause it can measure, including the commit classification', () => {
+    expect(OPERATOR_TOOL_CONTRACT.filter((c) => c.measuredBy !== null).length).toBeGreaterThanOrEqual(11)
+    expect(OPERATOR_TOOL_CONTRACT.map((c) => c.id)).toContain('OT-12')
   })
 })
 
-describe('the harness measures a conforming candidate', () => {
-  it('SUCCESS: every check passes', () => {
-    const r = harness('CONFORMING')
+describe('B-1: the commit outcome is classified conservatively', () => {
+  it('DEFINITELY_NOT_COMMITTED needs positive evidence that COMMIT was never requested', () => {
+    expect(classifyCommitOutcome({ transactionStarted: false, callbackCompleted: false, commitAcknowledged: false })).toBe('DEFINITELY_NOT_COMMITTED')
+    expect(classifyCommitOutcome({ transactionStarted: true, callbackCompleted: false, commitAcknowledged: false })).toBe('DEFINITELY_NOT_COMMITTED')
+    expect(classifyCommitOutcome({ transactionStarted: true, callbackCompleted: true, commitAcknowledged: false })).toBe('COMMIT_OUTCOME_UNKNOWN')
+    expect(classifyCommitOutcome({ transactionStarted: true, callbackCompleted: true, commitAcknowledged: true })).toBe('COMMITTED')
+  })
+  it('a run that left no terminal line is UNKNOWN, never NOT_COMMITTED', () => {
+    expect(classifyToolRun('')).toEqual({ outcome: 'COMMIT_OUTCOME_UNKNOWN', token: COMMIT_UNKNOWN_TOKEN, carrier: 'NO_TERMINAL_LINE' })
+    expect(classifyToolRun('{"phase":"COMMIT_REQUESTED"}\n')).toMatchObject({ outcome: 'COMMIT_OUTCOME_UNKNOWN', carrier: 'NO_TERMINAL_LINE' })
+    expect(classifyToolRun('{"mint":"DEFINITELY_NOT_COMMITTED"}\n').outcome).toBe('DEFINITELY_NOT_COMMITTED')
+    expect(classifyToolRun('{"mint":"SOMETHING_ELSE"}\n').outcome).toBe('COMMIT_OUTCOME_UNKNOWN')
+  })
+})
+
+describe('the harness measures a conforming candidate at every commit boundary', () => {
+  it.each(['SUCCESS', 'FAILS_BEFORE_TRANSACTION', 'MINT_FAILS', 'COMMIT_TRANSPORT_LOST', 'KILLED_DURING_COMMIT', 'UNPINNED_TARGET'] as const)('%s: every check passes', (scenario) => {
+    const r = harness('CONFORMING', scenario)
     expect(r.checks).toEqual(Object.fromEntries(Object.keys(r.checks).map((k) => [k, 'PASSED'])))
     expect(r.overall).toBe('CONFORMS')
-    expect(Object.keys(r.checks)).toEqual(
-      expect.arrayContaining(['SEQUENCE', 'BOUND_ONLY', 'SECRET_SHAPE', 'VALID_UNTIL_EQUALS_N09', 'OUTPUT_CLEAN', 'FILES_CLEAN', 'DEPOSITOR_ARGV_CLEAN', 'DEPOSITOR_ENV_CLEAN', 'HANDOFF_AFTER_COMMIT'])
-    )
   })
-  it('MINT_FAILS: rolls back and hands nothing to N30', () => {
-    const r = harness('CONFORMING', 'MINT_FAILS')
-    expect(r.overall).toBe('CONFORMS')
-    expect(r.checks.NO_HANDOFF_WITHOUT_COMMIT).toBe('PASSED')
+  it('COMMIT_TRANSPORT_LOST: UNKNOWN with the dedicated token, exit 4, and the candidate handed to custody', () => {
+    const r = harness('CONFORMING', 'COMMIT_TRANSPORT_LOST')
+    expect(r.classification).toEqual({ outcome: 'COMMIT_OUTCOME_UNKNOWN', token: COMMIT_UNKNOWN_TOKEN, carrier: 'TERMINAL_LINE' })
+    expect(r.toolExit).toBe(4)
+    expect(r.checks.CANDIDATE_RETAINED_IN_CUSTODY).toBe('PASSED')
   })
-  it('UNPINNED_TARGET: refuses before constructing any driver client', () => {
-    const r = harness('CONFORMING', 'UNPINNED_TARGET')
-    expect(r.checks.REFUSES_UNPINNED_TARGET).toBe('PASSED')
+  it('KILLED_DURING_COMMIT: the governed reading is UNKNOWN with the carrier lost', () => {
+    expect(harness('CONFORMING', 'KILLED_DURING_COMMIT').classification).toMatchObject({ outcome: 'COMMIT_OUTCOME_UNKNOWN', carrier: 'NO_TERMINAL_LINE' })
   })
   it('the fixture refuses a REAL driver (it is not a live mint tool)', () => {
     const dir = mkdtempSync(join(tmpdir(), 'd1-mint-real-'))
@@ -85,8 +106,8 @@ describe('the harness measures a conforming candidate', () => {
     let status = 0
     let out = ''
     try {
-      out = execFileSync(process.execPath, [tool, `--driver-root=${REPO}`, `--depositor=${join(dir, 'none.js')}`, `--valid-until=${N09}`], {
-        env: { ...process.env, UELLIX_D1_MINT_OPERATOR_DATABASE_URL: ['postgresql:', '//postgres:', 'x', '@db.bvyzblhqymxruxdguaee.supabase.co:5432/postgres'].join('') },
+      out = execFileSync(process.execPath, [tool, `--driver-root=${REPO}`, `--depositor=${join(dir, 'none.js')}`, `--valid-until=${N09}`, `--target-host=${HARNESS_TARGET_HOST}`], {
+        env: { ...process.env, UELLIX_D1_MINT_OPERATOR_DATABASE_URL: ['postgresql:', '//postgres:', 'x', '@', HARNESS_TARGET_HOST, ':5432/postgres'].join('') },
         encoding: 'utf8',
       })
     } catch (e) {
@@ -99,23 +120,39 @@ describe('the harness measures a conforming candidate', () => {
 })
 
 describe('the harness FAILS each non-conforming candidate on the clause it breaks', () => {
-  const cases: Array<[ToolVariant, string]> = [
-    ['LITERAL_IN_SQL', 'BOUND_ONLY'],
-    ['INTERPOLATED_NOT_BOUND', 'BOUND_ONLY'],
-    ['SECRET_IN_DEPOSITOR_ARGV', 'DEPOSITOR_ARGV_CLEAN'],
-    ['SECRET_TO_TEMP_FILE', 'FILES_CLEAN'],
-    ['SECRET_PRINTED', 'OUTPUT_CLEAN'],
-    ['WRONG_VALID_UNTIL', 'VALID_UNTIL_EQUALS_N09'],
-    ['HANDOFF_BEFORE_COMMIT', 'HANDOFF_AFTER_COMMIT'],
-    ['ADMIN_ENV_LEAKED_TO_DEPOSITOR', 'DEPOSITOR_ENV_CLEAN'],
+  const cases: Array<[ToolVariant, Scenario, string]> = [
+    ['LITERAL_IN_SQL', 'SUCCESS', 'BOUND_ONLY'],
+    ['INTERPOLATED_NOT_BOUND', 'SUCCESS', 'BOUND_ONLY'],
+    ['SECRET_IN_DEPOSITOR_ARGV', 'SUCCESS', 'DEPOSITOR_ARGV_CLEAN'],
+    ['SECRET_TO_TEMP_FILE', 'SUCCESS', 'FILES_CLEAN'],
+    ['SECRET_PRINTED', 'SUCCESS', 'OUTPUT_CLEAN'],
+    ['WRONG_VALID_UNTIL', 'SUCCESS', 'VALID_UNTIL_EQUALS_N09'],
+    ['HANDOFF_BEFORE_COMMIT', 'SUCCESS', 'HANDOFF_AFTER_COMMIT'],
+    ['ADMIN_ENV_LEAKED_TO_DEPOSITOR', 'SUCCESS', 'DEPOSITOR_ENV_CLEAN'],
+    ['NO_TARGET_PIN', 'UNPINNED_TARGET', 'REFUSES_UNPINNED_TARGET'],
+    ['AMBIGUITY_AS_NOT_COMMITTED', 'COMMIT_TRANSPORT_LOST', 'CLASSIFIED_COMMIT_OUTCOME_UNKNOWN'],
+    ['AMBIGUITY_DROPS_CANDIDATE', 'COMMIT_TRANSPORT_LOST', 'CANDIDATE_RETAINED_IN_CUSTODY'],
   ]
-  it.each(cases)('%s -> %s FAILED', (variant, check) => {
-    const r = harness(variant)
+  it.each(cases)('%s under %s -> %s FAILED', (variant, scenario, check) => {
+    const r = harness(variant, scenario)
     expect(r.checks[check]).toBe('FAILED')
     expect(r.overall).toBe('DOES_NOT_CONFORM')
   })
-  it('NO_TARGET_PIN -> REFUSES_UNPINNED_TARGET FAILED', () => {
-    expect(harness('NO_TARGET_PIN', 'UNPINNED_TARGET').checks.REFUSES_UNPINNED_TARGET).toBe('FAILED')
+  it('the two ambiguity variants still conform when COMMIT is acknowledged (the defect is only on the unknown path)', () => {
+    expect(allPassed(harness('AMBIGUITY_AS_NOT_COMMITTED', 'SUCCESS'))).toBe(true)
+    expect(allPassed(harness('AMBIGUITY_DROPS_CANDIDATE', 'SUCCESS'))).toBe(true)
+  })
+})
+
+describe('no real target in the fake contract tests', () => {
+  it('CONTROL fake-harness-real-staging-host: neither the harness nor the fixture names the staging project or a supabase host', () => {
+    for (const f of ['scripts/custody/d1-mint-tool-contract-harness.ts', 'tests/custody/support/fake-only-mint-tool.ts']) {
+      const text = readFileSync(join(REPO, f), 'utf8')
+      expect(text, f).not.toContain(KNOWN_STAGING_PROJECT_REF)
+      expect(text, f).not.toMatch(/supabase\.co/)
+      expect(text, f).not.toMatch(/KNOWN_STAGING_PROJECT_REF|KNOWN_PRODUCTION_IDENTIFIERS/)
+    }
+    expect(HARNESS_TARGET_HOST.endsWith('.invalid')).toBe(true)
   })
 })
 

@@ -5,17 +5,19 @@
 // in-memory script answering exact statement texts.
 //
 // Mutation controls carried here: N14 / N22 bypass N05 (vault in the closure),
-// consumer spawns a child, wrong role, wrong project, unauthorized statement.
+// consumer spawns a child, wrong role, wrong project, unauthorized statement;
+// AC-1 surface widened or made dynamic; AC-2 enumeration or proof skipped;
+// AC-3 EXECUTE still required or silently PASSed; to_regprocedure introduced.
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
-import { AUTHORITY_CONFLICTS, P1_STATEMENTS, type P1Id } from '@/db/custody/p1-reads'
+import { AC1_AUTHORIZED_SURFACE, P1_STATEMENTS, ac2ReachabilityProof, type P1Id } from '@/db/custody/p1-reads'
 import { BEGIN_READ_ONLY, ROLLBACK, runAuditorReadSession } from '@/db/custody/auditor-read-session'
 import { N14_BODY, n14StatementTexts, runN14Observation } from '@/db/custody/n14-observation'
-import { n22StatementTexts, runN21Mr3Poststate, runN22Poststate } from '@/db/custody/n22-poststate'
+import { N21_BODY, N22_BODY, n21ExitFromRows, n22ExitFromRows, n22Rows, n22StatementTexts, runN21Mr3Poststate, runN22Poststate, type PvRow } from '@/db/custody/n22-poststate'
 import type { N13Connect, Row } from '@/db/custody/n13-verification'
 import { main as n14Main } from '@/scripts/custody/d1-auditor-n14-consumer'
 import { main as n22Main, parseNode } from '@/scripts/custody/d1-auditor-n22-consumer'
@@ -26,11 +28,15 @@ const VAR = 'UELLIX_AUDITOR_DATABASE_URL'
 const PW = 'Q'.repeat(43)
 const url = (host: string, role = 'uellix_auditor'): string => ['postgresql:', `//${role}:`, PW, `@${host}:5432/postgres`].join('')
 const STAGING = url(`db.${KNOWN_STAGING_PROJECT_REF}.supabase.co`)
+const RELEASE = join(process.cwd(), 'docs', 'ops', 'release')
 
-const AUTHORITY = JSON.parse(
-  readFileSync(join(process.cwd(), 'docs', 'ops', 'release', 'FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json'), 'utf8')
-) as { AUTHORIZED_FUTURE_SQL: { PHASE_P1_OBSERVATION_ONLY_READS: string[] } }
+const AUTHORITY = JSON.parse(readFileSync(join(RELEASE, 'FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json'), 'utf8')) as {
+  AUTHORIZED_FUTURE_SQL: { PHASE_P1_OBSERVATION_ONLY_READS: string[] }
+}
 const P1_LIST = AUTHORITY.AUTHORIZED_FUTURE_SQL.PHASE_P1_OBSERVATION_ONLY_READS
+const V106 = JSON.parse(readFileSync(join(RELEASE, 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.6.json'), 'utf8')) as {
+  SUCCESSOR_AUTHORIZED_SQL: { AC1_TABLE_PRIVILEGES: { sql: string; surface: Record<string, string[]> } }
+}
 
 const GOOD: Partial<Record<P1Id, readonly Row[]>> = {
   IDENTITY: [{ current_user: 'uellix_auditor', session_user: 'uellix_auditor' }],
@@ -56,6 +62,7 @@ const GOOD: Partial<Record<P1Id, readonly Row[]>> = {
     { schema_name: 'uellix_grounding', present: false, can_usage: null, can_create: null },
   ],
   DEFAULT_ACL: [{ owner_role: 'uellix_owner', schema_name: 'public', object_type: 'r', privilege_type: 'SELECT' }],
+  TABLE_PRIVILEGES: [{ sentinel_select: true, sentinel_insert: false, sentinel_update: false, sentinel_delete: false, sentinel_truncate: false, users_select: true }],
 }
 
 function fake(over: Partial<Record<P1Id, readonly Row[] | Error>> = {}): { connect: N13Connect; sent: string[] } {
@@ -77,36 +84,67 @@ function fake(over: Partial<Record<P1Id, readonly Row[] | Error>> = {}): { conne
     }),
   }
 }
+const tables = (o: Record<string, boolean>): Partial<Record<P1Id, readonly Row[]>> => ({ TABLE_PRIVILEGES: [{ ...GOOD.TABLE_PRIVILEGES![0], ...o }] })
 
 describe('statement provenance', () => {
-  it('every VERBATIM statement is byte-identical to its authority entry', () => {
+  it('every VERBATIM statement is byte-identical to its original authority entry', () => {
     for (const s of Object.values(P1_STATEMENTS).filter((x) => x.form === 'VERBATIM')) {
       expect(P1_LIST[s.authorityIndex!], s.id).toBe(s.sql)
+      expect(s.authority, s.id).toBe('ORIGINAL_P1')
     }
   })
-  it('every DESCRIBED statement maps to an authority entry and uses nothing the authority forbids', () => {
+  it('every DESCRIBED statement maps to an original authority entry and uses nothing the authority forbids', () => {
     for (const s of Object.values(P1_STATEMENTS).filter((x) => x.form === 'DESCRIBED')) {
       expect(P1_LIST[s.authorityIndex!], s.id).toBeDefined()
       expect(s.sql.startsWith('SELECT '), s.id).toBe(true)
-      // One SELECT, no statement separator, so no DDL or DML can ride along;
-      // and none of the reads EXPLICITLY_UNAUTHORIZED_SQL names.
       expect(s.sql, s.id).not.toMatch(/pg_authid|pg_shadow|rolpassword|to_regprocedure|information_schema|pg_stat_activity|pg_locks|SET ROLE|SESSION AUTHORIZATION|\bCOPY\b|\bLISTEN\b|\bNOTIFY\b|;/i)
     }
   })
-  it('the statement outside the authority, and the one that raises on OLD_DB, are BLOCKED', () => {
-    expect(P1_STATEMENTS.TABLE_PRIVILEGES).toMatchObject({ form: 'NOT_IN_AUTHORITY', blockedBy: 'AC-1' })
-    expect(P1_STATEMENTS.FUNCTION_EXECUTE.blockedBy).toBe('AC-3')
-    expect(AUTHORITY_CONFLICTS.map((c) => c.id)).toEqual(['AC-1', 'AC-2', 'AC-3'])
+  it('AC-1: TABLE_PRIVILEGES is SUCCESSOR authority, never presented as original, byte-identical to the v1.0.6 pin', () => {
+    expect(P1_STATEMENTS.TABLE_PRIVILEGES).toMatchObject({ form: 'SUCCESSOR_PINNED', authority: 'SUCCESSOR_V1_0_6_AC1', authorityIndex: null, disposition: 'ISSUABLE', ruling: 'AC-1' })
+    expect(P1_STATEMENTS.TABLE_PRIVILEGES.sql).toBe(V106.SUCCESSOR_AUTHORIZED_SQL.AC1_TABLE_PRIVILEGES.sql)
+    expect(P1_LIST).not.toContain(P1_STATEMENTS.TABLE_PRIVILEGES.sql)
   })
-  it('no node can send a blocked statement', () => {
-    const texts = [...n14StatementTexts(), ...n22StatementTexts()]
-    expect(texts).not.toContain(P1_STATEMENTS.TABLE_PRIVILEGES.sql)
-    expect(texts).not.toContain(P1_STATEMENTS.FUNCTION_EXECUTE.sql)
+  it('CONTROL AC-1-surface: across EVERY statement, has_table_privilege names exactly the owner surface, as literals, for uellix_auditor only', () => {
+    const pairs: string[] = []
+    for (const s of Object.values(P1_STATEMENTS)) {
+      const calls = s.sql.match(/has_table_privilege\(/g)?.length ?? 0
+      const literal = [...s.sql.matchAll(/has_table_privilege\('uellix_auditor', '([a-z_]+\.[a-z_]+)', '([A-Z]+)'\)/g)]
+      expect(literal.length, `${s.id}: a has_table_privilege call that is not a literal (role, relation, privilege) triple`).toBe(calls)
+      for (const m of literal) pairs.push(`${m[1]}|${m[2]}`)
+    }
+    const allowed = Object.entries(AC1_AUTHORIZED_SURFACE).flatMap(([r, ps]) => ps.map((p) => `${r}|${p}`))
+    expect(pairs.sort()).toEqual(allowed.sort())
+    expect(AC1_AUTHORIZED_SURFACE).toEqual(V106.SUCCESSOR_AUTHORIZED_SQL.AC1_TABLE_PRIVILEGES.surface)
+  })
+  it('CONTROL AC-2-no-enumeration: REACH is a keyed lookup over the named roles, with no pattern', () => {
+    expect(P1_STATEMENTS.REACH.sql).toMatch(/= ANY \(ARRAY\[/)
+    expect(P1_STATEMENTS.REACH.sql).not.toMatch(/\bLIKE\b|SIMILAR TO|~|regexp|uellix_cap/i)
+  })
+  it('CONTROL AC-3 / M20: FUNCTION_EXECUTE is deferred, and no statement uses to_regprocedure', () => {
+    expect(P1_STATEMENTS.FUNCTION_EXECUTE).toMatchObject({ disposition: 'DEFERRED_TO_PRECHECK_R2', ruling: 'AC-3' })
+    for (const s of Object.values(P1_STATEMENTS)) expect(s.sql, s.id).not.toMatch(/to_regprocedure/i)
+  })
+  it('no node sends FUNCTION_EXECUTE; N14 and N22 both send TABLE_PRIVILEGES', () => {
+    expect([...n14StatementTexts(), ...n22StatementTexts()]).not.toContain(P1_STATEMENTS.FUNCTION_EXECUTE.sql)
+    expect(n14StatementTexts()).toContain(P1_STATEMENTS.TABLE_PRIVILEGES.sql)
+    expect(n22StatementTexts()).toContain(P1_STATEMENTS.TABLE_PRIVILEGES.sql)
+    for (const body of [N14_BODY, N21_BODY, N22_BODY]) expect(body).not.toContain('FUNCTION_EXECUTE')
+  })
+})
+
+describe('the AC-2 structural proof', () => {
+  it('holds only when all three conditions are OBSERVED', () => {
+    expect(ac2ReachabilityProof({ rolsuper: false, membershipEdgesAsMember: 0, datdbaIsAuditor: false }).holds).toBe(true)
+    expect(ac2ReachabilityProof({ rolsuper: true, membershipEdgesAsMember: 0, datdbaIsAuditor: false }).holds).toBe(false)
+    expect(ac2ReachabilityProof({ rolsuper: false, membershipEdgesAsMember: 1, datdbaIsAuditor: false }).holds).toBe(false)
+    expect(ac2ReachabilityProof({ rolsuper: false, membershipEdgesAsMember: 0, datdbaIsAuditor: true }).holds).toBe(false)
+    expect(ac2ReachabilityProof({ rolsuper: null, membershipEdgesAsMember: null, datdbaIsAuditor: undefined }).failed).toHaveLength(3)
   })
 })
 
 describe('the read session', () => {
-  it('CONTROL unauthorized-statement: a body cannot send a blocked or unlisted statement, and nothing reaches the transport', async () => {
+  it('CONTROL unauthorized-statement: a body cannot send a deferred or unlisted statement, and nothing reaches the transport', async () => {
     const f = fake()
     const r = await runAuditorReadSession({
       env: { [VAR]: STAGING },
@@ -138,65 +176,127 @@ describe('the read session', () => {
 })
 
 describe('N14', () => {
-  it('measures every authorized prestate in one read-only transaction, raises no token on a clean target, and does NOT claim its exit while AC-1/AC-3 are open', async () => {
+  it('measures every required prestate including the AC-1 rows, defers only FUNCTION_EXECUTE, and meets its exit on a clean target', async () => {
     const f = fake()
     const r = await runN14Observation({ env: { [VAR]: STAGING }, connect: f.connect })
     expect(r.token).toBeNull()
-    expect(r.prestate).toMatchObject({ kp3StellaOpsExists: true, kp5StellaOpsUsage: true, kp6Req2NotPerformed: true, membershipEdges: 0 })
-    expect(r.notMeasuredBecause).toEqual(['AC-1', 'AC-3'])
-    expect(r.exitMet).toBe(false)
+    expect(r.prestate).toMatchObject({ kp3StellaOpsExists: true, kp5StellaOpsUsage: true, kp6Req2NotPerformed: true, membershipEdges: 0, membershipEdgesAsMember: 0 })
+    expect(r.prestate?.ac2Proof).toEqual({ holds: true, failed: [] })
+    expect(r.prestate?.tablePrivileges).toEqual(GOOD.TABLE_PRIVILEGES![0])
+    expect(r.deferredToPrecheckR2).toEqual(['FUNCTION_EXECUTE'])
+    expect(r.exitMet).toBe(true)
     expect(f.sent[0]).toBe(BEGIN_READ_ONLY)
     expect(f.sent.at(-1)).toBe(ROLLBACK)
-    expect(f.sent.filter((s) => s === BEGIN_READ_ONLY)).toHaveLength(1)
+    expect(f.sent).toContain(P1_STATEMENTS.TABLE_PRIVILEGES.sql)
   })
   it('KP-3 first: an absent uellix_stella_ops is STOP_STELLA_OPS_SCHEMA_ABSENT and no privilege is read after it', async () => {
     const f = fake({ STELLA_OPS_EXISTS: [{ '?column?': false }] })
     const r = await runN14Observation({ env: { [VAR]: STAGING }, connect: f.connect })
     expect(r.token).toBe('STOP_STELLA_OPS_SCHEMA_ABSENT')
+    expect(r.exitMet).toBe(false)
     expect(f.sent).not.toContain(P1_STATEMENTS.SCHEMA_PRIVILEGES.sql)
-    expect(f.sent.indexOf(P1_STATEMENTS.STELLA_OPS_EXISTS.sql)).toBeLessThan(f.sent.indexOf(ROLLBACK))
   })
   it.each([
     [{ ROLE_ATTRIBUTES: [{ ...GOOD.ROLE_ATTRIBUTES![0], rolbypassrls: true }] }, 'STOP_DANGEROUS_ROLE_ATTRIBUTE'],
     [{ MEMBERSHIPS: [{ granted_role: 'uellix_owner', member_role: 'uellix_auditor' }] }, 'STOP_UNEXPLAINED_ROLE_MEMBERSHIP'],
     [{ OWNERSHIP: [{ classes: '1', namespaces: '0', procs: '0', types: '0' }] }, 'STOP_UNEXPECTED_AUDITOR_OWNERSHIP'],
+    [{ DATDBA: [{ '?column?': true }] }, 'STOP_UNEXPECTED_AUDITOR_OWNERSHIP'],
     [{ DATABASE_PRIVILEGES: [{ ...GOOD.DATABASE_PRIVILEGES![0], auditor_connect: false }] }, 'STOP_CONNECT_PRIVILEGE_ABSENT'],
     [{ SCHEMA_PRIVILEGES: [{ schema_name: 'public', present: true, can_usage: true, can_create: true }, { schema_name: 'uellix_stella_ops', present: true, can_usage: true, can_create: false }] }, 'STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE'],
+    [tables({ sentinel_insert: true }), 'STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE'],
+    [tables({ sentinel_truncate: true }), 'STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE'],
   ] as const)('raises %s', async (over, token) => {
     const r = await runN14Observation({ env: { [VAR]: STAGING }, connect: fake(over as Partial<Record<P1Id, readonly Row[]>>).connect })
     expect(r.token).toBe(token)
-  })
-  it('its body order starts at KP-3', () => {
-    expect(N14_BODY[0]).toBe('STELLA_OPS_EXISTS')
+    expect(r.exitMet).toBe(false)
   })
 })
 
 describe('N22 and N21', () => {
-  it('N22 asserts all 34 rows; the AC-1/AC-3 rows are BLOCKED and keep the exit unmet', async () => {
+  it('N22 asserts all 34 rows: PV-22/28/32 are real assertions, PV-24/25 are DEFERRED_TO_PRECHECK_R2, and the exit is met on a clean target', async () => {
     const r = await runN22Poststate({ env: { [VAR]: STAGING }, connect: fake().connect })
     expect(r.rows).toHaveLength(34)
-    expect(r.rows.filter((x) => x.verdict === 'BLOCKED').map((x) => x.id)).toEqual(['PV-22', 'PV-24', 'PV-25', 'PV-28', 'PV-32'])
+    const v = (id: string) => r.rows.find((x) => x.id === id)?.verdict
+    expect(['PV-22', 'PV-28', 'PV-32'].map(v)).toEqual(['PASS', 'PASS', 'PASS'])
+    expect(r.deferredToPrecheckR2).toEqual(['PV-24', 'PV-25'])
     expect(r.rows.filter((x) => x.verdict === 'FAIL')).toEqual([])
-    expect(r.blockedBy).toEqual(['AC-1', 'AC-3'])
-    expect(r.readOnlyProof).toMatchObject({ ATTRIBUTES: 'PASS', MEMBERSHIPS: 'PASS', OWNERSHIP: 'PASS', GRANTS: 'BLOCKED', SESSION: 'PASS' })
+    expect(r.tokens).toEqual([])
+    expect(r.readOnlyProof?.GRANTS).toEqual({ verdict: 'PASS', deferredRows: ['PV-24', 'PV-25'] })
+    expect(Object.values(r.readOnlyProof!).every((l) => l.verdict === 'PASS')).toBe(true)
+    expect(r.exitMet).toBe(true)
+  })
+  it.each([
+    [tables({ sentinel_select: false }), 'PV-22', null],
+    [tables({ sentinel_delete: true }), 'PV-28', 'STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE'],
+    [tables({ users_select: false }), 'PV-32', 'STOP_PRE_EXISTING_SURFACE_CHANGED'],
+    [{ ROLE_ATTRIBUTES: [{ ...GOOD.ROLE_ATTRIBUTES![0], rolsuper: true }] }, 'PV-6', 'STOP_DANGEROUS_ROLE_ATTRIBUTE'],
+    [{ DATDBA: [{ '?column?': true }] }, 'PV-14', 'STOP_UNEXPLAINED_ROLE_MEMBERSHIP'],
+  ] as const)('a wrong state FAILS its row and raises the authority token, and the exit is unmet (%#)', async (over, row, token) => {
+    const r = await runN22Poststate({ env: { [VAR]: STAGING }, connect: fake(over as Partial<Record<P1Id, readonly Row[]>>).connect })
+    expect(r.rows.find((x) => x.id === row)?.verdict).toBe('FAIL')
+    if (token === null) expect(r.failedWithoutToken).toContain(row)
+    else expect(r.tokens).toContain(token)
     expect(r.exitMet).toBe(false)
   })
-  it('N22 fails a row on a wrong state and the proof layer with it', async () => {
-    const r = await runN22Poststate({ env: { [VAR]: STAGING }, connect: fake({ ROLE_ATTRIBUTES: [{ ...GOOD.ROLE_ATTRIBUTES![0], rolsuper: true }] }).connect })
-    expect(r.rows.find((x) => x.id === 'PV-6')?.verdict).toBe('FAIL')
-    expect(r.readOnlyProof?.ATTRIBUTES).toBe('FAIL')
+  it('CONTROL AC-2-proof: PV-14 FAILS when only the structural proof fails (datdba), even with every named role unreachable', async () => {
+    const r = await runN22Poststate({ env: { [VAR]: STAGING }, connect: fake({ DATDBA: [{ '?column?': true }] }).connect })
+    expect(r.rows.find((x) => x.id === 'PV-14')?.verdict).toBe('FAIL')
   })
-  it('N22 re-issues the whole authorized P1 read list, not a subset', async () => {
+  it('PV-1, PV-2 and PV-5 come from what the server reported, not from a constant', () => {
+    const base = {
+      attrs: GOOD.ROLE_ATTRIBUTES![0]!,
+      memberships: [],
+      reach: [],
+      own: { classes: 0, namespaces: 0, procs: 0, types: 0 },
+      datdba: false,
+      db: GOOD.DATABASE_PRIVILEGES![0]!,
+      schemas: new Map(),
+      tables: GOOD.TABLE_PRIVILEGES![0]!,
+    }
+    const rows = n22Rows({ ...base, preflight: { connected: true, kp1: true, targetIdentityArmB: true, sentinel: null, identity: null } })
+    expect(rows.find((x) => x.id === 'PV-5')?.verdict).toBe('FAIL')
+    expect(rows.find((x) => x.id === 'PV-1')?.verdict).toBe('FAIL')
+    const other = n22Rows({ ...base, preflight: { connected: true, kp1: true, targetIdentityArmB: true, sentinel: null, identity: { currentUser: 'uellix_auditor', sessionUser: 'postgres' } } })
+    expect(other.find((x) => x.id === 'PV-2')?.verdict).toBe('FAIL')
+  })
+  it('CONTROL AC-3-silent-pass: a PV-24/25 reported PASS, or a deferral on any other row, does not satisfy the exit rule', () => {
+    const rows = n22Rows({
+      preflight: { connected: true, kp1: true, targetIdentityArmB: true, sentinel: { environment: 'staging', projectRef: KNOWN_STAGING_PROJECT_REF }, identity: { currentUser: 'uellix_auditor', sessionUser: 'uellix_auditor' } },
+      attrs: GOOD.ROLE_ATTRIBUTES![0]!,
+      memberships: [],
+      reach: [],
+      own: { classes: 0, namespaces: 0, procs: 0, types: 0 },
+      datdba: false,
+      db: GOOD.DATABASE_PRIVILEGES![0]!,
+      schemas: new Map([
+        ['public', { present: true, usage: true, create: false }],
+        ['uellix_bootstrap', { present: true, usage: true, create: false }],
+        ['uellix_stella_ops', { present: true, usage: true, create: false }],
+      ]),
+      tables: GOOD.TABLE_PRIVILEGES![0]!,
+    })
+    expect(n22ExitFromRows(rows, true)).toBe(true)
+    const deferOther = rows.map((x): PvRow => (x.id === 'PV-26' ? { ...x, verdict: 'DEFERRED_TO_PRECHECK_R2' } : x))
+    expect(n22ExitFromRows(deferOther, true)).toBe(false)
+  })
+  it('N21: USAGE and CREATE are asserted, EXECUTE is DEFERRED_TO_PRECHECK_R2, and the exit is met; FUNCTION_EXECUTE is never sent', async () => {
+    const f = fake()
+    const r = await runN21Mr3Poststate({ env: { [VAR]: STAGING }, connect: f.connect })
+    expect(r.rows.map((x) => x.verdict)).toEqual(['PASS', 'PASS', 'DEFERRED_TO_PRECHECK_R2', 'DEFERRED_TO_PRECHECK_R2'])
+    expect(r.exitMet).toBe(true)
+    expect(f.sent).not.toContain(P1_STATEMENTS.FUNCTION_EXECUTE.sql)
+    expect(n21ExitFromRows(r.rows.map((x) => (x.id.startsWith('N21-EXECUTE') ? { ...x, verdict: 'PASS' as const } : x)))).toBe(false)
+  })
+  it('N21 fails when CREATE is held', async () => {
+    const r = await runN21Mr3Poststate({ env: { [VAR]: STAGING }, connect: fake({ SCHEMA_PRIVILEGES: [{ schema_name: 'uellix_stella_ops', present: true, can_usage: true, can_create: true }] }).connect })
+    expect(r.exitMet).toBe(false)
+  })
+  it('N22 re-issues every ISSUABLE P1 read', async () => {
     const f = fake()
     await runN22Poststate({ env: { [VAR]: STAGING }, connect: f.connect })
     const issuedIds = Object.values(P1_STATEMENTS).filter((s) => f.sent.includes(s.sql)).map((s) => s.id).sort()
-    const allUnblocked = Object.values(P1_STATEMENTS).filter((s) => s.blockedBy === null).map((s) => s.id).sort()
-    expect(issuedIds).toEqual(allUnblocked)
-  })
-  it('N21 passes USAGE and CREATE and cannot pass EXECUTE while AC-3 is open', async () => {
-    const r = await runN21Mr3Poststate({ env: { [VAR]: STAGING }, connect: fake().connect })
-    expect(r.rows.map((x) => x.verdict)).toEqual(['PASS', 'PASS', 'BLOCKED', 'BLOCKED'])
-    expect(r.exitMet).toBe(false)
+    const allIssuable = Object.values(P1_STATEMENTS).filter((s) => s.disposition === 'ISSUABLE').map((s) => s.id).sort()
+    expect(issuedIds).toEqual(allIssuable)
   })
 })
 

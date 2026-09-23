@@ -17,7 +17,7 @@ export async function main(argv: readonly string[], env: Readonly<Record<string,
       resolved: r.session.failedAt !== 'RESOLVE',
       connected: r.session.preflight.connected,
       ok: r.exitMet,
-      report: { failedAt: r.session.failedAt, code: r.session.code, token: r.token, notMeasuredBecause: r.notMeasuredBecause, prestate: r.prestate, statementsIssued: r.session.statementsIssued, rolledBack: r.session.rolledBack },
+      report: { failedAt: r.session.failedAt, code: r.session.code, token: r.token, deferredToPrecheckR2: r.deferredToPrecheckR2, prestate: r.prestate, statementsIssued: r.session.statementsIssued, rolledBack: r.session.rolledBack },
     }
   })
 }

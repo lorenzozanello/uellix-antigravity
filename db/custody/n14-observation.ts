@@ -12,13 +12,14 @@
 // Exit: every prestate except MR-2's is MEASURED and recorded.
 // It may NOT evaluate SQ-6 or SQ-7 (the PRECHECK; mutant M20).
 //
-// The prestates AC-1 and AC-3 block (DML and SELECT table privileges,
-// function EXECUTE) are NOT measured: no node issues a blocked statement. N14
-// therefore reports its exit as NOT MET while either conflict is open, with
-// the conflict ids as the reason. It never reports them as measured.
+// DAG v1.0.6 rulings: the AC-1 table privileges ARE measured (successor-
+// authorized, pinned); the function EXECUTE prestate is DEFERRED_TO_PRECHECK_R2
+// by AC-3 and is neither issued nor required for N14's exit; AC-2's structural
+// proof (rolsuper false, no membership edge as member, datdba not the auditor)
+// is recorded, and its failure is already a token below.
 
 import { runAuditorReadSession, type ReadFn, type SessionOutcome } from './auditor-read-session'
-import { EP3_NAMED_ROLES, P1_STATEMENTS, issuable, type ConflictId, type P1Id } from './p1-reads'
+import { EP3_NAMED_ROLES, P1_STATEMENTS, ac2ReachabilityProof, issuable, type P1Id } from './p1-reads'
 import type { N13Connect, Row } from './n13-verification'
 
 export type N14Token =
@@ -41,9 +42,11 @@ export const N14_BODY: readonly P1Id[] = [
   'DATABASE_PRIVILEGES',
   'SCHEMA_PRIVILEGES',
   'DEFAULT_ACL',
-  'FUNCTION_EXECUTE',
   'TABLE_PRIVILEGES',
 ]
+
+/** Named by N14's act in v1.0.0, deferred by AC-3: reported, never issued, never required. */
+export const N14_DEFERRED: readonly P1Id[] = ['FUNCTION_EXECUTE']
 
 export interface N14Prestate {
   readonly kp3StellaOpsExists: boolean
@@ -52,6 +55,10 @@ export interface N14Prestate {
   readonly serverVersionNum: string | null
   readonly roleAttributes: Readonly<Record<string, unknown>> | null
   readonly membershipEdges: number
+  readonly membershipEdgesAsMember: number | null
+  readonly ac2Proof: { holds: boolean; failed: readonly string[] } | null
+  /** AC-1: the six authorized (relation, privilege) booleans. */
+  readonly tablePrivileges: Readonly<Record<string, boolean>> | null
   readonly reachableNamedRoles: readonly string[]
   readonly namedRolesPresent: readonly string[]
   readonly ownership: Readonly<Record<string, number>>
@@ -65,8 +72,9 @@ export interface N14Result {
   readonly session: Omit<SessionOutcome<unknown>, 'body'>
   readonly prestate: N14Prestate | null
   readonly token: N14Token | null
-  readonly notMeasuredBecause: readonly ConflictId[]
-  /** N14's exit: every prestate except MR-2's measured. False while any conflict blocks a read. */
+  /** Named by v1.0.0 and deferred by AC-3: reported, never issued, never required. */
+  readonly deferredToPrecheckR2: readonly P1Id[]
+  /** N14's exit (v1.0.6): every prestate except MR-2's and the deferred EXECUTE one measured, no token, rolled back. */
   readonly exitMet: boolean
 }
 
@@ -86,6 +94,10 @@ export function n14Token(p: N14Prestate): N14Token | null {
   if (p.databasePrivileges?.auditor_connect !== true) return 'STOP_CONNECT_PRIVILEGE_ABSENT'
   const create = (s: string): boolean | null | undefined => p.schemaPrivileges.find((x) => x.schema === s)?.create
   if (create('uellix_stella_ops') !== false || create('public') !== false) return 'STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE'
+  const t = p.tablePrivileges
+  if (t === null || ['sentinel_insert', 'sentinel_update', 'sentinel_delete', 'sentinel_truncate'].some((k) => t[k] !== false)) {
+    return 'STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE'
+  }
   return null
 }
 
@@ -99,6 +111,9 @@ async function measure(read: ReadFn): Promise<N14Prestate> {
     serverVersionNum: null,
     roleAttributes: null,
     membershipEdges: 0,
+    membershipEdgesAsMember: null,
+    ac2Proof: null,
+    tablePrivileges: null,
     reachableNamedRoles: [],
     namedRolesPresent: [],
     ownership: {},
@@ -118,6 +133,7 @@ async function measure(read: ReadFn): Promise<N14Prestate> {
   const db = one(await read('DATABASE_PRIVILEGES'))
   const schemas = await read('SCHEMA_PRIVILEGES')
   const acl = await read('DEFAULT_ACL')
+  const tables = one(await read('TABLE_PRIVILEGES'))
 
   const schemaPrivileges = schemas.map((r) => ({
     schema: String(r.schema_name),
@@ -133,6 +149,15 @@ async function measure(read: ReadFn): Promise<N14Prestate> {
     serverVersionNum: typeof version === 'string' ? version : null,
     roleAttributes: attrs,
     membershipEdges: memberships.length,
+    membershipEdgesAsMember: memberships.filter((r) => r.member_role === 'uellix_auditor').length,
+    ac2Proof: ac2ReachabilityProof({
+      rolsuper: attrs.rolsuper,
+      membershipEdgesAsMember: memberships.filter((r) => r.member_role === 'uellix_auditor').length,
+      datdbaIsAuditor: datdba,
+    }),
+    tablePrivileges: Object.fromEntries(
+      ['sentinel_select', 'sentinel_insert', 'sentinel_update', 'sentinel_delete', 'sentinel_truncate', 'users_select'].map((k) => [k, tables[k] === true ? true : tables[k] === false ? false : (null as unknown as boolean)])
+    ),
     reachableNamedRoles: reach.filter((r) => r.can_member === true || r.can_usage === true || r.can_set === true).map((r) => String(r.role_name)),
     namedRolesPresent: reach.map((r) => String(r.role_name)).filter((n) => (EP3_NAMED_ROLES as readonly string[]).includes(n)),
     ownership: { classes: num(own.classes), namespaces: num(own.namespaces), procs: num(own.procs), types: num(own.types) },
@@ -152,8 +177,8 @@ export async function runN14Observation(params: {
   readonly env: Readonly<Record<string, string | undefined>>
   readonly connect?: N13Connect
 }): Promise<N14Result> {
-  const { blocked } = issuable(N14_BODY)
-  const notMeasuredBecause = Array.from(new Set(blocked.map((s) => s.blockedBy as ConflictId))).sort()
+  const { deferred } = issuable([...N14_BODY, ...N14_DEFERRED])
+  if (deferred.some((d) => N14_BODY.includes(d.id))) throw new Error('N14_BODY names a statement that is not ISSUABLE.')
   const outcome = await runAuditorReadSession({ env: params.env, connect: params.connect, bodyAllowlist: N14_BODY, body: measure })
   const { body, ...session } = outcome
   const prestate = body
@@ -162,12 +187,19 @@ export async function runN14Observation(params: {
     session,
     prestate,
     token,
-    notMeasuredBecause,
-    exitMet: outcome.failedAt === null && prestate !== null && token === null && notMeasuredBecause.length === 0 && outcome.rolledBack,
+    deferredToPrecheckR2: deferred.map((d) => d.id),
+    exitMet:
+      outcome.failedAt === null &&
+      prestate !== null &&
+      prestate.kp3StellaOpsExists &&
+      prestate.tablePrivileges !== null &&
+      Object.values(prestate.tablePrivileges).every((v) => typeof v === 'boolean') &&
+      token === null &&
+      outcome.rolledBack,
   }
 }
 
 /** Exported for the statement-provenance test: every text this node can send. */
 export function n14StatementTexts(): string[] {
-  return ['IDENTITY', 'READ_ONLY', 'SENTINEL', ...N14_BODY].map((id) => P1_STATEMENTS[id as P1Id]).filter((s) => s.blockedBy === null).map((s) => s.sql)
+  return ['IDENTITY', 'READ_ONLY', 'SENTINEL', ...N14_BODY].map((id) => P1_STATEMENTS[id as P1Id]).filter((s) => s.disposition === 'ISSUABLE').map((s) => s.sql)
 }

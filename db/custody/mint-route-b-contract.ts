@@ -118,13 +118,14 @@ export const OPERATOR_TOOL_CONTRACT: readonly ContractClause[] = [
   { id: 'OT-1', clause: 'The tool file lives outside the repository working tree and is executed from outside it.', source: 'generated_where; owner decision D1_MINT_OPERATOR_TOOL', measuredBy: 'OUTSIDE_REPOSITORY' },
   { id: 'OT-2', clause: 'Node, with the PostgreSQL driver established by measurement (postgres@3.4.9), loaded by createRequire from an explicit driver root given as --driver-root. No package is downloaded.', source: 'lane mandate section 3/4; measured driver', measuredBy: 'SEQUENCE' },
   { id: 'OT-3', clause: 'The operator\'s privileged connection material is read from UELLIX_D1_MINT_OPERATOR_DATABASE_URL in the tool\'s own environment and removed from it before any child is spawned. HOW that variable is supplied is NOT decided here and belongs to the future execution authority.', source: 'lane mandate section 3', measuredBy: 'DEPOSITOR_ENV_CLEAN' },
-  { id: 'OT-4', clause: 'Before the driver is constructed, the privileged connection\'s host must be the direct database host of the pinned staging project; anything else is refused with no driver call.', source: 'HC_1.placement: after target identity is verified BY REF; TARGET_IDENTITY', measuredBy: 'REFUSES_UNPINNED_TARGET' },
+  { id: 'OT-4', clause: 'The target host is INJECTED as --target-host (non-secret): the execution procedure sets it to the N04-verified direct host of the pinned project, and the harness to an RFC 6761 .invalid host, so no test names or can reach a real project. Before the driver is constructed, the privileged connection host must equal it; anything else is refused with no driver call. The N30 depositor independently refuses a production DSN that does not name the pinned staging host.', source: 'HC_1.placement (after target identity is verified BY REF); TARGET_IDENTITY; recertification nonblocker on the harness naming the real staging host', measuredBy: 'REFUSES_UNPINNED_TARGET' },
   { id: 'OT-5', clause: 'The new value is generated inside the tool: >= 32 bytes from a CSPRNG, base64url (>= 43 characters of [A-Za-z0-9_-]).', source: 'generation_requirements.entropy/encoding', measuredBy: 'SECRET_SHAPE' },
   { id: 'OT-6', clause: 'One transaction: exactly SET_ROLE, SET_PASSWORD, SET_VALID_UNTIL, DO_BLOCK, in that order, then COMMIT. The value and the expiry travel ONLY as bound parameters; no statement text contains the value.', source: 'set_config bound-parameter pattern; RB-DELTA-1..3', measuredBy: 'SEQUENCE+BOUND_ONLY' },
   { id: 'OT-7', clause: 'The expiry parameter equals the then-current N09 passed as --valid-until (strict UTC Z form).', source: 'OD-3; N09', measuredBy: 'VALID_UNTIL_EQUALS_N09' },
-  { id: 'OT-8', clause: 'The built N30 depositor is spawned as a child with an argument array (no shell), an allowlisted environment (no privileged material, no value), and receives the auditor DSN on stdin ONLY AFTER COMMIT; on any failure before COMMIT its stdin is closed empty.', source: 'DAG v1.0.4 N30_ADJACENCY_RULE; N30 constraints', measuredBy: 'HANDOFF_AFTER_COMMIT+DEPOSITOR_ARGV_CLEAN+DEPOSITOR_ENV_CLEAN' },
+  { id: 'OT-8', clause: 'The built N30 depositor is spawned as a child with an argument array (no shell) and an allowlisted environment (no privileged material, no value). It receives the auditor DSN on stdin once COMMIT is acknowledged OR once the commit outcome is UNKNOWN (the value may be live, so it must be in custody); its stdin is closed empty ONLY when COMMIT was provably never requested.', source: 'DAG v1.0.4 N30_ADJACENCY_RULE; DAG v1.0.6 COMMIT_OUTCOME_MODEL.N30_CUSTODY_UNDER_COMMIT_OUTCOME_UNKNOWN', measuredBy: 'HANDOFF_AFTER_COMMIT+CANDIDATE_RETAINED_IN_CUSTODY+NO_HANDOFF_WITHOUT_COMMIT+DEPOSITOR_ARGV_CLEAN+DEPOSITOR_ENV_CLEAN' },
   { id: 'OT-9', clause: 'The value never appears in argv, a file, the tool\'s stdout or stderr, or any log.', source: 'WHERE_THE_PASSWORD_MUST_NOT_TRAVEL', measuredBy: 'OUTPUT_CLEAN+FILES_CLEAN+DEPOSITOR_ARGV_CLEAN' },
   { id: 'OT-10', clause: 'The tool prints only non-secret metadata: mint COMMITTED / NOT_COMMITTED, the depositor exit, and the depositor\'s N30 booleans.', source: 'EVIDENCE_MATERIALIZATION (mechanism name only)', measuredBy: 'OUTPUT_CLEAN' },
+  { id: 'OT-12', clause: 'Commit classification: COMMITTED only on an acknowledged COMMIT; DEFINITELY_NOT_COMMITTED only when the transaction never started or the callback failed before completing; every other failure after the callback completed is COMMIT_OUTCOME_UNKNOWN, reported with STOP_COMMIT_OUTCOME_UNKNOWN__CREDENTIAL_MAY_BE_LIVE and exit code 4. The tool prints a non-secret COMMIT_REQUESTED phase line as the last act of the callback and a terminal {mint: <outcome>} line; a run with no terminal line is read as COMMIT_OUTCOME_UNKNOWN.', source: 'DAG v1.0.6 COMMIT_OUTCOME_MODEL (B-1)', measuredBy: 'CLASSIFIED_COMMITTED+CLASSIFIED_DEFINITELY_NOT_COMMITTED+CLASSIFIED_COMMIT_OUTCOME_UNKNOWN+EXIT_IS_STOP' },
   { id: 'OT-11', clause: 'The tool lets go of every reference it can (no global, no cache, process exits promptly). JavaScript strings are not zeroable; this is disclosed, not claimed.', source: 'OF-CUST-1 analogue', measuredBy: null },
 ]
 
@@ -145,4 +146,51 @@ export function findRepositoryHostedLiveMintScripts(files: readonly { path: stri
         !f.text.includes(FAKE_ONLY_GUARD_MARKER)
     )
     .map((f) => f.path)
+}
+
+// ---------------------------------------------------------------------------
+// B-1: THE COMMIT OUTCOME, CLASSIFIED CONSERVATIVELY
+// ---------------------------------------------------------------------------
+
+export const COMMIT_UNKNOWN_TOKEN = 'STOP_COMMIT_OUTCOME_UNKNOWN__CREDENTIAL_MAY_BE_LIVE' as const
+
+export type CommitOutcome = 'COMMITTED' | 'DEFINITELY_NOT_COMMITTED' | 'COMMIT_OUTCOME_UNKNOWN'
+
+/**
+ * The outcome from what the client can KNOW. postgres.js sends COMMIT after the
+ * callback, outside its try: once the callback has completed, any failure may
+ * have happened after the server committed. DEFINITELY_NOT_COMMITTED therefore
+ * needs positive evidence that COMMIT was never requested.
+ */
+export function classifyCommitOutcome(e: {
+  readonly transactionStarted: boolean
+  readonly callbackCompleted: boolean
+  readonly commitAcknowledged: boolean
+}): CommitOutcome {
+  if (e.commitAcknowledged) return 'COMMITTED'
+  if (!e.transactionStarted) return 'DEFINITELY_NOT_COMMITTED'
+  if (!e.callbackCompleted) return 'DEFINITELY_NOT_COMMITTED'
+  return 'COMMIT_OUTCOME_UNKNOWN'
+}
+
+/**
+ * The governed reading of a tool run from its stdout alone. Only a terminal
+ * {mint: <outcome>} line is believed; a run that left none (killed, crashed,
+ * aborted) is COMMIT_OUTCOME_UNKNOWN, because nothing proves COMMIT was not
+ * requested.
+ */
+export function classifyToolRun(stdout: string): { outcome: CommitOutcome; token: string | null; carrier: 'TERMINAL_LINE' | 'NO_TERMINAL_LINE' } {
+  let terminal: { mint?: unknown } | null = null
+  for (const line of stdout.split(/\r?\n/)) {
+    try {
+      const o = JSON.parse(line) as { mint?: unknown }
+      if (typeof o.mint === 'string') terminal = o
+    } catch {
+      /* not a JSON line */
+    }
+  }
+  if (terminal === null) return { outcome: 'COMMIT_OUTCOME_UNKNOWN', token: COMMIT_UNKNOWN_TOKEN, carrier: 'NO_TERMINAL_LINE' }
+  const m = terminal.mint
+  if (m === 'COMMITTED' || m === 'DEFINITELY_NOT_COMMITTED') return { outcome: m, token: null, carrier: 'TERMINAL_LINE' }
+  return { outcome: 'COMMIT_OUTCOME_UNKNOWN', token: COMMIT_UNKNOWN_TOKEN, carrier: 'TERMINAL_LINE' }
 }

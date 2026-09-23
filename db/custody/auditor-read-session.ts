@@ -16,7 +16,7 @@
 //
 // THE STATEMENT ALLOWLIST IS ENFORCED AT RUN TIME. The body receives a `read`
 // that accepts only statements registered in P1_STATEMENTS, not blocked by an
-// open authority conflict, and named by the node. Anything else throws before
+// deferred to PRECHECK-R2, and named by the node. Anything else throws before
 // it reaches the transport, so an unauthorized statement is not merely absent
 // from the source: it cannot be sent.
 
@@ -56,6 +56,8 @@ export interface SessionPreflight {
   readonly kp2: boolean
   readonly targetIdentityArmB: boolean
   readonly sentinel: { environment: string; projectRef: string } | null
+  /** What the SERVER reported for KP-1, verbatim, when it reported exactly one row. */
+  readonly identity: { currentUser: unknown; sessionUser: unknown } | null
 }
 
 export type ReadFn = (id: P1Id) => Promise<readonly Row[]>
@@ -83,7 +85,7 @@ export async function runAuditorReadSession<T>(params: {
 }): Promise<SessionOutcome<T>> {
   const connect = params.connect ?? refuseToConnect
   const issued: string[] = []
-  const pre = { connected: false, kp1: false, kp2: false, targetIdentityArmB: false, sentinel: null as SessionPreflight['sentinel'] }
+  const pre = { connected: false, kp1: false, kp2: false, targetIdentityArmB: false, sentinel: null as SessionPreflight['sentinel'], identity: null as SessionPreflight['identity'] }
   const out = (
     failedAt: SessionFailedAt | null,
     token: SessionOutcome<T>['token'],
@@ -114,9 +116,9 @@ export async function runAuditorReadSession<T>(params: {
     issued.push(sql)
     return transport.query(sql)
   }
-  const allowed = new Set(params.bodyAllowlist.filter((id) => P1_STATEMENTS[id].blockedBy === null))
+  const allowed = new Set(params.bodyAllowlist.filter((id) => P1_STATEMENTS[id].disposition === 'ISSUABLE'))
   const read: ReadFn = async (id) => {
-    if (!allowed.has(id)) throw new UnauthorizedStatement(`statement ${id} is not in this node's allowlist or is blocked by an open authority conflict`)
+    if (!allowed.has(id)) throw new UnauthorizedStatement(`statement ${id} is not in this node's allowlist or is not ISSUABLE`)
     return send(P1_STATEMENTS[id].sql)
   }
 
@@ -127,7 +129,9 @@ export async function runAuditorReadSession<T>(params: {
     await send(BEGIN_READ_ONLY)
     began = true
     step = 'KP-1'
-    pre.kp1 = assertKp1(await send(P1_STATEMENTS.IDENTITY.sql))
+    const identityRows = await send(P1_STATEMENTS.IDENTITY.sql)
+    pre.identity = identityRows.length === 1 ? { currentUser: identityRows[0].current_user, sessionUser: identityRows[0].session_user } : null
+    pre.kp1 = assertKp1(identityRows)
     if (!pre.kp1) result = out('KP-1', 'STOP_AUDITOR_AUTHENTICATION_FAILED', 'SESSION_KP1_IDENTITY_NOT_AUDITOR', null, false)
     if (result === null) {
       step = 'KP-2'

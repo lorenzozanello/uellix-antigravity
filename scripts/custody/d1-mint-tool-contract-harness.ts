@@ -1,48 +1,71 @@
 // scripts/custody/d1-mint-tool-contract-harness.ts
 //
 // MEASURE A CANDIDATE ROUTE-B MINT TOOL AGAINST THE CONTRACT, WITHOUT A
-// DATABASE AND WITHOUT A REAL VALUE.
+// DATABASE, WITHOUT A REAL VALUE AND WITHOUT A REAL TARGET.
 //
 // The candidate is a file OUTSIDE the repository. The harness gives it:
-//   - a FAKE `postgres` driver (it records every call, with its bound
-//     parameters, into a log beside itself, and exports the fake marker);
-//   - a FAKE N30 depositor (it records its argv, its environment and exactly
-//     the bytes it received on stdin, beside itself, and answers like N30);
-//   - a synthetic privileged DSN in UELLIX_D1_MINT_OPERATOR_DATABASE_URL;
+//   - a FAKE `postgres` driver that follows postgres.js's begin() shape
+//     (callback in try with ROLLBACK; COMMIT AFTER the callback, outside the
+//     try) and records every call, with bound parameters, beside itself;
+//   - a FAKE N30 depositor that records its argv, environment and the exact
+//     bytes it received on stdin, beside itself, and answers like N30;
+//   - a synthetic privileged DSN and --target-host naming an RFC 6761
+//     `.invalid` host, so nothing in the harness names or could reach a real
+//     project;
 //   - a working directory and TEMP/TMP of its own, which are searched after.
-// The value the tool generates is synthetic by construction (the driver is
-// fake, so nothing it "sets" exists anywhere), and it is recovered from the
-// fake driver's log to check where else it went.
+//
+// SCENARIOS pressure every commit boundary B-1 of the recertification named:
+//   SUCCESS                   COMMIT acknowledged.
+//   FAILS_BEFORE_TRANSACTION  BEGIN fails: no transaction, nothing committed.
+//   MINT_FAILS                the DO block fails inside the callback: ROLLBACK,
+//                             COMMIT never requested.
+//   COMMIT_TRANSPORT_LOST     the callback completes and the connection is lost
+//                             on COMMIT: the server may have committed.
+//   KILLED_DURING_COMMIT      the process dies on COMMIT: no terminal line.
+//   UNPINNED_TARGET           the privileged connection names another host.
 //
 // It cannot see everything: a candidate could open a socket of its own or
 // write outside the directories it was given. The harness measures the
-// clauses OPERATOR_TOOL_CONTRACT marks `measuredBy`, and the rest stay
-// statements for the certifier.
+// clauses OPERATOR_TOOL_CONTRACT marks `measuredBy`.
 
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
-import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from '../../db/hosted/target-identity'
 import { checkDsnShape } from '../../db/custody/production-custody'
-import { ROUTE_B_ROLE, ROUTE_B_STATEMENTS } from '../../db/custody/mint-route-b-contract'
+import { COMMIT_UNKNOWN_TOKEN, ROUTE_B_ROLE, ROUTE_B_STATEMENTS, classifyToolRun } from '../../db/custody/mint-route-b-contract'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 
-export type Scenario = 'SUCCESS' | 'MINT_FAILS' | 'UNPINNED_TARGET'
+export type Scenario = 'SUCCESS' | 'FAILS_BEFORE_TRANSACTION' | 'MINT_FAILS' | 'COMMIT_TRANSPORT_LOST' | 'KILLED_DURING_COMMIT' | 'UNPINNED_TARGET'
 type State = 'PASSED' | 'FAILED'
+
+/** The only target the harness ever names. RFC 6761: guaranteed never to resolve. */
+export const HARNESS_TARGET_HOST = 'db.harness-target.invalid'
+const OTHER_HOST = 'db.harness-other.invalid'
 
 const FAKE_DRIVER = `'use strict'
 const fs = require('node:fs'); const path = require('node:path')
 const LOG = path.join(__dirname, 'driver-log.jsonl')
 const rec = (o) => fs.appendFileSync(LOG, JSON.stringify({ at: Date.now(), ...o }) + '\\n')
-const failDo = fs.existsSync(path.join(__dirname, 'FAIL_DO'))
+const flag = (n) => fs.existsSync(path.join(__dirname, n))
 module.exports = function postgres(url, opts) {
   rec({ event: 'construct', host: new URL(url).hostname, ssl: opts && opts.ssl, prepare: opts && opts.prepare })
   const q = (strings, ...values) => { const text = strings.reduce((a, s, i) => a + (i ? '$' + i : '') + s, ''); rec({ event: 'query', text, params: values }); return Promise.resolve([]) }
-  q.unsafe = (text, params) => { rec({ event: 'unsafe', text, params: params || [] }); if (failDo && text.includes('DO $rotate$')) return Promise.reject(Object.assign(new Error('fake failure'), { code: 'XX000' })); return Promise.resolve([]) }
+  q.unsafe = (text, params) => { rec({ event: 'unsafe', text, params: params || [] }); if (flag('FAIL_DO') && text.includes('DO $rotate$')) return Promise.reject(Object.assign(new Error('fake failure'), { code: 'XX000' })); return Promise.resolve([]) }
   return {
-    // COMMIT is HELD for 1.5s, so a value handed to the depositor before COMMIT
-    // has time to arrive there first and its arrival timestamp precedes COMMIT.
-    begin: async (fn) => { rec({ event: 'BEGIN' }); try { const r = await fn(q); await new Promise((res) => setTimeout(res, 1500)); rec({ event: 'COMMIT' }); return r } catch (e) { rec({ event: 'ROLLBACK' }); throw e } },
+    // postgres.js scope(): callback inside try/catch with ROLLBACK; COMMIT after it, OUTSIDE the try.
+    begin: async (fn) => {
+      if (flag('FAIL_BEGIN')) { rec({ event: 'BEGIN_FAILED' }); throw Object.assign(new Error('fake begin failure'), { code: 'ECONNREFUSED' }) }
+      rec({ event: 'BEGIN' })
+      let r
+      try { r = await fn(q) } catch (e) { rec({ event: 'ROLLBACK' }); throw e }
+      // COMMIT is HELD 1.5s so a value handed over before COMMIT arrives first.
+      await new Promise((res) => setTimeout(res, 1500))
+      rec({ event: 'COMMIT_REQUESTED' })
+      if (flag('KILL_AT_COMMIT')) process.exit(137)
+      if (flag('FAIL_COMMIT')) { rec({ event: 'COMMIT_LOST' }); throw Object.assign(new Error('fake connection lost'), { code: 'CONNECTION_CLOSED' }) }
+      rec({ event: 'COMMIT' })
+      return r
+    },
     unsafe: q.unsafe,
     end: async () => { rec({ event: 'end' }) },
   }
@@ -64,6 +87,13 @@ process.stdin.on('end', () => {
 })
 `
 
+const FLAG_FOR: Partial<Record<Scenario, string>> = {
+  FAILS_BEFORE_TRANSACTION: 'FAIL_BEGIN',
+  MINT_FAILS: 'FAIL_DO',
+  COMMIT_TRANSPORT_LOST: 'FAIL_COMMIT',
+  KILLED_DURING_COMMIT: 'KILL_AT_COMMIT',
+}
+
 function filesUnder(dir: string): string[] {
   if (!existsSync(dir)) return []
   const out: string[] = []
@@ -80,6 +110,8 @@ export interface HarnessResult {
   readonly checks: Readonly<Record<string, State>>
   readonly overall: 'CONFORMS' | 'DOES_NOT_CONFORM'
   readonly toolExit: number | null
+  /** The governed classification of the run, from the tool's own output only. */
+  readonly classification: ReturnType<typeof classifyToolRun>
 }
 
 export function runMintToolContractHarness(params: {
@@ -104,15 +136,13 @@ export function runMintToolContractHarness(params: {
   writeFileSync(join(driverRoot, 'package.json'), '{"name":"harness-driver-root","private":true}')
   writeFileSync(join(driverDir, 'package.json'), '{"name":"postgres","main":"index.js"}')
   writeFileSync(join(driverDir, 'index.js'), FAKE_DRIVER)
-  if (params.scenario === 'MINT_FAILS') writeFileSync(join(driverDir, 'FAIL_DO'), '')
+  const flag = FLAG_FOR[params.scenario]
+  if (flag !== undefined) writeFileSync(join(driverDir, flag), '')
   const depositor = join(depositorDir, 'fake-n30-deposit.js')
   writeFileSync(depositor, FAKE_DEPOSITOR)
 
   const adminPassword = `harness-admin-${Date.now().toString(36)}-synthetic`
-  const host =
-    params.scenario === 'UNPINNED_TARGET'
-      ? `db.${KNOWN_PRODUCTION_IDENTIFIERS.projectRefs[0] ?? 'abcdefghijklmnopqrst'}.supabase.co`
-      : `db.${KNOWN_STAGING_PROJECT_REF}.supabase.co`
+  const host = params.scenario === 'UNPINNED_TARGET' ? OTHER_HOST : HARNESS_TARGET_HOST
   const adminUrl = ['postgresql:', '//postgres:', adminPassword, '@', host, ':5432/postgres'].join('')
 
   const env: Record<string, string> = { UELLIX_D1_MINT_OPERATOR_DATABASE_URL: adminUrl, TEMP: temp, TMP: temp }
@@ -120,14 +150,13 @@ export function runMintToolContractHarness(params: {
     const val = process.env[k]
     if (val !== undefined) env[k] = val
   }
-  const run = spawnSync(process.execPath, [resolvePath(params.toolPath), `--driver-root=${driverRoot}`, `--depositor=${depositor}`, `--valid-until=${params.validUntil}`], {
-    cwd,
-    env: env as NodeJS.ProcessEnv,
-    encoding: 'utf8',
-    timeout: 60_000,
-    windowsHide: true,
-  })
+  const run = spawnSync(
+    process.execPath,
+    [resolvePath(params.toolPath), `--driver-root=${driverRoot}`, `--depositor=${depositor}`, `--valid-until=${params.validUntil}`, `--target-host=${HARNESS_TARGET_HOST}`],
+    { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', timeout: 60_000, windowsHide: true }
+  )
   const toolOutput = `${run.stdout ?? ''}${run.stderr ?? ''}`
+  const classification = classifyToolRun(run.stdout ?? '')
 
   const driverLog = join(driverDir, 'driver-log.jsonl')
   const events = existsSync(driverLog)
@@ -141,11 +170,26 @@ export function runMintToolContractHarness(params: {
   const reps = secret === null ? [] : [secret, Buffer.from(secret).toString('base64')]
   const leaks = (text: string): boolean => reps.some((r) => text.includes(r))
   const adminLeaks = (text: string): boolean => text.includes(adminPassword) || text.includes(adminUrl)
+  const expectedDsn = secret === null ? null : ['postgresql:', `//${ROUTE_B_ROLE}:`, secret, `@${HARNESS_TARGET_HOST}:5432/postgres`].join('')
+  const received = dep?.stdin.replace(/\r?\n$/, '') ?? ''
+  const handedOver = dep !== null && received === expectedDsn && checkDsnShape(Buffer.from(received), 'synthetic') === null && (dep.stdin.match(/\n/g)?.length ?? 0) <= 1
 
   if (params.scenario === 'UNPINNED_TARGET') {
     checks.REFUSES_UNPINNED_TARGET = pf(run.status !== 0 && events.length === 0 && !adminLeaks(toolOutput))
+  } else if (params.scenario === 'FAILS_BEFORE_TRANSACTION') {
+    checks.SEQUENCE = pf(JSON.stringify(events.map((e) => e.event)) === JSON.stringify(['construct', 'BEGIN_FAILED', 'end']))
+    checks.CLASSIFIED_DEFINITELY_NOT_COMMITTED = pf(classification.outcome === 'DEFINITELY_NOT_COMMITTED')
+    checks.NO_HANDOFF_WITHOUT_COMMIT = pf(dep !== null && dep.stdin.length === 0)
+    checks.OUTPUT_CLEAN = pf(!adminLeaks(toolOutput))
+    checks.EXIT = pf(run.status !== 0)
   } else {
     const shape = events.map((e) => (e.event === 'query' || e.event === 'unsafe' ? `${e.event}:${e.text}` : e.event))
+    const tail: Record<string, string[]> = {
+      SUCCESS: ['COMMIT_REQUESTED', 'COMMIT', 'end'],
+      MINT_FAILS: ['ROLLBACK', 'end'],
+      COMMIT_TRANSPORT_LOST: ['COMMIT_REQUESTED', 'COMMIT_LOST', 'end'],
+      KILLED_DURING_COMMIT: ['COMMIT_REQUESTED'],
+    }
     const expected = [
       'construct',
       'BEGIN',
@@ -153,8 +197,7 @@ export function runMintToolContractHarness(params: {
       `query:${ROUTE_B_STATEMENTS.SET_PASSWORD}`,
       `query:${ROUTE_B_STATEMENTS.SET_VALID_UNTIL}`,
       `unsafe:${ROUTE_B_STATEMENTS.DO_BLOCK}`,
-      params.scenario === 'MINT_FAILS' ? 'ROLLBACK' : 'COMMIT',
-      'end',
+      ...tail[params.scenario]!,
     ]
     checks.SEQUENCE = pf(JSON.stringify(shape) === JSON.stringify(expected))
     checks.TLS_REQUIRED = pf(events[0]?.ssl === 'require')
@@ -174,25 +217,33 @@ export function runMintToolContractHarness(params: {
     checks.OUTPUT_CLEAN = pf(!leaks(toolOutput) && !adminLeaks(toolOutput))
     const toolFiles = [...filesUnder(cwd), ...filesUnder(temp)]
     checks.FILES_CLEAN = pf(toolFiles.every((f) => !leaks(readFileSync(f, 'latin1')) && !adminLeaks(readFileSync(f, 'latin1'))))
-    checks.DEPOSITOR_ARGV_CLEAN = pf(dep !== null && !dep.argv.some((a) => leaks(a) || adminLeaks(a)))
-    checks.DEPOSITOR_ENV_CLEAN = pf(
-      dep !== null &&
-        dep.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL === undefined &&
-        Object.values(dep.env).every((v) => !leaks(v) && !adminLeaks(v))
-    )
+    if (params.scenario !== 'KILLED_DURING_COMMIT') {
+      checks.DEPOSITOR_ARGV_CLEAN = pf(dep !== null && !dep.argv.some((a) => leaks(a) || adminLeaks(a)))
+      checks.DEPOSITOR_ENV_CLEAN = pf(
+        dep !== null && dep.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL === undefined && Object.values(dep.env).every((v) => !leaks(v) && !adminLeaks(v))
+      )
+    }
+    const commitRequestedAt = events.find((e) => e.event === 'COMMIT_REQUESTED')?.at ?? Number.POSITIVE_INFINITY
     if (params.scenario === 'SUCCESS') {
       const commitAt = events.find((e) => e.event === 'COMMIT')?.at ?? Number.POSITIVE_INFINITY
-      const line = dep?.stdin.replace(/\r?\n$/, '') ?? ''
-      const expectedDsn = secret === null ? null : ['postgresql:', `//${ROUTE_B_ROLE}:`, secret, `@db.${KNOWN_STAGING_PROJECT_REF}.supabase.co:5432/postgres`].join('')
-      checks.HANDOFF_AFTER_COMMIT = pf(
-        dep !== null && dep.at >= commitAt && line === expectedDsn && checkDsnShape(Buffer.from(line), 'production') === null && (dep.stdin.match(/\n/g)?.length ?? 0) <= 1
-      )
+      checks.HANDOFF_AFTER_COMMIT = pf(handedOver && dep !== null && dep.at >= commitAt)
+      checks.CLASSIFIED_COMMITTED = pf(classification.outcome === 'COMMITTED')
       checks.EXIT = pf(run.status === 0)
-    } else {
+    } else if (params.scenario === 'MINT_FAILS') {
+      checks.CLASSIFIED_DEFINITELY_NOT_COMMITTED = pf(classification.outcome === 'DEFINITELY_NOT_COMMITTED')
       checks.NO_HANDOFF_WITHOUT_COMMIT = pf(dep !== null && dep.stdin.length === 0)
       checks.EXIT = pf(run.status !== 0)
+    } else if (params.scenario === 'COMMIT_TRANSPORT_LOST') {
+      // B-1: an unacknowledged COMMIT is UNKNOWN, and the possibly-live value goes into custody.
+      checks.CLASSIFIED_COMMIT_OUTCOME_UNKNOWN = pf(classification.outcome === 'COMMIT_OUTCOME_UNKNOWN' && classification.token === COMMIT_UNKNOWN_TOKEN)
+      checks.CANDIDATE_RETAINED_IN_CUSTODY = pf(handedOver && dep !== null && dep.at >= commitRequestedAt)
+      checks.EXIT_IS_STOP = pf(run.status === 4)
+    } else {
+      // KILLED_DURING_COMMIT: the tool leaves no terminal line; the governed reading is UNKNOWN, carrier lost.
+      checks.CLASSIFIED_COMMIT_OUTCOME_UNKNOWN = pf(classification.outcome === 'COMMIT_OUTCOME_UNKNOWN' && classification.carrier === 'NO_TERMINAL_LINE')
+      checks.NO_VALUE_ESCAPED = pf(dep === null || dep.stdin.length === 0 || handedOver)
     }
   }
   const overall = Object.values(checks).every((s) => s === 'PASSED') ? 'CONFORMS' : 'DOES_NOT_CONFORM'
-  return { scenario: params.scenario, checks, overall, toolExit: run.status }
+  return { scenario: params.scenario, checks, overall, toolExit: run.status, classification }
 }

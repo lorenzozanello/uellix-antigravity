@@ -21,12 +21,17 @@
 //                 is declared as a realization for independent review, never
 //                 passed off as a quotation.
 //
-// AUTHORITY CONFLICTS ARE NOT RESOLVED HERE. Where the authority requires a
-// read its own exhaustive list does not contain, or a read that raises on the
-// state the authority expects, the statement is registered as BLOCKED with its
-// conflict id and NO node issues it. The node then cannot meet its exit, which
-// is the fail-closed outcome: nothing is measured by an unauthorized read, and
-// nothing is reported as measured that was not.
+//   SUCCESSOR_PINNED  the statement is NOT in the original exhaustive list. It
+//                 is authorized by a successor amendment (DAG v1.0.6
+//                 SUCCESSOR_AUTHORIZED_SQL, from the owner's AC-1 decision),
+//                 and its text is byte-compared to that amendment by test. It is
+//                 never presented as part of the original list.
+//
+// THE CONFLICTS v1.0.5 DECLARED ARE RULED IN v1.0.6 (see AUTHORITY_CONFLICTS
+// below): AC-1 authorized TABLE_PRIVILEGES; AC-2 was refuted (REACH stays keyed,
+// and PV-14 rests on ac2ReachabilityProof); AC-3 deferred FUNCTION_EXECUTE to
+// PRECHECK-R2. A statement whose disposition is not ISSUABLE is never sent by
+// any node; the read session enforces it at run time.
 
 export const AUDITOR = 'uellix_auditor'
 
@@ -72,27 +77,35 @@ export type P1Id =
 
 export type ConflictId = 'AC-1' | 'AC-2' | 'AC-3'
 
+export type Disposition = 'ISSUABLE' | 'DEFERRED_TO_PRECHECK_R2'
+
 export interface P1Statement {
   readonly id: P1Id
   readonly sql: string
-  /** Index into PHASE_P1_OBSERVATION_ONLY_READS, or null when the authority has no entry (AC-1). */
+  /** Index into PHASE_P1_OBSERVATION_ONLY_READS, or null when the original list has no entry. */
   readonly authorityIndex: number | null
-  readonly form: 'VERBATIM' | 'DESCRIBED' | 'NOT_IN_AUTHORITY'
-  /** A statement with an open conflict is never issued by any node. */
-  readonly blockedBy: ConflictId | null
+  readonly form: 'VERBATIM' | 'DESCRIBED' | 'SUCCESSOR_PINNED'
+  /** Which authority authorizes the text: the original exhaustive list, or the successor amendment. */
+  readonly authority: 'ORIGINAL_P1' | 'SUCCESSOR_V1_0_6_AC1'
+  /** Only ISSUABLE statements are ever sent. */
+  readonly disposition: Disposition
+  /** The conflict ruling that governs the statement, if any. */
+  readonly ruling: ConflictId | null
 }
 
 export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
-  IDENTITY: { id: 'IDENTITY', sql: 'SELECT current_user, session_user', authorityIndex: 0, form: 'VERBATIM', blockedBy: null },
-  READ_ONLY: { id: 'READ_ONLY', sql: "SELECT current_setting('transaction_read_only')", authorityIndex: 1, form: 'VERBATIM', blockedBy: null },
-  SERVER_VERSION: { id: 'SERVER_VERSION', sql: "SELECT current_setting('server_version_num')", authorityIndex: 2, form: 'VERBATIM', blockedBy: null },
-  SENTINEL: { id: 'SENTINEL', sql: 'SELECT environment, project_ref FROM uellix_bootstrap.staging_sentinel', authorityIndex: 3, form: 'VERBATIM', blockedBy: null },
+  IDENTITY: { id: 'IDENTITY', sql: 'SELECT current_user, session_user', authorityIndex: 0, form: 'VERBATIM', authority: 'ORIGINAL_P1', disposition: 'ISSUABLE', ruling: null },
+  READ_ONLY: { id: 'READ_ONLY', sql: "SELECT current_setting('transaction_read_only')", authorityIndex: 1, form: 'VERBATIM', authority: 'ORIGINAL_P1', disposition: 'ISSUABLE', ruling: null },
+  SERVER_VERSION: { id: 'SERVER_VERSION', sql: "SELECT current_setting('server_version_num')", authorityIndex: 2, form: 'VERBATIM', authority: 'ORIGINAL_P1', disposition: 'ISSUABLE', ruling: null },
+  SENTINEL: { id: 'SENTINEL', sql: 'SELECT environment, project_ref FROM uellix_bootstrap.staging_sentinel', authorityIndex: 3, form: 'VERBATIM', authority: 'ORIGINAL_P1', disposition: 'ISSUABLE', ruling: null },
   ROLE_ATTRIBUTES: {
     id: 'ROLE_ATTRIBUTES',
     sql: "SELECT rolcanlogin, rolsuper, rolbypassrls, rolcreatedb, rolcreaterole, rolreplication, rolinherit, rolconnlimit, rolvaliduntil FROM pg_catalog.pg_roles WHERE rolname = 'uellix_auditor'",
     authorityIndex: 4,
     form: 'VERBATIM',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
   MEMBERSHIPS: {
     id: 'MEMBERSHIPS',
@@ -102,7 +115,9 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       "LEFT JOIN pg_catalog.pg_roles g ON g.oid = am.grantor WHERE r.rolname = 'uellix_auditor' OR m.rolname = 'uellix_auditor'",
     authorityIndex: 5,
     form: 'DESCRIBED',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
   REACH: {
     id: 'REACH',
@@ -115,7 +130,9 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       `FROM pg_catalog.pg_roles r WHERE r.rolname = ANY (ARRAY[${q(EP3_NAMED_ROLES)}])`,
     authorityIndex: 6,
     form: 'DESCRIBED',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
   DATABASE_PRIVILEGES: {
     id: 'DATABASE_PRIVILEGES',
@@ -126,7 +143,9 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       "pg_catalog.has_database_privilege('public', current_database(), 'TEMP') AS public_temp",
     authorityIndex: 7,
     form: 'DESCRIBED',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
   SCHEMA_PRIVILEGES: {
     id: 'SCHEMA_PRIVILEGES',
@@ -139,9 +158,11 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       `FROM unnest(ARRAY[${q(EP5_NAMED_SCHEMAS)}]) AS s(name)`,
     authorityIndex: 8,
     form: 'DESCRIBED',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
-  STELLA_OPS_EXISTS: { id: 'STELLA_OPS_EXISTS', sql: "SELECT pg_catalog.to_regnamespace('uellix_stella_ops') IS NOT NULL", authorityIndex: 9, form: 'VERBATIM', blockedBy: null },
+  STELLA_OPS_EXISTS: { id: 'STELLA_OPS_EXISTS', sql: "SELECT pg_catalog.to_regnamespace('uellix_stella_ops') IS NOT NULL", authorityIndex: 9, form: 'VERBATIM', authority: 'ORIGINAL_P1', disposition: 'ISSUABLE', ruling: null },
   OWNERSHIP: {
     id: 'OWNERSHIP',
     sql:
@@ -151,14 +172,18 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       "(SELECT count(*) FROM pg_catalog.pg_type WHERE typowner = 'uellix_auditor'::regrole) AS types",
     authorityIndex: 10,
     form: 'DESCRIBED',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
   DATDBA: {
     id: 'DATDBA',
     sql: "SELECT datdba = 'uellix_auditor'::regrole FROM pg_catalog.pg_database WHERE datname = current_database()",
     authorityIndex: 11,
     form: 'VERBATIM',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
   DEFAULT_ACL: {
     id: 'DEFAULT_ACL',
@@ -168,7 +193,9 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       "WHERE a.grantee = 'uellix_auditor'::regrole",
     authorityIndex: 12,
     form: 'DESCRIBED',
-    blockedBy: null,
+    authority: 'ORIGINAL_P1',
+    disposition: 'ISSUABLE',
+    ruling: null,
   },
   FUNCTION_EXECUTE: {
     id: 'FUNCTION_EXECUTE',
@@ -177,7 +204,10 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       `pg_catalog.has_function_privilege('uellix_auditor', '${SEVEN_ARGUMENT_PREDECESSOR_LITERAL}', 'EXECUTE') AS seven_execute`,
     authorityIndex: 13,
     form: 'DESCRIBED',
-    blockedBy: 'AC-3',
+    authority: 'ORIGINAL_P1',
+    // AC-3 (owner): never issued in this DAG; verified, if at all, by PRECHECK-R2.
+    disposition: 'DEFERRED_TO_PRECHECK_R2',
+    ruling: 'AC-3',
   },
   TABLE_PRIVILEGES: {
     id: 'TABLE_PRIVILEGES',
@@ -189,8 +219,11 @@ export const P1_STATEMENTS: Readonly<Record<P1Id, P1Statement>> = {
       "pg_catalog.has_table_privilege('uellix_auditor', 'uellix_bootstrap.staging_sentinel', 'TRUNCATE') AS sentinel_truncate, " +
       "pg_catalog.has_table_privilege('uellix_auditor', 'public.users', 'SELECT') AS users_select",
     authorityIndex: null,
-    form: 'NOT_IN_AUTHORITY',
-    blockedBy: 'AC-1',
+    form: 'SUCCESSOR_PINNED',
+    // AC-1 (owner): the six (relation, privilege) pairs, for uellix_auditor, for N14 and N22 only.
+    authority: 'SUCCESSOR_V1_0_6_AC1',
+    disposition: 'ISSUABLE',
+    ruling: 'AC-1',
   },
 }
 
@@ -202,6 +235,11 @@ export interface AuthorityConflict {
   readonly basis: 'READ_FROM_THE_AUTHORITY' | 'DERIVED_FROM_DOCUMENTED_ENGINE_SEMANTICS_UNMEASURED'
 }
 
+/**
+ * The conflicts AS DECLARED in DAG v1.0.5 (history, unchanged). Their rulings
+ * live in DAG v1.0.6 AUTHORITY_CONFLICT_RULINGS; the effective state is
+ * computed across the amendment chain by scripts/custody/d1-pre-hc1-post-mint.ts.
+ */
 export const AUTHORITY_CONFLICTS: readonly AuthorityConflict[] = [
   {
     id: 'AC-1',
@@ -229,8 +267,35 @@ export const AUTHORITY_CONFLICTS: readonly AuthorityConflict[] = [
   },
 ]
 
-/** The statements a node may issue: the ones it names, minus every blocked one. */
-export function issuable(ids: readonly P1Id[]): { issued: P1Statement[]; blocked: P1Statement[] } {
+/** The statements a node may issue: the ones it names that are ISSUABLE; the rest are reported, never sent. */
+export function issuable(ids: readonly P1Id[]): { issued: P1Statement[]; deferred: P1Statement[] } {
   const all = ids.map((id) => P1_STATEMENTS[id])
-  return { issued: all.filter((s) => s.blockedBy === null), blocked: all.filter((s) => s.blockedBy !== null) }
+  return { issued: all.filter((s) => s.disposition === 'ISSUABLE'), deferred: all.filter((s) => s.disposition !== 'ISSUABLE') }
+}
+
+/** The owner's AC-1 surface: the ONLY (relation, privilege) pairs any statement may name in has_table_privilege. */
+export const AC1_AUTHORIZED_SURFACE: Readonly<Record<string, readonly string[]>> = {
+  'uellix_bootstrap.staging_sentinel': ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE'],
+  'public.users': ['SELECT'],
+}
+
+/**
+ * AC-2, REFUTED by DAG v1.0.6 as a TECHNICAL ruling. pg_has_role(u, r, ...)
+ * for r other than u is true only if u is a superuser or r is in u's membership
+ * closure, which is built from pg_auth_members edges with u as MEMBER plus the
+ * implicit pg_database_owner membership of datdba. So with rolsuper false, zero
+ * edges as member and datdba not u, NO other role is reachable, uellix_cap_* or
+ * otherwise, and no enumeration is needed. Every condition must be OBSERVED
+ * true; an unobserved (null, undefined, non-boolean) condition fails.
+ */
+export function ac2ReachabilityProof(i: {
+  readonly rolsuper: unknown
+  readonly membershipEdgesAsMember: number | null
+  readonly datdbaIsAuditor: unknown
+}): { readonly holds: boolean; readonly failed: readonly string[] } {
+  const failed: string[] = []
+  if (i.rolsuper !== false) failed.push('rolsuper is not observed false')
+  if (i.membershipEdgesAsMember !== 0) failed.push('membership edges with uellix_auditor as MEMBER are not observed zero')
+  if (i.datdbaIsAuditor !== false) failed.push('datdba is not observed to be a role other than uellix_auditor')
+  return { holds: failed.length === 0, failed }
 }

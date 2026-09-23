@@ -13,6 +13,8 @@
 // route analysis (section 9) as frozen, non-secret data, so the execution
 // record can cite it and a test can pin it.
 
+import { classifyCommitOutcome, type CommitOutcome } from '../../db/custody/mint-route-b-contract'
+
 export type N11Status =
   | 'NOT_EXECUTED'
   | 'FAILED_BEFORE_ACCEPTANCE'
@@ -113,7 +115,7 @@ export function compensationGate(params: {
 // THE POST-MINT STATES
 // ---------------------------------------------------------------------------
 
-export type CredentialExistence = 'NO_NEW_CREDENTIAL' | 'LIVE_ON_TARGET' | 'LIVE_ON_TARGET_UNUSABLE_OR_UNPROVEN'
+export type CredentialExistence = 'NO_NEW_CREDENTIAL' | 'LIVE_ON_TARGET' | 'LIVE_ON_TARGET_UNUSABLE_OR_UNPROVEN' | 'MAY_BE_LIVE'
 
 export interface PostMintScenario {
   readonly id: string
@@ -129,6 +131,10 @@ export interface PostMintScenario {
   /** Whether a rotation must eventually happen (never automatically). */
   readonly rotate_again: 'NOT_REQUIRED' | 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW' | 'REQUIRED_AT_N28_UNDER_FRESH_HC1'
   readonly automatic_credential_mutation: false
+  /** The dedicated STOP token of the state, when it has one. */
+  readonly token?: string
+  /** May the governed removal path remove the WCM entry in this state? Never under an unknown commit. */
+  readonly wcm_removal_permitted: boolean
 }
 
 const PN_ONLY = 'AVAILABLE_ONLY_UNDER_HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL' as const
@@ -142,15 +148,44 @@ const PN_ONLY = 'AVAILABLE_ONLY_UNDER_HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL'
 export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
   {
     id: 'PM-0',
-    boundary: 'Route B transaction, before COMMIT',
-    scenario: 'The mint fails or is refused (STOP_CREDENTIAL_MUTATION_FAILED, STOP_AUDITOR_ROLE_ABSENT), or the operator aborts before COMMIT',
+    boundary: 'Route B transaction, COMMIT provably never requested',
+    scenario: 'DEFINITELY_NOT_COMMITTED: BEGIN failed, or the callback failed before completing (STOP_CREDENTIAL_MUTATION_FAILED, STOP_AUDITOR_ROLE_ABSENT), or the operator aborted inside the callback — in every case postgres.js never sent COMMIT',
     credential: 'NO_NEW_CREDENTIAL',
     may_exist_in: ['the mint tool heap until it exits (never valid anywhere)'],
-    next: 'Nothing to compensate: the transaction rolled back and the transaction-local GUC died with it. The tool closes the depositor stdin empty (harness check NO_HANDOFF_WITHOUT_COMMIT). A retry is a new MR-2 act.',
+    next: 'The transaction rolled back (or never began) and the transaction-local GUC died with it. The tool closes the depositor stdin empty (harness NO_HANDOFF_WITHOUT_COMMIT). A retry is a new MR-2 act under a fresh HC-1. This is the ONLY state in which nothing is compensated, and it requires positive evidence that COMMIT was never requested.',
     fresh_hc1_required_before_any_credential_mutation: true,
     password_null: 'NOT_APPLICABLE',
     rotate_again: 'NOT_REQUIRED',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
+  },
+  {
+    id: 'PM-0U',
+    boundary: 'Route B COMMIT requested, acknowledgement not received',
+    scenario: 'COMMIT_OUTCOME_UNKNOWN with the candidate deposited: explicit error on COMMIT, lost connection, timeout or transport ambiguity after the callback completed',
+    credential: 'MAY_BE_LIVE',
+    may_exist_in: ['the target (possibly, as a verifier)', 'the WCM entry (the candidate, deposited under N30_CUSTODY_UNDER_COMMIT_OUTCOME_UNKNOWN)'],
+    next: 'STOP with STOP_COMMIT_OUTCOME_UNKNOWN__CREDENTIAL_MAY_BE_LIVE. The candidate is RETAINED in the WCM entry; it is not removed because an acknowledgement was lost. N11 is not closed. RECONCILIATION_AUTHORITY_REQUIRED: no authority defines how an unknown commit is resolved, and N13 is not authorized without N11 act exit. Any credential mutation (ROTATE AGAIN, PASSWORD NULL) waits for its own confirmation; nothing is automatic.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
+    automatic_credential_mutation: false,
+    token: 'STOP_COMMIT_OUTCOME_UNKNOWN__CREDENTIAL_MAY_BE_LIVE',
+    wcm_removal_permitted: false,
+  },
+  {
+    id: 'PM-0K',
+    boundary: 'Route B COMMIT requested, tool dead before the depositor held the value',
+    scenario: 'COMMIT_OUTCOME_UNKNOWN with the carrier lost: the process was killed, crashed or aborted after the COMMIT request point and left no terminal line',
+    credential: 'MAY_BE_LIVE',
+    may_exist_in: ['the target (possibly, as a verifier)', 'nowhere readable: the value died with the tool heap'],
+    next: 'STOP with STOP_COMMIT_OUTCOME_UNKNOWN__CREDENTIAL_MAY_BE_LIVE. A possibly-live value with no carrier cannot be delivered or reconciled; it can only be withdrawn: ROTATE AGAIN under a fresh HC-1, or PASSWORD NULL under HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL. Neither is automatic. VALID UNTIL bounds the exposure and substitutes for neither.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
+    automatic_credential_mutation: false,
+    token: 'STOP_COMMIT_OUTCOME_UNKNOWN__CREDENTIAL_MAY_BE_LIVE',
+    wcm_removal_permitted: false,
   },
   {
     id: 'PM-1',
@@ -163,6 +198,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
   },
   {
     id: 'PM-2',
@@ -175,6 +211,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: true,
   },
   {
     id: 'PM-3',
@@ -187,6 +224,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: true,
   },
   {
     id: 'PM-4',
@@ -199,6 +237,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
   },
   {
     id: 'PM-5',
@@ -211,6 +250,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: true,
   },
   {
     id: 'PM-6',
@@ -223,6 +263,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
   },
   {
     id: 'PM-7',
@@ -235,6 +276,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
   },
   {
     id: 'PM-8',
@@ -247,6 +289,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
   },
   {
     id: 'PM-9',
@@ -259,6 +302,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
   },
   {
     id: 'PM-10',
@@ -271,6 +315,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: true,
   },
   {
     id: 'PM-11',
@@ -283,6 +328,7 @@ export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
     password_null: PN_ONLY,
     rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
     automatic_credential_mutation: false,
+    wcm_removal_permitted: false,
   },
 ]
 
@@ -346,3 +392,66 @@ export const MINT_ROUTES: readonly MintRoute[] = [
  */
 export const MINT_ROUTE_DECISION_STATUS = 'RATIFIED_B_SQL_BOUND_PARAMETER' as const
 export const MINT_ROUTE_OWNER_DECISION_FILE = 'docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0.json'
+
+// ---------------------------------------------------------------------------
+// B-1: THE COMMIT FAILURE MATRIX
+// ---------------------------------------------------------------------------
+
+export interface CommitFailureRow {
+  readonly id: string
+  readonly failure: string
+  readonly evidence: { transactionStarted: boolean; callbackCompleted: boolean; commitAcknowledged: boolean }
+  readonly outcome: CommitOutcome
+  readonly credential_may_exist: boolean
+  readonly wcm_candidate: 'ABSENT' | 'RETAINED' | 'ABSENT_CARRIER_LOST' | 'PRESENT_AFTER_N30'
+  readonly state: 'PM-0' | 'PM-0U' | 'PM-0K' | 'PROCEED_TO_N30_EXIT_CHECK'
+  readonly allowed_next_act: string
+  readonly human_confirmation_needed_for_any_credential_mutation: true
+  readonly fresh_hc1_needed_for_rotate_again: true
+  readonly password_null_confirmation_needed: boolean
+}
+
+const ev = (transactionStarted: boolean, callbackCompleted: boolean, commitAcknowledged: boolean) => ({ transactionStarted, callbackCompleted, commitAcknowledged })
+
+/**
+ * Each row's outcome is COMPUTED by classifyCommitOutcome from the evidence the
+ * client actually has, never typed. A row whose failure the client cannot place
+ * before the COMMIT request point carries callbackCompleted = true, and is
+ * therefore UNKNOWN: no branch labels an uncertain state DEFINITELY_NOT_COMMITTED.
+ */
+export const COMMIT_FAILURE_MATRIX: readonly CommitFailureRow[] = (
+  [
+    ['CF-1', 'failure before the transaction (connect or BEGIN fails)', ev(false, false, false), 'ABSENT', 'PM-0', 'Close the depositor stdin empty; a retry is a new MR-2 act under a fresh HC-1.'],
+    ['CF-2', 'failure before the credential statement (SET_ROLE fails)', ev(true, false, false), 'ABSENT', 'PM-0', 'As CF-1.'],
+    ['CF-3', 'the credential statement errors (DO block raises)', ev(true, false, false), 'ABSENT', 'PM-0', 'As CF-1.'],
+    ['CF-4', 'failure after the callback completed, before the driver provably sent COMMIT', ev(true, true, false), 'RETAINED', 'PM-0U', 'STOP; retain the deposited candidate; RECONCILIATION_AUTHORITY_REQUIRED. The client cannot distinguish "never sent" from "sent, ACK lost".'],
+    ['CF-5', 'explicit server error on COMMIT', ev(true, true, false), 'RETAINED', 'PM-0U', 'As CF-4: the client cannot prove the error belongs to a COMMIT that did not persist.'],
+    ['CF-6', 'COMMIT sent and acknowledged', ev(true, true, true), 'PRESENT_AFTER_N30', 'PROCEED_TO_N30_EXIT_CHECK', 'Deposit; N30 exit by post-write probe and round trip; then N13.'],
+    ['CF-7', 'COMMIT sent, connection lost', ev(true, true, false), 'RETAINED', 'PM-0U', 'As CF-4.'],
+    ['CF-8', 'COMMIT timeout', ev(true, true, false), 'RETAINED', 'PM-0U', 'As CF-4.'],
+    ['CF-9', 'driver throws with transport ambiguity', ev(true, true, false), 'RETAINED', 'PM-0U', 'As CF-4.'],
+    ['CF-10', 'process killed during COMMIT', ev(true, true, false), 'ABSENT_CARRIER_LOST', 'PM-0K', 'STOP; withdraw only by ROTATE AGAIN (fresh HC-1) or PASSWORD NULL (its own confirmation); nothing automatic.'],
+  ] as const
+).map(([id, failure, evidence, wcm, state, next]) => {
+  const outcome = classifyCommitOutcome(evidence)
+  return {
+    id,
+    failure,
+    evidence,
+    outcome,
+    credential_may_exist: outcome !== 'DEFINITELY_NOT_COMMITTED',
+    wcm_candidate: wcm,
+    state,
+    allowed_next_act: next,
+    human_confirmation_needed_for_any_credential_mutation: true as const,
+    fresh_hc1_needed_for_rotate_again: true as const,
+    password_null_confirmation_needed: outcome !== 'DEFINITELY_NOT_COMMITTED',
+  }
+})
+
+/** The governed state for an outcome, and whether the candidate reached the depositor. */
+export function stateForCommitOutcome(outcome: CommitOutcome, candidateDeposited: boolean): 'PM-0' | 'PM-0U' | 'PM-0K' | 'PROCEED_TO_N30_EXIT_CHECK' {
+  if (outcome === 'DEFINITELY_NOT_COMMITTED') return 'PM-0'
+  if (outcome === 'COMMITTED') return 'PROCEED_TO_N30_EXIT_CHECK'
+  return candidateDeposited ? 'PM-0U' : 'PM-0K'
+}

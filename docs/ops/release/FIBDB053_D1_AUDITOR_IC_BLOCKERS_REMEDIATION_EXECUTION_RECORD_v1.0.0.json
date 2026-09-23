@@ -1,0 +1,406 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_IC_BLOCKERS_REMEDIATION_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "IC_BLOCKERS_REMEDIATION_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_PROVIDER_MUTATION__NO_HC1__NO_CERTIFICATION_EVENT",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-IC-BLOCKERS-AND-AUTHORITY-CLOSURE-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not the custodian, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "head": "adbe6dacd034a50e5f40b8faed98c9a063abe658",
+    "tree": "a568a10c00c58fdf96e0b19933a196c866c8aa8c",
+    "prestate_gate": "PASS, declared, 2026-09-23T17:48:01Z"
+  },
+  "INDEPENDENT_RECERT_CONSUMED": "D1_POST_MINT_COMPLETENESS_RECERT_FAIL on adbe6dac: B-1 (ambiguous COMMIT misclassified NOT_COMMITTED) and B-2 (self-fulfilling package binding, demonstrated survivor). AC-1 CONFIRMED, AC-2 REFUTED, AC-3 CONFIRMED. Recorded in DAG v1.0.6 INDEPENDENT_RECERT_CONSUMED from the lane mandate's summary; the recertification wrote nothing to the registry and nothing is reconstructed.",
+  "OWNER_DECISIONS": {
+    "record": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_AC1_AC3_OWNER_DECISION_v1.0.0.json",
+    "AC-1": "AUTHORIZE_NARROW_HAS_TABLE_PRIVILEGE_OBSERVATION",
+    "AC-3": "DEFER_FUNCTION_EXECUTE_ASSERTIONS_TO_PRECHECK_R2",
+    "SIGNED": "YES"
+  },
+  "AC2_TECHNICAL_RULING": {
+    "ruling": "AC2_REFUTED_BY_EXISTING_AUTHORITY_AND_POSTGRESQL_ROLE_REACHABILITY_SEMANTICS",
+    "materialized_in": "DAG v1.0.6 AUTHORITY_CONFLICT_RULINGS.AC-2 (kind TECHNICAL_AUTHORITY_RULING)",
+    "proof": "pg_has_role(u, r) for r other than u requires u superuser, or r in u's membership closure (pg_auth_members edges with u as MEMBER, plus pg_database_owner via datdba). Observed rolsuper = false (PV-6), zero edges as member (PV-12) and datdba not u (PV-19) make the closure {u}; no other role is reachable, uellix_cap_* included, and no enumeration is needed.",
+    "implementation": "db/custody/p1-reads.ts ac2ReachabilityProof (every condition must be OBSERVED); PV-14 PASS only if the named roles are unreachable AND the proof holds; REACH stays keyed (= ANY (ARRAY[...]), no pattern).",
+    "enumeration": "NONE"
+  },
+  "SUCCESSOR_AUTHORITY": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.6.json (0 nodes, 0 edges; rulings, SUCCESSOR_AUTHORIZED_SQL, exit amendments, PRECHECK_R2_HANDOFF, COMMIT_OUTCOME_MODEL, CERTIFICATION_EVENT_CONTRACT, N10 conjuncts PMR-9/PMR-10 with PMR-8 superseded, OPEN_EXECUTION_PRECONDITION_GAPS)",
+  "AC1_SQL_SURFACE": {
+    "statement": "SUCCESSOR_AUTHORIZED_SQL.AC1_TABLE_PRIVILEGES, byte-identical to P1_STATEMENTS.TABLE_PRIVILEGES (test)",
+    "pairs": [
+      "uellix_bootstrap.staging_sentinel: SELECT, INSERT, UPDATE, DELETE, TRUNCATE",
+      "public.users: SELECT"
+    ],
+    "principal": "uellix_auditor",
+    "construction": "a constant with literal (role, relation, privilege) triples; a test parses every has_table_privilege call in every statement and requires the set to EQUAL the owner surface",
+    "provenance": "form SUCCESSOR_PINNED, authority SUCCESSOR_V1_0_6_AC1, never presented as part of the original exhaustive list"
+  },
+  "AC1_RUNTIME_STATUS": "ISSUABLE; N14 measures it (DML true -> STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE) and N22 re-issues it: PV-22, PV-28, PV-32 are genuine PASS/FAIL assertions (FAIL tokens: PV-28 STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE, PV-32 STOP_PRE_EXISTING_SURFACE_CHANGED, PV-22 none in N22's list -> reported by row).",
+  "AC3_DEFERRED_ROWS": [
+    "PV-24",
+    "PV-25",
+    "N21-EXECUTE-NINE (PV-24)",
+    "N21-EXECUTE-SEVEN (PV-25)"
+  ],
+  "AC3_VERDICT_MODEL": "Closed vocabulary PASS / FAIL / RECORDED / DEFERRED_TO_PRECHECK_R2. DEFERRED is permitted ONLY on the four rows above; it is never counted as PASS; FUNCTION_EXECUTE disposition DEFERRED_TO_PRECHECK_R2 and in no node body.",
+  "N21_EXIT_CONTRACT": "USAGE = true and CREATE = false PASS, and both EXECUTE rows exactly DEFERRED_TO_PRECHECK_R2 (n21ExitFromRows).",
+  "PRECHECK_R2_HANDOFF": "DAG v1.0.6 PRECHECK_R2_HANDOFF: canonical identity of both literals; EXECUTE state per signature and state; a non-raising method; UNKNOWN / inability / unexpected raise = STOP; nothing assumed from this deferral. SQL not chosen.",
+  "B1_COMMIT_UNKNOWN_MODEL": {
+    "states": "COMMITTED / DEFINITELY_NOT_COMMITTED (only when COMMIT was provably never requested: no transaction, or callback failed before completing) / COMMIT_OUTCOME_UNKNOWN (every other failure once the callback completed, and every run without a terminal line)",
+    "classifiers": "db/custody/mint-route-b-contract.ts classifyCommitOutcome, classifyToolRun",
+    "token": "STOP_COMMIT_OUTCOME_UNKNOWN__CREDENTIAL_MAY_BE_LIVE (exit 4)",
+    "matrix": "scripts/custody/d1-post-mint.ts COMMIT_FAILURE_MATRIX CF-1..CF-10, outcomes COMPUTED from evidence; CF-4, CF-5, CF-7, CF-8, CF-9 UNKNOWN with the candidate retained; CF-10 UNKNOWN with the carrier lost; CF-1..CF-3 DEFINITELY_NOT_COMMITTED; CF-6 COMMITTED",
+    "harness": "fake driver follows postgres.js scope(): COMMIT after the callback outside the try; scenarios SUCCESS, FAILS_BEFORE_TRANSACTION, MINT_FAILS, COMMIT_TRANSPORT_LOST, KILLED_DURING_COMMIT, UNPINNED_TARGET all CONFORM for the fake-only fixture; AMBIGUITY_AS_NOT_COMMITTED and AMBIGUITY_DROPS_CANDIDATE fail their checks"
+  },
+  "B1_WCM_CUSTODY": "Under COMMIT_OUTCOME_UNKNOWN the candidate is deposited into the N30 entry (DAG v1.0.6 N30_CUSTODY_UNDER_COMMIT_OUTCOME_UNKNOWN) and RETAINED: PM-0U and PM-0K have wcm_removal_permitted = false, automatic_credential_mutation = false; PASSWORD NULL only under HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL, ROTATE AGAIN only under a fresh HC-1.",
+  "B1_RECONCILIATION_STATUS": "RECONCILIATION_AUTHORITY_REQUIRED. N13 (the only governed probe that would authenticate with the value) requires N11 act exit, which UNKNOWN does not meet; no reconciliation is invented or executed. Technical authority gap, not an owner policy choice.",
+  "B2_PACKAGE_CLOSURE": "scripts/custody/d1-package-closure.ts: code closure derived from emitted require() of every execution entry point (production entries, PRE-HC1 evaluator, mint contract and harness, topology demonstration) + every tracked docs/ops/release/FIBDB053_D1_*, docs/ops/owner-ratifications/FIBDB053_D1_* and the custody inventory + package.json and pnpm-lock.yaml; certification events excluded by pattern; digest sha256 over sorted path:blob of WORKING-TREE blobs.",
+  "B2_CANDIDATE_BINDING": "scripts/custody/d1-candidate-certification.ts: an event certifies candidate_commit (path derived from it); HEAD must be the candidate, or a descendant whose diff from it is exactly the event file added; working tree clean; package digest equal.",
+  "B2_TREE_BINDING": "candidate_tree must equal git rev-parse <candidate>^{tree}.",
+  "B2_CERT_EVENT_CONTRACT": "DAG v1.0.6 CERTIFICATION_EVENT_CONTRACT: docs/ops/release/FIBDB053_D1_AUDITOR_PREHC1_PACKAGE_CERTIFICATION_<cand12>_v1.0.0.json; event_class, candidate_commit, candidate_tree, verdict, verdict_class in {PASS, PASS_WITH_NONBLOCKING_FINDINGS}, blocking_findings = 0, package_closure_digest, certifier_is_not_the_author = true; two disagreeing events for one candidate = NOT_READY. NO event is written by this lane.",
+  "B2_IC_SURVIVOR_REGRESSION": "tests/custody/d1-candidate-certification.test.ts builds real git repositories: change the consumer shell + rewrite closure_blobs in one commit after a certified candidate -> NOT eligible ('differs from the certified candidate by more than the event'); eligible again only after a NEW event certifies the new commit.",
+  "PMR7_SUCCESSOR_RULINGS": "readChain() reads every graph source (v1.0.0..v1.0.6) in order: conjuncts added and superseded by id, conflicts declared, rulings collected; effectiveRulings() refuses unknown ids, contradictory rulings, unknown kinds, and owner rulings the owner record does not carry; PMR-10 checks each active ruling against the measured implementation.",
+  "PRE_HC1": "N10 NOT_READY (see VALIDATION.custody_pre_hc1).",
+  "DELIVERY_MATRIX_STATUS": "Derived over the whole chain (graphNodes of every graph source); a synthetic HOSTED_SQL node in a successor amendment surfaces as a gap and fails PMR-5 (test).",
+  "FAKE_HARNESS_STATUS": "The harness and the fixture name only db.harness-target.invalid (RFC 6761); --target-host is injected; no staging ref, no supabase host, no target-identity import (test).",
+  "EXECUTE_MODE_TOPOLOGY_STATUS": "Execute-mode loading path demonstrated with the BUILT N13 consumer under bare node against a fake driver root (tests/custody/d1-execute-mode-fake-driver.test.ts): driver loaded only from --driver-root, one reserved connection, only the pinned statements then ROLLBACK, release, end; no value in output or driver log. The PEB-observed execute topology stays NONBLOCKING_FUTURE_EVIDENCE (v1.0.6 OEP-3).",
+  "SERVER_LOGGING_PRECONDITION_STATUS": "OPEN_EXECUTION_PRECONDITION_GAP (v1.0.6 OEP-1): no authority requires measuring the hosted logging posture before N11; parameter binding keeps the value out of statement text, not out of a server that logs bind parameters; not a PRE-HC1 conjunct.",
+  "N22_STOP_SEMANTICS": "FAIL rows map to N22's own tokens (DAG v1.0.0 N22.tokens); a FAIL row with no token is reported by id. PV-5 is now the observed fact (session connected AND the server answered KP-1), PV-1 / PV-2 the server-reported identities; no tautological row remains.",
+  "TOPOLOGY_DEMONSTRATION": {
+    "command": "pnpm custody:production:demonstrate -- --out-dir=<outside> --delivery=<DL-N13|DL-N14|DL-N21|DL-N22>",
+    "value": "fresh NON-SECRET sentinel, .invalid host, sentinel namespace; no database socket",
+    "per_delivery": {
+      "DL-N13": {
+        "node": "N13",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 903,
+        "closure_blobs": {
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n13-consumer.ts": "34553a67aad7821882b1c9ff442873844e85423b",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      },
+      "DL-N14": {
+        "node": "N14",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 954,
+        "closure_blobs": {
+          "db/custody/auditor-read-session.ts": "02083a7612d56548444d6559e6880bc891ee5baa",
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/n14-observation.ts": "c49958e9231b6402f43cd98cc60a8d563f59d6f0",
+          "db/custody/p1-reads.ts": "3a2a1589d7457ed7655d5f1a4e1eff392a5ea956",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n14-consumer.ts": "e7737eabf8e46b37c073c51bd3f962636fc906b2",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      },
+      "DL-N21": {
+        "node": "N21",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 875,
+        "closure_blobs": {
+          "db/custody/auditor-read-session.ts": "02083a7612d56548444d6559e6880bc891ee5baa",
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/n22-poststate.ts": "06d4a064d471d1631d8d649253aa24bfdbc50048",
+          "db/custody/p1-reads.ts": "3a2a1589d7457ed7655d5f1a4e1eff392a5ea956",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n22-consumer.ts": "6bcc4260967affc8b1eb01c952b14297d68b21da",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      },
+      "DL-N22": {
+        "node": "N22",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 856,
+        "closure_blobs": {
+          "db/custody/auditor-read-session.ts": "02083a7612d56548444d6559e6880bc891ee5baa",
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/n22-poststate.ts": "06d4a064d471d1631d8d649253aa24bfdbc50048",
+          "db/custody/p1-reads.ts": "3a2a1589d7457ed7655d5f1a4e1eff392a5ea956",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n22-consumer.ts": "6bcc4260967affc8b1eb01c952b14297d68b21da",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      }
+    },
+    "uellix_wcm_entries_after": 0,
+    "ceiling": "SATISFIED_CANDIDATE per delivery"
+  },
+  "MUTATION_RESULTS": {
+    "result": "24 of 24 RED",
+    "mutants": [
+      {
+        "id": "A1_AC1_ADDS_A_RELATION",
+        "result": "RED",
+        "tests": "Tests  2 failed | 39 passed (41)"
+      },
+      {
+        "id": "A2_AC1_ADDS_A_PRIVILEGE",
+        "result": "RED",
+        "tests": "Tests  2 failed | 39 passed (41)"
+      },
+      {
+        "id": "A3_AC1_DYNAMIC_OBJECT_NAME",
+        "result": "RED",
+        "tests": "Tests  2 failed | 39 passed (41)"
+      },
+      {
+        "id": "A4_AC1_HARD_CODED_PASS",
+        "result": "RED",
+        "tests": "Tests  1 failed | 40 passed (41)"
+      },
+      {
+        "id": "B1_AC2_ROLE_ENUMERATION",
+        "result": "RED",
+        "tests": "Tests  1 failed | 40 passed (41)"
+      },
+      {
+        "id": "B2_AC2_ACCEPTED_WITHOUT_PROOF",
+        "result": "RED",
+        "tests": "Tests  2 failed | 39 passed (41)"
+      },
+      {
+        "id": "C1_AC3_EXECUTE_REQUIRED_FOR_EXIT",
+        "result": "RED",
+        "tests": "Tests  2 failed | 39 passed (41)"
+      },
+      {
+        "id": "C2_AC3_SILENT_PASS_PV24",
+        "result": "RED",
+        "tests": "Tests  1 failed | 40 passed (41)"
+      },
+      {
+        "id": "C3_TO_REGPROCEDURE_INTRODUCED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 39 passed (41)"
+      },
+      {
+        "id": "D1_COMMIT_AMBIGUITY_AS_NOT_COMMITTED",
+        "result": "RED",
+        "tests": "Tests  3 failed | 45 passed (48)"
+      },
+      {
+        "id": "D2_NO_TERMINAL_LINE_AS_NOT_COMMITTED",
+        "result": "RED",
+        "tests": "Tests  3 failed | 27 passed (30)"
+      },
+      {
+        "id": "D3_COMMIT_AMBIGUITY_DELETES_CANDIDATE",
+        "result": "RED",
+        "tests": "Tests  2 failed | 16 passed (18)"
+      },
+      {
+        "id": "D4_AUTOMATIC_PASSWORD_NULL",
+        "result": "RED",
+        "tests": "Tests  2 failed | 16 passed (18)"
+      },
+      {
+        "id": "D5_AUTOMATIC_ROTATE_AGAIN_SPENT_HC1",
+        "result": "RED",
+        "tests": "Tests  2 failed | 16 passed (18)"
+      },
+      {
+        "id": "G1_FAKE_HARNESS_REAL_STAGING_HOST",
+        "result": "RED",
+        "tests": "Tests  5 failed | 25 passed (30)"
+      },
+      {
+        "id": "E1_POST_CERT_EDIT_ACCEPTED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 14 passed (16)"
+      },
+      {
+        "id": "E2_CANDIDATE_SHA_NOT_BOUND_TO_PATH",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "E3_TREE_NOT_CHECKED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "E4_WRONG_EVENT_CLASS_ACCEPTED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "E5_FAIL_RECERT_ACCEPTED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "E6_BLOCKING_FINDINGS_ACCEPTED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "F1_SUCCESSOR_RULING_IGNORED",
+        "result": "RED",
+        "tests": "Tests  39 failed | 10 passed (49)"
+      },
+      {
+        "id": "F2_RESOLVED_RULING_BLOCKED_IMPLEMENTATION",
+        "result": "RED",
+        "tests": "Tests  1 failed | 38 passed (39)"
+      },
+      {
+        "id": "H1_SUCCESSOR_DELIVERY_OMITTED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 38 passed (39)"
+      }
+    ],
+    "survivor_self_test": {
+      "id": "SELFTEST_HARMLESS_COMMENT",
+      "result": "GREEN_SURVIVED"
+    },
+    "restoration": "Each file restored byte for byte (SHA-256 verified); the worktree status and every changed file's blob were identical before and after the battery."
+  },
+  "SCHEDULE_STATUS": {
+    "verdict": "NOT_FEASIBLE_WITHOUT_RESCHEDULING",
+    "preserved": {
+      "N08_W": "2026-09-24T14:00:00Z",
+      "N31_R": "2026-09-24T18:00:00Z",
+      "N09_E": "2026-09-25T14:00:00.000Z"
+    },
+    "consequence": "Unchanged by this lane: fresh owner-supplied N08 and N31 (and a mechanical N09) are required before the next PRE-HC1 cycle."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": 0,
+  "final_state": "D1_IC_BLOCKERS_REMEDIATED__AC1_AUTHORIZED__AC2_REFUTED__AC3_DEFERRED_TO_PRECHECK_R2__COMMIT_UNKNOWN_GOVERNED__CERTIFICATION_BINDING_HARDENED__READY_FOR_SHORT_RECERT",
+  "next_gate": "ONE short independent recertification of the remediated candidate, materialized (by the certifier) as a CERTIFICATION_EVENT_CONTRACT event. Only after PASS: fresh schedule -> owner N08/N31 -> mechanical N09 -> fresh PRE-HC1 -> fresh HC-1 -> immediate N11 confirmation."
+}
