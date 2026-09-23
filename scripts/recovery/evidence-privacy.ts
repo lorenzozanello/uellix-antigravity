@@ -18,10 +18,13 @@
 //
 // Tool stderr is the one channel where PostgreSQL itself quotes row values
 // ("DETAIL: Failing row contains (...)", "Key (email)=(...) already exists").
-// It is therefore never retained as text: `summarizeStderr` keeps a digest, a
-// line count and a closed classification.
-
-import { createHash } from 'node:crypto'
+// NOTHING derived from its text is retained except a CLOSED diagnostic class
+// (classifyToolOutcome). In particular no digest of it: the recert of
+// ec573e9b recovered a four-digit row value by brute-forcing an unsalted
+// sha256 of stderr in 1/10000 tries — a digest of low-entropy data is a
+// confirmation oracle, and no salt, truncation or re-hashing changes that.
+// The authority never requires a stderr digest (no occurrence of "stderr" in
+// the recovery authority, its amendment, or STAGING_RELEASE_PRODUCTION_AUTHORITY).
 
 export type StringGrammar =
   | 'identifier'
@@ -145,36 +148,63 @@ export function findForbiddenSubstrings(serialized: string, forbidden: readonly 
   return forbidden.filter((f) => f.length > 0 && serialized.includes(f))
 }
 
-export type StderrClass = 'EMPTY' | 'NOTICE_ONLY' | 'WARNING' | 'ERROR' | 'FATAL'
+/**
+ * A tool run, as evidence: exit status and a CLOSED diagnostic class. The class
+ * depends only on (a) the exit status and (b) a SQLSTATE taken from a line that
+ * is ENTIRELY tool-generated (psql with VERBOSITY=sqlstate prints `ERROR:  42501`
+ * and nothing else: no message, no DETAIL, no row). Anything else — pg_restore's
+ * free-text errors included — is UNKNOWN. Exit 0 is NONE whatever stderr says.
+ */
+export type ToolDiagnostic =
+  | 'NONE'
+  | 'INSUFFICIENT_PRIVILEGE'
+  | 'INTEGRITY_CONSTRAINT_VIOLATION'
+  | 'UNDEFINED_OBJECT'
+  | 'DUPLICATE_OBJECT'
+  | 'CONNECTION_OR_AUTHENTICATION_FAILURE'
+  | 'UNKNOWN'
 
-export interface StderrSummary {
-  stderr_sha256: string
-  stderr_lines: number
-  stderr_class: StderrClass
+export const TOOL_DIAGNOSTICS: readonly ToolDiagnostic[] = [
+  'NONE',
+  'INSUFFICIENT_PRIVILEGE',
+  'INTEGRITY_CONSTRAINT_VIOLATION',
+  'UNDEFINED_OBJECT',
+  'DUPLICATE_OBJECT',
+  'CONNECTION_OR_AUTHENTICATION_FAILURE',
+  'UNKNOWN',
+]
+
+export interface ToolOutcome {
+  exit_code: number
+  diagnostic: ToolDiagnostic
 }
 
-export const STDERR_SUMMARY_SHAPE: Shape = S.obj({
-  stderr_sha256: S.str('sha256'),
-  stderr_lines: S.int(),
-  stderr_class: S.enm('EMPTY', 'NOTICE_ONLY', 'WARNING', 'ERROR', 'FATAL'),
-})
+export const TOOL_OUTCOME_SHAPE: Shape = S.obj({ exit_code: S.int(), diagnostic: S.enm(...TOOL_DIAGNOSTICS) })
 
-/** Tool stderr -> digest + line count + closed class. The text itself is dropped here. */
-export function summarizeStderr(stderr: string): StderrSummary {
-  const lines = stderr.split(/\r?\n/).filter((l) => l.trim() !== '')
-  let cls: StderrClass = 'EMPTY'
-  if (lines.length > 0) cls = 'NOTICE_ONLY'
-  if (lines.some((l) => /\bWARNING\b/.test(l))) cls = 'WARNING'
-  if (lines.some((l) => /\berror\b|\bERROR\b/.test(l))) cls = 'ERROR'
-  if (lines.some((l) => /\bFATAL\b|\bPANIC\b/.test(l))) cls = 'FATAL'
-  return { stderr_sha256: createHash('sha256').update(stderr).digest('hex'), stderr_lines: lines.length, stderr_class: cls }
+/** SQLSTATE -> closed class. Unlisted codes are UNKNOWN (fail closed), never passed through. */
+export function sqlstateClass(sqlstate: string | null): ToolDiagnostic {
+  if (sqlstate === null) return 'UNKNOWN'
+  if (sqlstate === '42501') return 'INSUFFICIENT_PRIVILEGE'
+  if (sqlstate.startsWith('23')) return 'INTEGRITY_CONSTRAINT_VIOLATION'
+  if (['42P01', '42704', '42883', '3F000', '3D000'].includes(sqlstate)) return 'UNDEFINED_OBJECT'
+  if (['42P07', '42710', '42P06', '42P04', '42723'].includes(sqlstate)) return 'DUPLICATE_OBJECT'
+  if (sqlstate.startsWith('08') || sqlstate.startsWith('28')) return 'CONNECTION_OR_AUTHENTICATION_FAILURE'
+  return 'UNKNOWN'
+}
+
+export function classifyToolOutcome(exitCode: number | null, stderr: string): ToolOutcome {
+  const code = exitCode ?? 1
+  if (code === 0) return { exit_code: 0, diagnostic: 'NONE' }
+  return { exit_code: code, diagnostic: sqlstateClass(extractSqlstate(stderr)) }
 }
 
 /**
- * With psql's `VERBOSITY=sqlstate`, an error line is `ERROR:  42501` and nothing
- * else — no message, no DETAIL. Returns the SQLSTATE or null.
+ * The SQLSTATE of a line that is WHOLLY tool-generated under psql
+ * VERBOSITY=sqlstate: `ERROR:  42501`, optionally prefixed by psql's
+ * `psql:<stdin>:3: `. The whole line must match, so text that merely
+ * CONTAINS such a fragment (a quoted row, a DETAIL) never yields a code.
  */
 export function extractSqlstate(stderr: string): string | null {
-  const match = stderr.match(/(?:ERROR|FATAL):\s+([0-9A-Z]{5})\b/)
+  const match = stderr.match(/^(?:psql:[^\s:]*:\d+: )?(?:ERROR|FATAL): {2}([0-9A-Z]{5})\s*$/m)
   return match ? match[1] : null
 }

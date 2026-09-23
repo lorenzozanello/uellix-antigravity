@@ -63,19 +63,25 @@ describe('observeVitest', () => {
 
 describe('battery definition', () => {
   const ROOT = path.resolve(import.meta.dirname, '../..')
-  it('every mutant anchor exists exactly once in its file, so every mutation is real and unambiguous', () => {
+  it('every edit anchor exists exactly once in its file, so every mutation is real and unambiguous', () => {
     for (const m of [...MUTANTS, NEUTRAL_MUTANT]) {
-      const text = readFileSync(path.join(ROOT, m.file), 'utf8')
-      expect(text.split(m.anchor).length - 1, m.id).toBe(1)
+      for (const edit of m.edits) {
+        const text = readFileSync(path.join(ROOT, edit.file), 'utf8')
+        expect(text.split(edit.anchor).length - 1, `${m.id} in ${edit.file}`).toBe(1)
+      }
     }
   })
-  it('covers the manifest mutation controls OR-M1..OR-M14', () => {
+  it('covers the manifest controls OR-M1..OR-M14 and every remediation class the recert named', () => {
     const ids = new Set(MUTANTS.map((m) => m.id.replace(/b$/, '')))
     for (let i = 1; i <= 14; i++) expect(ids.has(`OR-M${i}`), `OR-M${i}`).toBe(true)
+    for (const id of ['B1-M1', 'B1-M2', 'B1-M3', 'NB1-M1', 'NB1-M2', 'NB2-M1', 'NB2-M2', 'NB2-M3', 'NB3-M1', 'NB3-M2', 'NB3-M3', 'NB3-M4', 'NB3-M5', 'NB3-M6', 'NB3-M7', 'NB6-M1']) {
+      expect(ids.has(id), id).toBe(true)
+    }
   })
   it('the neutral self-test mutant changes a comment only and is declared KILLED on purpose', () => {
-    expect(NEUTRAL_MUTANT.anchor.startsWith('//')).toBe(true)
-    expect(NEUTRAL_MUTANT.replacement.startsWith('//')).toBe(true)
+    expect(NEUTRAL_MUTANT.edits).toHaveLength(1)
+    expect(NEUTRAL_MUTANT.edits[0].anchor.startsWith('//')).toBe(true)
+    expect(NEUTRAL_MUTANT.edits[0].replacement.startsWith('//')).toBe(true)
     expect(NEUTRAL_MUTANT.expect).toBe('KILLED')
   })
 })

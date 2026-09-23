@@ -17,7 +17,9 @@ import {
 import type { RestoreOutcome } from '../../scripts/recovery/restore-runner'
 import type { Substrate } from '../../scripts/recovery/substrate'
 import { FakeDocker } from './fake-docker'
-import { sampleCensus, samplePacket } from './sample-evidence'
+import { sampleCensus, sampleCensusRecord, samplePacket } from './sample-evidence'
+import { NO_MUTATION_CONFIRMATION } from '../../scripts/recovery/artifact-packet'
+import { STORAGE_BYTES_DECLARATION } from '../../scripts/recovery/post-restore-invariants'
 
 const restore: RestoreOutcome = {
   ok: true,
@@ -31,6 +33,8 @@ const restore: RestoreOutcome = {
   roles_at_start: ['anon', 'pg_database_owner', 'postgres', 'supabase_admin'],
   roles_after_restore: ['anon', 'fixture_app_owner', 'fixture_capability', 'pg_database_owner', 'postgres', 'supabase_admin'],
   tool_refusals: [],
+  target_observation: { image_id: 'sha256:' + '0'.repeat(64), network_mode: 'none' },
+  substrate_server_version_num: 170006,
 }
 
 function ctx(mutate: (c: Census) => void = () => undefined, extra: Partial<InvariantContext> = {}): InvariantContext {
@@ -38,6 +42,7 @@ function ctx(mutate: (c: Census) => void = () => undefined, extra: Partial<Invar
   mutate(restored)
   return {
     packet: samplePacket(),
+    sourceCensus: sampleCensus(),
     restored,
     restoredCensusProblem: null,
     restore,
@@ -59,7 +64,7 @@ describe('invariants over a faithful restore', () => {
       expect(res.verdict, id).toBe(id === 'PRI-7' ? 'UNKNOWN' : 'PASS')
     }
     expect(r['PRI-7'].reason_code).toBe('STORAGE_SCHEMA_NOT_IN_DECLARED_SCOPE')
-    expect(r['PRI-7'].observed).toEqual(['storage_object_bytes=OUT_OF_SCOPE'])
+    expect(r['PRI-7'].observed).toEqual([STORAGE_BYTES_DECLARATION])
     for (const e of DEFAULT_INVARIANT_PLAN) {
       const full = { id: e.id, phase: e.phase, predicate: e.predicate, predicate_sha256: 'a'.repeat(64), census_sql_sha256: 'b'.repeat(64), ...r[e.id] }
       expect(validateEvidence(full, INVARIANT_RESULT_SHAPE), e.id).toEqual([])
@@ -95,7 +100,7 @@ describe('each broken property turns its invariant RED', () => {
 
   it('OR-N6: RR-CAP-7 is ABSOLUTE — a source that itself lacks PUBLIC USAGE does not excuse the restore (parity alone would PASS)', () => {
     const c = ctx((r) => (r.schemas[0].acl = r.schemas[0].acl.filter((a) => !a.startsWith('PUBLIC:'))))
-    c.packet.source_census.schemas[0].acl = c.packet.source_census.schemas[0].acl.filter((a) => !a.startsWith('PUBLIC:'))
+    c.sourceCensus.schemas[0].acl = c.sourceCensus.schemas[0].acl.filter((a) => !a.startsWith('PUBLIC:'))
     expect(DEFAULT_INVARIANT_PLAN.find((e) => e.id === 'PRI-2')!.evaluate(c)).toMatchObject({ verdict: 'FAIL', reason_code: 'RR_CAP_7_PUBLIC_USAGE_ABSENT' })
   })
 
@@ -125,7 +130,7 @@ describe('each broken property turns its invariant RED', () => {
 
   it('a source with no rows cannot supply negative evidence: PRI-5 FAILs rather than passing trivially', () => {
     const c = ctx()
-    c.packet.source_census.row_counts.forEach((r) => (r.rows = 0))
+    c.sourceCensus.row_counts.forEach((r) => (r.rows = 0))
     c.restored!.row_counts.forEach((r) => (r.rows = 0))
     expect(DEFAULT_INVARIANT_PLAN.find((e) => e.id === 'PRI-5')!.evaluate(c)).toMatchObject({ verdict: 'FAIL', reason_code: 'SOURCE_HAS_NO_ROWS_NEGATIVE_EVIDENCE_IMPOSSIBLE' })
   })
@@ -134,7 +139,7 @@ describe('each broken property turns its invariant RED', () => {
 describe('UNKNOWN is explicit, never an omission', () => {
   it('unstable source counts degrade PRI-5 to UNKNOWN with the stated reason', () => {
     const c = ctx()
-    c.packet.no_intervening_mutation.census_pre_post_equal = false
+    c.packet[NO_MUTATION_CONFIRMATION].capture_census.pre_post_equal = false
     expect(DEFAULT_INVARIANT_PLAN.find((e) => e.id === 'PRI-5')!.evaluate(c)).toMatchObject({ verdict: 'UNKNOWN', reason_code: 'SOURCE_COUNTS_NOT_STABLE_DURING_CAPTURE_DEGRADED_TO_RECORDING' })
   })
 
@@ -190,6 +195,7 @@ describe('OR-N16: ordering of non-mutating checks before any mutating probe', ()
       substrate: { identity: { containerId: 'c'.repeat(64) } } as Substrate,
       database: 'd',
       packet: samplePacket(),
+      sourceCensus: sampleCensusRecord(),
       restore,
       capabilityProbes: [],
       plan: [probe, ...DEFAULT_INVARIANT_PLAN.filter((e) => e !== probe)],
@@ -208,5 +214,23 @@ describe('OR-N16: ordering of non-mutating checks before any mutating probe', ()
   it('census scope tokens are grammar-checked before they reach psql', () => {
     expect(() => censusInvocation({ schemas: ["public'; DROP TABLE x; --"], excludedRelations: [] })).toThrow(/RECOVERY_SCOPE_GRAMMAR/)
     expect(() => censusInvocation({ schemas: [], excludedRelations: [] })).toThrow(/RECOVERY_SCOPE_EMPTY/)
+  })
+})
+
+describe('the source census judged is the one the packet is bound to', () => {
+  it('a census record that differs from the bound one is refused before a single docker call', () => {
+    const fake = new FakeDocker()
+    const other = sampleCensus()
+    other.row_counts[0].rows = 77
+    const run = runPostRestoreInvariants(fake, {
+      substrate: { identity: { containerId: 'c'.repeat(64) } } as Substrate,
+      database: 'd',
+      packet: samplePacket(),
+      sourceCensus: sampleCensusRecord(other),
+      restore,
+      capabilityProbes: [],
+    })
+    expect(run).toMatchObject({ ok: false, refusal: 'INVARIANT_SOURCE_CENSUS_NOT_BOUND' })
+    expect(fake.calls).toEqual([])
   })
 })

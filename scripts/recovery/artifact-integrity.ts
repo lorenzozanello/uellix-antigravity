@@ -6,9 +6,9 @@
 //   1. LOCATION  — the artifact lives OUTSIDE the repository working tree
 //                  (authority RETENTION_AND_DISPOSAL: "NEVER committed ... tracked
 //                  or untracked"; CL-3). Checked on the resolved real path.
-//   2. DIGEST    — the bytes on disk hash to the packet's artifact_sha256 and
-//                  have its size. The verifier RECOMPUTES; it never trusts a
-//                  digest it did not compute (EVIDENCE.independent_verifiability_contract).
+//   2. DIGEST    — the bytes on disk hash to the packet's content digest
+//                  (backup identifier). The verifier RECOMPUTES; it never trusts
+//                  a digest it did not compute (EVIDENCE.independent_verifiability_contract).
 //   3. STRUCTURE — `pg_restore --list` of those bytes parses as a custom-format
 //                  archive dumped by the pinned tool from the pinned engine, and
 //                  its TABLE entries are exactly the captured relations. This is
@@ -23,13 +23,13 @@ import { createHash } from 'node:crypto'
 import { createReadStream, existsSync, realpathSync, statSync } from 'node:fs'
 import path from 'node:path'
 
-import type { BackupPacket } from './artifact-packet'
+import { packetArtifactSha256, type BackupPacket } from './artifact-packet'
+import type { Census } from './catalog-census'
 
 export type IntegrityRefusalCode =
   | 'ARTIFACT_PATH_NOT_ABSOLUTE'
   | 'ARTIFACT_INSIDE_REPOSITORY'
   | 'ARTIFACT_ABSENT'
-  | 'ARTIFACT_SIZE_MISMATCH'
   | 'ARTIFACT_DIGEST_MISMATCH'
   | 'ARTIFACT_TOC_UNREADABLE'
   | 'ARTIFACT_TOC_NOT_CUSTOM_FORMAT'
@@ -84,8 +84,7 @@ export async function verifyArtifactDigest(packet: BackupPacket, artifactPath: s
   if (location) return location
   if (!existsSync(artifactPath) || !statSync(artifactPath).isFile()) return { ok: false, code: 'ARTIFACT_ABSENT' }
   const { sha256, bytes } = await sha256File(artifactPath)
-  if (bytes !== packet.backup_identifier.artifact_bytes) return { ok: false, code: 'ARTIFACT_SIZE_MISMATCH' }
-  if (sha256 !== packet.backup_identifier.artifact_sha256) return { ok: false, code: 'ARTIFACT_DIGEST_MISMATCH' }
+  if (sha256 !== packetArtifactSha256(packet)) return { ok: false, code: 'ARTIFACT_DIGEST_MISMATCH' }
   return { ok: true, sha256, bytes }
 }
 
@@ -132,13 +131,13 @@ export function parseArchiveToc(listing: string): ArchiveToc {
 
 /**
  * Layer 3, over an already-parsed TOC: custom format, non-empty, and its TABLE
- * entries are EXACTLY the source census's ordinary/partitioned tables.
+ * entries are EXACTLY the bound source census's ordinary/partitioned tables.
  * Version fields are handed to the tool pin by the caller (tool-pin.ts).
  */
-export function checkArchiveStructure(toc: ArchiveToc, packet: BackupPacket): IntegrityVerdict | null {
+export function checkArchiveStructure(toc: ArchiveToc, sourceCensus: Census): IntegrityVerdict | null {
   if (toc.format !== 'CUSTOM') return { ok: false, code: 'ARTIFACT_TOC_NOT_CUSTOM_FORMAT' }
   if (toc.entryCount === 0 || toc.tables.length === 0) return { ok: false, code: 'ARTIFACT_TOC_EMPTY' }
-  const expected = packet.source_census.relations
+  const expected = sourceCensus.relations
     .filter((r) => r.kind === 'r' || r.kind === 'p')
     .map((r) => `${r.schema}.${r.name}`)
     .sort()
@@ -146,4 +145,26 @@ export function checkArchiveStructure(toc: ArchiveToc, packet: BackupPacket): In
     return { ok: false, code: 'ARTIFACT_TOC_RELATIONS_MISMATCH' }
   }
   return null
+}
+
+const PUBLIC_SCHEMA_ENTRY = /^\d+;\s+\d+\s+\d+\s+SCHEMA\s+-\s+public\s+\S+\s*$/
+
+/**
+ * The TOC list a restore into a FRESH database uses: the archive's own
+ * `SCHEMA - public` entry removed, everything else kept in archive order.
+ *
+ * pg_dump -n public emits CREATE SCHEMA public (measured, and re-measured by the
+ * recert of ec573e9b); a fresh database already has public, so with
+ * --exit-on-error the restore stops at "schema public already exists". The
+ * earlier mechanism DROPPED the fresh database's public first — a destructive
+ * statement the recovery authority does not name, and the thing that made the
+ * restored public lose its initdb ACL (the RR-CAP-7 shape). Selecting the TOC
+ * with `pg_restore -L` is non-destructive, keeps the fresh database's public
+ * (owner pg_database_owner, USAGE to PUBLIC), and restores everything else.
+ * The listing carries object names only, never row content.
+ */
+export function selectTocForExistingPublic(listing: string): { list: string; removed: number } {
+  const lines = listing.split(/\r?\n/)
+  const kept = lines.filter((l) => !PUBLIC_SCHEMA_ENTRY.test(l))
+  return { list: kept.join('\n'), removed: lines.length - kept.length }
 }

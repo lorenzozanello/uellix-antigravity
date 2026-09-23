@@ -4,39 +4,34 @@
 // (docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json).
 //
 // Gated: UELLIX_PG_TESTS=1 (Docker required). Skipped — never silently passed —
-// otherwise. ZERO HOSTED CONTACT: every container is started by this file from
-// the pinned image with --network none (except the one deliberately bridged
-// container OR-N11 creates to prove it is REFUSED), filled with fabricated rows,
-// and destroyed with its volumes. Every destructive call is scoped to ids and
-// run labels this file created.
+// otherwise, and a skipped run allocates NOTHING: every directory, container and
+// git read happens inside a hook or a test, never in a describe body (NB-6;
+// asserted by tests/recovery/skipped-e2e-residue.test.ts).
+//
+// ZERO HOSTED CONTACT: every container is started by this file from the pinned
+// image with --network none (except the one deliberately bridged container
+// OR-N11 creates to prove it is REFUSED), filled with fabricated rows, and
+// destroyed with its volumes. Every destructive call is scoped to ids and run
+// labels this file created. The capture-principal escalation pressure lives in
+// tests/recovery/principal-reachability.pg.test.ts.
 
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { validateBackupPacket, type BackupPacket } from '../../scripts/recovery/artifact-packet'
-import { captureLogicalBackup, type CaptureOutcome } from '../../scripts/recovery/capture'
-import { summarizeStderr, validateEvidence } from '../../scripts/recovery/evidence-privacy'
+import { frozenPacketContents, NO_MUTATION_CONFIRMATION, validateBackupPacket, type BackupPacket, type SourceCensusRecord } from '../../scripts/recovery/artifact-packet'
+import { captureLogicalBackup } from '../../scripts/recovery/capture'
+import { classifyToolOutcome, validateEvidence } from '../../scripts/recovery/evidence-privacy'
 import { FIXTURE_REHEARSAL, fixturePaths, loadSyntheticSource, runOfflineRehearsal, SOURCE_DATABASE, disposeArtifact } from '../../scripts/recovery/offline-rehearsal'
 import { runPostRestoreInvariants } from '../../scripts/recovery/post-restore-invariants'
-import { realDockerCli as docker } from '../../scripts/recovery/process'
+import { realDockerCli as docker, type DockerCli } from '../../scripts/recovery/process'
+import { RESTORED_INTO, VERIFICATION_RESULTS } from '../../scripts/recovery/restore-proof'
 import { restoreIntoSubstrate, runPgRestore, RESTORE_STEP_SHAPE, type RestoreOutcome } from '../../scripts/recovery/restore-runner'
-import {
-  assertSubstrateOwnership,
-  createSubstrate,
-  destroySubstrate,
-  newRunId,
-  ROLE_LABEL,
-  RUN_LABEL,
-  SubstrateRefusal,
-  substratePsql,
-  type DestructionProof,
-  type Substrate,
-} from '../../scripts/recovery/substrate'
+import { assertSubstrateOwnership, createSubstrate, destroySubstrate, newRunId, ROLE_LABEL, RUN_LABEL, SubstrateRefusal, substratePsql, type DestructionProof, type Substrate } from '../../scripts/recovery/substrate'
 import { RECOVERY_TOOL_PIN } from '../../scripts/recovery/tool-pin'
 
 const ENABLED = process.env.UELLIX_PG_TESTS === '1'
@@ -57,7 +52,10 @@ const noCanary = (value: unknown) => {
 }
 
 describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable PostgreSQL', { timeout: 900_000 }, () => {
-  const statusBefore = ENABLED ? gitStatus() : ''
+  let statusBefore = ''
+  beforeAll(() => {
+    statusBefore = gitStatus()
+  })
 
   it('guard: the fixture plants canaries (a canary scan over nothing proves nothing)', () => {
     expect(CANARIES.length).toBeGreaterThanOrEqual(10)
@@ -87,57 +85,71 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
     expect(labelled(run)).toEqual({ containers: '', volumes: '' })
   })
 
-  it('OR-P1 / OR-P5 / OR-P6: synthetic source -> capture -> restore -> invariants -> destroy, with zero row content in evidence', async () => {
+  it('OR-P1 / OR-P5 / OR-P6: synthetic source -> capture -> restore -> invariants -> destroy; packets EXACTLY the frozen contents; zero row content', async () => {
     const result = await runOfflineRehearsal(docker, { repoRoot: REPO, ...PATHS, ...FIXTURE_REHEARSAL })
-    const { proof, packet } = result
-    expect(proof.verdict_reasons).toEqual([])
-    expect(proof.verdict).toBe('OFFLINE_REHEARSAL_PASS')
+    const { backup_packet: packet, restore_proof: proof, rehearsal_record: record } = result.bundle
+    expect(record.verdict_reasons).toEqual([])
+    expect(record.verdict).toBe('OFFLINE_REHEARSAL_PASS')
     expect(result.evidenceViolations).toEqual([])
     expect(result.forbiddenHits).toBe(0)
     expect(packet).not.toBeNull()
+    expect(proof).not.toBeNull()
+    // B-1, on the REAL emitted evidence.
+    expect(Object.keys(packet!)).toEqual(frozenPacketContents('BACKUP_PACKET'))
+    expect(Object.keys(proof!)).toEqual(frozenPacketContents('RESTORE_PROOF'))
     expect(validateBackupPacket(packet)).toEqual([])
     // OR-P5: every invariant evaluated, with raw facts, and only the accepted UNKNOWN.
-    const byId = Object.fromEntries(proof.post_restore_verification.map((r) => [r.id, r]))
+    const invariants = proof![VERIFICATION_RESULTS].invariants
+    const byId = Object.fromEntries(invariants.map((r) => [r.id, r]))
     expect(Object.keys(byId).sort()).toEqual(['EXT', 'PRI-1', 'PRI-2', 'PRI-2-CAP', 'PRI-3', 'PRI-4', 'PRI-5', 'PRI-6', 'PRI-7', 'PROBE-ROLLBACK', 'SEQ', 'TRG'])
-    for (const r of proof.post_restore_verification) expect(r.verdict, r.id).toBe(r.id === 'PRI-7' ? 'UNKNOWN' : 'PASS')
+    for (const r of invariants) expect(r.verdict, r.id).toBe(r.id === 'PRI-7' ? 'UNKNOWN' : 'PASS')
     expect(byId['PRI-5'].observed).toEqual(['public.fixture_audit:rows=2', 'public.fixture_member:rows=5', 'public.fixture_org:rows=3', 'uellix_provisioning.applied_units:rows=4'])
     expect(byId['PROBE-ROLLBACK'].observed).toContain('nontransactional_sequence_advance:public.fixture_audit_id_seq:from=2:to=3')
-    expect(proof.restore_steps.find((s) => s.step === 'POST_RESTORE_CORPUS')?.status).toBe('SUCCESS')
-    // OR-P6: both substrates destroyed and proven absent; artifact disposed.
-    expect(proof.destruction.map((x) => [x.role, x.verdict])).toEqual([
-      ['restore-substrate', 'DESTROYED_AND_VERIFIED_ABSENT'],
-      ['source-fixture', 'DESTROYED_AND_VERIFIED_ABSENT'],
+    expect(record.restore_steps.map((s) => [s.step, s.status])).toEqual([
+      ['TOC', 'SUCCESS'],
+      ['ROLES_CORPUS', 'SUCCESS'],
+      ['CREATE_DATABASE', 'SUCCESS'],
+      ['TOC_SELECTION', 'SUCCESS'],
+      ['PG_RESTORE', 'SUCCESS'],
+      ['POST_RESTORE_CORPUS', 'SUCCESS'],
     ])
-    expect(proof.artifact_disposal.verdict).toBe('DISPOSED_AND_VERIFIED_ABSENT')
-    expect(labelled(proof.run_id)).toEqual({ containers: '', volumes: '' })
-    // Privacy (DP-5, SENT-ROW-CANARY) and CL-3.
-    expect(noCanary({ packet, proof })).toEqual([])
+    // NB-7: observed, not restated — inspect reported these at restore time.
+    const target = proof![RESTORED_INTO]
+    expect(target.image_id_observed).toBe(RECOVERY_TOOL_PIN.imageId)
+    expect(target.network_mode_observed).toBe('none')
+    expect(target.engine).toMatchObject({ substrate_server_version_num: 170006, source_server_version_num: 170006, source_image_id_observed: RECOVERY_TOOL_PIN.imageId })
+    // OR-P6: both substrates destroyed and proven absent; artifact disposed.
+    expect(target.destruction.verdict).toBe('DESTROYED_AND_VERIFIED_ABSENT')
+    expect(record.other_destructions.map((x) => [x.role, x.verdict])).toEqual([['source-fixture', 'DESTROYED_AND_VERIFIED_ABSENT']])
+    expect(record.artifact_disposal.verdict).toBe('DISPOSED_AND_VERIFIED_ABSENT')
+    expect(labelled(record.run_id)).toEqual({ containers: '', volumes: '' })
+    // Privacy (DP-5, SENT-ROW-CANARY), NB-1 (no stderr digest anywhere) and CL-3.
+    expect(noCanary(result.bundle)).toEqual([])
+    expect(JSON.stringify(result.bundle)).not.toMatch(/stderr/)
     expect(gitStatus()).toBe(statusBefore)
   })
 
-  it('OR-N5: every restore command exits 0 but the post-restore corpus is skipped -> RR-CAP-7 absent -> FAIL', async () => {
+  it('NB-5 premise: WITHOUT the post-restore corpus the TOC-selected restore keeps public\'s initdb ACL — PRI-2 passes, no DROP was ever needed', async () => {
     const result = await runOfflineRehearsal(docker, { repoRoot: REPO, ...PATHS, ...FIXTURE_REHEARSAL, postRestoreCorpusPath: null })
-    const { proof } = result
-    expect(proof.restore_steps.every((s) => s.status !== 'FAILED')).toBe(true)
-    expect(proof.restore_refusal).toBeNull()
-    expect(proof.verdict).toBe('OFFLINE_REHEARSAL_FAIL')
-    expect(proof.verdict_reasons).toEqual(expect.arrayContaining(['INVARIANT_FAIL_PRI_2', 'INVARIANT_FAIL_PRI_2_CAP']))
-    const cap = proof.post_restore_verification.find((r) => r.id === 'PRI-2-CAP')!
-    expect(cap.observed).toEqual(['fixture_capability:public.fixture_capability_probe:exit=3:sqlstate=42501'])
-    expect(proof.post_restore_verification.find((r) => r.id === 'PRI-2')!.reason_code).toBe('RR_CAP_7_PUBLIC_USAGE_ABSENT')
-    expect(proof.destruction.every((x) => x.verdict === 'DESTROYED_AND_VERIFIED_ABSENT')).toBe(true)
-    expect(noCanary(result)).toEqual([])
+    const { restore_proof: proof, rehearsal_record: record } = result.bundle
+    expect(record.restore_steps.find((s) => s.step === 'POST_RESTORE_CORPUS')?.status).toBe('SKIPPED')
+    expect(record.restore_steps.find((s) => s.step === 'TOC_SELECTION')?.status).toBe('SUCCESS')
+    const inv = Object.fromEntries(proof![VERIFICATION_RESULTS].invariants.map((r) => [r.id, r]))
+    expect(inv['PRI-2'].verdict).toBe('PASS')
+    expect(inv['PRI-2-CAP'].verdict).toBe('PASS')
+    expect(record.verdict).toBe('OFFLINE_REHEARSAL_PASS')
+    expect(noCanary(result.bundle)).toEqual([])
   })
 
   describe('sabotage and refusal battery over ONE real capture', () => {
-    const runId = newRunId()
-    const artifactDir = mkdtempSync(path.join(tmpdir(), 'uellix-recovery-battery-'))
+    let runId = ''
+    let artifactDir = ''
     const created: Substrate[] = []
     const proofs: DestructionProof[] = []
     let source: Substrate
     let target: Substrate
-    let capture: CaptureOutcome
     let packet: BackupPacket
+    let census: SourceCensusRecord
     let artifactPath: string
     let restore: RestoreOutcome
     let cloneSeq = 0
@@ -149,44 +161,53 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
       expect(substratePsql(docker, target, 'postgres', `CREATE DATABASE ${name} TEMPLATE pristine_copy;\n`).status).toBe(0)
       return name
     }
+    const invariantsOn = (db: string) => {
+      const run = runPostRestoreInvariants(docker, { substrate: target, database: db, packet, sourceCensus: census, restore, capabilityProbes: probes })
+      if (!run.ok) throw new Error(`invariant run refused: ${run.refusal}`)
+      return run.results
+    }
     const corruptCopy = (label: string, mutate: (b: Buffer) => void, recomputeDigest: boolean) => {
       const bytes = readFileSync(artifactPath)
       mutate(bytes)
       const p = path.join(artifactDir, `${label}.dump`)
       writeFileSync(p, bytes)
       const sha = createHash('sha256').update(bytes).digest('hex')
-      const pk: BackupPacket = recomputeDigest
-        ? { ...packet, backup_identifier: { ...packet.backup_identifier, artifact_id: `sha256:${sha}`, artifact_sha256: sha, artifact_bytes: bytes.length } }
-        : packet
+      const pk: BackupPacket = recomputeDigest ? { ...packet, 'backup identifier': { ...packet['backup identifier'], content_digest: `sha256:${sha}` } } : packet
       return { p, pk }
     }
+    const restoreReq = (s: Substrate, pk: BackupPacket, p: string, post: string | null) => ({
+      target: s.identity,
+      substrate: s,
+      packet: pk,
+      sourceCensus: census,
+      artifactPath: p,
+      repoRoot: REPO,
+      rolesCorpusPath: PATHS.fixtureRolesPath,
+      postRestoreCorpusPath: post,
+    })
+    const captureReq = () => ({
+      source: source.identity,
+      database: SOURCE_DATABASE,
+      principal: FIXTURE_REHEARSAL.principal,
+      scope: FIXTURE_REHEARSAL.scope,
+      eventClass: null,
+      declaredClassification: 'SYNTHETIC_FIXTURE' as const,
+      artifactDir,
+      repoRoot: REPO,
+    })
 
     beforeAll(async () => {
+      runId = newRunId()
+      artifactDir = mkdtempSync(path.join(tmpdir(), 'uellix-recovery-battery-'))
       source = track(createSubstrate(docker, { runId, role: 'source-fixture' }))
       loadSyntheticSource(docker, source, PATHS.fixtureRolesPath, PATHS.fixtureSourcePath)
-      capture = await captureLogicalBackup(docker, {
-        source: source.identity,
-        database: SOURCE_DATABASE,
-        principal: FIXTURE_REHEARSAL.principal,
-        scope: FIXTURE_REHEARSAL.scope,
-        eventClass: null,
-        declaredClassification: 'SYNTHETIC_FIXTURE',
-        artifactDir,
-        repoRoot: REPO,
-      })
+      const capture = await captureLogicalBackup(docker, captureReq())
       if (!capture.ok) throw new Error(`capture failed: ${capture.code}`)
       packet = capture.packet
+      census = capture.sourceCensus
       artifactPath = capture.artifactPath
       target = track(createSubstrate(docker, { runId, role: 'restore-substrate' }))
-      restore = await restoreIntoSubstrate(docker, {
-        target: target.identity,
-        substrate: target,
-        packet,
-        artifactPath,
-        repoRoot: REPO,
-        rolesCorpusPath: PATHS.fixtureRolesPath,
-        postRestoreCorpusPath: PATHS.postRestoreCorpusPath,
-      })
+      restore = await restoreIntoSubstrate(docker, restoreReq(target, packet, artifactPath, PATHS.postRestoreCorpusPath))
       if (!restore.ok) throw new Error(`restore failed: ${restore.refusal}`)
       // A PRISTINE copy, taken before ANY invariant run: the capability probe is
       // mutating and advances a sequence non-transactionally (measured), so a
@@ -196,17 +217,14 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
 
     afterAll(() => {
       for (const s of created.reverse()) proofs.push(destroySubstrate(docker, s))
-      const disposal = disposeArtifact(artifactDir, packet?.backup_identifier.artifact_sha256 ?? null)
+      const disposal = disposeArtifact(artifactDir || null, packet ? packet['backup identifier'].content_digest.slice(7) : null)
       expect(proofs.every((p) => p.verdict === 'DESTROYED_AND_VERIFIED_ABSENT')).toBe(true)
       expect(disposal.verdict).toBe('DISPOSED_AND_VERIFIED_ABSENT')
       expect(labelled(runId)).toEqual({ containers: '', volumes: '' })
     }, 300_000)
 
     it('sanity: the unsabotaged restore passes every invariant but PRI-7', () => {
-      const run = runPostRestoreInvariants(docker, { substrate: target, database: restore.restore_database!, packet, restore, capabilityProbes: probes })
-      expect(run.ok).toBe(true)
-      if (!run.ok) return
-      expect(run.results.filter((r) => r.verdict !== 'PASS').map((r) => r.id)).toEqual(['PRI-7'])
+      expect(invariantsOn(restore.restore_database!).filter((r) => r.verdict !== 'PASS').map((r) => r.id)).toEqual(['PRI-7'])
     })
 
     it.each<[string, string, string[]]>([
@@ -221,55 +239,94 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
     ])('%s -> exactly the named invariants FAIL', (_label, sabotage, expected) => {
       const db = clone()
       expect(substratePsql(docker, target, db, `${sabotage}\n`).status).toBe(0)
-      const run = runPostRestoreInvariants(docker, { substrate: target, database: db, packet, restore, capabilityProbes: probes })
-      expect(run.ok).toBe(true)
-      if (!run.ok) return
-      expect(run.results.filter((r) => r.verdict === 'FAIL').map((r) => r.id).sort()).toEqual([...expected].sort())
-      expect(noCanary(run.results)).toEqual([])
+      const results = invariantsOn(db)
+      expect(results.filter((r) => r.verdict === 'FAIL').map((r) => r.id).sort()).toEqual([...expected].sort())
+      expect(noCanary(results)).toEqual([])
+    })
+
+    it('OR-N5 / RR-CAP-7: every restore step exited 0, the defect is INDUCED, DETECTED, then REPAIRED by the post-restore corpus', () => {
+      expect(restore.steps.every((s) => s.status === 'SUCCESS')).toBe(true)
+      const db = clone()
+      expect(substratePsql(docker, target, db, 'REVOKE USAGE ON SCHEMA public FROM PUBLIC;\n').status).toBe(0)
+      const broken = Object.fromEntries(invariantsOn(db).map((r) => [r.id, r]))
+      expect(broken['PRI-2']).toMatchObject({ verdict: 'FAIL', reason_code: 'RR_CAP_7_PUBLIC_USAGE_ABSENT' })
+      expect(broken['PRI-2-CAP'].observed).toEqual(['fixture_capability:public.fixture_capability_probe:exit=3:sqlstate=42501'])
+      // Repair on a fresh clone of the same defect (the first was probed).
+      const db2 = clone()
+      expect(substratePsql(docker, target, db2, 'REVOKE USAGE ON SCHEMA public FROM PUBLIC;\n').status).toBe(0)
+      expect(substratePsql(docker, target, db2, readFileSync(PATHS.postRestoreCorpusPath, 'utf8')).status).toBe(0)
+      const repaired = Object.fromEntries(invariantsOn(db2).map((r) => [r.id, r]))
+      expect(repaired['PRI-2'].verdict).toBe('PASS')
+      expect(repaired['PRI-2-CAP'].verdict).toBe('PASS')
     })
 
     it('OR-N20: a second restore into the same (now populated) cluster is refused as not role-pristine', async () => {
-      const again = await restoreIntoSubstrate(docker, { target: target.identity, substrate: target, packet, artifactPath, repoRoot: REPO, rolesCorpusPath: PATHS.fixtureRolesPath, postRestoreCorpusPath: null })
+      const again = await restoreIntoSubstrate(docker, restoreReq(target, packet, artifactPath, null))
       expect(again).toMatchObject({ ok: false, refusal: 'RESTORE_SUBSTRATE_NOT_ROLE_PRISTINE' })
     })
 
     it('OR-N3: restoring into the SOURCE container of the same run is refused', async () => {
-      const out = await restoreIntoSubstrate(docker, { target: source.identity, substrate: source, packet, artifactPath, repoRoot: REPO, rolesCorpusPath: PATHS.fixtureRolesPath, postRestoreCorpusPath: null })
+      const out = await restoreIntoSubstrate(docker, { ...restoreReq(source, packet, artifactPath, null), target: source.identity })
       expect(out).toMatchObject({ ok: false, refusal: 'RESTORE_TARGET_OWNERSHIP_REFUSED', refusal_detail: 'SUBSTRATE_NOT_OWNED_BY_RUN' })
     })
 
     it('OR-N2: artifact bytes that differ from the packet digest are refused before restore', async () => {
       const { p, pk } = corruptCopy('digest-mismatch', (b) => (b[b.length - 10] ^= 0xff), false)
-      const out = await restoreIntoSubstrate(docker, { target: target.identity, substrate: target, packet: pk, artifactPath: p, repoRoot: REPO, rolesCorpusPath: PATHS.fixtureRolesPath, postRestoreCorpusPath: null })
+      const out = await restoreIntoSubstrate(docker, restoreReq(target, pk, p, null))
       expect(out).toMatchObject({ ok: false, refusal: 'RESTORE_ARTIFACT_INTEGRITY_REFUSED', refusal_detail: 'ARTIFACT_DIGEST_MISMATCH' })
     })
 
     it('OR-N1: a header-corrupted artifact is refused structurally even when its digest was recomputed to match', async () => {
       const { p, pk } = corruptCopy('header-corrupt', (b) => b.fill(0x41, 0, 5), true)
-      const out = await restoreIntoSubstrate(docker, { target: target.identity, substrate: target, packet: pk, artifactPath: p, repoRoot: REPO, rolesCorpusPath: PATHS.fixtureRolesPath, postRestoreCorpusPath: null })
+      const out = await restoreIntoSubstrate(docker, restoreReq(target, pk, p, null))
       expect(out).toMatchObject({ ok: false, refusal: 'RESTORE_ARTIFACT_STRUCTURE_REFUSED' })
     })
 
     it('OR-N1: a data-corrupted artifact (digest recomputed) never yields a successful restore', async () => {
       const fresh = track(createSubstrate(docker, { runId, role: 'restore-substrate' }))
       const { p, pk } = corruptCopy('data-corrupt', (b) => b.fill(0x00, b.length - 400, b.length - 40), true)
-      const out = await restoreIntoSubstrate(docker, { target: fresh.identity, substrate: fresh, packet: pk, artifactPath: p, repoRoot: REPO, rolesCorpusPath: PATHS.fixtureRolesPath, postRestoreCorpusPath: PATHS.postRestoreCorpusPath })
+      const out = await restoreIntoSubstrate(docker, restoreReq(fresh, pk, p, PATHS.postRestoreCorpusPath))
       expect(out.ok).toBe(false)
       expect(['RESTORE_STEP_FAILED', 'RESTORE_ARTIFACT_STRUCTURE_REFUSED']).toContain(out.refusal)
       expect(noCanary(out)).toEqual([])
     })
 
-    it('OR-N21 / SENT-RESTORE-ERROR-ROW: a restore error that QUOTES a row value leaves only a digest in evidence', async () => {
+    it('NB-3 real: bytes swapped AFTER validation and TOC, DURING the pg_restore stream -> STOP (real Docker, real pg_restore)', async () => {
+      const fresh = track(createSubstrate(docker, { runId, role: 'restore-substrate' }))
+      const copy = path.join(artifactDir, 'toctou.dump')
+      copyFileSync(artifactPath, copy)
+      const tamper: DockerCli = {
+        ...docker,
+        run: docker.run,
+        runWithEnv: docker.runWithEnv,
+        streamToFile: docker.streamToFile,
+        streamFromFile: (args, file) => {
+          if (args.includes('-d')) {
+            const bytes = readFileSync(file)
+            bytes[bytes.length - 20] ^= 0xff
+            writeFileSync(file, bytes)
+          }
+          return docker.streamFromFile(args, file)
+        },
+      }
+      const out = await restoreIntoSubstrate(tamper, restoreReq(fresh, packet, copy, PATHS.postRestoreCorpusPath))
+      expect(out).toMatchObject({ ok: false, refusal: 'RESTORE_STREAM_DIGEST_MISMATCH' })
+      expect(out.steps.map((s) => s.step)).not.toContain('POST_RESTORE_CORPUS')
+    })
+
+    it('OR-N21 / NB-1: a restore error that QUOTES a row value leaves only a closed diagnostic in evidence', async () => {
       const db = clone()
-      const prep = 'TRUNCATE public.fixture_member;\nALTER TABLE public.fixture_member ADD CONSTRAINT no_canary CHECK (display NOT LIKE \'CANARY%\') NOT VALID;\n'
+      const prep = "TRUNCATE public.fixture_member;\nALTER TABLE public.fixture_member ADD CONSTRAINT no_canary CHECK (display NOT LIKE 'CANARY%') NOT VALID;\n"
       expect(substratePsql(docker, target, db, prep).status).toBe(0)
       const res = await runPgRestore(docker, target, db, artifactPath, ['--data-only', '-n', 'public', '-t', 'fixture_member'])
       expect(res.status).not.toBe(0)
       // The raw stderr really does carry a row value — otherwise this proves nothing.
       expect(CANARIES.some((c) => res.stderr.includes(c))).toBe(true)
-      const step = { step: 'PG_RESTORE', status: 'FAILED', exit_code: res.status, input_sha256: res.sha256, ...summarizeStderr(res.stderr) }
+      const outcome = classifyToolOutcome(res.status, res.stderr)
+      const step = { step: 'PG_RESTORE', status: 'FAILED', exit_code: outcome.exit_code, diagnostic: outcome.diagnostic, input_sha256: res.sha256 }
       expect(validateEvidence(step, RESTORE_STEP_SHAPE)).toEqual([])
       expect(noCanary(step)).toEqual([])
+      expect(JSON.stringify(step)).not.toContain(createHash('sha256').update(res.stderr).digest('hex'))
     })
 
     it('OR-N7 at capture: a scope that omits a depended-upon extension is refused and leaves no artifact', async () => {
@@ -283,16 +340,17 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
       }
     })
 
-    it('OR-P7 real: two captures differing only in event_class agree on census, scope and invocation', async () => {
+    it('OR-P7 real: two captures differing only in event_class agree on everything but the carried value', async () => {
       const dir = mkdtempSync(path.join(tmpdir(), 'uellix-recovery-evclass-'))
       try {
         const other = await captureLogicalBackup(docker, { ...captureReq(), eventClass: 'S1_CORPUS_NO_NEW_RUNTIME', artifactDir: dir })
         expect(other.ok).toBe(true)
         if (!other.ok) return
-        expect(other.packet.event_class).toEqual({ value: 'S1_CORPUS_NO_NEW_RUNTIME', policy: 'NOT_CHOSEN_BY_THIS_MECHANISM' })
-        expect(packet.event_class).toEqual({ value: null, policy: 'NOT_CHOSEN_BY_THIS_MECHANISM' })
-        for (const k of ['source_census', 'scope', 'target_identifier', 'data_classification', 'release_binding'] as const) expect(other.packet[k]).toEqual(packet[k])
-        expect(other.packet.method.invocation).toEqual(packet.method.invocation)
+        expect(other.packet[NO_MUTATION_CONFIRMATION].the_change_it_precedes.event_class).toEqual({ value: 'S1_CORPUS_NO_NEW_RUNTIME', policy: 'NOT_CHOSEN_BY_THIS_MECHANISM' })
+        expect(packet[NO_MUTATION_CONFIRMATION].the_change_it_precedes.event_class.value).toBeNull()
+        for (const k of ['target identifier', 'the method used', 'the scope covered'] as const) expect(other.packet[k]).toEqual(packet[k])
+        expect(other.packet[NO_MUTATION_CONFIRMATION].capture_census).toEqual(packet[NO_MUTATION_CONFIRMATION].capture_census)
+        expect(other.sourceCensus).toEqual(census)
       } finally {
         rmSync(dir, { recursive: true, force: true })
       }
@@ -305,27 +363,10 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
       expect(substratePsql(docker, source, SOURCE_DATABASE, 'CREATE ROLE recovery_capture_nobypass LOGIN; GRANT pg_read_all_data TO recovery_capture_nobypass;\n').status).toBe(0)
       const nb = await captureLogicalBackup(docker, { ...captureReq(), principal: { roleName: 'recovery_capture_nobypass', provenance: 'LOCAL_DISPOSABLE_FIXTURE_ROLE' } })
       expect(nb.ok ? [] : nb.principalRefusals).toEqual(['PRINCIPAL_NO_BYPASSRLS_WITH_RLS_IN_SCOPE'])
-      const writer = 'CREATE ROLE recovery_capture_writer LOGIN BYPASSRLS; GRANT pg_read_all_data TO recovery_capture_writer; GRANT INSERT ON public.fixture_audit TO recovery_capture_writer;\n'
-      expect(substratePsql(docker, source, SOURCE_DATABASE, writer).status).toBe(0)
-      const w = await captureLogicalBackup(docker, { ...captureReq(), principal: { roleName: 'recovery_capture_writer', provenance: 'LOCAL_DISPOSABLE_FIXTURE_ROLE' } })
-      expect(w.ok ? [] : w.principalRefusals).toEqual(['PRINCIPAL_WRITE_PRIVILEGE_IN_SCOPE'])
     })
-
-    function captureReq() {
-      return {
-        source: source.identity,
-        database: SOURCE_DATABASE,
-        principal: FIXTURE_REHEARSAL.principal,
-        scope: FIXTURE_REHEARSAL.scope,
-        eventClass: null,
-        declaredClassification: 'SYNTHETIC_FIXTURE' as const,
-        artifactDir,
-        repoRoot: REPO,
-      }
-    }
   })
 
-  it('OR-N11 real: a container carrying this run\'s labels but on the bridge network is refused as a substrate', async () => {
+  it("OR-N11 real: a container carrying this run's labels but on the bridge network is refused as a substrate", async () => {
     const runId = newRunId()
     const name = `uellix-recovery-bridged-${runId}`
     try {
@@ -372,4 +413,3 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
     expect(gitStatus()).toBe(statusBefore)
   })
 })
-

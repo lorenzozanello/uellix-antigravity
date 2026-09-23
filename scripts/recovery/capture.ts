@@ -6,13 +6,13 @@
 //
 //   1. identity      — the source is a LOCAL_DISPOSABLE container this run owns.
 //                      A HOSTED_STAGING source is REFUSED here: this mechanism has
-//                      no hosted grant, and a future execution authority must
-//                      supply and verify the capture principal against the
-//                      authorized target before lifting the refusal.
+//                      no hosted grant, and its principal is
+//                      BLOCKED_PENDING_AUTHORIZED_REACHABILITY_PROOF (below).
 //   2. location      — the artifact directory is outside the repository.
 //   3. tool pin      — image id, pg_dump version, source server version.
-//   4. principal     — the capture role is verified READ-ONLY by catalog
-//                      predicates, as itself, before a single row is read.
+//   4. principal     — the capture role AND EVERY ROLE IT CAN BECOME are verified
+//                      read-only by catalog predicates, as itself, before a
+//                      single row is read.
 //   5. pre-census    — the source observation the restore is later judged by.
 //   6. scope closure — every extension an in-scope object depends on is
 //                      declared (pg_dump -n does NOT emit CREATE EXTENSION on
@@ -20,7 +20,8 @@
 //   7. pg_dump -Fc   — streamed to the file and hashed on the stream.
 //   8. post-census   — equality with 5 is recorded as a FACT. Whether equality
 //                      is REQUIRED (S8 / OD-3 per event class) is not decided here.
-//   9. packet        — built, then validated against the closed grammar.
+//   9. packet        — built by buildBackupPacket (six frozen contents), then
+//                      validated, together with the bound census record.
 //
 // Any failure after the artifact file exists deletes it: a half-written dump is
 // still a copy of source data (RETENTION_AND_DISPOSAL).
@@ -29,18 +30,18 @@ import { existsSync, rmSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import {
-  BACKUP_PACKET_VERSION,
-  EVENT_CLASS_POLICY,
+  buildBackupPacket,
   classifyData,
-  targetIdentifierOf,
   validateBackupPacket,
+  validateSourceCensusRecord,
   type BackupPacket,
   type DataClassification,
   type DeclaredScope,
+  type SourceCensusRecord,
 } from './artifact-packet'
 import { checkArtifactLocation } from './artifact-integrity'
-import { censusInvocation, censusSha256, parseCensusResult, type Census } from './catalog-census'
-import { extractSqlstate, summarizeStderr, type GrammarViolation } from './evidence-privacy'
+import { censusInvocation, parseCensusResult, type Census } from './catalog-census'
+import { classifyToolOutcome, extractSqlstate, type GrammarViolation } from './evidence-privacy'
 import type { DockerCli, ProcessResult } from './process'
 import type { RecoveryIdentity } from './recovery-target'
 import { assertSubstrateOwnership, SubstrateRefusal } from './substrate'
@@ -58,6 +59,15 @@ export interface CapturePrincipal {
   provenance: 'LOCAL_DISPOSABLE_FIXTURE_ROLE' | 'AUTHORITY_SUPPLIED'
 }
 
+/**
+ * The hosted capture principal's status under THIS mechanism. Proving that a
+ * hosted role cannot SET ROLE into a write-capable identity needs catalog reads
+ * against the authorized target that no current authority grants (the recovery
+ * authority's AUTHORIZED_OPERATIONS name no such read). Until an execution
+ * authority supplies an authorized reachability proof, the answer is fixed.
+ */
+export const HOSTED_PRINCIPAL_STATUS = 'BLOCKED_PENDING_AUTHORIZED_REACHABILITY_PROOF' as const
+
 export interface CaptureRequest {
   source: RecoveryIdentity
   database: string
@@ -66,7 +76,10 @@ export interface CaptureRequest {
   /** Opaque DDL event-class code, carried verbatim. Never interpreted. */
   eventClass: string | null
   declaredClassification: DataClassification
-  releaseBinding?: BackupPacket['release_binding']
+  /** FRESHNESS criterion 4: the SHA of this tooling, when the caller measured a clean tree. */
+  toolingSha?: string | null
+  releaseSha?: string | null
+  migrationCorpusPacketSha256?: string | null
   artifactDir: string
   repoRoot: string
 }
@@ -87,11 +100,12 @@ export type CaptureRefusalCode =
   | 'CAPTURE_PACKET_GRAMMAR'
 
 export type CaptureOutcome =
-  | { ok: true; packet: BackupPacket; artifactPath: string }
+  | { ok: true; packet: BackupPacket; sourceCensus: SourceCensusRecord; artifactPath: string }
   | {
       ok: false
       code: CaptureRefusalCode
       detail: string
+      hostedPrincipalStatus?: typeof HOSTED_PRINCIPAL_STATUS
       toolRefusals?: ToolRefusal[]
       principalRefusals?: PrincipalRefusalCode[]
       violations?: GrammarViolation[]
@@ -102,6 +116,16 @@ export type CaptureOutcome =
 // ---------------------------------------------------------------------------
 // Capture principal verification (pure evaluation over a catalog observation)
 // ---------------------------------------------------------------------------
+
+/** A role the principal can BECOME: any membership chain, whatever its INHERIT / SET / ADMIN options. */
+export interface ReachableRole {
+  name: string
+  rolsuper: boolean
+  rolcreaterole: boolean
+  rolcreatedb: boolean
+  write_privileged_relations: number
+  schema_create: number
+}
 
 export interface PrincipalObservation {
   role: string
@@ -116,6 +140,7 @@ export interface PrincipalObservation {
   schema_create: number
   schema_no_usage: number
   rls_relations: number
+  reachable_roles: ReachableRole[]
 }
 
 export type PrincipalRefusalCode =
@@ -128,10 +153,33 @@ export type PrincipalRefusalCode =
   | 'PRINCIPAL_CANNOT_READ_SCOPE'
   | 'PRINCIPAL_NO_BYPASSRLS_WITH_RLS_IN_SCOPE'
   | 'PRINCIPAL_SCOPE_EMPTY'
+  | 'PRINCIPAL_REACHABILITY_UNKNOWN'
+  | 'PRINCIPAL_REACHES_UNSAFE_PREDEFINED_ROLE'
+  | 'PRINCIPAL_REACHES_SUPERUSER'
+  | 'PRINCIPAL_REACHES_ROLE_OR_DB_CREATOR'
+  | 'PRINCIPAL_REACHES_WRITE_PRIVILEGE'
+  | 'PRINCIPAL_REACHES_CREATE_ON_SCOPE_SCHEMA'
 
 /**
- * The CAPTURE_PRINCIPAL_CONTRACT of the implementation manifest. Every
- * predicate is evaluated; all failures are reported, not only the first.
+ * The only predefined (pg_*) role a capture principal may be able to become.
+ * Everything else under the reserved pg_ prefix is refused unevaluated:
+ * pg_write_all_data, pg_write_server_files and pg_execute_server_program write
+ * by definition, and a closed allowlist fails closed on any role added later.
+ */
+export const SAFE_PREDEFINED_ROLES: readonly string[] = ['pg_read_all_data']
+
+/**
+ * The CAPTURE_PRINCIPAL_CONTRACT, closed under role reachability.
+ *
+ * Effective privileges alone are NOT enough — measured by the recert of
+ * ec573e9b: a principal granted a writer role WITH INHERIT FALSE, SET TRUE
+ * passes every has_table_privilege predicate and then writes after SET ROLE.
+ * NOINHERIT does not help either: it removes inherited privileges, not the
+ * ability to SET ROLE. Measured here as well: a grant WITH ADMIN TRUE, INHERIT
+ * FALSE, SET FALSE lets the principal re-grant itself SET and become the role.
+ * So every role reachable through ANY membership chain (pg_has_role MEMBER,
+ * which follows grants regardless of their INHERIT/SET/ADMIN options) is held
+ * to the same predicates as the principal. Every failure is reported.
  */
 export function evaluatePrincipal(expectedRole: string, o: PrincipalObservation): PrincipalRefusalCode[] {
   const out: PrincipalRefusalCode[] = []
@@ -144,10 +192,41 @@ export function evaluatePrincipal(expectedRole: string, o: PrincipalObservation)
   if (o.unselectable_relations > 0 || o.schema_no_usage > 0) out.push('PRINCIPAL_CANNOT_READ_SCOPE')
   if (o.rls_relations > 0 && !o.rolbypassrls) out.push('PRINCIPAL_NO_BYPASSRLS_WITH_RLS_IN_SCOPE')
   if (o.relation_count === 0) out.push('PRINCIPAL_SCOPE_EMPTY')
+  if (!Array.isArray(o.reachable_roles) || !o.reachable_roles.every(isReachableRole)) {
+    out.push('PRINCIPAL_REACHABILITY_UNKNOWN')
+    return out
+  }
+  const add = (code: PrincipalRefusalCode) => {
+    if (!out.includes(code)) out.push(code)
+  }
+  for (const r of o.reachable_roles) {
+    if (r.name.startsWith('pg_')) {
+      if (!SAFE_PREDEFINED_ROLES.includes(r.name)) add('PRINCIPAL_REACHES_UNSAFE_PREDEFINED_ROLE')
+      continue
+    }
+    if (r.rolsuper) add('PRINCIPAL_REACHES_SUPERUSER')
+    if (r.rolcreaterole || r.rolcreatedb) add('PRINCIPAL_REACHES_ROLE_OR_DB_CREATOR')
+    if (r.write_privileged_relations > 0) add('PRINCIPAL_REACHES_WRITE_PRIVILEGE')
+    if (r.schema_create > 0) add('PRINCIPAL_REACHES_CREATE_ON_SCOPE_SCHEMA')
+  }
   return out
 }
 
-/** Run AS the principal. Relation predicates use OIDs, never names (no absent-object errors). */
+function isReachableRole(v: unknown): v is ReachableRole {
+  if (typeof v !== 'object' || v === null) return false
+  const r = v as Record<string, unknown>
+  return (
+    typeof r.name === 'string' &&
+    ['rolsuper', 'rolcreaterole', 'rolcreatedb'].every((k) => typeof r[k] === 'boolean') &&
+    ['write_privileged_relations', 'schema_create'].every((k) => Number.isSafeInteger(r[k]))
+  )
+}
+
+/**
+ * Run AS the principal. Relation and role predicates use OIDs, never names (no
+ * absent-object errors). `reachable` is every role other than the principal
+ * that pg_has_role(..., 'MEMBER') says it belongs to through any chain.
+ */
 export const PRINCIPAL_SQL = String.raw`
 BEGIN READ ONLY;
 WITH scope AS (
@@ -157,6 +236,11 @@ WITH scope AS (
 ), rel AS (
   SELECT c.oid, c.relkind, c.relrowsecurity FROM pg_class c JOIN ns ON ns.oid = c.relnamespace
   WHERE c.relkind IN ('r','p','v','m','S','f')
+), me AS (
+  SELECT oid FROM pg_roles WHERE rolname = current_user
+), reachable AS (
+  SELECT r.oid, r.rolname, r.rolsuper, r.rolcreaterole, r.rolcreatedb
+  FROM pg_roles r, me WHERE r.oid <> me.oid AND pg_has_role(me.oid, r.oid, 'MEMBER')
 )
 SELECT json_build_object(
   'role', current_user,
@@ -171,7 +255,14 @@ SELECT json_build_object(
    OR (relkind = 'S' AND NOT has_sequence_privilege(oid, 'SELECT'))),
   'schema_create', (SELECT count(*) FROM ns WHERE has_schema_privilege(oid, 'CREATE')),
   'schema_no_usage', (SELECT count(*) FROM ns WHERE NOT has_schema_privilege(oid, 'USAGE')),
-  'rls_relations', (SELECT count(*) FROM rel WHERE relrowsecurity)
+  'rls_relations', (SELECT count(*) FROM rel WHERE relrowsecurity),
+  'reachable_roles', (SELECT coalesce(json_agg(json_build_object(
+      'name', x.rolname, 'rolsuper', x.rolsuper, 'rolcreaterole', x.rolcreaterole, 'rolcreatedb', x.rolcreatedb,
+      'write_privileged_relations', (SELECT count(*) FROM rel WHERE
+          (relkind <> 'S' AND has_table_privilege(x.oid, rel.oid, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+       OR (relkind = 'S' AND has_sequence_privilege(x.oid, rel.oid, 'UPDATE'))),
+      'schema_create', (SELECT count(*) FROM ns WHERE has_schema_privilege(x.oid, ns.oid, 'CREATE'))
+    ) ORDER BY x.rolname), '[]'::json) FROM reachable x)
 ) FROM pg_roles r WHERE r.rolname = current_user;
 COMMIT;
 `
@@ -199,6 +290,7 @@ function isPrincipalObservation(v: unknown): v is PrincipalObservation {
   const o = v as Record<string, unknown>
   const bools = ['rolsuper', 'rolcreaterole', 'rolcreatedb', 'rolbypassrls', 'write_all_member']
   const ints = ['relation_count', 'write_privileged_relations', 'unselectable_relations', 'schema_create', 'schema_no_usage', 'rls_relations']
+  // reachable_roles is NOT required here: its absence must reach evaluatePrincipal as REACHABILITY_UNKNOWN.
   return typeof o.role === 'string' && bools.every((k) => typeof o[k] === 'boolean') && ints.every((k) => Number.isSafeInteger(o[k]))
 }
 
@@ -212,11 +304,12 @@ export async function captureLogicalBackup(docker: DockerCli, req: CaptureReques
     return {
       ok: false,
       code: 'RECOVERY_HOSTED_CAPTURE_NOT_AUTHORIZED',
-      detail: 'this mechanism holds no hosted grant; a future execution authority must supply and verify the capture principal against the authorized target',
+      detail: 'this mechanism holds no hosted grant, and no authorized reachability proof for a hosted capture principal exists',
+      hostedPrincipalStatus: HOSTED_PRINCIPAL_STATUS,
     }
   }
   if (req.principal.provenance !== 'LOCAL_DISPOSABLE_FIXTURE_ROLE') {
-    return { ok: false, code: 'CAPTURE_PRINCIPAL_PROVENANCE_REFUSED', detail: 'only a disposable fixture role is accepted by the offline mechanism' }
+    return { ok: false, code: 'CAPTURE_PRINCIPAL_PROVENANCE_REFUSED', detail: 'only a disposable fixture role is accepted by the offline mechanism', hostedPrincipalStatus: HOSTED_PRINCIPAL_STATUS }
   }
   const grammarProblems = [
     ...[req.database, req.principal.roleName, ...req.scope.schemas, ...req.scope.extensions].filter((t) => !IDENT.test(t)),
@@ -258,12 +351,12 @@ export async function captureLogicalBackup(docker: DockerCli, req: CaptureReques
   )
   if (!toolVerdict.ok) return { ok: false, code: 'CAPTURE_TOOL_PIN_REFUSED', detail: toolVerdict.refusals.map((r) => r.code).join(','), toolRefusals: toolVerdict.refusals }
 
-  // 4. Principal.
+  // 4. Principal, closed under role reachability.
   const scopeVars = ['-v', 'ON_ERROR_STOP=1', '-v', 'VERBOSITY=sqlstate', '-tAq', '-v', `scope_schemas=${req.scope.schemas.join(',')}`]
   const principalRes = principalPsql(docker, cid, req.principal.roleName, req.database, scopeVars, PRINCIPAL_SQL)
   const observation = principalRes.status === 0 ? firstJsonLine(principalRes.stdout) : null
   if (!isPrincipalObservation(observation)) {
-    return { ok: false, code: 'CAPTURE_PRINCIPAL_REFUSED', detail: `principal observation failed (sqlstate ${extractSqlstate(principalRes.stderr) ?? 'none'})` }
+    return { ok: false, code: 'CAPTURE_PRINCIPAL_REFUSED', detail: `principal observation failed (${classifyToolOutcome(principalRes.status, principalRes.stderr).diagnostic}, sqlstate ${extractSqlstate(principalRes.stderr) ?? 'none'})`, principalRefusals: ['PRINCIPAL_REACHABILITY_UNKNOWN'] }
   }
   const principalRefusals = evaluatePrincipal(req.principal.roleName, observation)
   if (principalRefusals.length > 0) return { ok: false, code: 'CAPTURE_PRINCIPAL_REFUSED', detail: principalRefusals.join(','), principalRefusals }
@@ -305,45 +398,39 @@ export async function captureLogicalBackup(docker: DockerCli, req: CaptureReques
     return !existsSync(artifactPath)
   }
   if (dump.status !== 0 || dump.bytes === 0) {
-    return { ok: false, code: 'CAPTURE_TOOL_FAILED', detail: `pg_dump exit ${dump.status}, stderr class ${summarizeStderr(dump.stderr).stderr_class}`, partialArtifactDeleted: deletePartial() }
+    return { ok: false, code: 'CAPTURE_TOOL_FAILED', detail: `pg_dump ${classifyToolOutcome(dump.status, dump.stderr).diagnostic}`, partialArtifactDeleted: deletePartial() }
   }
 
   // 8. Post-census.
   const post = runCensus()
   if (!post.ok) return { ok: false, code: 'CAPTURE_CENSUS_FAILED', detail: post.code, violations: post.violations, partialArtifactDeleted: deletePartial() }
-  const preSha = censusSha256(pre.census)
-  const postSha = censusSha256(post.census)
 
-  // 9. Packet.
-  const stderr = summarizeStderr(dump.stderr)
-  const packet: BackupPacket = {
-    packet_class: 'BACKUP_PACKET',
-    packet_version: BACKUP_PACKET_VERSION,
-    mechanism: 'STAGING_RECOVERY_OFFLINE_MECHANISM',
-    target_identifier: targetIdentifierOf(source),
-    backup_identifier: { artifact_id: `sha256:${dump.sha256}`, artifact_sha256: dump.sha256, artifact_bytes: dump.bytes, storage_locator_class: 'OS_TEMP_OUTSIDE_REPOSITORY' },
-    backup_timestamp: { capture_started_at: startedAt, capture_finished_at: finishedAt },
-    method: {
-      tool: 'pg_dump',
-      tool_version: parseToolVersion(dumpVersion.stdout.split(/\r?\n/)[0], 'pg_dump') ?? '0',
-      format: 'custom',
-      image_ref: RECOVERY_TOOL_PIN.imageRef,
-      image_id: source.imageId,
-      capture_principal: req.principal.roleName,
-      invocation,
-      stderr_sha256: stderr.stderr_sha256,
-      stderr_lines: stderr.stderr_lines,
-    },
+  // 9. Packet + bound census record.
+  const packet = buildBackupPacket({
+    identity: source,
+    artifactSha256: dump.sha256,
+    captureStartedAt: startedAt,
+    captureFinishedAt: finishedAt,
+    toolVersion: parseToolVersion(dumpVersion.stdout.split(/\r?\n/)[0], 'pg_dump') ?? '0',
+    imageRefPinned: RECOVERY_TOOL_PIN.imageRef,
+    imageIdObserved: source.imageId,
+    toolingSha: req.toolingSha ?? null,
+    invocation,
     scope: req.scope,
-    no_intervening_mutation: { policy: EVENT_CLASS_POLICY, pre_capture_census_sha256: preSha, post_capture_census_sha256: postSha, census_pre_post_equal: preSha === postSha },
-    event_class: { value: req.eventClass, policy: EVENT_CLASS_POLICY },
-    release_binding: req.releaseBinding ?? { release_sha: null, migration_corpus_packet_sha256: null },
+    preCensus: pre.census,
+    postCensus: post.census,
+    eventClass: req.eventClass,
+    releaseSha: req.releaseSha ?? null,
+    migrationCorpusPacketSha256: req.migrationCorpusPacketSha256 ?? null,
+  })
+  const sourceCensus: SourceCensusRecord = {
+    record_class: 'SOURCE_CATALOG_CENSUS_RECORD',
+    census: pre.census,
     data_classification: classifyData(source, req.declaredClassification),
-    source_census: pre.census,
   }
-  const violations = validateBackupPacket(packet)
+  const violations = [...validateBackupPacket(packet), ...validateSourceCensusRecord(sourceCensus, packet)]
   if (violations.length > 0) return { ok: false, code: 'CAPTURE_PACKET_GRAMMAR', detail: `${violations.length} grammar violation(s)`, violations, partialArtifactDeleted: deletePartial() }
-  return { ok: true, packet, artifactPath }
+  return { ok: true, packet, sourceCensus, artifactPath }
 }
 
 /** Declared schemas exist; declared extensions exist; every depended-upon extension is declared. */

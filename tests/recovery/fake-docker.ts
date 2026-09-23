@@ -12,7 +12,10 @@
 // Knobs let a test make the fake misbehave the way a real failure would
 // (a volume that cannot be removed, a network mode that is not "none").
 
-import type { DockerCli, ProcessResult } from '../../scripts/recovery/process'
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+
+import type { DockerCli, ProcessResult, StreamInResult, StreamOutResult } from '../../scripts/recovery/process'
 
 interface FakeVolume {
   name: string
@@ -43,6 +46,12 @@ export interface FakeDockerOptions {
   /** `rm` ignores `-v` (simulates the precedent `docker rm -f` without -v). */
   rmIgnoresV?: boolean
   exec?: (containerId: string, argv: string[], input?: string) => ProcessResult
+  /** Bytes a streamed `docker exec ... pg_dump` writes to the artifact file. */
+  dumpBytes?: Buffer
+  /** Called BEFORE a streamFromFile reads the file — lets a test change bytes mid-flight. */
+  onStream?: (args: string[], filePath: string, callIndex: number) => void
+  /** stdout/status of a streamFromFile call (default: status 0, empty stdout). */
+  streamResult?: (args: string[]) => { status: number; stdout: string; stderr?: string }
 }
 
 const ok = (stdout = ''): ProcessResult => ({ status: 0, stdout, stderr: '' })
@@ -83,12 +92,24 @@ export class FakeDocker implements DockerCli {
     return this.run(args)
   }
 
-  async streamToFile(): Promise<never> {
-    throw new Error('FakeDocker.streamToFile is not modelled')
+  readonly streamCalls: string[][] = []
+
+  /** Writes the configured dump bytes; the digest is of the bytes written, as in the real CLI. */
+  async streamToFile(args: string[], filePath: string): Promise<StreamOutResult> {
+    this.calls.push(args)
+    if (!this.opts.dumpBytes) throw new Error('FakeDocker.streamToFile: no dumpBytes configured')
+    writeFileSync(filePath, this.opts.dumpBytes, { flag: 'wx' })
+    return { status: 0, stderr: '', sha256: createHash('sha256').update(this.opts.dumpBytes).digest('hex'), bytes: this.opts.dumpBytes.length }
   }
 
-  async streamFromFile(): Promise<never> {
-    throw new Error('FakeDocker.streamFromFile is not modelled')
+  /** Reads the file AT STREAM TIME and hashes exactly what it read — a behavioral oracle for streaming integrity. */
+  async streamFromFile(args: string[], filePath: string): Promise<StreamInResult> {
+    this.calls.push(args)
+    this.streamCalls.push(args)
+    this.opts.onStream?.(args, filePath, this.streamCalls.length - 1)
+    const bytes = readFileSync(filePath)
+    const r = this.opts.streamResult?.(args) ?? { status: 0, stdout: '' }
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr ?? '', sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length }
   }
 
   run(args: string[], input?: string): ProcessResult {

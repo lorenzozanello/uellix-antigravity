@@ -8,59 +8,68 @@
 //               restore-substrate this run labelled, pinned image, running,
 //               network "none". A HOSTED identity is refused structurally —
 //               the authority's AUTHORIZED_OPERATIONS never let a restore
-//               touch anything but the disposable container.
-//   integrity   location + recomputed digest + size (artifact-integrity.ts).
+//               touch anything but the disposable container. What inspect
+//               REPORTS (image id, network mode) is kept as the observation.
+//   binding     the source census record is the one the packet digests.
+//   integrity   location + recomputed digest (artifact-integrity.ts).
 //   structure   `pg_restore --list` of the streamed bytes: custom format,
-//               non-empty, TABLE entries == captured relations, header versions
-//               on the pin; the streamed digest must match as well.
+//               non-empty, TABLE entries == bound census relations, header
+//               versions on the pin; the streamed digest must match as well.
 //   tools       pg_restore version and substrate server version on the pin.
 //   pristine    the cluster's roles are EXACTLY the pinned image baseline
 //               (PRI-3: roles are cluster-scoped; a pre-existing application
 //               role masks the first real failure).
 //   roles       the roles corpus (digest recorded).
-//   database    a fresh database; if the artifact carries its own
-//               `SCHEMA - public` entry, the fresh database's EMPTY public is
-//               dropped so the artifact alone defines it (measured: otherwise
-//               pg_restore fails with "schema public already exists").
+//   database    a fresh database.
+//   selection   if the archive carries its own `SCHEMA - public`, a TOC list
+//               without that one entry is written into the container and used
+//               with `pg_restore -L` — non-destructive; the fresh database
+//               keeps its own public (earlier versions DROPPED it; the recert
+//               of ec573e9b found that act named nowhere in the authority).
 //   restore     pg_restore --exit-on-error, fed the artifact; the sha256 of
 //               the bytes it actually received must equal the packet digest.
 //   post        the post-restore corpus (db/baseline/stella_g2_post_restore.sql
-//               for the RR-CAP-7 entries pg_dump does not emit), digest recorded,
-//               or recorded as SKIPPED — never silently absent.
+//               for the RR-CAP-7 entries), digest recorded, or SKIPPED —
+//               never silently absent.
 //
-// Exit status is recorded per step and is NECESSARY, never SUFFICIENT: whether
-// the restore WORKED is decided by post-restore-invariants.ts.
+// Exit status is recorded per step as a CLOSED outcome (exit code + diagnostic
+// class; no stderr text, no stderr digest) and is NECESSARY, never SUFFICIENT:
+// whether the restore WORKED is decided by post-restore-invariants.ts.
 
 import { readFileSync } from 'node:fs'
 
-import type { BackupPacket } from './artifact-packet'
-import { checkArchiveStructure, parseArchiveToc, verifyArtifactDigest } from './artifact-integrity'
-import { S, summarizeStderr, type Shape, type StderrSummary } from './evidence-privacy'
+import { NO_MUTATION_CONFIRMATION, packetArtifactSha256, type BackupPacket, type SourceCensusRecord } from './artifact-packet'
+import { checkArchiveStructure, parseArchiveToc, selectTocForExistingPublic, verifyArtifactDigest } from './artifact-integrity'
+import { censusSha256 } from './catalog-census'
+import { classifyToolOutcome, S, TOOL_DIAGNOSTICS, type Shape, type ToolDiagnostic } from './evidence-privacy'
 import { sha256Hex, type DockerCli } from './process'
 import type { RecoveryIdentity } from './recovery-target'
 import { assertSubstrateOwnership, SubstrateRefusal, SUBSTRATE_SUPERUSER, substratePsql, type Substrate } from './substrate'
 import { evaluateToolPin, PINNED_IMAGE_BASELINE_ROLES, type ToolRefusal } from './tool-pin'
+
+/** Where the selected TOC list lives INSIDE the disposable container (destroyed with it). */
+export const IN_CONTAINER_TOC_LIST = '/tmp/uellix-recovery.toc'
 
 export interface RestoreRequest {
   /** The identity the caller claims to restore into. Must be `substrate.identity`. */
   target: RecoveryIdentity
   substrate: Substrate
   packet: BackupPacket
+  sourceCensus: SourceCensusRecord
   artifactPath: string
   repoRoot: string
   rolesCorpusPath: string
   /** null = deliberately skipped; recorded as SKIPPED in the outcome. */
   postRestoreCorpusPath: string | null
-  /** Receives raw tool stderr IN MEMORY for local diagnosis only. Never persisted by this module. */
-  onDiagnostic?: (step: RestoreStepName, stderr: string) => void
 }
 
-export type RestoreStepName = 'TOC' | 'ROLES_CORPUS' | 'CREATE_DATABASE' | 'DROP_EMPTY_PUBLIC' | 'PG_RESTORE' | 'POST_RESTORE_CORPUS'
+export type RestoreStepName = 'TOC' | 'ROLES_CORPUS' | 'CREATE_DATABASE' | 'TOC_SELECTION' | 'PG_RESTORE' | 'POST_RESTORE_CORPUS'
 
-export interface RestoreStep extends StderrSummary {
+export interface RestoreStep {
   step: RestoreStepName
   status: 'SUCCESS' | 'FAILED' | 'SKIPPED'
   exit_code: number | null
+  diagnostic: ToolDiagnostic | null
   input_sha256: string | null
 }
 
@@ -68,6 +77,7 @@ export type RestoreRefusalCode =
   | 'RESTORE_TARGET_NOT_DISPOSABLE'
   | 'RESTORE_TARGET_NOT_THE_SUBSTRATE'
   | 'RESTORE_TARGET_OWNERSHIP_REFUSED'
+  | 'RESTORE_SOURCE_CENSUS_NOT_BOUND'
   | 'RESTORE_ARTIFACT_INTEGRITY_REFUSED'
   | 'RESTORE_ARTIFACT_STRUCTURE_REFUSED'
   | 'RESTORE_STREAM_DIGEST_MISMATCH'
@@ -87,16 +97,17 @@ export interface RestoreOutcome {
   roles_at_start: string[]
   roles_after_restore: string[]
   tool_refusals: ToolRefusal[]
+  /** What inspect REPORTED for the target at restore time; null if never reached. */
+  target_observation: { image_id: string; network_mode: string } | null
+  substrate_server_version_num: number | null
 }
 
 export const RESTORE_STEP_SHAPE: Shape = S.obj({
-  step: S.enm('TOC', 'ROLES_CORPUS', 'CREATE_DATABASE', 'DROP_EMPTY_PUBLIC', 'PG_RESTORE', 'POST_RESTORE_CORPUS'),
+  step: S.enm('TOC', 'ROLES_CORPUS', 'CREATE_DATABASE', 'TOC_SELECTION', 'PG_RESTORE', 'POST_RESTORE_CORPUS'),
   status: S.enm('SUCCESS', 'FAILED', 'SKIPPED'),
   exit_code: S.opt(S.int()),
+  diagnostic: S.opt(S.enm(...TOOL_DIAGNOSTICS)),
   input_sha256: S.opt(S.str('sha256')),
-  stderr_sha256: S.str('sha256'),
-  stderr_lines: S.int(),
-  stderr_class: S.enm('EMPTY', 'NOTICE_ONLY', 'WARNING', 'ERROR', 'FATAL'),
 })
 
 function rolesOf(docker: DockerCli, substrate: Substrate): string[] | null {
@@ -123,6 +134,9 @@ export async function restoreIntoSubstrate(docker: DockerCli, req: RestoreReques
   let restoreDb: string | null = null
   let streamed: string | null = null
   let toolRefusals: ToolRefusal[] = []
+  let targetObservation: RestoreOutcome['target_observation'] = null
+  let substrateServer: number | null = null
+  const digest = packetArtifactSha256(req.packet)
 
   const done = (refusal: RestoreRefusalCode | null, detail: string | null): RestoreOutcome => ({
     ok: refusal === null,
@@ -136,11 +150,14 @@ export async function restoreIntoSubstrate(docker: DockerCli, req: RestoreReques
     roles_at_start: rolesAtStart,
     roles_after_restore: rolesAfter,
     tool_refusals: toolRefusals,
+    target_observation: targetObservation,
+    substrate_server_version_num: substrateServer,
   })
-  const record = (step: RestoreStepName, status: RestoreStep['status'], exitCode: number | null, stderr: string, inputSha: string | null) => {
-    if (stderr && req.onDiagnostic) req.onDiagnostic(step, stderr)
-    steps.push({ step, status, exit_code: exitCode, input_sha256: inputSha, ...summarizeStderr(stderr) })
+  const record = (step: RestoreStepName, exitCode: number | null, stderr: string, inputSha: string | null) => {
+    const outcome = classifyToolOutcome(exitCode, stderr)
+    steps.push({ step, status: outcome.exit_code === 0 ? 'SUCCESS' : 'FAILED', exit_code: outcome.exit_code, diagnostic: outcome.diagnostic, input_sha256: inputSha })
   }
+  const skip = (step: RestoreStepName) => steps.push({ step, status: 'SKIPPED', exit_code: null, diagnostic: null, input_sha256: null })
 
   // Target.
   if (req.target.identityClass !== 'LOCAL_DISPOSABLE') return done('RESTORE_TARGET_NOT_DISPOSABLE', 'only a disposable substrate this run created may be restored into')
@@ -149,33 +166,40 @@ export async function restoreIntoSubstrate(docker: DockerCli, req: RestoreReques
   }
   const substrate = req.substrate
   try {
-    assertSubstrateOwnership(docker, req.target, 'restore-substrate')
+    const inspected = assertSubstrateOwnership(docker, req.target, 'restore-substrate')
+    targetObservation = { image_id: inspected.Image, network_mode: inspected.HostConfig.NetworkMode }
   } catch (error) {
     return done('RESTORE_TARGET_OWNERSHIP_REFUSED', error instanceof SubstrateRefusal ? error.code : 'inspect failed')
   }
 
-  // Integrity (location, recomputed digest, size).
+  // Binding: the census the invariants will judge by is the one the packet names.
+  if (censusSha256(req.sourceCensus.census) !== req.packet[NO_MUTATION_CONFIRMATION].capture_census.pre_capture_census_sha256) {
+    return done('RESTORE_SOURCE_CENSUS_NOT_BOUND', 'the source census record is not the one the packet digests')
+  }
+
+  // Integrity (location, recomputed digest).
   const integrity = await verifyArtifactDigest(req.packet, req.artifactPath, req.repoRoot)
   if (!integrity.ok) return done('RESTORE_ARTIFACT_INTEGRITY_REFUSED', integrity.code)
 
   // Structure: pg_restore --list over the streamed bytes.
   const cid = substrate.identity.containerId
   const toc = await docker.streamFromFile(['exec', '-i', cid, 'pg_restore', '--list'], req.artifactPath)
-  record('TOC', toc.status === 0 ? 'SUCCESS' : 'FAILED', toc.status, toc.stderr, toc.sha256)
-  if (toc.sha256 !== req.packet.backup_identifier.artifact_sha256) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore --list do not match the packet digest')
+  record('TOC', toc.status, toc.stderr, toc.sha256)
+  if (toc.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore --list do not match the packet digest')
   if (toc.status !== 0) return done('RESTORE_ARTIFACT_STRUCTURE_REFUSED', 'ARTIFACT_TOC_UNREADABLE')
   const parsedToc = parseArchiveToc(toc.stdout)
-  const structure = checkArchiveStructure(parsedToc, req.packet)
+  const structure = checkArchiveStructure(parsedToc, req.sourceCensus.census)
   if (structure && !structure.ok) return done('RESTORE_ARTIFACT_STRUCTURE_REFUSED', structure.code)
 
   // Tools.
   const restoreVersion = docker.run(['exec', cid, 'pg_restore', '--version'])
   const serverVersion = substratePsql(docker, substrate, 'postgres', 'SHOW server_version_num;\n', ['-tA'])
+  substrateServer = serverVersion.status === 0 && /^\d+$/.test(serverVersion.stdout.trim()) ? Number(serverVersion.stdout.trim()) : null
   const pin = evaluateToolPin(
     {
-      imageId: substrate.identity.imageId,
+      imageId: targetObservation.image_id,
       pgRestoreVersionLine: restoreVersion.status === 0 ? restoreVersion.stdout.split(/\r?\n/)[0] : null,
-      substrateServerVersionNum: serverVersion.status === 0 && /^\d+$/.test(serverVersion.stdout.trim()) ? Number(serverVersion.stdout.trim()) : null,
+      substrateServerVersionNum: substrateServer,
       artifactDumpedBy: parsedToc.dumpedBy,
       artifactDumpedFrom: parsedToc.dumpedFrom,
     },
@@ -196,36 +220,42 @@ export async function restoreIntoSubstrate(docker: DockerCli, req: RestoreReques
   // Roles corpus.
   const rolesSql = readFileSync(req.rolesCorpusPath, 'utf8')
   const roles = substratePsql(docker, substrate, 'postgres', rolesSql)
-  record('ROLES_CORPUS', roles.status === 0 ? 'SUCCESS' : 'FAILED', roles.status, roles.stderr, sha256Hex(rolesSql))
+  record('ROLES_CORPUS', roles.status, roles.stderr, sha256Hex(rolesSql))
   if (roles.status !== 0) return done('RESTORE_STEP_FAILED', 'ROLES_CORPUS')
 
   // Fresh database.
   restoreDb = `recovery_restore_${substrate.identity.runId}`
   const created = substratePsql(docker, substrate, 'postgres', `CREATE DATABASE ${restoreDb};\n`)
-  record('CREATE_DATABASE', created.status === 0 ? 'SUCCESS' : 'FAILED', created.status, created.stderr, null)
+  record('CREATE_DATABASE', created.status, created.stderr, null)
   if (created.status !== 0) return done('RESTORE_STEP_FAILED', 'CREATE_DATABASE')
+
+  // TOC selection (non-destructive replacement for the former DROP SCHEMA public).
+  let listArgs: string[] = []
   if (parsedToc.createsPublicSchema) {
-    const dropped = substratePsql(docker, substrate, restoreDb, 'DROP SCHEMA public RESTRICT;\n')
-    record('DROP_EMPTY_PUBLIC', dropped.status === 0 ? 'SUCCESS' : 'FAILED', dropped.status, dropped.stderr, null)
-    if (dropped.status !== 0) return done('RESTORE_STEP_FAILED', 'DROP_EMPTY_PUBLIC')
+    const selected = selectTocForExistingPublic(toc.stdout)
+    const wrote = docker.run(['exec', '-i', cid, 'sh', '-c', `cat > ${IN_CONTAINER_TOC_LIST}`], selected.list)
+    // Exactly one entry must be removed; anything else is a failed selection.
+    record('TOC_SELECTION', selected.removed === 1 ? wrote.status : 1, wrote.stderr, sha256Hex(selected.list))
+    if (wrote.status !== 0 || selected.removed !== 1) return done('RESTORE_STEP_FAILED', 'TOC_SELECTION')
+    listArgs = ['-L', IN_CONTAINER_TOC_LIST]
   } else {
-    record('DROP_EMPTY_PUBLIC', 'SKIPPED', null, '', null)
+    skip('TOC_SELECTION')
   }
 
   // pg_restore.
-  const restored = await runPgRestore(docker, substrate, restoreDb, req.artifactPath, [])
+  const restored = await runPgRestore(docker, substrate, restoreDb, req.artifactPath, listArgs)
   streamed = restored.sha256
-  record('PG_RESTORE', restored.status === 0 ? 'SUCCESS' : 'FAILED', restored.status, restored.stderr, restored.sha256)
-  if (restored.sha256 !== req.packet.backup_identifier.artifact_sha256) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore do not match the packet digest')
+  record('PG_RESTORE', restored.status, restored.stderr, restored.sha256)
+  if (restored.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore do not match the packet digest')
   if (restored.status !== 0) return done('RESTORE_STEP_FAILED', 'PG_RESTORE')
 
   // Post-restore corpus.
   if (req.postRestoreCorpusPath === null) {
-    record('POST_RESTORE_CORPUS', 'SKIPPED', null, '', null)
+    skip('POST_RESTORE_CORPUS')
   } else {
     const postSql = readFileSync(req.postRestoreCorpusPath, 'utf8')
     const post = substratePsql(docker, substrate, restoreDb, postSql)
-    record('POST_RESTORE_CORPUS', post.status === 0 ? 'SUCCESS' : 'FAILED', post.status, post.stderr, sha256Hex(postSql))
+    record('POST_RESTORE_CORPUS', post.status, post.stderr, sha256Hex(postSql))
     if (post.status !== 0) return done('RESTORE_STEP_FAILED', 'POST_RESTORE_CORPUS')
   }
 
@@ -236,7 +266,7 @@ export async function restoreIntoSubstrate(docker: DockerCli, req: RestoreReques
 /**
  * One pg_restore invocation into `database` of the substrate, fed the artifact
  * on stdin. Exported so a test can drive a deliberately failing variant through
- * the SAME evidence path (stderr is summarized, never retained as text).
+ * the SAME evidence path (stderr is classified, never retained).
  */
 export function runPgRestore(docker: DockerCli, substrate: Substrate, database: string, artifactPath: string, extraArgs: string[]) {
   return docker.streamFromFile(['exec', '-i', substrate.identity.containerId, 'pg_restore', '-U', SUBSTRATE_SUPERUSER, '-d', database, '--exit-on-error', '--no-password', ...extraArgs], artifactPath)

@@ -1,9 +1,14 @@
-// tests/recovery/sample-evidence.ts — a grammar-valid census and BACKUP_PACKET
-// shaped like the one the real e2e rehearsal produces for the synthetic fixture.
+// tests/recovery/sample-evidence.ts — a grammar-valid census, BACKUP_PACKET and
+// bound census record shaped like the real e2e rehearsal's. The packet is built
+// by the SAME pure builder capture uses, so it cannot drift from production.
 // Pure data: no row values, only catalog facts, counts and digests.
 
-import type { BackupPacket } from '../../scripts/recovery/artifact-packet'
+import { buildBackupPacket, type BackupPacket, type BackupPacketInput, type SourceCensusRecord } from '../../scripts/recovery/artifact-packet'
 import type { Census } from '../../scripts/recovery/catalog-census'
+import type { InvariantResult } from '../../scripts/recovery/post-restore-invariants'
+import { buildRestoreProof, type RestoreProof } from '../../scripts/recovery/restore-proof'
+import type { RestoreOutcome } from '../../scripts/recovery/restore-runner'
+import type { DestructionProof, Substrate } from '../../scripts/recovery/substrate'
 import { RECOVERY_TOOL_PIN } from '../../scripts/recovery/tool-pin'
 
 const H = (c: string) => c.repeat(64)
@@ -48,31 +53,82 @@ export function sampleCensus(): Census {
   }
 }
 
-export function samplePacket(overrides: Partial<BackupPacket> = {}): BackupPacket {
+export const SAMPLE_CONTAINER = 'c'.repeat(64)
+
+export function samplePacketInput(overrides: Partial<BackupPacketInput> = {}): BackupPacketInput {
   return {
-    packet_class: 'BACKUP_PACKET',
-    packet_version: '1.0.0',
-    mechanism: 'STAGING_RECOVERY_OFFLINE_MECHANISM',
-    target_identifier: { identity_class: 'LOCAL_DISPOSABLE', project_ref: null, container_id: H('c'), derivation: 'SUBSTRATE_RUN_LABEL' },
-    backup_identifier: { artifact_id: `sha256:${H('a')}`, artifact_sha256: H('a'), artifact_bytes: 13379, storage_locator_class: 'OS_TEMP_OUTSIDE_REPOSITORY' },
-    backup_timestamp: { capture_started_at: '2026-09-23T20:00:35.000Z', capture_finished_at: '2026-09-23T20:00:36.000Z' },
-    method: {
-      tool: 'pg_dump',
-      tool_version: '17.6',
-      format: 'custom',
-      image_ref: RECOVERY_TOOL_PIN.imageRef,
-      image_id: RECOVERY_TOOL_PIN.imageId,
-      capture_principal: 'recovery_capture_ro',
-      invocation: ['pg_dump', '-h', '127.0.0.1', '-U', 'recovery_capture_ro', '-d', 'fixture_src', '--no-password', '-Fc', '-n', 'public', '-e', 'pg_trgm'],
-      stderr_sha256: H('e'),
-      stderr_lines: 0,
-    },
-    scope: { schemas: ['public', 'uellix_provisioning'], excluded_relations: [], extensions: ['pg_trgm'], storage_object_bytes: 'OUT_OF_SCOPE' },
-    no_intervening_mutation: { policy: 'NOT_CHOSEN_BY_THIS_MECHANISM', pre_capture_census_sha256: H('b'), post_capture_census_sha256: H('b'), census_pre_post_equal: true },
-    event_class: { value: null, policy: 'NOT_CHOSEN_BY_THIS_MECHANISM' },
-    release_binding: { release_sha: null, migration_corpus_packet_sha256: null },
-    data_classification: 'SYNTHETIC_FIXTURE',
-    source_census: sampleCensus(),
+    identity: { identityClass: 'LOCAL_DISPOSABLE', containerId: SAMPLE_CONTAINER, containerName: 'x', runId: 'abcdef0123456789', role: 'source-fixture', imageId: RECOVERY_TOOL_PIN.imageId },
+    artifactSha256: H('a'),
+    captureStartedAt: '2026-09-23T20:00:35.000Z',
+    captureFinishedAt: '2026-09-23T20:00:36.000Z',
+    toolVersion: '17.6',
+    imageRefPinned: RECOVERY_TOOL_PIN.imageRef,
+    imageIdObserved: RECOVERY_TOOL_PIN.imageId,
+    toolingSha: null,
+    invocation: ['pg_dump', '-h', '127.0.0.1', '-U', 'recovery_capture_ro', '-d', 'fixture_src', '--no-password', '-Fc', '-n', 'public', '-n', 'uellix_provisioning', '-e', 'pg_trgm'],
+    scope: { schemas: ['public', 'uellix_provisioning'], excluded_relations: [], extensions: ['pg_trgm'] },
+    preCensus: sampleCensus(),
+    postCensus: sampleCensus(),
+    eventClass: null,
+    releaseSha: null,
+    migrationCorpusPacketSha256: null,
     ...overrides,
   }
+}
+
+export function samplePacket(overrides: Partial<BackupPacketInput> = {}): BackupPacket {
+  return buildBackupPacket(samplePacketInput(overrides))
+}
+
+export function sampleCensusRecord(census: Census = sampleCensus()): SourceCensusRecord {
+  return { record_class: 'SOURCE_CATALOG_CENSUS_RECORD', census, data_classification: 'SYNTHETIC_FIXTURE' }
+}
+
+/** A RESTORE_PROOF built by the production builder from sample parts. */
+export function sampleRestoreProof(invariants: InvariantResult[] = []): RestoreProof {
+  const sub = (role: 'source-fixture' | 'restore-substrate', id: string): Substrate => ({
+    identity: { identityClass: 'LOCAL_DISPOSABLE', containerId: id, containerName: `uellix-recovery-${role}-x`, runId: 'abcdef0123456789', role, imageId: RECOVERY_TOOL_PIN.imageId },
+    namedVolume: 'v',
+    recordedVolumes: [{ name: 'v', kind: 'named' }],
+    createdAt: '2026-09-23T20:00:37.000Z',
+    observed: { imageId: RECOVERY_TOOL_PIN.imageId, networkMode: 'none' },
+    password: 'never-emitted',
+  })
+  const destruction: DestructionProof = {
+    container_id: H('d'),
+    run_id: 'abcdef0123456789',
+    role: 'restore-substrate',
+    created_at: '2026-09-23T20:00:37.000Z',
+    destroyed_at: '2026-09-23T20:00:50.000Z',
+    container_remove: { exit_code: 0, diagnostic: 'NONE' },
+    volumes: [{ name: 'v', kind: 'named', remove_exit_code: 0, absent: true }],
+    container_absent_by_id: true,
+    containers_remaining_with_substrate_label: 0,
+    volumes_remaining_with_substrate_label: 0,
+    verdict: 'DESTROYED_AND_VERIFIED_ABSENT',
+  }
+  const restore: RestoreOutcome = {
+    ok: true,
+    refusal: null,
+    refusal_detail: null,
+    restore_database: 'recovery_restore_abcdef0123456789',
+    restore_started_at: '2026-09-23T20:00:40.000Z',
+    restore_finished_at: '2026-09-23T20:00:41.000Z',
+    streamed_sha256: H('a'),
+    steps: [],
+    roles_at_start: [],
+    roles_after_restore: [],
+    tool_refusals: [],
+    target_observation: { image_id: RECOVERY_TOOL_PIN.imageId, network_mode: 'none' },
+    substrate_server_version_num: 170006,
+  }
+  return buildRestoreProof({
+    packet: samplePacket(),
+    sourceCensus: sampleCensusRecord(),
+    sourceSubstrate: sub('source-fixture', H('e')),
+    restoreSubstrate: sub('restore-substrate', H('d')),
+    restore,
+    invariants,
+    restoreDestruction: destruction,
+  })
 }

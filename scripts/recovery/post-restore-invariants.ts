@@ -3,7 +3,7 @@
 // authority POST_RESTORE_INVARIANTS PRI-1..PRI-7, EVIDENCE).
 //
 // "A restore is not verified by its exit status." Every invariant here compares
-// the RESTORED census with the SOURCE census the BACKUP_PACKET carries, or
+// the RESTORED census with the SOURCE census the BACKUP_PACKET is bound to, or
 // asserts an absolute property the repository has already measured failing
 // (RR-CAP-7). Beyond PRI-1..PRI-7 it covers the clean-room's source-derived
 // additions — required extensions, sequences and identity columns, trigger
@@ -31,7 +31,7 @@
 
 import { createHash } from 'node:crypto'
 
-import type { BackupPacket } from './artifact-packet'
+import { declaredExtensions, NO_MUTATION_CONFIRMATION, SCOPE_COVERED, type BackupPacket, type SourceCensusRecord } from './artifact-packet'
 import { CENSUS_SQL_SHA256, censusInvocation, censusSha256, parseCensusResult, type Census } from './catalog-census'
 import { extractSqlstate, S, type Shape } from './evidence-privacy'
 import type { DockerCli } from './process'
@@ -53,6 +53,9 @@ export interface InvariantResult {
   observed: string[]
 }
 
+/** PRI-7's explicit statement, emitted in every result rather than left to inference. */
+export const STORAGE_BYTES_DECLARATION = 'storage_object_bytes=OUT_OF_SCOPE_FOR_A_LOGICAL_DUMP'
+
 export interface CapabilityProbe {
   /** Role the probe runs as (SET LOCAL ROLE). */
   role: string
@@ -62,6 +65,8 @@ export interface CapabilityProbe {
 
 export interface InvariantContext {
   packet: BackupPacket
+  /** The source census the packet is BOUND to (checked by the runner before anything is evaluated). */
+  sourceCensus: Census
   restored: Census | null
   restoredCensusProblem: string | null
   restore: RestoreOutcome
@@ -134,7 +139,7 @@ function compare(expected: string[], observed: string[], failCode: string): Eval
 
 function withRestored(ctx: InvariantContext, f: (source: Census, restored: Census) => Eval): Eval {
   if (!ctx.restored) return unknown(ctx.restoredCensusProblem ?? 'RESTORED_CENSUS_UNAVAILABLE')
-  return f(ctx.packet.source_census, ctx.restored)
+  return f(ctx.sourceCensus, ctx.restored)
 }
 
 // ---------------------------------------------------------------------------
@@ -151,8 +156,8 @@ export const DEFAULT_INVARIANT_PLAN: readonly PlanEntry[] = [
       withRestored(ctx, (src, dst) => {
         if (src.relations.length === 0) return { verdict: 'FAIL', reason_code: 'SOURCE_SCOPE_EMPTY', expected: [], observed: relFacts(dst) }
         const present = new Set(dst.schemas.map((s) => s.name))
-        const missingSchemas = ctx.packet.scope.schemas.filter((s) => !present.has(s))
-        const excludedPresent = dst.relations.filter((r) => ctx.packet.scope.excluded_relations.includes(`${r.schema}.${r.name}`))
+        const missingSchemas = ctx.packet[SCOPE_COVERED].schemas.filter((s) => !present.has(s))
+        const excludedPresent = dst.relations.filter((r) => ctx.packet[SCOPE_COVERED].excluded_relations.includes(`${r.schema}.${r.name}`))
         const base = compare([...relFacts(src), ...fnFacts(src)], [...relFacts(dst), ...fnFacts(dst)], 'RELATION_INVENTORY_MISMATCH')
         if (missingSchemas.length > 0) return { ...base, verdict: 'FAIL', reason_code: 'DECLARED_SCHEMA_ABSENT' }
         if (excludedPresent.length > 0) return { ...base, verdict: 'FAIL', reason_code: 'EXCLUDED_RELATION_PRESENT' }
@@ -167,7 +172,7 @@ export const DEFAULT_INVARIANT_PLAN: readonly PlanEntry[] = [
     evaluate: (ctx) =>
       withRestored(ctx, (src, dst) => {
         const base = compare(schemaFacts(src), schemaFacts(dst), 'SCHEMA_ACL_MISMATCH')
-        if (ctx.packet.scope.schemas.includes('public')) {
+        if (ctx.packet[SCOPE_COVERED].schemas.includes('public')) {
           const pub = dst.schemas.find((s) => s.name === 'public')
           if (!pub || pub.owner !== 'pg_database_owner') return { ...base, verdict: 'FAIL', reason_code: 'PUBLIC_OWNER_NOT_PG_DATABASE_OWNER' }
           if (!pub.acl.some((a) => a.startsWith('PUBLIC:USAGE:'))) return { ...base, verdict: 'FAIL', reason_code: 'RR_CAP_7_PUBLIC_USAGE_ABSENT' }
@@ -209,7 +214,7 @@ export const DEFAULT_INVARIANT_PLAN: readonly PlanEntry[] = [
     predicate: 'PER_RELATION_ROW_COUNTS_EQUAL_AND_SOURCE_HAS_A_NON_EMPTY_RELATION',
     evaluate: (ctx) =>
       withRestored(ctx, (src, dst) => {
-        if (!ctx.packet.no_intervening_mutation.census_pre_post_equal) return unknown('SOURCE_COUNTS_NOT_STABLE_DURING_CAPTURE_DEGRADED_TO_RECORDING', countFacts(src))
+        if (!ctx.packet[NO_MUTATION_CONFIRMATION].capture_census.pre_post_equal) return unknown('SOURCE_COUNTS_NOT_STABLE_DURING_CAPTURE_DEGRADED_TO_RECORDING', countFacts(src))
         if (!src.row_counts.some((r) => r.rows > 0)) return { verdict: 'FAIL', reason_code: 'SOURCE_HAS_NO_ROWS_NEGATIVE_EVIDENCE_IMPOSSIBLE', expected: countFacts(src), observed: countFacts(dst) }
         return compare(countFacts(src), countFacts(dst), 'ROW_COUNT_MISMATCH')
       }),
@@ -228,9 +233,11 @@ export const DEFAULT_INVARIANT_PLAN: readonly PlanEntry[] = [
     predicate: 'STORAGE_OBJECT_BYTES_DECLARED_OUT_OF_SCOPE_AND_STORAGE_METADATA_RESTORED_IF_IN_SCOPE',
     evaluate: (ctx) =>
       withRestored(ctx, (src, dst) => {
-        const declaration = `storage_object_bytes=${ctx.packet.scope.storage_object_bytes}`
-        if (ctx.packet.scope.storage_object_bytes !== 'OUT_OF_SCOPE') return { verdict: 'FAIL', reason_code: 'STORAGE_BYTES_DECLARATION_ABSENT', expected: [], observed: [declaration] }
-        if (!ctx.packet.scope.schemas.includes('storage')) return { ...unknown('STORAGE_SCHEMA_NOT_IN_DECLARED_SCOPE'), observed: [declaration] }
+        // A logical dump (the method in the packet is pg_dump) cannot carry
+        // storage object bytes; the declaration is stated, never implied (PRI-7).
+        const declaration = STORAGE_BYTES_DECLARATION
+        if (ctx.packet['the method used'].tool.name !== 'pg_dump') return { verdict: 'FAIL', reason_code: 'STORAGE_BYTES_DECLARATION_UNSUPPORTED_METHOD', expected: [], observed: [] }
+        if (!ctx.packet[SCOPE_COVERED].schemas.includes('storage')) return { ...unknown('STORAGE_SCHEMA_NOT_IN_DECLARED_SCOPE'), observed: [declaration] }
         const s = (c: Census) => relFacts(c).filter((f) => f.startsWith('storage.'))
         const base = compare(s(src), s(dst), 'STORAGE_METADATA_MISMATCH')
         return { ...base, observed: [...base.observed, declaration] }
@@ -243,7 +250,7 @@ export const DEFAULT_INVARIANT_PLAN: readonly PlanEntry[] = [
     predicate: 'EVERY_DECLARED_OR_DEPENDED_EXTENSION_PRESENT_WITH_SOURCE_VERSION',
     evaluate: (ctx) =>
       withRestored(ctx, (src, dst) => {
-        const required = [...new Set([...ctx.packet.scope.extensions, ...src.extension_dependencies])].sort()
+        const required = [...new Set([...declaredExtensions(ctx.packet), ...src.extension_dependencies])].sort()
         const fmt = (c: Census) => c.extensions.filter((e) => required.includes(e.name)).map((e) => `${e.name}@${e.version}`)
         const expected = fmt(src)
         if (expected.length !== required.length) return { verdict: 'FAIL', reason_code: 'REQUIRED_EXTENSION_ABSENT_IN_SOURCE', expected, observed: fmt(dst) }
@@ -318,6 +325,7 @@ export interface InvariantRunRequest {
   substrate: Substrate
   database: string
   packet: BackupPacket
+  sourceCensus: SourceCensusRecord
   restore: RestoreOutcome
   capabilityProbes: CapabilityProbe[]
   /** Defaults to DEFAULT_INVARIANT_PLAN. Accepted only so the ordering refusal is testable. */
@@ -327,6 +335,7 @@ export interface InvariantRunRequest {
 export type InvariantRun =
   | { ok: true; results: InvariantResult[]; restored_census_sha256: string | null }
   | { ok: false; refusal: 'INVARIANT_PLAN_ORDER_VIOLATION'; problems: PlanOrderProblem[] }
+  | { ok: false; refusal: 'INVARIANT_SOURCE_CENSUS_NOT_BOUND'; problems: [] }
 
 const QUALIFIED = /^[A-Za-z_][A-Za-z0-9_$]{0,62}\.[A-Za-z_][A-Za-z0-9_$]{0,62}$/
 const IDENT = /^[A-Za-z_][A-Za-z0-9_$]{0,62}$/
@@ -339,8 +348,12 @@ export function runPostRestoreInvariants(docker: DockerCli, req: InvariantRunReq
   const plan = req.plan ?? DEFAULT_INVARIANT_PLAN
   const problems = validateInvariantPlan(plan)
   if (problems.length > 0) return { ok: false, refusal: 'INVARIANT_PLAN_ORDER_VIOLATION', problems }
+  // The source census is judged ONLY if it is the one the packet is bound to.
+  if (censusSha256(req.sourceCensus.census) !== req.packet[NO_MUTATION_CONFIRMATION].capture_census.pre_capture_census_sha256) {
+    return { ok: false, refusal: 'INVARIANT_SOURCE_CENSUS_NOT_BOUND', problems: [] }
+  }
 
-  const scope = { schemas: req.packet.scope.schemas, excludedRelations: req.packet.scope.excluded_relations }
+  const scope = { schemas: req.packet[SCOPE_COVERED].schemas, excludedRelations: req.packet[SCOPE_COVERED].excluded_relations }
   const takeCensus = () => {
     const inv = censusInvocation(scope)
     return parseCensusResult(substratePsql(docker, req.substrate, req.database, inv.stdin, inv.psqlArgs))
@@ -348,6 +361,7 @@ export function runPostRestoreInvariants(docker: DockerCli, req: InvariantRunReq
 
   const ctx: InvariantContext = {
     packet: req.packet,
+    sourceCensus: req.sourceCensus.census,
     restored: null,
     restoredCensusProblem: null,
     restore: req.restore,

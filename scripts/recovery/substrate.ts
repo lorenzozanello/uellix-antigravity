@@ -30,7 +30,7 @@
 import { randomBytes } from 'node:crypto'
 
 import { probeServingPostmaster, type ProcessResult } from '../db-audit-disposable'
-import { S, summarizeStderr, type Shape, type StderrSummary } from './evidence-privacy'
+import { classifyToolOutcome, S, TOOL_OUTCOME_SHAPE, type Shape, type ToolOutcome } from './evidence-privacy'
 import type { DockerCli } from './process'
 import type { LocalDisposableIdentity, SubstrateRole } from './recovery-target'
 import { RECOVERY_TOOL_PIN, type RecoveryToolPin } from './tool-pin'
@@ -56,6 +56,8 @@ export interface Substrate {
   /** Every volume inspect reported on the container, named or anonymous. */
   recordedVolumes: Array<{ name: string; kind: 'named' | 'anonymous' }>
   createdAt: string
+  /** What `docker inspect` REPORTED after creation — observations, not the pin restated. */
+  observed: { imageId: string; networkMode: string }
   /** Throwaway; never persisted, never in argv. Held only so evidence can be scanned for it. */
   password: string
 }
@@ -196,6 +198,7 @@ export function createSubstrate(docker: DockerCli, options: CreateSubstrateOptio
     namedVolume,
     recordedVolumes: [{ name: namedVolume, kind: 'named' }],
     createdAt,
+    observed: { imageId: '', networkMode: '' },
     password,
   }
   if (created.status !== 0) {
@@ -207,6 +210,7 @@ export function createSubstrate(docker: DockerCli, options: CreateSubstrateOptio
   const c = inspectContainer(docker, containerId)
   if (!c) throw new SubstrateRefusal('SUBSTRATE_INSPECT_FAILED', 'freshly created container did not inspect', substrate)
   substrate.recordedVolumes = recordVolumes(c, namedVolume)
+  substrate.observed = { imageId: c.Image, networkMode: c.HostConfig?.NetworkMode ?? '' }
   if (c.Mounts.some((m) => m.Type !== 'volume')) throw new SubstrateRefusal('SUBSTRATE_BIND_MOUNT_PRESENT', 'a non-volume mount is present', substrate)
   if (!c.Mounts.some((m) => m.Type === 'volume' && m.Name === namedVolume && m.Destination === PGDATA)) {
     throw new SubstrateRefusal('SUBSTRATE_PGDATA_NOT_ON_RUN_VOLUME', 'PGDATA is not on the run volume', substrate)
@@ -256,7 +260,7 @@ export interface DestructionProof {
   role: SubstrateRole
   created_at: string
   destroyed_at: string
-  container_remove: StderrSummary & { exit_code: number }
+  container_remove: ToolOutcome
   volumes: Array<{ name: string; kind: 'named' | 'anonymous'; remove_exit_code: number | null; absent: boolean }>
   container_absent_by_id: boolean
   containers_remaining_with_substrate_label: number
@@ -270,12 +274,7 @@ export const DESTRUCTION_PROOF_SHAPE: Shape = S.obj({
   role: S.enm('source-fixture', 'restore-substrate'),
   created_at: S.str('iso_timestamp'),
   destroyed_at: S.str('iso_timestamp'),
-  container_remove: S.obj({
-    stderr_sha256: S.str('sha256'),
-    stderr_lines: S.int(),
-    stderr_class: S.enm('EMPTY', 'NOTICE_ONLY', 'WARNING', 'ERROR', 'FATAL'),
-    exit_code: S.int(),
-  }),
+  container_remove: TOOL_OUTCOME_SHAPE,
   volumes: S.arr(S.obj({ name: S.str('resource_name'), kind: S.enm('named', 'anonymous'), remove_exit_code: S.opt(S.int()), absent: S.bool() })),
   container_absent_by_id: S.bool(),
   containers_remaining_with_substrate_label: S.int(),
@@ -314,7 +313,7 @@ export function destroySubstrate(docker: DockerCli, substrate: Substrate): Destr
     role,
     created_at: substrate.createdAt,
     destroyed_at: new Date().toISOString(),
-    container_remove: { ...summarizeStderr(removed.stderr), exit_code: removed.status },
+    container_remove: classifyToolOutcome(removed.status, removed.stderr),
     volumes,
     container_absent_by_id: containerAbsent,
     containers_remaining_with_substrate_label: containersRemaining,
