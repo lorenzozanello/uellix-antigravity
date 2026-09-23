@@ -16,6 +16,7 @@ import {
 } from './ops'
 import { asXcc1Refusal, assertInvocationSafe, assertProjectionConforms, buildInvocation, project, type Invocation, type ToolContext } from './guards'
 import { scanText } from './evidence-scan'
+import { SecretDetectedRefusal, localizeFindings } from './safe-diagnostic'
 import { XCC1_PREFLIGHT_ARGS, assertIsolationListing, assertXcc1Env } from './xcc1'
 import { assertXcc1NormativeEnv, assertXcc1NormativePreflightArgv, assertXcc1NormativePreflightListing } from './xcc1-normative'
 
@@ -282,9 +283,11 @@ export class SafeReadExecutor {
     const { projection, absent } = outcome === 'OK' ? project(op, source) : { projection: {}, absent: [] }
     source = undefined // the raw object goes out of scope here and is never serialized
     assertProjectionConforms(op, projection)
-    const hits = scanText(JSON.stringify(projection))
+    const serialized = JSON.stringify(projection)
+    const hits = scanText(serialized)
     if (hits.length > 0) {
-      throw new Refusal('STOP_SECRET_BEARING_FIELD_RETURNED', `detectors ${[...new Set(hits.map((h) => h.detector))].join(',')} fired on ${op.id}`)
+      // The decision above is unchanged; the diagnostic only names the field class (v1.0.6).
+      throw new SecretDetectedRefusal(op, [...new Set(hits.map((h) => h.detector))], localizeFindings(op, projection, serialized, hits))
     }
 
     const assertions = this.postconditions(op, params, projection, outcome)

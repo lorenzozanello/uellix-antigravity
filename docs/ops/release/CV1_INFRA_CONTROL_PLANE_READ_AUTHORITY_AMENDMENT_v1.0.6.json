@@ -1,0 +1,543 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.6",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.6",
+ "authority_class": "EXECUTOR_DIAGNOSTIC_AMENDMENT__SAFE_REFUSAL_METADATA__NOT_A_NEW_GRANT__NOT_AN_ARMING_ACT",
+ "document_class": "APPEND_ONLY_AMENDMENT__NO_GOVERNED_READ__NO_PACMI_CALL__NO_MUTATION__NO_M8__NO_M9",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "builds_on": [
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5.json",
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0.json"
+ ],
+ "mission_id": "CV1-INFRA-VR2-ENTROPY-SAFE-DIAGNOSTIC-R1",
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.6.json",
+ "AS_OF_PRE_AMENDMENT_HEAD": "56294d149e85703820661a19718e9396da9776d9",
+ "AS_OF_PRE_AMENDMENT_TREE": "64053e1d4d9ce46162dab407fb64eaa68e1483ca",
+ "as_of_measurement_note": "ZERO governed reads, ZERO PACMI calls and ZERO provider network operations were performed by this lane. All tests drive the fake provider world.",
+ "MOTIVATION": {
+  "context_not_an_occurrence_record": "No canonical execution-attempt / STOP-occurrence record type exists in this authority chain or in docs/ops/ods (the ODS 'journal' is the SQL baseline journal-wrapper set, unrelated). None is invented here. The facts below are the motivating context of this amendment only.",
+  "execution_head": "56294d149e85703820661a19718e9396da9776d9",
+  "state": "STOP_SECRET_BEARING_FIELD_RETURNED__V_R2_S2__ZERO_EVIDENCE__ZERO_MUTATIONS",
+  "facts_as_reported_by_the_executing_lane": {
+   "RC9A": "satisfied",
+   "DN0": "PASS",
+   "G-R1": "executed",
+   "G-R2": "executed",
+   "G-R3": "executed",
+   "G-R4": "executed",
+   "V-R2.S1": "executed",
+   "V-R2.S2": "refused (OPAQUE_HIGH_ENTROPY after projection)",
+   "V-R1 / V-R3 / X-R1": "not reached",
+   "V-R4": "not executed by design",
+   "evidence": "none",
+   "provider_mutations": "zero",
+   "secrets_exposed": "zero"
+  },
+  "why_this_delta": "The refusal named only the detector and the op. Which allowlisted field class fired could not be determined without reading the value, which is forbidden. This delta makes the refusal name the FIELD CLASS and nothing about the datum."
+ },
+ "SAFE_DIAGNOSTIC_CONTRACT": {
+  "id": "SD-1",
+  "rule": "NORMATIVE. When the post-projection supplemental scan refuses a projection (STOP_SECRET_BEARING_FIELD_RETURNED), the refusal MAY carry, per offending location, EXACTLY these keys: operation_id, detector_id, normalized_schema_path, primitive_type, string_length, uppercase_count, lowercase_count, digit_count, underscore_count, hyphen_count, dot_count, slash_count. Bounded to 16 entries per refusal; identical entries are reported once.",
+  "must_not_contain": [
+   "the value",
+   "any substring, prefix or suffix",
+   "the first or last character",
+   "a hash, digest or fingerprint",
+   "any encoding of the value",
+   "a hostname, userinfo, path or query extracted from the value",
+   "a provider record id (unless the reported path itself is id, which names the field, not the datum)",
+   "any raw provider response"
+  ],
+  "path_is_authority_text": "normalized_schema_path is the op's own allowlist entry with arrays written [*] (e.g. projects[*].link.repo), a declared presence name, a container prefix of an allowlist entry, '$' for the root, or UNLOCALIZED. A provider key beneath a '.**' subtree is NEVER echoed: such a location reports the '.**' entry itself.",
+  "counts": "Over the decoded value for a string, number, boolean or null; over the serialized container for an object or array location.",
+  "localization": "Structural, not post-hoc. The in-memory projection is re-serialized piece by piece recording the span of every member and value; the rebuilt text must equal JSON.stringify(projection) byte for byte, or every hit is UNLOCALIZED. Each detector offset maps to the innermost span containing it, so key-context detectors (a secret-keyed member) localize to their member, which a per-leaf rescan would not see.",
+  "implementation": "scripts/infra-read/safe-diagnostic.ts (localizeFindings, schemaPathFor, SecretDetectedRefusal)."
+ },
+ "PASS_FAIL_SEMANTICS": {
+  "rule": "NORMATIVE. The diagnostic is OBSERVATIONAL. The decision is the unchanged v1.0.4 check: the same detectors over the same JSON.stringify(projection) text, and any finding refuses. The diagnostic is computed only after that decision, is attached to the same refusal class and the same token, and can never turn STOP into PASS.",
+  "no_detector_change": "OPAQUE_HIGH_ENTROPY and every other detector, its thresholds and its scope are unchanged. No field is exempted.",
+  "classification_out_of_scope": "This amendment does NOT decide that any field is safe or that any detector should ignore it, including when a synthetic Vercel id resembles the hit. The real field class is unknown until the governed runtime is repeated; any exception needs its own evidence-based decision."
+ },
+ "CERTIFICATION_EVENT_CHAIN": {
+  "finding": "MEASURED while authoring this delta: v1.0.5 bound the ONE executor-recert event path (..._EXECUTOR_RECERT_IC_v1.0.0.json) to whatever --certified-candidate is supplied. That file now exists, is append-only, and certifies 81b56ed4. Any later candidate, including this delta, could therefore never satisfy LIMB_1: the B-1 dead end moved from the verdict name to the event path.",
+  "supersedes": {
+   "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5.json RECERT_MATERIALIZATION_CONTRACT[\"CERTIFIED_CANDIDATE.candidate_head\"]",
+   "superseded_text_verbatim": "The exact 40-hex HEAD the recertification reviewed. The execution protocol is invoked with the same SHA as --certified-candidate; any other value fails LIMB_1.",
+   "scope_of_supersession": "For candidates AFTER 81b56ed4 only. For 81b56ed4 itself the v1.0.5 text remains exactly what happened."
+  },
+  "rule": "NORMATIVE. dn0ConfigFor binds FOUR events: the effective-authority IC (455b5426), the arming-package IC (3dc12909), the executor base recert at ..._EXECUTOR_RECERT_IC_v1.0.0.json FIXED to 81b56ed4, and the diagnostic recert at docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC_v1.0.0.json (package_id CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC) bound to the supplied --certified-candidate. Each must satisfy CP-1 (v1.0.5) unchanged, and each certified candidate must be an ancestor of HEAD.",
+  "why_both": "The next certification covers ONLY this delta. The candidate is therefore certified by the base recert (81b56ed4) AND the delta recert (this head) together; neither alone suffices.",
+  "materialization_contract_for_the_diagnostic_recert": {
+   "path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC_v1.0.0.json",
+   "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC",
+   "authority_class_prefix": "INDEPENDENT_CERTIFICATION_EVENT_RECORD",
+   "CERTIFIED_CANDIDATE.candidate_head": "The exact 40-hex head of this diagnostic delta that the short certification reviewed; the execution is invoked with the same SHA as --certified-candidate.",
+   "VERDICT": "the certifier token copied verbatim; blocking_findings the integer reported"
+  },
+  "tests": "tests/infra-read/entrypoint.test.ts (the real config binds four events; the real 81b56ed4 recert passes CP-1 as configured and can never stand in for the diagnostic recert); mutant N30 re-creates the dead end and must be KILLED."
+ },
+ "EXECUTOR_CONTRACT_UNCHANGED": {
+  "unchanged": [
+   "operation registry (24 ops) and the EXECUTE_NOW read set (8 reads)",
+   "read ordering",
+   "projection allowlists",
+   "envelope allowlists",
+   "RC-9a",
+   "RC-9b",
+   "DN-0 semantics (the measurement protocol is unchanged; only its configured event list gains the delta recert, see CERTIFICATION_EVENT_CHAIN)",
+   "XCC-1",
+   "provider methods and endpoints",
+   "V-R2 scope exclusions (RNA-1)",
+   "V-R4 classification (F_IMMEDIATE_ONLY_BEFORE_MUTATION)"
+  ],
+  "changed_files": [
+   "scripts/infra-read/safe-diagnostic.ts (new)",
+   "scripts/infra-read/executor.ts (the refusal constructor at the existing decision point only)",
+   "scripts/infra-read/run-governed-reads.ts (dn0ConfigFor event chain only; see CERTIFICATION_EVENT_CHAIN)",
+   "scripts/infra-read/mutation-battery.mjs (D-mutants)",
+   "tests/infra-read/** (new tests and fixtures)"
+  ],
+  "no_new_provider_operation": true
+ },
+ "EC1_EC2_PRESERVED": {
+  "EC-1": "UNCHANGED and still mandatory before any evidence commit: the serialized scan AND a recursive decoded-string-leaf scan (keys included) of every evidence file, with the same detectors; a finding at either level is STOP_EVIDENCE_SECRET_DETECTED. Not re-implemented inside the executor by this delta.",
+  "EC-2": "UNCHANGED and still mandatory before execution: git config --name-only --get-regexp 'extraheader$' must report no key at any scope."
+ },
+ "MUTATION_RESULTS": {
+  "method": "scripts/infra-read/mutation-battery.mjs on the final tree of this delta, in two chunks (the full battery exceeds the 10-minute command cap): unmutated suite green first (280/280), each mutant applied, tests/infra-read run, file restored from an in-memory byte copy and SHA-verified.",
+  "aggregate": "MUTANTS=58 (32 + 26) AS_EXPECTED=58 UNEXPECTED=0 BATTERY=PASS; self-test SELF_TEST=PASS (BATTERY=FAIL on a real survivor).",
+  "H_normal_pass": "Covered by a test, not a mutant: a normal V-R2.S2 passes and its record carries no diagnostic payload.",
+  "I_registry_unchanged": "Covered by a test pinning the 24-op registry, the 8-read EXECUTE_NOW set and V-R4 F_IMMEDIATE; the git diff of this delta leaves ops.ts, guards.ts, protocol.ts, certification.ts, xcc1*.ts and evidence-scan.ts byte-identical.",
+  "results": [
+   {
+    "id": "M01",
+    "mutation": "gh exact-shape check removed (POST/body forms)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M02",
+    "mutation": "gh denylist emptied (exact shape still operative)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M03",
+    "mutation": "vercel exact-shape check removed (POST/body forms)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M04",
+    "mutation": "projection conformance disabled",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M05",
+    "mutation": "G-R1-first check removed (G-R2 before G-R1)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M06",
+    "mutation": "RC-9b check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M07",
+    "mutation": "RNA-1 exclusion removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M08",
+    "mutation": "freshness refusal removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M09",
+    "mutation": "post-projection secret detectors removed",
+    "verdict": "KILLED",
+    "failing_tests": 17,
+    "classification": "AS_EXPECTED",
+    "why": "A/B: with the detector decision removed, STOP becomes PASS and every synthetic V-R2.S2 location stops refusing. The decision line is the unchanged v1.0.4 check."
+   },
+   {
+    "id": "M10",
+    "mutation": "X-R1 preflight requirement removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M11",
+    "mutation": "GIT_ASKPASS dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M12",
+    "mutation": "ceiling directory dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 17,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M13",
+    "mutation": "isolation listing accepts file origins",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M14",
+    "mutation": "no-commit-since-DN-0 guard disabled (stale DN-0 head)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M15",
+    "mutation": "post-certification MODIFY accepted",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M16",
+    "mutation": "env-value detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M17",
+    "mutation": "V-R1 allowlist admits deploy-hook url",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M18",
+    "mutation": "vercel write-operation-id check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N01",
+    "mutation": "B-1 reintroduced: predicate requires the author-guessed verdict name",
+    "verdict": "KILLED",
+    "failing_tests": 17,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N02",
+    "mutation": "B-1 reintroduced at the entry point: a verdict pattern configured for the recert event",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N03",
+    "mutation": "candidate binding removed (wrong-candidate PASS accepted)",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N04",
+    "mutation": "verdict judged by substring (FAIL containing PASS accepted)",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N05",
+    "mutation": "blocking-count check removed",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N06",
+    "mutation": "document-class check removed",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N07",
+    "mutation": "gh env guard reverted to a case-sensitive denylist (mixed-case GH_TOKEN)",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N08",
+    "mutation": "vercel env guard reverted to a case-sensitive denylist (mixed-case VERCEL_TOKEN)",
+    "verdict": "KILLED",
+    "failing_tests": 13,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N09",
+    "mutation": "credential-name check made case-sensitive",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N10",
+    "mutation": "constructed env compares names case-sensitively",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N11",
+    "mutation": "vcp_ detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N12",
+    "mutation": "URL userinfo detector reverted to the v1.0.4 user:password form",
+    "verdict": "KILLED",
+    "failing_tests": 3,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N13",
+    "mutation": "env-assignment detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N14",
+    "mutation": "keyword-adjacent classic-token detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N15",
+    "mutation": "designated fixtures accepted regardless of counts (global suppression)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N16",
+    "mutation": "raw provider key injected into the evidence envelope",
+    "verdict": "KILLED",
+    "failing_tests": 76,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N17",
+    "mutation": "envelope allowlist disabled",
+    "verdict": "KILLED",
+    "failing_tests": 8,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N18",
+    "mutation": "X-R1 registry drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N19",
+    "mutation": "X-R1 registry drops the core.askPass reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N20",
+    "mutation": "X-R1 registry drops the http.extraHeader reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N21",
+    "mutation": "preflight argv drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 14,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N22",
+    "mutation": "terminal prompt enabled in the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 13,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N23",
+    "mutation": "system-config isolation dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 16,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N24",
+    "mutation": "normative X-R1 argv check removed from the guard",
+    "verdict": "KILLED",
+    "failing_tests": 3,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N25",
+    "mutation": "DN-0 residual-vector (insteadOf/cookieFile) check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N26",
+    "mutation": "DN-0 fetch drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N27",
+    "mutation": "RC-9a identity assertion removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N28",
+    "mutation": "DN-0 origin https-without-userinfo check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N29",
+    "mutation": "DN-0 residual probe reads config VALUES (--name-only dropped)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D01",
+    "mutation": "diagnostic carries the raw value",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED",
+    "why": "C: the raw value in the diagnostic trips the key-set check and every forbidden-form check."
+   },
+   {
+    "id": "D02",
+    "mutation": "diagnostic smuggles a value PREFIX inside an allowed field",
+    "verdict": "KILLED",
+    "failing_tests": 18,
+    "classification": "AS_EXPECTED",
+    "why": "D: a value prefix hidden in an ALLOWED field is caught by the 6-character-window forms and by the exact path check."
+   },
+   {
+    "id": "D03",
+    "mutation": "diagnostic smuggles a value SUFFIX inside an allowed field",
+    "verdict": "KILLED",
+    "failing_tests": 18,
+    "classification": "AS_EXPECTED",
+    "why": "D: as D02 for a suffix."
+   },
+   {
+    "id": "D04",
+    "mutation": "diagnostic carries a hash / digest of the value",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED",
+    "why": "E: a SHA-256 digest as an extra key trips the key-set check and the digest forbidden forms."
+   },
+   {
+    "id": "D05",
+    "mutation": "diagnostic hides a digest prefix inside the path",
+    "verdict": "KILLED",
+    "failing_tests": 18,
+    "classification": "AS_EXPECTED",
+    "why": "E: a digest prefix hidden in the path is caught by the digest-prefix forbidden form and by the exact path check."
+   },
+   {
+    "id": "D06",
+    "mutation": "wrong field path: array marker not normalized",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED",
+    "why": "F: projects[] instead of projects[*]: every path expectation fails."
+   },
+   {
+    "id": "D07",
+    "mutation": "wrong field path: outermost span chosen instead of innermost",
+    "verdict": "KILLED",
+    "failing_tests": 18,
+    "classification": "AS_EXPECTED",
+    "why": "F: the outermost span is chosen: every location reports a container path instead of the field."
+   },
+   {
+    "id": "D08",
+    "mutation": "unexpected diagnostic key",
+    "verdict": "KILLED",
+    "failing_tests": 12,
+    "classification": "AS_EXPECTED",
+    "why": "G: an unexpected key trips the key-set check."
+   },
+   {
+    "id": "D09",
+    "mutation": "a provider key under .** is echoed in the path",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "A provider key beneath .** would be echoed in the path; the authority-text tests fail."
+   },
+   {
+    "id": "N30",
+    "mutation": "the append-only 81b56ed4 base recert re-bound to the supplied candidate (event-path dead end)",
+    "verdict": "KILLED",
+    "failing_tests": 21,
+    "classification": "AS_EXPECTED",
+    "why": "The base recert re-bound to the supplied candidate: the real config no longer binds four events as specified, and every recert of a later candidate is refused (the event-path dead end)."
+   },
+   {
+    "id": "D10",
+    "mutation": "refusal token changed by the diagnostic",
+    "verdict": "KILLED",
+    "failing_tests": 17,
+    "classification": "AS_EXPECTED",
+    "why": "The refusal token callers handle changes: the token and message-prefix checks fail."
+   }
+  ],
+  "retained_without_why": "M01-M18 and N01-N29 keep the reasons recorded in v1.0.5 MUTATION_RESULTS; all re-killed here."
+ },
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "Every prohibition of v1.0.0 through v1.0.5, unrelaxed.",
+  "No governed read is authorized by this amendment. After the short independent certification of THIS delta, the governed execution restarts from a fresh runtime RC-9a and DN-0; the four GitHub reads and the partial V-R2 of the stopped attempt have no evidence and are NOT reused."
+ ],
+ "final_state": "INFRA_VR2_SAFE_DIAGNOSTIC_AUTHORED__FAIL_CLOSED_PRESERVED__READY_FOR_SHORT_RECERT",
+ "next_gate": "ONE short independent certification of ONLY this diagnostic delta (56294d14..this head). On PASS, materialize it as its own certification event and restart the entire governed execution from fresh RC-9a + DN-0 with --certified-candidate equal to the recertified head."
+}

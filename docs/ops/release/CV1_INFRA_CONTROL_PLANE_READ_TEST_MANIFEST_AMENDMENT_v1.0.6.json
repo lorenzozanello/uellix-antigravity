@@ -1,0 +1,38 @@
+{
+  "manifest_id": "CV1-INFRA-VR2-ENTROPY-SAFE-DIAGNOSTIC",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.6.json",
+  "dependencies": [
+    "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5.json)",
+    "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0.json; certifies 81b56ed4)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {"id": "SEN-F1", "purpose": "ZERO GOVERNED READS, ZERO PACMI CALLS AND ZERO PROVIDER NETWORK in this lane. Every provider response is the fake world; the child-process harness runs the real executor against it."},
+    {"id": "SEN-F2", "purpose": "The synthetic secret-shaped values are assembled at runtime from a 35-character alphabet; none is a committed literal. Each must appear ZERO times, in raw, JSON-escaped, any 6-character window, base64, SHA-256 or MD5 form, across stdout, stderr, Error.message, the serialized error, String(error), the stack and util.inspect."}
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {"id": "PF-1", "description": "For every allowlisted V-R2.S2 location (projects[*].id/name/accountId/createdAt/updatedAt/link.type/link.repo/link.org/link.repoId/link.productionBranch, pagination.next/count) a synthetic entropy value yields STOP_SECRET_BEARING_FIELD_RETURNED with the exact normalized path, type, length and class counts.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "PF-2", "description": "A key-context detector (secret-keyed member) localizes to its member path.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "PF-3", "description": "A normal V-R2.S2 passes and its record carries no diagnostic payload.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "PF-4", "description": "The real dn0ConfigFor binds the 81b56ed4 executor recert (real committed file, accepted by CP-1) and a diagnostic recert bound to the supplied candidate.", "test_file": "tests/infra-read/entrypoint.test.ts"}
+  ],
+  "negative_controls": [
+    {"id": "NF-01", "description": "No output channel of a child process running the real executor carries any forbidden form of the planted value (raw, escaped, windows, base64, digests).", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "NF-02", "description": "A provider key beneath a .** subtree is never echoed; the path is the allowlist entry.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "NF-03", "description": "An unfaithful serialization reports UNLOCALIZED instead of a guessed path; unknown paths and undeclared presence names are UNLOCALIZED.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "NF-04", "description": "The diagnostic key set is exactly the permitted twelve keys, values are scalars, and diagnostics are bounded.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "NF-05", "description": "The registry is exactly the 24 ops, EXECUTE_NOW is exactly the 8 reads, and V-R4 stays F_IMMEDIATE_ONLY_BEFORE_MUTATION.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "NF-06", "description": "A diagnostic recert for another candidate, or an 81b56ed4 recert offered for a new candidate, does not satisfy LIMB_1.", "test_file": "tests/infra-read/entrypoint.test.ts"}
+  ],
+  "mutation_controls": [
+    {"id": "MF-01", "description": "Detector decision removed (STOP -> PASS), M09 — must be KILLED.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "MF-02", "description": "Raw value, prefix, suffix, digest (as a key or hidden in the path) in the diagnostic — each must be KILLED.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "MF-03", "description": "Wrong path (array marker not normalized; outermost span chosen); provider key under .** echoed — each must be KILLED.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "MF-04", "description": "Unexpected diagnostic key; refusal token changed — each must be KILLED.", "test_file": "tests/infra-read/safe-diagnostic.test.ts"},
+    {"id": "MF-05", "description": "Every v1.0.4 / v1.0.5 production mutant retained — each must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"}
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

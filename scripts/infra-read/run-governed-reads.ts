@@ -79,6 +79,20 @@ const localGit: LocalGit = {
 export const EXECUTOR_RECERT_EVENT = {
   path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0.json',
   packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC',
+  /** Materialized at 56294d14; it certifies the executor base, and stays bound to it (v1.0.6). */
+  certifiedCandidate: '81b56ed44e9f6744c3949eff7ab9ad1b7137a5b5',
+} as const
+
+/**
+ * v1.0.6: the short certification of ONLY the safe-diagnostic delta on top of
+ * that base. THIS is the event bound to the candidate being executed. The base
+ * recert above is append-only and certifies 81b56ed4, so it can never certify a
+ * later candidate: binding it to --certified-candidate would make every later
+ * candidate unarmable (the B-1 dead end, moved to the event path).
+ */
+export const EXECUTOR_DIAGNOSTIC_RECERT_EVENT = {
+  path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC_v1.0.0.json',
+  packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC',
 } as const
 
 export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
@@ -96,7 +110,8 @@ export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
     certificationEvents: [
       { path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC', certifiedCandidate: '455b5426e11e5518606328dc0f1c3cd6bc7887ca' },
       { path: 'docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json', packageId: 'CV1_INFRA_RC9_ARMING_PACKAGE_IC', certifiedCandidate: '3dc12909bb5b584ebc2266900659ab6f158d9eef' },
-      { ...EXECUTOR_RECERT_EVENT, certifiedCandidate },
+      { path: EXECUTOR_RECERT_EVENT.path, packageId: EXECUTOR_RECERT_EVENT.packageId, certifiedCandidate: EXECUTOR_RECERT_EVENT.certifiedCandidate },
+      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate },
     ],
   }
 }

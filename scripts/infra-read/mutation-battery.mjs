@@ -18,7 +18,7 @@ import { aggregate, classify, verdictOf } from './mutation-verdict.mjs'
 const R = process.cwd().split('\\').join('/') + '/'
 const F = (p) => R + 'scripts/infra-read/' + p
 const G = F('guards.ts'), E = F('executor.ts'), X = F('xcc1.ts'), P = F('protocol.ts'), S = F('evidence-scan.ts')
-const C = F('certification.ts'), O = F('ops.ts'), RG = F('run-governed-reads.ts')
+const C = F('certification.ts'), O = F('ops.ts'), RG = F('run-governed-reads.ts'), D = F('safe-diagnostic.ts')
 const XR1 = "fixedArgs: ['-c', 'credential.helper=', '-c', 'core.askPass=', '-c', 'http.extraHeader=', 'ls-remote', X_R1_URL]"
 
 // [id, description, file, find, replace, expectation]
@@ -44,7 +44,7 @@ export const MUTANTS = [
   ['M18', 'vercel write-operation-id check removed', G, "  if (typeof endpoint !== 'string' || !endpoint.startsWith('/')) {", '  if (false) {', 'KILLED'],
   // ---- v1.0.5: B-1 and the certification predicate
   ['N01', 'B-1 reintroduced: predicate requires the author-guessed verdict name', C, '  const v = verdict.verdict\n', "  const v = verdict.verdict\n  if (typeof v === 'string' && !/^INFRA_EXECUTOR_HARDENING_IC_PASS/.test(v)) return { ok: false, reason: 'verdict name' }\n", 'KILLED'],
-  ['N02', 'B-1 reintroduced at the entry point: a verdict pattern configured for the recert event', RG, '      { ...EXECUTOR_RECERT_EVENT, certifiedCandidate },', '      { ...EXECUTOR_RECERT_EVENT, certifiedCandidate, verdict: /^INFRA_EXECUTOR_HARDENING_IC_PASS/ },', 'KILLED'],
+  ['N02', 'B-1 reintroduced at the entry point: a verdict pattern configured for the recert event', RG, '      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate },', '      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate, verdict: /^INFRA_EXECUTOR_HARDENING_IC_PASS/ },', 'KILLED'],
   ['N03', 'candidate binding removed (wrong-candidate PASS accepted)', C, '  if (cand !== req.certifiedCandidate) return', '  if (false) return', 'KILLED'],
   ['N04', 'verdict judged by substring (FAIL containing PASS accepted)', C, "  if (!/^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/.test(verdict)) return undefined", "  if (verdict.includes('PASS')) return 'PASS'\n  if (!/^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/.test(verdict)) return undefined", 'KILLED'],
   ['N05', 'blocking-count check removed', C, '  if (verdict.blocking_findings !== 0) return', '  if (false) return', 'KILLED'],
@@ -77,6 +77,18 @@ export const MUTANTS = [
   ['N27', 'RC-9a identity assertion removed', P, 'host.login === expected.githubLogin && host.tokenSource === expected.githubTokenSource &&', 'true &&', 'KILLED'],
   ['N28', 'DN-0 origin https-without-userinfo check removed', P, '  if (remote.status !== 0) throw', '  if (false) throw', 'KILLED'],
   ['N29', 'DN-0 residual probe reads config VALUES (--name-only dropped)', P, "  const residual = git.run(['config', '--name-only', '--get-regexp', DN0_FETCH_RESIDUAL_VECTOR_REGEX])", "  const residual = git.run(['config', '--get-regexp', DN0_FETCH_RESIDUAL_VECTOR_REGEX])", 'KILLED'],
+  // ---- v1.0.6: safe structural diagnostic (the decision itself is M09)
+  ['D01', 'diagnostic carries the raw value', D, "    slash_count: count(text, /\\//g),\n  }", "    slash_count: count(text, /\\//g),\n    value: span.value,\n  }", 'KILLED'],
+  ['D02', 'diagnostic smuggles a value PREFIX inside an allowed field', D, '    normalized_schema_path: schemaPathFor(op, span.generic),', '    normalized_schema_path: schemaPathFor(op, span.generic) + text.slice(0, 6),', 'KILLED'],
+  ['D03', 'diagnostic smuggles a value SUFFIX inside an allowed field', D, '    normalized_schema_path: schemaPathFor(op, span.generic),', '    normalized_schema_path: schemaPathFor(op, span.generic) + text.slice(-6),', 'KILLED'],
+  ['D04', 'diagnostic carries a hash / digest of the value', D, "    slash_count: count(text, /\\//g),\n  }", "    slash_count: count(text, /\\//g),\n    digest: process.getBuiltinModule('node:crypto').createHash('sha256').update(text).digest('hex'),\n  }", 'KILLED'],
+  ['D05', 'diagnostic hides a digest prefix inside the path', D, '    normalized_schema_path: schemaPathFor(op, span.generic),', "    normalized_schema_path: schemaPathFor(op, span.generic) + '#' + process.getBuiltinModule('node:crypto').createHash('sha256').update(text).digest('hex').slice(0, 8),", 'KILLED'],
+  ['D06', 'wrong field path: array marker not normalized', D, "const star = (p: string) => p.split('[]').join('[*]')", 'const star = (p: string) => p', 'KILLED'],
+  ['D07', 'wrong field path: outermost span chosen instead of innermost', D, 's.end - s.start < best.end - best.start', 's.end - s.start > best.end - best.start', 'KILLED'],
+  ['D08', 'unexpected diagnostic key', D, "    slash_count: count(text, /\\//g),\n  }", "    slash_count: count(text, /\\//g),\n    leaf_index: 0,\n  }", 'KILLED'],
+  ['D09', 'a provider key under .** is echoed in the path', D, '      if (generic === base || generic.startsWith(`${base}.`) || generic.startsWith(`${base}[]`)) return star(p)', '      if (generic === base || generic.startsWith(`${base}.`) || generic.startsWith(`${base}[]`)) return star(generic)', 'KILLED'],
+  ['N30', 'the append-only 81b56ed4 base recert re-bound to the supplied candidate (event-path dead end)', RG, '      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate },', '      { path: EXECUTOR_RECERT_EVENT.path, packageId: EXECUTOR_RECERT_EVENT.packageId, certifiedCandidate },', 'KILLED'],
+  ['D10', 'refusal token changed by the diagnostic', D, "    super('STOP_SECRET_BEARING_FIELD_RETURNED',", "    super('STOP_SECRET_DIAGNOSTIC',", 'KILLED'],
 ]
 
 // Behaviour-neutral: a comment edit. Expected KILLED, so it MUST be reported UNEXPECTED.
