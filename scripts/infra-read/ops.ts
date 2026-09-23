@@ -58,6 +58,8 @@ export const TEAM_ID_RE = new RegExp(`^${TEAM}$`)
 export const PROJECT_ID_RE = new RegExp(`^${PRJ}$`)
 export const SHA40_RE = new RegExp(`^${SHA40}$`)
 export const UNTIL_RE = /^[0-9]{1,20}$/
+/** G-R5 page number: 1..999, digits only, no sign, no leading zero (v1.0.7). */
+export const INVENTORY_PAGE_RE = /^[1-9][0-9]{0,2}$/
 const BRANCH_NAME_RE = /^[A-Za-z0-9._/-]{1,200}$/
 
 export type Params = Readonly<Record<string, string | undefined>>
@@ -227,6 +229,20 @@ const ops: OpDef[] = [
     pathPattern: new RegExp(`^${GH}/commits/${SHA40}/status$`),
     build: (p) => `${GH_REPO_PATH}/commits/${req(p, 'sha', SHA40_RE)}/status`,
     allowlist: ['state', 'sha', 'total_count', 'statuses[].context', 'statuses[].state'],
+  },
+  {
+    // v1.0.7 (owner decision LRW-2): the authenticated user's repository
+    // inventory, officially documented as GET /user/repos
+    // (repos/list-for-authenticated-user). ONE read class; it paginates only
+    // because the endpoint does. Its ONLY input is the page number: no Vercel
+    // value (link.repo, link.org, link.repoId) can reach the request. Pages are
+    // reduced to target matches in-process (repo-witness.ts) before any scan or
+    // evidence; the inventory is never persisted.
+    id: 'G-R5', read: 'G-R5', cls: 'GOVERNED_READ', plane: 'PLANE-G', tool: 'gh', freshness: 'EXECUTE_NOW',
+    nodeIds: ['DN-2', 'DN-11'],
+    pathPattern: /^\/user\/repos\?per_page=100&page=[1-9][0-9]{0,2}$/,
+    build: (p) => `/user/repos?per_page=100&page=${req(p, 'page', INVENTORY_PAGE_RE)}`,
+    allowlist: ['[].id', '[].name', '[].full_name', '[].owner.login'],
   },
 
   // ------------------------------------------------------------- PLANE-V

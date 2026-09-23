@@ -15,20 +15,22 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { EXECUTOR_DIAGNOSTIC_RECERT_EVENT, EXECUTOR_RECERT_EVENT, assertExecutionRequested, dn0ConfigFor, main, parseArgs } from '../../scripts/infra-read/run-governed-reads'
+import { EXECUTOR_DELTA_RECERT_PACKAGE_ID, EXECUTOR_DIAGNOSTIC_RECERT_EVENT, EXECUTOR_RECERT_EVENT, assertExecutionRequested, deltaRecertEventPathFor, dn0ConfigFor, main, parseArgs } from '../../scripts/infra-read/run-governed-reads'
 import { assessCertificationEvent, terminalClassOf } from '../../scripts/infra-read/certification'
 import { measureDn0, type LocalGit } from '../../scripts/infra-read/protocol'
 import { Refusal } from '../../scripts/infra-read/ops'
 
 const CANDIDATE = 'd3e4a55bfca3d32511ced78c09fd2e1a7a133270'
 const cfg = dn0ConfigFor(CANDIDATE)
-// v1.0.6: events[2] is the 81b56ed4 base recert (fixed); events[3] is the diagnostic recert bound to the supplied candidate.
-const recertReq = cfg.certificationEvents[3]
+// v1.0.7: events[2] = 81b56ed4 base recert (fixed); events[3] = diagnostic recert (fixed to 4a3c2837);
+// events[4] = the DELTA recert of the supplied candidate, at a path derived from that candidate.
+const recertReq = cfg.certificationEvents[4]
+const DELTA_PATH = deltaRecertEventPathFor(CANDIDATE)
 
 function recert(over: Record<string, unknown> = {}, verdictOver: Record<string, unknown> = {}): string {
   return JSON.stringify({
     authority_class: 'INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT',
-    package_id: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.packageId,
+    package_id: EXECUTOR_DELTA_RECERT_PACKAGE_ID,
     CERTIFIED_CANDIDATE: { candidate_head: CANDIDATE },
     ...over,
     VERDICT: { verdict: 'INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_PASS', blocking_findings: 0, nonblocking_findings: 0, ...verdictOver },
@@ -41,14 +43,24 @@ function refusalToken(fn: () => unknown): string {
 }
 
 describe('dn0ConfigFor (the real entry-point configuration)', () => {
-  it('binds four events, each to an EXACT candidate, and configures NO verdict name', () => {
-    expect(cfg.certificationEvents).toHaveLength(4)
+  it('binds five events, each to an EXACT candidate, and configures NO verdict name', () => {
+    expect(cfg.certificationEvents).toHaveLength(5)
     for (const ev of cfg.certificationEvents) {
       expect(Object.keys(ev).sort()).toEqual(['certifiedCandidate', 'packageId', 'path'])
       expect(ev.certifiedCandidate).toMatch(/^[0-9a-f]{40}$/)
     }
     expect(cfg.certificationEvents[2]).toEqual({ path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC', certifiedCandidate: '81b56ed44e9f6744c3949eff7ab9ad1b7137a5b5' })
-    expect(recertReq).toEqual({ path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC', certifiedCandidate: CANDIDATE })
+    expect(cfg.certificationEvents[3]).toEqual({ path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC', certifiedCandidate: '4a3c2837595abb57e35ba6b4230d66ee4e1da229' })
+    expect(recertReq).toEqual({ path: `docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_${CANDIDATE.slice(0, 12).toUpperCase()}_IC_v1.0.0.json`, packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC', certifiedCandidate: CANDIDATE })
+  })
+
+  it('the delta-recert path is derived from the candidate: distinct candidates never share an event (no one-use dead end)', () => {
+    const other = '0123456789abcdef0123456789abcdef01234567'
+    expect(deltaRecertEventPathFor(other)).not.toBe(DELTA_PATH)
+    expect(dn0ConfigFor(other).certificationEvents[4].certifiedCandidate).toBe(other)
+    // Every delta-recert path is in the class DN-0 permits to be ADDED after certification.
+    expect(cfg.allowedPostCertificationAdditions.some((re) => re.test(DELTA_PATH))).toBe(true)
+    expect(() => deltaRecertEventPathFor('not-a-sha')).toThrow()
   })
 
   it('the entry-point source carries no verdict-name literal or verdict regex (B-1 cannot be reintroduced silently)', () => {
@@ -61,16 +73,18 @@ describe('dn0ConfigFor (the real entry-point configuration)', () => {
     expect(code('scripts/infra-read/protocol.ts')).not.toMatch(/_IC_PASS/)
   })
 
-  it('the three MATERIALIZED events on disk (incl. the 81b56ed4 base recert) satisfy the predicate exactly as configured', () => {
-    for (const ev of cfg.certificationEvents.slice(0, 3)) {
+  it('the four MATERIALIZED events on disk (incl. both fixed recerts) satisfy the predicate exactly as configured', () => {
+    for (const ev of cfg.certificationEvents.slice(0, 4)) {
       expect(assessCertificationEvent(readFileSync(ev.path, 'utf8'), ev)).toEqual({ ok: true, terminal: 'PASS_WITH_NONBLOCKING_FINDINGS' })
     }
   })
 
-  it('the 81b56ed4 base recert can never stand in for the diagnostic recert of a later candidate (v1.0.6)', () => {
-    const base = readFileSync(EXECUTOR_RECERT_EVENT.path, 'utf8')
-    expect(assessCertificationEvent(base, recertReq).ok).toBe(false)
-    expect(assessCertificationEvent(base, { ...recertReq, packageId: EXECUTOR_RECERT_EVENT.packageId }).ok).toBe(false) // another candidate
+  it('neither fixed historical recert can stand in for the delta recert of a later candidate (v1.0.6 / v1.0.7)', () => {
+    for (const ev of [EXECUTOR_RECERT_EVENT, EXECUTOR_DIAGNOSTIC_RECERT_EVENT]) {
+      const hist = readFileSync(ev.path, 'utf8')
+      expect(assessCertificationEvent(hist, recertReq).ok).toBe(false)
+      expect(assessCertificationEvent(hist, { ...recertReq, packageId: ev.packageId }).ok).toBe(false) // another candidate
+    }
   })
 
   it('the MATERIALIZED hardening FAIL can never satisfy any event requirement', () => {
@@ -144,7 +158,7 @@ function fakeRepo(recertRaw: string | undefined): LocalGit {
       if (a === 'rev-parse HEAD') return out(`${'c'.repeat(40)}\n`)
       if (a === 'rev-parse HEAD^{tree}') return out('e'.repeat(40))
       if (a.startsWith('merge-base --is-ancestor ')) return out('')
-      if (a.startsWith('diff --name-status ')) return out(`A\t${EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path}\n`)
+      if (a.startsWith('diff --name-status ')) return out(`A\t${DELTA_PATH}\n`)
       if (a.startsWith('config --name-only --get-regexp ^remote')) return out('remote.origin.url\n')
       if (a.startsWith('config --name-only --get-regexp ')) return { status: 1, stdout: '', stderr: '' }
       if (args.includes('fetch')) return out('')
@@ -152,7 +166,7 @@ function fakeRepo(recertRaw: string | undefined): LocalGit {
       if (a.startsWith('rev-parse HEAD:')) return out(pinBlob.get(a.slice('rev-parse HEAD:'.length)) ?? '')
       if (a.startsWith('show HEAD:')) {
         const p = a.slice('show HEAD:'.length)
-        if (p === EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path) return recertRaw === undefined ? { status: 128, stdout: '', stderr: 'absent' } : out(recertRaw)
+        if (p === DELTA_PATH) return recertRaw === undefined ? { status: 128, stdout: '', stderr: 'absent' } : out(recertRaw)
         return out(readFileSync(p, 'utf8'))
       }
       return { status: 1, stdout: '', stderr: `unexpected git ${a}` }
@@ -163,13 +177,13 @@ function fakeRepo(recertRaw: string | undefined): LocalGit {
 describe('measureDn0 driven by dn0ConfigFor (entry-point integration, fake git)', () => {
   it('POSITIVE: the real config + materialized events + a canonical-name recert of the exact candidate -> all 3 events verified', () => {
     const r = measureDn0(fakeRepo(recert()), cfg)
-    expect(r.certification_events_verified).toBe(4)
-    expect(r.post_certification_additions).toEqual([EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path])
+    expect(r.certification_events_verified).toBe(5)
+    expect(r.post_certification_additions).toEqual([DELTA_PATH])
     expect(r.pins_matched).toBe(cfg.pins.length)
   })
   it('POSITIVE: the canonical PASS_WITH_NONBLOCKING_FINDINGS form', () => {
     const raw = recert({}, { verdict: 'INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_PASS_WITH_NONBLOCKING_FINDINGS', nonblocking_findings: 3 })
-    expect(measureDn0(fakeRepo(raw), cfg).certification_events_verified).toBe(4)
+    expect(measureDn0(fakeRepo(raw), cfg).certification_events_verified).toBe(5)
   })
   const refused: [string, string | undefined][] = [
     ['recert absent', undefined],

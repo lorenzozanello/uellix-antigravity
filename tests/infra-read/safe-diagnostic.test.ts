@@ -169,15 +169,16 @@ describe('localization is structural and authority-derived', () => {
   })
 })
 
-describe('I: registry and read set unchanged by this delta', () => {
-  it('the registry is exactly these ops, and EXECUTE_NOW is exactly the eight reads', () => {
+describe('I: registry and read set (v1.0.7: exactly one read class added)', () => {
+  it('the registry is exactly these ops (25), and EXECUTE_NOW is exactly the nine read classes (v1.0.7 adds G-R5 only)', () => {
     expect([...REGISTRY.keys()]).toEqual([
-      'G-R1', 'G-R3', 'G-R2.WITNESS', 'G-R2.A', 'G-R2.B', 'G-R2.B.DETAIL', 'G-R2.C', 'G-R4.RUNS', 'G-R4.STATUS',
+      'G-R1', 'G-R3', 'G-R2.WITNESS', 'G-R2.A', 'G-R2.B', 'G-R2.B.DETAIL', 'G-R2.C', 'G-R4.RUNS', 'G-R4.STATUS', 'G-R5',
       'V-R2.S1', 'V-R2.S2', 'V-R2.S3', 'V-R2.L1', 'V-R2.L3', 'V-R2.L5', 'V-R2.L7', 'V-R1', 'V-R3', 'V-R4.DEPLOYMENTS',
       'X-R1', 'PACMI-G1', 'PACMI-V1', 'PACMI-V2', 'PACMI-V3',
     ])
     const reads = [...new Set([...REGISTRY.values()].filter((o) => o.cls === 'GOVERNED_READ' && o.freshness === 'EXECUTE_NOW').map((o) => o.read))].sort()
-    expect(reads).toEqual(['G-R1', 'G-R2', 'G-R3', 'G-R4', 'V-R1', 'V-R2', 'V-R3', 'X-R1'])
+    expect(reads).toEqual(['G-R1', 'G-R2', 'G-R3', 'G-R4', 'G-R5', 'V-R1', 'V-R2', 'V-R3', 'X-R1'])
+    expect(REGISTRY.size).toBe(25)
     expect(getOp('V-R4.DEPLOYMENTS').freshness).toBe('F_IMMEDIATE_ONLY_BEFORE_MUTATION')
   })
 })

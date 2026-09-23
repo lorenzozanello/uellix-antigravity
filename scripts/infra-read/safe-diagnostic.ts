@@ -58,6 +58,8 @@ interface Span {
   readonly start: number
   readonly end: number
   readonly generic: string
+  /** Concrete location (array indices and keys). Internal only: never reported. */
+  readonly concrete: readonly (string | number)[]
   readonly value: unknown
 }
 
@@ -69,7 +71,7 @@ function typeOf(v: unknown): SafeDiagnostic['primitive_type'] {
 }
 
 /** Re-serializes exactly as JSON.stringify(v) (no indentation), recording spans. */
-function serialize(v: unknown, generic: string, parts: string[], pos: { n: number }, spans: Span[]): void {
+function serialize(v: unknown, generic: string, parts: string[], pos: { n: number }, spans: Span[], concrete: readonly (string | number)[] = []): void {
   const start = pos.n
   const emit = (s: string) => { parts.push(s); pos.n += s.length }
   if (Array.isArray(v)) {
@@ -77,7 +79,7 @@ function serialize(v: unknown, generic: string, parts: string[], pos: { n: numbe
     v.forEach((el, i) => {
       if (i > 0) emit(',')
       if (el === undefined || typeof el === 'function' || typeof el === 'symbol') emit('null')
-      else serialize(el, `${generic}[]`, parts, pos, spans)
+      else serialize(el, `${generic}[]`, parts, pos, spans, [...concrete, i])
     })
     emit(']')
   } else if (v !== null && typeof v === 'object') {
@@ -90,18 +92,49 @@ function serialize(v: unknown, generic: string, parts: string[], pos: { n: numbe
       const memberStart = pos.n
       const childGeneric = generic === '' ? k : `${generic}.${k}`
       emit(`${JSON.stringify(k)}:`)
-      serialize(el, childGeneric, parts, pos, spans)
+      serialize(el, childGeneric, parts, pos, spans, [...concrete, k])
       // The member span (key through value) localizes key-context detectors.
-      spans.push({ start: memberStart, end: pos.n, generic: childGeneric, value: el })
+      spans.push({ start: memberStart, end: pos.n, generic: childGeneric, concrete: [...concrete, k], value: el })
     }
     emit('}')
   } else {
     emit(JSON.stringify(v) ?? 'null')
   }
-  spans.push({ start, end: pos.n, generic, value: v })
+  spans.push({ start, end: pos.n, generic, concrete, value: v })
 }
 
 const star = (p: string) => p.split('[]').join('[*]')
+
+/** The innermost member or value span containing `offset`. */
+function innermost(spans: readonly Span[], offset: number): Span | undefined {
+  let best: Span | undefined
+  for (const s of spans) {
+    if (s.start <= offset && offset < s.end && (!best || s.end - s.start < best.end - best.start)) best = s
+  }
+  return best
+}
+
+/**
+ * INTERNAL, for in-process adjudication only (v1.0.7): each finding with the
+ * generic path, concrete location and value of its innermost span. The result
+ * carries provider values and MUST NEVER be serialized, logged or thrown;
+ * refusals use localizeFindings. Returns undefined when the rebuilt
+ * serialization is not faithful (the caller must then STOP).
+ */
+export function locateFindingsInternal(projection: unknown, serialized: string, findings: readonly Finding[]):
+  { readonly detector: string; readonly generic: string; readonly concrete: readonly (string | number)[]; readonly value: unknown }[] | undefined {
+  const parts: string[] = []
+  const spans: Span[] = []
+  serialize(projection, '', parts, { n: 0 }, spans)
+  if (parts.join('') !== serialized) return undefined
+  const out: { detector: string; generic: string; concrete: readonly (string | number)[]; value: unknown }[] = []
+  for (const f of findings) {
+    const span = innermost(spans, f.offset)
+    if (!span) return undefined
+    out.push({ detector: f.detector, generic: span.generic, concrete: span.concrete, value: span.value })
+  }
+  return out
+}
 
 /** Maps a generic path to AUTHORITY text: an allowlist entry, a declared presence name, or a container prefix of an entry. */
 export function schemaPathFor(op: OpDef, generic: string): string {
@@ -163,12 +196,7 @@ export function localizeFindings(op: OpDef, projection: unknown, serialized: str
   const out: SafeDiagnostic[] = []
   const seen = new Set<string>()
   for (const f of findings) {
-    let best: Span | undefined
-    if (faithful) {
-      for (const s of spans) {
-        if (s.start <= f.offset && f.offset < s.end && (!best || s.end - s.start < best.end - best.start)) best = s
-      }
-    }
+    const best = faithful ? innermost(spans, f.offset) : undefined
     const d = describe(op, f.detector, best)
     const k = JSON.stringify(d)
     if (seen.has(k)) continue

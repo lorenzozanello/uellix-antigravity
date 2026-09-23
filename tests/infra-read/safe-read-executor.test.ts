@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest'
 import { rmSync } from 'node:fs'
 import path from 'node:path'
 import {
-  CTX, PRJ_AG, PRJ_PW, SHA_A, SHA_B, TEAM, X_R1_URL, antigravityProject, fakeDeployHookUrl, fakeRunner, world,
+  CTX, PRJ_AG, PRJ_PW, SHA_A, SHA_B, TEAM, X_R1_URL, antigravityProject, fakeDeployHookUrl, fakeRunner, repoShaped, world,
 } from './fixtures'
 import type { Invocation, ToolContext } from '../../scripts/infra-read/guards'
 
@@ -517,6 +517,72 @@ describe('terminating DN-0 protocol (no network, fake git)', () => {
     const git2 = fakeGit({ diffSinceCandidate: 'M\tscripts/infra-read/ops.ts' })
     expect(refusalToken(() => protocol.assertEvidenceCommitParent(git2, 'c'.repeat(40), 'docs/ops/release/evidence/'))).toBe('STOP_STALE_DN0')
   })
+
+  // ------------------------------------------------------------- v1.0.7 (G-R5 witness, TI-2, RC-9a scope)
+  const json = (v: unknown) => ({ status: 0, stdout: JSON.stringify(v), stderr: '' })
+  const FLAG = repoShaped(1)
+  const flaggedWorld = (inventory: { id: number; name: string; owner: string }[]) => {
+    const pw = { id: PRJ_PW, name: 'uellix-production-web', link: { type: 'github', repo: FLAG, org: 'lorenzozanello', repoId: 424242 } }
+    const pages: Record<string, ReturnType<typeof json>> = {
+      [`/v9/projects?teamId=${TEAM}&limit=100`]: json({ projects: [antigravityProject(), pw], pagination: { count: 2, next: null } }),
+      '/user/repos?per_page=100&page=1': json(inventory.map((r) => ({ id: r.id, name: r.name, full_name: `${r.owner}/${r.name}`, owner: { login: r.owner } }))),
+      '/user/repos?per_page=100&page=2': json([]),
+    }
+    return world(pages)
+  }
+
+  it('POSITIVE (v1.0.7): a deferred link.repo finding is adjudicated by G-R5 right after the V-R2 inventory and BEFORE V-R1; 9 read classes', () => {
+    const runner = fakeRunner(flaggedWorld([{ id: 7, name: 'other', owner: 'lorenzozanello' }, { id: 424242, name: FLAG, owner: 'lorenzozanello' }]))
+    const bundle = protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(runner, ctx), git: fakeGit(), dn0: dn0cfg })
+    const classes = [...new Set(bundle.records.filter((r) => r.record_kind === 'GOVERNED_READ_EVIDENCE').map((r) => r.read_id))].sort()
+    expect(classes).toEqual(['G-R1', 'G-R2', 'G-R3', 'G-R4', 'G-R5', 'V-R1', 'V-R2', 'V-R3', 'X-R1'])
+    for (const r of bundle.records) expect(isValidatedEvidence(r)).toBe(true)
+    const ids = runner.calls.map((c) => c.opId)
+    const lastS2 = ids.lastIndexOf('V-R2.S2')
+    const firstR5 = ids.indexOf('G-R5')
+    expect(firstR5).toBeGreaterThan(lastS2)
+    expect(ids.indexOf('V-R1')).toBeGreaterThan(ids.lastIndexOf('G-R5'))
+    const s2 = bundle.records.find((r) => r.op_id === 'V-R2.S2')!
+    expect(s2.scanner_adjudications.map((a) => a.classification)).toEqual(['EXPECTED_PROVIDER_IDENTIFIER'])
+    expect(bundle.not_executed_by_design).toEqual(['V-R4 (F_IMMEDIATE_ONLY_BEFORE_MUTATION: bracket M-7, never in the read-only phase)'])
+    // The inventory itself never becomes evidence.
+    expect(JSON.stringify(bundle)).not.toContain('"other"')
+  })
+
+  it('REFUSED (v1.0.7): the same phase STOPs when the inventory does not bind the repoId (no evidence)', () => {
+    const runner = fakeRunner(flaggedWorld([{ id: 7, name: 'other', owner: 'lorenzozanello' }]))
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(runner, ctx), git: fakeGit(), dn0: dn0cfg }))).toBe('STOP_WITNESS_ZERO_MATCH')
+    expect(runner.calls.some((c) => c.opId === 'V-R1')).toBe(false)
+  })
+
+  it('G-R5 is NOT executed when V-R2.S2 has no deferred finding, and the bundle says so', () => {
+    const runner = fakeRunner()
+    const bundle = protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(runner, ctx), git: fakeGit(), dn0: dn0cfg })
+    expect(runner.calls.some((c) => c.opId === 'G-R5')).toBe(false)
+    expect(bundle.not_executed_by_design.some((x) => x.startsWith('G-R5 (NOT_REQUIRED'))).toBe(true)
+  })
+
+  it('REFUSED (v1.0.7 RC-9a): a credential without the `repo` scope stops before any read', () => {
+    const noRepo = world({ 'PACMI-G1': json({ hosts: { 'github.com': [{ login: 'lorenzozanello', active: true, state: 'success', scopes: 'gist, read:org, workflow', tokenSource: 'keyring', host: 'github.com' }] } }) })
+    const runner = fakeRunner(noRepo)
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(runner, ctx), git: fakeGit(), dn0: dn0cfg }))).toBe('STOP_RC9_UNRESOLVED')
+    expect(runner.calls.some((c) => c.opId === 'G-R1')).toBe(false)
+  })
+
+  const ti2Cases: [string, Record<string, unknown>][] = [
+    ['link.repo in owner/name form (the CM-6 reading)', { repo: 'lorenzozanello/uellix-antigravity' }],
+    ['link.org not the governed owner', { org: 'someone-else' }],
+    ['link.repoId not G-R1 repository id', { repoId: 2 }],
+    ['link.repoId as a string', { repoId: '1' }],
+    ['link.type not github', { type: 'gitlab' }],
+  ]
+  for (const [name, over] of ti2Cases) {
+    it(`REFUSED (v1.0.7 TI-2): ${name}`, () => {
+      const ag = antigravityProject() as { link: Record<string, unknown> }
+      const w = world({ [`/v9/projects/uellix-antigravity?teamId=${TEAM}`]: json({ ...ag, link: { ...ag.link, ...over } }) })
+      expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(fakeRunner(w), ctx), git: fakeGit(), dn0: dn0cfg }))).toBe('STOP_PROJECT_IDENTITY_MISMATCH')
+    })
+  }
 
   it('SHA fixtures are distinct (guards against a vacuous G-R4 provenance check)', () => {
     expect(SHA_A).not.toBe(SHA_B)

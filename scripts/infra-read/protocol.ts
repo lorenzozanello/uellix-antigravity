@@ -152,6 +152,9 @@ function firstActiveHost(projection: unknown): Record<string, unknown> | undefin
 }
 
 /** The executor identity RC-9a must ASSERT, not merely record (v1.0.5). */
+/** v1.0.7: the one classic OAuth scope G-R5 needs to see private repositories. Not a widening: already held. */
+export const REQUIRED_GITHUB_SCOPE = 'repo'
+
 export interface ExpectedIdentity {
   readonly githubLogin: string
   readonly githubTokenSource: string
@@ -165,8 +168,12 @@ export function runRuntimeRc9a(ex: SafeReadExecutor, clock: Clock = systemClock,
   const g = ex.run('PACMI-G1'); records.push(g)
   const host = firstActiveHost(g.projection)
   const scopes = host?.scopes
+  // v1.0.7: G-R5 lists the authenticated user's repositories; private ones need the
+  // classic OAuth `repo` scope, which this credential already holds (RC-9a record, DF-13).
+  // It is REQUIRED here so a principal that cannot see private repositories fails before any read.
+  const scopeList = Array.isArray(scopes) ? scopes.map(String) : typeof scopes === 'string' ? scopes.split(',').map((x) => x.trim()) : []
   const gOk = !!host && host.login === expected.githubLogin && host.tokenSource === expected.githubTokenSource &&
-    (Array.isArray(scopes) ? scopes.length > 0 : typeof scopes === 'string' && scopes !== '')
+    scopeList.includes(REQUIRED_GITHUB_SCOPE)
 
   const v1 = ex.run('PACMI-V1'); records.push(v1)
   const v2 = ex.run('PACMI-V2'); records.push(v2)
@@ -319,6 +326,25 @@ export function runGovernedReadPhase(deps: PhaseDeps): GovernedReadBundle {
     paged('V-R2.S2', { teamId })
     step('V-R2.S3', { teamId })
   }
+  // v1.0.7: a deferred OPAQUE_HIGH_ENTROPY finding at V-R2.S2 projects[*].link.repo is
+  // adjudicated by the SAME-RUN witness BEFORE any later read. G-R5 runs only then.
+  const notExecuted: string[] = ['V-R4 (F_IMMEDIATE_ONLY_BEFORE_MUTATION: bracket M-7, never in the read-only phase)']
+  if (ex.hasPendingAdjudications()) {
+    do {
+      assertNoCommitSinceDn0(git, dn0)
+      ex.run('G-R5', { page: String(ex.witness.expectedPage()) }) // page records are control-only and are not evidence
+    } while (!ex.witness.isComplete())
+    const { witnessRecord, replacements } = ex.finalizeRepositoryWitness()
+    for (const [pending, resolved] of replacements) {
+      const i = records.indexOf(pending)
+      if (i < 0) throw new Refusal('STOP_WITNESS_UNKNOWN', 'a pending record is not in the bundle')
+      records[i] = resolved
+    }
+    records.push(witnessRecord)
+  } else {
+    notExecuted.push('G-R5 (NOT_REQUIRED: no OPAQUE_HIGH_ENTROPY finding at V-R2.S2 projects[*].link.repo in this run)')
+  }
+  if (ex.hasPendingAdjudications()) throw new Refusal('STOP_WITNESS_UNKNOWN', 'unadjudicated V-R2.S2 findings remain')
   const agTeams = teams.filter((t) => [...(ex.state.inventory.get(t)?.values() ?? [])].includes(ANTIGRAVITY_PROJECT))
   if (agTeams.length !== 1) throw new Refusal('STOP_PROJECT_IDENTITY_MISMATCH', `${ANTIGRAVITY_PROJECT} found in ${agTeams.length} scopes`)
   step('V-R1', { teamId: agTeams[0] })
@@ -338,7 +364,7 @@ export function runGovernedReadPhase(deps: PhaseDeps): GovernedReadBundle {
   return {
     protocol: 'RC9A -> DN0(last) -> NO_COMMIT -> READS -> EVIDENCE_COMMIT_AFTER',
     rc9a, dn0, ac1: { ...ac1, armed_at_runtime: armed }, records, limb_d, unresolved,
-    not_executed_by_design: ['V-R4 (F_IMMEDIATE_ONLY_BEFORE_MUTATION: bracket M-7, never in the read-only phase)'],
+    not_executed_by_design: notExecuted,
   }
 }
 

@@ -1,0 +1,770 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.7",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7",
+ "authority_class": "READ_CLASS_AMENDMENT__ONE_WITNESS_READ_ADDED__NOT_AN_ARMING_ACT",
+ "document_class": "APPEND_ONLY_AMENDMENT__NO_GOVERNED_READ__NO_PACMI_CALL__NO_MUTATION__NO_M8__NO_M9",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "builds_on": [
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.6.json"
+ ],
+ "owner_decision": "docs/ops/owner-ratifications/CV1_INFRA_LINK_REPO_WITNESS_INVENTORY_READ_OWNER_DECISION_v1.0.0.json (LRW-2)",
+ "mission_id": "CV1-INFRA-LINK-REPO-INVENTORY-WITNESS-AUTHORITY-AND-IMPLEMENTATION-R1",
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.7.json",
+ "AS_OF_PRE_AMENDMENT_HEAD": "dcbd0acce8f21248a796c939924610c77446f3b1",
+ "AS_OF_PRE_AMENDMENT_TREE": "a7c5febb82ef6cb8f13492a3815232598184c8d5",
+ "as_of_measurement_note": "ZERO governed reads, ZERO authenticated provider operations and ZERO real provider values. Provider facts come from GitHub's and Vercel's public documentation and official OpenAPI descriptions, fetched unauthenticated on 2026-09-23, and from the committed RC-9a executor record.",
+ "OWNER_AUTHORIZATION": "LRW-2: INFRA_LINK_REPO_WITNESS_INVENTORY_READ = AUTHORIZED, recorded verbatim in the owner decision record. It supersedes only the witness ROUTE of LRW-1 (whose ID-keyed condition failed); LRW-1's record is unchanged.",
+ "DOCUMENTED_PROVIDER_CAPABILITY": {
+  "class": "OFFICIALLY_DOCUMENTED and OFFICIALLY_SPECIFIED",
+  "operation": "GET /user/repos, operationId repos/list-for-authenticated-user, 'List repositories for the authenticated user'",
+  "sources": [
+   "https://docs.github.com/en/rest/repos/repos (the operation, its parameters and its token section)",
+   "github/rest-api-description descriptions/api.github.com/api.github.com.json (openapi 3.0.3, info.version 1.1.4)"
+  ],
+  "semantics": "Lists repositories the authenticated user has explicit permission (read, write or admin) to access: owned, collaborator, and reachable through an organization membership.",
+  "parameters_used": {
+   "per_page": "100 (documented maximum)",
+   "page": "1.. (documented, default 1)"
+  },
+  "parameters_not_used": {
+   "visibility / affiliation / type": "defaults (all; owner,collaborator,organization_member) define the COMPLETE authorized set; a filter could hide a legitimate target",
+   "sort / direction": "documented default full_name ascending gives a deterministic order",
+   "since / before": "time filters, not needed"
+  },
+  "pagination_model": "Page-numbered. The traversal requests page 1, 2, ... in order and completes only on an EMPTY page. The documented Link header is not read (reading response headers would require gh's --include, which the executor forbids), so completion is established by the empty page, never by a short page.",
+  "response_fields_used": "id (integer, 'Unique identifier of the repository'), name, full_name, owner.login; all four are required in the specified schema.",
+  "responses": "200, 304, 401, 403, 422; any non-200 STOPs. Rate limiting surfaces as 403 or 429 and STOPs."
+ },
+ "AUTH_PRINCIPAL_COMPATIBILITY": {
+  "runtime_principal": "The GitHub CLI's OAuth-app user token (gho_ class, keyring storage), as recorded by the RC-9a executor record and re-measured by runtime RC-9a on every execution. It is a user-context token carrying classic OAuth scopes; it is not a GitHub App installation token.",
+  "documented_support": "The endpoint works with user-context tokens: the official page lists GitHub App user access tokens and fine-grained personal access tokens (Metadata: read). It does NOT list installation access tokens (x-github.enabledForGitHubApps = false), and none is used. For classic-scope tokens (OAuth apps, classic PATs), GitHub's scope documentation states that no scope grants read-only access to public information and that 'repo' grants access to private repositories.",
+  "verdict": "COMPATIBLE"
+ },
+ "PERMISSION_CONTRACT": {
+  "required": "Classic OAuth scope 'repo' (to include private linked repositories).",
+  "not_a_widening": "The credential already holds 'repo' (RC-9a record; DF-13 recorded that these scopes can do more than the authority allows and that separation is by control). No new scope, token or principal is introduced.",
+  "rc9a_change": "Runtime RC-9a PLANE-G now REQUIRES 'repo' among the provider-reported scopes (protocol.ts REQUIRED_GITHUB_SCOPE). A credential without it STOPs (STOP_RC9_UNRESOLVED) before any read, instead of failing later as a zero match.",
+  "verdict": "NO_PERMISSION_AUTHORITY_EXPANSION"
+ },
+ "G_R5": {
+  "id": "G-R5 (AUTHENTICATED_REPOSITORY_INVENTORY_IDENTITY_WITNESS)",
+  "read_class": "ONE. Page requests are invocations of the same class, not separate classes.",
+  "endpoint_shape": "gh api --method GET /user/repos?per_page=100&page=N, exact-shape guarded: path pattern ^/user/repos?per_page=100&page=[1-9][0-9]{0,2}$.",
+  "input": "ONLY the page number, validated digits-only 1..999 without sign or leading zero. link.repo, link.org and link.repoId never reach the URL, path, query, headers or body: the builder has no access to them, and the exact-shape guard refuses any other query key or path.",
+  "when": "Only when the SAME run's V-R2.S2 has deferred at least one finding (see SCANNER_ADJUDICATION). Otherwise it is recorded NOT_REQUIRED and not executed.",
+  "order": "V-R2.S1 -> V-R2.S2 (+ S3) for every team -> G-R5 pages 1..N to completion -> verdict -> V-R1, V-R3, V-R2 limbs, X-R1. No later read runs while a finding is unadjudicated.",
+  "multi_project": "The target set is every deferred project of V-R2.S2 in this run (keyed by repoId; several projects may share one). ONE traversal serves all targets; each target requires its own exactly-one identity.",
+  "projection": "Per item: id, name, full_name, owner.login (allowlist pinned by test). Each page is reduced IN MEMORY to target matches before any scan, record or log; non-matching repositories are discarded at once.",
+  "memory_bound": "Retained: the target set, at most the matched identities per target, and control metadata (next page, completion flag, first/last id and count of the previous page for loop detection). Never the inventory. Tested at 9,900 repositories.",
+  "page_cap": "100 pages (10,000 repositories); exceeding it STOPs rather than truncating."
+ },
+ "SAME_RUN_WITNESS": {
+  "binding": "ALL of: numeric link.repoId === id (structural: matches are keyed by id); link.type === 'github'; link.repo === name; link.org === owner.login; full_name === owner.login + '/' + name; exactly one match per repoId across the COMPLETE traversal.",
+  "case_rules": "Strict string equality. No case folding or trimming: no provider documentation justifies normalizing, so a case difference STOPs.",
+  "failure": "401, 403, 404, 429 / rate limit, timeout or missing status, malformed JSON or page, item missing or malformed id / name / full_name / owner.login, page larger than per_page, a repeated page (loop), the page cap, an out-of-order or post-completion page, zero match, multiple match, id / name / owner / full_name / type mismatch, an incomplete traversal, or any UNKNOWN: STOP fail-closed.",
+  "cross_run_isolation": "The witness, the pending set and the adjudicated-value set are instance state of the executor; every execution constructs a new executor and starts empty. Previous G-R reads, a previous V-R2, committed evidence, cached inventories and fixtures cannot satisfy it: the only way in is ingestPage from this executor's own G-R5 pages."
+ },
+ "SCANNER_ADJUDICATION": {
+  "scan_first": "The post-projection scan runs unchanged. With no finding, nothing changes.",
+  "deferrable": "ONLY at V-R2.S2, and only if EVERY finding of that projection is OPAQUE_HIGH_ENTROPY at exactly projects[*].link.repo, the leaf itself trips no other detector, and its project carries link.type 'github', a positive integer link.repoId, a non-empty link.org and an id. Anything else STOPs at once with the certified safe diagnostic.",
+  "pending": "A deferred record is marked PENDING_SAME_RUN_WITNESS and is NOT validated evidence; the entry point cannot write it.",
+  "pass": "Witness PASS replaces it by a validated record whose scanner_adjudications say classification EXPECTED_PROVIDER_IDENTIFIER, basis SAME_RUN_AUTHENTICATED_REPOSITORY_INVENTORY_ID_MATCH.",
+  "fail": "Witness FAIL / UNKNOWN / ERROR: STOP.",
+  "other_detectors": "Never adjudicated: token prefixes, userinfo, authorization / bearer, private keys, credential assignments and every other detector STOP exactly as before, including on link.repo. OPAQUE_HIGH_ENTROPY itself is unchanged (no threshold, length, regex or value exception)."
+ },
+ "TI2_CORRECTION": {
+  "supersedes": {
+   "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json READS.reads[0].target_identity.requirements[1]",
+   "superseded_text_verbatim": "TI-2: the returned link.repo MUST equal lorenzozanello/uellix-antigravity. If it does not, the measured setting does not govern this repository and the entire production-boundary analysis would be about a different codebase. This is DN-1's MIN-1_the_three_fields_that_must_come_back_together, carried as a hard assertion."
+  },
+  "evidence_for_the_correction": [
+   "Vercel's official OpenAPI (GET /v9/projects/{idOrName}, GitHub link variants) gives link separate 'org' and 'repo' string fields plus a numeric 'repoId'; with the owner held in 'org', 'repo' carries the repository name.",
+   "The installed Vercel CLI 54.14.2 pairs project.link.org with project.link.repo.",
+   "The certified safe diagnostic of the observed V-R2.S2 hit reported slash_count = 0, inconsistent with an owner/name form.",
+   "The owner decision LRW-2 defines the binding link.repo === repository.name."
+  ],
+  "residual_uncertainty": "Vercel's specification gives the fields no descriptions. The corrected TI-2 therefore fails closed: if Vercel in fact returns an owner/name link.repo, V-R1 STOPs (STOP_PROJECT_IDENTITY_MISMATCH) and nothing is concluded.",
+  "rule": "NORMATIVE. TI-2 holds iff link.type === 'github', link.org === 'lorenzozanello', link.repo === 'uellix-antigravity' and link.repoId === the repository id G-R1 returned in THIS run. It is ENFORCED on V-R1 (STOP_PROJECT_IDENTITY_MISMATCH), where v1.0.4-v1.0.6 only recorded it.",
+  "historical_note": "The CM-6 measurement text in the release-control amendment is not edited."
+ },
+ "OPERATION_REGISTRY": {
+  "operations": 25,
+  "execute_now_read_classes": [
+   "G-R1",
+   "G-R2",
+   "G-R3",
+   "G-R4",
+   "G-R5",
+   "V-R1",
+   "V-R2",
+   "V-R3",
+   "X-R1"
+  ],
+  "unchanged": "V-R4 remains F_IMMEDIATE_ONLY_BEFORE_MUTATION. No other operation is added."
+ },
+ "EVIDENCE_MODEL": {
+  "envelope": "Every record gains scanner_adjudications (an empty array unless adjudicated); its entries have exactly {normalized_schema_path, project_id, detector_id, classification, basis} in the single permitted form.",
+  "g_r5_record": "ONE witness record: {pages_traversed, terminal: EMPTY_PAGE, matched: [{id, owner.login}]}. The matched repository NAME is not duplicated (it is already the adjudicated V-R2.S2 field). Page records, the inventory and non-matching repositories never become evidence.",
+  "ec1": "The entry point's evidence scan now runs EC-1 in-run at both levels (serialized and decoded leaves / keys). A finding is explained only by a V-R2.S2 adjudication marker for that project, OPAQUE_HIGH_ENTROPY at that exact leaf or quoted value, no other detector on the value, and the executor's in-memory same-run witness. scripts/infra-read/evidence-adjudication.ts is also a standalone pre-commit CLI; outside the run it can only honour the executor's markers."
+ },
+ "EVENT_CHAIN_SUCCESSOR": {
+  "rule": "NORMATIVE. dn0ConfigFor binds FIVE events: the effective-authority IC (455b5426), the arming-package IC (3dc12909), the executor base recert (fixed to 81b56ed4), the diagnostic recert (fixed to 4a3c2837), and the DELTA recert of the executed candidate at docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_<first 12 hex of the candidate, upper case>_IC_v1.0.0.json, package_id CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC.",
+  "why": "v1.0.6 bound the diagnostic-recert path to the supplied candidate; that file is now materialized for 4a3c2837 and is append-only, so this candidate could never arm through it. The delta-recert path is derived from each candidate, so no append-only event is ever asked to certify a SHA it does not name, and the dead end cannot recur. The name is in the allowedPostCertificationAdditions class.",
+  "successor_duty": "A later delta pins this candidate's delta recert as a fixed historical event (as this delta pins 81b56ed4 and 4a3c2837).",
+  "materialization_contract": "After the short recertification of this delta: the file at the derived path for the recertified head, package_id CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC, authority_class prefix INDEPENDENT_CERTIFICATION_EVENT_RECORD, CERTIFIED_CANDIDATE.candidate_head = that head, the verdict copied verbatim, blocking_findings the integer reported."
+ },
+ "MUTATION_RESULTS": {
+  "method": "scripts/infra-read/mutation-battery.mjs on the final tree, in three chunks (the full battery exceeds the 10-minute command cap): unmutated suite green first (351/351), each production mutant applied, tests/infra-read run, file restored from an in-memory byte copy and SHA-verified.",
+  "aggregate": "MUTANTS=90 (M01-M18, N01-N30, D01-D10, W01-W32) AS_EXPECTED=90 UNEXPECTED=0 BATTERY=PASS; SELF_TEST=PASS (BATTERY=FAIL on a real survivor).",
+  "equivalence_notes": [
+   "The verdict-time id equality (gh.id !== repoId) is structurally redundant: matches are KEYED by the provider id, so it cannot differ. W09 therefore mutates the binding itself (a name match stored under the target id) and is killed.",
+   "The detector restriction on a deferred link.repo has two layers (the serialized finding must be OPAQUE_HIGH_ENTROPY; the decoded leaf must trip no other detector). Either layer alone suffices, so W19 removes both together.",
+   "A broadened G-R5 projection has no observable effect because each page is reduced before any record; the allowlist is therefore pinned by an exact test, which kills W22."
+  ],
+  "results": [
+   {
+    "id": "M01",
+    "mutation": "gh exact-shape check removed (POST/body forms)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M02",
+    "mutation": "gh denylist emptied (exact shape still operative)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M03",
+    "mutation": "vercel exact-shape check removed (POST/body forms)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M04",
+    "mutation": "projection conformance disabled",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M05",
+    "mutation": "G-R1-first check removed (G-R2 before G-R1)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M06",
+    "mutation": "RC-9b check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M07",
+    "mutation": "RNA-1 exclusion removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M08",
+    "mutation": "freshness refusal removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M09",
+    "mutation": "post-projection secret detectors removed",
+    "verdict": "KILLED",
+    "failing_tests": 54,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M10",
+    "mutation": "X-R1 preflight requirement removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M11",
+    "mutation": "GIT_ASKPASS dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 24,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M12",
+    "mutation": "ceiling directory dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 26,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M13",
+    "mutation": "isolation listing accepts file origins",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M14",
+    "mutation": "no-commit-since-DN-0 guard disabled (stale DN-0 head)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M15",
+    "mutation": "post-certification MODIFY accepted",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M16",
+    "mutation": "env-value detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M17",
+    "mutation": "V-R1 allowlist admits deploy-hook url",
+    "verdict": "KILLED",
+    "failing_tests": 13,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "M18",
+    "mutation": "vercel write-operation-id check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N01",
+    "mutation": "B-1 reintroduced: predicate requires the author-guessed verdict name",
+    "verdict": "KILLED",
+    "failing_tests": 25,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N02",
+    "mutation": "B-1 reintroduced at the entry point: a verdict pattern configured for the recert event",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N03",
+    "mutation": "candidate binding removed (wrong-candidate PASS accepted)",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N04",
+    "mutation": "verdict judged by substring (FAIL containing PASS accepted)",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N05",
+    "mutation": "blocking-count check removed",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N06",
+    "mutation": "document-class check removed",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N07",
+    "mutation": "gh env guard reverted to a case-sensitive denylist (mixed-case GH_TOKEN)",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N08",
+    "mutation": "vercel env guard reverted to a case-sensitive denylist (mixed-case VERCEL_TOKEN)",
+    "verdict": "KILLED",
+    "failing_tests": 13,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N09",
+    "mutation": "credential-name check made case-sensitive",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N10",
+    "mutation": "constructed env compares names case-sensitively",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N11",
+    "mutation": "vcp_ detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 3,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N12",
+    "mutation": "URL userinfo detector reverted to the v1.0.4 user:password form",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N13",
+    "mutation": "env-assignment detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N14",
+    "mutation": "keyword-adjacent classic-token detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N15",
+    "mutation": "designated fixtures accepted regardless of counts (global suppression)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N16",
+    "mutation": "raw provider key injected into the evidence envelope",
+    "verdict": "KILLED",
+    "failing_tests": 120,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N17",
+    "mutation": "envelope allowlist disabled",
+    "verdict": "KILLED",
+    "failing_tests": 8,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N18",
+    "mutation": "X-R1 registry drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 7,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N19",
+    "mutation": "X-R1 registry drops the core.askPass reset",
+    "verdict": "KILLED",
+    "failing_tests": 7,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N20",
+    "mutation": "X-R1 registry drops the http.extraHeader reset",
+    "verdict": "KILLED",
+    "failing_tests": 7,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N21",
+    "mutation": "preflight argv drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 23,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N22",
+    "mutation": "terminal prompt enabled in the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 22,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N23",
+    "mutation": "system-config isolation dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 25,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N24",
+    "mutation": "normative X-R1 argv check removed from the guard",
+    "verdict": "KILLED",
+    "failing_tests": 3,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N25",
+    "mutation": "DN-0 residual-vector (insteadOf/cookieFile) check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N26",
+    "mutation": "DN-0 fetch drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 13,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N27",
+    "mutation": "RC-9a identity assertion removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N28",
+    "mutation": "DN-0 origin https-without-userinfo check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N29",
+    "mutation": "DN-0 residual probe reads config VALUES (--name-only dropped)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D01",
+    "mutation": "diagnostic carries the raw value",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D02",
+    "mutation": "diagnostic smuggles a value PREFIX inside an allowed field",
+    "verdict": "KILLED",
+    "failing_tests": 18,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D03",
+    "mutation": "diagnostic smuggles a value SUFFIX inside an allowed field",
+    "verdict": "KILLED",
+    "failing_tests": 18,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D04",
+    "mutation": "diagnostic carries a hash / digest of the value",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D05",
+    "mutation": "diagnostic hides a digest prefix inside the path",
+    "verdict": "KILLED",
+    "failing_tests": 18,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D06",
+    "mutation": "wrong field path: array marker not normalized",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D07",
+    "mutation": "wrong field path: outermost span chosen instead of innermost",
+    "verdict": "KILLED",
+    "failing_tests": 47,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D08",
+    "mutation": "unexpected diagnostic key",
+    "verdict": "KILLED",
+    "failing_tests": 12,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D09",
+    "mutation": "a provider key under .** is echoed in the path",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "N30",
+    "mutation": "an append-only historical recert re-bound to the supplied candidate (event-path dead end)",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "D10",
+    "mutation": "refusal token changed by the diagnostic",
+    "verdict": "KILLED",
+    "failing_tests": 25,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W01",
+    "mutation": "G-R5 request carries a repository name",
+    "verdict": "KILLED",
+    "failing_tests": 29,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W02",
+    "mutation": "G-R5 request carries an org",
+    "verdict": "KILLED",
+    "failing_tests": 29,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W03",
+    "mutation": "G-R5 request carries the repoId",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W04",
+    "mutation": "raw inventory page persisted (no reduction before the record)",
+    "verdict": "KILLED",
+    "failing_tests": 14,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W05",
+    "mutation": "non-matching repositories retained (whole inventory accumulated)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W06",
+    "mutation": "pagination stops once every target matched (before completeness)",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W07",
+    "mutation": "duplicate match ignored",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W08",
+    "mutation": "zero match ignored",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W09",
+    "mutation": "id binding replaced by a name match",
+    "verdict": "KILLED",
+    "failing_tests": 3,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W10",
+    "mutation": "name equality skipped",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W11",
+    "mutation": "owner equality skipped",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W12",
+    "mutation": "full_name coherence skipped",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W13",
+    "mutation": "witness type equality skipped",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W14",
+    "mutation": "deferral accepts a non-github link.type",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W15",
+    "mutation": "witness shared across executions (prior-run witness reused)",
+    "verdict": "KILLED",
+    "failing_tests": 26,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W16",
+    "mutation": "adjudicated values shared across executions",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W17",
+    "mutation": "identity hard-coded when GitHub returned none",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W18",
+    "mutation": "OPAQUE_HIGH_ENTROPY suppressed globally",
+    "verdict": "KILLED",
+    "failing_tests": 22,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W19",
+    "mutation": "every detector suppressed on link.repo (both detector layers removed)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W20",
+    "mutation": "a 403 treated as a successful page",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W21",
+    "mutation": "a rate limit treated as a successful page",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W22",
+    "mutation": "G-R5 projection broadened",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W23",
+    "mutation": "another read class added",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W24",
+    "mutation": "pending V-R2.S2 record validated before the witness",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W25",
+    "mutation": "TI-2 reverted to the owner/name comparison",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W26",
+    "mutation": "TI-2 no longer enforced on V-R1",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W27",
+    "mutation": "RC-9a no longer requires the repo scope",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W28",
+    "mutation": "evidence re-scan ignores the adjudication marker",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W29",
+    "mutation": "evidence re-scan ignores the same-run value check",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W30",
+    "mutation": "delta-recert path no longer candidate-derived (one-use dead end)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W31",
+    "mutation": "witness page-loop detection removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   },
+   {
+    "id": "W32",
+    "mutation": "witness page cap removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED"
+   }
+  ]
+ },
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "Every prohibition of v1.0.0 through v1.0.6, unrelaxed.",
+  "No search, no owner/name lookup, no ID-keyed lookup, no contents / issues / commits / settings read, and no persistence of the inventory or of raw responses.",
+  "No detector is weakened; no exception exists outside V-R2.S2 projects[*].link.repo and a same-run witness PASS.",
+  "No governed read is authorized by this amendment until its delta is independently recertified and a fresh human confirmation is given; the execution then restarts from fresh RC-9a and DN-0 with no reuse of earlier attempts."
+ ],
+ "final_state": "INFRA_LINK_REPO_INVENTORY_WITNESS_AUTHORED__ONE_READ_CLASS_ADDED__25_OPS_9_EXECUTE_NOW__FAIL_CLOSED_PRESERVED__READY_FOR_SHORT_RECERT",
+ "next_gate": "ONE short independent recertification of dcbd0acc..this head. On PASS: materialize the delta recert at its derived path, obtain a fresh human confirmation, then fresh RC-9a -> fresh DN-0 -> all 9 EXECUTE_NOW read classes from scratch."
+}

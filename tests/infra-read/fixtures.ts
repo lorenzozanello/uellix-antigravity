@@ -32,7 +32,8 @@ export function antigravityProject() {
   return {
     id: PRJ_AG, name: 'uellix-antigravity', accountId: TEAM, createdAt: 1, updatedAt: 2,
     link: {
-      type: 'github', repo: 'lorenzozanello/uellix-antigravity', productionBranch: 'main', repoId: 9,
+      // v1.0.7: link.repo is the repository NAME; the owner is link.org; repoId is G-R1's repository id.
+      type: 'github', repo: 'uellix-antigravity', org: 'lorenzozanello', productionBranch: 'main', repoId: 1,
       deployHooks: [{ id: 'dh_1', name: 'hook', ref: 'main', createdAt: 3, url: fakeDeployHookUrl() }],
     },
     gitProviderOptions: { createDeployments: 'enabled' },
@@ -104,6 +105,15 @@ export function fakeRunner(w: Record<string, RunResult> = world()): FakeRunner {
   }) as FakeRunner
   fn.calls = calls
   return fn
+}
+
+/** v1.0.7: a 40-character, GitHub-name-shaped synthetic value that OPAQUE_HIGH_ENTROPY flags. Assembled at runtime. */
+export function repoShaped(seed: number): string {
+  const a = 'Ab3Cd5Ef7Gh9Jk2Mn4Pq6Rs8Tu1Vw3Xy5Za7Bc9'
+  const parts: string[] = []
+  // Segment lengths 10 + 10 + 9 + 8 plus 3 hyphens = exactly 40 characters.
+  ;[10, 10, 9, 8].forEach((len, i) => parts.push([...Array(len)].map((_, j) => a[(seed * 7 + i * 11 + j * 3) % a.length]).join('')))
+  return parts.join('-')
 }
 
 export { X_R1_URL }

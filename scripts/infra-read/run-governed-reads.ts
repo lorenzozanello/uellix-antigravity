@@ -18,7 +18,7 @@ import { buildGhEnv, buildVercelEnv, type Invocation, type ToolContext } from '.
 import { SafeReadExecutor, assertEnvelopeConforms, isValidatedEvidence, type RunResult } from './executor'
 import { assertBundleEnvelopeConforms, runGovernedReadPhase, type Dn0Config, type LocalGit } from './protocol'
 import { buildXcc1Env, createXcc1Context } from './xcc1'
-import { scanFiles } from './evidence-scan'
+import { scanEvidenceFiles } from './evidence-adjudication'
 
 export interface CliArgs { readonly execute: boolean; readonly certifiedCandidate?: string; readonly out?: string }
 
@@ -93,7 +93,23 @@ export const EXECUTOR_RECERT_EVENT = {
 export const EXECUTOR_DIAGNOSTIC_RECERT_EVENT = {
   path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC_v1.0.0.json',
   packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DIAGNOSTIC_RECERT_IC',
+  /** Materialized at 5375c697; it certifies the safe-diagnostic delta and stays bound to it (v1.0.7). */
+  certifiedCandidate: '4a3c2837595abb57e35ba6b4230d66ee4e1da229',
 } as const
+
+/**
+ * v1.0.7: the certification of the delta that produced the candidate being
+ * executed. Its PATH is derived from that candidate, so every future candidate
+ * has its own event and no append-only event is ever asked to certify a SHA it
+ * does not name (the one-use dead end of v1.0.5 / v1.0.6 cannot recur). The
+ * name matches the allowedPostCertificationAdditions class. When a later delta
+ * is authored, its predecessor's delta recert is added to the fixed list above.
+ */
+export const EXECUTOR_DELTA_RECERT_PACKAGE_ID = 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC'
+export function deltaRecertEventPathFor(candidate: string): string {
+  if (!SHA40_RE.test(candidate)) throw new Refusal('STOP_EXECUTION_NOT_REQUESTED', 'candidate is not a 40-hex SHA')
+  return `docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_${candidate.slice(0, 12).toUpperCase()}_IC_v1.0.0.json`
+}
 
 export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
   const authority = JSON.parse(readFileSync('docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json', 'utf8')) as {
@@ -111,7 +127,8 @@ export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
       { path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC', certifiedCandidate: '455b5426e11e5518606328dc0f1c3cd6bc7887ca' },
       { path: 'docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json', packageId: 'CV1_INFRA_RC9_ARMING_PACKAGE_IC', certifiedCandidate: '3dc12909bb5b584ebc2266900659ab6f158d9eef' },
       { path: EXECUTOR_RECERT_EVENT.path, packageId: EXECUTOR_RECERT_EVENT.packageId, certifiedCandidate: EXECUTOR_RECERT_EVENT.certifiedCandidate },
-      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate },
+      { path: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path, packageId: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.packageId, certifiedCandidate: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.certifiedCandidate },
+      { path: deltaRecertEventPathFor(certifiedCandidate), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate },
     ],
   }
 }
@@ -136,13 +153,20 @@ export function main(argv: readonly string[]): number {
     assertBundleEnvelopeConforms(summaryObject)
     writeFileSync(summary, `${JSON.stringify(summaryObject, null, 1)}\n`)
     written.push(summary)
-    const scan = scanFiles(written)
-    console.log(`GOVERNED_READS=${bundle.records.filter((r) => r.record_kind === 'GOVERNED_READ_EVIDENCE').length}`)
+    // EC-1 in-run: serialized + decoded leaves; only the SAME-RUN witness can explain a finding.
+    const scan = scanEvidenceFiles(written, (v) => executor.isAdjudicatedValue(v))
+    const ser = scan.unexplained.filter((f) => f.level === 'SERIALIZED').length
+    const dec = scan.unexplained.filter((f) => f.level === 'DECODED').length
+    for (const f of scan.unexplained) console.error(`  ${f.level} ${f.detector} ${f.file} ${f.where}`)
+    console.log(`GOVERNED_READ_RECORDS=${bundle.records.filter((r) => r.record_kind === 'GOVERNED_READ_EVIDENCE').length}`)
+    console.log(`GOVERNED_READ_CLASSES=${[...new Set(bundle.records.filter((r) => r.record_kind === 'GOVERNED_READ_EVIDENCE').map((r) => r.read_id))].sort().join(',')}`)
     console.log(`EVIDENCE_FILES=${written.length}`)
-    console.log(`EVIDENCE_SCAN=${scan.findings.length === 0 ? 'PASS' : 'FAIL'}`)
+    console.log(`EC1_SERIALIZED_SCAN=${ser === 0 ? 'PASS' : 'FAIL'}`)
+    console.log(`EC1_DECODED_LEAF_SCAN=${dec === 0 ? 'PASS' : 'FAIL'}`)
+    console.log(`SAME_RUN_ADJUDICATED_FINDINGS=${scan.adjudicatedExplained}`)
     console.log(`DN0_HEAD=${bundle.dn0.head}`)
     console.log('NEXT: commit the evidence directory ONLY, with parent == DN0_HEAD, then run assertEvidenceCommitParent.')
-    return scan.findings.length === 0 ? 0 : 1
+    return ser + dec === 0 ? 0 : 1
   } catch (e) {
     console.error(e instanceof Refusal ? e.message : `STOP_UNEXPECTED: ${(e as Error).message}`)
     return 2

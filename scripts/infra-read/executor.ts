@@ -16,7 +16,8 @@ import {
 } from './ops'
 import { asXcc1Refusal, assertInvocationSafe, assertProjectionConforms, buildInvocation, project, type Invocation, type ToolContext } from './guards'
 import { scanText } from './evidence-scan'
-import { SecretDetectedRefusal, localizeFindings } from './safe-diagnostic'
+import { SecretDetectedRefusal, localizeFindings, locateFindingsInternal } from './safe-diagnostic'
+import { ADJUDICATION_BASIS, ADJUDICATION_CLASSIFICATION, RepositoryInventoryWitness, isRepoId, type WitnessTarget } from './repo-witness'
 import { XCC1_PREFLIGHT_ARGS, assertIsolationListing, assertXcc1Env } from './xcc1'
 import { assertXcc1NormativeEnv, assertXcc1NormativePreflightArgv, assertXcc1NormativePreflightListing } from './xcc1-normative'
 
@@ -40,6 +41,16 @@ export interface EvidenceRecord {
   readonly projection: unknown
   readonly absent_fields: readonly { path: string; kind: string }[]
   readonly assertions: Readonly<Record<string, boolean | string>>
+  /** v1.0.7: same-run scanner adjudications carried by this record (empty for almost every record). */
+  readonly scanner_adjudications: readonly ScannerAdjudication[]
+}
+
+export interface ScannerAdjudication {
+  readonly normalized_schema_path: 'projects[*].link.repo'
+  readonly project_id: string
+  readonly detector_id: 'OPAQUE_HIGH_ENTROPY'
+  readonly classification: typeof ADJUDICATION_CLASSIFICATION | 'PENDING_SAME_RUN_WITNESS'
+  readonly basis: typeof ADJUDICATION_BASIS
 }
 
 const VALIDATED = new WeakSet<object>()
@@ -55,7 +66,9 @@ const VALIDATED = new WeakSet<object>()
 export const ENVELOPE_KEYS = [
   'record_kind', 'op_id', 'read_id', 'plane', 'node_ids', 'freshness', 'prestate_validity', 'operation',
   'request_utc', 'response_utc', 'http_status', 'outcome', 'projection', 'absent_fields', 'assertions',
+  'scanner_adjudications',
 ] as const
+export const SCANNER_ADJUDICATION_KEYS = ['normalized_schema_path', 'project_id', 'detector_id', 'classification', 'basis'] as const
 export const OPERATION_KEYS = ['tool', 'method', 'endpoint', 'fixed_args'] as const
 export const ABSENT_FIELD_KEYS = ['path', 'kind'] as const
 export const ASSERTION_KEYS = [
@@ -80,6 +93,16 @@ export function assertEnvelopeConforms(record: unknown): void {
     if (typeof v !== 'boolean' && typeof v !== 'string') throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'assertion value is not scalar')
   }
   if (!Array.isArray(r.absent_fields)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'absent_fields is not an array')
+  if (!Array.isArray(r.scanner_adjudications)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'scanner_adjudications is not an array')
+  for (const a of r.scanner_adjudications) {
+    onlyKeys(a, SCANNER_ADJUDICATION_KEYS, 'record.scanner_adjudications[]')
+    const x = a as Record<string, unknown>
+    if (r.op_id !== 'V-R2.S2' || x.normalized_schema_path !== 'projects[*].link.repo' || x.detector_id !== 'OPAQUE_HIGH_ENTROPY' ||
+      (x.classification !== ADJUDICATION_CLASSIFICATION && x.classification !== 'PENDING_SAME_RUN_WITNESS') || x.basis !== ADJUDICATION_BASIS ||
+      typeof x.project_id !== 'string') {
+      throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'scanner adjudication outside its single permitted form')
+    }
+  }
   for (const a of r.absent_fields) onlyKeys(a, ABSENT_FIELD_KEYS, 'record.absent_fields[]')
   if (!Array.isArray(r.node_ids) || r.node_ids.some((n) => typeof n !== 'string')) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'node_ids malformed')
   for (const k of ['record_kind', 'op_id', 'read_id', 'plane', 'freshness', 'prestate_validity', 'request_utc', 'response_utc', 'outcome']) {
@@ -148,6 +171,35 @@ function paginationNext(projection: unknown): string | undefined {
   return typeof n === 'number' || (typeof n === 'string' && n !== '') ? String(n) : undefined
 }
 
+function adjudication(projectId: string, classification: ScannerAdjudication['classification']): ScannerAdjudication {
+  return { normalized_schema_path: 'projects[*].link.repo', project_id: projectId, detector_id: 'OPAQUE_HIGH_ENTROPY', classification, basis: ADJUDICATION_BASIS }
+}
+
+/**
+ * v1.0.7: the V-R2.S2 findings that may await the same-run witness, or
+ * undefined (-> STOP now, with the certified safe diagnostic). EVERY finding
+ * must be OPAQUE_HIGH_ENTROPY at exactly projects[*].link.repo, the leaf itself
+ * must trip no other detector, and its project must carry a github link with a
+ * numeric repoId, an org and an id. Anything else is not deferrable.
+ */
+function linkRepoTargets(projection: unknown, serialized: string, hits: readonly { detector: string; offset: number }[]): WitnessTarget[] | undefined {
+  const located = locateFindingsInternal(projection, serialized, hits)
+  if (!located) return undefined
+  const byProject = new Map<number, WitnessTarget>()
+  for (const l of located) {
+    if (l.detector !== 'OPAQUE_HIGH_ENTROPY' || l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined
+    if (scanText(l.value).some((f) => f.detector !== 'OPAQUE_HIGH_ENTROPY')) return undefined
+    const c = l.concrete
+    if (c.length !== 4 || c[0] !== 'projects' || typeof c[1] !== 'number' || c[2] !== 'link' || c[3] !== 'repo') return undefined
+    const pr = (get(projection, 'projects') as Record<string, unknown>[] | undefined)?.[c[1]]
+    const link = pr?.link as Record<string, unknown> | undefined
+    if (!pr || !link || typeof pr.id !== 'string' || link.type !== 'github' || !isRepoId(link.repoId) ||
+      typeof link.org !== 'string' || link.org === '' || link.repo !== l.value) return undefined
+    byProject.set(c[1], { projectId: pr.id, repoId: link.repoId, linkType: link.type, linkRepo: l.value, linkOrg: link.org })
+  }
+  return byProject.size > 0 ? [...byProject.values()] : undefined
+}
+
 export class SafeReadExecutor {
   readonly state = {
     ghRepo: undefined as undefined | { id: unknown; fullName: string },
@@ -165,6 +217,14 @@ export class SafeReadExecutor {
     xcc1PreflightPassed: false,
     executed: [] as string[],
   }
+
+  /** v1.0.7: same-run witness; a new executor (a new execution) always starts empty. */
+  readonly witness = new RepositoryInventoryWitness()
+  private readonly pendingAdjudications = new Map<EvidenceRecord, readonly WitnessTarget[]>()
+  private readonly adjudicatedValues = new Set<string>()
+  private witnessPages = 0
+  private witnessFirstRequestUtc: string | undefined
+  private witnessLastResponseUtc: string | undefined
 
   constructor(
     private readonly runner: ProviderRunner,
@@ -207,6 +267,11 @@ export class SafeReadExecutor {
       }
       if (op.read === 'G-R4' && !s.commitShas.has(p.sha ?? '')) {
         throw new Refusal('STOP_SHA_IDENTITY_MISMATCH', 'G-R4 SHA has no recorded provenance')
+      }
+      if (op.id === 'G-R5') {
+        // Only for adjudication targets of THIS run, strictly in page order, never after completion.
+        if (p.page !== String(this.witness.expectedPage())) throw new Refusal('STOP_PAGINATION_INCOMPLETE', 'G-R5 page is not the next expected page')
+        if ([...this.pendingAdjudications.keys()].length === 0) throw new Refusal('STOP_READ_AUTHORITY_EXCEEDED', 'G-R5 without a pending adjudication')
       }
     }
     if (op.plane === 'PLANE-V') {
@@ -280,14 +345,31 @@ export class SafeReadExecutor {
     }
     if (op.id === 'PACMI-V3') source = this.minimizeMembers(source)
 
-    const { projection, absent } = outcome === 'OK' ? project(op, source) : { projection: {}, absent: [] }
+    // G-R5's completion signal is an EMPTY page; an empty array has no allowlisted
+    // leaf and would otherwise project to {} (v1.0.7).
+    const emptyInventoryPage = op.id === 'G-R5' && Array.isArray(source) && source.length === 0
+    const projected = outcome === 'OK' ? project(op, source) : { projection: {} as unknown, absent: [] }
+    const absent = projected.absent
+    let projection: unknown = projected.projection
     source = undefined // the raw object goes out of scope here and is never serialized
     assertProjectionConforms(op, projection)
+    if (op.id === 'G-R5') {
+      // v1.0.7: the page is reduced to target matches BEFORE any scan or record;
+      // non-matching repositories are discarded here and go nowhere.
+      if (outcome !== 'OK') throw new Refusal('STOP_PROVIDER_ERROR', 'G-R5 page did not return 200')
+      if (this.witnessFirstRequestUtc === undefined) this.witnessFirstRequestUtc = request_utc
+      this.witnessLastResponseUtc = response_utc
+      projection = this.witness.ingestPage(Number(params.page), emptyInventoryPage ? [] : projection)
+      this.witnessPages++
+    }
     const serialized = JSON.stringify(projection)
     const hits = scanText(serialized)
+    let deferred: WitnessTarget[] | undefined
     if (hits.length > 0) {
+      // v1.0.7: exactly ONE finding class may be deferred to the same-run witness.
+      deferred = op.id === 'V-R2.S2' ? linkRepoTargets(projection, serialized, hits) : undefined
       // The decision above is unchanged; the diagnostic only names the field class (v1.0.6).
-      throw new SecretDetectedRefusal(op, [...new Set(hits.map((h) => h.detector))], localizeFindings(op, projection, serialized, hits))
+      if (!deferred) throw new SecretDetectedRefusal(op, [...new Set(hits.map((h) => h.detector))], localizeFindings(op, projection, serialized, hits))
     }
 
     const assertions = this.postconditions(op, params, projection, outcome)
@@ -314,10 +396,67 @@ export class SafeReadExecutor {
       projection,
       absent_fields: absent,
       assertions: Object.freeze(assertions),
+      scanner_adjudications: Object.freeze((deferred ?? []).map((t) => Object.freeze(adjudication(t.projectId, 'PENDING_SAME_RUN_WITNESS')))),
     })
     assertEnvelopeConforms(record)
+    if (deferred) {
+      // NOT validated: an unadjudicated record can never be written as evidence.
+      for (const t of deferred) this.witness.addTarget(t)
+      this.pendingAdjudications.set(record, deferred)
+      return record
+    }
     VALIDATED.add(record)
     return record
+  }
+
+  hasPendingAdjudications(): boolean {
+    return this.pendingAdjudications.size > 0
+  }
+
+  /** Same-run exact value lookup for the entry point's evidence re-scan. In memory only. */
+  isAdjudicatedValue(value: string): boolean {
+    return this.adjudicatedValues.has(value)
+  }
+
+  /**
+   * v1.0.7: after the G-R5 traversal completes, render the witness verdict
+   * (throws on ANY failure), return the G-R5 witness record (matched id and
+   * owner.login only, never the repository name), and replace every pending
+   * V-R2.S2 record by its adjudicated, validated form.
+   */
+  finalizeRepositoryWitness(): { readonly witnessRecord: EvidenceRecord; readonly replacements: ReadonlyMap<EvidenceRecord, EvidenceRecord> } {
+    const verdict = this.witness.verdict()
+    const op = getOp('G-R5')
+    const projection = { pages_traversed: this.witnessPages, terminal: 'EMPTY_PAGE', matched: verdict.resolved }
+    const serialized = JSON.stringify(projection)
+    const hits = scanText(serialized)
+    if (hits.length > 0) throw new SecretDetectedRefusal(op, [...new Set(hits.map((h) => h.detector))], localizeFindings(op, projection, serialized, hits))
+    const witnessRecord: EvidenceRecord = Object.freeze({
+      record_kind: 'GOVERNED_READ_EVIDENCE', op_id: op.id, read_id: op.read, plane: op.plane, node_ids: [...op.nodeIds],
+      freshness: op.freshness, prestate_validity: PRESTATE_VALIDITY,
+      operation: Object.freeze({ tool: 'gh', method: 'GET' as const, endpoint: `/user/repos?per_page=100&page=1..${this.witnessPages}` }),
+      request_utc: this.witnessFirstRequestUtc ?? this.clock.now(), response_utc: this.witnessLastResponseUtc ?? this.clock.now(),
+      http_status: 200, outcome: 'OK', projection, absent_fields: [],
+      assertions: Object.freeze({ identity_established: true }),
+      scanner_adjudications: Object.freeze([]),
+    })
+    assertEnvelopeConforms(witnessRecord)
+    const adjudicatedProjects = new Set(verdict.adjudicated.map((t) => t.projectId))
+    const replacements = new Map<EvidenceRecord, EvidenceRecord>()
+    for (const [pending, targets] of this.pendingAdjudications) {
+      if (!targets.every((t) => adjudicatedProjects.has(t.projectId))) throw new Refusal('STOP_WITNESS_UNKNOWN', 'a pending V-R2.S2 location was not adjudicated')
+      const resolved: EvidenceRecord = Object.freeze({
+        ...pending,
+        scanner_adjudications: Object.freeze(targets.map((t) => Object.freeze(adjudication(t.projectId, ADJUDICATION_CLASSIFICATION)))),
+      })
+      assertEnvelopeConforms(resolved)
+      VALIDATED.add(resolved)
+      replacements.set(pending, resolved)
+    }
+    for (const t of verdict.adjudicated) this.adjudicatedValues.add(t.linkRepo)
+    this.pendingAdjudications.clear()
+    VALIDATED.add(witnessRecord)
+    return { witnessRecord, replacements }
   }
 
   private minimizeMembers(source: unknown): unknown {
@@ -390,7 +529,12 @@ export class SafeReadExecutor {
       case 'V-R3': {
         const id = get(proj, 'id')
         if (typeof id === 'string') s.antigravityIds.add(id)
-        a.TI2_link_repo_matches = get(proj, 'link.repo') === REPO_FULL_NAME
+        // v1.0.7 TI-2: the Vercel link TUPLE against the governed GitHub identity G-R1
+        // established in THIS run (link.repo is the repository NAME; the owner is link.org).
+        const ti2 = get(proj, 'link.type') === 'github' && get(proj, 'link.org') === GH_OWNER && get(proj, 'link.repo') === GH_REPO &&
+          isRepoId(get(proj, 'link.repoId')) && s.ghRepo !== undefined && get(proj, 'link.repoId') === s.ghRepo.id
+        a.TI2_link_repo_matches = ti2
+        if (op.id === 'V-R1' && !ti2) throw new Refusal('STOP_PROJECT_IDENTITY_MISMATCH', 'TI-2: the Vercel link tuple is not the governed repository')
         a.name_matches = get(proj, 'name') === ANTIGRAVITY_PROJECT
         break
       }

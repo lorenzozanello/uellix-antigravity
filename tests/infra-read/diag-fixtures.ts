@@ -22,11 +22,15 @@ export function syntheticSecret(field: string): string {
   return ['cfg"', run, '"end'].join('')
 }
 
-/** The V-R2.S2 response for TEAM, with `value` planted at `field` (projects[] field or pagination.*). */
-export function projectsListWith(field: string, value: string): Record<string, RunResult> {
+/**
+ * The V-R2.S2 response for TEAM, with `value` planted at `field` (projects[] field or pagination.*).
+ * v1.0.7: a link.repo finding on a GitHub link is DEFERRED to the same-run witness, not refused at
+ * once; the diagnostic STOP for link.repo is therefore exercised with a non-GitHub link.type.
+ */
+export function projectsListWith(field: string, value: string, linkType = field === 'link.repo' ? 'gitlab' : 'github'): Record<string, RunResult> {
   const project: Record<string, unknown> = {
     id: 'prj_PRODWEB00002', name: 'uellix-production-web', accountId: TEAM, createdAt: 1, updatedAt: 2,
-    link: { type: 'github', repo: 'uellix-production-web', org: 'lorenzozanello', repoId: 3, productionBranch: 'main' },
+    link: { type: linkType, repo: 'uellix-production-web', org: 'lorenzozanello', repoId: 3, productionBranch: 'main' },
   }
   const pagination: Record<string, unknown> = { count: 1, next: null }
   if (field.startsWith('pagination.')) pagination[field.slice('pagination.'.length)] = value

@@ -19,6 +19,7 @@ const R = process.cwd().split('\\').join('/') + '/'
 const F = (p) => R + 'scripts/infra-read/' + p
 const G = F('guards.ts'), E = F('executor.ts'), X = F('xcc1.ts'), P = F('protocol.ts'), S = F('evidence-scan.ts')
 const C = F('certification.ts'), O = F('ops.ts'), RG = F('run-governed-reads.ts'), D = F('safe-diagnostic.ts')
+const W = F('repo-witness.ts'), A = F('evidence-adjudication.ts')
 const XR1 = "fixedArgs: ['-c', 'credential.helper=', '-c', 'core.askPass=', '-c', 'http.extraHeader=', 'ls-remote', X_R1_URL]"
 
 // [id, description, file, find, replace, expectation]
@@ -44,7 +45,7 @@ export const MUTANTS = [
   ['M18', 'vercel write-operation-id check removed', G, "  if (typeof endpoint !== 'string' || !endpoint.startsWith('/')) {", '  if (false) {', 'KILLED'],
   // ---- v1.0.5: B-1 and the certification predicate
   ['N01', 'B-1 reintroduced: predicate requires the author-guessed verdict name', C, '  const v = verdict.verdict\n', "  const v = verdict.verdict\n  if (typeof v === 'string' && !/^INFRA_EXECUTOR_HARDENING_IC_PASS/.test(v)) return { ok: false, reason: 'verdict name' }\n", 'KILLED'],
-  ['N02', 'B-1 reintroduced at the entry point: a verdict pattern configured for the recert event', RG, '      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate },', '      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate, verdict: /^INFRA_EXECUTOR_HARDENING_IC_PASS/ },', 'KILLED'],
+  ['N02', 'B-1 reintroduced at the entry point: a verdict pattern configured for the recert event', RG, '      { path: deltaRecertEventPathFor(certifiedCandidate), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate },', '      { path: deltaRecertEventPathFor(certifiedCandidate), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate, verdict: /^INFRA_EXECUTOR_HARDENING_IC_PASS/ },', 'KILLED'],
   ['N03', 'candidate binding removed (wrong-candidate PASS accepted)', C, '  if (cand !== req.certifiedCandidate) return', '  if (false) return', 'KILLED'],
   ['N04', 'verdict judged by substring (FAIL containing PASS accepted)', C, "  if (!/^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/.test(verdict)) return undefined", "  if (verdict.includes('PASS')) return 'PASS'\n  if (!/^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/.test(verdict)) return undefined", 'KILLED'],
   ['N05', 'blocking-count check removed', C, '  if (verdict.blocking_findings !== 0) return', '  if (false) return', 'KILLED'],
@@ -87,8 +88,41 @@ export const MUTANTS = [
   ['D07', 'wrong field path: outermost span chosen instead of innermost', D, 's.end - s.start < best.end - best.start', 's.end - s.start > best.end - best.start', 'KILLED'],
   ['D08', 'unexpected diagnostic key', D, "    slash_count: count(text, /\\//g),\n  }", "    slash_count: count(text, /\\//g),\n    leaf_index: 0,\n  }", 'KILLED'],
   ['D09', 'a provider key under .** is echoed in the path', D, '      if (generic === base || generic.startsWith(`${base}.`) || generic.startsWith(`${base}[]`)) return star(p)', '      if (generic === base || generic.startsWith(`${base}.`) || generic.startsWith(`${base}[]`)) return star(generic)', 'KILLED'],
-  ['N30', 'the append-only 81b56ed4 base recert re-bound to the supplied candidate (event-path dead end)', RG, '      { ...EXECUTOR_DIAGNOSTIC_RECERT_EVENT, certifiedCandidate },', '      { path: EXECUTOR_RECERT_EVENT.path, packageId: EXECUTOR_RECERT_EVENT.packageId, certifiedCandidate },', 'KILLED'],
+  ['N30', 'an append-only historical recert re-bound to the supplied candidate (event-path dead end)', RG, '      { path: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path, packageId: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.packageId, certifiedCandidate: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.certifiedCandidate },', '      { path: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path, packageId: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.packageId, certifiedCandidate },', 'KILLED'],
   ['D10', 'refusal token changed by the diagnostic', D, "    super('STOP_SECRET_BEARING_FIELD_RETURNED',", "    super('STOP_SECRET_DIAGNOSTIC',", 'KILLED'],
+  // ---- v1.0.7: G-R5 inventory witness (owner decision LRW-2)
+  ['W01', 'G-R5 request carries a repository name', O, "    build: (p) => `/user/repos?per_page=100&page=${req(p, 'page', INVENTORY_PAGE_RE)}`,", "    build: (p) => `/user/repos?per_page=100&page=${req(p, 'page', INVENTORY_PAGE_RE)}&q=${p.repo ?? ''}`,", 'KILLED'],
+  ['W02', 'G-R5 request carries an org', O, "    build: (p) => `/user/repos?per_page=100&page=${req(p, 'page', INVENTORY_PAGE_RE)}`,", "    build: (p) => `/user/repos?per_page=100&page=${req(p, 'page', INVENTORY_PAGE_RE)}&affiliation=${p.org ?? ''}`,", 'KILLED'],
+  ['W03', 'G-R5 request carries the repoId', O, "    build: (p) => `/user/repos?per_page=100&page=${req(p, 'page', INVENTORY_PAGE_RE)}`,", "    build: (p) => p.repoId ? `/repositories/${p.repoId}` : `/user/repos?per_page=100&page=${req(p, 'page', INVENTORY_PAGE_RE)}`,", 'KILLED'],
+  ['W04', 'raw inventory page persisted (no reduction before the record)', E, "      projection = this.witness.ingestPage(Number(params.page), emptyInventoryPage ? [] : projection)", "      this.witness.ingestPage(Number(params.page), emptyInventoryPage ? [] : projection)", 'KILLED'],
+  ['W05', 'non-matching repositories retained (whole inventory accumulated)', W, '      if (this.targets.has(item.id as number)) {', '      if (true) {', 'KILLED'],
+  ['W06', 'pagination stops once every target matched (before completeness)', W, "    this.lastPageSignature = signature\n", "    this.lastPageSignature = signature\n    if ([...this.targets.keys()].every((k) => this.matches.has(k))) this.complete = true\n", 'KILLED'],
+  ['W07', 'duplicate match ignored', W, "      if (found.length > 1) stop(", "      if (false) stop(", 'KILLED'],
+  ['W08', 'zero match ignored', W, "      if (found.length === 0) stop(", "      if (false) stop(", 'KILLED'],
+  ['W09', 'id binding replaced by a name match', W, "      if (this.targets.has(item.id as number)) {\n        const list = this.matches.get(item.id as number) ?? []\n        list.push(Object.freeze({ id: item.id as number, name: item.name as string, fullName: item.full_name as string, ownerLogin: owner }))\n        this.matches.set(item.id as number, list)\n      }", "      const byName = [...this.targets.entries()].find(([, ts]) => ts.some((t) => t.linkRepo === item.name))\n      if (byName) {\n        const list = this.matches.get(byName[0]) ?? []\n        list.push(Object.freeze({ id: byName[0], name: item.name as string, fullName: item.full_name as string, ownerLogin: owner }))\n        this.matches.set(byName[0], list)\n      }", 'KILLED'],
+  ['W10', 'name equality skipped', W, "        if (t.linkRepo !== gh.name) stop(", "        if (false) stop(", 'KILLED'],
+  ['W11', 'owner equality skipped', W, "        if (t.linkOrg !== gh.ownerLogin) stop(", "        if (false) stop(", 'KILLED'],
+  ['W12', 'full_name coherence skipped', W, "      if (gh.fullName !== `${gh.ownerLogin}/${gh.name}`) stop(", "      if (false) stop(", 'KILLED'],
+  ['W13', 'witness type equality skipped', W, "        if (t.linkType !== 'github') stop(", "        if (false) stop(", 'KILLED'],
+  ['W14', 'deferral accepts a non-github link.type', E, "    if (!pr || !link || typeof pr.id !== 'string' || link.type !== 'github' || !isRepoId(link.repoId) ||", "    if (!pr || !link || typeof pr.id !== 'string' || !isRepoId(link.repoId) ||", 'KILLED'],
+  ['W15', 'witness shared across executions (prior-run witness reused)', E, '  readonly witness = new RepositoryInventoryWitness()', '  readonly witness: RepositoryInventoryWitness = ((globalThis as unknown as { __w?: RepositoryInventoryWitness }).__w ??= new RepositoryInventoryWitness())', 'KILLED'],
+  ['W16', 'adjudicated values shared across executions', E, '  private readonly adjudicatedValues = new Set<string>()', '  private readonly adjudicatedValues: Set<string> = ((globalThis as unknown as { __a?: Set<string> }).__a ??= new Set<string>())', 'KILLED'],
+  ['W17', 'identity hard-coded when GitHub returned none', W, "      const found = this.matches.get(repoId) ?? []", "      const found = this.matches.get(repoId) ?? [{ id: repoId, name: targets[0].linkRepo, fullName: `${targets[0].linkOrg}/${targets[0].linkRepo}`, ownerLogin: targets[0].linkOrg }]", 'KILLED'],
+  ['W18', 'OPAQUE_HIGH_ENTROPY suppressed globally', E, "      if (!deferred) throw new SecretDetectedRefusal(", "      if (!deferred && hits.some((h) => h.detector !== 'OPAQUE_HIGH_ENTROPY')) throw new SecretDetectedRefusal(", 'KILLED'],
+  ['W19', 'every detector suppressed on link.repo (both detector layers removed)', E, "    if (l.detector !== 'OPAQUE_HIGH_ENTROPY' || l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined\n    if (scanText(l.value).some((f) => f.detector !== 'OPAQUE_HIGH_ENTROPY')) return undefined\n", "    if (l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined\n", 'KILLED'],
+  ['W20', 'a 403 treated as a successful page', E, "  if (res.status === 0) return 200", "  if (res.status === 0 || /HTTP 403/.test(res.stderr)) return 200", 'KILLED'],
+  ['W21', 'a rate limit treated as a successful page', E, "  if (res.status === 0) return 200", "  if (res.status === 0 || /HTTP 429/.test(res.stderr)) return 200", 'KILLED'],
+  ['W22', 'G-R5 projection broadened', O, "    allowlist: ['[].id', '[].name', '[].full_name', '[].owner.login'],", "    allowlist: ['[].id', '[].name', '[].full_name', '[].owner.login', '[].private', '[].html_url'],", 'KILLED'],
+  ['W23', 'another read class added', O, "    allowlist: ['[].id', '[].name', '[].full_name', '[].owner.login'],\n  },", "    allowlist: ['[].id', '[].name', '[].full_name', '[].owner.login'],\n  },\n  { id: 'G-R6', read: 'G-R6', cls: 'GOVERNED_READ', plane: 'PLANE-G', tool: 'gh', freshness: 'EXECUTE_NOW', nodeIds: [], pathPattern: /^\\/user$/, build: () => '/user', allowlist: ['login'] },", 'KILLED'],
+  ['W24', 'pending V-R2.S2 record validated before the witness', E, "      this.pendingAdjudications.set(record, deferred)\n      return record", "      this.pendingAdjudications.set(record, deferred)\n      VALIDATED.add(record)\n      return record", 'KILLED'],
+  ['W25', 'TI-2 reverted to the owner/name comparison', E, "get(proj, 'link.repo') === GH_REPO &&", "get(proj, 'link.repo') === REPO_FULL_NAME &&", 'KILLED'],
+  ['W26', 'TI-2 no longer enforced on V-R1', E, "        if (op.id === 'V-R1' && !ti2) throw", "        if (false) throw", 'KILLED'],
+  ['W27', 'RC-9a no longer requires the repo scope', P, '    scopeList.includes(REQUIRED_GITHUB_SCOPE)', '    true', 'KILLED'],
+  ['W28', 'evidence re-scan ignores the adjudication marker', A, "    if (typeof p?.id === 'string' && ids.has(p.id) && typeof repo === 'string' &&", "    if (typeof p?.id === 'string' && typeof repo === 'string' &&", 'KILLED'],
+  ['W29', 'evidence re-scan ignores the same-run value check', A, " && isAdjudicatedValue(repo)) out.add(repo)", ") out.add(repo)", 'KILLED'],
+  ['W30', 'delta-recert path no longer candidate-derived (one-use dead end)', RG, "  return `docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_${candidate.slice(0, 12).toUpperCase()}_IC_v1.0.0.json`", "  return 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC_v1.0.0.json'", 'KILLED'],
+  ['W31', 'witness page-loop detection removed', W, "    if (signature === this.lastPageSignature) stop(", "    if (false) stop(", 'KILLED'],
+  ['W32', 'witness page cap removed', W, "    if (this.nextPage > MAX_INVENTORY_PAGES && !this.complete) {", "    if (false) {", 'KILLED'],
 ]
 
 // Behaviour-neutral: a comment edit. Expected KILLED, so it MUST be reported UNEXPECTED.
