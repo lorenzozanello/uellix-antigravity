@@ -19,6 +19,7 @@
 // which the owner's DF11 ratification forbids ("MUST NEVER observe").
 
 import { readFileSync } from 'node:fs'
+import { PRIVATE_KEY_BLOCK_PATTERN } from '../scan-secrets'
 
 export interface Detector { readonly id: string; readonly re: RegExp }
 
@@ -28,6 +29,10 @@ export const DETECTORS: readonly Detector[] = [
   // token-prefix literal it carries. Prefix-anchored, so it is discriminating.
   { id: 'VERCEL_VCP_TOKEN', re: /\bvcp_[A-Za-z0-9]{16,}/ },
   { id: 'VERCEL_DEPLOY_HOOK_URL', re: /api\.vercel\.com\/v[0-9]+\/integrations\/deploy\//i },
+  // v1.0.8 (recert NB-1): the repository's OWN private-key definition, reused from
+  // scripts/scan-secrets.ts (never a copy) and WITHOUT that gate's line-annotation
+  // allowance: provider-controlled text must not be able to exempt itself.
+  { id: 'PRIVATE_KEY_BLOCK', re: PRIVATE_KEY_BLOCK_PATTERN },
   // An optional scheme word (token / Bearer / Basic) precedes the value; GitHub's own form is `Authorization: token <x>`.
   { id: 'AUTHORIZATION_HEADER', re: /\b(?:proxy-)?authorization\b["']?\s*[:=]\s*["']?(?:[A-Za-z]+\s+)?\S{6,}/i },
   { id: 'BEARER_OR_BASIC_CREDENTIAL', re: /\b(?:bearer|basic)\s+[A-Za-z0-9._~+/=-]{12,}/i },

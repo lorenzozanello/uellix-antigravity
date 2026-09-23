@@ -21,7 +21,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { scanText } from './evidence-scan'
-import { ADJUDICATION_CLASSIFICATION } from './repo-witness'
+import { ADJUDICATION_CLASSIFICATION, GITHUB_REPOSITORY_NAME_RE } from './repo-witness'
 
 export interface Ec1Finding { readonly level: 'SERIALIZED' | 'DECODED'; readonly detector: string; readonly file: string; readonly where: string }
 export interface Ec1Report {
@@ -44,6 +44,7 @@ function adjudicatedValuesOf(record: Record<string, unknown>, isAdjudicatedValue
   for (const p of projects as Record<string, unknown>[]) {
     const repo = (p?.link as Record<string, unknown> | undefined)?.repo
     if (typeof p?.id === 'string' && ids.has(p.id) && typeof repo === 'string' &&
+      GITHUB_REPOSITORY_NAME_RE.test(repo) &&
       scanText(repo).every((f) => f.detector === 'OPAQUE_HIGH_ENTROPY') && isAdjudicatedValue(repo)) out.add(repo)
   }
   return out

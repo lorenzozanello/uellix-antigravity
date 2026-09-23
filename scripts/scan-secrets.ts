@@ -260,6 +260,15 @@ const token = (kind: SecretFindingKind, pattern: RegExp): Detector => ({
   extract: (m) => (isUnmistakablePlaceholder(m[0]) ? null : { value: m[0], context: '' }),
 })
 
+/**
+ * The ONE private-key block definition, shared with the control-plane evidence
+ * scanner (scripts/infra-read/evidence-scan.ts), which reuses the pattern but
+ * NOT this file's annotation gate. Any PEM private-key header label: the
+ * earlier RSA / EC / OPENSSH / PGP / bare forms, plus ENCRYPTED, DSA and the
+ * `PGP PRIVATE KEY BLOCK` armor. A strict superset of the previous pattern.
+ */
+export const PRIVATE_KEY_BLOCK_PATTERN = /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/
+
 const DETECTORS: readonly Detector[] = [
   {
     kind: 'PG_DSN_EMBEDDED_PASSWORD',
@@ -288,7 +297,7 @@ const DETECTORS: readonly Detector[] = [
     kind: 'PRIVATE_KEY_BLOCK',
     // No placeholder path: a PEM header is never fixture material by virtue of
     // its own contents, so this one is annotation-gated or nothing.
-    pattern: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g,
+    pattern: new RegExp(PRIVATE_KEY_BLOCK_PATTERN.source, 'g'),
     extract: (m) => ({ value: m[0], context: '' }),
   },
 ]

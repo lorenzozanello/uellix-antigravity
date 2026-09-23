@@ -106,6 +106,8 @@ export const EXECUTOR_DIAGNOSTIC_RECERT_EVENT = {
  * is authored, its predecessor's delta recert is added to the fixed list above.
  */
 export const EXECUTOR_DELTA_RECERT_PACKAGE_ID = 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC'
+/** v1.0.8: the inventory-witness candidate whose delta recert (materialized at 1d47137f) is fixed history. */
+export const INVENTORY_WITNESS_CANDIDATE = 'b25f2d32e414af8cb9b54f53867125a771e43efd'
 export function deltaRecertEventPathFor(candidate: string): string {
   if (!SHA40_RE.test(candidate)) throw new Refusal('STOP_EXECUTION_NOT_REQUESTED', 'candidate is not a 40-hex SHA')
   return `docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_${candidate.slice(0, 12).toUpperCase()}_IC_v1.0.0.json`
@@ -128,6 +130,8 @@ export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
       { path: 'docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json', packageId: 'CV1_INFRA_RC9_ARMING_PACKAGE_IC', certifiedCandidate: '3dc12909bb5b584ebc2266900659ab6f158d9eef' },
       { path: EXECUTOR_RECERT_EVENT.path, packageId: EXECUTOR_RECERT_EVENT.packageId, certifiedCandidate: EXECUTOR_RECERT_EVENT.certifiedCandidate },
       { path: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path, packageId: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.packageId, certifiedCandidate: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.certifiedCandidate },
+      // v1.0.8 successor duty (v1.0.7 EVENT_CHAIN_SUCCESSOR): b25f2d32's delta recert is now FIXED history.
+      { path: deltaRecertEventPathFor(INVENTORY_WITNESS_CANDIDATE), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate: INVENTORY_WITNESS_CANDIDATE },
       { path: deltaRecertEventPathFor(certifiedCandidate), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate },
     ],
   }

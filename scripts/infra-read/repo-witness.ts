@@ -48,6 +48,16 @@ interface GithubIdentity {
 export const MAX_INVENTORY_PAGES = 100
 export const INVENTORY_PAGE_SIZE = 100
 
+/**
+ * v1.0.8: GitHub's documented repository-name grammar, verbatim from
+ * https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository
+ * ("must not exceed 100 characters, and can only contain ASCII letters, digits,
+ * and the characters ., -, and _"). Defense in depth: a link.repo outside it is
+ * never deferred, never a witness target, never explained by the evidence
+ * re-scan. It only NARROWS; it does not normalize anything.
+ */
+export const GITHUB_REPOSITORY_NAME_RE = /^[A-Za-z0-9._-]{1,100}$/
+
 export const ADJUDICATION_CLASSIFICATION = 'EXPECTED_PROVIDER_IDENTIFIER'
 export const ADJUDICATION_BASIS = 'SAME_RUN_AUTHENTICATED_REPOSITORY_INVENTORY_ID_MATCH'
 
@@ -74,6 +84,7 @@ export class RepositoryInventoryWitness {
     for (const [k, v] of [['projectId', t.projectId], ['linkType', t.linkType], ['linkRepo', t.linkRepo], ['linkOrg', t.linkOrg]] as const) {
       if (typeof v !== 'string' || v === '') stop('STOP_WITNESS_UNKNOWN', `target ${k} missing or not a string`)
     }
+    if (!GITHUB_REPOSITORY_NAME_RE.test(t.linkRepo)) stop('STOP_WITNESS_UNKNOWN', 'link.repo is outside the documented repository-name grammar')
     const list = this.targets.get(t.repoId) ?? []
     list.push(Object.freeze({ ...t }))
     this.targets.set(t.repoId, list)

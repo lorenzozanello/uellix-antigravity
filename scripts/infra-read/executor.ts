@@ -17,7 +17,7 @@ import {
 import { asXcc1Refusal, assertInvocationSafe, assertProjectionConforms, buildInvocation, project, type Invocation, type ToolContext } from './guards'
 import { scanText } from './evidence-scan'
 import { SecretDetectedRefusal, localizeFindings, locateFindingsInternal } from './safe-diagnostic'
-import { ADJUDICATION_BASIS, ADJUDICATION_CLASSIFICATION, RepositoryInventoryWitness, isRepoId, type WitnessTarget } from './repo-witness'
+import { ADJUDICATION_BASIS, ADJUDICATION_CLASSIFICATION, GITHUB_REPOSITORY_NAME_RE, RepositoryInventoryWitness, isRepoId, type WitnessTarget } from './repo-witness'
 import { XCC1_PREFLIGHT_ARGS, assertIsolationListing, assertXcc1Env } from './xcc1'
 import { assertXcc1NormativeEnv, assertXcc1NormativePreflightArgv, assertXcc1NormativePreflightListing } from './xcc1-normative'
 
@@ -188,6 +188,8 @@ function linkRepoTargets(projection: unknown, serialized: string, hits: readonly
   const byProject = new Map<number, WitnessTarget>()
   for (const l of located) {
     if (l.detector !== 'OPAQUE_HIGH_ENTROPY' || l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined
+    // v1.0.8: only a value inside GitHub's documented repository-name grammar can await the witness.
+    if (!GITHUB_REPOSITORY_NAME_RE.test(l.value)) return undefined
     if (scanText(l.value).some((f) => f.detector !== 'OPAQUE_HIGH_ENTROPY')) return undefined
     const c = l.concrete
     if (c.length !== 4 || c[0] !== 'projects' || typeof c[1] !== 'number' || c[2] !== 'link' || c[3] !== 'repo') return undefined

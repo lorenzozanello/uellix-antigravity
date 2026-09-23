@@ -1,0 +1,36 @@
+{
+  "manifest_id": "CV1-INFRA-SECRET-SCANNER-IDENTIFIER-HARDENING",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.8.json",
+  "dependencies": [
+    "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7.json)",
+    "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_B25F2D32E414_IC_v1.0.0 (NB-1)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {"id": "SEN-H1", "purpose": "Every PEM private-key header in the tests is assembled at runtime from fragments; no committed file carries one, so the repository gate never sees one."},
+    {"id": "SEN-H2", "purpose": "ZERO governed reads, ZERO authenticated provider operations, ZERO real provider values; the provider is the fake world."}
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {"id": "PH-1", "description": "The runtime catalog carries PRIVATE_KEY_BLOCK and it IS the repository's exported pattern (object identity); both scanners detect every PEM private-key label.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "PH-2", "description": "A random opaque, grammar-valid repo-like name is still deferred and adjudicated by the same-run witness; an ordinary repo name is ordinary evidence.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "PH-3", "description": "The real dn0ConfigFor binds six events with b25f2d32's delta recert fixed; the five materialized events satisfy CP-1 as configured.", "test_file": "tests/infra-read/entrypoint.test.ts"}
+  ],
+  "negative_controls": [
+    {"id": "NH-01", "description": "Private-key block with and without entropy, Bearer material, userinfo, ghp_ and vcp_ prefixes each STOP at V-R2.S2 with the named detector in the diagnostic, and G-R5 never runs, even when the inventory would match.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "NH-02", "description": "An entropy-only value outside the documented grammar STOPs; the witness refuses a grammar-invalid target; the evidence re-scan explains none of these.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "NH-03", "description": "The repo gate's annotation allowance does not apply at runtime.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "NH-04", "description": "A value tripping entropy and another detector is not adjudicated at all (0 explained).", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "NH-05", "description": "The b25f2d32 delta recert cannot certify a new candidate.", "test_file": "tests/infra-read/entrypoint.test.ts"}
+  ],
+  "mutation_controls": [
+    {"id": "MH-01", "description": "Private-key detector removed from the runtime catalog; replaced by a narrower copy; shared pattern narrowed back (P01-P03) must be KILLED.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "MH-02", "description": "Annotation allowance applied at runtime (P04) must be KILLED.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "MH-03", "description": "Grammar layer removed from deferral, witness or re-scan; detector layer removed from the re-scan (P05-P08) must be KILLED.", "test_file": "tests/infra-read/scanner-hardening.test.ts"},
+    {"id": "MH-04", "description": "The old b25f2d32 event accepted for the new candidate; its fixed history event dropped (P09-P10) must be KILLED.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "MH-05", "description": "Every earlier production mutant re-killed on this tree; the battery still FAILS on a real survivor.", "test_file": "tests/infra-read/mutation-verdict.test.ts"}
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

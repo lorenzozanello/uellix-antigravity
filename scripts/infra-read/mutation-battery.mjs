@@ -19,7 +19,7 @@ const R = process.cwd().split('\\').join('/') + '/'
 const F = (p) => R + 'scripts/infra-read/' + p
 const G = F('guards.ts'), E = F('executor.ts'), X = F('xcc1.ts'), P = F('protocol.ts'), S = F('evidence-scan.ts')
 const C = F('certification.ts'), O = F('ops.ts'), RG = F('run-governed-reads.ts'), D = F('safe-diagnostic.ts')
-const W = F('repo-witness.ts'), A = F('evidence-adjudication.ts')
+const W = F('repo-witness.ts'), A = F('evidence-adjudication.ts'), SS = R + 'scripts/scan-secrets.ts'
 const XR1 = "fixedArgs: ['-c', 'credential.helper=', '-c', 'core.askPass=', '-c', 'http.extraHeader=', 'ls-remote', X_R1_URL]"
 
 // [id, description, file, find, replace, expectation]
@@ -109,7 +109,7 @@ export const MUTANTS = [
   ['W16', 'adjudicated values shared across executions', E, '  private readonly adjudicatedValues = new Set<string>()', '  private readonly adjudicatedValues: Set<string> = ((globalThis as unknown as { __a?: Set<string> }).__a ??= new Set<string>())', 'KILLED'],
   ['W17', 'identity hard-coded when GitHub returned none', W, "      const found = this.matches.get(repoId) ?? []", "      const found = this.matches.get(repoId) ?? [{ id: repoId, name: targets[0].linkRepo, fullName: `${targets[0].linkOrg}/${targets[0].linkRepo}`, ownerLogin: targets[0].linkOrg }]", 'KILLED'],
   ['W18', 'OPAQUE_HIGH_ENTROPY suppressed globally', E, "      if (!deferred) throw new SecretDetectedRefusal(", "      if (!deferred && hits.some((h) => h.detector !== 'OPAQUE_HIGH_ENTROPY')) throw new SecretDetectedRefusal(", 'KILLED'],
-  ['W19', 'every detector suppressed on link.repo (both detector layers removed)', E, "    if (l.detector !== 'OPAQUE_HIGH_ENTROPY' || l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined\n    if (scanText(l.value).some((f) => f.detector !== 'OPAQUE_HIGH_ENTROPY')) return undefined\n", "    if (l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined\n", 'KILLED'],
+  ['W19', 'every detector suppressed on link.repo (both detector layers removed; grammar layer kept)', E, "    if (l.detector !== 'OPAQUE_HIGH_ENTROPY' || l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined\n    // v1.0.8: only a value inside GitHub's documented repository-name grammar can await the witness.\n    if (!GITHUB_REPOSITORY_NAME_RE.test(l.value)) return undefined\n    if (scanText(l.value).some((f) => f.detector !== 'OPAQUE_HIGH_ENTROPY')) return undefined\n", "    if (l.generic !== 'projects[].link.repo' || typeof l.value !== 'string') return undefined\n    if (!GITHUB_REPOSITORY_NAME_RE.test(l.value)) return undefined\n", 'KILLED'],
   ['W20', 'a 403 treated as a successful page', E, "  if (res.status === 0) return 200", "  if (res.status === 0 || /HTTP 403/.test(res.stderr)) return 200", 'KILLED'],
   ['W21', 'a rate limit treated as a successful page', E, "  if (res.status === 0) return 200", "  if (res.status === 0 || /HTTP 429/.test(res.stderr)) return 200", 'KILLED'],
   ['W22', 'G-R5 projection broadened', O, "    allowlist: ['[].id', '[].name', '[].full_name', '[].owner.login'],", "    allowlist: ['[].id', '[].name', '[].full_name', '[].owner.login', '[].private', '[].html_url'],", 'KILLED'],
@@ -123,6 +123,17 @@ export const MUTANTS = [
   ['W30', 'delta-recert path no longer candidate-derived (one-use dead end)', RG, "  return `docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_${candidate.slice(0, 12).toUpperCase()}_IC_v1.0.0.json`", "  return 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC_v1.0.0.json'", 'KILLED'],
   ['W31', 'witness page-loop detection removed', W, "    if (signature === this.lastPageSignature) stop(", "    if (false) stop(", 'KILLED'],
   ['W32', 'witness page cap removed', W, "    if (this.nextPage > MAX_INVENTORY_PAGES && !this.complete) {", "    if (false) {", 'KILLED'],
+  // ---- v1.0.8: private-key detector reuse + documented repository-name grammar (recert NB-1)
+  ['P01', 'private-key detector removed from the runtime catalog', S, "  { id: 'PRIVATE_KEY_BLOCK', re: PRIVATE_KEY_BLOCK_PATTERN },\n", '', 'KILLED'],
+  ['P02', 'runtime catalog uses a narrower COPY instead of the shared pattern (catalog only updated in tests)', S, "{ id: 'PRIVATE_KEY_BLOCK', re: PRIVATE_KEY_BLOCK_PATTERN }", "{ id: 'PRIVATE_KEY_BLOCK', re: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/ }", 'KILLED'],
+  ['P03', 'shared pattern narrowed back to the previous label set (authority says STOP, runtime accepts ENCRYPTED/DSA/PGP BLOCK)', SS, 'export const PRIVATE_KEY_BLOCK_PATTERN = /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/', 'export const PRIVATE_KEY_BLOCK_PATTERN = /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/', 'KILLED'],
+  ['P04', 'repo-gate annotation allowance applied at runtime (provider text exempts itself)', S, "export function scanText(text: string, detectors: readonly Detector[] = DETECTORS): Finding[] {\n", "export function scanText(text: string, detectors: readonly Detector[] = DETECTORS): Finding[] {\n  if (/secret-scan-ok:\\s*\\S+/.test(text)) return []\n", 'KILLED'],
+  ['P05', 'grammar layer removed from deferral', E, "    if (!GITHUB_REPOSITORY_NAME_RE.test(l.value)) return undefined\n    if (scanText(l.value)", "    if (scanText(l.value)", 'KILLED'],
+  ['P06', 'grammar layer removed from the witness target', W, "    if (!GITHUB_REPOSITORY_NAME_RE.test(t.linkRepo)) stop(", "    if (false) stop(", 'KILLED'],
+  ['P07', 'grammar layer removed from the evidence re-scan (private key/other finding explained after the witness)', A, "      GITHUB_REPOSITORY_NAME_RE.test(repo) &&\n", '', 'KILLED'],
+  ['P08', 'detector layer removed from the evidence re-scan', A, "      scanText(repo).every((f) => f.detector === 'OPAQUE_HIGH_ENTROPY') && isAdjudicatedValue(repo)) out.add(repo)", "      isAdjudicatedValue(repo)) out.add(repo)", 'KILLED'],
+  ['P09', 'the old b25f2d32 event accepted for the new candidate', RG, '      { path: deltaRecertEventPathFor(certifiedCandidate), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate },', '      { path: deltaRecertEventPathFor(INVENTORY_WITNESS_CANDIDATE), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate: INVENTORY_WITNESS_CANDIDATE },', 'KILLED'],
+  ['P10', 'the fixed b25f2d32 history event dropped from the chain', RG, '      { path: deltaRecertEventPathFor(INVENTORY_WITNESS_CANDIDATE), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate: INVENTORY_WITNESS_CANDIDATE },\n', '', 'KILLED'],
 ]
 
 // Behaviour-neutral: a comment edit. Expected KILLED, so it MUST be reported UNEXPECTED.
