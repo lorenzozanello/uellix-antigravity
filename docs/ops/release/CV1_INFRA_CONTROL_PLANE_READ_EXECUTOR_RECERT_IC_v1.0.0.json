@@ -1,0 +1,60 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0",
+ "authority_class": "INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT",
+ "document_class": "CERTIFICATION_EVENT_RECORD__NO_READ__NO_MUTATION",
+ "append_only": true,
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01), lane CV1-INFRA-CONTROL-PLANE-READ-EXECUTION-R1",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "materialization_contract": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5.json RECERT_MATERIALIZATION_CONTRACT (path, package_id, authority_class prefix, exact candidate_head, verdict copied verbatim, integer blocking count).",
+ "CERTIFIED_CANDIDATE": {
+  "candidate_head": "81b56ed44e9f6744c3949eff7ab9ad1b7137a5b5",
+  "candidate_tree": "507f4aaf162e91038ec893539c641fa0e4312048",
+  "candidate_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "candidate_pr": "#214",
+  "scope_reviewed": "The executor remediation delta d3e4a55b..81b56ed4: v1.0.5 amendment and manifest amendment, the materialized executor-hardening FAIL, and scripts/infra-read/** with tests/infra-read/**.",
+  "candidate_verification_performed_by_this_lane": "Head and tree re-derived from git (git rev-parse HEAD and HEAD^{tree} at 81b56ed4, which was also the remote branch head) before being written here."
+ },
+ "VERDICT": {
+  "verdict": "INFRA_CONTROL_PLANE_READ_EXECUTOR_FINAL_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+  "blocking_findings": 0,
+  "nonblocking_findings": 9,
+  "provenance": "REPORTED_BY_DIRECTING_TEXT, MATERIALIZED_HERE. This lane did not conduct the review. The verdict token is copied verbatim, the counts are as reported, and the candidate identity was re-derived independently. No verdict artifact of the reviewer was supplied and none is reconstructed.",
+  "reported_closures": ["B-1 = CLOSED", "SOURCE/EXECUTOR PREPARATION = CLOSED", "NEXT_GATE = ACTUAL CONTROL-PLANE EXECUTION"]
+ },
+ "REVIEWER_IDENTITY": {
+  "reviewer": "NOT_SUPPLIED by the directing text.",
+  "execution_timestamp": "NOT_SUPPLIED.",
+  "why": "Inventing a reviewer or an execution instant would fabricate provenance for an event this lane did not witness."
+ },
+ "NONBLOCKING_FINDINGS": {
+  "reported_count": 9,
+  "enumeration_status": "PARTIAL BY CONSTRUCTION. The directing text supplied the substance of two findings, as execution conditions EC-1 and EC-2. The text of the other 7 was NOT SUPPLIED. Ids below are content-addressed in this record's own namespace (FR-NB-*) and make no claim about the reviewer's numbering.",
+  "identified": [
+   {
+    "id": "FR-NB-EC1-DECODED-LEAF-SCAN",
+    "substance": "Scanning only JSON.stringify of the evidence misses quote-sensitive secret forms, because the serialization escapes the quotes the detectors expect (e.g. a credential-named assignment or a token: \"...\" form inside a string value).",
+    "disposition_directed": "EC-1: before any evidence commit, scan every evidence value at BOTH levels, the serialized representation and every decoded string leaf recursively, with the same semantic detectors; a finding at either level is STOP_EVIDENCE_SECRET_DETECTED, with no commit and no push, and the matched text is never printed."
+   },
+   {
+    "id": "FR-NB-EC2-URL-SCOPED-EXTRAHEADER",
+    "substance": "The http.extraHeader reset given on the command line does not neutralize a URL-scoped http.<url>.extraHeader key in repository, global or system configuration, which would still be sent by a git network operation run inside the repository.",
+    "disposition_directed": "EC-2: before DN-0 and before any governed network read, git config --name-only --get-regexp 'extraheader$' must report no matching key (values never printed), else STOP_GIT_EXTRAHEADER_PRESENT and zero governed reads."
+   }
+  ],
+  "not_supplied": 7,
+  "binding_instruction": "Any reviewer holding the full output must treat every finding not matched above as STILL OPEN. This record's PASS is not evidence that all 9 were dispositioned."
+ },
+ "WHAT_THIS_EVENT_DOES_AND_DOES_NOT_DO": {
+  "does": "Materializes the final recertification of candidate 81b56ed4 so the runtime LIMB_1 predicate (CP-1) can find and evaluate it.",
+  "does_not": [
+   "Arm anything by itself. AC-1 is evaluated at runtime, on every execution: runtime RC-9a, then DN-0 as the last pre-read act.",
+   "Authorize any read beyond the effective read set, any mutation, V-R4, or M-8 / M-9.",
+   "Change the certified effective package: it is an ADDED certification-event file, the class v1.0.5 allowedPostCertificationAdditions permits."
+  ]
+ },
+ "final_state": "EXECUTOR_FINAL_RECERT_MATERIALIZED__FINDINGS_PARTIAL__NOT_AN_ARMING_ACT",
+ "next_gate": "EC-2 preflight, then the human confirmation boundary, then runtime RC-9a, DN-0 (last pre-read act) and the eight EXECUTE_NOW reads through the safe executor."
+}
