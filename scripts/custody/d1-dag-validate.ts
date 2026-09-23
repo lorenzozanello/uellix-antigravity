@@ -173,6 +173,16 @@ function reachableFrom(start: string, edges: readonly Edge[]): Set<string> {
   return seen
 }
 
+/**
+ * Every node with a HARD edge into `nodeId`, over the union of all graph
+ * sources. Used by the N06 closure check so its predecessor list is read from
+ * the graph rather than typed from memory.
+ */
+export function hardPredecessorsOf(nodeId: string): string[] {
+  const { edges } = collect()
+  return [...new Set(edges.filter((e) => e.to === nodeId && e.kind === 'HARD').map((e) => e.from))].sort()
+}
+
 export interface GraphFacts {
   readonly nodeCount: number
   readonly edgeCount: number
