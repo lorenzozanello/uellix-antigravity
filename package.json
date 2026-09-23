@@ -102,6 +102,7 @@
     "certify:remediation": "tsx scripts/remediation-certify.ts",
     "custody:n05:demonstrate": "tsx scripts/custody/n05-sentinel-demonstration.ts",
     "custody:dag:validate": "tsx scripts/custody/d1-dag-validate.ts",
+    "custody:pre-hc1": "tsx scripts/custody/d1-pre-hc1.ts",
     "authority:repin": "tsx scripts/authority-repin.mts",
     "dry-run:runtime-helper": "bash scripts/runtime-helper-contract-dry-run.sh",
     "dry-run:runtime-table-acl": "bash scripts/runtime-table-acl-dry-run.sh",
