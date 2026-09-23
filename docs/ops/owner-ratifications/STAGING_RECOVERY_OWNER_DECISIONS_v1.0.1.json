@@ -1,0 +1,223 @@
+{
+  "package_id": "STAGING_RECOVERY_OWNER_DECISIONS",
+  "version": "1.0.1",
+  "artifact_id": "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NARROW_REOPENING_OF_OD_3_BY_EVENT_CLASS__OD_5_OD_6_REVERIFIED_UNCHANGED__NO_EXECUTION",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-RECOVERY-EVENT-CLASS-AUTHORITY-AMENDMENT-R1",
+  "lane": "codex/cv1-staging-recovery-authority-r1",
+  "role": "COMMERCIAL_V1_STAGING_RECOVERY_OWNER_RATIFICATION_MATERIALIZER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_MATERIALIZATION",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "supersedes": {
+    "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+    "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+    "scope": "ratifications[OD-3] ONLY, and only to the extent needed to make the recovery posture event-class-specific. OD-5 and OD-6 are carried forward UNCHANGED after the re-verification below. v1.0.0 remains byte-identical as history."
+  },
+
+  "materialized_at_base": {
+    "BASE_SHA": "4df9e6d37de19a15560993f1d67331bfa498008b",
+    "BASE_TREE": "2c606a43825623005d3ded38581da8431ac04f26",
+    "branch": "codex/cv1-staging-recovery-authority-r1",
+    "pull_request": "https://github.com/lorenzozanello/uellix-antigravity/pull/205 (DRAFT, not merged)",
+    "worktree_state": "CLEAN at lane open (git status --porcelain --untracked-files=all empty)."
+  },
+
+  "companion_authority_amendment": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "companion_manifest_amendment": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+
+  "authority_binding": {
+    "rule": "Bound to exact historical bytes by blob SHA. The companion amendment v1.0.2 is introduced in the SAME commit as this record and is bound by path, not by blob: each of the two artifacts cites the other, so neither can carry the other's blob without a circular dependency. The same-commit co-introduction is itself checked (manifest amendment v1.0.2 PC-25).",
+    "historical_blobs": {
+      "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json": "154c3d1d396784ae7189b8088669b0ef8231de67",
+      "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json": "4dfe95774529e65287e51456842f89a2f0a498f9",
+      "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+      "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc",
+      "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json": "7c0aa9d8d738d6474d38f3f4b87de245e2db9c33"
+    },
+    "question_answered_lives_at": {
+      "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "commit": "c6eabf20764ddc69b780ab763fbb870468e6b569",
+      "blob": "1abcefc499172874433052db8a75f03ca35f3eba",
+      "clause": "SECTION_B8_OWNER_READJUDICATION (OD-Q5)",
+      "status": "DRAFT descendant (#208), not in this tree; cited by blob."
+    }
+  },
+
+  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_AND_SUPPLIED_VERBATIM_TO_THIS_LANE. The product owner supplied the decision below in the lane brief of CV1-STAGING-RECOVERY-EVENT-CLASS-AUTHORITY-AMENDMENT-R1 on 2026-09-23, under the heading FRESH OWNER RATIFICATION, ending 'SIGNED = YES'. 'SIGNED = YES' is the owner's written assertion in that brief; it is not a cryptographic signature and is not presented as one. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct: nothing in owner_decision_verbatim is a measurement.",
+
+  "owner_decision_verbatim": [
+    "RECOVERY_EVENT_CLASS_MODEL =",
+    "AUTHORIZED",
+    "",
+    "EVENT_A_INITIAL_CORPUS =",
+    "C3_EMPTY_WINDOW_BY_CONSTRUCTION",
+    "",
+    "CONDITIONS_EVENT_A =",
+    "- governed census proves no client/writer is active;",
+    "- PR #201 has not executed;",
+    "- any contrary or UNKNOWN result => STOP;",
+    "- census becomes stale after any writer/provider act.",
+    "",
+    "EVENT_B_STAGE_A =",
+    "ACCEPT_BOUNDED_STAGING_WRITE_LOSS",
+    "",
+    "CONDITIONS_EVENT_B =",
+    "- staging only, never production;",
+    "- scheduled maintenance window;",
+    "- exposure duration quantified before human confirmation;",
+    "- no active commercial pilot/user session intentionally running;",
+    "- governed recovery point taken and verified immediately before DDL;",
+    "- no intentional application traffic during the window;",
+    "- any inability to bound the exposure => STOP.",
+    "",
+    "KEEP_FULL_SCOPE_QUIESCE_FOR_EVENT_B =",
+    "NO",
+    "",
+    "C2_PARTIAL_QUIESCE =",
+    "NOT_AUTHORIZED",
+    "",
+    "This decision supersedes OD-3 ONLY as necessary to make the recovery posture",
+    "event-class-specific.",
+    "",
+    "OD-5 and OD-6 remain unchanged.",
+    "",
+    "SIGNED =",
+    "YES"
+  ],
+
+  "structured_decision": {
+    "rule": "A semantically exact structured rendering of owner_decision_verbatim. Where the two differ, the verbatim text controls and the difference is a defect of this record.",
+    "RECOVERY_EVENT_CLASS_MODEL": "AUTHORIZED",
+    "EVENT_A_INITIAL_CORPUS": "C3_EMPTY_WINDOW_BY_CONSTRUCTION",
+    "CONDITIONS_EVENT_A": [
+      "governed census proves no client/writer is active",
+      "PR #201 has not executed",
+      "any contrary or UNKNOWN result => STOP",
+      "census becomes stale after any writer/provider act"
+    ],
+    "EVENT_B_STAGE_A": "ACCEPT_BOUNDED_STAGING_WRITE_LOSS",
+    "CONDITIONS_EVENT_B": [
+      "staging only, never production",
+      "scheduled maintenance window",
+      "exposure duration quantified before human confirmation",
+      "no active commercial pilot/user session intentionally running",
+      "governed recovery point taken and verified immediately before DDL",
+      "no intentional application traffic during the window",
+      "any inability to bound the exposure => STOP"
+    ],
+    "KEEP_FULL_SCOPE_QUIESCE_FOR_EVENT_B": "NO",
+    "C2_PARTIAL_QUIESCE": "NOT_AUTHORIZED",
+    "OD3_SUPERSESSION": "ONLY_AS_NECESSARY_TO_MAKE_THE_RECOVERY_POSTURE_EVENT_CLASS_SPECIFIC",
+    "OD5": "UNCHANGED",
+    "OD6": "UNCHANGED",
+    "SIGNED": "YES"
+  },
+
+  "condition_to_authority_mapping": {
+    "rule": "Where each owner condition is made mechanical in the companion amendment. The mapping adds no condition and drops none.",
+    "EVENT_A": [
+      {"condition": "governed census proves no client/writer is active", "amendment_facts": ["EA-F1", "EA-F2", "EA-F3"]},
+      {"condition": "PR #201 has not executed", "amendment_facts": ["EA-F4"], "source_rule": "SECTION_C5.PR201_EXECUTION_STATE"},
+      {"condition": "any contrary or UNKNOWN result => STOP", "amendment_rule": "SECTION_C4.fact_semantics and every stop_on_unknown / stop_on_mismatch of EA-F1..EA-F6"},
+      {"condition": "census becomes stale after any writer/provider act", "amendment_facts": ["EA-F5", "EA-F6"], "amendment_rule": "SECTION_C5.invalidators EA-INV-1..EA-INV-9"}
+    ],
+    "EVENT_B": [
+      {"condition": "staging only, never production", "amendment_rule": "EV-1 production veto first, CF-1, SECTION_C7 target_project_ref"},
+      {"condition": "scheduled maintenance window", "amendment_facts": ["EB-F1"]},
+      {"condition": "exposure duration quantified before human confirmation", "amendment_facts": ["EB-F2", "EB-F3"], "amendment_rule": "SECTION_C7, SECTION_C13 HC-2-B"},
+      {"condition": "no active commercial pilot/user session intentionally running", "amendment_facts": ["EB-F4"], "amendment_rule": "SECTION_C6.PILOT_SESSION_PREDICATE"},
+      {"condition": "governed recovery point taken and verified immediately before DDL", "amendment_facts": ["S8-F1", "S8-F2", "S8-F3", "S8-F4"], "amendment_rule": "SECTION_C9, SECTION_C12"},
+      {"condition": "no intentional application traffic during the window", "amendment_facts": ["EB-F5"], "amendment_rule": "SECTION_C6.TRAFFIC_POSTURE"},
+      {"condition": "any inability to bound the exposure => STOP", "amendment_rule": "STOP_UNBOUNDED_STAGING_WRITE_LOSS_EXPOSURE"}
+    ]
+  },
+
+  "OD_3_NARROW_REOPENING": {
+    "historical_OD_3": {
+      "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+      "decision": "QUIESCE",
+      "statement_verbatim": "For the governed pre-DDL recovery window, staging writes must be quiesced so that the no-intervening-mutation predicate can be established positively. The owner does NOT accept intentional loss of writes in that window.",
+      "status_now": "PRESERVED AS HISTORY. It was ONE global decision. It did not mean an event-specific ACCEPT and is not reread as having meant one."
+    },
+    "what_is_reopened": "Only the posture, and only by splitting it per event class.",
+    "per_class_result": {
+      "EVENT_A_INITIAL_CORPUS": {"posture": "C3_EMPTY_WINDOW_BY_CONSTRUCTION", "relation_to_historical_intent": "PRESERVED. No write loss is accepted; the no-intervening-write guarantee is delivered by an empty window rather than by a prevention act."},
+      "EVENT_B_STAGE_A": {"posture": "ACCEPT_BOUNDED_STAGING_WRITE_LOSS", "relation_to_historical_intent": "REVERSED FOR THIS CLASS ONLY. The owner now accepts the loss of unexpected staging writes inside a quantified, bounded exposure. This is a reversal and is recorded as one."},
+      "ANY_OTHER_CLASS": {"posture": null, "relation_to_historical_intent": "No posture. The window STOPS. Neither QUIESCE nor ACCEPT is inherited by default."}
+    },
+    "why_the_reopening_was_necessary": "QUIESCE was measured unexecutable over the effective writer set (quiesce amendment blob 1abcefc4, SECTION_B7 CG-Q4), and the clean-room recertification of the effective package found that one global posture cannot govern two DDL events with opposite writer topology. The owner, who alone may reopen OD-3 (v1.0.0 reopening_rule; quiesce SECTION_B8), has reopened it for that reason and no other."
+  },
+
+  "OD_Q5_ANSWER": {
+    "question_verbatim_source": "quiesce amendment blob 1abcefc4 SECTION_B8.question",
+    "answer": "CHANGE RECOVERY POSTURE, event-class-specific.",
+    "by_sub_option": {
+      "KEEP_QUIESCE": "NOT SELECTED for either class.",
+      "C-1_ACCEPT": "SELECTED FOR EVENT_B_STAGE_A ONLY, with the bounded exposure and written acceptance the parent ACCEPT posture requires.",
+      "C-2_NARROW_QUIESCE_TO_PR201_RUNTIME": "NOT_AUTHORIZED.",
+      "C-3_EMPTY_WINDOW_BY_CONSTRUCTION": "SELECTED FOR EVENT_A_INITIAL_CORPUS ONLY, contingent on the governed census."
+    },
+    "OD_Q1_consequence": "OD-Q1 was subsumed into C-2 by the quiesce amendment; C-2 being NOT_AUTHORIZED, OD-Q1 option A (bound runtime only) is not authorized.",
+    "OD_Q4_not_answered": "The owner did not choose whether PR #201 or an Event A window executes first. The consequence is fixed: PR #201 executing first forecloses Event A (STOP) until the owner decides again."
+  },
+
+  "carry_forward_reverification": {
+    "rule_being_satisfied": "v1.0.0 authority_binding.binding_rule: 'A successor must re-verify that OD-3, OD-5 and OD-6 still say what they said here, and must record that re-verification. Silence is not carry-forward.'",
+    "method": "sha256 over the canonical JSON (keys sorted recursively, no insignificant whitespace, UTF-8) of each ratification object in the v1.0.0 record at blob 876fc76c, recomputed by tests/release/staging-recovery-event-class-authority.test.ts.",
+    "OD-3": {"canonical_sha256": "432569e0a15dc7f991c216df081cb1729302a4871409d795de2980f768ba7196", "result": "RE-VERIFIED AS HISTORY; narrowly superseded by this record."},
+    "OD-5": {"canonical_sha256": "691325e7868e1e9dbac5bdf258ed7a1ec2afd6c73652240a59265a1b7d90ef64", "result": "RE-VERIFIED UNCHANGED. ACCEPT_CONDITIONAL_ON_FULL_DP_POSTURE with OD-5.1..OD-5.6 carries forward verbatim and binds both event classes."},
+    "OD-6": {"canonical_sha256": "7d027a584a95f086182ecaedd3590286de6662590d62765ed304dcd4a3276567", "result": "RE-VERIFIED UNCHANGED. DESTROY_BY_DEFAULT, the four-element retention exception and the three pre-DDL destruction conditions carry forward verbatim and bind both event classes."}
+  },
+
+  "effective_ratifications": [
+    {"id": "OD-3", "status": "RATIFIED_BY_PRODUCT_OWNER__EVENT_CLASS_SPECIFIC", "decision_by_class": {"EVENT_A_INITIAL_CORPUS": "C3_EMPTY_WINDOW_BY_CONSTRUCTION", "EVENT_B_STAGE_A": "ACCEPT_BOUNDED_STAGING_WRITE_LOSS"}, "unknown_class": "STOP", "what_this_unlocks": "It resolves the OD-3 branch of v1.0.0 PRESTATE PS-5 per class and supplies the content of HC-2-A and HC-2-B as the companion amendment defines them.", "what_this_does_NOT_unlock": "No backup, restore, rehearsal, census, deployment, DDL or provider act. No human confirmation for any window. No quiesce act. No acceptance of any exposure that has not been quantified and confirmed per window."},
+    {"id": "OD-5", "status": "RATIFIED_BY_PRODUCT_OWNER", "source": "v1.0.0 ratifications[OD-5], carried forward unchanged", "canonical_sha256": "691325e7868e1e9dbac5bdf258ed7a1ec2afd6c73652240a59265a1b7d90ef64"},
+    {"id": "OD-6", "status": "RATIFIED_BY_PRODUCT_OWNER", "source": "v1.0.0 ratifications[OD-6], carried forward unchanged", "canonical_sha256": "7d027a584a95f086182ecaedd3590286de6662590d62765ed304dcd4a3276567"}
+  ],
+
+  "unresolved_nonblocking_decisions": {
+    "rule": "Unchanged from v1.0.0.",
+    "ids": ["OD-1", "OD-2", "OD-4"],
+    "note": "No RPO, RTO or exposure duration is declared or proposed by this record."
+  },
+
+  "precedence_note": "This record is canonical for product-owner intent on OD-3, OD-5 and OD-6 ONLY. It does not by itself make any act execution-effective; the companion amendment v1.0.2 gives the event-class posture its normative, mechanical form, and where the two are read together the amendment's definitions and predicates control. It does not override the release ledger, the release authority, the FIBDB-053 authorities or any FIB/ODS/database/security authority.",
+
+  "reopening_rule": "THIS IS NOT A NEW HPO. OD-3 is reopened only as stated in OD_3_NARROW_REOPENING. OD-5 and OD-6 are not reopened. A successor may not widen ACCEPT to another class, reintroduce C2, or treat UNKNOWN as a class, without a new owner decision.",
+
+  "explicit_non_authorizations": [
+    "NO backup, restore, rehearsal or census is performed or authorized by THIS record.",
+    "NO database connection, DDL or DML.",
+    "NO provider, Supabase, Vercel or PITR read or mutation by this lane.",
+    "NO PR #201 act and NO deployment.",
+    "NO Stage-A, G2 or production migration authorization.",
+    "NO human confirmation for any window is recorded or implied.",
+    "NO exposure duration is declared; the owner's acceptance is per window and per quantified record.",
+    "NO retention is granted; HC-5 remains withheld by default.",
+    "NO edit to any historical artifact.",
+    "NO access of any kind to ctaxtgujyyprgynmnvtq."
+  ],
+
+  "self_check": {
+    "note": "Structural; executed by tests/release/staging-recovery-event-class-authority.test.ts.",
+    "checks": [
+      "structured_decision.EVENT_A_INITIAL_CORPUS == 'C3_EMPTY_WINDOW_BY_CONSTRUCTION' and equals the amendment registry's EVENT_A posture",
+      "structured_decision.EVENT_B_STAGE_A == 'ACCEPT_BOUNDED_STAGING_WRITE_LOSS' and equals the amendment registry's EVENT_B posture",
+      "structured_decision.KEEP_FULL_SCOPE_QUIESCE_FOR_EVENT_B == 'NO'",
+      "structured_decision.C2_PARTIAL_QUIESCE == 'NOT_AUTHORIZED'",
+      "structured_decision.OD5 == structured_decision.OD6 == 'UNCHANGED' and SIGNED == 'YES'",
+      "every EVENT_A and EVENT_B condition of structured_decision appears in owner_decision_verbatim",
+      "the OD-3, OD-5 and OD-6 canonical digests recompute from the v1.0.0 record",
+      "every historical blob in authority_binding recomputes byte-identically from the working tree"
+    ]
+  },
+
+  "required_independent_review": "Part of ONE independent clean-room recertification of the complete effective Recovery package. The writing lane does not certify its own output.",
+  "final_state": "OWNER_EVENT_CLASS_RATIFICATION_MATERIALIZED",
+  "next_gate": "ONE independent clean-room recertification of the complete effective Recovery authority package. No hosted Recovery execution is authorized by this record."
+}
