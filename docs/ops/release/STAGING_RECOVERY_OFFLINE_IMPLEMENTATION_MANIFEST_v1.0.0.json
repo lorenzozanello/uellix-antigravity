@@ -1,0 +1,97 @@
+{
+  "manifest_id": "STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST",
+  "version": "1.0.0",
+  "lane": "CV1-STAGING-RECOVERY-OFFLINE-IMPLEMENTATION-R1",
+  "document_class": "BOUNDED_IMPLEMENTATION_MANIFEST_FROZEN_BEFORE_IMPLEMENTATION",
+  "append_only": true,
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Code Desktop, Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "AS_OF": {
+    "branch": "codex/cv1-staging-recovery-offline-implementation-r1",
+    "base_head": "4df9e6d37de19a15560993f1d67331bfa498008b",
+    "base_tree": "2c606a43825623005d3ded38581da8431ac04f26",
+    "prestate": "pnpm ods:prestate -- --branch codex/cv1-staging-recovery-offline-implementation-r1 --head 4df9e6d37de19a15560993f1d67331bfa498008b --tree 2c606a43825623005d3ded38581da8431ac04f26 --clean => ODS_PRESTATE=PASS; pnpm authority:seal:verify => AUTHORITY_SEAL_VERIFY=PASS (9 artifacts)"
+  },
+  "companion_test_manifest": "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+  "controlling_authority": {
+    "parent": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json (blob 154c3d1d396784ae7189b8088669b0ef8231de67)",
+    "amendment": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "owner_record": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json (read, not consumed)",
+    "relation": "This node implements REUSABLE LOCAL PRIMITIVES the parent names as ABSENT (RM-2 capture shape, RM-4 disposable restore, RM-5 invariants, RM-6 packets, RM-7 disposal). It consumes NO execution grant, performs NO act the parent reserves to an execution lane, and edits NO parent artifact."
+  },
+  "HARD_BOUNDARY": {
+    "rule": "Violation of any item is a STOP, not a finding.",
+    "prohibited": [
+      "any connection to staging, to any Supabase hosted database, or to any provider API",
+      "backup or restore of real staging; any real customer or staging data",
+      "PITR mutation; hosted project creation or deletion; any quiesce act",
+      "DDL against any hosted target",
+      "touching any container, volume or network this run did not create (in particular the canonical local Supabase stack supabase_*_uellix-antigravity)",
+      "docker volume prune, docker system prune, or any cleanup selected by anything other than this run's own recorded ids and run label",
+      "choosing, encoding or defaulting the OD-3 event-class recovery posture"
+    ]
+  },
+  "OUT_OF_SCOPE_AUTHORITY_PROBLEM": "The clean-room recert failed on ONE blocker: a single global OD-3 where two DDL event classes (S1 corpus without new runtime; 0017b with a deployed bridge) require distinct recovery postures. That successor is NOT authored here. The mechanism therefore carries an event_class FIELD whose policy is NOT_CHOSEN_BY_THIS_MECHANISM and never branches on its value.",
+  "IMPLEMENTATION_SURFACES": [
+    { "id": "S-1", "path": "scripts/recovery/capture.ts", "surface": "logical backup capture primitive (pg_dump -Fc, streamed to a file OUTSIDE the repo, sha256 computed during the stream, capture principal verified read-only first, per-relation census before and after the capture)" },
+    { "id": "S-2", "path": "scripts/recovery/artifact-packet.ts", "surface": "recovery artifact manifest (BACKUP_PACKET instance: the six frozen fields of STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0 plus the bindings ADJUDICATIONS.H requires; closed grammar; canonical digest)" },
+    { "id": "S-3", "path": "scripts/recovery/artifact-integrity.ts", "surface": "digest/integrity validator (recompute sha256, size, location-outside-repo, pg_restore --list structural TOC check against packet and pin)" },
+    { "id": "S-4", "path": "scripts/recovery/substrate.ts + scripts/recovery/restore-runner.ts", "surface": "disposable local restore runner (self-started --network none container with a labeled NAMED volume at PGDATA, readiness via the shared probeServingPostmaster, network/mount/ownership assertions, role-pristine census, roles corpus, restore digest bound during streaming, post-restore corpus)" },
+    { "id": "S-5", "path": "scripts/recovery/post-restore-invariants.ts + scripts/recovery/catalog-census.ts", "surface": "post-restore invariant runner (single census SQL run on both sides; ordered plan: non-mutating in READ ONLY transaction first, mutating capability probe last inside a rolled-back transaction)" },
+    { "id": "S-6", "path": "scripts/recovery/substrate.ts (destroySubstrate) + scripts/recovery/offline-rehearsal.ts", "surface": "deterministic cleanup and destruction proof (rm -f -v, explicit named-volume removal, post-destruction absence checks by id AND by run label, artifact file and directory removal with digest)" },
+    { "id": "S-7", "path": "scripts/recovery/tool-pin.ts", "surface": "tool pin and skew refusal" },
+    { "id": "S-8", "path": "scripts/recovery/recovery-target.ts", "surface": "identity classes (HOSTED_STAGING via verifyStagingTarget only; LOCAL_DISPOSABLE for tests); name-selector refusal; hosted never a restore target" },
+    { "id": "S-9", "path": "scripts/recovery/evidence-privacy.ts", "surface": "evidence grammar: closed keys, typed values, no free text; stderr retained only as digest + line count + classification" },
+    { "id": "S-10", "path": "scripts/recovery/mutation-battery.ts + scripts/recovery/mutation-verdict.ts", "surface": "mutation battery with pure verdict logic and a real-survivor self-test" },
+    { "id": "S-11", "path": "scripts/recovery/process.ts", "surface": "argument-array process execution (no shell), buffered and streamed" }
+  ],
+  "SCOPE_ALLOWLIST": [
+    "scripts/recovery/**",
+    "tests/recovery/**",
+    "tests/postgres/recovery-offline.pg.test.ts",
+    "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST_v1.0.0.json",
+    "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json"
+  ],
+  "EXPLICITLY_NOT_TOUCHED": [
+    "db/hosted/target-identity.ts (reused by import, unchanged)",
+    "scripts/db-audit-disposable.ts (reused by import, unchanged)",
+    "scripts/baseline-rehearsal-local.ts (its docker rm -f without -v weakness is recorded, NOT repaired here: repairing it is outside this allowlist)",
+    "db/baseline/** (stella_g2_post_restore.sql is READ as the post-restore corpus, never edited)",
+    "package.json (no new script, no new dependency)",
+    "every docs/ops/** authority artifact other than the two new manifests"
+  ],
+  "TOOL_PINNING_DECISION": {
+    "measured_skew": "Clean-room finding: the governed rehearsal image scripts/baseline-rehearsal-local.ts REHEARSAL_IMAGE = public.ecr.aws/supabase/postgres:17.6.1.143, while the authorized staging target was measured LIVE (authority ADJUDICATIONS.L) at 17.6.1.155.",
+    "measured_here": "Both builds report PostgreSQL 17.6 (server_version_num 170006) and ship pg_dump/pg_restore/psql 17.6. The 17.6.1.155 image is present locally with image id sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b (RepoDigest public.ecr.aws/supabase/postgres@sha256:3866d94d...). It declares NO Docker VOLUME (inspect .Mounts = []), so without an explicit mount PGDATA would live in the container layer.",
+    "resolution": "A SEPARATE recovery pin, not an edit of REHEARSAL_IMAGE: image reference public.ecr.aws/supabase/postgres:17.6.1.155, image id pinned by full sha256, PostgreSQL version 17.6 / server_version_num 170006 required EXACTLY for pg_dump, pg_restore, the source server, the substrate server and the artifact header. Any difference is a refusal, never a warning. The Supabase build suffix of the SOURCE is not visible over SQL and is therefore RECORDED as UNKNOWN_FROM_SQL, not asserted.",
+    "why_exact_not_compatible": "Logical dumps are portable across patch releases in principle, but the authority states 'tolerable in principle is not a measurement'. An exact pin fails closed on the first staging engine upgrade, which is the intended behaviour: the pin is then moved by a governed act, not absorbed silently."
+  },
+  "CAPTURE_PRINCIPAL_CONTRACT": {
+    "rule": "The mechanism never invents a hosted privilege. It VERIFIES a principal it is given, by catalog predicates, before any capture byte is read.",
+    "predicates": [
+      "rolsuper = false, rolcreaterole = false, rolcreatedb = false",
+      "not a member (transitively) of pg_write_all_data",
+      "no INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER privilege on any in-scope relation",
+      "no CREATE privilege on any in-scope schema",
+      "rolbypassrls = true whenever any in-scope relation has FORCE ROW LEVEL SECURITY or RLS enabled (pg_dump runs with row_security = off and would otherwise fail or capture a filtered subset)",
+      "SELECT reachable on every in-scope relation"
+    ],
+    "hosted": "Capture from a HOSTED_STAGING identity is REFUSED by this mechanism (RECOVERY_HOSTED_CAPTURE_NOT_AUTHORIZED). A future execution authority must supply the principal, run the SAME predicates against the authorized target, and lift that refusal by a governed change.",
+    "local_tests": "Disposable role recovery_capture_ro: LOGIN BYPASSRLS, member of pg_read_all_data, no per-object grant (so nothing about it is dumped)."
+  },
+  "MEASUREMENTS_THAT_SHAPED_THE_DESIGN": [
+    "pg_dump 17.6 with -n public emits a 'SCHEMA - public' TOC entry, so pg_restore into a fresh database fails with 'schema public already exists'. The runner drops the EMPTY public schema of the freshly created restore database before pg_restore, so the artifact alone defines it.",
+    "That restore then exits 0 while schema public has a NULL ACL: the SECURITY DEFINER capability call fails with 'permission denied for schema public' — RR-CAP-7 reproduced on a synthetic fixture. Applying db/baseline/stella_g2_post_restore.sql repairs it. A restore judged by exit status would have PASSED.",
+    "pg_dump with -n does NOT emit CREATE EXTENSION for an extension living in an in-scope schema; the capture must name extensions explicitly (--extension), and the declared scope therefore carries an extension list.",
+    "The pinned image's pg_hba trusts 127.0.0.1 inside the container, so a disposable capture principal logs in AS ITSELF over the container loopback with no password; the container still has --network none.",
+    "docker rm -v removes ANONYMOUS volumes only; a NAMED volume survives it and needs docker volume rm. Both are verified absent afterwards."
+  ],
+  "NON_GOALS": [
+    "no hosted capture, no hosted restore, no hosted read of any kind",
+    "no FRESHNESS / no-intervening-mutation POLICY (S8); the capture records pre/post census equality as a FACT only",
+    "no D2/D3/D5/ENV-07 satisfaction; storage object bytes are declared out of scope in every RESTORE_PROOF",
+    "no retention decision (HC-5): default disposition in the offline rehearsal is DESTROY"
+  ],
+  "final_state_target": "STAGING_RECOVERY_OFFLINE_MECHANISM_IMPLEMENTED__ZERO_HOSTED_CONTACT__READY_FOR_INDEPENDENT_RECERT",
+  "next_gate": "Independent source recert. Real recovery execution remains blocked on the OD-3 event-class authority successor."
+}
