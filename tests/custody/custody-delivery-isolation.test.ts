@@ -55,6 +55,8 @@ const spawns: SpawnRecord[] = []
 const vault = new Map<string, Buffer>()
 let consoleAttached = true
 let corruptBlobLine = false
+/** When true the fake bridge ignores the enumeration prefix and returns every entry. */
+let sweepOverReturns = false
 
 const b64 = (s: string): string => Buffer.from(s, 'utf8').toString('base64')
 
@@ -111,7 +113,8 @@ class FakeChild extends EventEmitter {
     } else if (req.op === 'remove') {
       reply({ ok: true, deleted: vault.delete(req.target!), win32: 0 })
     } else if (req.op === 'sweep') {
-      reply({ ok: true, targets: [...vault.keys()].filter((k) => k.startsWith(req.prefix!)), win32: 0 })
+      const all = [...vault.keys()]
+      reply({ ok: true, targets: sweepOverReturns ? all : all.filter((k) => k.startsWith(req.prefix!)), win32: 0 })
     } else if (req.op === 'console') {
       reply({ ok: true, attached: consoleAttached, win32: consoleAttached ? 0 : 6 })
     }
@@ -154,6 +157,7 @@ beforeEach(() => {
   vault.clear()
   consoleAttached = true
   corruptBlobLine = false
+  sweepOverReturns = false
   delete process.env[VAR]
   vi.mocked(spawn).mockImplementation(fakeSpawn as unknown as typeof spawn)
 })
@@ -291,6 +295,26 @@ describe('the recovery sweep is bounded to the sentinel namespace (OF-CUST-3)', 
 
   it('sweeps inside the namespace', async () => {
     await seed()
+    await expect(sweepCredentials('UELLIX-N05-SENTINEL')).resolves.toEqual([TARGET])
+  })
+
+  it('enumerates the namespace WITH its separator, so a UELLIX-N05-SENTINELX-* decoy survives', async () => {
+    const DECOY = 'UELLIX-N05-SENTINELX-DECOY'
+    vault.set(DECOY, Buffer.from('decoy'))
+    await seed()
+    await expect(sweepCredentials('UELLIX-N05-SENTINEL')).resolves.toEqual([TARGET])
+    const firstLine = Buffer.concat(bridgeSpawns()[0]!.stdin).toString('ascii').split(/\r?\n/)[0]!
+    const req = JSON.parse(Buffer.from(firstLine, 'base64').toString('utf8')) as { prefix: string }
+    expect(req.prefix).toBe('UELLIX-N05-SENTINEL-')
+    expect(vault.has(DECOY)).toBe(true)
+  })
+
+  it('re-filters what the bridge returns, so an over-returning enumeration cannot widen a sweep', async () => {
+    const DECOY = 'UELLIX-N05-SENTINELX-DECOY'
+    vault.set(DECOY, Buffer.from('decoy'))
+    vault.set('GIT-UNRELATED', Buffer.from('other'))
+    await seed()
+    sweepOverReturns = true
     await expect(sweepCredentials('UELLIX-N05-SENTINEL')).resolves.toEqual([TARGET])
   })
 })

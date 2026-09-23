@@ -249,17 +249,95 @@
       "what_the_verdict_string_itself_discloses": "FAIL: one blocking finding, nine non-blocking. Everything else the certifier reproduced independently passed: ancestry and write set, the sentinel contract, WCM-C2 through WCM-C5, read-after-delete ERROR_NOT_FOUND, the graph (32 nodes, 44 edges, 36 HARD, 8 CONDITIONAL, acyclic) and every machine gate. N05 was NOT certified, and PRs #215, #216 and #217 were NOT made eligible for closure by this verdict.",
       "what_the_successor_lane_did_with_it": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-REMEDIATION-R2 remediated B-1 and the execution-critical non-blocking findings on the same branch and recorded what it did at docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_AMENDMENT_v1.0.1.json. That lane cannot close B-1; only an independent recertification can.",
       "node_status_unchanged_by_this_record": "ZERO nodes closed. N05 is OPEN and, at the examined candidate, STOP_SECRET_DELIVERY_NONCOMPLIANT fired on the measured topology. N06 and N07 are NOT SATISFIED. N30's act is NOT PERFORMED. N32's datum is UNSUPPLIED."
+    },
+    {
+      "occurrence_id": "CERT-OCC-CUSTODY-REALIZATION-R2",
+      "subject_node": "N05. This is the first occurrence in this registry that closes a DAG node: the independent recertification ruled N05 SATISFIED. It also recorded N29 IMPLEMENTED and N30's mechanism IMPLEMENTED with its real act NOT PERFORMED. N06 and N07 remain NOT SATISFIED.",
+      "subject_package": "FIBDB053-D1-AUDITOR-CUSTODY-REALIZATION, remediation R2",
+      "certified_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0.json",
+          "blob_sha": "51cecd661a412bc33f7b126948292cc94c498063"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "blob_sha": "7012cd1a9f6133f0f840162217a0bdee841d484d"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_v1.0.0.json",
+          "blob_sha": "6c0831731e996e91162a864b1083d69e80b9bbeb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+          "blob_sha": "0fa50122da2fef1504f51910d69c7d67e87887f2"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "blob_sha": "9df6f82ae2f0ce5267ac4fb57b75eea47c00ecc0"
+        },
+        {
+          "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json",
+          "blob_sha": "83a64ff872b8e2f42e9ab13b762dc42b42b9b2fb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "6374e4be4abe981c68e2abdd62205b6acd953b65"
+        }
+      ],
+      "certified_implementation": "db/custody/**, scripts/custody/** and tests/custody/** at certified_at_commit.",
+      "certified_at_commit": "1c47566357f06fdc41280297bc7bc2e8bed4d504",
+      "certified_at_tree": "279307715e06057369af7d182bea9b3a4b93fea0",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL SHORT RECERTIFICATION of the remediation delta feb84915..1c475663, with the certifier's OWN external PEB observer (not the candidate's) and live Windows mutants.",
+      "VERDICT": "D1_AUDITOR_CUSTODY_REALIZATION_R2_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-23",
+      "blocking_findings": 0,
+      "nonblocking_findings": null,
+      "nonblocking_findings_hole_reason": "The total count was not supplied to the recording lane. The findings below are the ones evidenced to it, and are recorded as a list rather than turned into a number nobody counted.",
+      "nonblocking_findings_evidenced": [
+        "The sentinel recovery sweep enumerated UELLIX-N05-SENTINEL* without enforcing the '-' separator and swept a UELLIX-N05-SENTINELX-* decoy. Hardened by CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1; the decoy now survives.",
+        "Mutant B1d — a failed console probe read as 'attached' — survived every control.",
+        "Four bridge mutants are killed only by the Windows demonstration, not by the cross-platform suite.",
+        "Six non-secret probe result files from the previous candidate remained in %TEMP%."
+      ],
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate verdict document exists and none is reconstructed.",
+      "SELF_PIN_NOTE": "The seventh certified artifact is THIS REGISTRY at the blob it carried at the certified commit, which held five occurrences. It is not re-pinned to the blob this append produces.",
+      "B_1_STATUS_AFTER_THIS_OCCURRENCE": {
+        "status": "CLOSED",
+        "how_it_supersedes": "CERT-OCC-CUSTODY-REALIZATION-R1 recorded B-1 with BLOCKER_STATUS OPEN until an independent recertification of a successor candidate records it closed. THIS occurrence is that recertification. R1 is NOT edited; its OPEN status is superseded by this later append, which is the only way this registry changes a state.",
+        "evidence_as_ruled": "The certifier's own PEB observer found the value in the delivered consumer only: zero descendants, zero credential-bearing conhost, zero unreadable blocks, on the success, failure, timeout and launcher-kill paths. A launcher without a console was refused before the vault was read. Mutants reintroducing windowsHide:true, removing the console precondition, or detaching the consumer reproduced the leak under the certifier's observer."
+      },
+      "NODE_STATES_RULED": {
+        "N05": "SATISFIED",
+        "N29": "IMPLEMENTED",
+        "N30": "MECHANISM IMPLEMENTED; REAL ACT NOT PERFORMED",
+        "N32": "EXISTS; datum unsupplied at the certified commit",
+        "N06": "NOT SATISFIED",
+        "N07": "NOT SATISFIED"
+      },
+      "RESIDUALS_THAT_TRAVEL_WITH_N05": [
+        "The launcher heap holds the value for the launcher's lifetime (OF-CUST-1); no zeroization is claimed. processes_or_environments must name the launcher surface.",
+        "The WCM entry survives an abrupt kill by design; recovery is the bounded sentinel sweep, and for the real credential only the governed rotation removes it (OF-CUST-3).",
+        "The behavioural controls run only on Windows; ubuntu-latest runners do not execute them.",
+        "The production consumer topology must be re-demonstrated wherever it differs from the certified sentinel consumer."
+      ],
+      "ADMINISTRATIVE_CONSEQUENCE": "PRs #215, #216 and #217 became eligible for closure as SUPERSEDED_BY_PR_219; they were closed administratively, not merged, with branches retained, by CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1.",
+      "node_status_unchanged_by_this_record": "Beyond N05, no node is closed by this certification. N06 and N07 remain NOT SATISFIED; N08, N09 and N31 remain open; no credential exists."
     }
   ],
 
   "DERIVED_FACTS": {
-    "OCCURRENCE_COUNT": 5,
-    "CERTIFIED_ARTIFACT_COUNT": 17,
-    "VERDICTS_RECORDING_A_PASS": 4,
+    "OCCURRENCE_COUNT": 6,
+    "CERTIFIED_ARTIFACT_COUNT": 24,
+    "VERDICTS_RECORDING_A_PASS": 5,
     "VERDICTS_RECORDING_A_FAIL": 1,
-    "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 0,
+    "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 1,
     "COUNTS_RECOMPUTED_ON_APPEND": "The first three numbers were 3, 10 and 3 when this registry held three occurrences. They are RECOMPUTED from the arrays on every append, never incremented: an incremented count is a count nobody re-derived, which is the defect OF-N05-9 records. CERTIFIED_ARTIFACT_COUNT is the union of path-and-blob pairs, so the consolidated occurrence's pin of this registry at its own earlier blob counts once and does not collide with anything.",
-    "why_the_last_number_is_zero": "Four verdicts certify an AUTHORITY PACKAGE and none of them demonstrates a mechanism, supplies an owner datum, or fills an evidence artifact, which is what closing N05, N06 or N07 respectively would require. The fifth verdict was the gate at which N05 could have closed, and it is a FAIL. A registry that let PASS strings read as closed nodes would be the most expensive error it could make.",
+    "why_nodes_closed_is_one": "Four verdicts certify an AUTHORITY PACKAGE and demonstrate nothing, so they close nothing. The fifth is a FAIL. The sixth, the R2 recertification, is the independent ruling that the demonstrated mechanism satisfies WCM-C1..WCM-C5 and the derived obligations, and it closes exactly one node: N05. It supplies no owner datum and fills no evidence artifact, so N06 and N07 stay open. A registry that let PASS strings read as more closed nodes than were ruled would be the most expensive error it could make.",
     "DERIVED_PROSE_RULE": "The prose fields of DERIVED_FACTS state the counts in words, so they are REGENERATED with the counts on every append, exactly like the numbers. Only OCCURRENCES entries, their blob pins, verdict strings and hole reasons are immutable. This rule was stated after NB-9 of the custody realization certification observed the previous append editing this prose without saying so.",
     "derivation_note": "OCCURRENCE_COUNT and CERTIFIED_ARTIFACT_COUNT are derived by counting this document's own OCCURRENCES array and the union of its certified_artifacts entries, and are re-derivable by any reader from the arrays above."
   },
@@ -281,6 +359,13 @@
         "append_date": "2026-09-23",
         "appended_at_base": "feb849154af8bc75d18d5477512060db217771fb",
         "what_was_not_touched": "The four earlier occurrences are byte-unchanged, and the original self_check is left as its authoring lane wrote it. The recomputed counts are OCCURRENCE_COUNT 5, VERDICTS_RECORDING_A_FAIL 1, VERDICTS_RECORDING_A_PASS 4, and CERTIFIED_ARTIFACT_COUNT unchanged at 17 because a FAIL certifies nothing. The examined blobs are pinned in the occurrence under a separate key so they cannot be mistaken for certified ones."
+      },
+      {
+        "appended_occurrence": "CERT-OCC-CUSTODY-REALIZATION-R2",
+        "appended_by": "CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1",
+        "append_date": "2026-09-23",
+        "appended_at_base": "1c47566357f06fdc41280297bc7bc2e8bed4d504",
+        "what_was_not_touched": "The five earlier occurrences are byte-unchanged, including R1's BLOCKER_STATUS OPEN, which is superseded by this append and not rewritten. Counts recomputed from the arrays: OCCURRENCE_COUNT 6, VERDICTS_RECORDING_A_PASS 5, VERDICTS_RECORDING_A_FAIL 1, NODES_CLOSED 1 (N05). The DERIVED_FACTS prose key was renamed with its content, per DERIVED_PROSE_RULE, because its old name asserted a zero that is no longer true."
       }
     ]
   },

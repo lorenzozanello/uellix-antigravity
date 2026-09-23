@@ -520,14 +520,22 @@ export async function removeCredential(target: string): Promise<boolean> {
  */
 export async function sweepCredentials(prefix: string): Promise<string[]> {
   assertValidTarget(prefix)
-  if (!SWEEPABLE_TARGET_PREFIXES.some((p) => prefix === p || prefix.startsWith(`${p}-`))) {
+  const root = SWEEPABLE_TARGET_PREFIXES.find((p) => prefix === p || prefix.startsWith(`${p}-`))
+  if (root === undefined) {
     throw new CustodyError(
       'CUSTODY_TARGET_INVALID',
       `Refusing to sweep "${prefix}": only ${SWEEPABLE_TARGET_PREFIXES.join(', ')} may be swept. ` +
         'Removing a real credential entry is the rotation act N28 governs, never a sweep.'
     )
   }
-  const { response: res } = await invokeBridge({ op: 'sweep', prefix })
+  // The guard above bounds the ARGUMENT, not the wildcard it feeds: the bridge
+  // enumerates `<prefix>*`, and `UELLIX-N05-SENTINEL*` also matches
+  // `UELLIX-N05-SENTINELX-...`, which is outside the namespace (independent
+  // recertification R2, decoy swept). The enumeration is therefore always
+  // `<root>-...*`, and the results are re-filtered here, so a bridge that
+  // returns more than it was asked for cannot widen what a caller deletes.
+  const enumerationPrefix = prefix === root ? `${root}-` : prefix
+  const { response: res } = await invokeBridge({ op: 'sweep', prefix: enumerationPrefix })
   if (!res.ok) {
     throw new CustodyError(
       'CUSTODY_SWEEP_FAILED',
@@ -535,7 +543,7 @@ export async function sweepCredentials(prefix: string): Promise<string[]> {
       res.win32
     )
   }
-  return res.targets ?? []
+  return (res.targets ?? []).filter((t) => t.startsWith(enumerationPrefix) && t.startsWith(`${root}-`))
 }
 
 /**
