@@ -1,0 +1,68 @@
+{
+ "package_id": "CV1_INFRA_RC9_ARMING_PACKAGE_IC",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0",
+ "authority_class": "INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT",
+ "document_class": "CERTIFICATION_EVENT_RECORD__NO_READ__NO_MUTATION",
+ "append_only": true,
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01), lane CV1-INFRA-CONTROL-PLANE-READ-EXECUTOR-HARDENING-R3",
+ "repository": "lorenzozanello/uellix-antigravity",
+
+ "CERTIFIED_CANDIDATE": {
+  "candidate_head": "3dc12909bb5b584ebc2266900659ab6f158d9eef",
+  "candidate_tree": "aa5763518e13678d9fc242350756a64942c4ad33",
+  "candidate_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "candidate_pr": "#214",
+  "scope_reviewed": "The closure and arming package: v1.0.3 amendment and manifest amendment, the DF11 owner decision, the RC-9a executor record, the fresh DN-0 recorded in the v1.0.1 arming determination, and that determination.",
+  "candidate_verification_performed_by_this_lane": "Head and tree re-derived from git by this lane before being written here."
+ },
+
+ "VERDICT": {
+  "verdict": "INFRA_RC9_ARMING_PACKAGE_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+  "blocking_findings": 0,
+  "nonblocking_findings": 16,
+  "provenance": "REPORTED_BY_DIRECTING_TEXT, MATERIALIZED_HERE. This lane did not conduct the review. It records the event against an independently re-derived candidate identity so the verdict no longer exists only in conversation."
+ },
+
+ "REVIEWER_IDENTITY": {
+  "reviewer": "NOT_SUPPLIED by the directing text.",
+  "reported_in_session_memory": "The executing host's session memory records the review as lane CV1-INFRA-RC9-ARMING-PACKAGE-IC-R1, run under Claude Opus 5.5, on 2026-09-23, in strictly read-only mode. That is a REPORT written by the reviewing session, recorded here as such and not independently verified by this lane.",
+  "execution_timestamp": "NOT_SUPPLIED. The same memory records a wall-clock reading of 2026-09-23T11:01:21Z that the review used for its credential-expiry analysis; that reading is NOT recorded here as the review's execution time.",
+  "why": "Inventing a reviewer or an execution instant would fabricate provenance for an event this lane did not witness."
+ },
+
+ "NONBLOCKING_FINDINGS": {
+  "reported_count": 16,
+  "enumeration_status": "PARTIAL BY CONSTRUCTION.",
+  "identifier_scheme": "Content-addressed ids in this record's own namespace (AP-NB-*). They make no claim about the reviewer's own numbering.",
+  "listed_as_findings": [
+   {"id": "AP-NB-DF13-NO-MACHINE-STOP", "substance": "DF-13 recorded that the credentials can perform every forbidden act, but nothing mechanical stopped a mutation. Measured in the installed Vercel bundle: `--method GET` combined with -f/-F sends the fields as a JSON BODY on a GET, not as a query, and -f/-F/--input without --method becomes POST.", "disposition": "REMEDIATED by the safe-read executor (scripts/infra-read/) and v1.0.4 EXECUTOR_BOUNDARY: closed registry, exact-shape argv validation, no body flags reachable."},
+   {"id": "AP-NB-SECRETS-SCAN-BLIND", "substance": "pnpm secrets:scan has seven detector families and none for GitHub token families, Vercel credentials, deploy-hook URLs or Authorization material; its PASS was cited as evidence of absence for exactly those classes.", "disposition": "REMEDIATED ADDITIVELY by scripts/infra-read/evidence-scan.ts. secrets:scan is not modified or weakened."},
+   {"id": "AP-NB-XCC1-ASKPASS", "substance": "XCC-1 (helper reset + GIT_TERMINAL_PROMPT=0) is not credential-free: the askpass chain runs before the terminal prompt.", "disposition": "REMEDIATED by v1.0.4 XCC1_EFFECTIVE_CONTRACT, re-measured on this host, and a runtime isolation preflight."},
+   {"id": "AP-NB-VR2-RNA1-OPEN", "substance": "V-R2 step_4 still read 'for each project found', contradicting RNA-1 and DN-2's own predicate.", "disposition": "REMEDIATED by v1.0.4 VR2_RNA1_RESOLUTION and mechanically by the executor."},
+   {"id": "AP-NB-NINE-READS-NOT-ONE-PHASE", "substance": "'The nine reads' do not fit one read-only lane: V-R4 is F-IMMEDIATE and belongs bracketing M-7.", "disposition": "REMEDIATED by v1.0.4 FRESHNESS_CLASSIFICATION; the executor refuses V-R4 in the read-only phase."},
+   {"id": "AP-NB-PACMI-UNDECLARED-REFRESH", "substance": "PACMI-V1 refreshed the Vercel OAuth session and the refresh was not declared as a side effect.", "disposition": "REMEDIATED by v1.0.4 PACMI_REFRESH_DISPOSITION."},
+   {"id": "AP-NB-EXPIRY-OUTSIDE-PACMI", "substance": "The credential expiry was read from auth.json, a file read outside the provider-native PACMI operation set.", "disposition": "REMEDIATED by v1.0.4 EXPIRY_READ_WITHDRAWN: validity is established provider-natively at use time; auth.json is not read by the executor."},
+   {"id": "AP-NB-RC9B-ORDER-LOST", "substance": "The RC-9a/RC-9b split dropped the original requirement that G-R1 precede G-R2.", "disposition": "REMEDIATED by v1.0.4 RC9B_ORDER and mechanically enforced (STOP_RC9B_NOT_DISCHARGED)."}
+  ],
+  "stated_as_review_analysis": [
+   {"id": "AP-AN-ARMING-HORIZON", "substance": "ARMED was valid at its instant, but the Vercel horizon (06:02:15Z) has passed and AC-CON-2 binds RC-9a to the session, so every new executor re-discharges RC-9a.", "disposition": "ADDRESSED by v1.0.4 ARMED_STATE: runtime RC-9a on every execution."},
+   {"id": "AP-AN-DN0-TERMINATION", "substance": "Committing DN-0 evidence before the reads, combined with 'satisfied at this head and nowhere else', is an infinite regress.", "disposition": "ADDRESSED by v1.0.4 TERMINATING_DN0_PROTOCOL and scripts/infra-read/protocol.ts."}
+  ],
+  "arithmetic": "8 items were listed as findings. 2 more were stated as review analysis and may or may not be counted among the 16. The text of between 6 and 8 of the 16 reported findings was therefore NOT SUPPLIED to this lane.",
+  "binding_instruction": "Any reviewer holding the full output must treat every finding not matched above as STILL OPEN. This record's PASS is not evidence that all 16 were dispositioned."
+ },
+
+ "WHAT_THIS_EVENT_DOES_AND_DOES_NOT_DO": {
+  "does": "Materializes the certification of the arming package as a repository artifact, so the executor's runtime LIMB_1 check can find and parse it.",
+  "does_not": [
+   "Authorize any read. The executor-hardening delta that follows this record must itself be independently certified first.",
+   "Arm anything. Arming is evaluated at runtime by the executor, against AC-1, on every execution.",
+   "Close the unsupplied findings."
+  ]
+ },
+
+ "final_state": "ARMING_PACKAGE_IC_MATERIALIZED__FINDINGS_PARTIAL__NOT_AN_ARMING_ACT",
+ "next_gate": "The executor-hardening delta (v1.0.4 + scripts/infra-read) and its bounded independent certification."
+}

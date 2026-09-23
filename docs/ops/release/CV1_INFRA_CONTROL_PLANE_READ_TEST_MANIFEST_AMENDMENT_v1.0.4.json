@@ -1,0 +1,69 @@
+{
+ "manifest_id": "CV1-INFRA-CONTROL-PLANE-READ-EXECUTOR-HARDENING",
+ "node_or_batch": "batch",
+ "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4.json",
+ "dependencies": [
+  "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3.json, blob 6ec975d4c4e53577cbc05d1de849d62b7d54d65d)",
+  "CV1_INFRA_CONTROL_PLANE_READ_RC9A_EXECUTOR_RECORD_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_RC9A_EXECUTOR_RECORD_v1.0.0.json, blob 0c8d2c88e544a24289ae75df2a76a60a2f6cf3f8)",
+  "CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION_v1.0.1 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION_v1.0.1.json, blob 4f7ec7b15ab4b69a96888612ee294a08f2106313)",
+  "CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0 (docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json)"
+ ],
+ "protected_surfaces": [],
+ "protected_authority": null,
+ "sentinels": [
+  {"id": "SEN-D1", "purpose": "ZERO GOVERNED READS AND ZERO PACMI CALLS in the executor-hardening lane. The only git executions are local (.invalid host, config listing); no gh or vercel process is spawned by any test."},
+  {"id": "SEN-D2", "purpose": "NO CREDENTIAL-SHAPED LITERAL IN THE REPOSITORY. Test fixtures assemble token- and hook-shaped strings at runtime; the supplemental scanner over the committed write set must stay clean."},
+  {"id": "SEN-D3", "purpose": "ALLOWLIST, NOT DENYLIST. A method guard that only enumerates forbidden flags is incomplete by construction; the operative control is exact-shape equality of the whole argv."},
+  {"id": "SEN-D4", "purpose": "NON-VACUITY. Every 'runner never called' assertion is paired with a positive control proving the same fake runner is installed and reachable."}
+ ],
+ "known_conditions": [],
+ "positive_controls": [
+  {"id": "PD-1", "description": "A registry op reaches the runner with the exact GET argv and yields a validated evidence record.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "PD-2", "description": "V-R1 projection keeps deploy-hook metadata, presence booleans and the autodeploy locus, and drops the hook URL, the password and env values.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "PD-3", "description": "PACMI-G1 drops a token field from gh output; PACMI-V3 keeps only the executor's own member row.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "PD-4", "description": "The terminating protocol runs RC-9a first, DN-0 last before reads, G-R1 before G-R2, never V-R4, never targets uellix-antigravity in role limbs, issues no git commit, and its bundle scans clean.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "PD-5", "description": "A certification-event file ADDED after certification is accepted by DN-0.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "PD-6", "description": "Real git: the XCC-1 environment passes the static guard, its preflight lists only the three command-line resets, and credential fill produces no credential even with a hostile core.askPass.", "test_file": "tests/infra-read/xcc1-local.test.ts"},
+  {"id": "PD-7", "description": "The supplemental scanner has a detector for every class secrets:scan is blind to, and does not flag SHAs, Vercel ids or alias hostnames.", "test_file": "tests/infra-read/evidence-scan.test.ts"}
+ ],
+ "negative_controls": [
+  {"id": "ND-01", "description": "GitHub implicit POST via -f / --raw-field / -F / --field is refused before execution.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-02", "description": "GitHub explicit POST (--method POST, -X POST, --method=DELETE) is refused before execution.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-03", "description": "GitHub --input is refused before execution.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-04", "description": "GitHub without an explicit --method is refused (gh's default is not relied upon); --verbose, -i, -H, --hostname, --show-token and a GH_TOKEN override are refused.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-05", "description": "Vercel -f body semantics, --raw-field, -F, --input are refused before execution.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-06", "description": "Vercel write operation id (deleteProject) as the endpoint is refused before execution.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-07", "description": "Vercel non-GET method, missing --method, --generate=curl, --verbose, --dangerously-skip-permissions, --scope and decrypt=true are refused before execution.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-08", "description": "An arbitrary endpoint (off-registry op id, or a registry op whose built path is mutated) is refused before execution.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-09", "description": "Raw response persistence: a bypassed projector is refused by conformance, and a raw object is never a validated record.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-10", "description": "Deploy-hook URL output is refused even when it arrives through an allowlisted field.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-11", "description": "Env-value output: L5 drops value, and a bypassed projector carrying it is refused.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-12", "description": "G-R2 before G-R1 is refused; G-R2 after a G-R1 without a permission object is refused (RC-9b).", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-13", "description": "RNA-1: every role limb (L1/L3/L5/L7) against uellix-antigravity is refused, and role limbs before a complete inventory are refused.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-14", "description": "V-R4 is refused in the read-only phase.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-15", "description": "X-R1 with the credential helper still active, a credential-bearing URL, an ssh or http URL, askpass available (set or unset GIT_ASKPASS, SSH_ASKPASS), extraHeader injected through the environment, ceiling removed, system config re-enabled, or cwd outside the root is refused by the static guard.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-16", "description": "Real git: each askpass vector is shown LIVE (returns a password) and then refused; a file-provided helper, extraHeader, insteadOf, or a parent repository's config is shown visible to the preflight and refused; a helper SUBSTITUTED for the missing reset (same key names) is refused by the origin check.", "test_file": "tests/infra-read/xcc1-local.test.ts"},
+  {"id": "ND-17", "description": "Protocol: HEAD moving after DN-0, a post-certification MODIFY, a FAIL certification verdict, or an unestablished Vercel role are each refused; the evidence commit must have parent == DN-0 HEAD and only add evidence.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "ND-18", "description": "The supplemental scanner fails on an empty file set and never echoes the matched text.", "test_file": "tests/infra-read/evidence-scan.test.ts"}
+ ],
+ "mutation_controls": [
+  {"id": "MD-01", "description": "gh exact-shape check removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-02", "description": "gh denylist emptied — the refusal must be PRESERVED by the exact-shape check (observed: killed on token precision only).", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-03", "description": "vercel exact-shape check removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-04", "description": "projection conformance disabled — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-05", "description": "G-R1-first check removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-06", "description": "RC-9b check removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-07", "description": "RNA-1 exclusion removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-08", "description": "freshness refusal removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-09", "description": "post-projection detectors removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-10", "description": "X-R1 preflight requirement removed — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-11", "description": "GIT_ASKPASS dropped from the XCC-1 environment — must be KILLED.", "test_file": "tests/infra-read/xcc1-local.test.ts"},
+  {"id": "MD-12", "description": "ceiling directory dropped — must be KILLED.", "test_file": "tests/infra-read/xcc1-local.test.ts"},
+  {"id": "MD-13", "description": "isolation listing accepts file origins — must be KILLED (requires the substituted-helper test).", "test_file": "tests/infra-read/xcc1-local.test.ts"},
+  {"id": "MD-14", "description": "no-commit-since-DN-0 guard disabled — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-15", "description": "post-certification MODIFY accepted — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+  {"id": "MD-16", "description": "env-value detector removed — must be KILLED.", "test_file": "tests/infra-read/evidence-scan.test.ts"},
+  {"id": "MD-17", "description": "V-R1 allowlist admits the deploy-hook url — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"}
+ ],
+ "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

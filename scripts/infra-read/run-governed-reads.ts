@@ -1,0 +1,123 @@
+// scripts/infra-read/run-governed-reads.ts
+//
+// Entry point for the READ-EXECUTION lane. NOT RUN by the executor-hardening
+// lane that authored it; running it performs real authenticated control-plane
+// reads. It refuses unless every one of --execute, --certified-candidate and
+// --out is supplied, and then follows the terminating protocol in
+// protocol.ts. It writes ONLY validated, projected evidence records, and runs
+// the supplemental evidence scan over what it wrote before reporting success.
+//
+//   pnpm tsx scripts/infra-read/run-governed-reads.ts --execute \
+//     --certified-candidate <40-hex> --out docs/ops/release/evidence/<dir>
+
+import { spawnSync } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
+import { PINNED_TOOL_VERSIONS, Refusal, SHA40_RE } from './ops'
+import { buildGhEnv, buildVercelEnv, type Invocation, type ToolContext } from './guards'
+import { SafeReadExecutor, isValidatedEvidence, type RunResult } from './executor'
+import { runGovernedReadPhase, type Dn0Config, type LocalGit } from './protocol'
+import { buildXcc1Env, createXcc1Context } from './xcc1'
+import { scanFiles } from './evidence-scan'
+
+export interface CliArgs { readonly execute: boolean; readonly certifiedCandidate?: string; readonly out?: string }
+
+export function parseArgs(argv: readonly string[]): CliArgs {
+  const get = (flag: string) => { const i = argv.indexOf(flag); return i === -1 ? undefined : argv[i + 1] }
+  return { execute: argv.includes('--execute'), certifiedCandidate: get('--certified-candidate'), out: get('--out') }
+}
+
+/** Refuses anything short of an explicit, fully-specified execution request. */
+export function assertExecutionRequested(a: CliArgs): asserts a is Required<CliArgs> {
+  if (!a.execute) throw new Refusal('STOP_EXECUTION_NOT_REQUESTED', 'refusing: --execute not given')
+  if (!a.certifiedCandidate || !SHA40_RE.test(a.certifiedCandidate)) throw new Refusal('STOP_EXECUTION_NOT_REQUESTED', 'refusing: --certified-candidate <40-hex> required')
+  if (!a.out) throw new Refusal('STOP_EXECUTION_NOT_REQUESTED', 'refusing: --out <dir> required')
+}
+
+const realRunner = (inv: Invocation): RunResult => {
+  const r = spawnSync(inv.file, [...inv.argv], {
+    // Built from scratch or filtered by guards.ts; Next.js' ProcessEnv augmentation (NODE_ENV) does not apply to a child.
+    env: inv.env as unknown as NodeJS.ProcessEnv, cwd: inv.cwd, encoding: 'utf8', shell: false, maxBuffer: 256 * 1024 * 1024, timeout: 180_000,
+  })
+  return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '' }
+}
+
+function resolveTools(): ToolContext {
+  const gh = spawnSync('gh', ['--version'], { encoding: 'utf8', shell: false })
+  if (gh.status !== 0 || !(gh.stdout ?? '').includes(`gh version ${PINNED_TOOL_VERSIONS.gh} `)) {
+    throw new Refusal('STOP_TOOL_VERSION_DRIFT', `gh is not the measured ${PINNED_TOOL_VERSIONS.gh}`)
+  }
+  const appData = process.env.APPDATA
+  if (!appData) throw new Refusal('STOP_TOOL_VERSION_DRIFT', 'APPDATA unset; cannot locate the vercel CLI entry')
+  const pkgDir = path.join(appData, 'npm', 'node_modules', 'vercel')
+  const pkg = JSON.parse(readFileSync(path.join(pkgDir, 'package.json'), 'utf8')) as { version?: string }
+  if (pkg.version !== PINNED_TOOL_VERSIONS.vercel) throw new Refusal('STOP_TOOL_VERSION_DRIFT', `vercel is not the measured ${PINNED_TOOL_VERSIONS.vercel}`)
+  const vercelEntry = path.join(pkgDir, 'dist', 'vc.js')
+  if (!existsSync(vercelEntry)) throw new Refusal('STOP_TOOL_VERSION_DRIFT', 'vercel entry dist/vc.js absent')
+  const x = createXcc1Context()
+  return {
+    ghFile: 'gh', nodeFile: process.execPath, vercelEntry,
+    ghEnv: buildGhEnv(process.env), vercelEnv: buildVercelEnv(process.env),
+    xcc1Env: buildXcc1Env(x, process.env), xcc1Cwd: x.cwd,
+  }
+}
+
+const localGit: LocalGit = {
+  run: (args) => {
+    const r = spawnSync('git', [...args], { encoding: 'utf8', shell: false })
+    return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '' }
+  },
+}
+
+export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
+  const authority = JSON.parse(readFileSync('docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json', 'utf8')) as {
+    EFFECTIVE_PACKAGE_CONSUMED: { pins: { path: string; blob: string }[] }
+  }
+  return {
+    expectedBranch: 'codex/cv1-infra-control-plane-read-authority-r1',
+    certifiedCandidate,
+    allowedPostCertificationAdditions: [/^docs\/ops\/release\/CV1_INFRA_[A-Z0-9_]+_IC_v[0-9.]+\.json$/],
+    parentBinding: '6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2',
+    integrationRef: 'origin/integration/commercial-v1',
+    pins: authority.EFFECTIVE_PACKAGE_CONSUMED.pins,
+    certificationEvents: [
+      { path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json', verdict: /^INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/ },
+      { path: 'docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json', verdict: /^INFRA_RC9_ARMING_PACKAGE_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/ },
+      // Materialized by the read-execution lane from the bounded IC of THIS delta, before DN-0.
+      { path: 'docs/ops/release/CV1_INFRA_EXECUTOR_HARDENING_IC_v1.0.0.json', verdict: /^INFRA_EXECUTOR_HARDENING_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/ },
+    ],
+  }
+}
+
+export function main(argv: readonly string[]): number {
+  const args = parseArgs(argv)
+  try {
+    assertExecutionRequested(args)
+    const executor = new SafeReadExecutor(realRunner, resolveTools())
+    const bundle = runGovernedReadPhase({ executor, git: localGit, dn0: dn0ConfigFor(args.certifiedCandidate) })
+    mkdirSync(args.out, { recursive: true })
+    const written: string[] = []
+    bundle.records.forEach((r, i) => {
+      if (!isValidatedEvidence(r)) throw new Refusal('STOP_UNVALIDATED_EVIDENCE', 'refusing to write an unvalidated record')
+      const file = path.join(args.out, `${String(i).padStart(3, '0')}_${r.op_id}.json`)
+      writeFileSync(file, `${JSON.stringify(r, null, 1)}\n`)
+      written.push(file)
+    })
+    const summary = path.join(args.out, 'BUNDLE_SUMMARY.json')
+    writeFileSync(summary, `${JSON.stringify({ ...bundle, records: bundle.records.map((r) => r.op_id) }, null, 1)}\n`)
+    written.push(summary)
+    const scan = scanFiles(written)
+    console.log(`GOVERNED_READS=${bundle.records.filter((r) => r.record_kind === 'GOVERNED_READ_EVIDENCE').length}`)
+    console.log(`EVIDENCE_FILES=${written.length}`)
+    console.log(`EVIDENCE_SCAN=${scan.findings.length === 0 ? 'PASS' : 'FAIL'}`)
+    console.log(`DN0_HEAD=${bundle.dn0.head}`)
+    console.log('NEXT: commit the evidence directory ONLY, with parent == DN0_HEAD, then run assertEvidenceCommitParent.')
+    return scan.findings.length === 0 ? 0 : 1
+  } catch (e) {
+    console.error(e instanceof Refusal ? e.message : `STOP_UNEXPECTED: ${(e as Error).message}`)
+    return 2
+  }
+}
+
+const invokedDirectly = process.argv[1] !== undefined && /run-governed-reads\.[cm]?[jt]s$/.test(process.argv[1])
+if (invokedDirectly) process.exitCode = main(process.argv.slice(2))
