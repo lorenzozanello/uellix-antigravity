@@ -1,0 +1,103 @@
+{
+ "package_id": "CV1_INFRA_LINK_REPO_WITNESS_READ_OWNER_DECISION",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_LINK_REPO_WITNESS_READ_OWNER_DECISION_v1.0.0",
+ "authority_class": "OWNER_RATIFICATION_RECORD__NOT_AN_EXECUTION_AUTHORITY",
+ "document_class": "OWNER_RATIFICATION__NO_HOSTED_MUTATION__NO_GOVERNED_READ__NO_SECRET_DISCLOSURE",
+ "append_only": true,
+ "mission_id": "CV1-INFRA-LINK-REPO-ID-WITNESS-AUTHORITY-AND-IMPLEMENTATION-R1",
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "resolves": "The STOP_SEMANTIC_WITNESS_INSUFFICIENT outcome of lane CV1-INFRA-VR2-LINK-REPO-SEMANTIC-WITNESS-R1 (the governed GitHub read set observes exactly one repository, so no same-run identity witness exists for V-R2.S2 projects[*].link.repo).",
+ "materialized_at_base": {
+  "base_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "BASE_SHA": "5375c6976251465667414b40e88e502fee526398",
+  "BASE_TREE": "60c61209da31561566b1d4ec00b05888569503d9",
+  "candidate_pr": "#214",
+  "worktree_state": "clean at materialization"
+ },
+ "THE_PROBLEM_RATIFIED_AGAINST": {
+  "stop": "Two governed executions stopped fail-closed at V-R2.S2 with OPAQUE_HIGH_ENTROPY; the certified safe diagnostic located it at projects[*].link.repo (string, length 40). No value was exposed.",
+  "witness_gap": "Every G-R1..G-R4 operation is fixed to /repos/lorenzozanello/uellix-antigravity; nothing in the governed set can bind a different linked repository's identity in the same run."
+ },
+ "RATIFICATION": {
+  "id": "LRW-1",
+  "owner_selected_decision_verbatim": "INFRA_LINK_REPO_WITNESS_READ = AUTHORIZED",
+  "PURPOSE_verbatim": "Resolve V-R2.S2 projects[*].link.repoId to an authoritative GitHub repository identity solely to adjudicate projects[*].link.repo and TI-2.",
+  "SCOPE_verbatim": "ONE additional governed read class only.",
+  "INPUT_verbatim": "numeric link.repoId from the already-projected V-R2.S2 record.",
+  "REQUIRED_OUTPUT_PROJECTION_verbatim": ["repository numeric id", "repository name", "repository full_name", "owner.login"],
+  "PROHIBITED_verbatim": [
+   "sending the untrusted link.repo value to GitHub",
+   "searching by the untrusted repository name",
+   "listing broad repository inventories unless independently justified",
+   "expanding to contents/issues/commits/settings",
+   "using prior-run data",
+   "persisting raw provider responses",
+   "weakening any secret detector"
+  ],
+  "ENDPOINT_RULE_verbatim": "Do not assume GET /repositories/{repository_id} is acceptable merely because third-party clients implement it. The author must first establish the narrowest viable GitHub capability. If no defensible minimal ID-keyed read can be established: STOP_PROVIDER_CAPABILITY_NOT_ESTABLISHED.",
+  "FAILURE_SEMANTICS_verbatim": "404 / forbidden / inaccessible / mismatch / unknown / malformed response => STOP fail-closed.",
+  "SUCCESS_SEMANTICS_verbatim": "Only an exact same-run binding among: Vercel link.repoId, GitHub repository.id, Vercel link.repo, GitHub repository.name/full_name, Vercel link.org, GitHub owner.login, Vercel link.type = github may adjudicate OPAQUE_HIGH_ENTROPY as EXPECTED_PROVIDER_IDENTIFIER. ALL OTHER SECRET DETECTORS REMAIN ACTIVE.",
+  "owner_signature": "SIGNED = YES (given in the directing text of this lane; the owner states these are binding owner decisions)",
+  "disposition": "RATIFIED_AUTHORIZE_ONE_ID_KEYED_WITNESS_READ_CLASS__CONDITIONAL_ON_AN_ESTABLISHED_PROVIDER_CAPABILITY"
+ },
+ "STATUS": {
+  "executed": "NO",
+  "certified": "NO",
+  "implemented": "NO",
+  "condition_evaluated_by_this_lane": "The ENDPOINT RULE's precondition (a defensible minimal ID-keyed GitHub capability) was evaluated by the materializing lane and was NOT met: STOP_PROVIDER_CAPABILITY_NOT_ESTABLISHED. The authorization therefore stands, unused; no operation, registry entry or amendment implements it.",
+  "capability_findings": [
+   {
+    "route": "A. REST GET /repositories/{repository_id}",
+    "class": "DE_FACTO_UNDOCUMENTED",
+    "evidence": [
+     "Absent from the official REST reference for repositories (https://docs.github.com/en/rest/repos/repos, fetched 2026-09-23): the only documented single-repository GET is GET /repos/{owner}/{repo}.",
+     "Absent from GitHub's official OpenAPI description (github/rest-api-description, descriptions/api.github.com/api.github.com.json, openapi 3.0.3, info.version 1.1.4, fetched 2026-09-23): no /repositories/{repository_id} path exists.",
+     "GitHub staff (community discussion https://github.com/orgs/community/discussions/24515) confirm the API can resolve a repository by database ID, and decline to say if or when it becomes official and documented.",
+     "The installed official gh 2.93.0 binary uses repositories/%d only for sub-resources (codespaces, environment variables), never the bare route."
+    ],
+    "consequence": "Per the owner's ENDPOINT RULE and the documentation standard, DE_FACTO_UNDOCUMENTED does not become governed authority automatically."
+   },
+   {
+    "route": "B. GraphQL keyed by a repository identifier",
+    "class": "NOT_ESTABLISHED",
+    "evidence": [
+     "GitHub's official public GraphQL schema (https://docs.github.com/public/fpt/schema.docs.graphql, fetched 2026-09-23): the Query root offers repository(owner: String!, name: String!) (name-keyed, prohibited), node(id: ID!) / nodes(ids: [ID!]!) (global node IDs), repositoryOwner(login:) and resource(url:). No Query field takes a numeric databaseId.",
+     "GitHub's global node ID guide (https://docs.github.com/en/graphql/guides/migrating-graphql-global-node-ids) directs integrators to treat node IDs as opaque strings; deriving one from a numeric repoId would be an undocumented transformation, which the owner decision excludes."
+    ]
+   },
+   {
+    "route": "C. Other official numeric repository_id routes",
+    "class": "NOT_APPLICABLE",
+    "evidence": ["Every path in the official OpenAPI description that takes {repository_id} is a PUT or DELETE (e.g. adding or removing a repository from an organization secret, variable, runner group or app installation). All are mutations; none returns repository identity."]
+   },
+   {
+    "route": "Excluded by the owner decision",
+    "class": "PROHIBITED",
+    "evidence": ["GET /repos/{owner}/{repo} with Vercel's untrusted link.org / link.repo as input (sends the untrusted name).", "Broad inventories (GET /repositories, /user/repos, /users/{username}/repos, /orgs/{org}/repos) and search."]
+   }
+  ],
+  "what_would_reconsider_it": [
+   "GitHub documenting an ID-keyed repository GET (in the REST reference or the official OpenAPI description): the route becomes OFFICIALLY_DOCUMENTED or OFFICIALLY_SPECIFIED and this authorization can be implemented as written.",
+   "An explicit owner decision to accept the DE_FACTO_UNDOCUMENTED GET /repositories/{repository_id} as governed authority, with its instability risk stated (it would still fail closed on any 404 / 403 / shape change).",
+   "An owner decision to independently justify a bounded inventory read (e.g. the governed owner's repositories) as the witness source."
+  ]
+ },
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "No read has been added to the registry and none may be executed under this record: the capability condition was not met.",
+  "It does not authorize the name-keyed or inventory routes the owner prohibited.",
+  "It does not relax any secret detector, adjudicate the observed V-R2.S2 hit, or change TI-2.",
+  "It is not an execution authority, a certification or an arming act."
+ ],
+ "precedence_note": "This record is canonical for owner intent on the link.repo witness read only. The effective read authority (v1.0.0 as amended through v1.0.6) continues to control the read set, which remains 24 operations / 8 EXECUTE_NOW.",
+ "self_check": {
+  "SC-L1": "The owner's decision, purpose, scope, input, projection, prohibitions, endpoint rule and failure/success semantics are recorded verbatim.",
+  "SC-L2": "The record is not marked EXECUTED, CERTIFIED or IMPLEMENTED.",
+  "SC-L3": "Every capability classification cites a primary source fetched by the lane; a third-party client is not treated as authority.",
+  "SC-L4": "No real provider value was inspected and no governed or authenticated provider operation was performed."
+ },
+ "final_state": "LINK_REPO_WITNESS_READ_AUTHORIZED__PROVIDER_CAPABILITY_NOT_ESTABLISHED__NOT_IMPLEMENTED",
+ "next_gate": "Owner decision on one of the what_would_reconsider_it routes. Until then the V-R2.S2 STOP stands and no execution is re-attempted."
+}
