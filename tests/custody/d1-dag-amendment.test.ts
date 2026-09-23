@@ -62,7 +62,12 @@ const amendment = JSON.parse(
   PRECONDITION_SETS_WIDENED_BY_THESE_EDGES: Record<string, { amended?: string[] }>
 }
 
-const facts = deriveGraphFacts()
+// Measured through v1.0.3 itself: this file certifies the graph the v1.0.3
+// amendment declared, and a later append must not change what it measures.
+// The v1.0.4 graph has its own file, tests/custody/d1-dag-amendment-v104.test.ts.
+const facts = deriveGraphFacts({
+  throughSource: 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json',
+})
 const g = amendment.RECOMPUTED_GRAPH
 
 describe('the graph is structurally sound', () => {

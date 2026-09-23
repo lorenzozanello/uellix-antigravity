@@ -61,7 +61,22 @@ const GRAPH_SOURCES = [
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.1.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json',
+  'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json',
 ] as const
+
+export type GraphSource = (typeof GRAPH_SOURCES)[number]
+
+/**
+ * The sources up to and including `through`, in amendment order. An amendment
+ * certifies the graph AS IT STOOD when it was written, so its own test must
+ * keep measuring that graph after a later amendment lands; otherwise every
+ * append would force an edit of the previous amendment's assertions, which is
+ * how an append-only record stops being one.
+ */
+function sourcesThrough(through: GraphSource | undefined): readonly GraphSource[] {
+  if (through === undefined) return GRAPH_SOURCES
+  return GRAPH_SOURCES.slice(0, GRAPH_SOURCES.indexOf(through) + 1)
+}
 
 interface Node {
   readonly id: string
@@ -84,13 +99,13 @@ interface RawDoc {
   NEW_EDGES?: Array<Record<string, unknown>>
 }
 
-function collect(): { nodes: Node[]; edges: Edge[]; sourcesRead: string[]; sourcesMissing: string[] } {
+function collect(through?: GraphSource): { nodes: Node[]; edges: Edge[]; sourcesRead: string[]; sourcesMissing: string[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
   const sourcesRead: string[] = []
   const sourcesMissing: string[] = []
 
-  for (const file of GRAPH_SOURCES) {
+  for (const file of sourcesThrough(through)) {
     const path = join(RELEASE_DIR, file)
     if (!existsSync(path)) {
       sourcesMissing.push(file)
@@ -215,8 +230,8 @@ export interface GraphFacts {
  * that can be derived" enforceable rather than aspirational: the amendment's
  * numbers are now checked by a test, so an edited count goes red.
  */
-export function deriveGraphFacts(): GraphFacts {
-  const { nodes, edges, sourcesRead, sourcesMissing } = collect()
+export function deriveGraphFacts(options: { readonly throughSource?: GraphSource } = {}): GraphFacts {
+  const { nodes, edges, sourcesRead, sourcesMissing } = collect(options.throughSource)
 
   const ids = nodes.map((n) => n.id)
   const uniqueIds = Array.from(new Set(ids)).sort(
@@ -314,6 +329,10 @@ export function deriveGraphFacts(): GraphFacts {
     ['N06 reachable from N32', reachableFrom('N32', edges).has('N06')],
     ['N32 reachable from N03', reachableFrom('N03', edges).has('N32')],
     ['N10 reachable from N06', reachableFrom('N06', edges).has('N10')],
+    // v1.0.4: the first authenticated session consumes what N30 deposited.
+    // Checked on every graph, so before v1.0.4 it is honestly false and is
+    // only a FAILURE once the amendment that introduces it is in the union.
+    ['N13 reachable from N30', reachableFrom('N30', edges).has('N13')],
   ]
 
   // N28's disconnection is v1.0.0's own declared external segment, disclosed
@@ -343,7 +362,13 @@ export function deriveGraphFacts(): GraphFacts {
       `incoming edges neither declared nor recorded as a widening: ${unexplainedIncoming.join(', ')}`
     )
   }
-  for (const [label, ok] of properties) if (!ok) failures.push(`reachability lost: ${label}`)
+  const introducedBy: Record<string, string> = {
+    'N13 reachable from N30': 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json',
+  }
+  for (const [label, ok] of properties) {
+    const since = introducedBy[label]
+    if (!ok && (since === undefined || sourcesRead.includes(since))) failures.push(`reachability lost: ${label}`)
+  }
 
   return {
     nodeCount: uniqueIds.length,
