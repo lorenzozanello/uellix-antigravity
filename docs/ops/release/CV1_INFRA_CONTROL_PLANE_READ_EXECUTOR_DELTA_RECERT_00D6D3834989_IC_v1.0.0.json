@@ -1,0 +1,124 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_00D6D3834989_IC_v1.0.0",
+ "authority_class": "INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT",
+ "document_class": "CERTIFICATION_EVENT_RECORD__NO_READ__NO_MUTATION",
+ "append_only": true,
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01), lane CV1-INFRA-SECRET-SCANNER-HARDENING-RECERT-MATERIALIZATION-R1",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "materialization_contract": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.8.json EVENT_CHAIN (the delta recert of the executed candidate, at the path deltaRecertEventPathFor derives from that candidate; package_id, authority_class prefix, exact candidate_head, verdict copied verbatim, integer blocking count), as enforced by scripts/infra-read/certification.ts assessCertificationEvent and scripts/infra-read/run-governed-reads.ts dn0ConfigFor at the candidate.",
+ "CERTIFIED_CANDIDATE": {
+  "candidate_head": "00d6d38349890cb02320390191f41720a051d59d",
+  "candidate_tree": "4253da18596890cf5bf82b666aecfbf8e38a06b9",
+  "candidate_base": "1d47137feb19b564792c3764c9ad34e8a8eda96f",
+  "candidate_base_tree": "d41864ad60dac0cc023e3e5e61fb5392e2c413ef",
+  "candidate_parent_is_base": true,
+  "candidate_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "candidate_pr": "#214",
+  "scope_reviewed": "ONLY the bounded delta 1d47137f..00d6d383 (one commit, 11 files: 3 added, 8 modified; both docs files are additions): the shared private-key detector (scripts/scan-secrets.ts PRIVATE_KEY_BLOCK_PATTERN reused by the runtime evidence scanner), the documented GitHub repository-name grammar at the three claimed defense points (deferral, witness-target registration, EC-1 re-scan), the mixed-detector semantics of the V-R2.S2 projects[*].link.repo entropy exception, preservation of the v1.0.7 inventory witness, the six-event chain with the b25f2d32 delta recert fixed as history, and amendment v1.0.8 with its test manifest. Unrelated Infra architecture was not reopened.",
+  "candidate_verification_performed_by_this_lane": "Head and tree re-derived from git (rev-parse HEAD and HEAD^{tree}) and equal to refs/heads/codex/cv1-infra-control-plane-read-authority-r1 and refs/pull/214/head, read anonymously (credential helper reset, no askpass, no terminal prompt). The b25f2d32 delta recert blob (5440347b753f0b95b89091f1a646f78983ce708d) is identical at the base and at the candidate. During the review, PR #214 head was 00d6d383 with CI 'Lint, typecheck, test, build' success and Vercel success (anonymous public check-run and status reads)."
+ },
+ "VERDICT": {
+  "verdict": "INFRA_SECRET_SCANNER_HARDENING_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+  "blocking_findings": 0,
+  "nonblocking_findings": 7,
+  "provenance": "CONDUCTED AND MATERIALIZED IN THE SAME INDEPENDENT REVIEW CONVERSATION (lane CV1-INFRA-SECRET-SCANNER-HARDENING-RECERT-R1, then this materialization lane, in continuity). This is not the conversation that authored the delta. Independence is PROCEDURAL (separate conversation and lane, governed by the ODS workflow); it is not cryptographically provable and no such proof is claimed. The verdict token and counts are copied verbatim from the issued decision.",
+  "determinations": {
+   "PRIVATE_KEY_DETECTOR_SHARED": "YES",
+   "PROVIDER_INPUT_ANNOTATION_BYPASS": "CLOSED",
+   "PROVIDER_GRAMMAR": "SUPPORTED (NB-3)",
+   "MIXED_DETECTOR_FAIL_CLOSED": "YES",
+   "EXACT_ENTROPY_EXCEPTION": "PASS",
+   "INVENTORY_WITNESS_PRESERVED": "YES",
+   "HISTORICAL_EVENT_ISOLATION": "PASS",
+   "NEW_EVENT_CHAIN_TERMINATES": "YES (NB-5)",
+   "REGISTRY": "25_TOTAL / 9_EXECUTE_NOW / V-R4_IMMEDIATE_ONLY"
+  }
+ },
+ "EVIDENCE_SUMMARY": {
+  "delta_scope": "git diff --name-status 1d47137f 00d6d383: 3 A (amendment v1.0.8, manifest amendment v1.0.8, tests/infra-read/scanner-hardening.test.ts), 8 M (six scripts/infra-read files, scripts/scan-secrets.ts, tests/infra-read/entrypoint.test.ts). ops.ts, guards.ts, protocol.ts, certification.ts, safe-diagnostic.ts, xcc1.ts and xcc1-normative.ts are byte-identical to the base. No sealed or historical artifact is modified.",
+  "shared_detector": "The runtime catalog entry PRIVATE_KEY_BLOCK holds the exported repository pattern by object identity. Randomized superset check (200,000 generated strings): every string the previous repository pattern matched is matched by the shared pattern and by the runtime scanner. Eight header label forms (RSA, EC, OPENSSH, ENCRYPTED, DSA, PGP with and without the BLOCK armor, bare) are detected by both scanners and STOP the real executor at V-R2.S2, at link.repo and at name, with and without entropy. The repository gate's line annotation is never honoured at runtime (same field, adjacent field, own line). Test headers were assembled at runtime; no header is committed.",
+  "mixed_detectors": "Real executor: private key only -> STOP; grammar-valid entropy only -> deferred -> EXPECTED_PROVIDER_IDENTIFIER after the same-run witness; private key + entropy -> STOP naming both; GitHub or Vercel token prefix + entropy -> STOP; deferrable entropy at link.repo plus any other finding in another field -> STOP (no partial deferral); link.type other than github -> STOP. EC-1 with forged adjudication markers explains nothing for any value that trips another detector.",
+  "provider_grammar": "Read from GitHub's public documentation (unauthenticated): the rendered page docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository and its source reusable data/reusables/repositories/repo-name.md in github/docs state that the name must not exceed 100 characters and can only contain ASCII letters, digits and the characters '.', '-' and '_'. ^[A-Za-z0-9._-]{1,100}$ represents that rule faithfully; no flags, no normalization; a trailing newline is rejected. Space, slash, colon, CR, LF, tab, NUL, non-ASCII, homoglyph, 101 characters and empty are refused; 100 characters, '.', '_', '.git' and ordinary names are accepted.",
+  "defense_layers": "Each grammar layer removed alone: the system still fails closed (without deferral grammar, witness registration STOPs with STOP_WITNESS_UNKNOWN). Deferral and registration both removed: a grammar-invalid name is adjudicated only if GitHub returns that exact name, and the EC-1 layer still leaves it unexplained. A private key STOPs under every layer combination (the detector does not depend on the grammar).",
+  "inventory_witness": "G-R5 requests carry only a page number (no Vercel value reaches GitHub); case-flipped name, owner mismatch, incoherent full_name, zero match and duplicate match each STOP; the witness code changed only by the added grammar check.",
+  "event_chain": "Real git in a disposable clone, only the fetch intercepted, 14/14: candidate with no event -> STOP_ARMING_LIMB1_UNSATISFIED (absent); a PASS event at the derived path arms (6 events, 9 pins); an event naming b25f2d32, the b25f2d32 event bytes copied to the new path, a FAIL verdict, blocking 1 and a wrong package_id all STOP; executing b25f2d32 from the new head -> STOP_STALE_DN0; a code change after certification, removal of the historical event and a dirty worktree -> STOP_STALE_DN0; a successor candidate derives and arms on its own distinct path.",
+  "registry": "Derived from the candidate's REGISTRY: 25 operations (21 GOVERNED_READ, 4 PACMI); EXECUTE_NOW governed-read classes exactly G-R1, G-R2, G-R3, G-R4, G-R5, V-R1, V-R2, V-R3, X-R1 (9); V-R4.DEPLOYMENTS F_IMMEDIATE_ONLY_BEFORE_MUTATION.",
+  "mutation": "Author battery subset P01-P10, W18, W19: 12/12 AS_EXPECTED; self-test PASS (the battery fails on a real survivor). Reviewer's 19 independent mutants X01-X19: 17 KILLED; X05 SURVIVED (NB-1); X15 SURVIVED as an EQUIVALENT mutant (NB-7).",
+  "gates": "tests/infra-read + tests/scan-secrets.test.ts 421/421; reviewer probes 46/46; typecheck exit 0; eslint on the delta exit 0; secrets:scan PASS; authority:seal:verify PASS; ods:scope PASS (11 files, 0 violations); ods:poststate PASS (6/6 steps); manifest amendment v1.0.8 valid against UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 (ajv 8.20). ods:prestate: HEAD, TREE and CLEAN PASS; BRANCH FAIL only because the review worktree was detached at the exact SHA."
+ },
+ "PRIOR_FINDINGS_DISPOSITION": {
+  "source": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_B25F2D32E414_IC_v1.0.0.json (historical, unchanged)",
+  "NB-1": "CLOSED by candidate 00d6d383: the runtime scanner carries the shared private-key detector, and link.repo is deferred only inside the documented repository-name grammar. Measured by this review; the historical record keeps its own 'OPEN — NOT FIXED' text as history.",
+  "NB-2..NB-9": "Not dispositioned by this review. They remain OPEN as that record states. NB-4 and NB-5 of that record are restated below as this review's NB-4 and NB-5 because this delta touches them."
+ },
+ "NONBLOCKING_FINDINGS": {
+  "reported_count": 7,
+  "enumeration_status": "COMPLETE. All 7 are OPEN. This record's PASS dispositions none of them.",
+  "items": [
+   {
+    "id": "NB-1",
+    "finding": "The multi-label generality of the shared pattern ('(?:[A-Z0-9]+ )*', which v1.0.8 describes as covering any PEM private-key header label) is not pinned by any test: narrowing it to at most one label (reviewer mutant X05) survives the author's suites and the reviewer's probes. No standard multi-word private-key label is known to be affected.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-2",
+    "finding": "Framings outside five-dash PEM armor (the SSH2 four-dash 'BEGIN SSH2 ENCRYPTED PRIVATE KEY' form, the PuTTY key-file form) are detected by neither scanner, before or after this delta. At link.repo the grammar excludes them; elsewhere in a projection they STOP only if another detector (typically OPAQUE_HIGH_ENTROPY on the body) fires.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-3",
+    "finding": "The documented grammar is a repository-CREATION rule, not a stated contract on the name field of GET /user/repos or on Vercel's link.repo, and it does not encode reserved names. A real name outside it would STOP (availability, not safety).",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-4",
+    "finding": "The EC-1 re-scan grammar layer is the ONLY grammar guard in the standalone EC-1 CLI (isAdjudicatedValue = () => true): without it a forged marker explains a grammar-invalid entropy value. Present in the candidate; the standalone-CLI weakness itself is the earlier record's NB-4, still OPEN.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-5",
+    "finding": "Successor-chain contiguity is still not code-enforced: a successor candidate arms with the fixed b25f2d32 event and its own event, whether or not this 00d6d383 event has been added to the fixed list. The successor duty remains procedural (the earlier record's NB-5).",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-6",
+    "finding": "Wording: v1.0.8 says a private-key header 'anywhere in a projection' STOPs; G-R5 pages are by design reduced to target matches before the scan, so a non-matching repository's name on a G-R5 page is discarded unscanned (never recorded).",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-7",
+    "finding": "The executor's detector layer and the grammar layer overlap exactly for private keys (every PEM header contains a space): reviewer mutant X15 (private key made deferrable, grammar kept) is EQUIVALENT and survives. Each layer is independently sufficient (measured in both directions), but only layer-combination removal can show it.",
+    "status": "OPEN"
+   }
+  ]
+ },
+ "REVIEWER_IDENTITY": {
+  "reviewer": "Claude Opus 5.5 (claude-opus-5-5) under Claude Code Desktop, detached worktree at 00d6d383.",
+  "execution_date": "2026-09-23",
+  "execution_instant": "NOT RECORDED. Only the date is stated; no instant is reconstructed."
+ },
+ "OPERATIONS_BY_THE_REVIEW": {
+  "GOVERNED_READS_EXECUTED": "ZERO",
+  "PACMI_AUTHENTICATED_OPS_EXECUTED": "ZERO",
+  "PROVIDER_MUTATIONS_EXECUTED": "ZERO",
+  "REAL_PROVIDER_VALUES_INSPECTED": "ZERO",
+  "SECRETS_EXPOSED": "ZERO",
+  "note": "Only public documentation and anonymous public-repository metadata (PR head, check runs, commit status, remote refs) were read."
+ },
+ "WHAT_THIS_EVENT_DOES_AND_DOES_NOT_DO": {
+  "does": "Materializes the recertification of the v1.0.8 delta at the path dn0ConfigFor derives for 00d6d383, so the runtime LIMB_1 predicate can find it as the sixth event, bound to that executable candidate.",
+  "does_not": [
+   "Arm anything by itself. AC-1 is evaluated at runtime on every execution: runtime RC-9a, then DN-0 as the last pre-read act.",
+   "Replace or edit any historical event (455b5426, 3dc12909, 81b56ed4, 4a3c2837, b25f2d32); each stays bound to its own candidate and required.",
+   "Fix, waive or disposition any of the seven findings above, or NB-2..NB-9 of the b25f2d32 record.",
+   "Authorize execution now: execution requires a fresh explicit human confirmation first.",
+   "Authorize any read beyond the effective read set, any mutation, V-R4, or M-8 / M-9.",
+   "Change the certified effective package: it is an ADDED certification-event file, the class allowedPostCertificationAdditions permits."
+  ]
+ },
+ "final_state": "INFRA_00D6D383_RECERT_MATERIALIZED__READY_FOR_FRESH_HUMAN_CONFIRMATION",
+ "next_gate": "STOP for a fresh explicit human confirmation. Only after it: fresh RC-9a, then fresh DN-0 as the last pre-read act, then all 9 EXECUTE_NOW read classes from scratch with --certified-candidate 00d6d38349890cb02320390191f41720a051d59d."
+}
