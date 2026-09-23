@@ -85,6 +85,18 @@ describe('the bridge source is code and nothing else', () => {
     expect(WCM_BRIDGE_POWERSHELL_SOURCE).toContain('present = $null')
   })
 
+  it('binds its P/Invoke signatures in-process and starts no compiler child', () => {
+    // Add-Type starts csc.exe and cvtres.exe on every call: processes that live
+    // a few milliseconds inside the custody process tree and routinely exit
+    // before an external observer can read their command line or environment
+    // block. The bridge emits its signatures with Reflection.Emit instead.
+    expect(WCM_BRIDGE_POWERSHELL_SOURCE).not.toMatch(/Add-Type/i)
+    expect(WCM_BRIDGE_POWERSHELL_SOURCE).toContain('DefineDynamicAssembly')
+    for (const entry of ['CredWriteW', 'CredReadW', 'CredDeleteW', 'CredEnumerateW', 'AttachConsole']) {
+      expect(WCM_BRIDGE_POWERSHELL_SOURCE).toContain(`Entry = '${entry}'`)
+    }
+  })
+
   it('reads the secret from stdin and never from a parameter', () => {
     expect(WCM_BRIDGE_POWERSHELL_SOURCE).toContain('[Console]::In.ReadLine()')
     expect(WCM_BRIDGE_POWERSHELL_SOURCE).not.toMatch(/param\s*\(/i)
@@ -104,10 +116,10 @@ describe('the bridge environment allowlist', () => {
     }
   })
 
-  it('includes TEMP, which Add-Type needs to compile', () => {
-    // Recorded as a control because its absence is a measured past failure:
-    // without TEMP the bridge throws inside Add-Type and the error surfaces as
-    // a CredWriteW failure, pointing at the one call that never ran.
+  it('includes TEMP, which PowerShell itself uses', () => {
+    // Kept as a control because its absence is a measured past failure: a
+    // bridge started without TEMP threw before reaching any operation, and the
+    // error surfaced as a CredWriteW failure pointing at a call that never ran.
     expect(BRIDGE_ENV_ALLOWLIST).toContain('TEMP')
   })
 })

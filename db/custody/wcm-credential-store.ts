@@ -31,17 +31,25 @@
 //
 // That is what makes WCM-C3 a property of every future invocation rather than
 // of the one run that happened to be observed.
+//
+// ---------------------------------------------------------------------------
+// THE VALUE CROSSES THIS MODULE AS BYTES, NEVER AS A JAVASCRIPT STRING
+// ---------------------------------------------------------------------------
+// A JavaScript string cannot be zeroed. The deposit framing and the retrieval
+// blob therefore travel as Buffers through `db/custody/base64-bytes.ts`, and
+// bridge stdout is collected as bytes. This removes avoidable copies; it does
+// not make the process memory-safe, and OF-CUST-1 states what remains.
 
 import { spawn } from 'node:child_process'
+import { decodeBase64Bytes, encodeBase64Bytes } from './base64-bytes'
 import { WCM_BRIDGE_POWERSHELL_SOURCE } from './wcm-powershell-source'
 
 /** The Windows PowerShell 5.1 host. Present on every supported workstation. */
 const POWERSHELL_EXECUTABLE = 'powershell.exe'
 
 /**
- * The bridge compiles C# on first use via `Add-Type`. A cold run has been
- * measured in the low seconds; this ceiling exists so a wedged child cannot
- * hang a demonstration indefinitely, not as a performance budget.
+ * A bridge call has been measured well under the ceiling; this exists so a
+ * wedged child cannot hang a demonstration indefinitely, not as a budget.
  */
 const BRIDGE_TIMEOUT_MS = 60_000
 
@@ -56,6 +64,8 @@ export type CustodyErrorCode =
   | 'CUSTODY_REMOVE_FAILED'
   | 'CUSTODY_SWEEP_FAILED'
   | 'CUSTODY_TARGET_INVALID'
+  | 'CUSTODY_CONSOLE_PROBE_FAILED'
+  | 'CUSTODY_DELIVERY_TOPOLOGY_UNSAFE'
 
 export class CustodyError extends Error {
   readonly name = 'CustodyError'
@@ -99,9 +109,21 @@ export function bridgeArgv(): readonly string[] {
  * A target name is not a secret, but an unconstrained one is a way to make
  * this module read or delete a credential it was never meant to. The grammar
  * is deliberately narrow, and `sweepCredentials` additionally refuses any
- * prefix outside the reserved namespaces.
+ * prefix outside `SWEEPABLE_TARGET_PREFIXES`.
  */
 const TARGET_NAME_GRAMMAR = /^[A-Za-z0-9][A-Za-z0-9._:\-]{0,255}$/
+
+/**
+ * The ONLY namespace a sweep may enumerate, and so the only one a recovery
+ * may delete from.
+ *
+ * A sweep is the recovery path for a demonstration killed between deposit and
+ * cleanup (OF-CUST-3). It must never reach the real credential: removing the
+ * real entry is the rotation act N28 governs, not a cleanup. Bounding the
+ * sweep here, in the mechanism, makes that a property of the code rather than
+ * of whoever calls it.
+ */
+export const SWEEPABLE_TARGET_PREFIXES = ['UELLIX-N05-SENTINEL'] as const
 
 function assertValidTarget(target: string): void {
   if (!TARGET_NAME_GRAMMAR.test(target)) {
@@ -126,7 +148,8 @@ export const BRIDGE_ENV_ALLOWLIST = [
   'PATH',
   'PATHEXT',
   'COMSPEC',
-  // csc, invoked by Add-Type, writes its intermediates here.
+  // PowerShell itself uses the temp directory; a bridge started without it
+  // failed before reaching any operation.
   'TEMP',
   'TMP',
   'USERPROFILE',
@@ -148,21 +171,29 @@ function bridgeEnvironment(): NodeJS.ProcessEnv {
 }
 
 interface BridgeRequest {
-  readonly op: 'deposit' | 'retrieve' | 'probe' | 'remove' | 'sweep'
+  readonly op: 'deposit' | 'retrieve' | 'probe' | 'remove' | 'sweep' | 'console'
   readonly target?: string
   readonly username?: string
   readonly prefix?: string
+  readonly pid?: number
 }
 
 interface BridgeResponse {
   readonly ok: boolean
   readonly present?: boolean | null
   readonly deleted?: boolean
+  readonly attached?: boolean | null
   readonly win32?: number
-  readonly blobBase64?: string
+  readonly blobFollows?: boolean
   readonly targets?: string[]
   readonly error?: string
   readonly exceptionType?: string
+}
+
+interface BridgeResult {
+  readonly response: BridgeResponse
+  /** The decoded second line, for a successful retrieve only. Caller zeroes. */
+  readonly blob: Buffer | null
 }
 
 /**
@@ -203,10 +234,25 @@ function describeBridgeFailure(res: BridgeResponse): string {
   return parts.length === 0 ? '' : ` (${parts.join(': ')})`
 }
 
-async function invokeBridge(
-  request: BridgeRequest,
-  secret?: Buffer
-): Promise<BridgeResponse> {
+/**
+ * Split raw stdout bytes into lines without converting them to a string.
+ * A CR before the LF is dropped and empty lines are skipped.
+ */
+function splitLines(raw: Buffer): Buffer[] {
+  const lines: Buffer[] = []
+  let start = 0
+  for (let i = 0; i <= raw.length; i += 1) {
+    if (i === raw.length || raw[i] === 0x0a) {
+      let end = i
+      if (end > start && raw[end - 1] === 0x0d) end -= 1
+      if (end > start) lines.push(raw.subarray(start, end))
+      start = i + 1
+    }
+  }
+  return lines
+}
+
+async function invokeBridge(request: BridgeRequest, secret?: Buffer): Promise<BridgeResult> {
   if (!isWindowsCredentialManagerAvailable()) {
     throw new CustodyError(
       'CUSTODY_PLATFORM_UNSUPPORTED',
@@ -217,35 +263,39 @@ async function invokeBridge(
 
   const requestLine = Buffer.from(JSON.stringify(request), 'utf8').toString('base64')
 
-  return await new Promise<BridgeResponse>((resolve, reject) => {
+  return await new Promise<BridgeResult>((resolve, reject) => {
     const child = spawn(POWERSHELL_EXECUTABLE, bridgeArgv(), {
       // Every stream is a pipe. No stream is inherited, so nothing the bridge
       // writes can reach a console, and nothing a console holds can reach it.
       stdio: ['pipe', 'pipe', 'pipe'] as const,
+      // The bridge gets its own hidden console, and with it a conhost.exe. That
+      // conhost inherits the bridge's environment — which is the ALLOWLIST
+      // below and never carries the delivery variable. The consumer is a
+      // different matter; see process-delivery.ts.
       windowsHide: true,
       // The bridge inherits an ALLOWLIST, not this process's environment. An
       // inherited block is how a variable reaches a process nobody intended it
       // to reach, and the bridge needs very little.
       //
-      // TEMP and TMP are on the list for a measured reason: `Add-Type`
-      // compiles the C# through csc, which writes to the temp directory, and a
-      // bridge started without them fails inside Add-Type before it ever
-      // reaches an operation. The first run of this harness failed exactly
-      // there, and the failure surfaced as a CredWriteW error because the
-      // bridge's catch reported the exception without its type. Both were
-      // fixed: the allowlist below, and the exception type now travelling in
-      // the error message.
+      // TEMP and TMP are on the list for a measured reason: a bridge started
+      // without them failed before it ever reached an operation.
       env: bridgeEnvironment(),
     })
 
-    let stdout = ''
+    // stdout is collected as BYTES. The retrieval blob travels on it, and a
+    // string accumulator would leave an unzeroable copy of the value here.
+    const stdoutChunks: Buffer[] = []
     let stderr = ''
     let settled = false
+    const zeroStdout = (): void => {
+      for (const c of stdoutChunks) c.fill(0)
+    }
 
     const timer = setTimeout(() => {
       if (settled) return
       settled = true
       child.kill()
+      zeroStdout()
       reject(
         new CustodyError(
           'CUSTODY_BRIDGE_TIMEOUT',
@@ -254,19 +304,23 @@ async function invokeBridge(
       )
     }, BRIDGE_TIMEOUT_MS)
 
-    child.stdout.setEncoding('utf8')
-    child.stdout.on('data', (chunk: string) => {
-      stdout += chunk
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdoutChunks.push(chunk)
     })
     child.stderr.setEncoding('utf8')
     child.stderr.on('data', (chunk: string) => {
       stderr += chunk
     })
+    // A bridge that dies before reading stdin makes the write fail with EPIPE.
+    // Without a listener that is an uncaught exception in the launcher; with
+    // one, the 'close' handler below reports the real outcome.
+    child.stdin.on('error', () => {})
 
     child.on('error', (err) => {
       if (settled) return
       settled = true
       clearTimeout(timer)
+      zeroStdout()
       reject(
         new CustodyError(
           'CUSTODY_BRIDGE_SPAWN_FAILED',
@@ -279,25 +333,50 @@ async function invokeBridge(
       if (settled) return
       settled = true
       clearTimeout(timer)
-      const line = stdout.trim().split(/\r?\n/).filter(Boolean).pop()
-      if (line === undefined) {
-        reject(
-          new CustodyError(
-            'CUSTODY_BRIDGE_PROTOCOL',
-            `The credential bridge produced no response line. stderr: ${scrubDiagnostic(stderr)}`
-          )
-        )
-        return
-      }
+      const raw = Buffer.concat(stdoutChunks)
+      zeroStdout()
       try {
-        resolve(JSON.parse(Buffer.from(line, 'base64').toString('utf8')) as BridgeResponse)
-      } catch {
-        reject(
-          new CustodyError(
-            'CUSTODY_BRIDGE_PROTOCOL',
-            `The credential bridge response was not decodable. stderr: ${scrubDiagnostic(stderr)}`
+        const lines = splitLines(raw)
+        const head = lines[0]
+        if (head === undefined) {
+          reject(
+            new CustodyError(
+              'CUSTODY_BRIDGE_PROTOCOL',
+              `The credential bridge produced no response line. stderr: ${scrubDiagnostic(stderr)}`
+            )
           )
-        )
+          return
+        }
+        let response: BridgeResponse
+        try {
+          // The response line is NON-SECRET by protocol, so a string is fine.
+          response = JSON.parse(decodeBase64Bytes(head).toString('utf8')) as BridgeResponse
+        } catch {
+          reject(
+            new CustodyError(
+              'CUSTODY_BRIDGE_PROTOCOL',
+              `The credential bridge response was not decodable. stderr: ${scrubDiagnostic(stderr)}`
+            )
+          )
+          return
+        }
+        let blob: Buffer | null = null
+        if (response.blobFollows === true) {
+          const blobLine = lines[1]
+          if (blobLine === undefined) {
+            reject(new CustodyError('CUSTODY_BRIDGE_PROTOCOL', 'The bridge announced a blob and sent none.'))
+            return
+          }
+          try {
+            blob = decodeBase64Bytes(blobLine)
+          } catch {
+            reject(new CustodyError('CUSTODY_BRIDGE_PROTOCOL', 'The blob line was not valid base64.'))
+            return
+          }
+        }
+        resolve({ response, blob })
+      } finally {
+        raw.fill(0)
       }
     })
 
@@ -309,14 +388,18 @@ async function invokeBridge(
     // when it returns. Zeroing immediately after the call — the obvious way to
     // write this — races the flush and sends the bridge base64 of NUL bytes,
     // which surfaces as a FormatException inside the bridge and reads, at the
-    // top of the stack, as "CredWriteW failed". It is a data-loss bug wearing
-    // a Win32 error's clothes, and it was found by running the mechanism
-    // rather than by reading it.
+    // top of the stack, as "CredWriteW failed".
     child.stdin.write(Buffer.from(`${requestLine}\n`, 'ascii'))
     if (secret === undefined) {
       child.stdin.end()
     } else {
-      const framed = Buffer.from(`${secret.toString('base64')}\n`, 'ascii')
+      // Framed from bytes to bytes: `secret.toString('base64')` would leave an
+      // unzeroable string copy of the value in this heap.
+      const encoded = encodeBase64Bytes(secret)
+      const framed = Buffer.alloc(encoded.length + 1)
+      encoded.copy(framed)
+      encoded.fill(0)
+      framed[framed.length - 1] = 0x0a
       child.stdin.end(framed, () => {
         framed.fill(0)
       })
@@ -341,7 +424,7 @@ export async function depositCredential(params: {
   if (params.secret.length === 0) {
     throw new CustodyError('CUSTODY_DEPOSIT_FAILED', 'Refusing to deposit an empty value.')
   }
-  const res = await invokeBridge(
+  const { response: res } = await invokeBridge(
     { op: 'deposit', target: params.target, username: params.username },
     params.secret
   )
@@ -358,15 +441,15 @@ export async function depositCredential(params: {
  * N29's reader. Return the stored value as a Buffer, or null when the entry is
  * absent.
  *
- * The caller owns the returned Buffer and is expected to zero it. A Buffer is
- * returned rather than a string because a JavaScript string cannot be zeroed;
- * see `db/custody/process-delivery.ts` for where that limitation becomes
- * unavoidable and how it is disclosed.
+ * The caller owns the returned Buffer and is expected to zero it. It is
+ * decoded from bridge stdout BYTES; no JavaScript string of the value is
+ * created on this path.
  */
 export async function retrieveCredential(target: string): Promise<Buffer | null> {
   assertValidTarget(target)
-  const res = await invokeBridge({ op: 'retrieve', target })
+  const { response: res, blob } = await invokeBridge({ op: 'retrieve', target })
   if (!res.ok) {
+    blob?.fill(0)
     if (res.win32 === ERROR_NOT_FOUND) return null
     throw new CustodyError(
       'CUSTODY_RETRIEVE_FAILED',
@@ -374,10 +457,10 @@ export async function retrieveCredential(target: string): Promise<Buffer | null>
       res.win32
     )
   }
-  if (typeof res.blobBase64 !== 'string') {
+  if (blob === null) {
     throw new CustodyError('CUSTODY_BRIDGE_PROTOCOL', 'Retrieve succeeded but returned no blob.')
   }
-  return Buffer.from(res.blobBase64, 'base64')
+  return blob
 }
 
 /**
@@ -391,7 +474,7 @@ export async function retrieveCredential(target: string): Promise<Buffer | null>
  */
 export async function probeCredential(target: string): Promise<boolean> {
   assertValidTarget(target)
-  const res = await invokeBridge({ op: 'probe', target })
+  const { response: res } = await invokeBridge({ op: 'probe', target })
   if (!res.ok || typeof res.present !== 'boolean') {
     throw new CustodyError(
       'CUSTODY_PROBE_FAILED',
@@ -412,7 +495,7 @@ export async function probeCredential(target: string): Promise<boolean> {
  */
 export async function removeCredential(target: string): Promise<boolean> {
   assertValidTarget(target)
-  const res = await invokeBridge({ op: 'remove', target })
+  const { response: res } = await invokeBridge({ op: 'remove', target })
   if (!res.ok) {
     throw new CustodyError(
       'CUSTODY_REMOVE_FAILED',
@@ -424,19 +507,27 @@ export async function removeCredential(target: string): Promise<boolean> {
 }
 
 /**
- * Enumerate generic entries under a prefix.
+ * Enumerate generic entries under a prefix inside `SWEEPABLE_TARGET_PREFIXES`.
  *
  * This is the recovery path for the one case RC-5's derived gap names and the
  * two removal paths do not reach: a process killed between deposit and
  * cleanup leaves the VAULT ENTRY behind, because the entry is
  * CRED_PERSIST_LOCAL_MACHINE by design and no teardown in a dead process can
- * run. The environment variable is not at risk in that case — it never existed
- * outside the consuming child's own block — but the entry is, and a sweep is
- * the only thing that finds it.
+ * run (OF-CUST-3). The environment variable is not at risk in that case — it
+ * never existed outside the consuming child's own block, and the child dies
+ * with its launcher's job — but the entry is, and a sweep is the only thing
+ * that finds it.
  */
 export async function sweepCredentials(prefix: string): Promise<string[]> {
   assertValidTarget(prefix)
-  const res = await invokeBridge({ op: 'sweep', prefix })
+  if (!SWEEPABLE_TARGET_PREFIXES.some((p) => prefix === p || prefix.startsWith(`${p}-`))) {
+    throw new CustodyError(
+      'CUSTODY_TARGET_INVALID',
+      `Refusing to sweep "${prefix}": only ${SWEEPABLE_TARGET_PREFIXES.join(', ')} may be swept. ` +
+        'Removing a real credential entry is the rotation act N28 governs, never a sweep.'
+    )
+  }
+  const { response: res } = await invokeBridge({ op: 'sweep', prefix })
   if (!res.ok) {
     throw new CustodyError(
       'CUSTODY_SWEEP_FAILED',
@@ -445,4 +536,29 @@ export async function sweepCredentials(prefix: string): Promise<string[]> {
     )
   }
   return res.targets ?? []
+}
+
+/**
+ * Whether process `pid` is attached to a console, answered by the bridge,
+ * which detaches from its own console and calls AttachConsole(pid).
+ *
+ * Process delivery asks this about ITS OWN pid before reading the vault. A
+ * launcher with no console makes Windows give the consumer a fresh
+ * conhost.exe, and that conhost inherits the consumer's environment block,
+ * value included — the measured blocker B-1. A probe that fails throws:
+ * "could not tell" is never read as "has a console".
+ */
+export async function isProcessAttachedToConsole(pid: number): Promise<boolean> {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    throw new CustodyError('CUSTODY_CONSOLE_PROBE_FAILED', `Not a process id: ${String(pid)}.`)
+  }
+  const { response: res } = await invokeBridge({ op: 'console', pid })
+  if (!res.ok || typeof res.attached !== 'boolean') {
+    throw new CustodyError(
+      'CUSTODY_CONSOLE_PROBE_FAILED',
+      `The console-attachment probe could not be completed${describeBridgeFailure(res)}.`,
+      res.win32
+    )
+  }
+  return res.attached
 }

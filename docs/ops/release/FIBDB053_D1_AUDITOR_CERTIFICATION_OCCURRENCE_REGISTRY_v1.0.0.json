@@ -149,17 +149,118 @@
       "what_the_verdict_string_itself_discloses": "PASS WITH NONBLOCKING FINDINGS: zero blockers, ten non-blocking findings. The certifier re-derived the graph independently and found it COINCIDENT, and reproduced five mutants with a different JSON Schema engine. Non-blocking finding NB-1 recorded that human_custodian had no producer node while planned_removal_date was given one at N31, classified the human_custodian gap NONBLOCKING_FUTURE_INPUT, and expressly declined to rule on the asymmetry, calling it one of SCOPE rather than of CLASS.",
       "what_the_successor_lane_did_with_it": "NB-1 was put to the product owner, who ratified ADD_N32_OWNER_INTAKE at OD-N32-1, recorded at docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json and implemented as node N32 by DAG amendment v1.0.3. The other nine non-blocking findings are NOT addressed by the CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1 lane and remain OPEN.",
       "node_status_unchanged_by_this_record": "ZERO nodes closed. N05, N06 and N07 remain OPEN and NOT SATISFIED; N29, N30 and N31 remain declared and unexecuted. Certifying a consolidated authority package is not demonstrating a mechanism, supplying an owner datum, or filling an evidence artifact."
+    },
+    {
+      "occurrence_id": "CERT-OCC-CUSTODY-REALIZATION-R1",
+      "subject_node": "NONE CLOSED. The certification examined the custody realization candidate — the N29 reader, the N30 depositor mechanism, the N05 sentinel demonstration and its harness, the N32 owner-intake node and DAG amendment v1.0.3 — and was the gate at which N05 could have been certified. It was not.",
+      "subject_package": "FIBDB053-D1-AUDITOR-CUSTODY-REALIZATION",
+      "certified_artifacts": [],
+      "certified_artifacts_note": "EMPTY BY CONSTRUCTION. A FAIL certifies nothing, so this occurrence contributes nothing to CERTIFIED_ARTIFACT_COUNT. What was EXAMINED is pinned separately below, so a reader can tell exactly which bytes failed.",
+      "examined_candidate_commit": "feb849154af8bc75d18d5477512060db217771fb",
+      "examined_candidate_tree": "67e8f57f346ceeb73adb37164acfb22bb82f3935",
+      "examined_parent_commit": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+      "examined_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0.json",
+          "blob_sha": "51cecd661a412bc33f7b126948292cc94c498063"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_v1.0.0.json",
+          "blob_sha": "6c0831731e996e91162a864b1083d69e80b9bbeb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "blob_sha": "8cfeaefb1e239c55cc9064000f4749c6d31fcbab"
+        },
+        {
+          "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json",
+          "blob_sha": "83a64ff872b8e2f42e9ab13b762dc42b42b9b2fb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "907edad77bd0c588f6fd02ff5dbc17b8e51745ac"
+        }
+      ],
+      "examined_implementation": "db/custody/** and scripts/custody/** and tests/custody/** at examined_candidate_commit.",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL IMPLEMENTATION CERTIFICATION, including an independent Windows sentinel reproduction with an external PEB environment-block and command-line observer, and a mutation battery.",
+      "VERDICT": "D1_AUDITOR_CUSTODY_REALIZATION_IC_FAIL",
+      "certification_date": "2026-09-23",
+      "blocking_findings": 1,
+      "nonblocking_findings": 9,
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate verdict document exists and none is reconstructed.",
+      "BLOCKING_FINDING_B_1": {
+        "id": "B-1",
+        "finding": "The delivered value was present in the environment block of a SECOND process. process-delivery.ts spawned the consumer with windowsHide:true; Node passes CREATE_NO_WINDOW; the consumer was given a new console, and the conhost.exe hosting it — a child of the consumer — carried UELLIX_AUDITOR_DATABASE_URL and the sentinel value in its own environment block, on the success, failure and kill paths.",
+        "how_it_was_measured": "By reading each process's environment block from its PEB with an external reader, not by reasoning. A negative control discriminated: the conhost.exe children of the bridge, whose environment is an allowlist, did not carry the variable.",
+        "why_the_candidate_reported_green": "The candidate's own RC7 control exempted conhost.exe BY NAME, on the stated reason that the console subsystem attaches it rather than the application handing it an environment block. The certifier ran the candidate's own demonstration under the external reader in the same session: it printed RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD PASSED, 'ENVIRONMENT-INHERITING CHILDREN: NONE' and SATISFIED_CANDIDATE while two credential-bearing conhost.exe processes were observed.",
+        "why_it_blocks": "RC-7's binding_status in the N05 readiness authority: a child that retains the value breaches WCM-C1's own scope and STOP_SECRET_DELIVERY_NONCOMPLIANT fires on that ground. The candidate's own finding F_2 applied exactly that standard to a runtime helper (esbuild).",
+        "measured_alternatives_at_certification": "windowsHide:false and detached:true each removed the credential-bearing conhost child; detached:true also removes the consumer from the launcher's kill-on-close job.",
+        "BLOCKER_STATUS": "OPEN. It remains open until an INDEPENDENT recertification of a successor candidate records it closed. A remediation lane's own statement that it is fixed does not close it, and this entry is not to be edited to say otherwise."
+      },
+      "NONBLOCKING_FINDINGS": [
+        {
+          "id": "NB-1",
+          "finding": "Mutants M05 (value appended to the bridge argv), M06 (process.env written during delivery), M07 (assertArgvIsClean disabled) and M08 (ambient-value refusal disabled) survived the whole custody suite, 146 of 146 green. The manifest attributed CN3 and CN5 to tests that did not exist."
+        },
+        {
+          "id": "NB-2",
+          "finding": "Mutants D11 (process.env written and then deleted during delivery) and D13 (base64 of the value appended to the consumer argv) survived the candidate's demonstration harness, which reported SATISFIED_CANDIDATE. Its command-line search recognised only the raw value."
+        },
+        {
+          "id": "NB-3",
+          "finding": "RC3_DEPOSIT_ARGV_CLEAN did not assert that the deposit and retrieval bridge processes were observed at all, and the command-line poller's effective cadence was about 39 polls per run rather than one per 100ms."
+        },
+        {
+          "id": "NB-4",
+          "finding": "OF-CUST-1 was understated: at least twelve copies of the value in three encodings, including base64 copies created on the RETRIEVAL path, remained in the launcher heap for the launcher's whole lifetime, not only a string at the spawn boundary until garbage collection."
+        },
+        {
+          "id": "NB-5",
+          "finding": "Edge E-03-32's 'why' in DAG amendment v1.0.3 cited 'E-01-08', an edge id that does not exist; the parallel edge is E-03-08."
+        },
+        {
+          "id": "NB-6",
+          "finding": "Comments claimed controls and functions that did not exist: that sweepCredentials refuses prefixes outside the reserved namespaces, and a function named sweepSentinelEntries."
+        },
+        {
+          "id": "NB-7",
+          "finding": "The out-of-tree fresh-shell probe left its non-secret result files in %TEMP%."
+        },
+        {
+          "id": "NB-8",
+          "finding": "parentIsNotThisTree only checked that the probe's parent was not the launcher itself."
+        },
+        {
+          "id": "NB-9",
+          "finding": "This registry's DERIVED_FACTS.why_the_last_number_is_zero prose was edited in place by the previous append."
+        }
+      ],
+      "open_finding_dispositions_at_certification": {
+        "OF-CUST-1": "NONBLOCKING_RESIDUAL. No certified authority promises JavaScript heap zeroization; the disclosure was inaccurate (NB-4).",
+        "OF-CUST-2": "EXEMPTION INVALID. Measured, not reasoned: it is B-1.",
+        "OF-CUST-3": "A — consistent with the durable custody model. The vault entry surviving an abrupt kill is by design; the entry's lifetime is outside WCM-C1..C5; the sentinel recovery sweep was measured finding and removing it.",
+        "OF-CUST-4": "DISCHARGED. The certifier read explorer.exe's environment block directly — what a freshly launched shell inherits — and the registry User and Machine blocks with a capability-of-true control; the WMI probe's parent was measured as WmiPrvSE."
+      },
+      "what_the_verdict_string_itself_discloses": "FAIL: one blocking finding, nine non-blocking. Everything else the certifier reproduced independently passed: ancestry and write set, the sentinel contract, WCM-C2 through WCM-C5, read-after-delete ERROR_NOT_FOUND, the graph (32 nodes, 44 edges, 36 HARD, 8 CONDITIONAL, acyclic) and every machine gate. N05 was NOT certified, and PRs #215, #216 and #217 were NOT made eligible for closure by this verdict.",
+      "what_the_successor_lane_did_with_it": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-REMEDIATION-R2 remediated B-1 and the execution-critical non-blocking findings on the same branch and recorded what it did at docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_AMENDMENT_v1.0.1.json. That lane cannot close B-1; only an independent recertification can.",
+      "node_status_unchanged_by_this_record": "ZERO nodes closed. N05 is OPEN and, at the examined candidate, STOP_SECRET_DELIVERY_NONCOMPLIANT fired on the measured topology. N06 and N07 are NOT SATISFIED. N30's act is NOT PERFORMED. N32's datum is UNSUPPLIED."
     }
   ],
 
   "DERIVED_FACTS": {
-    "OCCURRENCE_COUNT": 4,
+    "OCCURRENCE_COUNT": 5,
     "CERTIFIED_ARTIFACT_COUNT": 17,
     "VERDICTS_RECORDING_A_PASS": 4,
-    "VERDICTS_RECORDING_A_FAIL": 0,
+    "VERDICTS_RECORDING_A_FAIL": 1,
     "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 0,
     "COUNTS_RECOMPUTED_ON_APPEND": "The first three numbers were 3, 10 and 3 when this registry held three occurrences. They are RECOMPUTED from the arrays on every append, never incremented: an incremented count is a count nobody re-derived, which is the defect OF-N05-9 records. CERTIFIED_ARTIFACT_COUNT is the union of path-and-blob pairs, so the consolidated occurrence's pin of this registry at its own earlier blob counts once and does not collide with anything.",
-    "why_the_last_number_is_zero": "Every one of the four verdicts certifies an AUTHORITY PACKAGE. None demonstrates a mechanism, supplies an owner datum, or fills an evidence artifact, which is what closing N05, N06 or N07 respectively would require. A registry that let four PASS strings read as four closed nodes would be the most expensive error it could make.",
+    "why_the_last_number_is_zero": "Four verdicts certify an AUTHORITY PACKAGE and none of them demonstrates a mechanism, supplies an owner datum, or fills an evidence artifact, which is what closing N05, N06 or N07 respectively would require. The fifth verdict was the gate at which N05 could have closed, and it is a FAIL. A registry that let PASS strings read as closed nodes would be the most expensive error it could make.",
+    "DERIVED_PROSE_RULE": "The prose fields of DERIVED_FACTS state the counts in words, so they are REGENERATED with the counts on every append, exactly like the numbers. Only OCCURRENCES entries, their blob pins, verdict strings and hole reasons are immutable. This rule was stated after NB-9 of the custody realization certification observed the previous append editing this prose without saying so.",
     "derivation_note": "OCCURRENCE_COUNT and CERTIFIED_ARTIFACT_COUNT are derived by counting this document's own OCCURRENCES array and the union of its certified_artifacts entries, and are re-derivable by any reader from the arrays above."
   },
 
@@ -173,6 +274,13 @@
         "appended_at_base": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
         "what_was_not_touched": "CERT-OCC-N05, CERT-OCC-N06 and CERT-OCC-N07 are byte-unchanged, including CERT-OCC-N06's deliberate pin to the PRE-correction custody inventory blob 28c2379f. Re-pinning that to the corrected blob would report that the corrected file is what was certified, which is false, and the consolidated closure authority says so in terms. The original self_check block below is also unedited and its 'three of three' phrasing is preserved rather than restated, because it is a claim about the three occurrences it was written for.",
         "why_the_original_self_check_is_left_alone": "It is an assertion the AUTHORING lane made about ITS write set. Rewriting it to say 'four of four' would put this lane's words in that lane's mouth. The fourth occurrence's own fields carry the same guarantees and are checkable independently: reviewer_identity and exact_timestamp_utc are explicit nulls with stated hole reasons, no prior verdict document is reconstructed, and no secret value appears."
+      },
+      {
+        "appended_occurrence": "CERT-OCC-CUSTODY-REALIZATION-R1",
+        "appended_by": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-REMEDIATION-R2",
+        "append_date": "2026-09-23",
+        "appended_at_base": "feb849154af8bc75d18d5477512060db217771fb",
+        "what_was_not_touched": "The four earlier occurrences are byte-unchanged, and the original self_check is left as its authoring lane wrote it. The recomputed counts are OCCURRENCE_COUNT 5, VERDICTS_RECORDING_A_FAIL 1, VERDICTS_RECORDING_A_PASS 4, and CERTIFIED_ARTIFACT_COUNT unchanged at 17 because a FAIL certifies nothing. The examined blobs are pinned in the occurrence under a separate key so they cannot be mistaken for certified ones."
       }
     ]
   },

@@ -7,13 +7,14 @@
 // that demonstration is to observe from somewhere the subject does not
 // control.
 //
-//   externalCommandLineObserver   RC-3. A process reporting its own command
-//                                 line is a self-report by the party under
-//                                 examination. This polls Win32_Process from a
-//                                 SEPARATE process and records every command
-//                                 line it can read, for every process on the
-//                                 machine, for the whole duration of the
-//                                 demonstration.
+//   PebObserver (n05-peb-observer.ts)
+//                                 RC-3 and RC-7. The command line AND the
+//                                 environment block of every process, read
+//                                 from its PEB by a SEPARATE process. It
+//                                 replaced a Win32_Process poller that never
+//                                 read an environment block, which is how a
+//                                 credential-bearing conhost.exe was declared
+//                                 clean by name (B-1).
 //
 //   observeFromOutsideProcessTree RC-2. A shell this process spawned inherits
 //                                 this process's environment block, so it
@@ -35,7 +36,7 @@
 //                                 rules out.
 
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 
@@ -96,99 +97,6 @@ function parseJsonFromPowerShell<T>(text: string): T {
   return JSON.parse(withoutBom) as T
 }
 
-export interface ObservedProcess {
-  readonly pid: number
-  readonly ppid: number
-  readonly name: string
-  readonly cmd: string | null
-}
-
-export interface CommandLineObservation {
-  /** Every distinct (pid, command line) pair seen during the window. */
-  readonly processes: readonly ObservedProcess[]
-  readonly pollCount: number
-  readonly readableCommandLines: number
-  readonly unreadableCommandLines: number
-}
-
-/**
- * Start polling every process on the machine. Returns a handle whose `stop()`
- * resolves with everything observed.
- *
- * The observer is signalled to stop by the appearance of a file, not by a
- * signal or a kill: a killed observer would lose whatever it had buffered, and
- * an observation that loses its tail is exactly the one that would miss a
- * short-lived process carrying a value on its command line.
- */
-export function startCommandLineObserver(workDir: string): {
-  stop: () => Promise<CommandLineObservation>
-} {
-  const stopFile = join(workDir, 'observer.stop')
-  const dumpFile = join(workDir, 'observer.json')
-  if (existsSync(stopFile)) writeFileSync(stopFile, '')
-
-  const script = `
-$ErrorActionPreference = 'Stop'
-$stopFile = '${stopFile.replace(/'/g, "''")}'
-$dumpFile = '${dumpFile.replace(/'/g, "''")}'
-$seen = @{}
-$polls = 0
-$deadline = (Get-Date).AddMinutes(10)
-while ((-not (Test-Path $stopFile)) -and ((Get-Date) -lt $deadline)) {
-  $polls = $polls + 1
-  foreach ($p in (Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId,Name,CommandLine)) {
-    $key = [string]$p.ProcessId + '|' + [string]$p.CommandLine
-    if (-not $seen.ContainsKey($key)) {
-      $seen[$key] = [pscustomobject]@{ pid = $p.ProcessId; ppid = $p.ParentProcessId; name = $p.Name; cmd = $p.CommandLine }
-    }
-  }
-  Start-Sleep -Milliseconds 100
-}
-# One last sweep after the stop signal, so a process that exited during the
-# final sleep is still in the record.
-foreach ($p in (Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId,Name,CommandLine)) {
-  $key = [string]$p.ProcessId + '|' + [string]$p.CommandLine
-  if (-not $seen.ContainsKey($key)) {
-    $seen[$key] = [pscustomobject]@{ pid = $p.ProcessId; ppid = $p.ParentProcessId; name = $p.Name; cmd = $p.CommandLine }
-  }
-}
-$payload = [pscustomobject]@{ polls = $polls; processes = @($seen.Values) }
-Set-Content -Path $dumpFile -Value ($payload | ConvertTo-Json -Depth 4 -Compress) -Encoding UTF8
-`
-
-  const child = spawn(POWERSHELL, psArgv(script), {
-    stdio: ['ignore', 'ignore', 'pipe'] as const,
-    windowsHide: true,
-  })
-  const exited = new Promise<void>((resolve) => child.on('close', () => resolve()))
-
-  return {
-    stop: async (): Promise<CommandLineObservation> => {
-      writeFileSync(stopFile, 'stop')
-      await exited
-      if (!existsSync(dumpFile)) {
-        throw new Error('The command-line observer produced no dump. RC-3 cannot be discharged.')
-      }
-      const parsed = parseJsonFromPowerShell<{
-        polls: number
-        processes: Array<{ pid: number; ppid: number; name: string; cmd: string | null }>
-      }>(readFileSync(dumpFile, 'utf8'))
-      const processes = parsed.processes.map((p) => ({
-        pid: p.pid,
-        ppid: p.ppid,
-        name: p.name,
-        cmd: p.cmd ?? null,
-      }))
-      return {
-        processes,
-        pollCount: parsed.polls,
-        readableCommandLines: processes.filter((p) => p.cmd !== null).length,
-        unreadableCommandLines: processes.filter((p) => p.cmd === null).length,
-      }
-    },
-  }
-}
-
 /**
  * Ask a process OUTSIDE this process tree whether a variable name is set.
  *
@@ -204,6 +112,7 @@ Set-Content -Path $dumpFile -Value ($payload | ConvertTo-Json -Depth 4 -Compress
 export async function observeFromOutsideProcessTree(varName: string): Promise<{
   readonly present: boolean
   readonly parentIsNotThisTree: boolean
+  readonly parentName: string
   readonly createdPid: number
 }> {
   const resultFile = join(tmpdir(), `uellix-n05-outside-${process.pid}-${Date.now()}.json`)
@@ -211,7 +120,8 @@ export async function observeFromOutsideProcessTree(varName: string): Promise<{
     "$ErrorActionPreference = 'Stop'",
     `$v = [Environment]::GetEnvironmentVariable('${varName}','Process')`,
     "$me = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $PID)",
-    '$o = [pscustomobject]@{ present = ($null -ne $v); ppid = $me.ParentProcessId }',
+    "$par = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $me.ParentProcessId)",
+    '$o = [pscustomobject]@{ present = ($null -ne $v); ppid = $me.ParentProcessId; parentName = [string]$par.Name }',
     `Set-Content -Path '${resultFile.replace(/'/g, "''")}' -Value ($o | ConvertTo-Json -Compress) -Encoding UTF8`,
   ].join('\n')
   const encodedInner = Buffer.from(inner, 'utf16le').toString('base64')
@@ -231,22 +141,33 @@ Write-Output ([pscustomobject]@{ rc = $r.ReturnValue; pid = $r.ProcessId } | Con
     throw new Error(`Win32_Process.Create refused the out-of-tree probe (rc=${created.rc}).`)
   }
 
-  const deadline = Date.now() + 30_000
-  while (Date.now() < deadline) {
-    if (existsSync(resultFile)) break
+  try {
+    const deadline = Date.now() + 30_000
+    while (Date.now() < deadline) {
+      if (existsSync(resultFile)) break
+      await new Promise((r) => setTimeout(r, 200))
+    }
+    if (!existsSync(resultFile)) {
+      throw new Error('The out-of-tree probe produced no result. RC-2 cannot be discharged.')
+    }
+    // A file seen mid-write parses as nothing; give the writer one beat.
     await new Promise((r) => setTimeout(r, 200))
-  }
-  if (!existsSync(resultFile)) {
-    throw new Error('The out-of-tree probe produced no result. RC-2 cannot be discharged.')
-  }
-  const parsed = parseJsonFromPowerShell<{ present: boolean; ppid: number }>(
-    readFileSync(resultFile, 'utf8')
-  )
-  // The probe's parent must not be us, and must not be our shell either.
-  return {
-    present: parsed.present,
-    parentIsNotThisTree: parsed.ppid !== process.pid,
-    createdPid: created.pid,
+    const parsed = parseJsonFromPowerShell<{ present: boolean; ppid: number; parentName: string }>(
+      readFileSync(resultFile, 'utf8')
+    )
+    // NP9 rests on this probe being OUTSIDE the demonstration's tree. "Its
+    // parent is not this process" is too weak — a grandchild passes it — so
+    // the parent is required to BE the WMI provider host that
+    // Win32_Process.Create re-parents onto, which no process in this tree is.
+    return {
+      present: parsed.present,
+      parentIsNotThisTree: parsed.ppid !== process.pid && /^WmiPrvSE\.exe$/i.test(parsed.parentName),
+      parentName: parsed.parentName,
+      createdPid: created.pid,
+    }
+  } finally {
+    // The probe's result is non-secret, but a successful run leaves nothing behind.
+    rmSync(resultFile, { force: true })
   }
 }
 
@@ -383,7 +304,7 @@ Write-Output ([pscustomobject]@{
       exists: true,
       note:
         'Not a history sink but the same disclosure surface, and the one WCM-C2 governs. ' +
-        'Observed continuously during the run by startCommandLineObserver.',
+        'Observed continuously during the run by the PEB observer, which reads each command line from outside.',
     },
   ]
 }

@@ -62,7 +62,7 @@
       "from": "N03",
       "to": "N32",
       "kind": "HARD",
-      "why": "The custodian is a datum of the custody arrangement OD-2 ratifies, so the ratification gate must have closed before it is taken. Parallel to E-01-08's role for the other unbounded owner intake."
+      "why": "The custodian is a datum of the custody arrangement OD-2 ratifies, so the ratification gate must have closed before it is taken. Parallel to E-03-08's role for the other unbounded owner intake."
     },
     {
       "id": "E-32-06",

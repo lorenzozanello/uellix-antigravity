@@ -60,16 +60,17 @@
 
 import { randomBytes } from 'node:crypto'
 import { isUnmistakablePlaceholder } from '../scan-secrets'
+import { SWEEPABLE_TARGET_PREFIXES } from '../../db/custody/wcm-credential-store'
 
 /**
  * The reserved Credential Manager namespace for this demonstration.
  *
- * Every entry the harness creates begins with it, `sweepSentinelEntries` only
- * ever deletes entries that begin with it, and nothing else in the programme
- * uses it. That is what bounds the blast radius of a sweep to entries this
- * repository created.
+ * Every entry the harness creates begins with it, and `sweepCredentials` in
+ * the mechanism REFUSES any prefix outside `SWEEPABLE_TARGET_PREFIXES`, of
+ * which this is the only member. That refusal, not this comment, is what
+ * bounds the blast radius of a sweep to entries this demonstration created.
  */
-export const SENTINEL_TARGET_PREFIX = 'UELLIX-N05-SENTINEL'
+export const SENTINEL_TARGET_PREFIX: string = SWEEPABLE_TARGET_PREFIXES[0]
 
 /**
  * The environment variable the real consumer reads, carried verbatim from

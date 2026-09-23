@@ -53,6 +53,22 @@ export function isSatisfied(state: ControlState): boolean {
  * the token fires on that ground". The first run of this demonstration
  * revealed exactly such a child, so the observation is carried as a control
  * that can fail rather than as prose a reader has to interpret.
+ *
+ * Three ids were added by the remediation of the independent certification's
+ * blocker B-1, each because the certification showed a green result that
+ * could not have been red:
+ *
+ *   OBS0  the process observer is proven, per run, to SEE every governed
+ *         representation in both a command line and an environment block,
+ *         by finding an injected fixture. RC3, NP10 and RC7 are NOT_RUN
+ *         until it has.
+ *   B1    the launcher-console precondition that removes the credential-
+ *         bearing conhost.exe is proven able to REFUSE, on a process that
+ *         really has no console.
+ *   RC5   abrupt termination: a killed consumer leaves no process holding the
+ *         value, and a killed depositor's vault entry is found and removed by
+ *         the bounded recovery sweep. RC-5's derived gap asks for a statement;
+ *         this is the statement, measured.
  */
 export const N05_DEMONSTRATION_CONTROL_IDS = [
   'NP9_FRESH_SHELL_ABSENT',
@@ -64,6 +80,9 @@ export const N05_DEMONSTRATION_CONTROL_IDS = [
   'RC4_HISTORY_SINKS_CLEAN',
   'RC6_VAULT_ENTRY_ABSENT_AFTER_CLEANUP',
   'RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD',
+  'OBS0_OBSERVER_DETECTS_INJECTED_FIXTURE',
+  'B1_CONSOLE_PRECONDITION_CAPABLE_OF_REFUSING',
+  'RC5_ABRUPT_TERMINATION_RECOVERED',
 ] as const
 
 export type N05ControlId = (typeof N05_DEMONSTRATION_CONTROL_IDS)[number]

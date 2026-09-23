@@ -13,53 +13,65 @@
 //
 // This implementation never sets the variable anywhere that could outlive the
 // consumer. `process.env` of THIS process is not written to, at any point, on
-// any path. The value exists in precisely one environment block — the one
-// CreateProcess builds for the consuming child — and that block is destroyed
-// by the operating system when the child exits, whether it exits cleanly,
-// crashes, or is killed.
+// any path. The value exists in the environment block CreateProcess builds for
+// the consuming child, and that block is destroyed by the operating system
+// when the child exits, whether it exits cleanly, crashes, or is killed.
 //
-// The consequences are worth stating plainly, because they are what makes the
-// five conditions cheap to discharge here and expensive to discharge in the
-// obvious design:
+// ---------------------------------------------------------------------------
+// THE PROCESS-CREATION MODEL, AS MEASURED (B-1)
+// ---------------------------------------------------------------------------
+// "Exactly one process holds the value" is a claim about Windows process
+// creation, not about this file, and the first version of it was wrong. The
+// independent certification read the environment block of every descendant
+// and found a conhost.exe, child of the consumer, carrying the variable and
+// its value. The cause, measured on this workstation by reading each
+// process's environment block from outside:
 //
-//   WCM-C1  The fresh-shell check cannot find the variable, because no shell,
-//           session or persistent store was ever written to. RC-2's second
-//           observation passes for a structural reason rather than because a
-//           cleanup step happened to run.
-//   WCM-C2  A Windows environment block is not argv. It is not in the process
-//           table, `Get-CimInstance Win32_Process` does not report it, and
-//           reading it from outside requires PROCESS_VM_READ on that specific
-//           process.
-//   WCM-C4  "Removed immediately after the consuming process exits" is
-//           satisfied by process exit itself, on the success path, on the
-//           failure path, and on the kill path the authority's two-path text
-//           does not reach.
+//   consumer spawned with windowsHide:true   Node passes CREATE_NO_WINDOW, the
+//                                            consumer gets a NEW console, and
+//                                            the conhost.exe hosting it
+//                                            inherits the consumer's block.
+//   windowsHide:false, launcher HAS console  The consumer shares the launcher's
+//                                            existing console. No conhost is
+//                                            created. Only the consumer holds
+//                                            the value.
+//   windowsHide:false, launcher NO console   Windows creates a console for the
+//                                            consumer anyway, and its conhost
+//                                            inherits the value again.
+//   detached:true                            No conhost, but the consumer is
+//                                            also taken OUT of the launcher's
+//                                            kill-on-close job object, so it
+//                                            survives an abrupt launcher kill
+//                                            with the value in its block.
+//
+// Hence the two rules below: the consumer is spawned with windowsHide:false
+// and never detached, and delivery REFUSES to run unless the launcher is
+// attached to a console. The job object Node places every non-detached child
+// in is kept, and was measured to kill the consumer when the launcher is
+// killed.
 //
 // ---------------------------------------------------------------------------
 // THE ONE EXPOSURE THIS DESIGN DOES NOT REMOVE, STATED RATHER THAN HIDDEN
 // ---------------------------------------------------------------------------
-// `child_process.spawn` takes `env` as strings. A JavaScript string is
-// immutable and cannot be zeroed, so between `retrieveCredential` and the
-// `spawn` call the value exists as an unzeroable string in this process's
-// heap, at the mercy of the garbage collector. The Buffer is zeroed; the
-// string it was converted from cannot be.
-//
-// The design that removes this hop is measured and NOT built here: let the
-// PowerShell bridge itself spawn the consumer, so the value never enters the
-// Node heap at all. It is not built because the lane that authorises this work
-// is explicit that the final production invocation must not be invented before
-// its source and runtime constraints are measured, and the consumer for the
-// real credential is not yet fixed. The hop is recorded as an open finding
-// against the production invocation decision rather than quietly accepted.
+// `child_process.spawn` takes `env` as strings. This file creates exactly ONE
+// JavaScript string of the value — the environment entry — and it cannot be
+// zeroed. It and the UTF-16 block libuv builds from it remain in this
+// process's memory for as long as the launcher lives. OF-CUST-1 records this
+// residual; nothing here claims to zero it. The launcher must therefore be a
+// short-lived process, and it belongs on the custody inventory's list of
+// processes that hold the value.
 
 import { spawn } from 'node:child_process'
-import { CustodyError, retrieveCredential } from './wcm-credential-store'
+import { encodeBase64Bytes } from './base64-bytes'
+import { CustodyError, isProcessAttachedToConsole, retrieveCredential } from './wcm-credential-store'
 
 export interface DeliveryResult {
   readonly exitCode: number | null
   readonly signal: NodeJS.Signals | null
   readonly stdout: string
   readonly stderr: string
+  /** The consumer's process id, so an external observer can find its tree. */
+  readonly pid: number | undefined
 }
 
 export interface DeliveryRequest {
@@ -73,28 +85,44 @@ export interface DeliveryRequest {
   readonly args: readonly string[]
   readonly cwd?: string
   readonly timeoutMs?: number
+  /** Called once with the consumer's pid, right after it is created. */
+  readonly onSpawn?: (pid: number | undefined) => void
 }
 
 const DEFAULT_CONSUMER_TIMEOUT_MS = 120_000
 
 /**
- * Refuse to launch a consumer whose own argv carries the value.
- *
- * WCM-C2 is about the mechanism, but a caller can breach it without the
- * mechanism's help by passing the secret through as an argument. The check is
- * cheap and it closes the gap between "this module does not put the value in
- * argv" and "the value is not in argv".
+ * The spawn flags for the consumer. Exported so a control can assert them:
+ * `windowsHide: true` is the measured cause of B-1, and `detached: true`
+ * trades it for a consumer that outlives a killed launcher.
  */
-function assertArgvIsClean(args: readonly string[], secret: Buffer): void {
-  const needle = secret.toString('utf8')
-  for (const arg of args) {
-    if (arg.includes(needle)) {
-      throw new CustodyError(
-        'CUSTODY_RETRIEVE_FAILED',
-        'Refusing to launch: the consumer argv carries the retrieved value. ' +
-          'WCM-C2 prohibits the value appearing in any process-table-visible form.'
-      )
+export const CONSUMER_SPAWN_FLAGS = { windowsHide: false, detached: false } as const
+
+/**
+ * Refuse to launch a consumer whose own argv carries the value in any form
+ * this mechanism creates.
+ *
+ * The mechanism creates exactly two representations of the value: the raw
+ * bytes (the environment entry) and their base64 (the stdin framing of a
+ * deposit and the blob line of a retrieval). Both are searched, as bytes, in
+ * every argument. WCM-C2 is about the mechanism, but a caller can breach it
+ * without the mechanism's help by passing the value through as an argument.
+ */
+export function assertArgvIsClean(args: readonly string[], secret: Buffer): void {
+  const b64 = encodeBase64Bytes(secret)
+  try {
+    for (const arg of args) {
+      const bytes = Buffer.from(arg, 'utf8')
+      if (bytes.includes(secret) || bytes.includes(b64)) {
+        throw new CustodyError(
+          'CUSTODY_RETRIEVE_FAILED',
+          'Refusing to launch: the consumer argv carries the retrieved value (raw or base64). ' +
+            'WCM-C2 prohibits the value appearing in any process-table-visible form.'
+        )
+      }
     }
+  } finally {
+    b64.fill(0)
   }
 }
 
@@ -119,6 +147,17 @@ export async function runWithDeliveredSecret(request: DeliveryRequest): Promise<
     )
   }
 
+  // B-1: without a console of its own, the launcher's consumer would get a
+  // fresh conhost.exe that inherits the value. Checked BEFORE the vault is
+  // read, so a refusal leaves nothing to clean up.
+  if (!(await isProcessAttachedToConsole(process.pid))) {
+    throw new CustodyError(
+      'CUSTODY_DELIVERY_TOPOLOGY_UNSAFE',
+      'This launcher is not attached to a console. A consumer started from it would be given a ' +
+        'new conhost.exe that inherits the delivered value (B-1). Run the launcher from a console.'
+    )
+  }
+
   const secret = await retrieveCredential(request.target)
   if (secret === null) {
     throw new CustodyError(
@@ -132,7 +171,7 @@ export async function runWithDeliveredSecret(request: DeliveryRequest): Promise<
 
     // The child's environment block: this process's environment, plus the one
     // variable, built here and passed to CreateProcess. `process.env` itself
-    // is not touched — reading it produces a copy.
+    // is not touched — spreading it produces a copy.
     const childEnv: NodeJS.ProcessEnv = {
       ...process.env,
       [request.envVarName]: secret.toString('utf8'),
@@ -143,8 +182,9 @@ export async function runWithDeliveredSecret(request: DeliveryRequest): Promise<
         env: childEnv,
         cwd: request.cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
-        windowsHide: true,
+        ...CONSUMER_SPAWN_FLAGS,
       })
+      request.onSpawn?.(child.pid)
 
       let stdout = ''
       let stderr = ''
@@ -180,13 +220,13 @@ export async function runWithDeliveredSecret(request: DeliveryRequest): Promise<
         if (settled) return
         settled = true
         clearTimeout(timer)
-        resolve({ exitCode: code, signal, stdout, stderr })
+        resolve({ exitCode: code, signal, stdout, stderr, pid: child.pid })
       })
     })
   } finally {
-    // The Buffer is zeroed on every path. The string derived from it above is
-    // not zeroable and is disclosed in this file's header rather than papered
-    // over with a `delete` that would achieve nothing.
+    // The Buffer is zeroed on every path. The one string derived from it above
+    // is not zeroable and is disclosed in this file's header rather than
+    // papered over with a `delete` that would achieve nothing.
     secret.fill(0)
   }
 }
