@@ -1,0 +1,153 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.5",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ZERO_NODES_ZERO_EDGES__N10_READINESS_CONJUNCTS__AUTHORITY_CONFLICTS_DECLARED__NO_EXECUTION__NO_SECRET__NO_NODE_CLOSED",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "As amended by v1.0.1..v1.0.4, none of which is edited.",
+  "mission_id": "CV1-D1-AUDITOR-POST-MINT-COMPLETENESS-AND-PREHC1-HARDENING-R1",
+  "lane": "CV1-D1-AUDITOR-POST-MINT-COMPLETENESS-AND-PREHC1-HARDENING-R1",
+  "role": "Make N10's readiness a function of the post-mint path the graph now contains, and declare, without resolving them, the authority conflicts that block N14, N21 and N22.",
+  "mode": "DOCS_AND_IMPLEMENTATION__THIS_FILE_IS_THE_GRAPH_HALF",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "3def3c5b7b82747a3d4533aa6badccb0043cffff",
+  "AS_OF_BASE_TREE": "70c0c3009183fa8af14794110c75564875120ed0",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the base; prestate gate PASS at 2026-09-23T16:04:46Z.",
+  "WHY_THIS_AMENDMENT_EXISTS": {
+    "the_blind_spot": "At 3def3c5b `pnpm custody:pre-hc1` reported N10 READY_FOR_HUMAN_CONFIRMATION while the mint route was undecided, the custody inventory listed a topology that no longer existed (OF-PM-4), and two of the four in-DAG credential consumers did not exist (OF-PM-1). N10's readiness was the conjunction of its seven HARD predecessors and nothing else, and none of those predecessors can see the post-mint path v1.0.4 created.",
+    "why_not_an_edge": "The conditions are not nodes: a ratified owner decision, a measured feasibility, a re-derived field, implemented consumers, demonstrated topologies, ruled conflicts and a certification bound to the current blobs. Encoding them as HARD edges would invent nodes for facts. They are declared here as N10 readiness conjuncts, read by the evaluator by id, and each is evaluated by a registered function; an id with no evaluator, or this file's absence, is NOT_READY.",
+    "no_edges_needed_for_N14_N21_N22": "Every in-DAG delivery already has the N30 entry as a producer by traversal: N30->N13 (E-30-13), N13->N14, N14->N15->N17->N18->N19->N20->N21, and N22 from N15/N21. RECOMPUTED_GRAPH below verifies each."
+  },
+  "NEW_NODES": [],
+  "NEW_EDGES": [],
+  "N10_PRE_HC1_READINESS_CONJUNCTS": [
+    {
+      "id": "PMR-1_MINT_ROUTE_RATIFIED",
+      "condition": "The mint-route owner decision exists, names B_SQL_BOUND_PARAMETER and EPHEMERAL_NODE_PG_OUTSIDE_REPOSITORY, and is SIGNED.",
+      "source": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0.json; post-mint path record MINT_ROUTE_DECISION_STATUS"
+    },
+    {
+      "id": "PMR-2_OPERATOR_TOOL_FEASIBLE",
+      "condition": "The operator-tool feasibility measurement is FEASIBLE and its driver still resolves from the repository root.",
+      "source": "Lane mandate section 4; STOP_OPERATOR_TOOL_DEPENDENCY_GAP otherwise"
+    },
+    {
+      "id": "PMR-3_PASSWORD_NULL_SEMANTICS",
+      "condition": "The owner decision D1_PASSWORD_NULL_REQUIRES_SEPARATE_HUMAN_CONFIRMATION = YES is present AND the compensation gate refuses PASSWORD NULL on any HC-1 and ROTATE AGAIN on a spent HC-1.",
+      "source": "Owner decision; HUMAN_CONFIRMATION.confirmations_are_not_transferable"
+    },
+    {
+      "id": "PMR-4_N06_REDERIVED_FOR_TOPOLOGY",
+      "condition": "The custody inventory's processes_or_environments equals the surfaces derived from the production topology, with every delivery enumerated.",
+      "source": "OF-PM-4 (v1.0.4); N06.act 'every process or environment that will hold it'"
+    },
+    {
+      "id": "PMR-5_IN_DAG_CONSUMERS_IMPLEMENTED",
+      "condition": "Every in-DAG delivery derived from the graph (every HOSTED_SQL session node) has a consumer that exists, is built as a production entry point, and is accepted by the launcher.",
+      "source": "OF-PM-1 (v1.0.4); v1.0.4 HOSTED_SQL_SESSION_DELIVERY_RULE"
+    },
+    {
+      "id": "PMR-6_TOPOLOGY_DEMONSTRATED_PER_CONSUMER",
+      "condition": "Each in-DAG delivery has a recorded synthetic topology demonstration at SATISFIED_CANDIDATE, run on the SAME launcher+consumer closure blobs that exist now.",
+      "source": "HC1-S5 / PRE-HC1 IC NB-6: re-demonstrate wherever the production consumer differs from the certified topology"
+    },
+    {
+      "id": "PMR-7_NO_OPEN_AUTHORITY_CONFLICT",
+      "condition": "No conflict in AUTHORITY_CONFLICTS_OPEN is without a ruling in AUTHORITY_CONFLICT_RULINGS.",
+      "source": "CLAUDE.md fail-closed rule; this amendment's AUTHORITY_CONFLICTS_OPEN"
+    },
+    {
+      "id": "PMR-8_PACKAGE_CERTIFIED_AT_CURRENT_BLOBS",
+      "condition": "Every file of the post-mint completeness package is covered, at its CURRENT blob, by a PASS occurrence in the certification registry.",
+      "source": "Next gate of this package; bound to the candidate's blobs, not to a future verdict name"
+    }
+  ],
+  "AUTHORITY_CONFLICTS_OPEN": [
+    {
+      "id": "AC-1",
+      "summary": "PV-22, PV-28 and PV-32 assert has_table_privilege, but AUTHORIZED_FUTURE_SQL is EXHAUSTIVE and PHASE_P1_OBSERVATION_ONLY_READS contains no has_table_privilege read, and P3 is the P1 list re-issued in full.",
+      "blocks": [
+        "N14 prestate of PV-22/28/32",
+        "N22 rows PV-22, PV-28, PV-32",
+        "READ_ONLY_PROOF layer GRANTS"
+      ],
+      "basis": "READ_FROM_THE_AUTHORITY"
+    },
+    {
+      "id": "AC-2",
+      "summary": "EP-3 requires pg_has_role over every uellix_cap_* role present, knowable only by a pattern scan of pg_roles, while authorized catalog reads are keyed lookups over named objects, never scans. The implemented REACH read covers the eight named roles only.",
+      "blocks": [
+        "completeness of N14 membership prestate and N22 PV-14 (not their execution)"
+      ],
+      "basis": "READ_FROM_THE_AUTHORITY"
+    },
+    {
+      "id": "AC-3",
+      "summary": "P1 read [13], PV-24/PV-25 and N21 call has_function_privilege on the canonical text signatures; a function named by text is parsed as regprocedure input, which raises when the function does not exist, and OLD_DB is DEFINED by the nine-argument function being absent. The only non-raising guard (to_regprocedure) is EXPLICITLY_UNAUTHORIZED (M20). On the expected state the read aborts the read-only transaction.",
+      "blocks": [
+        "N14 prestate of PV-24/25",
+        "N21 EXECUTE assertions",
+        "N22 rows PV-24, PV-25"
+      ],
+      "basis": "DERIVED_FROM_DOCUMENTED_ENGINE_SEMANTICS_UNMEASURED (no socket is permitted in this lane)"
+    }
+  ],
+  "AUTHORITY_CONFLICT_RULINGS": {},
+  "AUTHORITY_CONFLICT_RULINGS_rule": "A ruling is an owner or authority decision appended by a SUCCESSOR amendment and registered here by id. This amendment records none and resolves none. Until each is ruled, no node issues a blocked statement and N14, N21 and N22 cannot meet their exits.",
+  "ROUTE_B_DELTAS_FOR_RULING": {
+    "source": "db/custody/mint-route-b-contract.ts ROUTE_B_DELTAS",
+    "deltas": [
+      "RB-DELTA-1: LOGIN removed from the precedent's format string (MR-1 is its own act under HC-3).",
+      "RB-DELTA-2: VALID UNTIL %L appended, bound through a third set_config parameter equal to N09.",
+      "RB-DELTA-3: EXCEPTION WHEN OTHERS re-raise with a fixed message, so a failing ALTER ROLE cannot quote the formatted password in an error CONTEXT line (derived, unmeasured)."
+    ],
+    "status": "DECLARED FOR THE INDEPENDENT CERTIFICATION. No SQL text beyond these three deltas is introduced."
+  },
+  "DELIVERY_MATRIX": {
+    "derived_by": "scripts/custody/d1-delivery-matrix.ts deriveDeliveries()",
+    "in_dag": [
+      "DL-N13 -> d1-auditor-n13-consumer",
+      "DL-N14 -> d1-auditor-n14-consumer",
+      "DL-N21 (conditional on MR-3 FIRE) -> d1-auditor-n22-consumer --node=N21",
+      "DL-N22 -> d1-auditor-n22-consumer"
+    ],
+    "external": [
+      "DL-N23 -> the PRECHECK process, owned by CV1-D1-OLDDB-PRECHECK-EXEC-R2 (PRECHECK_R2_ENTRY_CONTRACT: this DAG does not derive its contents)",
+      "DL-FINAL-WITNESS -> owned by macro-chain node 9, outside this DAG"
+    ],
+    "excluded_and_why": "N16 (ALTER ROLE ... LOGIN) and N20 (GRANT USAGE ...) are HOSTED_SQL mutations executed by a privileged identity, not sessions as uellix_auditor."
+  },
+  "RECOMPUTED_GRAPH": {
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_TOTAL": 45,
+    "HARD_EDGE_COUNT": 37,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "ACYCLIC": true,
+    "REACHABILITY_PROPERTIES_BY_TRAVERSAL": {
+      "N13_reachable_from_N30": true,
+      "N14_reachable_from_N30": true,
+      "N21_reachable_from_N30": true,
+      "N22_reachable_from_N30": true,
+      "N23_reachable_from_N30": true
+    },
+    "HC1_IMMEDIATELY_UPSTREAM_OF_THE_MUTATION": "N11's only HARD predecessor is N10, and N10's only successor is N11.",
+    "N24_AND_N28_UNCHANGED": "Neither node, nor any edge touching it, is changed by v1.0.4 or v1.0.5."
+  },
+  "PRESERVED_UNCHANGED": [
+    "Every node, edge, exit and token of v1.0.0..v1.0.4.",
+    "N10's seven HARD predecessors; the conjuncts ADD conditions and remove none."
+  ],
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No mint, deposit, delivery or connection is authorized.",
+    "No conflict is resolved; no SQL is added to AUTHORIZED_FUTURE_SQL.",
+    "The PRECHECK and FINAL WITNESS consumers are not implemented here; their lanes own them."
+  ],
+  "required_independent_review": "MANDATORY, as part of the post-mint completeness package.",
+  "final_state": "N10_READINESS_BOUND_TO_THE_POST_MINT_PATH__AC_1_AC_2_AC_3_OPEN__ZERO_NODES_CLOSED",
+  "next_gate": "ONE independent certification of the complete post-mint / pre-HC1 package, including a ruling on AC-1..AC-3 and RB-DELTA-1..3."
+}

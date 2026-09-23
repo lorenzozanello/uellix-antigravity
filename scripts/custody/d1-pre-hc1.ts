@@ -35,6 +35,7 @@ import {
 } from '../../db/hosted/target-identity'
 import { AUDITOR_DATABASE_ROLE } from '../../db/safety/database-role'
 import { hardPredecessorsOf } from './d1-dag-validate'
+import { evaluatePostMintConjuncts, gatherPostMintInputs } from './d1-pre-hc1-post-mint'
 import { evaluateN06InRepo, type NodeState as N06NodeState } from './d1-n06-closure'
 import { computeValidUntilUtc } from './d1-n09-valid-until'
 
@@ -335,9 +336,16 @@ export function evaluateN10(params: {
   readonly states: Readonly<Record<string, NodeState>>
   readonly hardPredecessors: readonly string[]
   readonly hc1Answer: { readonly affirmative: true; readonly allSixStatementsGiven: true; readonly coversThisAct: true } | null
+  /**
+   * DAG v1.0.5 N10_PRE_HC1_READINESS_CONJUNCTS that are not satisfied (see
+   * d1-pre-hc1-post-mint.ts). Required: a caller that omits it is refused, so
+   * no path can reach READY on the seven predecessors alone again.
+   */
+  readonly postMintUnsatisfied: readonly string[] | undefined
 }): { readonly readiness: N10Readiness; readonly unsatisfied: readonly string[] } {
   if (params.hardPredecessors.length === 0) return { readiness: 'NOT_READY', unsatisfied: ['(no predecessors derived)'] }
-  const unsatisfied = params.hardPredecessors.filter((p) => params.states[p] !== 'SATISFIED')
+  if (params.postMintUnsatisfied === undefined) return { readiness: 'NOT_READY', unsatisfied: ['(post-mint readiness conjuncts not evaluated)'] }
+  const unsatisfied = [...params.hardPredecessors.filter((p) => params.states[p] !== 'SATISFIED'), ...params.postMintUnsatisfied]
   if (unsatisfied.length > 0) return { readiness: 'NOT_READY', unsatisfied }
   return { readiness: params.hc1Answer === null ? 'READY_FOR_HUMAN_CONFIRMATION' : 'SATISFIED', unsatisfied: [] }
 }
@@ -426,18 +434,27 @@ export function evaluatePreHc1(root: string, opts: {
     N07: n07.status,
   }
   const hardPredecessors = hardPredecessorsOf('N10')
-  const n10 = evaluateN10({ states, hardPredecessors, hc1Answer: null })
-  return { facts, frozenIntegration, n01, n02, n03, n04, n07, upstream, states, hardPredecessors, n10 }
+  const postMint = evaluatePostMintConjuncts(gatherPostMintInputs(root))
+  const n10 = evaluateN10({ states, hardPredecessors, hc1Answer: null, postMintUnsatisfied: postMint.unsatisfied })
+  return { facts, frozenIntegration, n01, n02, n03, n04, n07, upstream, states, hardPredecessors, postMint, n10 }
 }
 
-// CLI: measure this worktree against its own HEAD as the declared base.
+// CLI. With --branch= --head= --tree= the base is DECLARED by the caller and
+// N01 can stop on a mismatch. Without them it falls back to measuring its own
+// HEAD, which can never stop on a wrong head (PRE-HC1 IC NB-1); the output
+// says which it did.
 if (process.argv[1] !== undefined && /d1-pre-hc1\.ts$/.test(process.argv[1])) {
   const root = process.cwd()
   const f = measureRepoFacts(root, [], false)
+  const arg = (k: string): string | undefined => process.argv.slice(2).find((a) => a.startsWith(k))?.slice(k.length)
+  const declared = { branch: arg('--branch='), head: arg('--head='), tree: arg('--tree=') }
+  const fullyDeclared = declared.branch !== undefined && declared.head !== undefined && declared.tree !== undefined
   const ev = evaluatePreHc1(root, {
-    declaredBase: { branch: f.branch, head: f.head, tree: f.tree },
+    declaredBase: fullyDeclared ? { branch: declared.branch!, head: declared.head!, tree: declared.tree! } : { branch: f.branch, head: f.head, tree: f.tree },
     liveIntegration: true,
   })
+  process.stdout.write(`${JSON.stringify({ declaredBaseSource: fullyDeclared ? 'DECLARED_BY_CALLER' : 'SELF_MEASURED__CANNOT_STOP_ON_WRONG_HEAD' })}
+`)
   // The raw facts carry every measured blob; the evaluation already reports what was compared.
   const facts = { branch: ev.facts.branch, head: ev.facts.head, tree: ev.facts.tree, clean: ev.facts.clean, integrationRef: ev.facts.integrationRef }
   process.stdout.write(`${JSON.stringify({ ...ev, facts }, null, 2)}\n`)

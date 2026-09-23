@@ -62,6 +62,7 @@ const GRAPH_SOURCES = [
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json',
   'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json',
+  'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5.json',
 ] as const
 
 export type GraphSource = (typeof GRAPH_SOURCES)[number]
@@ -333,6 +334,10 @@ export function deriveGraphFacts(options: { readonly throughSource?: GraphSource
     // Checked on every graph, so before v1.0.4 it is honestly false and is
     // only a FAILURE once the amendment that introduces it is in the union.
     ['N13 reachable from N30', reachableFrom('N30', edges).has('N13')],
+    // v1.0.5: every in-DAG credential consumer has the N30 entry as a producer.
+    ['N14 reachable from N30', reachableFrom('N30', edges).has('N14')],
+    ['N21 reachable from N30', reachableFrom('N30', edges).has('N21')],
+    ['N22 reachable from N30', reachableFrom('N30', edges).has('N22')],
   ]
 
   // N28's disconnection is v1.0.0's own declared external segment, disclosed
@@ -364,6 +369,9 @@ export function deriveGraphFacts(options: { readonly throughSource?: GraphSource
   }
   const introducedBy: Record<string, string> = {
     'N13 reachable from N30': 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json',
+    'N14 reachable from N30': 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5.json',
+    'N21 reachable from N30': 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5.json',
+    'N22 reachable from N30': 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5.json',
   }
   for (const [label, ok] of properties) {
     const since = introducedBy[label]

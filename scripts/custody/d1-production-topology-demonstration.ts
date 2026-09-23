@@ -1,6 +1,10 @@
 // scripts/custody/d1-production-topology-demonstration.ts
 //
-//   pnpm custody:production:demonstrate -- --out-dir=<a path OUTSIDE this repository>
+//   pnpm custody:production:demonstrate -- --out-dir=<OUTSIDE the repository> --delivery=DL-N13|DL-N14|DL-N21|DL-N22
+//
+// One run per DELIVERY: each in-DAG consumer is its own topology (its own
+// binary and import closure), and one consumer's result is never generalized
+// to another. The record carries the launcher+consumer closure blobs it ran on.
 //
 // THE PRODUCTION TOPOLOGY, RE-DEMONSTRATED ON A SYNTHETIC VALUE.
 //
@@ -42,6 +46,9 @@ import { d1AuditorWcmTarget } from '../../db/custody/production-custody'
 import { AUDITOR_ENV_VAR_NAME, SENTINEL_TARGET_PREFIX, generateSentinel } from './n05-sentinel'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 import { buildProductionEntryPoints } from './build-production-entrypoints'
+import { execFileSync } from 'node:child_process'
+import { deriveDeliveries } from './d1-delivery-matrix'
+import { deliveryClosure } from './d1-pre-hc1-post-mint'
 import {
   enumerateHistorySinks,
   observeFromOutsideProcessTree,
@@ -137,6 +144,14 @@ async function main(): Promise<number> {
 
   // Built BEFORE any value exists, so no build tool runs while one is live.
   const built = buildProductionEntryPoints(REPO_ROOT, outDir)
+  const deliveryId = process.argv.slice(2).find((a) => a.startsWith('--delivery='))?.slice('--delivery='.length) ?? 'DL-N13'
+  const delivery = deriveDeliveries(REPO_ROOT).deliveries.find((d) => d.id === deliveryId && d.ownedBy === 'THIS_DAG')
+  if (delivery === undefined) throw new Error(`--delivery must name an in-DAG delivery (got ${deliveryId}).`)
+  const consumerJs = { N13: built.consumer, N14: built.consumerN14, N21: built.consumerN22, N22: built.consumerN22 }[delivery.node as 'N13' | 'N14' | 'N21' | 'N22']
+  const nodeArgs = [...delivery.consumerArgs]
+  const closureBlobs = Object.fromEntries(
+    deliveryClosure(REPO_ROOT, delivery).map((rel) => [rel, execFileSync('git', ['hash-object', '--', rel], { cwd: REPO_ROOT, encoding: 'utf8' }).trim()])
+  )
 
   const c: Record<string, State> = {
     T_OBS0_OBSERVER_SEES_FIXTURE: 'NOT_RUN',
@@ -174,7 +189,7 @@ async function main(): Promise<number> {
     envVarName: AUDITOR_ENV_VAR_NAME,
     governed,
     fixture,
-    classes: [bridgeArgv()[5]!.slice(0, 64), 'd1-auditor-n13-consumer', 'd1-deliver-n13', 'd1-n30-deposit'],
+    classes: [bridgeArgv()[5]!.slice(0, 64), 'd1-auditor-n', 'd1-deliver-n13', 'd1-n30-deposit'],
   })
   let stopped = false
   const deliveredConsumerPids: number[] = []
@@ -183,7 +198,7 @@ async function main(): Promise<number> {
     if (l.launcher === 'CONSUMER_SPAWNED' && typeof l.pid === 'number') deliveredConsumerPids.push(l.pid)
   }
   const deliver = (mode: string, extra: string[] = [], onLine?: (l: Record<string, unknown>) => void) => {
-    const r = startNode(built.deliver, [`--consumer=${built.consumer}`, `--mode=${mode}`, `--synthetic-target=${T}`, ...extra], {
+    const r = startNode(built.deliver, [`--consumer=${consumerJs}`, `--mode=${mode}`, `--synthetic-target=${T}`, ...nodeArgs, ...extra], {
       onLine: (l) => {
         consumerPidOf(l)
         onLine?.(l)
@@ -192,11 +207,11 @@ async function main(): Promise<number> {
     launcherPids.push(r.pid)
     return r
   }
-  const n13 = (run: Run): Record<string, unknown> => run.lines.find((l) => l.node === 'N13') ?? {}
+  const n13 = (run: Run): Record<string, unknown> => run.lines.find((l) => l.node === delivery.node) ?? {}
 
   try {
     log('')
-    log('  D-1 PRODUCTION TOPOLOGY DEMONSTRATION (synthetic value, no database)')
+    log(`  D-1 PRODUCTION TOPOLOGY DEMONSTRATION — ${delivery.id} (synthetic value, no database)`)
     log(`  working directory : ${outDir}`)
 
     // --- OBS0 fixture -------------------------------------------------------
@@ -216,7 +231,7 @@ async function main(): Promise<number> {
 
     // --- B-1 on the PRODUCTION launcher: no console -> refusal, nothing read --
     await observer.mark('b1')
-    const noConsole = await startNode(built.deliver, [`--consumer=${built.consumer}`, '--mode=dry-run', `--synthetic-target=${T}`], {
+    const noConsole = await startNode(built.deliver, [`--consumer=${consumerJs}`, '--mode=dry-run', `--synthetic-target=${T}`, ...nodeArgs], {
       noConsole: true,
       onLine: consumerPidOf,
     }).done
@@ -264,7 +279,7 @@ async function main(): Promise<number> {
 
     // --- negative: the same consumer with no delivery -----------------------
     await observer.mark('no_delivery')
-    const none = await startNode(built.consumer, ['--mode=expect-absent', `--dwell-ms=${DWELL_MS}`]).done
+    const none = await startNode(consumerJs, ['--mode=expect-absent', `--dwell-ms=${DWELL_MS}`, ...nodeArgs]).done
     const noneLine = n13(none)
     c.T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY = pf(resolvedWithDelivery && none.exitCode === 0 && noneLine.resolved === false)
     log(`  [4] no delivery            : exit=${none.exitCode} resolved=${String(noneLine.resolved)}`)
@@ -376,6 +391,9 @@ async function main(): Promise<number> {
     const overall = failed.length === 0 ? 'SATISFIED_CANDIDATE' : 'NOT_SATISFIED'
     const record = {
       demonstration: 'D1_PRODUCTION_TOPOLOGY_SYNTHETIC',
+      delivery: delivery.id,
+      node: delivery.node,
+      closure_blobs: closureBlobs,
       value: 'freshly generated NON-SECRET sentinel, RFC 6761 .invalid host, synthetic shape, sentinel namespace',
       topology: 'harness -> built d1-n30-deposit.js (stdin pipe) ; harness -> built d1-deliver-n13.js (console, bare node) -> built d1-auditor-n13-consumer.js (bare node, CONSUMER_SPAWN_FLAGS)',
       database_socket_attempted: false,
@@ -387,7 +405,7 @@ async function main(): Promise<number> {
       launchers_observed: `${launchersObserved.length}/${launcherPids.length}`,
       overall,
     }
-    writeFileSync(join(outDir, 'D1_PRODUCTION_TOPOLOGY_EVIDENCE.json'), `${JSON.stringify(record, null, 2)}\n`, 'utf8')
+    writeFileSync(join(outDir, `D1_PRODUCTION_TOPOLOGY_EVIDENCE_${delivery.id}.json`), `${JSON.stringify(record, null, 2)}\n`, 'utf8')
     log('')
     for (const [k2, s] of Object.entries(c)) log(`  ${s.padEnd(8)} ${k2}`)
     log(`  aggregate : ${overall}`)

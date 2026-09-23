@@ -1,0 +1,589 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_POST_MINT_COMPLETENESS_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "POST_MINT_COMPLETENESS_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_HOSTED_MUTATION__NO_HC1__NO_VAULT_LOCATOR",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-POST-MINT-COMPLETENESS-AND-PREHC1-HARDENING-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner and not the custodian.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "head": "3def3c5b7b82747a3d4533aa6badccb0043cffff",
+    "tree": "70c0c3009183fa8af14794110c75564875120ed0",
+    "prestate_gate": "PASS, declared branch/head/tree/clean, 2026-09-23T16:04:46Z"
+  },
+  "OWNER_DECISIONS": {
+    "record": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0.json",
+    "D1_MINT_ROUTE": "B_SQL_BOUND_PARAMETER",
+    "D1_MINT_OPERATOR_TOOL": "EPHEMERAL_NODE_PG_OUTSIDE_REPOSITORY",
+    "D1_PASSWORD_NULL_REQUIRES_SEPARATE_HUMAN_CONFIRMATION": "YES",
+    "SIGNED": "YES",
+    "authorizes_a_credential_act": false
+  },
+  "MINT_ROUTE_CONTRACT": {
+    "module": "db/custody/mint-route-b-contract.ts",
+    "source_clauses": [
+      "SECRET_GENERATION_CONTRACT.generation_requirements (entropy, encoding, generated_where, distinctness)",
+      "SECRET_GENERATION_CONTRACT.WHERE_THE_PASSWORD_MUST_NOT_TRAVEL (the set_config bound-parameter pattern; argv, output, repository, evidence)",
+      "MUTATION_ROLLBACK_CONTRACT.MR_2_CREDENTIAL (mutation, failure token, compensating action)",
+      "MR_1_LOGIN_ATTRIBUTE (LOGIN is its own act)",
+      "SECRET_ROTATION_CONTRACT.what_rotation_does_NOT_do",
+      "OD-3 and DAG N11.act / N09 (VALID UNTIL)",
+      "HUMAN_CONFIRMATION.HC_1 (placement after target identity by ref)",
+      "DAG v1.0.4 N30_ADJACENCY_RULE"
+    ],
+    "precedent": "scripts/rotate-local-role-credentials.ts:222-233 (two set_config bound parameters, DO block EXECUTE format('ALTER ROLE %I LOGIN PASSWORD %L', current_setting(...), current_setting(...)))",
+    "pinned_statements": [
+      "SELECT set_config('uellix.rotating_role', $1, true)",
+      "SELECT set_config('uellix.rotating_password', $1, true)",
+      "SELECT set_config('uellix.rotating_valid_until', $1, true)",
+      "DO $rotate$ ... EXECUTE format('ALTER ROLE %I PASSWORD %L VALID UNTIL %L', current_setting x3) ... EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION USING ERRCODE = SQLSTATE, MESSAGE = 'D1_CREDENTIAL_SET_FAILED' ... $rotate$"
+    ],
+    "deltas_declared_for_ruling": [
+      "RB-DELTA-1 LOGIN removed (DERIVED_FROM_AUTHORITY)",
+      "RB-DELTA-2 VALID UNTIL bound through a third set_config (DERIVED_FROM_AUTHORITY)",
+      "RB-DELTA-3 exception wrapper (DERIVED_SAFETY_ADDITION_UNMEASURED)"
+    ],
+    "no_other_sql_introduced": true,
+    "operator_tool_contract": "OT-1..OT-11 (OPERATOR_TOOL_CONTRACT). The live tool is NOT in the repository. The repository holds the contract, a harness (scripts/custody/d1-mint-tool-contract-harness.ts) that runs a candidate located outside the repository against a fake driver and a fake depositor, and a detector for a repository-hosted live mint script.",
+    "harness_results": {
+      "conforming_fake_only_fixture": "CONFORMS in SUCCESS, MINT_FAILS and UNPINNED_TARGET",
+      "non_conforming_variants_failed_on_their_clause": [
+        "LITERAL_IN_SQL -> BOUND_ONLY",
+        "INTERPOLATED_NOT_BOUND -> BOUND_ONLY",
+        "SECRET_IN_DEPOSITOR_ARGV -> DEPOSITOR_ARGV_CLEAN",
+        "SECRET_TO_TEMP_FILE -> FILES_CLEAN",
+        "SECRET_PRINTED -> OUTPUT_CLEAN",
+        "WRONG_VALID_UNTIL -> VALID_UNTIL_EQUALS_N09",
+        "HANDOFF_BEFORE_COMMIT -> HANDOFF_AFTER_COMMIT",
+        "ADMIN_ENV_LEAKED_TO_DEPOSITOR -> DEPOSITOR_ENV_CLEAN",
+        "NO_TARGET_PIN -> REFUSES_UNPINNED_TARGET"
+      ],
+      "fixture_refuses_real_driver": "exit 97 FAKE_ONLY_FIXTURE against the installed postgres package",
+      "measured_defect_fixed_during_the_lane": "HANDOFF_AFTER_COMMIT first compared timestamps against an instantaneous fake COMMIT and PASSED a pre-commit handoff (depositor start-up latency exceeded the transaction). The fake driver now holds COMMIT for 1.5s; the negative variant then FAILED as it must."
+    },
+    "harness_limits": "It cannot observe a socket opened by the candidate, files written outside the directories it hands over, or grandchildren other than the depositor. OT-11 is stated, not measured."
+  },
+  "OPERATOR_TOOL_FEASIBILITY": {
+    "verdict": "FEASIBLE",
+    "driver": "postgres@3.4.9",
+    "measured": {
+      "node": "v24.16.0",
+      "pg_package": "ABSENT (not installed; not installed by this lane)",
+      "postgres_package": "3.4.9, resolved by createRequire(<repository>/package.json) from a program located and run outside the repository",
+      "parameter_binding": "real: template values become $n placeholders with a separate parameters array (node_modules/postgres/src/types.js:75-92 handleValue)",
+      "pipe_handoff": "spawn with an argument array and a stdin pipe, no shell; exercised by the harness against a fake depositor and by the topology demonstrations against the built depositor"
+    },
+    "why_not_STOP_OPERATOR_TOOL_DEPENDENCY_GAP": "The lane mandate admits 'Node + pg or the exact available driver established by measurement'; the measured driver needs no new dependency and no download.",
+    "open": "The channel that supplies UELLIX_D1_MINT_OPERATOR_DATABASE_URL to the ephemeral tool is not decided here and belongs to the future execution authority (a shell assignment would persist it in PowerShell history)."
+  },
+  "CONSUMERS": {
+    "N13": {
+      "status": "IMPLEMENTED",
+      "entry": "scripts/custody/d1-auditor-n13-consumer.ts",
+      "core": "db/custody/n13-verification.ts",
+      "change_this_lane": "moved onto the shared consumer shell (scripts/custody/d1-consumer-shell.ts); behaviour unchanged, re-demonstrated"
+    },
+    "N14": {
+      "status": "IMPLEMENTED; EXIT UNREACHABLE WHILE AC-1 AND AC-3 ARE OPEN",
+      "entry": "scripts/custody/d1-auditor-n14-consumer.ts",
+      "core": "db/custody/n14-observation.ts over db/custody/auditor-read-session.ts and db/custody/p1-reads.ts",
+      "contract": "own delivery, own session: preflight KP-1, KP-2, sentinel + verifyStagingTarget(required); body KP-3 first (KP-4 stop, no has_schema_privilege on an absent schema), then every authorized prestate; ONE BEGIN READ ONLY, unconditional ROLLBACK; tokens STOP_STELLA_OPS_SCHEMA_ABSENT, STOP_DANGEROUS_ROLE_ATTRIBUTE, STOP_UNEXPLAINED_ROLE_MEMBERSHIP, STOP_UNEXPECTED_AUDITOR_OWNERSHIP, STOP_CONNECT_PRIVILEGE_ABSENT, STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE; never SQ-6/SQ-7"
+    },
+    "N21": {
+      "status": "IMPLEMENTED (conditional); EXIT UNREACHABLE WHILE AC-3 IS OPEN",
+      "entry": "scripts/custody/d1-auditor-n22-consumer.ts --node=N21",
+      "contract": "USAGE true and CREATE false asserted; both EXECUTE assertions BLOCKED by AC-3"
+    },
+    "N22": {
+      "status": "IMPLEMENTED; EXIT UNREACHABLE WHILE AC-1 AND AC-3 ARE OPEN",
+      "entry": "scripts/custody/d1-auditor-n22-consumer.ts",
+      "core": "db/custody/n22-poststate.ts",
+      "contract": "the P1 read list re-issued in full; PV-1..PV-34 as assertions with expected/actual/verdict; READ_ONLY_PROOF's five layers; PV-22, PV-24, PV-25, PV-28, PV-32 BLOCKED"
+    },
+    "N23": {
+      "status": "NOT IMPLEMENTED HERE, BY AUTHORITY",
+      "why": "PRECHECK_R2_ENTRY_CONTRACT: 'PRECHECK-R2 is a DIFFERENT LANE under a DIFFERENT AUTHORITY. This DAG ... does not derive its contents.' The parent's SQ-1..SQ-8 surface is specified; its consumer belongs to CV1-D1-OLDDB-PRECHECK-EXEC-R2 and must be built under bare node and topology-re-demonstrated there before it holds a real value. The launcher accepts only the three in-DAG consumers today."
+    },
+    "FINAL_WITNESS": {
+      "status": "NOT IMPLEMENTED HERE, BY AUTHORITY",
+      "why": "Macro-chain node 9, outside this DAG (N28 precondition). Same requirement as N23 before it holds a real value."
+    },
+    "statement_provenance": "db/custody/p1-reads.ts: IDENTITY, READ_ONLY, SERVER_VERSION, SENTINEL, ROLE_ATTRIBUTES, STELLA_OPS_EXISTS, DATDBA VERBATIM (byte-compared to the authority by test); MEMBERSHIPS, REACH, DATABASE_PRIVILEGES, SCHEMA_PRIVILEGES, OWNERSHIP, DEFAULT_ACL DESCRIBED (realizations of the authority's prose over the named objects, declared for review); FUNCTION_EXECUTE (AC-3) and TABLE_PRIVILEGES (AC-1, NOT_IN_AUTHORITY) BLOCKED: no node can send them, enforced at run time by the session allowlist."
+  },
+  "AUTHORITY_CONFLICTS": {
+    "declared_in": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.5.json AUTHORITY_CONFLICTS_OPEN",
+    "AC-1": "has_table_privilege demanded by PV-22/28/32, absent from the exhaustive P1 list",
+    "AC-2": "EP-3 'every uellix_cap_* role present' vs keyed-lookups-only",
+    "AC-3": "has_function_privilege on a text signature raises when the function is absent, and OLD_DB is defined by the nine-argument function's absence; the only guard is M20 (DERIVED from documented regprocedure input semantics and the authority's own E-6 analogue; UNMEASURED because no socket is permitted)",
+    "resolved_here": false
+  },
+  "DELIVERY_MATRIX": {
+    "derived_by": "scripts/custody/d1-delivery-matrix.ts from the DAG's HOSTED_SQL nodes (mutations N16, N20 excluded) plus N23 and the FINAL WITNESS",
+    "rows": [
+      {
+        "delivery": "DL-N13",
+        "node": "N13",
+        "consumer": "d1-auditor-n13-consumer.js",
+        "topology": "bare node launcher from a console -> bare node consumer, same console, kill-on-close job, no descendant",
+        "why": "KP-1/KP-2/arm B; N11 closure",
+        "cleanup": "consumer exit + launcher zeroing; WCM entry kept"
+      },
+      {
+        "delivery": "DL-N14",
+        "node": "N14",
+        "consumer": "d1-auditor-n14-consumer.js",
+        "topology": "as DL-N13, own closure",
+        "why": "P1 prestate",
+        "cleanup": "as DL-N13"
+      },
+      {
+        "delivery": "DL-N21",
+        "node": "N21",
+        "conditional": "MR-3 FIRE",
+        "consumer": "d1-auditor-n22-consumer.js --node=N21",
+        "topology": "as DL-N13, N22 closure",
+        "why": "MR-3 poststate",
+        "cleanup": "as DL-N13"
+      },
+      {
+        "delivery": "DL-N22",
+        "node": "N22",
+        "consumer": "d1-auditor-n22-consumer.js",
+        "topology": "as DL-N13, own closure",
+        "why": "P3 poststate + READ_ONLY_PROOF",
+        "cleanup": "as DL-N13"
+      },
+      {
+        "delivery": "DL-N23",
+        "node": "N23",
+        "consumer": "EXTERNAL (PRECHECK-R2 lane)",
+        "why": "PRECHECK_OLD_DB",
+        "cleanup": "N24 removal + positive absence"
+      },
+      {
+        "delivery": "DL-FINAL-WITNESS",
+        "node": "FINAL WITNESS",
+        "consumer": "EXTERNAL (macro-chain node 9)",
+        "why": "D1_OLD_DB_FINAL_WITNESS",
+        "cleanup": "N28 rotation, removal, custody closure"
+      }
+    ],
+    "one_process_per_delivery": "Every row is a separate launcher run and a separate consuming process; the value is never left set between two of them."
+  },
+  "N06": {
+    "status": "SATISFIED",
+    "method": "evaluateN06InRepo, now including checkInventorySurfaces against deriveCustodySurfaces(); the inventory entry's processes_or_environments re-derived in place (update_record_post_mint_topology).",
+    "before": "NOT_SATISFIED against the re-derivation: 7 derived surfaces missing and 4 obsolete ones listed",
+    "after": "SATISFIED, zero reasons",
+    "surfaces": [
+      "MINT_OPERATOR_TRANSIENT_SURFACE",
+      "TARGET_BACKEND_TRANSACTION_GUC",
+      "N30_DEPOSITOR_TRANSIENT_SURFACE",
+      "WCM_PERSISTENT_STORE",
+      "BRIDGE_TRANSIENT_SURFACE",
+      "N05_LAUNCHER_SURFACE",
+      "CONSUMER_ENVIRONMENT_PER_DELIVERY (6 deliveries)"
+    ]
+  },
+  "TOPOLOGY_DEMONSTRATION": {
+    "command": "pnpm custody:production:demonstrate -- --out-dir=<outside the repository> --delivery=<DL-N13|DL-N14|DL-N21|DL-N22>",
+    "value": "freshly generated NON-SECRET sentinel, RFC 6761 .invalid host, synthetic shape, sentinel namespace; no database socket attempted",
+    "per_delivery": {
+      "DL-N13": {
+        "node": "N13",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 955,
+        "closure_blobs": {
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n13-consumer.ts": "34553a67aad7821882b1c9ff442873844e85423b",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      },
+      "DL-N14": {
+        "node": "N14",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 908,
+        "closure_blobs": {
+          "db/custody/auditor-read-session.ts": "9d53aa4375911a838f8f80bb9b7e3ce5f2eb5b88",
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/n14-observation.ts": "83afb4871201dfbbbdadbe166f4a67ce77cad3da",
+          "db/custody/p1-reads.ts": "b08b5c31f90f207a06b233e79daf423c39f746c3",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n14-consumer.ts": "89036e28177492e6026266ed7ce2ee627e742994",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      },
+      "DL-N21": {
+        "node": "N21",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 950,
+        "closure_blobs": {
+          "db/custody/auditor-read-session.ts": "9d53aa4375911a838f8f80bb9b7e3ce5f2eb5b88",
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/n22-poststate.ts": "e475301f3a32c243013d97edb69c7b9b76a2e76d",
+          "db/custody/p1-reads.ts": "b08b5c31f90f207a06b233e79daf423c39f746c3",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n22-consumer.ts": "6cfd350d979a8a1340a9a94061c8f9c7287a1056",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      },
+      "DL-N22": {
+        "node": "N22",
+        "overall": "SATISFIED_CANDIDATE",
+        "controls_passed": "18/18",
+        "controls": {
+          "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+          "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+          "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+          "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+          "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+          "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+          "T_SUCCESS_PATH_REMOVED": "PASSED",
+          "T_FAILURE_PATH_REMOVED": "PASSED",
+          "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+          "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+          "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+          "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+          "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+          "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+          "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+          "T_HISTORY_SINKS_CLEAN": "PASSED",
+          "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+          "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+        },
+        "delivered_consumers_observed": "5/5",
+        "launchers_observed_clean": "5/5",
+        "consumer_descendants": [],
+        "observer_polls": 911,
+        "closure_blobs": {
+          "db/custody/auditor-read-session.ts": "9d53aa4375911a838f8f80bb9b7e3ce5f2eb5b88",
+          "db/custody/base64-bytes.ts": "17a198c5afbb3ae401ce8be09e8521ae6a3d2f93",
+          "db/custody/n13-verification.ts": "f69fddd6b49841d108cf861fdb555b3786dfe79a",
+          "db/custody/n22-poststate.ts": "e475301f3a32c243013d97edb69c7b9b76a2e76d",
+          "db/custody/p1-reads.ts": "b08b5c31f90f207a06b233e79daf423c39f746c3",
+          "db/custody/process-delivery.ts": "4264f5a693ebeb61af0fbdbef64fad3d38c1db51",
+          "db/custody/production-custody.ts": "80cedabd39ad01d01b55a6c7406b3850eefb691e",
+          "db/custody/wcm-credential-store.ts": "fab7437a284e2a01723682889205ddb353c15c21",
+          "db/custody/wcm-powershell-source.ts": "247eeca8dde45a0fc10d374b612cebc58d923422",
+          "db/hosted/target-identity.ts": "4b3e704b3ad93e21b6e6e048bac894458b927d19",
+          "db/safety/database-role.ts": "78e5bfc778c53e5207077f6836335f9ab0dbe392",
+          "db/safety/resolve-capability-database-url.ts": "14ff0a01ce331d6453686935f5c026e116b0107e",
+          "scripts/custody/d1-auditor-n22-consumer.ts": "6cfd350d979a8a1340a9a94061c8f9c7287a1056",
+          "scripts/custody/d1-consumer-shell.ts": "0cb5d9161ceb7a531c898d79cc30c3bdba69ced2",
+          "scripts/custody/d1-deliver-n13.ts": "7d0dadc844648bfb26c82315f83b97f220583e5d"
+        }
+      }
+    },
+    "external_deliveries": {
+      "DL-N23": "NOT_RUN: consumer owned and not yet built by the PRECHECK-R2 lane",
+      "DL-FINAL-WITNESS": "NOT_RUN: consumer owned by macro-chain node 9"
+    },
+    "uellix_wcm_entries_after": 0,
+    "ceiling": "SATISFIED_CANDIDATE per delivery. A builder's demonstration certifies nothing."
+  },
+  "PASSWORD_NULL_CONFIRMATION_SEMANTICS": "ALTER ROLE uellix_auditor PASSWORD NULL is never automatic and is permitted only under its OWN signed, unspent confirmation (HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL). No HC-1, spent or fresh, stands in for it (scripts/custody/d1-post-mint.ts compensationGate). No authority clause makes PASSWORD NULL an automatic emergency act, so the owner decision creates no contradiction.",
+  "ROTATE_AGAIN_CONFIRMATION_SEMANTICS": "ROTATE AGAIN is an MR-2 credential set and needs a FRESH HC-1 (HUMAN_CONFIRMATION.confirmations_are_not_transferable; SECRET_ROTATION_CONTRACT.rotation_mechanics 'Identical to the initial mint'). A spent HC-1 is refused by compensationGate.",
+  "POST_MINT_ATOMICITY": {
+    "source": "scripts/custody/d1-post-mint.ts POST_MINT_SCENARIOS PM-0..PM-11",
+    "boundaries": "transaction before COMMIT; after COMMIT before handoff; N30 write; N30 probe; N13; N13 KP-1; N14; N21/N22; N23/PRECHECK; launcher death; governed removal; operator abort after N30",
+    "invariants": [
+      "automatic_credential_mutation = false in every state",
+      "every credential mutation after the mint needs a fresh HC-1",
+      "PASSWORD NULL only under its own confirmation",
+      "an undeposited live credential (PM-1..PM-3) must be rotated or withdrawn, never parked",
+      "a deposited value may wait in custody until R; read-only nodes resume by fresh deliveries"
+    ],
+    "executed": "NOTHING"
+  },
+  "PRE_HC1_EVALUATOR_HARDENING": {
+    "module": "scripts/custody/d1-pre-hc1-post-mint.ts",
+    "source_of_the_conjunct_list": "DAG v1.0.5 N10_PRE_HC1_READINESS_CONJUNCTS, read by id; missing amendment, empty list or unregistered id = NOT_READY",
+    "conjuncts": [
+      "PMR-1_MINT_ROUTE_RATIFIED",
+      "PMR-2_OPERATOR_TOOL_FEASIBLE",
+      "PMR-3_PASSWORD_NULL_SEMANTICS",
+      "PMR-4_N06_REDERIVED_FOR_TOPOLOGY",
+      "PMR-5_IN_DAG_CONSUMERS_IMPLEMENTED",
+      "PMR-6_TOPOLOGY_DEMONSTRATED_PER_CONSUMER",
+      "PMR-7_NO_OPEN_AUTHORITY_CONFLICT",
+      "PMR-8_PACKAGE_CERTIFIED_AT_CURRENT_BLOBS"
+    ],
+    "evaluateN10_change": "postMintUnsatisfied is a REQUIRED input; omitting it is NOT_READY",
+    "cli_change": "accepts --branch= --head= --tree= and reports declaredBaseSource (NB-1)"
+  },
+  "DAG_STATUS": {
+    "sources": 6,
+    "nodes": 32,
+    "edges": 45,
+    "hard": 37,
+    "conditional": 8,
+    "acyclic": true,
+    "reachable_from_N30": [
+      "N13",
+      "N14",
+      "N21",
+      "N22",
+      "N23"
+    ],
+    "hc1_immediately_upstream_of_N11": true,
+    "N24_N28_unchanged": true,
+    "amendment": "v1.0.5: zero nodes, zero edges; N10 conjuncts, AC-1..AC-3 declared, RB deltas declared"
+  },
+  "SCHEDULE": {
+    "preserved": {
+      "N08_W": "2026-09-24T14:00:00Z",
+      "N31_R": "2026-09-24T18:00:00Z",
+      "N09_E": "2026-09-25T14:00:00.000Z"
+    },
+    "evaluated_at_utc": "2026-09-23T16:37:20Z",
+    "remaining_before_W": "about 21.4 hours",
+    "work_remaining_before_W": [
+      "one independent certification of this package",
+      "an owner/authority ruling on AC-1, AC-2 and AC-3 by a successor amendment (without it N14, N21 and N22 cannot meet their exits)",
+      "the PRECHECK-R2 consumer built and re-demonstrated by its own lane",
+      "fresh PRE-HC1 evaluation and certification",
+      "fresh HC-1 and immediate confirmation",
+      "N11..N25 executed",
+      "N26 independent certification of the executed provisioning",
+      "N27 PRECHECK-R2 with its own confirmation",
+      "the FINAL WITNESS at W"
+    ],
+    "verdict": "NOT_FEASIBLE_WITHOUT_RESCHEDULING",
+    "consequence": "A fresh owner-supplied N08 (planned FINAL WITNESS instant) and N31 (planned removal) will be required before the next PRE-HC1 cycle, and N09 re-derived mechanically from the new N08. No credential exists, so a reschedule re-rotates nothing. W, R and E are NOT moved by this record."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "final_state": "D1_POST_MINT_COMPLETENESS_IMPLEMENTED__ROUTE_B_RATIFIED__IN_DAG_CONSUMERS_IMPLEMENTED__N06_REDERIVED__PREHC1_FAIL_CLOSED_HARDENED__AUTHORITY_CONFLICTS_AC1_AC3_OPEN__NOT_FEASIBLE_WITHOUT_RESCHEDULING",
+  "next_gate": "ONE independent certification of the complete post-mint / pre-HC1 package, which must confirm or refute AC-1..AC-3 and rule RB-DELTA-1..3. Then an owner/authority ruling on the confirmed conflicts; fresh N08/N31 (and mechanical N09); fresh PRE-HC1; fresh HC-1; immediate N11 confirmation.",
+  "MUTATION_RESULTS": {
+    "harness": "Each mutant applied to source (or, for M06, a new tracked-candidate file created), the focused test file run, original bytes restored and SHA-256 re-verified (new file deleted). Worktree status and every changed file's blob were byte-identical before and after the battery.",
+    "result": "21 of 21 RED",
+    "mutants": [
+      {
+        "id": "M01_LITERAL_PASSWORD_IN_SQL",
+        "result": "RED",
+        "tests": "Tests  2 failed | 17 passed (19)"
+      },
+      {
+        "id": "M02_INTERPOLATION_NOT_BOUND",
+        "result": "RED",
+        "tests": "Tests  5 failed | 14 passed (19)"
+      },
+      {
+        "id": "M03_SECRET_IN_ARGV",
+        "result": "RED",
+        "tests": "Tests  2 failed | 17 passed (19)"
+      },
+      {
+        "id": "M04_SECRET_TO_TEMP_FILE",
+        "result": "RED",
+        "tests": "Tests  2 failed | 17 passed (19)"
+      },
+      {
+        "id": "M05_SECRET_PRINTED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 17 passed (19)"
+      },
+      {
+        "id": "M06_REPO_HOSTED_LIVE_MINT_SCRIPT",
+        "result": "RED",
+        "tests": "Tests  1 failed | 18 passed (19)"
+      },
+      {
+        "id": "X3_HARNESS_COMMIT_HOLD_REMOVED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 18 passed (19)"
+      },
+      {
+        "id": "M07_N14_BYPASSES_N05",
+        "result": "RED",
+        "tests": "Tests  2 failed | 25 passed (27)"
+      },
+      {
+        "id": "M08_N22_BYPASSES_N05",
+        "result": "RED",
+        "tests": "Tests  2 failed | 25 passed (27)"
+      },
+      {
+        "id": "M09_CONSUMER_SPAWNS_CHILD",
+        "result": "RED",
+        "tests": "Tests  1 failed | 26 passed (27)"
+      },
+      {
+        "id": "M10_CONSUMER_WRONG_ROLE",
+        "result": "RED",
+        "tests": "Tests  1 failed | 26 passed (27)"
+      },
+      {
+        "id": "M11_CONSUMER_WRONG_PROJECT",
+        "result": "RED",
+        "tests": "Tests  1 failed | 26 passed (27)"
+      },
+      {
+        "id": "M12a_UNAUTHORIZED_SQL_ALLOWLIST_OFF",
+        "result": "RED",
+        "tests": "Tests  1 failed | 26 passed (27)"
+      },
+      {
+        "id": "M12b_UNAUTHORIZED_SQL_UNBLOCKED",
+        "result": "RED",
+        "tests": "Tests  5 failed | 22 passed (27)"
+      },
+      {
+        "id": "M16_AUTOMATIC_PASSWORD_NULL",
+        "result": "RED",
+        "tests": "Tests  1 failed | 12 passed (13)"
+      },
+      {
+        "id": "M17_ROTATE_AGAIN_WITH_SPENT_HC1",
+        "result": "RED",
+        "tests": "Tests  1 failed | 12 passed (13)"
+      },
+      {
+        "id": "X2_V105_CONJUNCT_DROPPED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 6 passed (7)"
+      },
+      {
+        "id": "M13_N06_OMITS_A_DELIVERY",
+        "result": "RED",
+        "tests": "Tests  20 failed | 5 passed (25)"
+      },
+      {
+        "id": "M14_PREHC1_READY_WITH_MISSING_ROUTE",
+        "result": "RED",
+        "tests": "Tests  3 failed | 22 passed (25)"
+      },
+      {
+        "id": "M15_PREHC1_READY_WITH_INCOMPLETE_CONSUMER",
+        "result": "RED",
+        "tests": "Tests  3 failed | 22 passed (25)"
+      },
+      {
+        "id": "X1_N10_IGNORES_POST_MINT",
+        "result": "RED",
+        "tests": "Tests  1 failed | 41 passed (42)"
+      }
+    ],
+    "survivor_self_test": {
+      "id": "SELFTEST_HARMLESS_COMMENT",
+      "result": "GREEN_SURVIVED",
+      "why": "A comment-only change must survive; it did, so the battery can report a survivor and its RED results are not self-fulfilling."
+    }
+  },
+  "VALIDATION": {
+    "custody_tests": "19 files, 431/431 passed (tests/custody/)",
+    "route_b_contract_tests": "19/19",
+    "n14_n21_n22_consumer_tests": "27/27",
+    "pre_hc1_post_mint_tests": "25/25",
+    "production_topology_demonstrations": "DL-N13, DL-N14, DL-N21, DL-N22: 18/18 SATISFIED_CANDIDATE each",
+    "n05_sentinel_demonstration_rerun": "SATISFIED_CANDIDATE",
+    "custody_dag_validate": "PASS (6 sources, 32 nodes, 45 edges, acyclic)",
+    "custody_pre_hc1": "N10 NOT_READY: PMR-7 (AC-1..AC-3 open), PMR-8 (no certification at current blobs); all seven HARD predecessors SATISFIED",
+    "typecheck": "PASS",
+    "lint": "0 problems in db/custody, scripts/custody, tests/custody",
+    "secrets_scan": "PASS",
+    "authority_seal_verify": "PASS",
+    "ods_scope_and_poststate": "run after commit; reported in the lane's final report"
+  }
+}

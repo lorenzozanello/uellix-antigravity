@@ -171,17 +171,23 @@ describe('N10 is READY at most, and never SATISFIED without HC-1', () => {
   })
 
   it.each(['N02', 'N03', 'N04', 'N05', 'N06', 'N07', 'N09'])('is NOT_READY when %s alone is missing', (p) => {
-    const r = evaluateN10({ states: { ...all, [p]: 'NOT_SATISFIED' }, hardPredecessors: preds, hc1Answer: null })
+    const r = evaluateN10({ states: { ...all, [p]: 'NOT_SATISFIED' }, hardPredecessors: preds, hc1Answer: null, postMintUnsatisfied: [] })
     expect(r.readiness).toBe('NOT_READY')
     expect(r.unsatisfied).toEqual([p])
   })
 
   it('is READY_FOR_HUMAN_CONFIRMATION, not SATISFIED, when every predecessor holds and no HC-1 answer exists', () => {
-    expect(evaluateN10({ states: all, hardPredecessors: preds, hc1Answer: null }).readiness).toBe('READY_FOR_HUMAN_CONFIRMATION')
+    expect(evaluateN10({ states: all, hardPredecessors: preds, hc1Answer: null, postMintUnsatisfied: [] }).readiness).toBe('READY_FOR_HUMAN_CONFIRMATION')
+  })
+
+  it('is NOT_READY when the post-mint conjuncts were not evaluated, or any is unsatisfied', () => {
+    expect(evaluateN10({ states: all, hardPredecessors: preds, hc1Answer: null, postMintUnsatisfied: undefined }).readiness).toBe('NOT_READY')
+    const r = evaluateN10({ states: all, hardPredecessors: preds, hc1Answer: null, postMintUnsatisfied: ['PMR-1_MINT_ROUTE_RATIFIED'] })
+    expect(r).toEqual({ readiness: 'NOT_READY', unsatisfied: ['PMR-1_MINT_ROUTE_RATIFIED'] })
   })
 
   it('refuses to evaluate over an empty predecessor set', () => {
-    expect(evaluateN10({ states: all, hardPredecessors: [], hc1Answer: null }).readiness).toBe('NOT_READY')
+    expect(evaluateN10({ states: all, hardPredecessors: [], hc1Answer: null, postMintUnsatisfied: [] }).readiness).toBe('NOT_READY')
   })
 })
 

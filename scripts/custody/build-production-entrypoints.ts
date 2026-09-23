@@ -1,11 +1,13 @@
 // scripts/custody/build-production-entrypoints.ts
 //
-// TRANSPILE THE FOUR PRODUCTION CUSTODY ENTRY POINTS TO PLAIN COMMONJS,
+// TRANSPILE THE SIX PRODUCTION CUSTODY ENTRY POINTS TO PLAIN COMMONJS,
 // OUTSIDE THE REPOSITORY TREE, SO EACH RUNS UNDER BARE `node`.
 //
 //   d1-n30-deposit            N30, the deposit (stdin pipe only)
 //   d1-deliver-n13            the launcher: N05's delivery path to one consumer
-//   d1-auditor-n13-consumer   N13, the consumer
+//   d1-auditor-n13-consumer   N13's consumer
+//   d1-auditor-n14-consumer   N14's consumer
+//   d1-auditor-n22-consumer   N22's consumer (and N21's, with --node=N21)
 //   d1-wcm-remove             the governed removal (N24, N28, compensation)
 //
 // Why bare node: build-sentinel-consumer.ts records the measured leak — under
@@ -33,9 +35,11 @@ export const PRODUCTION_ENTRY_POINTS = [
   'scripts/custody/d1-deliver-n13.ts',
   'scripts/custody/d1-auditor-n13-consumer.ts',
   'scripts/custody/d1-wcm-remove.ts',
+  'scripts/custody/d1-auditor-n14-consumer.ts',
+  'scripts/custody/d1-auditor-n22-consumer.ts',
 ] as const
 
-export type EntryName = 'deposit' | 'deliver' | 'consumer' | 'remove'
+export type EntryName = 'deposit' | 'deliver' | 'consumer' | 'remove' | 'consumerN14' | 'consumerN22'
 
 const REQUIRE_RE = /require\("([^"]+)"\)/g
 
@@ -102,5 +106,7 @@ export function buildProductionEntryPoints(repoRoot: string, outDir: string): Re
     deliver: at(PRODUCTION_ENTRY_POINTS[1]),
     consumer: at(PRODUCTION_ENTRY_POINTS[2]),
     remove: at(PRODUCTION_ENTRY_POINTS[3]),
+    consumerN14: at(PRODUCTION_ENTRY_POINTS[4]),
+    consumerN22: at(PRODUCTION_ENTRY_POINTS[5]),
   }
 }

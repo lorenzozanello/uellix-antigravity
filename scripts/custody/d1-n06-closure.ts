@@ -15,6 +15,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { checkPlannedRemoval, computeValidUntilUtc } from './d1-n09-valid-until'
 import { hardPredecessorsOf } from './d1-dag-validate'
+import { checkInventorySurfaces } from './d1-delivery-matrix'
 
 const CAPABILITY_AUTHORITY = 'docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json'
 export const CUSTODY_INVENTORY = 'docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json'
@@ -68,6 +69,8 @@ export interface N06Evaluation {
   readonly expiryMatchesN09: boolean
   readonly removalWithinBounds: boolean
   readonly secretFindings: readonly string[]
+  /** processes_or_environments against the production topology (d1-delivery-matrix). */
+  readonly topologyReasons: readonly string[]
   readonly hardPredecessors: readonly string[]
   readonly unsatisfiedPredecessors: readonly string[]
   readonly status: 'SATISFIED' | 'NOT_SATISFIED'
@@ -88,6 +91,14 @@ export function evaluateN06(params: {
   readonly plannedFinalWitnessUtc: string | null
   readonly predecessorStates: Readonly<Record<string, NodeState>>
   readonly hardPredecessors: readonly string[]
+  /**
+   * Why processes_or_environments does not match the derived production
+   * topology, if it does not. Present only when the caller derived it; the
+   * repository evaluation always does (OF-PM-4: the surfaces changed when the
+   * post-mint path was built, so an inventory listing the old ones is not
+   * "every process or environment that will hold it").
+   */
+  readonly topologyReasons?: readonly string[]
 }): N06Evaluation {
   const reasons: string[] = []
   const fields = deriveN06Fields(params.rootClause).map((f) => {
@@ -125,6 +136,9 @@ export function evaluateN06(params: {
   const secretFindings = SECRET_PATTERNS.filter(([, re]) => re.test(text)).map(([name]) => name)
   for (const f of secretFindings) reasons.push(`The entry contains a ${f}.`)
 
+  const topologyReasons = params.topologyReasons ?? []
+  reasons.push(...topologyReasons)
+
   const unsatisfiedPredecessors = params.hardPredecessors.filter((p) => params.predecessorStates[p] !== 'SATISFIED')
   for (const p of unsatisfiedPredecessors) reasons.push(`HARD predecessor ${p} is not SATISFIED.`)
   if (params.hardPredecessors.length === 0) reasons.push('No HARD predecessors were derived; refusing to evaluate over an empty set.')
@@ -136,6 +150,7 @@ export function evaluateN06(params: {
     expiryMatchesN09,
     removalWithinBounds,
     secretFindings,
+    topologyReasons,
     hardPredecessors: params.hardPredecessors,
     unsatisfiedPredecessors,
     status: reasons.length === 0 ? 'SATISFIED' : 'NOT_SATISFIED',
@@ -151,11 +166,13 @@ export function evaluateN06InRepo(
 ): N06Evaluation {
   const inv = JSON.parse(readFileSync(join(repoRoot, CUSTODY_INVENTORY), 'utf8')) as { entries: Array<Record<string, unknown>> }
   if (inv.entries.length !== 1) throw new Error(`The custody inventory holds ${inv.entries.length} entries; exactly one is required.`)
+  const entry = inv.entries[0]!
   return evaluateN06({
     rootClause: readRootClause(repoRoot),
-    entry: inv.entries[0]!,
+    entry,
     plannedFinalWitnessUtc,
     predecessorStates,
     hardPredecessors: hardPredecessorsOf('N06'),
+    topologyReasons: checkInventorySurfaces(repoRoot, entry.processes_or_environments),
   })
 }

@@ -44,116 +44,245 @@ export function n11Status(f: PostMintFacts): N11Status {
   return 'CLOSED'
 }
 
-export type Compensation =
-  | 'NONE__NOTHING_CHANGED'
-  | 'ROTATE_AGAIN_OR_PASSWORD_NULL__UNDER_A_FRESH_HUMAN_CONFIRMATION'
-  | 'GOVERNED_REMOVAL_OF_THE_ENTRY_THEN_ROTATE_AGAIN_OR_PASSWORD_NULL'
-  | 'GOVERNED_REMOVAL_OF_THE_ENTRY'
-  | 'NONE__ENTRY_STAYS_IN_CUSTODY_UNTIL_RESUMED_OR_R'
+// ---------------------------------------------------------------------------
+// COMPENSATIONS AND THE CONFIRMATIONS THEY NEED
+// ---------------------------------------------------------------------------
+//
+// Both compensations MR-2 names are credential mutations, and neither is ever
+// executed automatically:
+//
+//   ROTATE_AGAIN   is an MR-2 credential set. HUMAN_CONFIRMATION.
+//                  confirmations_are_not_transferable: "A confirmation is spent
+//                  when its act completes or its lane stops, and a later
+//                  attempt needs a new one." It needs a FRESH HC-1.
+//
+//   PASSWORD_NULL  (ALTER ROLE uellix_auditor PASSWORD NULL) needs its OWN
+//                  explicit human confirmation: owner decision
+//                  D1_PASSWORD_NULL_REQUIRES_SEPARATE_HUMAN_CONFIRMATION = YES
+//                  (docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0.json).
+//                  No HC-1, spent or fresh, stands in for it. No authority
+//                  clause makes it an automatic emergency act, so the owner
+//                  decision creates no contradiction.
+
+export type CompensationAction = 'ROTATE_AGAIN' | 'PASSWORD_NULL'
+
+export const HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL = 'HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL' as const
+export const HUMAN_CONFIRMATION_REQUIRED_FRESH_HC1 = 'HUMAN_CONFIRMATION_REQUIRED_FRESH_HC1' as const
+
+/** A human confirmation as recorded: which act it names, and its identity. */
+export interface Confirmation {
+  readonly id: string
+  readonly kind: 'HC-1' | 'PASSWORD_NULL'
+  readonly signed: boolean
+}
+
+export interface CompensationGate {
+  readonly permitted: boolean
+  readonly requires: typeof HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL | typeof HUMAN_CONFIRMATION_REQUIRED_FRESH_HC1
+  readonly reason: string
+}
+
+/**
+ * May this compensation run with this confirmation? Pure, and the only gate.
+ * `spent` is every confirmation id already consumed (the HC-1 at 87520a97 and
+ * the mint's own HC-1 among them).
+ */
+export function compensationGate(params: {
+  readonly action: CompensationAction
+  readonly confirmation: Confirmation | null
+  readonly spent: readonly string[]
+}): CompensationGate {
+  const c = params.confirmation
+  if (params.action === 'PASSWORD_NULL') {
+    const ok = c !== null && c.kind === 'PASSWORD_NULL' && c.signed && !params.spent.includes(c.id)
+    return {
+      permitted: ok,
+      requires: HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL,
+      reason: ok ? 'Its own, unspent, signed confirmation.' : 'PASSWORD NULL needs its OWN explicit human confirmation; an HC-1 (spent or fresh) is not one.',
+    }
+  }
+  const ok = c !== null && c.kind === 'HC-1' && c.signed && !params.spent.includes(c.id)
+  return {
+    permitted: ok,
+    requires: HUMAN_CONFIRMATION_REQUIRED_FRESH_HC1,
+    reason: ok ? 'A fresh, unspent, signed HC-1 for this rotation.' : 'ROTATE AGAIN is an MR-2 credential set and needs a FRESH HC-1; a spent one never transfers.',
+  }
+}
+
+// ---------------------------------------------------------------------------
+// THE POST-MINT STATES
+// ---------------------------------------------------------------------------
+
+export type CredentialExistence = 'NO_NEW_CREDENTIAL' | 'LIVE_ON_TARGET' | 'LIVE_ON_TARGET_UNUSABLE_OR_UNPROVEN'
 
 export interface PostMintScenario {
   readonly id: string
+  readonly boundary: string
   readonly scenario: string
-  readonly state_after: string
-  readonly value_location: string
-  readonly compensation: Compensation
-  readonly fresh_hc1_required_before_any_further_credential_mutation: true
-  readonly rotate_again_mandatory: boolean | 'OWNER_DECISION'
-  readonly password_null_permitted: 'AUTHORIZED_AS_N11_COMPENSATION__CONFIRMATION_REQUIREMENT_UNRESOLVED_NB8'
-  readonly why: string
+  readonly credential: CredentialExistence
+  readonly may_exist_in: readonly string[]
+  readonly next: string
+  /** Every credential mutation after the mint needs a fresh HC-1 (non-transferability). */
+  readonly fresh_hc1_required_before_any_credential_mutation: true
+  /** Is PASSWORD NULL on the table here, and if so it needs its own confirmation. */
+  readonly password_null: 'NOT_APPLICABLE' | 'AVAILABLE_ONLY_UNDER_HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL'
+  /** Whether a rotation must eventually happen (never automatically). */
+  readonly rotate_again: 'NOT_REQUIRED' | 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW' | 'REQUIRED_AT_N28_UNDER_FRESH_HC1'
+  readonly automatic_credential_mutation: false
 }
 
-const PN = 'AUTHORIZED_AS_N11_COMPENSATION__CONFIRMATION_REQUIREMENT_UNRESOLVED_NB8' as const
+const PN_ONLY = 'AVAILABLE_ONLY_UNDER_HUMAN_CONFIRMATION_REQUIRED_PASSWORD_NULL' as const
 
 /**
- * Every row fails closed. Two facts decide most of them:
- *
- *   HC-1 is spent when its act completes or its lane stops, so ANY further
- *   credential mutation (ROTATE AGAIN is an MR-2 credential set) needs a fresh
- *   HC-1. That is read from the HC-1 contract, not added to it.
- *
- *   N11's rollback field names two compensations, ROTATE AGAIN and PASSWORD
- *   NULL, and the PRE-HC1 certification's NB-8 records that no authority says
- *   whether PASSWORD NULL needs its own human confirmation. This table does
- *   not answer NB-8; it carries it.
+ * One row per failure the lane mandate names, at each boundary of the
+ * ratified route (Route B tool -> N30 -> N13 -> N14 -> [N21] -> N22 -> N23 ->
+ * FINAL WITNESS). Every row: no automatic credential mutation; the value is
+ * never copied to "save" it; a deposited value may wait in custody until R.
  */
 export const POST_MINT_SCENARIOS: readonly PostMintScenario[] = [
   {
+    id: 'PM-0',
+    boundary: 'Route B transaction, before COMMIT',
+    scenario: 'The mint fails or is refused (STOP_CREDENTIAL_MUTATION_FAILED, STOP_AUDITOR_ROLE_ABSENT), or the operator aborts before COMMIT',
+    credential: 'NO_NEW_CREDENTIAL',
+    may_exist_in: ['the mint tool heap until it exits (never valid anywhere)'],
+    next: 'Nothing to compensate: the transaction rolled back and the transaction-local GUC died with it. The tool closes the depositor stdin empty (harness check NO_HANDOFF_WITHOUT_COMMIT). A retry is a new MR-2 act.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: 'NOT_APPLICABLE',
+    rotate_again: 'NOT_REQUIRED',
+    automatic_credential_mutation: false,
+  },
+  {
     id: 'PM-1',
-    scenario: 'Mint succeeded, deposit (N30) failed',
-    state_after: 'N11 ACT_COMPLETE__USABILITY_PENDING; N30 NOT MET. A live credential exists on the target that no governed store holds.',
-    value_location: 'Only in the operator process that produced it, if it is still running. It must not be copied anywhere to "save" it: a second store is exactly what the custody contract forbids.',
-    compensation: 'ROTATE_AGAIN_OR_PASSWORD_NULL__UNDER_A_FRESH_HUMAN_CONFIRMATION',
-    fresh_hc1_required_before_any_further_credential_mutation: true,
-    rotate_again_mandatory: 'OWNER_DECISION',
-    password_null_permitted: PN,
-    why: 'An undeposited value can never be delivered, so it can never prove usability and never serve N13. It is an orphan credential whose only safe end is withdrawal. Whether that is a re-mint (ROTATE AGAIN, then N30 again) or PASSWORD NULL is the owner\'s choice under a fresh HC-1; if the depositor failed at STOP_N30_ENTRY_ALREADY_PRESENT, the pre-existing entry is first removed by the governed removal path and the reason recorded.',
+    boundary: 'After COMMIT, before the depositor received the value',
+    scenario: 'Mint succeeded; the pipe to N30 failed (depositor did not start, died, or the write failed), or the operator aborted here',
+    credential: 'LIVE_ON_TARGET_UNUSABLE_OR_UNPROVEN',
+    may_exist_in: ['the target (as a verifier)', 'the mint tool heap until it exits'],
+    next: 'STOP. The value is in no governed store and can never be delivered. It must not be copied anywhere to save it. Withdraw it: ROTATE AGAIN (then N30 again) under a fresh HC-1, or PASSWORD NULL under its own confirmation. The owner chooses.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
+    automatic_credential_mutation: false,
   },
   {
     id: 'PM-2',
-    scenario: 'Mint succeeded, the N13 consumer failed (not an authentication failure: resolve, identity arm A, a transport error, a query error, or KP-2)',
-    state_after: 'N11 ACT_COMPLETE__USABILITY_PENDING; N30 MET; N13 FAILED with a code.',
-    value_location: 'The N30 entry only. The consumer process has exited and the delivery is removed with it; the launcher zeroed its buffer.',
-    compensation: 'NONE__ENTRY_STAYS_IN_CUSTODY_UNTIL_RESUMED_OR_R',
-    fresh_hc1_required_before_any_further_credential_mutation: true,
-    rotate_again_mandatory: false,
-    password_null_permitted: PN,
-    why: 'The value is in its ratified store and nowhere else, so no custody rule is broken. N13 may be re-run by a fresh delivery after the cause is fixed, because a READ-ONLY re-run is not a credential mutation. If it cannot be resumed before R, the entry is removed at R by the governed removal path and the credential is withdrawn under a fresh HC-1.',
+    boundary: 'N30 write',
+    scenario: 'The depositor received the value but the WCM write failed, or STOP_N30_ENTRY_ALREADY_PRESENT refused it',
+    credential: 'LIVE_ON_TARGET_UNUSABLE_OR_UNPROVEN',
+    may_exist_in: ['the target (as a verifier)', 'the depositor heap until it exits', 'the mint tool heap until it exits'],
+    next: 'As PM-1. If the refusal was a pre-existing entry, that entry is removed by the governed removal path (by exact name) and the reason recorded, before any new deposit.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
+    automatic_credential_mutation: false,
   },
   {
     id: 'PM-3',
-    scenario: 'Deposit succeeded, verification failed: N13 KP-1 reports an identity other than uellix_auditor, or authentication is refused (STOP_AUDITOR_AUTHENTICATION_FAILED)',
-    state_after: 'N11 ACT_COMPLETE__USABILITY_FAILED; N30 MET; N13 STOP.',
-    value_location: 'The N30 entry.',
-    compensation: 'GOVERNED_REMOVAL_OF_THE_ENTRY_THEN_ROTATE_AGAIN_OR_PASSWORD_NULL',
-    fresh_hc1_required_before_any_further_credential_mutation: true,
-    rotate_again_mandatory: 'OWNER_DECISION',
-    password_null_permitted: PN,
-    why: 'Either the deposited value is not the minted one or the mint did not take. Neither is repairable by re-reading. The deposited value is removed (it is either useless or wrong), and the role\'s credential state is resolved by a fresh mutation under a fresh HC-1. A KP-1 that names a DIFFERENT role is additionally a target-identity incident and is recorded as such.',
+    boundary: 'N30 post-write probe',
+    scenario: 'The write returned, but the post-write probe reported absent or the round trip differed (n30ExitMet false)',
+    credential: 'LIVE_ON_TARGET_UNUSABLE_OR_UNPROVEN',
+    may_exist_in: ['the target (as a verifier)', 'possibly one WCM entry with unknown content'],
+    next: 'N30 is NOT met. Remove the entry by the governed removal path and verify absence positively; then as PM-1.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
+    automatic_credential_mutation: false,
   },
   {
     id: 'PM-4',
-    scenario: 'The launcher dies (killed, crashed, host lost) while a consumer holds the value',
-    state_after: 'The consumer is terminated with it by the kill-on-close job (re-measured by the topology demonstration). N30 MET; the node that was running is NOT MET.',
-    value_location: 'The N30 entry. No live process: re-verified by an external observation after the kill.',
-    compensation: 'NONE__ENTRY_STAYS_IN_CUSTODY_UNTIL_RESUMED_OR_R',
-    fresh_hc1_required_before_any_further_credential_mutation: true,
-    rotate_again_mandatory: false,
-    password_null_permitted: PN,
-    why: 'The delivery dies with its process tree, so no value is left set. The interrupted read-only node is re-run by a fresh delivery. OF-CUST-1 is carried: the dead launcher\'s heap held copies, and a crash dump of it would contain them; a crash dump written in that window is itself a custody incident.',
+    boundary: 'N13',
+    scenario: 'The N13 consumer failed without an authentication failure (resolve, arm A, transport, query, KP-2, sentinel)',
+    credential: 'LIVE_ON_TARGET',
+    may_exist_in: ['the WCM entry'],
+    next: 'N11 stays ACT_COMPLETE__USABILITY_PENDING. Fix the cause and re-run N13 by a fresh delivery (a read is not a credential mutation). If it cannot be resumed before R: governed removal at R, then withdrawal under the matching confirmation.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
+    automatic_credential_mutation: false,
   },
   {
     id: 'PM-5',
-    scenario: 'WCM cleanup (governed removal) fails at R, N24 or N28',
-    state_after: 'The entry is PRESENT past its planned removal. Custody is out of contract.',
-    value_location: 'The N30 entry, past R.',
-    compensation: 'GOVERNED_REMOVAL_OF_THE_ENTRY_THEN_ROTATE_AGAIN_OR_PASSWORD_NULL',
-    fresh_hc1_required_before_any_further_credential_mutation: true,
-    rotate_again_mandatory: 'OWNER_DECISION',
-    password_null_permitted: PN,
-    why: 'The removal is retried by the governed path until a positive absence check holds; it is never replaced by a sweep, because the real entry is outside the sweepable namespace by construction. Independently, a value that outlived its planned removal is withdrawn on the target, because the custody guarantee it was minted under no longer holds. VALID UNTIL (E) bounds the damage, and is not a substitute for either act.',
+    boundary: 'N13 KP-1',
+    scenario: 'Authentication refused (STOP_AUDITOR_AUTHENTICATION_FAILED) or KP-1 names another role',
+    credential: 'LIVE_ON_TARGET_UNUSABLE_OR_UNPROVEN',
+    may_exist_in: ['the target (as a verifier)', 'the WCM entry'],
+    next: 'N11 is ACT_COMPLETE__USABILITY_FAILED. Remove the entry by the governed path (it is useless or wrong), then withdraw under the matching confirmation. A KP-1 naming a different role is also a target-identity incident.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
+    automatic_credential_mutation: false,
   },
   {
     id: 'PM-6',
-    scenario: 'The operator aborts after the mint and before N30 or N13 completes',
-    state_after: 'As PM-1 if N30 is not met; as PM-2 if N30 is met.',
-    value_location: 'As PM-1 or PM-2.',
-    compensation: 'ROTATE_AGAIN_OR_PASSWORD_NULL__UNDER_A_FRESH_HUMAN_CONFIRMATION',
-    fresh_hc1_required_before_any_further_credential_mutation: true,
-    rotate_again_mandatory: 'OWNER_DECISION',
-    password_null_permitted: PN,
-    why: 'An abort is not a pause: HC-1 was spent by the act. If the value was deposited it may stay in custody until R and the lane may be resumed read-only; if it was not, PM-1 applies. Nothing about an abort authorizes writing the value anywhere else.',
+    boundary: 'N14',
+    scenario: 'N14 raised a STOP token, failed its session, or could not meet its exit (including the open AC-1 / AC-3 conflicts)',
+    credential: 'LIVE_ON_TARGET',
+    may_exist_in: ['the WCM entry'],
+    next: 'STOP at N14. No mutation follows (N15..N21 are gated on N14). The value waits in custody until R, then governed removal and N28-style rotation under a fresh HC-1.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
+    automatic_credential_mutation: false,
   },
   {
-    id: 'PM-0',
-    scenario: 'The mint itself is refused by the target (STOP_CREDENTIAL_MUTATION_FAILED or STOP_AUDITOR_ROLE_ABSENT)',
-    state_after: 'N11 FAILED_BEFORE_ACCEPTANCE. The role\'s credential state is what it was, UNKNOWN as declared at N11\'s prestate.',
-    value_location: 'Only in the operator process that produced it; it was never valid anywhere and is discarded.',
-    compensation: 'NONE__NOTHING_CHANGED',
-    fresh_hc1_required_before_any_further_credential_mutation: true,
-    rotate_again_mandatory: false,
-    password_null_permitted: PN,
-    why: 'A refused mutation changed nothing. HC-1 is still spent (its lane stopped), so a retry needs a fresh HC-1.',
+    id: 'PM-7',
+    boundary: 'N21 / N22',
+    scenario: 'A PV row FAILED (or is BLOCKED), or the MR-3 poststate failed',
+    credential: 'LIVE_ON_TARGET',
+    may_exist_in: ['the WCM entry'],
+    next: 'N22.if_any_assertion_fails: roll back the corresponding mutation per MUTATION_ROLLBACK_CONTRACT and STOP; do NOT proceed to N23. For MR-2 the "rollback" is a compensation and needs its own confirmation; nothing is automatic.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
+    automatic_credential_mutation: false,
+  },
+  {
+    id: 'PM-8',
+    boundary: 'N23 / PRECHECK',
+    scenario: 'The PRECHECK consumer failed or returned a STOP token',
+    credential: 'LIVE_ON_TARGET',
+    may_exist_in: ['the WCM entry'],
+    next: 'N24 still runs: remove the delivered value and verify absence. The PRECHECK lane decides its own continuation; the credential waits in custody until R or N28.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
+    automatic_credential_mutation: false,
+  },
+  {
+    id: 'PM-9',
+    boundary: 'Any delivery',
+    scenario: 'The launcher dies (killed, crashed, host lost) while a consumer holds the value',
+    credential: 'LIVE_ON_TARGET',
+    may_exist_in: ['the WCM entry', 'the dead launcher heap (OF-CUST-1; a crash dump written then is itself an incident)'],
+    next: 'The consumer dies with the launcher\'s kill-on-close job (re-measured per consumer topology). Re-run the interrupted read-only node by a fresh delivery.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
+    automatic_credential_mutation: false,
+  },
+  {
+    id: 'PM-10',
+    boundary: 'R, N24 or N28',
+    scenario: 'The governed WCM removal fails',
+    credential: 'LIVE_ON_TARGET',
+    may_exist_in: ['the WCM entry, past R'],
+    next: 'Retry the governed removal (exact name, never a sweep) until a positive absence check holds. Independently withdraw the credential on the target under the matching confirmation, because its custody guarantee no longer holds. VALID UNTIL (E) bounds the damage and substitutes for neither act.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_UNDER_FRESH_HC1_OR_WITHDRAW',
+    automatic_credential_mutation: false,
+  },
+  {
+    id: 'PM-11',
+    boundary: 'Between any two nodes after N30',
+    scenario: 'The operator aborts after N30 and before the FINAL WITNESS',
+    credential: 'LIVE_ON_TARGET',
+    may_exist_in: ['the WCM entry'],
+    next: 'An abort is not a pause of the HC-1: it was spent by the act. The value may stay in custody until R and read-only nodes may be resumed by fresh deliveries. At R: governed removal, then rotation or withdrawal under the matching confirmation.',
+    fresh_hc1_required_before_any_credential_mutation: true,
+    password_null: PN_ONLY,
+    rotate_again: 'REQUIRED_AT_N28_UNDER_FRESH_HC1',
+    automatic_credential_mutation: false,
   },
 ]
 
@@ -203,11 +332,17 @@ export const MINT_ROUTES: readonly MintRoute[] = [
     evidence: 'The DO block text (no value), the completion status, VALID UNTIL by value, and N13 KP-1 as the usability proof.',
     handoff_to_n30: 'The same operator process that bound the parameter composes the auditor DSN (role uellix_auditor, the direct database host of the pinned project, port 5432, database postgres) and writes it to the N30 depositor stdin pipe, then discards it. No file, clipboard, password manager or environment variable in between: each would be a second store.',
     unresolved: [
-      'The operator tool that performs generation + bound-parameter execution + the pipe to N30 is not named by any authority and cannot be a repository script.',
+      'RESOLVED BY OWNER DECISION D1_MINT_OPERATOR_TOOL = EPHEMERAL_NODE_PG_OUTSIDE_REPOSITORY: the tool is named, lives outside the repository, and is bound by OPERATOR_TOOL_CONTRACT (db/custody/mint-route-b-contract.ts).',
       'The privileged session the operator uses to issue the DO block is itself a credential (not uellix_auditor) whose custody this lane does not govern.',
       'The nested-statement audit residual above.',
     ],
   },
 ]
 
-export const MINT_ROUTE_DECISION_STATUS = 'OWNER_DECISION_REQUIRED_MINT_ROUTE' as const
+/**
+ * The post-mint path lane recorded OWNER_DECISION_REQUIRED_MINT_ROUTE. The
+ * owner has since ratified B (docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0.json).
+ * Ratifying a route authorizes no credential act.
+ */
+export const MINT_ROUTE_DECISION_STATUS = 'RATIFIED_B_SQL_BOUND_PARAMETER' as const
+export const MINT_ROUTE_OWNER_DECISION_FILE = 'docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0.json'

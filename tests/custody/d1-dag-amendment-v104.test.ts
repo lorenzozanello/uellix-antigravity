@@ -22,7 +22,8 @@ const amendment = JSON.parse(readFileSync(join(RELEASE_DIR, FILE), 'utf8')) as {
     ORPHAN_AND_UNREACHABLE_DISCLOSURE: { ORPHAN_NODES_AFTER: string[]; UNREACHABLE_FROM_N01_AFTER: string[] }
   }
 }
-const facts = deriveGraphFacts()
+// Measured through v1.0.4 itself; v1.0.5 has its own file.
+const facts = deriveGraphFacts({ throughSource: 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json' })
 const before = deriveGraphFacts({ throughSource: 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json' })
 const g = amendment.RECOMPUTED_GRAPH
 
