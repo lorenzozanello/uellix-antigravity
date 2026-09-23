@@ -27,6 +27,10 @@ export type ToolVariant =
   | 'NO_TARGET_PIN'
   | 'AMBIGUITY_AS_NOT_COMMITTED'
   | 'AMBIGUITY_DROPS_CANDIDATE'
+  /** NB-1 survivor strategy: UNKNOWN only for the one transport code it knows. */
+  | 'COMMIT_CLASSIFIED_BY_CODE'
+  /** NB-1 survivor strategy: a SQLSTATE-bearing error is read as a definite rollback. */
+  | 'COMMIT_CLASSIFIED_BY_SQLSTATE'
 
 export function renderFakeOnlyMintTool(variant: ToolVariant = 'CONFORMING'): string {
   const v = (name: ToolVariant, yes: string, no: string): string => (variant === name ? yes : no)
@@ -109,7 +113,15 @@ async function main() {
     })
     outcome = 'COMMITTED'
   } catch (e) {
-    outcome = ${v('AMBIGUITY_AS_NOT_COMMITTED', "'DEFINITELY_NOT_COMMITTED'", "callbackCompleted ? 'COMMIT_OUTCOME_UNKNOWN' : 'DEFINITELY_NOT_COMMITTED'")}
+    outcome = ${
+      variant === 'AMBIGUITY_AS_NOT_COMMITTED'
+        ? "'DEFINITELY_NOT_COMMITTED'"
+        : variant === 'COMMIT_CLASSIFIED_BY_CODE'
+          ? "callbackCompleted && e && e.code === 'CONNECTION_CLOSED' ? 'COMMIT_OUTCOME_UNKNOWN' : 'DEFINITELY_NOT_COMMITTED'"
+          : variant === 'COMMIT_CLASSIFIED_BY_SQLSTATE'
+            ? "callbackCompleted && !(e && typeof e.code === 'string' && /^[0-9A-Z]{5}$/.test(e.code)) ? 'COMMIT_OUTCOME_UNKNOWN' : 'DEFINITELY_NOT_COMMITTED'"
+            : "callbackCompleted ? 'COMMIT_OUTCOME_UNKNOWN' : 'DEFINITELY_NOT_COMMITTED'"
+    }
     out({ phase: 'DRIVER_REJECTED', code: e && e.code ? String(e.code) : 'UNKNOWN' })
   } finally {
     try { await sql.end({ timeout: 5 }) } catch { /* the outcome above stands */ }

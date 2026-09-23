@@ -13,10 +13,15 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { closureDigest } from '@/scripts/custody/d1-package-closure'
 import { eventPathFor, evaluateCandidateBinding, gatherCandidateFacts } from '@/scripts/custody/d1-candidate-certification'
+
+// Every case spawns a dozen git processes; under a parallel run (the
+// termination regression runs a nested suite) 5s is not enough. Time only —
+// no assertion changes.
+vi.setConfig({ testTimeout: 60_000 })
 
 const CONSUMER = 'scripts/custody/d1-consumer-shell.ts'
 const RECORD = 'docs/ops/release/FIBDB053_D1_AUDITOR_X_EXECUTION_RECORD_v1.0.0.json'

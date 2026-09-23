@@ -21,8 +21,19 @@
 //                             COMMIT never requested.
 //   COMMIT_TRANSPORT_LOST     the callback completes and the connection is lost
 //                             on COMMIT: the server may have committed.
+//   COMMIT_TIMEOUT            ... COMMIT times out (ETIMEDOUT).
+//   COMMIT_GENERIC_TRANSPORT_ERROR  ... the driver throws with no code at all.
+//   COMMIT_SERVER_ERROR_SQLSTATE    ... the server answers COMMIT with an error
+//                             carrying a SQLSTATE (a PostgresError shape).
 //   KILLED_DURING_COMMIT      the process dies on COMMIT: no terminal line.
+//   COMMIT_NO_FINAL_OUTPUT    COMMIT never answers; the run is ended from outside
+//                             and leaves no terminal line.
 //   UNPINNED_TARGET           the privileged connection names another host.
+//
+// NB-1: the four "throws on COMMIT" classes differ ONLY in the error they
+// carry. A tool that keys its classification on an error code, or on the
+// presence of a SQLSTATE, passes one of them and fails another; only a tool
+// that keys on "was COMMIT requested, and was it acknowledged" passes all four.
 //
 // It cannot see everything: a candidate could open a socket of its own or
 // write outside the directories it was given. The harness measures the
@@ -35,8 +46,39 @@ import { checkDsnShape } from '../../db/custody/production-custody'
 import { COMMIT_UNKNOWN_TOKEN, ROUTE_B_ROLE, ROUTE_B_STATEMENTS, classifyToolRun } from '../../db/custody/mint-route-b-contract'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 
-export type Scenario = 'SUCCESS' | 'FAILS_BEFORE_TRANSACTION' | 'MINT_FAILS' | 'COMMIT_TRANSPORT_LOST' | 'KILLED_DURING_COMMIT' | 'UNPINNED_TARGET'
+export type Scenario =
+  | 'SUCCESS'
+  | 'FAILS_BEFORE_TRANSACTION'
+  | 'MINT_FAILS'
+  | 'COMMIT_TRANSPORT_LOST'
+  | 'COMMIT_TIMEOUT'
+  | 'COMMIT_GENERIC_TRANSPORT_ERROR'
+  | 'COMMIT_SERVER_ERROR_SQLSTATE'
+  | 'KILLED_DURING_COMMIT'
+  | 'COMMIT_NO_FINAL_OUTPUT'
+  | 'UNPINNED_TARGET'
 type State = 'PASSED' | 'FAILED'
+
+/** How the fake driver fails AFTER COMMIT was requested, per scenario. `throw` carries the error's own properties. */
+export type CommitFailure =
+  | { readonly mode: 'throw'; readonly message: string; readonly props: Readonly<Record<string, unknown>> }
+  | { readonly mode: 'exit' }
+  | { readonly mode: 'hang' }
+
+/** Every post-COMMIT-request failure the harness drives, with the COMMIT_FAILURE_MATRIX row it realizes. */
+export const COMMIT_FAILURES: Readonly<Partial<Record<Scenario, CommitFailure & { readonly cfRow: string }>>> = {
+  COMMIT_TRANSPORT_LOST: { mode: 'throw', message: 'fake connection lost', props: { code: 'CONNECTION_CLOSED' }, cfRow: 'CF-7' },
+  COMMIT_TIMEOUT: { mode: 'throw', message: 'fake read timeout', props: { code: 'ETIMEDOUT', errno: -4039, syscall: 'read' }, cfRow: 'CF-8' },
+  COMMIT_GENERIC_TRANSPORT_ERROR: { mode: 'throw', message: 'fake socket hang up', props: {}, cfRow: 'CF-9' },
+  COMMIT_SERVER_ERROR_SQLSTATE: {
+    mode: 'throw',
+    message: 'fake could not serialize access due to read/write dependencies among transactions',
+    props: { name: 'PostgresError', severity: 'ERROR', severity_local: 'ERROR', code: '40001', routine: 'PreCommit_CheckForSerializationFailure' },
+    cfRow: 'CF-5',
+  },
+  KILLED_DURING_COMMIT: { mode: 'exit', cfRow: 'CF-10' },
+  COMMIT_NO_FINAL_OUTPUT: { mode: 'hang', cfRow: 'CF-10' },
+}
 
 /** The only target the harness ever names. RFC 6761: guaranteed never to resolve. */
 export const HARNESS_TARGET_HOST = 'db.harness-target.invalid'
@@ -61,8 +103,10 @@ module.exports = function postgres(url, opts) {
       // COMMIT is HELD 1.5s so a value handed over before COMMIT arrives first.
       await new Promise((res) => setTimeout(res, 1500))
       rec({ event: 'COMMIT_REQUESTED' })
-      if (flag('KILL_AT_COMMIT')) process.exit(137)
-      if (flag('FAIL_COMMIT')) { rec({ event: 'COMMIT_LOST' }); throw Object.assign(new Error('fake connection lost'), { code: 'CONNECTION_CLOSED' }) }
+      const f = flag('COMMIT_FAILURE') ? JSON.parse(fs.readFileSync(path.join(__dirname, 'COMMIT_FAILURE'), 'utf8')) : null
+      if (f && f.mode === 'exit') process.exit(137)
+      if (f && f.mode === 'hang') { setInterval(() => undefined, 1000); await new Promise(() => undefined) }
+      if (f && f.mode === 'throw') { rec({ event: 'COMMIT_NOT_ACKNOWLEDGED' }); throw Object.assign(new Error(f.message), f.props) }
       rec({ event: 'COMMIT' })
       return r
     },
@@ -90,8 +134,6 @@ process.stdin.on('end', () => {
 const FLAG_FOR: Partial<Record<Scenario, string>> = {
   FAILS_BEFORE_TRANSACTION: 'FAIL_BEGIN',
   MINT_FAILS: 'FAIL_DO',
-  COMMIT_TRANSPORT_LOST: 'FAIL_COMMIT',
-  KILLED_DURING_COMMIT: 'KILL_AT_COMMIT',
 }
 
 function filesUnder(dir: string): string[] {
@@ -138,6 +180,10 @@ export function runMintToolContractHarness(params: {
   writeFileSync(join(driverDir, 'index.js'), FAKE_DRIVER)
   const flag = FLAG_FOR[params.scenario]
   if (flag !== undefined) writeFileSync(join(driverDir, flag), '')
+  const commitFailure = COMMIT_FAILURES[params.scenario]
+  if (commitFailure !== undefined) writeFileSync(join(driverDir, 'COMMIT_FAILURE'), JSON.stringify(commitFailure))
+  // Carrier lost: the run leaves no terminal line (killed, or ended from outside while COMMIT hangs).
+  const carrierLost = commitFailure?.mode === 'exit' || commitFailure?.mode === 'hang'
   const depositor = join(depositorDir, 'fake-n30-deposit.js')
   writeFileSync(depositor, FAKE_DEPOSITOR)
 
@@ -153,7 +199,7 @@ export function runMintToolContractHarness(params: {
   const run = spawnSync(
     process.execPath,
     [resolvePath(params.toolPath), `--driver-root=${driverRoot}`, `--depositor=${depositor}`, `--valid-until=${params.validUntil}`, `--target-host=${HARNESS_TARGET_HOST}`],
-    { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', timeout: 60_000, windowsHide: true }
+    { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', timeout: commitFailure?.mode === 'hang' ? 8_000 : 60_000, windowsHide: true }
   )
   const toolOutput = `${run.stdout ?? ''}${run.stderr ?? ''}`
   const classification = classifyToolRun(run.stdout ?? '')
@@ -184,12 +230,14 @@ export function runMintToolContractHarness(params: {
     checks.EXIT = pf(run.status !== 0)
   } else {
     const shape = events.map((e) => (e.event === 'query' || e.event === 'unsafe' ? `${e.event}:${e.text}` : e.event))
-    const tail: Record<string, string[]> = {
-      SUCCESS: ['COMMIT_REQUESTED', 'COMMIT', 'end'],
-      MINT_FAILS: ['ROLLBACK', 'end'],
-      COMMIT_TRANSPORT_LOST: ['COMMIT_REQUESTED', 'COMMIT_LOST', 'end'],
-      KILLED_DURING_COMMIT: ['COMMIT_REQUESTED'],
-    }
+    const tail: string[] =
+      params.scenario === 'SUCCESS'
+        ? ['COMMIT_REQUESTED', 'COMMIT', 'end']
+        : params.scenario === 'MINT_FAILS'
+          ? ['ROLLBACK', 'end']
+          : carrierLost
+            ? ['COMMIT_REQUESTED']
+            : ['COMMIT_REQUESTED', 'COMMIT_NOT_ACKNOWLEDGED', 'end']
     const expected = [
       'construct',
       'BEGIN',
@@ -197,7 +245,7 @@ export function runMintToolContractHarness(params: {
       `query:${ROUTE_B_STATEMENTS.SET_PASSWORD}`,
       `query:${ROUTE_B_STATEMENTS.SET_VALID_UNTIL}`,
       `unsafe:${ROUTE_B_STATEMENTS.DO_BLOCK}`,
-      ...tail[params.scenario]!,
+      ...tail,
     ]
     checks.SEQUENCE = pf(JSON.stringify(shape) === JSON.stringify(expected))
     checks.TLS_REQUIRED = pf(events[0]?.ssl === 'require')
@@ -217,7 +265,7 @@ export function runMintToolContractHarness(params: {
     checks.OUTPUT_CLEAN = pf(!leaks(toolOutput) && !adminLeaks(toolOutput))
     const toolFiles = [...filesUnder(cwd), ...filesUnder(temp)]
     checks.FILES_CLEAN = pf(toolFiles.every((f) => !leaks(readFileSync(f, 'latin1')) && !adminLeaks(readFileSync(f, 'latin1'))))
-    if (params.scenario !== 'KILLED_DURING_COMMIT') {
+    if (!carrierLost) {
       checks.DEPOSITOR_ARGV_CLEAN = pf(dep !== null && !dep.argv.some((a) => leaks(a) || adminLeaks(a)))
       checks.DEPOSITOR_ENV_CLEAN = pf(
         dep !== null && dep.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL === undefined && Object.values(dep.env).every((v) => !leaks(v) && !adminLeaks(v))
@@ -233,13 +281,13 @@ export function runMintToolContractHarness(params: {
       checks.CLASSIFIED_DEFINITELY_NOT_COMMITTED = pf(classification.outcome === 'DEFINITELY_NOT_COMMITTED')
       checks.NO_HANDOFF_WITHOUT_COMMIT = pf(dep !== null && dep.stdin.length === 0)
       checks.EXIT = pf(run.status !== 0)
-    } else if (params.scenario === 'COMMIT_TRANSPORT_LOST') {
-      // B-1: an unacknowledged COMMIT is UNKNOWN, and the possibly-live value goes into custody.
+    } else if (!carrierLost) {
+      // B-1 / NB-1: an unacknowledged COMMIT is UNKNOWN whatever error it carried, and the possibly-live value goes into custody.
       checks.CLASSIFIED_COMMIT_OUTCOME_UNKNOWN = pf(classification.outcome === 'COMMIT_OUTCOME_UNKNOWN' && classification.token === COMMIT_UNKNOWN_TOKEN)
       checks.CANDIDATE_RETAINED_IN_CUSTODY = pf(handedOver && dep !== null && dep.at >= commitRequestedAt)
       checks.EXIT_IS_STOP = pf(run.status === 4)
     } else {
-      // KILLED_DURING_COMMIT: the tool leaves no terminal line; the governed reading is UNKNOWN, carrier lost.
+      // KILLED_DURING_COMMIT / COMMIT_NO_FINAL_OUTPUT: no terminal line; the governed reading is UNKNOWN, carrier lost.
       checks.CLASSIFIED_COMMIT_OUTCOME_UNKNOWN = pf(classification.outcome === 'COMMIT_OUTCOME_UNKNOWN' && classification.carrier === 'NO_TERMINAL_LINE')
       checks.NO_VALUE_ESCAPED = pf(dep === null || dep.stdin.length === 0 || handedOver)
     }

@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 import {
@@ -31,8 +31,12 @@ import {
   classifyToolRun,
   findRepositoryHostedLiveMintScripts,
 } from '@/db/custody/mint-route-b-contract'
-import { HARNESS_TARGET_HOST, runMintToolContractHarness, type Scenario } from '@/scripts/custody/d1-mint-tool-contract-harness'
+import { COMMIT_FAILURES, HARNESS_TARGET_HOST, runMintToolContractHarness, type Scenario } from '@/scripts/custody/d1-mint-tool-contract-harness'
+import { COMMIT_FAILURE_MATRIX } from '@/scripts/custody/d1-post-mint'
 import { renderFakeOnlyMintTool, type ToolVariant } from './support/fake-only-mint-tool'
+
+// Each harness run spawns the tool, a depositor and holds COMMIT 1.5s. Time only — no assertion changes.
+vi.setConfig({ testTimeout: 60_000 })
 
 const REPO = process.cwd()
 const N09 = '2026-09-25T14:00:00.000Z'
@@ -85,11 +89,22 @@ describe('B-1: the commit outcome is classified conservatively', () => {
 })
 
 describe('the harness measures a conforming candidate at every commit boundary', () => {
-  it.each(['SUCCESS', 'FAILS_BEFORE_TRANSACTION', 'MINT_FAILS', 'COMMIT_TRANSPORT_LOST', 'KILLED_DURING_COMMIT', 'UNPINNED_TARGET'] as const)('%s: every check passes', (scenario) => {
+  it.each([
+    'SUCCESS',
+    'FAILS_BEFORE_TRANSACTION',
+    'MINT_FAILS',
+    'COMMIT_TRANSPORT_LOST',
+    'COMMIT_TIMEOUT',
+    'COMMIT_GENERIC_TRANSPORT_ERROR',
+    'COMMIT_SERVER_ERROR_SQLSTATE',
+    'KILLED_DURING_COMMIT',
+    'COMMIT_NO_FINAL_OUTPUT',
+    'UNPINNED_TARGET',
+  ] as const)('%s: every check passes', (scenario) => {
     const r = harness('CONFORMING', scenario)
     expect(r.checks).toEqual(Object.fromEntries(Object.keys(r.checks).map((k) => [k, 'PASSED'])))
     expect(r.overall).toBe('CONFORMS')
-  })
+  }, 60_000)
   it('COMMIT_TRANSPORT_LOST: UNKNOWN with the dedicated token, exit 4, and the candidate handed to custody', () => {
     const r = harness('CONFORMING', 'COMMIT_TRANSPORT_LOST')
     expect(r.classification).toEqual({ outcome: 'COMMIT_OUTCOME_UNKNOWN', token: COMMIT_UNKNOWN_TOKEN, carrier: 'TERMINAL_LINE' })
@@ -117,6 +132,52 @@ describe('the harness measures a conforming candidate at every commit boundary',
     expect(status).toBe(97)
     expect(out).toContain('FAKE_ONLY_FIXTURE')
   })
+})
+
+// NB-1. The throw-on-COMMIT scenarios differ only in the error carried; the
+// governed reading must not. Each survivor strategy below passed the matrix
+// as it was (one CONNECTION_CLOSED scenario) or would pass part of this one.
+const THROWN_ON_COMMIT = (Object.keys(COMMIT_FAILURES) as Scenario[]).filter((s) => COMMIT_FAILURES[s]!.mode === 'throw')
+
+describe('NB-1: the commit classification does not depend on the error a failed COMMIT carries', () => {
+  it('the harness drives every client-visible post-request failure row of the commit matrix', () => {
+    expect(THROWN_ON_COMMIT).toEqual(['COMMIT_TRANSPORT_LOST', 'COMMIT_TIMEOUT', 'COMMIT_GENERIC_TRANSPORT_ERROR', 'COMMIT_SERVER_ERROR_SQLSTATE'])
+    const rows = new Set(Object.values(COMMIT_FAILURES).map((f) => f!.cfRow))
+    expect([...rows].sort()).toEqual(['CF-10', 'CF-5', 'CF-7', 'CF-8', 'CF-9'])
+    for (const id of rows) expect(COMMIT_FAILURE_MATRIX.find((r) => r.id === id)?.outcome, id).toBe('COMMIT_OUTCOME_UNKNOWN')
+    // Codes differ, including one SQLSTATE and one error with no code at all.
+    const codes = THROWN_ON_COMMIT.map((s) => (COMMIT_FAILURES[s] as { props: { code?: unknown } }).props.code)
+    expect(new Set(codes).size).toBe(4)
+    expect(codes).toContain(undefined)
+    expect(codes.some((c) => typeof c === 'string' && /^[0-9A-Z]{5}$/.test(c))).toBe(true)
+  })
+  it.each(THROWN_ON_COMMIT)('%s: a conforming tool reports UNKNOWN with the token, exit 4, and retains the candidate', (scenario) => {
+    const r = harness('CONFORMING', scenario)
+    expect(r.classification).toEqual({ outcome: 'COMMIT_OUTCOME_UNKNOWN', token: COMMIT_UNKNOWN_TOKEN, carrier: 'TERMINAL_LINE' })
+    expect(r.toolExit).toBe(4)
+    expect(r.checks.CANDIDATE_RETAINED_IN_CUSTODY).toBe('PASSED')
+  }, 60_000)
+  it('COMMIT_NO_FINAL_OUTPUT: a run ended from outside with no terminal line is UNKNOWN, carrier lost', () => {
+    const r = harness('CONFORMING', 'COMMIT_NO_FINAL_OUTPUT')
+    expect(r.classification).toMatchObject({ outcome: 'COMMIT_OUTCOME_UNKNOWN', carrier: 'NO_TERMINAL_LINE' })
+    expect(r.toolExit).toBeNull()
+  }, 60_000)
+
+  const survivors: Array<[ToolVariant, Scenario[], Scenario[]]> = [
+    // [variant, scenarios it still passes, scenarios that must catch it]
+    ['AMBIGUITY_AS_NOT_COMMITTED', [], ['COMMIT_TRANSPORT_LOST', 'COMMIT_TIMEOUT', 'COMMIT_GENERIC_TRANSPORT_ERROR', 'COMMIT_SERVER_ERROR_SQLSTATE']],
+    ['COMMIT_CLASSIFIED_BY_CODE', ['COMMIT_TRANSPORT_LOST'], ['COMMIT_TIMEOUT', 'COMMIT_GENERIC_TRANSPORT_ERROR', 'COMMIT_SERVER_ERROR_SQLSTATE']],
+    ['COMMIT_CLASSIFIED_BY_SQLSTATE', ['COMMIT_TRANSPORT_LOST', 'COMMIT_TIMEOUT', 'COMMIT_GENERIC_TRANSPORT_ERROR'], ['COMMIT_SERVER_ERROR_SQLSTATE']],
+  ]
+  it.each(survivors)('%s is killed by the error-class matrix (and only a matrix with more than one class kills it)', (variant, passes, catches) => {
+    for (const s of passes) expect(allPassed(harness(variant, s)), `${variant} under ${s}`).toBe(true)
+    for (const s of catches) {
+      const r = harness(variant, s)
+      expect(r.checks.CLASSIFIED_COMMIT_OUTCOME_UNKNOWN, `${variant} under ${s}`).toBe('FAILED')
+      expect(r.classification.outcome).toBe('DEFINITELY_NOT_COMMITTED')
+      expect(r.overall).toBe('DOES_NOT_CONFORM')
+    }
+  }, 120_000)
 })
 
 describe('the harness FAILS each non-conforming candidate on the clause it breaks', () => {

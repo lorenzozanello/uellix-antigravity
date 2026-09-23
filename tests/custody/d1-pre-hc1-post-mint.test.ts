@@ -15,11 +15,13 @@ import { describe, expect, it } from 'vitest'
 import { CONJUNCT_EVALUATORS, evaluatePostMintConjuncts, gatherPostMintInputs, readChain, type PostMintInputs } from '@/scripts/custody/d1-pre-hc1-post-mint'
 import { checkInventorySurfaces, deriveDeliveries } from '@/scripts/custody/d1-delivery-matrix'
 import { graphNodes } from '@/scripts/custody/d1-dag-validate'
-import { eventPathFor } from '@/scripts/custody/d1-candidate-certification'
+import { eventPathFor, evaluateCandidateBinding } from '@/scripts/custody/d1-candidate-certification'
 import { evaluatePreHc1, measureRepoFacts } from '@/scripts/custody/d1-pre-hc1'
 
 const ROOT = process.cwd()
 const REAL = gatherPostMintInputs(ROOT)
+/** What the certification of THIS checkout mechanically is: derived from git and the event files, never assumed. */
+const LIVE_CERTIFICATION = evaluateCandidateBinding(REAL.candidate)
 
 const CAND = 'c'.repeat(40)
 const TREE = 'd'.repeat(40)
@@ -60,16 +62,25 @@ describe('the repository as it stands', () => {
     expect(REAL.chain.conjunctIds.length).toBeGreaterThanOrEqual(9)
     for (const id of REAL.chain.conjunctIds) expect(CONJUNCT_EVALUATORS[id], id).toBeDefined()
   })
-  it('is NOT_READY, and the absent independent certification of this candidate is among the reasons', () => {
-    expect(unsat(REAL)).toContain('PMR-9_CANDIDATE_CERTIFIED')
+  // B-NEW-1: these assertions hold in EVERY certification state of the checkout
+  // (no event, a valid event, an invalid one). They never pin PMR-9 to a fixed
+  // value, which is what made the certifier's event turn the suite red; the
+  // termination regression plays that move on a real copy.
+  it('PMR-9 is exactly the mechanically derived certification state of this checkout', () => {
+    expect(unsat(REAL).includes('PMR-9_CANDIDATE_CERTIFIED')).toBe(!LIVE_CERTIFICATION.eligible)
+    if (REAL.candidate.events.length === 0) expect(LIVE_CERTIFICATION.eligible).toBe(false)
     expect(unsat(REAL)).not.toContain('PMR-7_NO_OPEN_AUTHORITY_CONFLICT')
     expect(unsat(REAL)).not.toContain('PMR-10_RULINGS_MATCH_IMPLEMENTATION')
   })
-  it('and the whole PRE-HC1 evaluation therefore reports N10 NOT_READY', () => {
+  it('with only an invalid event for this very HEAD, PMR-9 is unsatisfied', () => {
+    const bad = { ...GOOD_EVENT, path: eventPathFor(REAL.candidate.headCommit), body: { ...GOOD_EVENT.body, candidate_commit: REAL.candidate.headCommit, candidate_tree: REAL.candidate.headTree, verdict_class: 'FAIL' } }
+    expect(unsat({ ...REAL, candidate: { ...REAL.candidate, events: [bad] } })).toContain('PMR-9_CANDIDATE_CERTIFIED')
+  })
+  it('and N10 is the conjunction of what was measured: PMR-9 as derived, READY only with nothing unsatisfied', () => {
     const f = measureRepoFacts(ROOT, [], false)
     const ev = evaluatePreHc1(ROOT, { declaredBase: { branch: f.branch, head: f.head, tree: f.tree }, liveIntegration: false })
-    expect(ev.n10.readiness).toBe('NOT_READY')
-    expect(ev.n10.unsatisfied).toContain('PMR-9_CANDIDATE_CERTIFIED')
+    expect(ev.n10.unsatisfied.includes('PMR-9_CANDIDATE_CERTIFIED')).toBe(!LIVE_CERTIFICATION.eligible)
+    expect(ev.n10.readiness).toBe(ev.n10.unsatisfied.length === 0 ? 'READY_FOR_HUMAN_CONFIRMATION' : 'NOT_READY')
   }, 180_000)
 })
 
@@ -103,6 +114,7 @@ describe('negative controls (one input each)', () => {
     ['CONTROL AC-1 dynamic object name', { implementation: { ...impl, tablePrivilegePairs: [...impl.tablePrivilegePairs, '(non-literal has_table_privilege call)'] } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-1 text differs from the pin', { implementation: { ...impl, tablePrivileges: { ...impl.tablePrivileges, sql: `${impl.tablePrivileges.sql} ` } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-2 introduces role enumeration', { implementation: { ...impl, reachIsKeyed: false } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
+    ['CONTROL NB-4 another statement enumerates roles', { implementation: { ...impl, roleEnumerationFindings: ['MEMBERSHIPS: pattern match or uellix_cap_ reference'] } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-2 accepted without its structural proof', { implementation: { ...impl, pv14WhenProofFails: 'PASS' } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-3 FUNCTION_EXECUTE still required by a provisioning exit', { implementation: { ...impl, functionExecute: { ...impl.functionExecute, inN22: true } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-3 FUNCTION_EXECUTE issuable', { implementation: { ...impl, functionExecute: { ...impl.functionExecute, disposition: 'ISSUABLE' } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],

@@ -22,7 +22,7 @@
 // being no dependency between them at all. Every reachability claim below is a
 // breadth-first sweep over the edge set.
 
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 
 /**
@@ -67,6 +67,55 @@ export const GRAPH_SOURCES = [
 ] as const
 
 export type GraphSource = (typeof GRAPH_SOURCES)[number]
+
+const DAG_BASE = 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json'
+/** Any file that CLAIMS to be part of the lineage by name — an arbitrary JSON elsewhere is never read. */
+const LINEAGE_NAME = /^FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY(?:_AMENDMENT)?_v(\d+)\.(\d+)\.(\d+)\.json$/
+
+/**
+ * NB-6: the lineage as it is on disk, closed-world. Every file named as part
+ * of the lineage is read; an amendment belongs to it only if its body says the
+ * same version as its name and amends the base. (package_id is NOT a key: the
+ * append-only amendments carry three different spellings of it.) The order is
+ * by version. Any file named like the lineage that
+ * fails those checks, and any duplicate version, is an error — never skipped.
+ * `GRAPH_SOURCES` stays the pinned list the code reads; a lineage on disk that
+ * differs from it (an unregistered successor amendment, a missing one) is an
+ * error too, so a successor authority can no longer be ignored in silence.
+ */
+export function deriveGraphLineage(releaseDir: string): { readonly sources: readonly string[]; readonly errors: readonly string[] } {
+  const errors: string[] = []
+  const found: Array<{ file: string; key: number[] }> = []
+  if (!existsSync(join(releaseDir, DAG_BASE))) return { sources: [], errors: [`the lineage base ${DAG_BASE} is missing`] }
+  for (const file of readdirSync(releaseDir).sort()) {
+    const m = LINEAGE_NAME.exec(file)
+    if (m === null) continue
+    const version = `${m[1]}.${m[2]}.${m[3]}`
+    const isBase = file === DAG_BASE
+    let body: { version?: unknown; amends?: unknown }
+    try {
+      body = JSON.parse(readFileSync(join(releaseDir, file), 'utf8')) as typeof body
+    } catch {
+      errors.push(`${file} is named as a lineage source and is not JSON`)
+      continue
+    }
+    if (!isBase) {
+      if (!file.includes('_AMENDMENT_')) errors.push(`${file} is named like the base but is not the base`)
+      if (body.version !== version) errors.push(`${file} declares version ${String(body.version)}, not ${version}`)
+      if (body.amends !== `docs/ops/release/${DAG_BASE}`) errors.push(`${file} does not amend the lineage base`)
+    }
+    const key = [Number(m[1]), Number(m[2]), Number(m[3])]
+    if (found.some((f) => f.key.join('.') === key.join('.'))) errors.push(`version ${version} appears more than once in the lineage`)
+    found.push({ file, key })
+  }
+  found.sort((a, b) => a.key[0]! - b.key[0]! || a.key[1]! - b.key[1]! || a.key[2]! - b.key[2]!)
+  const sources = found.map((f) => f.file)
+  if (sources[0] !== DAG_BASE) errors.push('the lineage does not start at its base')
+  if (JSON.stringify(sources) !== JSON.stringify(GRAPH_SOURCES)) {
+    errors.push(`the lineage on disk (${sources.join(', ')}) is not the pinned GRAPH_SOURCES`)
+  }
+  return { sources, errors }
+}
 
 /**
  * The sources up to and including `through`, in amendment order. An amendment

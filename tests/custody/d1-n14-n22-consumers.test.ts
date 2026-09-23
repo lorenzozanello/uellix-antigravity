@@ -23,6 +23,7 @@ import { main as n14Main } from '@/scripts/custody/d1-auditor-n14-consumer'
 import { main as n22Main, parseNode } from '@/scripts/custody/d1-auditor-n22-consumer'
 import { parseLauncherArgs } from '@/scripts/custody/d1-deliver-n13'
 import { deriveClosure } from '@/scripts/custody/build-production-entrypoints'
+import { roleEnumerationFindings } from '@/scripts/custody/d1-pre-hc1-post-mint'
 
 const VAR = 'UELLIX_AUDITOR_DATABASE_URL'
 const PW = 'Q'.repeat(43)
@@ -120,6 +121,24 @@ describe('statement provenance', () => {
   it('CONTROL AC-2-no-enumeration: REACH is a keyed lookup over the named roles, with no pattern', () => {
     expect(P1_STATEMENTS.REACH.sql).toMatch(/= ANY \(ARRAY\[/)
     expect(P1_STATEMENTS.REACH.sql).not.toMatch(/\bLIKE\b|SIMILAR TO|~|regexp|uellix_cap/i)
+  })
+  it('NB-4: NO statement of the observation surface can enumerate roles (every statement, not REACH only)', () => {
+    expect(roleEnumerationFindings(P1_STATEMENTS)).toEqual([])
+    for (const s of Object.values(P1_STATEMENTS)) expect(s.sql, s.id).not.toMatch(/\b(?:I?LIKE|SIMILAR\s+TO)\b|~|regexp|uellix_cap/i)
+    // The guard is not vacuous: it covers every statement that reads a role catalog.
+    const catalogReaders = Object.values(P1_STATEMENTS).filter((s) => /pg_catalog\.pg_(?:roles|auth_members)\b/.test(s.sql)).map((s) => s.id)
+    expect(catalogReaders).toEqual(['ROLE_ATTRIBUTES', 'MEMBERSHIPS', 'REACH'])
+  })
+  it.each([
+    ['MEMBERSHIPS widened with LIKE uellix_cap_%', 'MEMBERSHIPS', (q: string) => `${q} OR r.rolname LIKE 'uellix_cap_%'`],
+    ['MEMBERSHIPS with its WHERE removed', 'MEMBERSHIPS', (q: string) => q.replace(/ WHERE [\s\S]*$/, '')],
+    ['MEMBERSHIPS with an unkeyed disjunct', 'MEMBERSHIPS', (q: string) => `${q} OR r.rolcanlogin`],
+    ['ROLE_ATTRIBUTES by regular expression', 'ROLE_ATTRIBUTES', (q: string) => q.replace("rolname = 'uellix_auditor'", "rolname ~ '^uellix_'")],
+    ['REACH extended by starts_with', 'REACH', (q: string) => `${q} OR starts_with(r.rolname, 'uellix_')`],
+    ['a new statement over pg_authid', 'OWNERSHIP', () => 'SELECT rolname FROM pg_catalog.pg_authid'],
+  ] as const)('NB-4 CONTROL %s -> a finding', (_name, id, mutate) => {
+    const mutated = { ...P1_STATEMENTS, [id]: { ...P1_STATEMENTS[id], sql: mutate(P1_STATEMENTS[id].sql) } }
+    expect(roleEnumerationFindings(mutated).some((f) => f.startsWith(`${id}:`))).toBe(true)
   })
   it('CONTROL AC-3 / M20: FUNCTION_EXECUTE is deferred, and no statement uses to_regprocedure', () => {
     expect(P1_STATEMENTS.FUNCTION_EXECUTE).toMatchObject({ disposition: 'DEFERRED_TO_PRECHECK_R2', ruling: 'AC-3' })
@@ -236,6 +255,21 @@ describe('N22 and N21', () => {
     expect(r.rows.find((x) => x.id === row)?.verdict).toBe('FAIL')
     if (token === null) expect(r.failedWithoutToken).toContain(row)
     else expect(r.tokens).toContain(token)
+    expect(r.exitMet).toBe(false)
+  })
+  it('NB-5: PV-28 asserts exactly INSERT, UPDATE, DELETE and TRUNCATE on the sentinel — no more, no fewer', async () => {
+    const clean = await runN22Poststate({ env: { [VAR]: STAGING }, connect: fake().connect })
+    const pv28 = clean.rows.find((x) => x.id === 'PV-28')!
+    expect(pv28.expected).toBe('INSERT, UPDATE, DELETE, TRUNCATE on uellix_bootstrap.staging_sentinel all false')
+    expect(Object.keys(JSON.parse(pv28.actual) as object)).toEqual(['insert', 'update', 'delete', 'truncate'])
+    expect(pv28.verdict).toBe('PASS')
+    // AC-1's sentinel surface is SELECT plus exactly these four: PV-28 is not broadened beyond it.
+    expect([...AC1_AUTHORIZED_SURFACE['uellix_bootstrap.staging_sentinel']!].sort()).toEqual(['DELETE', 'INSERT', 'SELECT', 'TRUNCATE', 'UPDATE'])
+  })
+  it.each(['sentinel_insert', 'sentinel_update', 'sentinel_delete', 'sentinel_truncate'] as const)('NB-5: %s alone true FAILS PV-28 and stops', async (priv) => {
+    const r = await runN22Poststate({ env: { [VAR]: STAGING }, connect: fake(tables({ [priv]: true }) as Partial<Record<P1Id, readonly Row[]>>).connect })
+    expect(r.rows.find((x) => x.id === 'PV-28')?.verdict).toBe('FAIL')
+    expect(r.tokens).toContain('STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE')
     expect(r.exitMet).toBe(false)
   })
   it('CONTROL AC-2-proof: PV-14 FAILS when only the structural proof fails (datdba), even with every named role unreachable', async () => {

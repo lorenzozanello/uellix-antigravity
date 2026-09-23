@@ -1,0 +1,217 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_CERT_EVENT_TERMINATION_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "CERT_EVENT_TERMINATION_AND_FOCUSED_HARDENING_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_PROVIDER_MUTATION__NO_HC1__NO_CERTIFICATION_EVENT",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-CERT-EVENT-TERMINATION-AND-FOCUSED-HARDENING-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not the custodian, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "head": "3a5ac69dd53e0911bd8cee99f51b1869c6b125a5",
+    "tree": "baf44d0a5943fe5f452bd12d833c212ea8bb85b0",
+    "prestate_gate": "PASS, declared, 2026-09-23T21:26:12Z"
+  },
+  "INDEPENDENT_RECERT_CONSUMED": "D1_IC_BLOCKERS_REMEDIATION_RECERT_FAIL on 3a5ac69d with ONE blocker, B-NEW-1 (a live-repository test pinned PMR-9 as always unsatisfied, so the certifier's event would turn a semantically READY candidate red: certification non-terminating). Confirmed closed and NOT reopened here: B-1, B-2, AC-1/AC-2/AC-3 conformance, package closure, DAG, 508/508, CI green. Non-blocking addressed: NB-1, NB-4, NB-5, NB-6.",
+  "B_NEW_1": {
+    "status": "REMEDIATED",
+    "live_assertions": "tests/custody/d1-pre-hc1-post-mint.test.ts no longer pins PMR-9. It asserts that PMR-9 is unsatisfied exactly when evaluateCandidateBinding(gatherCandidateFacts(ROOT)) is not eligible (state derived from git and the event files), that an invalid event alone for HEAD leaves PMR-9 unsatisfied, and that N10 is READY_FOR_HUMAN_CONFIRMATION exactly when nothing is unsatisfied. These hold in every certification state: no event (A), a valid event (B), an invalid one (C).",
+    "termination_regression": "tests/custody/d1-cert-event-termination.test.ts + tests/custody/support/d1-termination-repo.ts. A disposable real git clone of THIS candidate (objects shared by alternates; when the source checkout is clean the candidate IS the source HEAD commit; a dirty checkout, as under a mutation battery, is overlaid and committed); its origin is a local bare clone whose integration branch is set to the frozen integration commit, so N01's ls-remote is answered without network. A: at the candidate, N01 tokens [] and N10 = NOT_READY with unsatisfied exactly [PMR-9_CANDIDATE_CERTIFIED]. B: add ONLY a correctly shaped SYNTHETIC event at eventPathFor(candidate), commit; diff candidate..successor is exactly 'A <event path>'; binding eligible with no reason; N10 = READY_FOR_HUMAN_CONFIRMATION with nothing unsatisfied; the whole custody suite of the copy (every tests/custody/*.test.ts except the regression itself, which would recurse) is run THERE at the successor and exits 0; the successor is left clean. C: event + committed code edit / authority edit / test edit, event + uncommitted edit, event for the parent, event at the wrong path, wrong tree, FAIL verdict, blocking_findings 1, self-certification, digest of another package -> NOT_READY (the seven wrong-event cases with unsatisfied exactly [PMR-9]).",
+    "synthetic_only": "Every event is written inside the disposable copy with fixture = DISPOSABLE_TERMINATION_REGRESSION__NOT_A_CERTIFICATION and removed with it. No certification event exists in this repository; this lane did not and must not materialize the real independent PASS event.",
+    "found_while_building": "The first run of B surfaced a second non-terminating assertion written in this lane (an invalid event appended to REAL's events: with a valid event present the binding is correctly eligible) — corrected to replace, not append — and a 5 s default timeout in d1-candidate-certification.test.ts exceeded under the nested run's load (6.1 s). The latter is time only: vi.setConfig({ testTimeout: 60_000 }) there and in d1-mint-route-b-contract.test.ts, and --testTimeout=60000 on the nested run; no assertion changed."
+  },
+  "CERT_EVENT_TERMINATION": "PROVEN_ON_REAL_GIT: the candidate-specific event is the ONE post-candidate materialization PMR-9 needs; with it alone the custody suite stays GREEN and N10 reaches READY_FOR_HUMAN_CONFIRMATION.",
+  "REGISTRY_TERMINATION_STATUS": "NO_REGISTRY_WRITE_REQUIRED: PMR-9 reads only the event files and git (evaluateCandidateBinding); no registry, execution record or authority must be written after a PASS, and any such write would itself make HEAD differ from the candidate by more than the event (regression C). The PRE-HC1 registry OCCURRENCES are read for N05 only and are untouched by certification.",
+  "CERTIFIER_PROVENANCE_CLASS": {
+    "classification": "PROCESS_GOVERNED",
+    "machine_verified": [
+      "event_class",
+      "candidate_commit (40 hex, exists, is HEAD or HEAD's only-event parent)",
+      "event path derived from candidate_commit",
+      "candidate_tree == git tree of candidate_commit",
+      "verdict_class in {PASS, PASS_WITH_NONBLOCKING_FINDINGS}",
+      "blocking_findings === 0",
+      "package_closure_digest == digest of the package now",
+      "no contradictory event for the same candidate",
+      "working tree clean"
+    ],
+    "process_governed": "certifier_is_not_the_author is SELF-DECLARED by the event body: git cannot tell who wrote the file, and an author can write an event with that field true. Independence of the certifier is therefore governed by process (HPO lane separation, the owner's acceptance of the recert, review of the commit that adds the event), not enforced by the machine.",
+    "not_introduced": "No signing infrastructure, no key material, no cryptographic claim. Stated so the next reader does not infer enforcement that does not exist."
+  },
+  "NB_1_COMMIT_ERROR_CLASS_HARDENING": {
+    "status": "HARDENED",
+    "harness": "scripts/custody/d1-mint-tool-contract-harness.ts COMMIT_FAILURES: after COMMIT_REQUESTED the fake driver throws CONNECTION_CLOSED (CF-7), ETIMEDOUT (CF-8), an error with NO code (CF-9), a PostgresError-shaped server error with SQLSTATE 40001 (CF-5); exits 137 (CF-10); or hangs until the harness ends the run with no terminal line (COMMIT_NO_FINAL_OUTPUT, CF-10). The four throw classes differ only in the error carried.",
+    "rule": "COMMIT_REQUESTED observed + no positive acknowledgement -> COMMIT_OUTCOME_UNKNOWN (token, exit 4, candidate retained) for every error class; no terminal line -> UNKNOWN, carrier lost. The governed classification reads no error code.",
+    "survivors_killed": "COMMIT_CLASSIFIED_BY_CODE (UNKNOWN only for CONNECTION_CLOSED: passes CF-7, the only class the previous matrix had, and fails CF-8/CF-9/CF-5) and COMMIT_CLASSIFIED_BY_SQLSTATE (a SQLSTATE read as definite rollback: passes CF-7/8/9, fails CF-5); AMBIGUITY_AS_NOT_COMMITTED fails all four."
+  },
+  "NB_4_CAP_ENUMERATION_HARDENING": {
+    "status": "COMPLETE",
+    "guard": "scripts/custody/d1-pre-hc1-post-mint.ts roleEnumerationFindings(P1_STATEMENTS) over EVERY statement: any LIKE/ILIKE/SIMILAR TO/~/regexp_*/starts_with or uellix_cap reference; and any statement reading a role catalog (pg_roles, pg_authid, pg_auth_members, pg_user, pg_shadow, pg_group) whose WHERE is absent or not a disjunction of keyed rolname lookups (= '<literal>' or = ANY (ARRAY[<literals>])). Wired into ImplementationFacts and PMR-10 (AC-2 REFUTED requires zero findings).",
+    "non_vacuous": "The statements reading role catalogs are asserted to be exactly ROLE_ATTRIBUTES, MEMBERSHIPS, REACH.",
+    "placement": "The guard lives in the evaluator, not in db/custody/p1-reads.ts, so the delivery closures (and the topology demonstrations bound to them) are byte-identical; no SQL changed."
+  },
+  "NB_5_PV28_TRUNCATE_HARDENING": {
+    "status": "COMPLETE",
+    "assertion": "PV-28 expected text is exactly 'INSERT, UPDATE, DELETE, TRUNCATE on uellix_bootstrap.staging_sentinel all false'; its actual carries exactly the keys insert/update/delete/truncate; each of the four alone true FAILS PV-28 with STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE and an unmet exit; the sentinel surface stays SELECT + those four (AC-1), nothing broader. No code change: the implementation already checked all four; the gap was the test."
+  },
+  "NB_6_GRAPH_SOURCE_STATUS": {
+    "status": "CLOSED_WORLD_DERIVATION_ENFORCED_AGAINST_THE_PINNED_LIST",
+    "derivation": "scripts/custody/d1-dag-validate.ts deriveGraphLineage(): every file in docs/ops/release NAMED as part of the lineage (^FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY(_AMENDMENT)?_vX.Y.Z.json$) is read; an amendment must declare the version in its name and amend the base; version order; duplicate versions, a non-JSON file, a base-named non-base, a missing base, and any difference from GRAPH_SOURCES are errors. readChain() pushes them into chainErrors when reading the pinned list, so N10 is NOT_READY on drift. A JSON that does not claim the lineage name is never read.",
+    "not_done": "GRAPH_SOURCES is kept as the pinned list the code reads (a successor amendment must still be registered deliberately); replacing it outright would have widened the type surface every amendment test pins. package_id is not used as a membership key: the append-only amendments carry three different spellings of it."
+  },
+  "PRIOR_STATUS_RECONFIRMED": {
+    "B1": "CLOSED (classification by facts only; now pressured by six failure classes)",
+    "B2": "CLOSED (git identity binding; exercised end to end on a real clone of this candidate)",
+    "AC1": "AUTHORIZED, conformant (PV-28 now exact)",
+    "AC2": "REFUTED, conformant (no enumeration in any statement)",
+    "AC3": "DEFERRED_TO_PRECHECK_R2, conformant",
+    "delivery_matrix": "unchanged, derived over the chain",
+    "DAG": "unchanged: 7 sources, 32 nodes, 45 edges, acyclic",
+    "fake_harness": "names only db.harness-target.invalid"
+  },
+  "TOPOLOGY_DEMONSTRATION_STATUS": "NOT_REPEATED_NOT_NEEDED: no file in any delivery closure changed; the demonstrations recorded in FIBDB053_D1_AUDITOR_IC_BLOCKERS_REMEDIATION_EXECUTION_RECORD_v1.0.0.json still match the current closures (PMR-6 satisfied; regression A requires unsatisfied == [PMR-9] exactly).",
+  "MUTATION_RESULTS": {
+    "result": "18 of 18 as expected",
+    "note": "M01b is the SAME mutant as M01 run without the termination regression: it survives the rest of the suite, which is why the regression is load-bearing. SELFTEST_HARMLESS_COMMENT is the real survivor self-test.",
+    "mutants": [
+      {
+        "id": "M01_FIXED_PMR9_EXPECTATION",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 13 passed (14)"
+      },
+      {
+        "id": "M01b_FIXED_PMR9_EXPECTATION_WITHOUT_THE_REGRESSION",
+        "expected": "GREEN_SURVIVED",
+        "result": "GREEN_SURVIVED",
+        "tests": "Tests  41 passed (41)"
+      },
+      {
+        "id": "M02_VALID_EVENT_MAKES_SUITE_RED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 13 passed (14)"
+      },
+      {
+        "id": "M03_VALID_EVENT_NOT_ACCEPTED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 13 passed (14)"
+      },
+      {
+        "id": "M04_INVALID_EVENT_MAKES_READY",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 12 passed (14)"
+      },
+      {
+        "id": "M05_EVENT_PLUS_EDIT_ACCEPTED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  3 failed | 11 passed (14)"
+      },
+      {
+        "id": "M06_CODE_KEYED_COMMIT_CLASSIFICATION",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  6 failed | 37 passed (43)"
+      },
+      {
+        "id": "M07_SQLSTATE_KEYED_COMMIT_CLASSIFICATION",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 41 passed (43)"
+      },
+      {
+        "id": "M08_COMMIT_REQUESTED_ERROR_AS_NOT_COMMITTED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  9 failed | 34 passed (43)"
+      },
+      {
+        "id": "M08b_CONTRACT_AMBIGUITY_AS_NOT_COMMITTED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  4 failed | 57 passed (61)"
+      },
+      {
+        "id": "M09_ERROR_MATRIX_COLLAPSED_TO_ONE_CODE",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  13 failed | 30 passed (43)"
+      },
+      {
+        "id": "M10_MEMBERSHIPS_LIKE_UELLIX_CAP",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  24 failed | 70 passed (94)"
+      },
+      {
+        "id": "M10b_MEMBERSHIPS_WHERE_DROPPED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  24 failed | 70 passed (94)"
+      },
+      {
+        "id": "M11_PV28_WITHOUT_TRUNCATE",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 52 passed (53)"
+      },
+      {
+        "id": "M12_LINEAGE_CHECK_REMOVED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  7 failed | 3 passed (10)"
+      },
+      {
+        "id": "M13_PRIOR_REACH_ENUMERATION",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 51 passed (53)"
+      },
+      {
+        "id": "M14_PRIOR_TREE_NOT_CHECKED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  3 failed | 27 passed (30)"
+      },
+      {
+        "id": "SELFTEST_HARMLESS_COMMENT",
+        "expected": "GREEN_SURVIVED",
+        "result": "GREEN_SURVIVED",
+        "tests": "Tests  30 passed (30)"
+      }
+    ],
+    "restore": "every target restored byte-identical (sha256 checked per mutant); tree digest before and after the battery equal"
+  },
+  "VALIDATION": {
+    "custody_suite": "tests/custody: 25 files, 559/559 passed (before the record; re-run after it below in the commit evidence)",
+    "termination_regression": "tests/custody/d1-cert-event-termination.test.ts 14/14 (A, B with the nested custody suite GREEN at the successor, 4 edit cases, 7 wrong-event cases)",
+    "b1_matrix": "tests/custody/d1-mint-route-b-contract.test.ts: 10 scenarios conform; 4 throw classes UNKNOWN/exit 4/retained; no-final-output UNKNOWN carrier lost; 3 survivor strategies killed",
+    "ac_tests": "tests/custody/d1-n14-n22-consumers.test.ts (NB-4 guard + 6 controls, NB-5 exact PV-28 + 4 single-privilege FAILs), d1-pre-hc1-post-mint.test.ts (PMR-10 NB-4 control)",
+    "graph_lineage": "tests/custody/d1-graph-lineage.test.ts 10/10",
+    "typecheck": "PASS (tsc --noEmit)",
+    "lint": "PASS (0 findings on every changed file)",
+    "secrets_scan": "PASS (CURRENT_TREE: no credential material found)",
+    "authority_seal_verify": "PASS",
+    "dag_validate": "PASS (7 sources, 32 nodes, 45 edges, acyclic)"
+  },
+  "N10_AT_AUTHOR_CANDIDATE": "NOT_READY, by PMR-9 only (no certification event for this candidate).",
+  "SCHEDULE_STATUS": {
+    "verdict": "NOT_FEASIBLE_WITHOUT_RESCHEDULING",
+    "preserved": {
+      "N08_W": "2026-09-24T14:00:00Z",
+      "N31_R": "2026-09-24T18:00:00Z",
+      "N09_E": "2026-09-25T14:00:00.000Z"
+    },
+    "consequence": "Unchanged by this lane; not made feasible silently."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": 0,
+  "final_state": "D1_CERT_EVENT_TERMINATION_REMEDIATED__COMMIT_HARNESS_HARDENED__AC2_ENUMERATION_GUARD_COMPLETE__PV28_COMPLETE__READY_FOR_FINAL_SHORT_RECERT",
+  "next_gate": "ONE final focused independent recertification of this delta, materialized by the certifier as the CERTIFICATION_EVENT_CONTRACT event for the new candidate. Only after PASS: fresh schedule -> owner N08/N31 -> mechanical N09 -> fresh PRE-HC1 -> fresh HC-1."
+}

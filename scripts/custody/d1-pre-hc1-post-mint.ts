@@ -26,7 +26,7 @@ import { compensationGate } from './d1-post-mint'
 import { checkInventorySurfaces, deriveDeliveries, type Delivery } from './d1-delivery-matrix'
 import { PRODUCTION_ENTRY_POINTS, deriveClosure } from './build-production-entrypoints'
 import { CONSUMER_ENTRY } from './d1-deliver-n13'
-import { GRAPH_SOURCES } from './d1-dag-validate'
+import { GRAPH_SOURCES, deriveGraphLineage } from './d1-dag-validate'
 import { evaluateCandidateBinding, gatherCandidateFacts, type CandidateFacts } from './d1-candidate-certification'
 import { AC1_AUTHORIZED_SURFACE, P1_STATEMENTS } from '../../db/custody/p1-reads'
 import { N14_BODY } from '../../db/custody/n14-observation'
@@ -65,6 +65,8 @@ export interface ImplementationFacts {
   /** Every (relation, privilege) any statement passes to has_table_privilege. */
   readonly tablePrivilegePairs: readonly string[]
   readonly reachIsKeyed: boolean
+  /** NB-4: every statement of the observation surface that could enumerate roles (see roleEnumerationFindings). */
+  readonly roleEnumerationFindings: readonly string[]
   /** PV-14's verdict on a canned input where only the AC-2 structural proof fails (datdba is the auditor). */
   readonly pv14WhenProofFails: string
   readonly functionExecute: { disposition: string; inN14: boolean; inN21: boolean; inN22: boolean }
@@ -206,6 +208,7 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
     const ac2 = active['AC-2']
     if (ac2?.outcome === 'REFUTED') {
       if (!f.reachIsKeyed) r.push('AC-2 is refuted but REACH is not a keyed lookup over the named roles')
+      for (const x of f.roleEnumerationFindings) r.push(`AC-2 is refuted but a statement can enumerate roles: ${x}`)
       if (f.pv14WhenProofFails !== 'FAIL') r.push('AC-2 is refuted but PV-14 does not fail when its structural proof fails')
     } else if (ac2 !== undefined) r.push(`AC-2 ruling outcome ${ac2.outcome} has no implementation mapping`)
     const ac3 = active['AC-3']
@@ -253,6 +256,8 @@ export function readChain(root: string, sources: readonly string[] = GRAPH_SOURC
   const rulings: Record<string, Ruling[]> = {}
   const successorSql: Record<string, string> = {}
   const sourcesRead: string[] = []
+  // NB-6: reading the pinned list is only valid while it IS the lineage on disk.
+  if (sources === GRAPH_SOURCES) chainErrors.push(...deriveGraphLineage(join(root, RELEASE)).errors)
   for (const file of sources) {
     const doc = readJson<{
       N10_PRE_HC1_READINESS_CONJUNCTS?: Array<{ id: string }>
@@ -292,6 +297,32 @@ export function readChain(root: string, sources: readonly string[] = GRAPH_SOURC
 }
 
 /** Measure the implementation by CALLING it on canned rows — never by reading prose. */
+/** The role catalogs a statement could enumerate roles from. */
+const ROLE_CATALOG = /\bpg_catalog\.(?:pg_roles|pg_authid|pg_auth_members|pg_user|pg_shadow|pg_group)\b/i
+/** Pattern matching of any kind, or any mention of the uellix_cap_ family. */
+const ROLE_PATTERN = /\b(?:I?LIKE|SIMILAR\s+TO|regexp_\w+|starts_with)\b|~|uellix_cap/i
+/** One disjunct of a keyed predicate: `[alias.]rolname = '<literal>'` or `[alias.]rolname = ANY (ARRAY[<literals>])`. */
+const KEYED_DISJUNCT = /^\s*\(?\s*(?:\w+\.)?rolname\s*=\s*(?:'[a-z_]+'|ANY\s*\(\s*ARRAY\s*\[\s*'[a-z_]+'(?:\s*,\s*'[a-z_]+')*\s*\]\s*\))\s*\)?\s*$/i
+
+/**
+ * NB-4 (AC-2 no-enumeration, over the WHOLE observation surface, not REACH
+ * only). A statement is a finding when it pattern-matches anything or names
+ * the uellix_cap_ family, or when it reads a role catalog and its WHERE is not
+ * a disjunction of keyed rolname lookups — a missing WHERE, or any unkeyed
+ * disjunct, returns rows for roles nobody named.
+ */
+export function roleEnumerationFindings(statements: Readonly<Record<string, { readonly id: string; readonly sql: string }>>): string[] {
+  const out: string[] = []
+  for (const s of Object.values(statements)) {
+    if (ROLE_PATTERN.test(s.sql)) out.push(`${s.id}: pattern match or uellix_cap_ reference`)
+    if (!ROLE_CATALOG.test(s.sql)) continue
+    const where = /\bWHERE\b([\s\S]*)$/i.exec(s.sql)?.[1]
+    if (where === undefined) out.push(`${s.id}: reads a role catalog with no WHERE`)
+    else if (!where.split(/\bOR\b/i).every((d) => KEYED_DISJUNCT.test(d))) out.push(`${s.id}: reads a role catalog through a predicate that is not a keyed rolname lookup`)
+  }
+  return out
+}
+
 export function measureImplementation(): ImplementationFacts {
   const pairs: string[] = []
   for (const s of Object.values(P1_STATEMENTS)) {
@@ -330,6 +361,7 @@ export function measureImplementation(): ImplementationFacts {
     },
     tablePrivilegePairs: [...new Set(pairs)].sort(),
     reachIsKeyed: /= ANY \(ARRAY\[/.test(P1_STATEMENTS.REACH.sql) && !/\bLIKE\b|SIMILAR TO|~|regexp/i.test(P1_STATEMENTS.REACH.sql),
+    roleEnumerationFindings: roleEnumerationFindings(P1_STATEMENTS),
     pv14WhenProofFails: proofFails.find((r) => r.id === 'PV-14')?.verdict ?? '(missing)',
     functionExecute: {
       disposition: P1_STATEMENTS.FUNCTION_EXECUTE.disposition,
