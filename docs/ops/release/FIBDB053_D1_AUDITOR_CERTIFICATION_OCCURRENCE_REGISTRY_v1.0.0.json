@@ -327,17 +327,136 @@
       ],
       "ADMINISTRATIVE_CONSEQUENCE": "PRs #215, #216 and #217 became eligible for closure as SUPERSEDED_BY_PR_219; they were closed administratively, not merged, with branches retained, by CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1.",
       "node_status_unchanged_by_this_record": "Beyond N05, no node is closed by this certification. N06 and N07 remain NOT SATISFIED; N08, N09 and N31 remain open; no credential exists."
+    },
+    {
+      "occurrence_id": "CERT-OCC-PRE-HC1-CONVERGENCE",
+      "subject_node": "N10 readiness, over the complete non-secret PRE-HC1 package (N01-N07, N09, and the owner intakes N08, N31, N32 carried into N06).",
+      "subject_package": "FIBDB053-D1-AUDITOR-PRE-HC1-CONVERGENCE",
+      "certified_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PRE_HC1_CONVERGENCE_EXECUTION_RECORD_v1.0.0.json",
+          "blob_sha": "f001edaa724b209d20aa0793197b737b9fba5588"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N06_CLOSURE_EXECUTION_RECORD_v1.0.0.json",
+          "blob_sha": "735da6270ca516d4501efc3531b420728dcbff80"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_RUNTIME_INPUTS_EXECUTION_RECORD_v1.0.0.json",
+          "blob_sha": "7f0ceb07f0745e9232cc45b7c0ca7baaa0f1ece4"
+        },
+        {
+          "path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json",
+          "blob_sha": "7bd03fb296854f293ddf7bbe81cb4bdf78fb089f"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "903a72e814f1785a7fd4dde208a791a3deefa072"
+        },
+        {
+          "path": "scripts/custody/d1-pre-hc1.ts",
+          "blob_sha": "a9f48ff7331679109dfca32103059f39dc953dac"
+        },
+        {
+          "path": "scripts/custody/d1-n06-closure.ts",
+          "blob_sha": "f6bed19b2ac85be5db2c44d6878cb656361091f4"
+        },
+        {
+          "path": "scripts/custody/d1-n09-valid-until.ts",
+          "blob_sha": "7093b9ce434062479907cc74984a3bdeb48f89a6"
+        }
+      ],
+      "certified_at_commit": "8aa5366c4303e55d802d55b3c2ae2aff2b677593",
+      "certified_at_tree": "0d011de8f94b6b53e9d373f42e7211085f69992a",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL PRE-HC1 CERTIFICATION of the complete non-secret package.",
+      "VERDICT": "D1_AUDITOR_PRE_HC1_CONVERGENCE_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-23",
+      "blocking_findings": 0,
+      "nonblocking_findings": 9,
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate verdict document exists and none is reconstructed.",
+      "SELF_PIN_NOTE": "The fifth certified artifact is THIS REGISTRY at the blob it carried at the certified commit (six occurrences). It is not re-pinned to the blob this append produces.",
+      "PRE_HC1_NON_SECRET_PACKAGE": "CERTIFIED",
+      "N10": "READY_FOR_HUMAN_CONFIRMATION",
+      "HC1_EXECUTED": "NO",
+      "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+      "DB_CONNECTIONS_EXECUTED": 0,
+      "N07_ADJUDICATION": "N07 does NOT require a concrete evidence filename or instance file before HC-1. The certified authority deliberately defers the concrete name and the instance to N25 (FILENAME_NON_FIXATION); N07's exit condition and MR2-PRE-7 require only the skeleton and the pre-written rollback statements. The absence of an instance is CORRECT. N07 SATISFIED.",
+      "NONBLOCKING_FINDINGS": [
+        {
+          "id": "NB-1",
+          "headline_verbatim": "El CLI se autodeclara la base.",
+          "body_verbatim": "`pnpm custody:pre-hc1` usa como base declarada lo mismo que mide. Por eso `STOP_WRONG_HEAD` y `STOP_WRONG_TREE` no pueden saltar nunca desde el CLI: medido, da N01 PASS y N10 READY en una rama equivocada y",
+          "truncated_at_retrieval": true,
+          "consequence_carried": "At the HC-1 boundary an explicitly DECLARED prestate (branch, head, tree obtained independently before invocation) is required; the CLI's self-declared N01 alone is not sufficient."
+        },
+        {
+          "id": "NB-2",
+          "headline_verbatim": "N07 no detecta una instancia fabricada en `evidence/`:",
+          "body_verbatim": "con ella el conteo pasa de 30 a 31 y sigue en SATISFIED. En el candidato no hay ninguna: los 30 ficheros son de 2026-08 y el delta no toca el directorio.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-3",
+          "headline_verbatim": "La regex de precedentes es más ancha",
+          "body_verbatim": "que la convención `YYYY-MM-DD-att_<hex>-<slug>` que fija el manifiesto de N07. Cuenta nombres como `m8-`, `lifecycle1-` y un `.txt`.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-4",
+          "headline_verbatim": "N06 hereda estados en vez de recalcularlos.",
+          "body_verbatim": "Dentro de pre-HC1, N06 toma los `predecessor_states` que escribió su propio registro. Y N03 no depende de N01 en la evaluación completa. N10 sigue fallando cerrado por N02 y N04.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-5",
+          "headline_verbatim": "N05 se deriva solo del registro,",
+          "body_verbatim": "sin ligarlo a los blobs del mecanismo certificado.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-6",
+          "headline_verbatim": "HC1-S5 está marcada como verificable por máquina, pero no lo es del todo.",
+          "body_verbatim": "Incluye el nombre del custodio, que es un dato humano. Además no le transmite al owner los residuales de N05: - OF-CUST-1: copias del valor en el heap del lanzador",
+          "truncated_at_retrieval": true,
+          "consequence_carried": "HC1-S5 must be presented as NOT purely machine-verifiable and must disclose to the owner: (A) OF-CUST-1, copies of the value can remain in the launcher heap for the launcher's lifetime; (B) OF-CUST-3, the WCM entry can survive an abnormal launcher kill and must then be removed by the governed recovery path; (C) if the production consumer differs from the certified topology, delivery topology must be re-demonstrated."
+        },
+        {
+          "id": "NB-7",
+          "headline_verbatim": "El chequeo de \"misma base\" de N02 compara solo el HEAD,",
+          "body_verbatim": "no la rama. Sin impacto dentro de `evaluatePreHc1`.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-8",
+          "headline_verbatim": "PASSWORD NULL como retirada de emergencia:",
+          "body_verbatim": "la autoridad no dice si necesita su propia confirmación humana, y el paquete tampoco.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-9",
+          "headline_verbatim": "N06 exige el expiry literal, milisegundos incluidos.",
+          "body_verbatim": "Rechaza el mismo instante escrito sin milisegundos. Falla cerrado.",
+          "truncated_at_retrieval": false
+        }
+      ],
+      "nonblocking_findings_source": "The IC session transcript \"D-1 PRE-HC1 adversarial certification\" (the certifier's own report, in Spanish), retrieved verbatim by transcript search. Text is quoted as retrieved; where the body continues past what was retrievable, \"truncated_at_retrieval\" is true and nothing is completed from inference.",
+      "node_status_after_this_record": "N05 and N07 are ruled SATISFIED by independent certification (R2 and this occurrence). The other package states — N01 at the candidate, N02, N03, N04, N06, N09, and the owner data N08, N31, N32 — are certified here as part of the package, not re-ruled one by one. N10 is READY, not SATISFIED. No credential exists."
     }
   ],
 
   "DERIVED_FACTS": {
-    "OCCURRENCE_COUNT": 6,
-    "CERTIFIED_ARTIFACT_COUNT": 24,
-    "VERDICTS_RECORDING_A_PASS": 5,
+    "OCCURRENCE_COUNT": 7,
+    "CERTIFIED_ARTIFACT_COUNT": 32,
+    "VERDICTS_RECORDING_A_PASS": 6,
     "VERDICTS_RECORDING_A_FAIL": 1,
-    "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 1,
+    "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 2,
     "COUNTS_RECOMPUTED_ON_APPEND": "The first three numbers were 3, 10 and 3 when this registry held three occurrences. They are RECOMPUTED from the arrays on every append, never incremented: an incremented count is a count nobody re-derived, which is the defect OF-N05-9 records. CERTIFIED_ARTIFACT_COUNT is the union of path-and-blob pairs, so the consolidated occurrence's pin of this registry at its own earlier blob counts once and does not collide with anything.",
-    "why_nodes_closed_is_one": "Four verdicts certify an AUTHORITY PACKAGE and demonstrate nothing, so they close nothing. The fifth is a FAIL. The sixth, the R2 recertification, is the independent ruling that the demonstrated mechanism satisfies WCM-C1..WCM-C5 and the derived obligations, and it closes exactly one node: N05. It supplies no owner datum and fills no evidence artifact, so N06 and N07 stay open. A registry that let PASS strings read as more closed nodes than were ruled would be the most expensive error it could make.",
+    "why_nodes_closed_is_two": "Two nodes have their closure ruled by an independent certification: N05 (the R2 recertification) and N07 (the PRE-HC1 certification, which adjudicated its filename clause). The PRE-HC1 certification also certifies the package states of N01-N04, N06, N09 and the owner data, but it does not re-rule each as a closure, and this count does not pretend it did. N10 is READY FOR HUMAN CONFIRMATION, which is not a closure.",
     "DERIVED_PROSE_RULE": "The prose fields of DERIVED_FACTS state the counts in words, so they are REGENERATED with the counts on every append, exactly like the numbers. Only OCCURRENCES entries, their blob pins, verdict strings and hole reasons are immutable. This rule was stated after NB-9 of the custody realization certification observed the previous append editing this prose without saying so.",
     "derivation_note": "OCCURRENCE_COUNT and CERTIFIED_ARTIFACT_COUNT are derived by counting this document's own OCCURRENCES array and the union of its certified_artifacts entries, and are re-derivable by any reader from the arrays above."
   },
@@ -366,6 +485,13 @@
         "append_date": "2026-09-23",
         "appended_at_base": "1c47566357f06fdc41280297bc7bc2e8bed4d504",
         "what_was_not_touched": "The five earlier occurrences are byte-unchanged, including R1's BLOCKER_STATUS OPEN, which is superseded by this append and not rewritten. Counts recomputed from the arrays: OCCURRENCE_COUNT 6, VERDICTS_RECORDING_A_PASS 5, VERDICTS_RECORDING_A_FAIL 1, NODES_CLOSED 1 (N05). The DERIVED_FACTS prose key was renamed with its content, per DERIVED_PROSE_RULE, because its old name asserted a zero that is no longer true."
+      },
+      {
+        "appended_occurrence": "CERT-OCC-PRE-HC1-CONVERGENCE",
+        "appended_by": "CV1-D1-AUDITOR-HC1-BOUNDARY-R1",
+        "append_date": "2026-09-23",
+        "appended_at_base": "8aa5366c4303e55d802d55b3c2ae2aff2b677593",
+        "what_was_not_touched": "The six earlier occurrences are byte-unchanged. Counts recomputed from the arrays: OCCURRENCE_COUNT 7, VERDICTS_RECORDING_A_PASS 6, VERDICTS_RECORDING_A_FAIL 1, NODES_CLOSED 2 (N05, N07). The DERIVED_FACTS prose key was renamed with its content, per DERIVED_PROSE_RULE."
       }
     ]
   },
