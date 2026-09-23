@@ -93,7 +93,8 @@ function runOne([id, desc, file, find, replace, expect]) {
   const text = orig.toString('utf8')
   const count = text.split(find).length - 1
   if (count !== 1) return { id, desc, verdict: `INVALID_ANCHOR_COUNT_${count}`, failing: null, expect, classification: 'UNEXPECTED' }
-  writeFileSync(file, text.replace(find, replace))
+  // Function replacer: a string replacement would expand $&, $', $` and $$ patterns.
+  writeFileSync(file, text.replace(find, () => replace))
   let r
   try { r = suite() } finally {
     writeFileSync(file, orig)
