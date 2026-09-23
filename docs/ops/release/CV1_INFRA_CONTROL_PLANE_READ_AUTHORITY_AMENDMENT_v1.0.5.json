@@ -1,0 +1,664 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.5",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5",
+ "authority_class": "EXECUTOR_REMEDIATION_AMENDMENT__CERTIFICATION_PREDICATE_AND_ERRATA__NOT_A_NEW_GRANT__NOT_AN_ARMING_ACT",
+ "document_class": "APPEND_ONLY_AMENDMENT__NO_GOVERNED_READ__NO_PACMI_CALL__NO_MUTATION__NO_M8__NO_M9",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "builds_on": [
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3.json",
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4.json (blob 842e725328a259f27918be0846636afad50e41c5)"
+ ],
+ "certification_event_consumed": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_v1.0.0.json (INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_FAIL, 1 blocking / 12 nonblocking, candidate d3e4a55bfca3d32511ced78c09fd2e1a7a133270)",
+ "mission_id": "CV1-INFRA-CONTROL-PLANE-READ-EXECUTOR-REMEDIATION-R4",
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.5.json",
+ "AS_OF_PRE_AMENDMENT_HEAD": "d3e4a55bfca3d32511ced78c09fd2e1a7a133270",
+ "AS_OF_PRE_AMENDMENT_TREE": "b925a84ae991bbf41d0bb50d1f38a28b26947651",
+ "as_of_measurement_note": "Every host fact below was measured locally with ZERO provider network: the installed CLI bundles, the constructed environments run against `gh config get` and `vercel --version` (both offline), and git configuration listings. ZERO governed reads and ZERO PACMI calls were performed by this lane.",
+ "PURPOSE": {
+  "what_this_amendment_does": "Consumes the executor-hardening FAIL, replaces the verdict-NAME predicate of LIMB_1 with a certification-SEMANTICS predicate bound to the exact candidate, records the execution-hardening corrections the IC's findings called for, and corrects three measured factual errata of v1.0.4.",
+  "what_it_does_not_do": [
+   "It adds no read, widens no allowlist, relaxes no prohibition and takes no owner decision.",
+   "It does not redesign the authority: the registry, the terminating DN-0 protocol and AC-1 are unchanged in concept.",
+   "It does not arm anything. Arming remains a runtime evaluation of AC-1 on every execution."
+  ]
+ },
+ "FAIL_CONSUMED": {
+  "event": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_v1.0.0.json",
+  "verdict": "INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_FAIL",
+  "blocking": "B-1, recorded verbatim in the event: 'run-governed-reads.ts hardcodes a verdict prefix different from the canonical verdict actually emitted by this IC.'",
+  "nonblocking": "12 reported; 10 identified by content in the event, at least 2 NOT SUPPLIED and therefore still OPEN.",
+  "effect": "Candidate d3e4a55b is NOT certified. The v1.0.4 executor is superseded, as a candidate, by the v1.0.5 delta."
+ },
+ "CERTIFICATION_PREDICATE": {
+  "id": "CP-1 (LIMB_1, v1.0.5)",
+  "supersedes": [
+   {
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4.json ARMED_STATE.how_arming_now_happens",
+    "superseded_clause_verbatim": "including verification that the three certification events exist and carry passing VERDICT.verdict values — LIMB_1",
+    "replacement": "including verification that the three certification events exist and each satisfies CP-1 for the EXACT candidate it is bound to — LIMB_1"
+   },
+   {
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4.json (the third certification event and its verdict pattern)",
+    "superseded_text_verbatim": "docs/ops/release/CV1_INFRA_EXECUTOR_HARDENING_IC_v1.0.0.json (to be materialized from the bounded IC of THIS delta, with VERDICT.verdict matching ^INFRA_EXECUTOR_HARDENING_IC_PASS(_WITH_NONBLOCKING_FINDINGS)?$)",
+    "replacement": "See RECERT_MATERIALIZATION_CONTRACT. No verdict pattern exists any more."
+   }
+  ],
+  "why_the_name_predicate_was_wrong": "The verdict NAMESPACE is the certifier's choice. The v1.0.4 code bound LIMB_1 to a namespace the AUTHOR guessed, so a faithful materialization of a PASS by the actual certifier (namespace INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_*) could never arm. Teaching the code the other spelling would repeat the defect for the next certifier: the namespace would become an accidental ABI.",
+  "rule": "NORMATIVE. A certification event satisfies LIMB_1 for a requirement {path, packageId, certifiedCandidate} if and only if ALL of: (1) it parses as a JSON object; (2) authority_class begins with INDEPENDENT_CERTIFICATION_EVENT_RECORD (document class); (3) package_id equals the requirement's packageId (the event the MATERIALIZER was told to write; chosen by the materializer, never by the reviewer); (4) CERTIFIED_CANDIDATE.candidate_head is a full 40-hex SHA equal to the requirement's certifiedCandidate; (5) VERDICT.blocking_findings is the integer 0; (6) VERDICT.verdict is a single upper-case token whose TERMINAL class is PASS or PASS_WITH_NONBLOCKING_FINDINGS, and none of whose namespace tokens is a failure or negation token. The certified candidate must also be an ancestor of the executing HEAD.",
+  "never_satisfies_it": [
+   "a PASS for a different candidate (candidate check)",
+   "a PASS for another artifact class or another event (package_id and document-class checks)",
+   "prose containing the word PASS (single-token rule)",
+   "a FAIL containing the word PASS, e.g. ..._FAIL_PASS (any FAIL-prefixed token makes the class FAIL)",
+   "a negated PASS, e.g. ..._NOT_PASS (negation tokens in the namespace)",
+   "any verdict with blocking_findings other than the integer 0, including a string '0' or an absent count"
+  ],
+  "implementation": "scripts/infra-read/certification.ts (assessCertificationEvent, terminalClassOf), called by protocol.ts measureDn0 for every configured event; run-governed-reads.ts dn0ConfigFor configures {path, packageId, certifiedCandidate} per event and NO verdict name.",
+  "measured_against_the_materialized_events": "The two events already committed (EFFECTIVE_AUTHORITY_IC for 455b5426 and RC9_ARMING_PACKAGE_IC for 3dc12909) satisfy CP-1 unchanged (tests/infra-read/entrypoint.test.ts). The materialized hardening FAIL satisfies it for no requirement."
+ },
+ "RECERT_MATERIALIZATION_CONTRACT": {
+  "path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0.json",
+  "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC",
+  "authority_class_prefix": "INDEPENDENT_CERTIFICATION_EVENT_RECORD",
+  "CERTIFIED_CANDIDATE.candidate_head": "The exact 40-hex HEAD the recertification reviewed. The execution protocol is invoked with the same SHA as --certified-candidate; any other value fails LIMB_1.",
+  "VERDICT": "verdict = the certifier's own token, copied verbatim, whatever its namespace; blocking_findings = the integer count reported.",
+  "who_writes_it": "The executing lane, from the certifier's output, before DN-0. It belongs to the only class of addition permitted after the certified candidate (allowedPostCertificationAdditions: ADDED docs/ops/release/CV1_INFRA_*_IC_v*.json certification-event files; any MODIFY, or any other added path, is STOP_STALE_DN0), and adding it does not change the certified effective package.",
+  "note": "The FAIL of d3e4a55b is materialized under its own package_id (CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC). It is not the recert event and cannot be mistaken for it."
+ },
+ "ENTRYPOINT_TESTS": {
+  "file": "tests/infra-read/entrypoint.test.ts",
+  "why": "B-1 survived because no test loaded the REAL dn0ConfigFor(); protocol tests used a hand-written config whose verdict pattern matched a hand-written fixture.",
+  "covers": [
+   "dn0ConfigFor binds three events, each {path, packageId, certifiedCandidate} and nothing else; the recert event binds the supplied candidate",
+   "the entry-point, certification and protocol CODE carries no verdict-name literal or verdict pattern (comments that quote the retired name are excluded)",
+   "the two materialized events on disk satisfy CP-1; the materialized FAIL satisfies it for no requirement",
+   "ACCEPTED: canonical INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_PASS, canonical ..._PASS_WITH_NONBLOCKING_FINDINGS, an unguessed namespace, and the old guessed name judged semantically",
+   "REFUSED: wrong candidate, FAIL, FAIL reported with blocking 0, FAIL containing PASS, NOT_PASS, blocking > 0, blocking absent, blocking as a string, wrong document class, another package_id, candidate missing, candidate abbreviated, prose containing PASS, lower-case pass, PASS only as a prefix, non-JSON, VERDICT missing",
+   "measureDn0 driven by the real dn0ConfigFor, the real committed pins and the real committed events, with a synthesized recert: all 3 events verified for the canonical forms; STOP_ARMING_LIMB1_UNSATISFIED for absent / other-candidate / FAIL / blocking / wrong-class recerts",
+   "main() returns 2 with STOP_EXECUTION_NOT_REQUESTED for every incomplete invocation and runs nothing"
+  ]
+ },
+ "ENVIRONMENT_MODEL": {
+  "id": "ENV-1",
+  "finding_addressed": "EH-NB-ENV-CASE and EH-NB-ENV-BLAST-RADIUS.",
+  "measured": [
+   "The IC measured that on Windows Gh_Token / Vercel_Token bypass a case-sensitive denylist and are seen by the child as GH_TOKEN / VERCEL_TOKEN (Windows environment names are case-insensitive).",
+   "This lane measured, by NAME only, that the caller environment of the executor host carries CLAUDE_CODE_MESSAGING_TOKEN, which the v1.0.4 denylist model passed to both provider CLIs; it also carries NODE_USE_SYSTEM_CA, GIT_EDITOR and VERCEL_PLUGIN_* variables. No proxy variable is set on the host. No value was read.",
+   "Under the constructed environment below, offline: gh config get git_protocol -h github.com resolves (exit 0) and vercel --version runs (exit 0, 54.14.2). Keyring and auth-file resolution depend only on the account-context variables that ARE carried."
+  ],
+  "rule": "NORMATIVE. gh and vercel receive a CONSTRUCTED environment, never the caller's environment minus a denylist. Names are compared in UPPER CASE everywhere. Two case variants of one allowed name with different values are refused (STOP_ENV_AMBIGUOUS). At invocation time, independently of the builder, every name is upper-cased and refused if credential-shaped (STOP_CREDENTIAL_OVERRIDE_IN_ENV) or outside the allowlist (STOP_ENV_NOT_ALLOWLISTED).",
+  "carried_classes": {
+   "os_process_context": [
+    "PATH",
+    "PATHEXT",
+    "SYSTEMROOT",
+    "WINDIR",
+    "SYSTEMDRIVE",
+    "COMSPEC",
+    "TEMP",
+    "TMP",
+    "TMPDIR",
+    "LANG",
+    "LC_ALL",
+    "TZ"
+   ],
+   "account_profile_context": [
+    "APPDATA",
+    "LOCALAPPDATA",
+    "USERPROFILE",
+    "HOME",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "USERNAME",
+    "USERDOMAIN"
+   ],
+   "gh_only_keyring_access_on_posix": [
+    "DBUS_SESSION_BUS_ADDRESS",
+    "XDG_RUNTIME_DIR"
+   ],
+   "fixed_by_the_executor": {
+    "gh": [
+     "GH_PROMPT_DISABLED=1",
+     "GH_NO_UPDATE_NOTIFIER=1",
+     "GH_PAGER empty",
+     "NO_COLOR=1"
+    ],
+    "vercel": [
+     "NO_COLOR=1"
+    ]
+   }
+  },
+  "decided_not_carried": {
+   "credential_names": "any name whose upper-cased form contains TOKEN, SECRET, PASSW, API_KEY / APIKEY, PRIVATE_KEY, CREDENTIAL, COOKIE or AUTH. Refused at invocation even if a builder regression put one back.",
+   "NODE_OPTIONS": "REFUSED. It can preload arbitrary code into the Vercel CLI process (--require / --import), which runs with the OWNER credential.",
+   "NODE_EXTRA_CA_CERTS / NODE_TLS_REJECT_UNAUTHORIZED / NODE_USE_SYSTEM_CA / SSL_CERT_FILE / SSL_CERT_DIR": "REFUSED. They widen the TLS trust the credential is presented under. NODE_USE_SYSTEM_CA is set on the host; dropping it narrows Node to its bundled public roots, which chain the public provider APIs. A TLS failure then signals interception instead of being accepted.",
+   "GH_CONFIG_DIR / GH_HOST / GH_REPO / VERCEL_* / NOW_* / XDG_CONFIG_HOME / XDG_DATA_HOME / XDG_CACHE_HOME": "REFUSED. They redirect which identity, host, project or configuration the CLI resolves. The measured identity (RC-9a) is the one resolved from the default account locations, and nothing else may be substituted for it.",
+   "HTTPS_PROXY / HTTP_PROXY / ALL_PROXY / NO_PROXY": "REFUSED. None is set on the executor host. If the network ever requires one, the read fails visibly rather than routing a credential through caller-chosen infrastructure.",
+   "DEBUG / GH_DEBUG": "REFUSED. Diagnostic modes print request detail."
+  },
+  "owner_decision_needed": "NO. Both viable choices for proxies and extra CA material (carry or refuse) were evaluated; refusing has no trust cost and only an availability cost that fails visibly, so no two choices with materially different TRUST consequences remain."
+ },
+ "RC9A_IDENTITY_ASSERTION": {
+  "rule": "Runtime RC-9a now ASSERTS the identity it measures instead of only recording it: PLANE-G requires login lorenzozanello with tokenSource keyring, PLANE-V requires username lorenzozanello-5040. A token supplied by environment (tokenSource GH_TOKEN) or another login leaves PLANE-G unsatisfied and the phase stops with STOP_RC9_UNRESOLVED.",
+  "why_here": "With the constructed environment, an environment-supplied credential should be impossible; the assertion makes that a checked postcondition instead of an inference."
+ },
+ "FREE_TEXT_SECRET_CONTROLS": {
+  "finding_addressed": "EH-NB-FREE-TEXT-DETECTORS.",
+  "added_detectors": [
+   {
+    "id": "VERCEL_VCP_TOKEN",
+    "form": "the vcp_ prefix followed by 16+ alphanumerics",
+    "basis": "MEASURED: vcp_ is the only token-prefix literal in the installed Vercel CLI 54.14.2 bundle (dist/commands-bulk.js). Prefix-anchored, hence discriminating."
+   },
+   {
+    "id": "URL_USERINFO (widened)",
+    "form": "ANY userinfo in a scheme URL, not only user:password",
+    "basis": "A colon-less userinfo (a token as the user name) carried the credential and was invisible to the v1.0.4 form."
+   },
+   {
+    "id": "ENV_ASSIGNMENT_SECRET",
+    "form": "a credential-NAMED variable assigned a literal, in shell / .env / cmd form (no spaces around the equals sign) or PowerShell $env: form; names matched case-insensitively",
+    "basis": "Semantic: the NAME carries the meaning. Values beginning with $ or % are references and are not reported; source code with spaced assignments is deliberately outside the shell form."
+   },
+   {
+    "id": "KEYWORD_ADJACENT_OPAQUE",
+    "form": "a credential keyword (token, secret, credential, password, api key) followed by a key-value separator and 24+ alphanumerics",
+    "basis": "Classic Vercel tokens are 24 mixed alphanumerics, shape-identical to Vercel uids (MEASURED on a member uid). Only the adjacent keyword discriminates."
+   }
+  ],
+  "deliberately_not_added": "A length-only detector for 24-character strings. It would flag every Vercel uid, team id and project id in normal evidence.",
+  "residual": "A classic Vercel token printed with no credential keyword next to it is not detectable by shape. It is not reachable through any projection: no allowlist admits a token field, and the projection layer runs before any detector."
+ },
+ "ENVELOPE_ALLOWLIST": {
+  "finding_addressed": "EH-NB-ENVELOPE-I08.",
+  "rule": "NORMATIVE. SEPARATE from the per-op projection allowlist. Every evidence record must carry exactly the envelope keys (record_kind, op_id, read_id, plane, node_ids, freshness, prestate_validity, operation, request_utc, response_utc, http_status, outcome, projection, absent_fields, assertions); operation only tool/method/endpoint/fixed_args; absent_fields[] only path/kind; assertions only the seven named assertions with scalar values. The bundle summary and its rc9a block have their own key allowlists and carry op ids, not records. Any other key is STOP_ENVELOPE_NONCONFORMANT, whatever its value.",
+  "applied_at": [
+   "inside the executor, before a record is marked validated",
+   "in the entry point, before each record and the summary are written"
+  ],
+  "tests": "tests/infra-read/envelope.test.ts, where every injected value is proven invisible to the secret scanner, so a refusal can only come from the envelope control."
+ },
+ "XCC1_NORMATIVE_CONTRACT": {
+  "finding_addressed": "EH-NB-XR1-I13-I15.",
+  "why": "The guard compared X-R1's argv with ops.ts fixedArgs, the same array the builder used; dropping a reset from the registry changed both sides and nothing went RED.",
+  "rule": "NORMATIVE. scripts/infra-read/xcc1-normative.ts states the X-R1 contract by MEANING and imports neither the registry, the XCC-1 builder nor the guards. It is checked at runtime BEFORE the registry comparison, and tests pin it by literal.",
+  "contract": {
+   "argv": "exactly the three resets credential.helper, core.askpass, http.extraheader (git's lower-cased names), each with the EMPTY value, no other -c key, no duplicate, then exactly ls-remote and the canonical origin",
+   "origin": "https, host github.com, path /lorenzozanello/uellix-antigravity.git, no userinfo, no query, no fragment",
+   "environment": "GIT_CONFIG_NOSYSTEM=1 (system config isolation), GIT_TERMINAL_PROMPT=0, GIT_ASKPASS and SSH_ASKPASS DEFINED and EMPTY (askpass isolation), GCM_INTERACTIVE=never; GIT_CONFIG_GLOBAL, HOME and USERPROFILE inside the ceiling directory; the global config file empty (global isolation); cwd strictly below GIT_CEILING_DIRECTORIES (ceiling isolation)",
+   "preflight": "the same three resets then config --list --show-origin; the result must list exactly the three resets, all from the command line, all empty, and no URL rewrite (insteadOf / pushInsteadOf) from any source"
+  },
+  "no_network": "No X-R1 network access was executed. The only git processes run by tests are local configuration listings and credential fills against a .invalid host."
+ },
+ "MUTATION_BATTERY_SELF_TEST": {
+  "finding_addressed": "EH-NB-BATTERY-SUMMARY.",
+  "defect_verbatim_from_d3e4a55b": "const ok = (expect === 'RED' && verdict === 'KILLED') || (expect === 'RED' && verdict === 'SURVIVED')",
+  "effect": "Every row was AS_EXPECTED whatever happened, and the battery had no failing exit. The per-row KILLED / SURVIVED verdict column was computed independently of this expression, so the per-mutant verdicts v1.0.4 reports are not falsified by it; its aggregate and its AS_EXPECTED column were meaningless.",
+  "fix": "Verdict logic moved to scripts/infra-read/mutation-verdict.mjs and unit-tested (tests/infra-read/mutation-verdict.test.ts): AS_EXPECTED only when the observed verdict EQUALS the expectation; ERROR (crash, timeout, no test summary) never counts as a kill; unknown expectations are UNEXPECTED; the aggregate PASSES only if the battery is non-empty and every row is AS_EXPECTED; the process exits non-zero otherwise. The unmutated suite must be green before any mutant runs.",
+  "self_test": "node scripts/infra-read/mutation-battery.mjs --self-test runs a real killed mutant (M05) next to a behaviour-neutral comment edit deliberately expected KILLED. It passes only if that survivor is reported SURVIVED / UNEXPECTED and the aggregate is BATTERY=FAIL."
+ },
+ "SEN_D2_CORRECTION": {
+  "finding_addressed": "EH-NB-SEN-D2.",
+  "superseded_claims_verbatim": [
+   {
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.4.json sentinels[SEN-D2].purpose",
+    "text": "NO CREDENTIAL-SHAPED LITERAL IN THE REPOSITORY. Test fixtures assemble token- and hook-shaped strings at runtime; the supplemental scanner over the committed write set must stay clean."
+   },
+   {
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4.json self_check.SC-H7",
+    "text": "Token- and hook-shaped fixture strings are assembled at runtime; none is a committed literal."
+   },
+   {
+    "locus": "commit d3e4a55b message (not an artifact; recorded so the correction is findable; line-wrapped in the original, quoted here with the wrap removed)",
+    "text": "a strict credential-family scan of the 15-file write set = 0."
+   }
+  ],
+  "measured": "Running the FULL v1.0.4 detector set over the 15-file write set of d3e4a55b (git diff 3dc12909..d3e4a55b) returns 3 findings, all in tests/infra-read: COOKIE_MATERIAL and ENV_VALUE_FIELD in evidence-scan.test.ts (a runtime join that did not split the detectable part, and a plain literal), and URL_USERINFO in safe-read-executor.test.ts. The '= 0' was a scan with a strict SUBSET of detectors. None of the three is a credential; all are deliberate positive fixtures.",
+  "rule": "NORMATIVE. Three classes, never a global suppression: production code and evidence = CLEAN (zero findings); files DESIGNATED in tests/infra-read/expected-detections.json = EXPECTED_DETECTIONS only if their per-detector counts equal the designation EXACTLY (an extra detection is a leak, a missing one a detector regression); anything else = FAIL. A designation naming a file outside the write set is STOP_EXPECTED_DETECTIONS_STALE; an empty designation is FAIL.",
+  "command": "npx tsx scripts/infra-read/evidence-scan.ts --write-set-manifest tests/infra-read/expected-detections.json <write-set files>",
+  "measured_at_this_lane": "Write set of the executor lanes (3dc12909..this delta, 28 files, v1.0.5 detector set): CLEAN=24 (every production file, every authority/event document including this one, and the designation manifest), EXPECTED_DETECTIONS=4 (evidence-scan.test.ts, safe-read-executor.test.ts, xcc1-local.test.ts, xcc1-normative.test.ts, each at exactly its designated counts), FAIL=0. WRITE_SET_SCAN=PASS."
+ },
+ "GENERATE_CURL_ERRATUM": {
+  "finding_addressed": "EH-NB-GENERATE-CURL.",
+  "superseded_text_verbatim": {
+   "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4.json VERCEL_METHOD_GUARD.explicitly_refused_measured_on_vercel_api_help",
+   "item": "--generate (e.g. --generate=curl emits a request that carries the token)"
+  },
+  "correction": "MEASURED in the installed Vercel CLI 54.14.2 bundle (dist/chunk-FEYVO2US.js): the generated curl command carries an authorization header line whose credential position holds the literal placeholder <TOKEN>, not the token. The v1.0.4 justification overclaimed.",
+  "disposition": "--generate stays REFUSED, for the correct reason: it is outside the exact executor surface. It emits a REQUEST TEMPLATE instead of performing a read, so its output is not provider evidence, and every argv outside the one permitted shape is refused regardless of any denylist.",
+  "replacement_item": "--generate (emits a request template instead of performing a read; outside the exact executor surface)"
+ },
+ "ENTROPY_DISPOSITION": {
+  "finding_addressed": "EH-NB-ENTROPY-FP.",
+  "status": "OPEN. Not refined.",
+  "measured": "Over the committed authority files of this PR the OPAQUE_HIGH_ENTROPY detector fires on separator-segmented identifiers such as a v1.0.0 key made of 'class_for_' followed by the six labels DN-7 .. DN-12 joined with underscores (quoted in pieces here because this file must itself scan CLEAN; the whole identifier is pinned in tests/infra-read/evidence-scan.test.ts) and two similar keys in the parent DAG amendment. No production or evidence file of this lane triggers it.",
+  "why_not_refined": "The only discriminator between those identifiers and a token is segment structure. Exempting strings with 3 or more separators would also exempt about 13% of uniformly random 40-character base64url tokens (P(X>=3) for X ~ Binomial(40, 2/64) is about 0.128). That is a material weakening, and security takes precedence over convenience.",
+  "operational_consequence": "An evidence record whose projection legitimately contains such an identifier would fail the post-projection scan and stop the phase. That fails closed, and the known false-positive shape is pinned by a test so it is visible rather than surprising."
+ },
+ "DN0_FETCH_DISPOSITION": {
+  "finding_addressed": "EH-NB-DN0-FETCH.",
+  "why_separate_from_X_R1": "X-R1 is a governed READ of provider state: it runs in an EMPTY isolated directory with every configuration source removed, because its semantics are fully stated on its argv. The DN-0 fetch is a freshness refresh of the executing repository: its semantics (which remote, which refspecs, prune) come FROM repository configuration, and the host's system configuration sets the TLS backend (http.sslbackend, MEASURED). Applying XCC-1's system/global/repository isolation would change what the fetch does. XCC-1 is therefore not extended to it.",
+  "what_is_applied": "Everything that can be applied without changing semantics for a public repository: argv resets credential.helper, core.askPass and http.extraHeader to empty; environment GIT_ASKPASS and SSH_ASKPASS empty, GIT_TERMINAL_PROMPT=0, GCM_INTERACTIVE=never. A public repository needs no credential, so these change nothing unless a credential would otherwise have been presented, in which case the fetch now FAILS instead.",
+  "residual_vectors_checked_before_the_fetch": [
+   "URL rewrite and cookie file. The resets cannot neutralize url.*.insteadOf / pushInsteadOf (which can put userinfo into the fetched URL) or http.*.cookieFile. Their absence at every scope is required: git config --name-only --get-regexp for those keys must exit 1, else STOP_DN0_FETCH_CREDENTIAL_VECTOR and no fetch. MEASURED on the executor host at this lane: exit 1.",
+   "Remote shape. An ssh remote presents a key and a userinfo URL presents a token, neither of which the resets touch. remote.origin.url must match the value pattern https-without-userinfo: git config --name-only --get-regexp on that key with that value pattern must exit 0, else STOP_DN0_FETCH_CREDENTIAL_VECTOR and no fetch. MEASURED on the executor host at this lane: exit 0."
+  ],
+  "values_never_observed": "Both probes use --name-only and a value pattern, so git prints at most a key NAME. A credential-bearing configuration value is refused without ever entering the executor process (DF11: the credential MUST NEVER be observed).",
+  "residual_not_eliminated": "NONE identified for credential presentation by the fetch. The fetch still reads repository and system configuration by design; that is the documented semantic difference from X-R1, not a credential path.",
+  "no_remote_mutation": "The fetch only updates local remote-tracking refs."
+ },
+ "MUTATION_RESULTS": {
+  "method": "scripts/infra-read/mutation-battery.mjs (reproducible): the unmutated suite must be green first (253/253), then each production mutation is applied, tests/infra-read is run, and the file is restored from an in-memory byte copy and SHA-256 verified (never git checkout). Rows name the tests that died.",
+  "aggregate": "MUTANTS=47 AS_EXPECTED=47 UNEXPECTED=0 BATTERY=PASS",
+  "self_test": {
+   "rows": [
+    "M05 G-R1-first check removed (G-R2 before G-R1): KILLED / AS_EXPECTED",
+    "S01 SELF-TEST: behaviour-neutral comment edit, deliberately expected KILLED: SURVIVED / UNEXPECTED"
+   ],
+   "aggregate": "BATTERY=FAIL",
+   "result": "SELF_TEST=PASS (the battery failed when fed a survivor)"
+  },
+  "token_precision_kills": "M02, M18 and N09 are killed on the precision of the refusal TOKEN: in each, the refusal itself survives through a second layer (exact shape, closed path pattern, upper-cased allowlist). They are reported as such, not as bypasses.",
+  "results": [
+   {
+    "id": "M01",
+    "mutation": "gh exact-shape check removed (POST/body forms)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "The exact-GET-shape comparison is the only thing that refuses a gh argv without --method; the denylist does not cover it, so the mutant lets it through."
+   },
+   {
+    "id": "M02",
+    "mutation": "gh denylist emptied (exact shape still operative)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "Killed on TOKEN PRECISION only: with the denylist empty, --show-token is still refused by the exact-shape check, under STOP_READ_AUTHORITY_EXCEEDED instead of STOP_GH_NON_GET_OR_BODY_FORM. The refusal itself is preserved by design."
+   },
+   {
+    "id": "M03",
+    "mutation": "vercel exact-shape check removed (POST/body forms)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "Without the Vercel exact-shape check, --method DELETE and a missing --method reach the runner."
+   },
+   {
+    "id": "M04",
+    "mutation": "projection conformance disabled",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "A bypassed projector returns the raw object; post-projection conformance is the only layer that refuses it."
+   },
+   {
+    "id": "M05",
+    "mutation": "G-R1-first check removed (G-R2 before G-R1)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "G-R2 before G-R1 reaches the runner."
+   },
+   {
+    "id": "M06",
+    "mutation": "RC-9b check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "G-R2 after a G-R1 without a permission object reaches the runner."
+   },
+   {
+    "id": "M07",
+    "mutation": "RNA-1 exclusion removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A V-R2 role limb targets uellix-antigravity."
+   },
+   {
+    "id": "M08",
+    "mutation": "freshness refusal removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "V-R4 (F_IMMEDIATE_ONLY_BEFORE_MUTATION) runs in the read-only phase."
+   },
+   {
+    "id": "M09",
+    "mutation": "post-projection secret detectors removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A deploy-hook URL inside an allowlisted field survives into a record."
+   },
+   {
+    "id": "M10",
+    "mutation": "X-R1 preflight requirement removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "X-R1 runs without its immediately preceding isolation preflight."
+   },
+   {
+    "id": "M11",
+    "mutation": "GIT_ASKPASS dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED",
+    "why": "The built XCC-1 env lacks GIT_ASKPASS: both the XCC-1 static check and the normative contract refuse every legitimate X-R1, and the live askpass tests run the askpass program."
+   },
+   {
+    "id": "M12",
+    "mutation": "ceiling directory dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 17,
+    "classification": "AS_EXPECTED",
+    "why": "No ceiling: the %TEMP% repository (DF-14) is discovered, so the live preflight lists file-origin keys and every X-R1 path fails closed."
+   },
+   {
+    "id": "M13",
+    "mutation": "isolation listing accepts file origins",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A file-provided credential.helper substituted for the reset is accepted by the listing check (live local git)."
+   },
+   {
+    "id": "M14",
+    "mutation": "no-commit-since-DN-0 guard disabled (stale DN-0 head)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A commit between DN-0 and the reads is not detected (stale DN-0 head)."
+   },
+   {
+    "id": "M15",
+    "mutation": "post-certification MODIFY accepted",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A MODIFIED effective-package file after certification is accepted."
+   },
+   {
+    "id": "M16",
+    "mutation": "env-value detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A plain env value is no longer detected."
+   },
+   {
+    "id": "M17",
+    "mutation": "V-R1 allowlist admits deploy-hook url",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED",
+    "why": "The deploy-hook url becomes a projected field of V-R1."
+   },
+   {
+    "id": "M18",
+    "mutation": "vercel write-operation-id check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "Killed on TOKEN PRECISION: a write operation id is still refused by the closed path pattern, under STOP_READ_AUTHORITY_EXCEEDED instead of STOP_VERCEL_WRITE_OPERATION_ID."
+   },
+   {
+    "id": "N01",
+    "mutation": "B-1 reintroduced: predicate requires the author-guessed verdict name",
+    "verdict": "KILLED",
+    "failing_tests": 17,
+    "classification": "AS_EXPECTED",
+    "why": "B-1 reintroduced in the predicate: the canonical certifier verdicts and the two materialized PASS events are refused (LIMB_1 unreachable again), and the code-level no-verdict-name check fails."
+   },
+   {
+    "id": "N02",
+    "mutation": "B-1 reintroduced at the entry point: a verdict pattern configured for the recert event",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "B-1 reintroduced at the entry point: the configured event gains a verdict key and the entry-point code carries a verdict pattern; both are checked on the REAL dn0ConfigFor."
+   },
+   {
+    "id": "N03",
+    "mutation": "candidate binding removed (wrong-candidate PASS accepted)",
+    "verdict": "KILLED",
+    "failing_tests": 3,
+    "classification": "AS_EXPECTED",
+    "why": "A PASS for another candidate satisfies LIMB_1, both in the predicate and through measureDn0 with the real config."
+   },
+   {
+    "id": "N04",
+    "mutation": "verdict judged by substring (FAIL containing PASS accepted)",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED",
+    "why": "Substring judgement accepts ..._FAIL_PASS and prose, and also changes the terminal class of the materialized PASS_WITH_NONBLOCKING events."
+   },
+   {
+    "id": "N05",
+    "mutation": "blocking-count check removed",
+    "verdict": "KILLED",
+    "failing_tests": 6,
+    "classification": "AS_EXPECTED",
+    "why": "The materialized hardening FAIL (blocking 1) and a PASS with blocking > 0 would satisfy an event requirement."
+   },
+   {
+    "id": "N06",
+    "mutation": "document-class check removed",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "An authority document with a PASS-shaped VERDICT satisfies LIMB_1."
+   },
+   {
+    "id": "N07",
+    "mutation": "gh env guard reverted to a case-sensitive denylist (mixed-case GH_TOKEN)",
+    "verdict": "KILLED",
+    "failing_tests": 15,
+    "classification": "AS_EXPECTED",
+    "why": "Full BYPASS: Gh_Token / gh_token / Github_Token / GH_ENTERPRISE_TOKEN / CLAUDE_CODE_MESSAGING_TOKEN reach the gh runner (the exact case the IC measured)."
+   },
+   {
+    "id": "N08",
+    "mutation": "vercel env guard reverted to a case-sensitive denylist (mixed-case VERCEL_TOKEN)",
+    "verdict": "KILLED",
+    "failing_tests": 13,
+    "classification": "AS_EXPECTED",
+    "why": "Full BYPASS: Vercel_Token / vercel_token / NOW_TOKEN / VERCEL_AUTH_TOKEN reach the vercel runner."
+   },
+   {
+    "id": "N09",
+    "mutation": "credential-name check made case-sensitive",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED",
+    "why": "Killed on TOKEN PRECISION: mixed-case credential names are no longer classified as credentials, but the upper-cased ALLOWLIST still refuses them (STOP_ENV_NOT_ALLOWLISTED). Defense in depth holds; the test pins the precise class."
+   },
+   {
+    "id": "N10",
+    "mutation": "constructed env compares names case-sensitively",
+    "verdict": "KILLED",
+    "failing_tests": 4,
+    "classification": "AS_EXPECTED",
+    "why": "The builder drops Path / SystemRoot / windir spelled in non-upper case: the OS context gh and vercel need on Windows disappears."
+   },
+   {
+    "id": "N11",
+    "mutation": "vcp_ detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A vcp_ token inside a free-text field is not detected."
+   },
+   {
+    "id": "N12",
+    "mutation": "URL userinfo detector reverted to the v1.0.4 user:password form",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "A colon-less userinfo URL (token as user name) is not detected."
+   },
+   {
+    "id": "N13",
+    "mutation": "env-assignment detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED",
+    "why": "Credential-named assignments (shell, export, set, PowerShell, mixed case) are not detected."
+   },
+   {
+    "id": "N14",
+    "mutation": "keyword-adjacent classic-token detector removed",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "A keyword-adjacent classic 24-char token is not detected."
+   },
+   {
+    "id": "N15",
+    "mutation": "designated fixtures accepted regardless of counts (global suppression)",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A designated fixture with an extra or missing detection would classify EXPECTED_DETECTIONS: a global suppression."
+   },
+   {
+    "id": "N16",
+    "mutation": "raw provider key injected into the evidence envelope",
+    "verdict": "KILLED",
+    "failing_tests": 59,
+    "classification": "AS_EXPECTED",
+    "why": "An extra envelope key with a scanner-invisible value is refused inside the executor on EVERY record, so every positive path fails closed."
+   },
+   {
+    "id": "N17",
+    "mutation": "envelope allowlist disabled",
+    "verdict": "KILLED",
+    "failing_tests": 8,
+    "classification": "AS_EXPECTED",
+    "why": "Every envelope refusal test fails: a raw provider object, stdout and foreign keys would be serialized."
+   },
+   {
+    "id": "N18",
+    "mutation": "X-R1 registry drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED",
+    "why": "The registry X-R1 argv loses credential.helper=: the normative guard refuses the (drifted) legitimate X-R1, so positive paths fail closed; the literal-pinned spec test also fails. Under v1.0.4 this survived (I13)."
+   },
+   {
+    "id": "N19",
+    "mutation": "X-R1 registry drops the core.askPass reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED",
+    "why": "As N18 for core.askPass= (I14)."
+   },
+   {
+    "id": "N20",
+    "mutation": "X-R1 registry drops the http.extraHeader reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED",
+    "why": "As N18 for http.extraHeader= (I15)."
+   },
+   {
+    "id": "N21",
+    "mutation": "preflight argv drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 14,
+    "classification": "AS_EXPECTED",
+    "why": "The preflight argv loses a reset: the normative preflight-argv check refuses, and the live listing no longer shows three resets."
+   },
+   {
+    "id": "N22",
+    "mutation": "terminal prompt enabled in the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 13,
+    "classification": "AS_EXPECTED",
+    "why": "GIT_TERMINAL_PROMPT=1: the normative environment refuses every X-R1 and preflight."
+   },
+   {
+    "id": "N23",
+    "mutation": "system-config isolation dropped from the XCC-1 env",
+    "verdict": "KILLED",
+    "failing_tests": 16,
+    "classification": "AS_EXPECTED",
+    "why": "GIT_CONFIG_NOSYSTEM absent: the normative environment refuses, and live listings show system-file keys."
+   },
+   {
+    "id": "N24",
+    "mutation": "normative X-R1 argv check removed from the guard",
+    "verdict": "KILLED",
+    "failing_tests": 3,
+    "classification": "AS_EXPECTED",
+    "why": "The registry-drift tests: an op whose own fixedArgs lack a reset passes sameArgv; only the normative check refused it."
+   },
+   {
+    "id": "N25",
+    "mutation": "DN-0 residual-vector (insteadOf/cookieFile) check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "A configured insteadOf / cookieFile no longer stops the DN-0 fetch."
+   },
+   {
+    "id": "N26",
+    "mutation": "DN-0 fetch drops the credential.helper reset",
+    "verdict": "KILLED",
+    "failing_tests": 5,
+    "classification": "AS_EXPECTED",
+    "why": "The DN-0 fetch argv loses the credential.helper reset: the exact-args test fails and the fake repository does not recognize the fetch, so the positive DN-0 paths stop."
+   },
+   {
+    "id": "N27",
+    "mutation": "RC-9a identity assertion removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "Another GitHub login, or an environment-supplied token source, satisfies PLANE-G."
+   },
+   {
+    "id": "N28",
+    "mutation": "DN-0 origin https-without-userinfo check removed",
+    "verdict": "KILLED",
+    "failing_tests": 1,
+    "classification": "AS_EXPECTED",
+    "why": "An ssh or userinfo origin no longer stops the DN-0 fetch."
+   },
+   {
+    "id": "N29",
+    "mutation": "DN-0 residual probe reads config VALUES (--name-only dropped)",
+    "verdict": "KILLED",
+    "failing_tests": 2,
+    "classification": "AS_EXPECTED",
+    "why": "The residual probe would print configuration VALUES into the process (a credential-bearing insteadOf would be observed)."
+   }
+  ]
+ },
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "Every prohibition of v1.0.0 through v1.0.4, unrelaxed.",
+  "No governed read and no PACMI call was executed by this lane, and none is authorized by this amendment. run-governed-reads.ts must not be run until the v1.0.5 delta is independently recertified and that recertification is materialized per RECERT_MATERIALIZATION_CONTRACT.",
+  "No read is added, no projection allowlist is widened, no GitHub or Vercel setting is mutated, and no M-8 or M-9 step is taken.",
+  "No owner decision is taken or implied."
+ ],
+ "self_check": {
+  "SC-R1": "v1.0.0-v1.0.4, both manifests up to v1.0.4, the RC-9a record, both arming determinations and both earlier IC events are byte-identical; this delta adds files and edits only scripts/infra-read/** and tests/infra-read/**.",
+  "SC-R2": "Every superseded text is quoted verbatim from its committed source.",
+  "SC-R3": "The FAIL is materialized with its reported verdict and counts only; reviewer and timestamp are NOT_SUPPLIED and no verdict artifact is reconstructed.",
+  "SC-R4": "No verdict name appears in the LIMB_1 code path; the predicate is bound to the exact candidate.",
+  "SC-R5": "Zero governed reads, zero PACMI network calls and zero X-R1 network calls were executed by this lane.",
+  "SC-R6": "This file and every production file of the write set scan CLEAN under the v1.0.5 detector set; test fixtures are EXPECTED_DETECTIONS by exact designation."
+ },
+ "final_state": "INFRA_EXECUTOR_REMEDIATED__READY_FOR_SHORT_FINAL_RECERT__ZERO_GOVERNED_READS",
+ "next_gate": "ONE short independent recertification of this delta. On PASS, materialize it per RECERT_MATERIALIZATION_CONTRACT and run scripts/infra-read/run-governed-reads.ts with --certified-candidate equal to the recertified HEAD: runtime RC-9a -> DN-0 (last) -> reads -> evidence committed afterward with parent == DN-0 HEAD."
+}

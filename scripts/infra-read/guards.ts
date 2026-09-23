@@ -16,6 +16,7 @@
 import path from 'node:path'
 import { X_R1_URL, Refusal, type OpDef, type Params, type Tool } from './ops'
 import { assertXcc1Env } from './xcc1'
+import { NormativeViolation, assertXcc1NormativeArgv, assertXcc1NormativeEnv } from './xcc1-normative'
 
 export interface Invocation {
   readonly opId: string
@@ -49,7 +50,8 @@ export const GH_FORBIDDEN_FLAGS = [
 
 /**
  * vercel flags measured on CLI 54.14.2 `vercel api --help`. Note the ones that
- * differ from gh: --generate (emits a request, e.g. curl, carrying the token),
+ * differ from gh: --generate (emits a request TEMPLATE instead of reading; v1.0.5
+ * erratum: the measured curl template carries a <TOKEN> placeholder, not the token),
  * --dangerously-skip-permissions (skips DELETE confirmation), --spec-url.
  * Also MEASURED in the installed bundle: `--method GET` plus `-f/-F` sends the
  * fields as a JSON BODY on a GET, not as a query string.
@@ -73,25 +75,88 @@ function sameArgv(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((t, i) => t === b[i])
 }
 
-const GH_ENV_FORBIDDEN = ['GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN', 'GH_DEBUG', 'DEBUG', 'GH_HOST']
-const VERCEL_ENV_FORBIDDEN = ['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID', 'DEBUG']
+// ------------------------------------------------------------- environment model (v1.0.5)
+//
+// gh and vercel get a deliberately CONSTRUCTED environment, not the caller's
+// environment minus a denylist. MEASURED on the executor host: the caller's
+// environment carried CLAUDE_CODE_MESSAGING_TOKEN, which the previous denylist
+// passed to both CLIs; and the independent IC measured that a case-sensitive
+// denylist is bypassed on Windows by Gh_Token / Vercel_Token, which the child
+// then reads as GH_TOKEN / VERCEL_TOKEN. Names are therefore compared in upper
+// case everywhere, and only these classes are carried:
+//
+//   OS / process context      PATH, PATHEXT, SystemRoot, WINDIR, SystemDrive, ComSpec, TEMP, TMP, TMPDIR, LANG, LC_ALL, TZ
+//   account / profile context APPDATA, LOCALAPPDATA, USERPROFILE, HOME, HOMEDRIVE, HOMEPATH, USERNAME, USERDOMAIN
+//                             — gh finds its config and hosts.yml through APPDATA; the Windows keyring needs no
+//                             variable; Vercel CLI finds auth.json under APPDATA (xdg.data)
+//   gh only                   DBUS_SESSION_BUS_ADDRESS, XDG_RUNTIME_DIR (POSIX keyring access)
+//
+// Deliberately NOT carried (decided, not by omission):
+//   credentials               *TOKEN*, *SECRET*, *PASSW*, *API_KEY*, *PRIVATE_KEY*, *CREDENTIAL*, *COOKIE*, *AUTH*
+//   identity redirection      GH_HOST, GH_CONFIG_DIR, GH_REPO, VERCEL_*, NOW_*, XDG_CONFIG_HOME, XDG_DATA_HOME, XDG_CACHE_HOME
+//   code / trust injection    NODE_OPTIONS, NODE_EXTRA_CA_CERTS, NODE_TLS_REJECT_UNAUTHORIZED, NODE_USE_SYSTEM_CA,
+//                             SSL_CERT_FILE, SSL_CERT_DIR
+//   traffic redirection       HTTPS_PROXY, HTTP_PROXY, ALL_PROXY, NO_PROXY (none is set on the executor host; if the
+//                             network needs one, the read fails visibly instead of routing a credential through it)
+//   diagnostics               DEBUG, GH_DEBUG
+// NODE_USE_SYSTEM_CA IS set on the host. Dropping it narrows Node's trust to its
+// bundled public roots, which chain Vercel's public API; a TLS failure then
+// signals interception rather than being accepted.
 
-/** Environment for gh: inherit, then remove credential overrides so the keyring identity measured by RC-9a is the one used. */
-export function buildGhEnv(base: NodeJS.ProcessEnv): Record<string, string> {
+const OS_AND_ACCOUNT = [
+  'PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'SYSTEMDRIVE', 'COMSPEC', 'TEMP', 'TMP', 'TMPDIR', 'LANG', 'LC_ALL', 'TZ',
+  'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'HOME', 'HOMEDRIVE', 'HOMEPATH', 'USERNAME', 'USERDOMAIN',
+] as const
+const GH_FIXED: Readonly<Record<string, string>> = { GH_PROMPT_DISABLED: '1', GH_NO_UPDATE_NOTIFIER: '1', GH_PAGER: '', NO_COLOR: '1' }
+const VERCEL_FIXED: Readonly<Record<string, string>> = { NO_COLOR: '1' }
+export const GH_ENV_ALLOWED_UPPER: ReadonlySet<string> = new Set([...OS_AND_ACCOUNT, 'DBUS_SESSION_BUS_ADDRESS', 'XDG_RUNTIME_DIR', ...Object.keys(GH_FIXED)])
+export const VERCEL_ENV_ALLOWED_UPPER: ReadonlySet<string> = new Set([...OS_AND_ACCOUNT, ...Object.keys(VERCEL_FIXED)])
+
+/** Credential-bearing name shapes, matched on the UPPER-CASED name. */
+export const CREDENTIAL_NAME_RE = /TOKEN|SECRET|PASSW|API_?KEY|PRIVATE_?KEY|CREDENTIAL|COOKIE|AUTH/
+
+function constructEnv(base: Readonly<Record<string, string | undefined>>, allowedUpper: ReadonlySet<string>, fixed: Readonly<Record<string, string>>): Record<string, string> {
+  const byUpper = new Map<string, [string, string][]>()
+  for (const [k, v] of Object.entries(base)) {
+    if (typeof v !== 'string') continue
+    const u = k.toUpperCase()
+    const list = byUpper.get(u) ?? []
+    list.push([k, v])
+    byUpper.set(u, list)
+  }
   const env: Record<string, string> = {}
-  for (const [k, v] of Object.entries(base)) if (typeof v === 'string' && !GH_ENV_FORBIDDEN.includes(k)) env[k] = v
-  env.GH_PROMPT_DISABLED = '1'
-  env.GH_NO_UPDATE_NOTIFIER = '1'
-  env.GH_PAGER = ''
-  env.NO_COLOR = '1'
-  return env
+  for (const u of allowedUpper) {
+    if (u in fixed) continue
+    const hits = byUpper.get(u)
+    if (!hits) continue
+    if (new Set(hits.map(([, v]) => v)).size > 1) {
+      // Two case variants with different values: which one the child sees is platform-dependent. Refuse.
+      throw new Refusal('STOP_ENV_AMBIGUOUS', `environment carries conflicting case variants of ${u}`)
+    }
+    env[hits[0][0]] = hits[0][1]
+  }
+  return { ...env, ...fixed }
 }
 
-export function buildVercelEnv(base: NodeJS.ProcessEnv): Record<string, string> {
-  const env: Record<string, string> = {}
-  for (const [k, v] of Object.entries(base)) if (typeof v === 'string' && !VERCEL_ENV_FORBIDDEN.includes(k)) env[k] = v
-  env.NO_COLOR = '1'
-  return env
+/** Constructed environment for gh. The keyring identity RC-9a measures is the one gh resolves under it. */
+export function buildGhEnv(base: Readonly<Record<string, string | undefined>>): Record<string, string> {
+  return constructEnv(base, GH_ENV_ALLOWED_UPPER, GH_FIXED)
+}
+
+export function buildVercelEnv(base: Readonly<Record<string, string | undefined>>): Record<string, string> {
+  return constructEnv(base, VERCEL_ENV_ALLOWED_UPPER, VERCEL_FIXED)
+}
+
+/** Invocation-time check, independent of the builder: every name, upper-cased, must be allowed and none credential-shaped. */
+function assertProviderEnv(env: Readonly<Record<string, string>>, allowedUpper: ReadonlySet<string>, tool: string): void {
+  const seen = new Set<string>()
+  for (const k of Object.keys(env)) {
+    const u = k.toUpperCase()
+    if (CREDENTIAL_NAME_RE.test(u)) throw new Refusal('STOP_CREDENTIAL_OVERRIDE_IN_ENV', `${tool} env carries a credential-shaped variable (${u})`)
+    if (!allowedUpper.has(u)) throw new Refusal('STOP_ENV_NOT_ALLOWLISTED', `${tool} env carries ${u}, outside the constructed environment`)
+    if (seen.has(u)) throw new Refusal('STOP_ENV_AMBIGUOUS', `${tool} env carries two case variants of ${u}`)
+    seen.add(u)
+  }
 }
 
 // ------------------------------------------------------------- construction
@@ -138,7 +203,7 @@ export function assertInvocationSafe(inv: Invocation, op: OpDef, ctx: ToolContex
         throw new Refusal('STOP_GH_NON_GET_OR_BODY_FORM', 'gh method is not GET')
       }
     }
-    for (const k of GH_ENV_FORBIDDEN) if (k in inv.env) throw new Refusal('STOP_CREDENTIAL_OVERRIDE_IN_ENV', `gh env carries ${k}`)
+    assertProviderEnv(inv.env, GH_ENV_ALLOWED_UPPER, 'gh')
     if (op.fixedArgs) {
       if (!sameArgv(inv.argv, op.fixedArgs)) throw new Refusal('STOP_READ_AUTHORITY_EXCEEDED', 'gh fixed argv altered')
       return
@@ -158,7 +223,7 @@ export function assertInvocationSafe(inv: Invocation, op: OpDef, ctx: ToolContex
       if (hit) throw new Refusal('STOP_VERCEL_NON_GET_OR_BODY_FORM', `forbidden vercel flag ${hit}`)
       if (t.startsWith('--method=')) throw new Refusal('STOP_VERCEL_NON_GET_OR_BODY_FORM', 'vercel method is not the literal GET form')
     }
-    for (const k of VERCEL_ENV_FORBIDDEN) if (k in inv.env) throw new Refusal('STOP_CREDENTIAL_OVERRIDE_IN_ENV', `vercel env carries ${k}`)
+    assertProviderEnv(inv.env, VERCEL_ENV_ALLOWED_UPPER, 'vercel')
     if (op.fixedArgs) {
       if (!sameArgv(inv.argv, [ctx.vercelEntry, ...op.fixedArgs])) throw new Refusal('STOP_READ_AUTHORITY_EXCEEDED', 'vercel fixed argv altered')
       return
@@ -171,7 +236,10 @@ export function assertInvocationSafe(inv: Invocation, op: OpDef, ctx: ToolContex
 
   // git / X-R1 (XCC-1)
   if (inv.file !== 'git') throw new Refusal('STOP_READ_AUTHORITY_EXCEEDED', 'git executable substituted')
-  if (!sameArgv(inv.argv, op.fixedArgs!)) throw new Refusal('STOP_XCC1_CONTRACT_VIOLATION', 'git argv is not the XCC-1 form')
+  // The normative contract is checked FIRST and independently of ops.ts: the
+  // sameArgv comparison below shares its oracle with the builder (IC I13).
+  asXcc1Refusal(() => assertXcc1NormativeArgv(inv.argv))
+  if (!sameArgv(inv.argv, op.fixedArgs!))throw new Refusal('STOP_XCC1_CONTRACT_VIOLATION', 'git argv is not the XCC-1 form')
   const url = inv.argv[inv.argv.length - 1]
   let parsed: URL
   try { parsed = new URL(url) } catch { throw new Refusal('STOP_XCC1_CONTRACT_VIOLATION', 'X-R1 URL unparsable') }
@@ -180,6 +248,15 @@ export function assertInvocationSafe(inv: Invocation, op: OpDef, ctx: ToolContex
   }
   if (!inv.cwd || path.resolve(inv.cwd) !== path.resolve(ctx.xcc1Cwd)) throw new Refusal('STOP_XCC1_CONTRACT_VIOLATION', 'X-R1 cwd is not the isolated cwd')
   assertXcc1Env(inv.env, inv.cwd)
+  asXcc1Refusal(() => assertXcc1NormativeEnv(inv.env, inv.cwd!))
+}
+
+/** Re-throws a normative violation under the XCC-1 refusal token. */
+export function asXcc1Refusal(check: () => void): void {
+  try { check() } catch (e) {
+    if (e instanceof NormativeViolation) throw new Refusal('STOP_XCC1_CONTRACT_VIOLATION', e.message)
+    throw e
+  }
 }
 
 // ------------------------------------------------------------- projection

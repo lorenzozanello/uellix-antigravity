@@ -15,8 +15,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { PINNED_TOOL_VERSIONS, Refusal, SHA40_RE } from './ops'
 import { buildGhEnv, buildVercelEnv, type Invocation, type ToolContext } from './guards'
-import { SafeReadExecutor, isValidatedEvidence, type RunResult } from './executor'
-import { runGovernedReadPhase, type Dn0Config, type LocalGit } from './protocol'
+import { SafeReadExecutor, assertEnvelopeConforms, isValidatedEvidence, type RunResult } from './executor'
+import { assertBundleEnvelopeConforms, runGovernedReadPhase, type Dn0Config, type LocalGit } from './protocol'
 import { buildXcc1Env, createXcc1Context } from './xcc1'
 import { scanFiles } from './evidence-scan'
 
@@ -63,11 +63,23 @@ function resolveTools(): ToolContext {
 }
 
 const localGit: LocalGit = {
-  run: (args) => {
-    const r = spawnSync('git', [...args], { encoding: 'utf8', shell: false })
+  run: (args, envOverrides) => {
+    const env = envOverrides ? ({ ...process.env, ...envOverrides } as NodeJS.ProcessEnv) : process.env
+    const r = spawnSync('git', [...args], { encoding: 'utf8', shell: false, env })
     return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '' }
   },
 }
+
+/**
+ * Where the read-execution lane MUST materialize the bounded recertification of
+ * the executor candidate, and the package_id it must carry. These are the
+ * MATERIALIZER's names (the executing lane writes the file). The reviewer's
+ * verdict token is never read by name: see certification.ts.
+ */
+export const EXECUTOR_RECERT_EVENT = {
+  path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0.json',
+  packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC',
+} as const
 
 export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
   const authority = JSON.parse(readFileSync('docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json', 'utf8')) as {
@@ -80,11 +92,11 @@ export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
     parentBinding: '6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2',
     integrationRef: 'origin/integration/commercial-v1',
     pins: authority.EFFECTIVE_PACKAGE_CONSUMED.pins,
+    // Each event is bound to the EXACT candidate it certified (v1.0.5, B-1). No verdict name appears here.
     certificationEvents: [
-      { path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json', verdict: /^INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/ },
-      { path: 'docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json', verdict: /^INFRA_RC9_ARMING_PACKAGE_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/ },
-      // Materialized by the read-execution lane from the bounded IC of THIS delta, before DN-0.
-      { path: 'docs/ops/release/CV1_INFRA_EXECUTOR_HARDENING_IC_v1.0.0.json', verdict: /^INFRA_EXECUTOR_HARDENING_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/ },
+      { path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC', certifiedCandidate: '455b5426e11e5518606328dc0f1c3cd6bc7887ca' },
+      { path: 'docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json', packageId: 'CV1_INFRA_RC9_ARMING_PACKAGE_IC', certifiedCandidate: '3dc12909bb5b584ebc2266900659ab6f158d9eef' },
+      { ...EXECUTOR_RECERT_EVENT, certifiedCandidate },
     ],
   }
 }
@@ -99,12 +111,15 @@ export function main(argv: readonly string[]): number {
     const written: string[] = []
     bundle.records.forEach((r, i) => {
       if (!isValidatedEvidence(r)) throw new Refusal('STOP_UNVALIDATED_EVIDENCE', 'refusing to write an unvalidated record')
+      assertEnvelopeConforms(r)
       const file = path.join(args.out, `${String(i).padStart(3, '0')}_${r.op_id}.json`)
       writeFileSync(file, `${JSON.stringify(r, null, 1)}\n`)
       written.push(file)
     })
     const summary = path.join(args.out, 'BUNDLE_SUMMARY.json')
-    writeFileSync(summary, `${JSON.stringify({ ...bundle, records: bundle.records.map((r) => r.op_id) }, null, 1)}\n`)
+    const summaryObject = { ...bundle, records: bundle.records.map((r) => r.op_id) }
+    assertBundleEnvelopeConforms(summaryObject)
+    writeFileSync(summary, `${JSON.stringify(summaryObject, null, 1)}\n`)
     written.push(summary)
     const scan = scanFiles(written)
     console.log(`GOVERNED_READS=${bundle.records.filter((r) => r.record_kind === 'GOVERNED_READ_EVIDENCE').length}`)

@@ -120,10 +120,26 @@ describe('GitHub method guard (mutants must never reach execution)', () => {
     expect(refusalToken(() => new SafeReadExecutor(runner, ctx).run('PACMI-G1'))).toBe('STOP_GH_NON_GET_OR_BODY_FORM')
     expect(runner.calls).toHaveLength(0)
   })
-  it('REFUSED: a GH_TOKEN override in the environment', () => {
+  for (const name of ['GH_TOKEN', 'Gh_Token', 'gh_token', 'GITHUB_TOKEN', 'Github_Token', 'GH_ENTERPRISE_TOKEN', 'CLAUDE_CODE_MESSAGING_TOKEN']) {
+    it(`REFUSED: a credential-shaped variable in the gh environment (${name}; Windows names are case-insensitive)`, () => {
+      const runner = fakeRunner()
+      h.mutate = (inv) => ({ ...inv, env: { ...inv.env, [name]: 'x' } })
+      expect(refusalToken(() => new SafeReadExecutor(runner, ctx).run('G-R1'))).toBe('STOP_CREDENTIAL_OVERRIDE_IN_ENV')
+      expect(runner.calls).toHaveLength(0)
+    })
+  }
+  for (const name of ['GH_CONFIG_DIR', 'Gh_Config_Dir', 'GH_HOST', 'NODE_OPTIONS', 'HTTPS_PROXY', 'https_proxy', 'ALL_PROXY', 'HTTP_PROXY', 'XDG_CONFIG_HOME']) {
+    it(`REFUSED: ${name} is outside the constructed gh environment`, () => {
+      const runner = fakeRunner()
+      h.mutate = (inv) => ({ ...inv, env: { ...inv.env, [name]: 'x' } })
+      expect(refusalToken(() => new SafeReadExecutor(runner, ctx).run('G-R1'))).toBe('STOP_ENV_NOT_ALLOWLISTED')
+      expect(runner.calls).toHaveLength(0)
+    })
+  }
+  it('REFUSED: two case variants of one allowed name in the gh environment', () => {
     const runner = fakeRunner()
-    h.mutate = (inv) => ({ ...inv, env: { ...inv.env, GH_TOKEN: 'x' } })
-    expect(refusalToken(() => new SafeReadExecutor(runner, ctx).run('G-R1'))).toBe('STOP_CREDENTIAL_OVERRIDE_IN_ENV')
+    h.mutate = (inv) => ({ ...inv, env: { ...inv.env, PATH: 'a', Path: 'b' } })
+    expect(refusalToken(() => new SafeReadExecutor(runner, ctx).run('G-R1'))).toBe('STOP_ENV_AMBIGUOUS')
     expect(runner.calls).toHaveLength(0)
   })
 })
@@ -138,7 +154,7 @@ describe('Vercel method guard (flag semantics differ from gh)', () => {
     ['--input body', [V, 'api', EP, '--method', 'GET', '--raw', '--input', '-'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
     ['--method DELETE', [V, 'api', EP, '--method', 'DELETE', '--raw'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
     ['-X PATCH', [V, 'api', EP, '-X', 'PATCH', '--raw'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
-    ['--generate=curl (emits a request carrying the token)', [V, 'api', EP, '--method', 'GET', '--generate=curl'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
+    ['--generate=curl (emits a request template, not a read; v1.0.5 erratum: the template carries a <TOKEN> placeholder)', [V, 'api', EP, '--method', 'GET', '--generate=curl'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
     ['--verbose (full request/response)', [V, 'api', EP, '--method', 'GET', '--raw', '--verbose'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
     ['--dangerously-skip-permissions', [V, 'api', EP, '--method', 'GET', '--dangerously-skip-permissions'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
     ['--scope context override (DF-12)', [V, 'api', EP, '--method', 'GET', '--raw', '--scope', 'other'], 'STOP_VERCEL_NON_GET_OR_BODY_FORM'],
@@ -150,6 +166,24 @@ describe('Vercel method guard (flag semantics differ from gh)', () => {
       const before = runner.calls.length
       h.mutate = (inv) => ({ ...inv, argv })
       expect(refusalToken(() => ex.run('V-R1', { teamId: TEAM }))).toBe(token)
+      expect(runner.calls.length).toBe(before)
+    })
+  }
+  for (const name of ['VERCEL_TOKEN', 'Vercel_Token', 'vercel_token', 'VERCEL_AUTH_TOKEN', 'NOW_TOKEN', 'CLAUDE_CODE_MESSAGING_TOKEN']) {
+    it(`REFUSED: a credential-shaped variable in the vercel environment (${name})`, () => {
+      const { ex, runner } = primed()
+      const before = runner.calls.length
+      h.mutate = (inv) => ({ ...inv, env: { ...inv.env, [name]: 'x' } })
+      expect(refusalToken(() => ex.run('V-R1', { teamId: TEAM }))).toBe('STOP_CREDENTIAL_OVERRIDE_IN_ENV')
+      expect(runner.calls.length).toBe(before)
+    })
+  }
+  for (const name of ['VERCEL_ORG_ID', 'Vercel_Project_Id', 'NODE_OPTIONS', 'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'HTTPS_PROXY', 'XDG_DATA_HOME', 'DBUS_SESSION_BUS_ADDRESS']) {
+    it(`REFUSED: ${name} is outside the constructed vercel environment`, () => {
+      const { ex, runner } = primed()
+      const before = runner.calls.length
+      h.mutate = (inv) => ({ ...inv, env: { ...inv.env, [name]: 'x' } })
+      expect(refusalToken(() => ex.run('V-R1', { teamId: TEAM }))).toBe('STOP_ENV_NOT_ALLOWLISTED')
       expect(runner.calls.length).toBe(before)
     })
   }
@@ -292,6 +326,13 @@ describe('X-R1 invocation guard (XCC-1)', () => {
   })
   const bad: [string, (i: ReturnType<typeof good>) => ReturnType<typeof good>][] = [
     ['credential helper still active (reset removed)', (i) => ({ ...i, argv: i.argv.slice(2) })],
+    ['core.askPass reset removed', (i) => ({ ...i, argv: [...i.argv.slice(0, 2), ...i.argv.slice(4)] })],
+    ['http.extraHeader reset removed', (i) => ({ ...i, argv: [...i.argv.slice(0, 4), ...i.argv.slice(6)] })],
+    ['credential.helper reset to a helper', (i) => ({ ...i, argv: ['-c', 'credential.helper=manager', ...i.argv.slice(2)] })],
+    ['terminal prompt enabled', (i) => ({ ...i, env: { ...i.env, GIT_TERMINAL_PROMPT: '1' } })],
+    ['terminal prompt unset', (i) => { const e = { ...i.env }; delete e.GIT_TERMINAL_PROMPT; return { ...i, env: e } }],
+    ['global config pointed outside the isolation root', (i) => ({ ...i, env: { ...i.env, GIT_CONFIG_GLOBAL: path.join(path.dirname(xctx.root), 'gitconfig') } })],
+    ['userinfo without a password', (i) => ({ ...i, argv: [...i.argv.slice(0, -1), X_R1_URL.replace('https://', 'https://someone@')] })],
     ['credential-bearing URL', (i) => ({ ...i, argv: [...i.argv.slice(0, -1), X_R1_URL.replace('https://', 'https://user:pw@')] })],
     ['ssh URL', (i) => ({ ...i, argv: [...i.argv.slice(0, -1), 'git@github.com:lorenzozanello/uellix-antigravity.git'] })],
     ['http (not https)', (i) => ({ ...i, argv: [...i.argv.slice(0, -1), X_R1_URL.replace('https', 'http')] })],
@@ -309,16 +350,41 @@ describe('X-R1 invocation guard (XCC-1)', () => {
       expect(tok).toBe('STOP_XCC1_CONTRACT_VIOLATION')
     })
   }
+  // v1.0.5 (IC I13-I15): registry DRIFT. The op's own fixedArgs lose a reset, and the
+  // invocation is built from that same op, so sameArgv agrees with it. Only the
+  // independent normative contract can refuse this.
+  for (const drop of ['credential.helper=', 'core.askPass=', 'http.extraHeader=']) {
+    it(`REFUSED: registry drift drops ${drop} (builder and sameArgv share the oracle)`, () => {
+      const i = op.fixedArgs!.indexOf(drop)
+      const drifted = { ...op, fixedArgs: [...op.fixedArgs!.slice(0, i - 1), ...op.fixedArgs!.slice(i + 1)] }
+      const inv = { ...good(), argv: [...drifted.fixedArgs] }
+      expect(refusalToken(() => assertInvocationSafe(inv, drifted, ctx))).toBe('STOP_XCC1_CONTRACT_VIOLATION')
+    })
+  }
 })
 
 // ------------------------------------------------------------- protocol
 
-function fakeGit(opts: { moveHeadAfterReads?: number; diffSinceCandidate?: string; verdict?: string } = {}) {
+const CAND = '9'.repeat(40)
+
+/** A certification event document, shaped like the materialized ones. */
+function icEvent(over: { verdict?: string; blocking?: number; candidate?: string | null; cls?: string; packageId?: string } = {}): string {
+  return JSON.stringify({
+    authority_class: over.cls ?? 'INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT',
+    package_id: over.packageId ?? 'X_IC',
+    CERTIFIED_CANDIDATE: over.candidate === null ? {} : { candidate_head: over.candidate ?? CAND },
+    VERDICT: { verdict: over.verdict ?? 'X_IC_PASS_WITH_NONBLOCKING_FINDINGS', blocking_findings: over.blocking ?? 0 },
+  })
+}
+
+function fakeGit(opts: { moveHeadAfterReads?: number; diffSinceCandidate?: string; event?: string; residualConfig?: boolean; unsafeRemote?: boolean } = {}) {
   let head = 'c'.repeat(40)
   const calls: string[][] = []
+  const envs: (Readonly<Record<string, string>> | undefined)[] = []
   let revParseHeadCount = 0
-  const run = (args: readonly string[]) => {
+  const run = (args: readonly string[], env?: Readonly<Record<string, string>>) => {
     calls.push([...args])
+    envs.push(env)
     const a = args.join(' ')
     const out = (stdout: string) => ({ status: 0, stdout, stderr: '' })
     if (a === 'status --porcelain --untracked-files=all') return out('')
@@ -331,25 +397,27 @@ function fakeGit(opts: { moveHeadAfterReads?: number; diffSinceCandidate?: strin
     if (a === 'rev-parse HEAD^{tree}') return out('e'.repeat(40))
     if (a.startsWith('merge-base --is-ancestor')) return out('')
     if (a.startsWith('diff --name-status')) return out(opts.diffSinceCandidate ?? '')
-    if (a === 'fetch origin --prune') return out('')
+    if (a === '-c credential.helper= -c core.askPass= -c http.extraHeader= fetch origin --prune') return out('')
+    if (a.startsWith('config --name-only --get-regexp ^remote')) return opts.unsafeRemote ? { status: 1, stdout: '', stderr: '' } : out('remote.origin.url\n')
+    if (a.startsWith('config --name-only --get-regexp ')) return opts.residualConfig ? out('url.x.insteadof\n') : { status: 1, stdout: '', stderr: '' }
     if (a === 'rev-parse origin/integration/commercial-v1') return out(SHA_B)
     if (a === 'rev-parse origin/integration/commercial-v1^{tree}') return out('f'.repeat(40))
     if (a.startsWith('rev-parse HEAD:')) return out('1'.repeat(40))
-    if (a.startsWith('show HEAD:')) return out(JSON.stringify({ VERDICT: { verdict: opts.verdict ?? 'X_IC_PASS_WITH_NONBLOCKING_FINDINGS' } }))
+    if (a.startsWith('show HEAD:')) return out(opts.event ?? icEvent())
     if (a === 'rev-parse HEAD^') return out(`${'c'.repeat(40)}\n`)
     return { status: 1, stdout: '', stderr: `unexpected git ${a}` }
   }
-  return { run, calls }
+  return { run, calls, envs }
 }
 
 const dn0cfg = {
   expectedBranch: 'codex/cv1-infra-control-plane-read-authority-r1',
-  certifiedCandidate: '9'.repeat(40),
+  certifiedCandidate: CAND,
   allowedPostCertificationAdditions: [/^docs\/ops\/release\/CV1_INFRA_[A-Z0-9_]+_IC_v[0-9.]+\.json$/],
   parentBinding: '6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2',
   integrationRef: 'origin/integration/commercial-v1',
   pins: [{ path: 'docs/a.json', blob: '1'.repeat(40) }],
-  certificationEvents: [{ path: 'docs/ic.json', verdict: /^X_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/ }],
+  certificationEvents: [{ path: 'docs/ic.json', packageId: 'X_IC', certifiedCandidate: CAND }],
 }
 
 describe('terminating DN-0 protocol (no network, fake git)', () => {
@@ -367,7 +435,7 @@ describe('terminating DN-0 protocol (no network, fake git)', () => {
     for (const c of runner.calls) if (c.endpoint?.includes('/env?') || c.endpoint?.includes('/domains?') || c.endpoint?.includes('aliases?') || c.endpoint?.includes('deployments?')) expect(c.endpoint).not.toContain(PRJ_AG)
     expect(git.calls.some((c) => c[0] === 'commit')).toBe(false)
     const firstPacmi = runner.calls.findIndex((c) => c.opId.startsWith('PACMI'))
-    const fetchIdx = git.calls.findIndex((c) => c[0] === 'fetch')
+    const fetchIdx = git.calls.findIndex((c) => c.includes('fetch'))
     expect(firstPacmi).toBe(0)
     expect(fetchIdx).toBeGreaterThan(-1)
     expect(bundle.limb_d.any_match).toBe(true)
@@ -394,7 +462,46 @@ describe('terminating DN-0 protocol (no network, fake git)', () => {
 
   it('REFUSED: a certification event whose VERDICT.verdict is a FAIL (LIMB_1)', () => {
     const ex = new SafeReadExecutor(fakeRunner(), ctx)
-    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: ex, git: fakeGit({ verdict: 'X_IC_FAIL' }), dn0: dn0cfg }))).toBe('STOP_ARMING_LIMB1_UNSATISFIED')
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: ex, git: fakeGit({ event: icEvent({ verdict: 'X_IC_FAIL', blocking: 1 }) }), dn0: dn0cfg }))).toBe('STOP_ARMING_LIMB1_UNSATISFIED')
+  })
+
+  it('REFUSED: a PASS event that certifies a DIFFERENT candidate (LIMB_1)', () => {
+    const ex = new SafeReadExecutor(fakeRunner(), ctx)
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: ex, git: fakeGit({ event: icEvent({ candidate: '8'.repeat(40) }) }), dn0: dn0cfg }))).toBe('STOP_ARMING_LIMB1_UNSATISFIED')
+  })
+
+  it('DN-0 fetch is credential-free: resets on argv, no askpass/prompt in env, residual config checked FIRST', () => {
+    const git = fakeGit()
+    protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(fakeRunner(), ctx), git, dn0: dn0cfg })
+    const i = git.calls.findIndex((c) => c.includes('fetch'))
+    expect(git.calls[i]).toEqual(['-c', 'credential.helper=', '-c', 'core.askPass=', '-c', 'http.extraHeader=', 'fetch', 'origin', '--prune'])
+    expect(git.envs[i]).toEqual({ GIT_ASKPASS: '', SSH_ASKPASS: '', GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' })
+    const r = git.calls.findIndex((c) => c[0] === 'config' && c.includes('--get-regexp') && c.includes(protocol.DN0_FETCH_RESIDUAL_VECTOR_REGEX))
+    const u = git.calls.findIndex((c) => c[0] === 'config' && c.includes(protocol.DN0_REMOTE_URL_KEY_REGEX))
+    expect(r).toBeGreaterThan(-1)
+    expect(u).toBeGreaterThan(-1)
+    expect(Math.max(r, u)).toBeLessThan(i)
+    // Values never enter the process: every config probe is --name-only.
+    for (const c of git.calls.filter((c) => c[0] === 'config')) expect(c[1]).toBe('--name-only')
+  })
+
+  it('REFUSED: origin is not https-without-userinfo (ssh key or URL token would be presented)', () => {
+    const git = fakeGit({ unsafeRemote: true })
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(fakeRunner(), ctx), git, dn0: dn0cfg }))).toBe('STOP_DN0_FETCH_CREDENTIAL_VECTOR')
+    expect(git.calls.some((c) => c.includes('fetch'))).toBe(false)
+  })
+
+  it('REFUSED: an insteadOf / cookieFile key would let the DN-0 fetch carry a credential', () => {
+    const git = fakeGit({ residualConfig: true })
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(fakeRunner(), ctx), git, dn0: dn0cfg }))).toBe('STOP_DN0_FETCH_CREDENTIAL_VECTOR')
+    expect(git.calls.some((c) => c.includes('fetch'))).toBe(false)
+  })
+
+  it('REFUSED: runtime RC-9a measures a GitHub identity other than the executor (login or token source)', () => {
+    const who = world({ 'PACMI-G1': { status: 0, stdout: JSON.stringify({ hosts: { 'github.com': [{ state: 'success', active: true, host: 'github.com', login: 'someone-else', tokenSource: 'keyring', scopes: 'repo', gitProtocol: 'https' }] } }), stderr: '' } })
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(fakeRunner(who), ctx), git: fakeGit(), dn0: dn0cfg }))).toBe('STOP_RC9_UNRESOLVED')
+    const env = world({ 'PACMI-G1': { status: 0, stdout: JSON.stringify({ hosts: { 'github.com': [{ state: 'success', active: true, host: 'github.com', login: 'lorenzozanello', tokenSource: 'GH_TOKEN', scopes: 'repo', gitProtocol: 'https' }] } }), stderr: '' } })
+    expect(refusalToken(() => protocol.runGovernedReadPhase({ executor: new SafeReadExecutor(fakeRunner(env), ctx), git: fakeGit(), dn0: dn0cfg }))).toBe('STOP_RC9_UNRESOLVED')
   })
 
   it('REFUSED: runtime RC-9a cannot establish the Vercel ROLE (DF-12: context is not substituted)', () => {

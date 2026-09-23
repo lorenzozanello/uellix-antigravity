@@ -14,9 +14,10 @@ import {
   ANTIGRAVITY_PROJECT, FIXED_PROTECTED_BRANCHES, GH_OWNER, GH_REPO, PRESTATE_VALIDITY, Refusal, getOp,
   type OpDef, type Params,
 } from './ops'
-import { assertInvocationSafe, assertProjectionConforms, buildInvocation, project, type Invocation, type ToolContext } from './guards'
+import { asXcc1Refusal, assertInvocationSafe, assertProjectionConforms, buildInvocation, project, type Invocation, type ToolContext } from './guards'
 import { scanText } from './evidence-scan'
 import { XCC1_PREFLIGHT_ARGS, assertIsolationListing, assertXcc1Env } from './xcc1'
+import { assertXcc1NormativeEnv, assertXcc1NormativePreflightArgv, assertXcc1NormativePreflightListing } from './xcc1-normative'
 
 export interface RunResult { readonly status: number | null; readonly stdout: string; readonly stderr: string }
 export type ProviderRunner = (inv: Invocation) => RunResult
@@ -41,6 +42,50 @@ export interface EvidenceRecord {
 }
 
 const VALIDATED = new WeakSet<object>()
+
+// ------------------------------------------------------------- envelope allowlist
+//
+// SEPARATE from the per-op projection allowlist. The projection allowlist
+// governs what may appear INSIDE `projection`; this governs the record that
+// carries it. Without it, a raw provider key added to the envelope would be
+// serializable whenever its value happened not to trip a secret detector (the
+// independent IC's I08 mutant died only because fixtures carried token-shaped
+// strings).
+export const ENVELOPE_KEYS = [
+  'record_kind', 'op_id', 'read_id', 'plane', 'node_ids', 'freshness', 'prestate_validity', 'operation',
+  'request_utc', 'response_utc', 'http_status', 'outcome', 'projection', 'absent_fields', 'assertions',
+] as const
+export const OPERATION_KEYS = ['tool', 'method', 'endpoint', 'fixed_args'] as const
+export const ABSENT_FIELD_KEYS = ['path', 'kind'] as const
+export const ASSERTION_KEYS = [
+  'TI13_full_name_matches', 'rc9b_permission_object_captured', 'branch_resolves', 'pagination_terminal',
+  'TI2_link_repo_matches', 'name_matches', 'identity_established',
+] as const
+
+function onlyKeys(obj: unknown, allowed: readonly string[], where: string): void {
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', `${where} is not an object`)
+  for (const k of Object.keys(obj)) {
+    if (!allowed.includes(k)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', `${where} carries key ${k} outside the envelope allowlist`)
+  }
+}
+
+export function assertEnvelopeConforms(record: unknown): void {
+  onlyKeys(record, ENVELOPE_KEYS, 'record')
+  const r = record as Record<string, unknown>
+  for (const k of ENVELOPE_KEYS) if (!(k in r)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', `record lacks ${k}`)
+  onlyKeys(r.operation, OPERATION_KEYS, 'record.operation')
+  onlyKeys(r.assertions, ASSERTION_KEYS, 'record.assertions')
+  for (const v of Object.values(r.assertions as Record<string, unknown>)) {
+    if (typeof v !== 'boolean' && typeof v !== 'string') throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'assertion value is not scalar')
+  }
+  if (!Array.isArray(r.absent_fields)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'absent_fields is not an array')
+  for (const a of r.absent_fields) onlyKeys(a, ABSENT_FIELD_KEYS, 'record.absent_fields[]')
+  if (!Array.isArray(r.node_ids) || r.node_ids.some((n) => typeof n !== 'string')) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'node_ids malformed')
+  for (const k of ['record_kind', 'op_id', 'read_id', 'plane', 'freshness', 'prestate_validity', 'request_utc', 'response_utc', 'outcome']) {
+    if (typeof r[k] !== 'string') throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', `${k} is not a string`)
+  }
+  if (r.http_status !== null && typeof r.http_status !== 'number') throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'http_status malformed')
+}
 export function isValidatedEvidence(r: unknown): boolean {
   return typeof r === 'object' && r !== null && VALIDATED.has(r)
 }
@@ -195,9 +240,12 @@ export class SafeReadExecutor {
   xcc1Preflight(): void {
     const inv: Invocation = { opId: 'XCC-1.PREFLIGHT', tool: 'git', file: 'git', argv: [...XCC1_PREFLIGHT_ARGS], env: this.ctx.xcc1Env, cwd: this.ctx.xcc1Cwd }
     assertXcc1Env(inv.env, inv.cwd!)
+    asXcc1Refusal(() => assertXcc1NormativePreflightArgv(inv.argv))
+    asXcc1Refusal(() => assertXcc1NormativeEnv(inv.env, inv.cwd!))
     const res = this.runner(inv)
     if (res.status !== 0) throw new Refusal('STOP_XCC1_ISOLATION_BREACH', 'isolation preflight failed to run')
     assertIsolationListing(res.stdout)
+    asXcc1Refusal(() => assertXcc1NormativePreflightListing(res.stdout))
     this.state.xcc1PreflightPassed = true
   }
 
@@ -264,6 +312,7 @@ export class SafeReadExecutor {
       absent_fields: absent,
       assertions: Object.freeze(assertions),
     })
+    assertEnvelopeConforms(record)
     VALIDATED.add(record)
     return record
   }

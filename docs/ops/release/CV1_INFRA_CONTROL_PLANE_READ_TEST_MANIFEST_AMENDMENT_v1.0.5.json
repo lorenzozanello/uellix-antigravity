@@ -1,0 +1,56 @@
+{
+  "manifest_id": "CV1-INFRA-CONTROL-PLANE-READ-EXECUTOR-REMEDIATION",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5.json",
+  "dependencies": [
+    "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4.json, blob 842e725328a259f27918be0846636afad50e41c5)",
+    "CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.4 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.4.json, blob 9c034a65552d45400303874215a69e8dd6d4736d)",
+    "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_v1.0.0.json, blob 77ffdc6e9455c8fed9c7c03450a217d33f877848; FAIL consumed)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {"id": "SEN-E1", "purpose": "ZERO GOVERNED READS, ZERO PACMI CALLS AND ZERO X-R1 NETWORK CALLS in the remediation lane. The only git processes run by tests are local configuration listings and credential fills against a .invalid host; no gh or vercel process is spawned by any test."},
+    {"id": "SEN-E2", "purpose": "SUPERSEDES the v1.0.4 SEN-D2 purpose (quoted verbatim in the v1.0.5 amendment, SEN_D2_CORRECTION). Write-set classification: production code and evidence are CLEAN; the files designated in tests/infra-read/expected-detections.json are EXPECTED_DETECTIONS only with EXACTLY their designated per-detector counts; anything else is FAIL. Fixtures are never suppressed globally."},
+    {"id": "SEN-E3", "purpose": "Every value injected by the envelope tests is proven invisible to the secret scanner first, so an envelope refusal can only come from the envelope control."}
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {"id": "PE-1", "description": "The two materialized certification events (455b5426, 3dc12909) satisfy the CP-1 predicate exactly as dn0ConfigFor configures them.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "PE-2", "description": "A recertification of the exact candidate with the certifier's canonical verdict INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_PASS, or ..._PASS_WITH_NONBLOCKING_FINDINGS, or an unguessed namespace, satisfies CP-1; measureDn0 driven by the REAL dn0ConfigFor verifies all three events.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "PE-3", "description": "The constructed gh / vercel environments carry the OS and account context (original spelling preserved) and the fixed values, and nothing else.", "test_file": "tests/infra-read/env-model.test.ts"},
+    {"id": "PE-4", "description": "The registry X-R1 argv, the preflight argv, the built XCC-1 environment and a REAL local git preflight listing all satisfy the independent normative contract.", "test_file": "tests/infra-read/xcc1-normative.test.ts"},
+    {"id": "PE-5", "description": "A real executor record conforms to the envelope allowlist; a bundle summary conforms to its own.", "test_file": "tests/infra-read/envelope.test.ts"},
+    {"id": "PE-6", "description": "The DN-0 fetch carries the three resets on argv and the no-askpass / no-prompt environment, and both residual probes run BEFORE it, --name-only.", "test_file": "tests/infra-read/safe-read-executor.test.ts"}
+  ],
+  "negative_controls": [
+    {"id": "NE-01", "description": "B-1: the entry-point, certification and protocol code carry no verdict-name literal or verdict pattern, and every configured event is exactly {path, packageId, certifiedCandidate}.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "NE-02", "description": "CP-1 refuses: wrong candidate, FAIL, FAIL reported with blocking 0, FAIL containing PASS, NOT_PASS, blocking > 0, blocking absent or a string, wrong document class, another package_id, candidate missing or abbreviated, prose containing PASS, lower-case pass, PASS only as a prefix, non-JSON, VERDICT missing; the materialized FAIL satisfies no requirement.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "NE-03", "description": "measureDn0 with the real config stops STOP_ARMING_LIMB1_UNSATISFIED for an absent, other-candidate, FAIL, blocking or wrong-class recert.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "NE-04", "description": "main() returns 2 with STOP_EXECUTION_NOT_REQUESTED for every incomplete invocation and prints nothing to stdout.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "NE-05", "description": "Mixed-case credential names (Gh_Token, gh_token, Github_Token, Vercel_Token, vercel_token) and CLAUDE_CODE_MESSAGING_TOKEN are refused STOP_CREDENTIAL_OVERRIDE_IN_ENV at invocation, and never carried by the builders.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "NE-06", "description": "GH_CONFIG_DIR, GH_HOST, NODE_OPTIONS, proxies, XDG_*_HOME, VERCEL_* and SSL_CERT_FILE are refused STOP_ENV_NOT_ALLOWLISTED; conflicting case variants are STOP_ENV_AMBIGUOUS.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "NE-07", "description": "The builders drop every credential, redirection, code-injection, trust and proxy variable from a host-like environment and refuse conflicting case variants.", "test_file": "tests/infra-read/env-model.test.ts"},
+    {"id": "NE-08", "description": "Free-text detectors fire on a vcp_ token, colon-less and colon userinfo URLs, shell / export / set / PowerShell credential-named assignments (mixed case), and keyword-adjacent 24-char tokens; they stay silent on $ / % references, spaced source assignments, clean URLs and bare 24-char ids.", "test_file": "tests/infra-read/evidence-scan.test.ts"},
+    {"id": "NE-09", "description": "Write-set classification: an undesignated file with a finding FAILS; a designated file FAILS on an extra or a missing detection; an empty designation FAILS; a stale designation and an empty set are errors.", "test_file": "tests/infra-read/evidence-scan.test.ts"},
+    {"id": "NE-10", "description": "Envelope: a raw provider object, stdout, an operation key, a non-allowlisted or non-scalar assertion, an absent_fields key, a missing required key and malformed node_ids are STOP_ENVELOPE_NONCONFORMANT; so are extra bundle / rc9a keys and full records in the summary.", "test_file": "tests/infra-read/envelope.test.ts"},
+    {"id": "NE-11", "description": "Each required XCC-1 reset removed or altered, extra / duplicate -c keys, another subcommand, extra argv, http / other-host / other-repo / userinfo / ssh origins, and every environment deviation are normative violations; registry DRIFT (the op's own fixedArgs lose a reset) is refused by the guard although sameArgv agrees.", "test_file": "tests/infra-read/xcc1-normative.test.ts"},
+    {"id": "NE-12", "description": "The DN-0 fetch is refused STOP_DN0_FETCH_CREDENTIAL_VECTOR, with no fetch issued, when an insteadOf / cookieFile key exists or origin is not https-without-userinfo.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "NE-13", "description": "Runtime RC-9a with another GitHub login, or with an environment-supplied token source, stops STOP_RC9_UNRESOLVED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "NE-14", "description": "The battery verdict logic: SURVIVED is never AS_EXPECTED for an expected kill, ERROR never counts as a kill, the v1.0.4 'RED' spelling is not accepted, and the aggregate fails on one survivor or an empty battery.", "test_file": "tests/infra-read/mutation-verdict.test.ts"}
+  ],
+  "mutation_controls": [
+    {"id": "ME-01", "description": "B-1 reintroduced in the predicate (author-guessed verdict name required) — must be KILLED.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "ME-02", "description": "B-1 reintroduced at the entry point (a verdict pattern configured) — must be KILLED.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "ME-03", "description": "Candidate binding removed (wrong-candidate PASS) — must be KILLED.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "ME-04", "description": "Verdict judged by substring (FAIL containing PASS) — must be KILLED.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "ME-05", "description": "gh / vercel env guards reverted to case-sensitive denylists (mixed-case GH_TOKEN / VERCEL_TOKEN) — must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "ME-06", "description": "vcp_, URL-userinfo (reverted to user:password), env-assignment and keyword-adjacent detectors removed — each must be KILLED.", "test_file": "tests/infra-read/evidence-scan.test.ts"},
+    {"id": "ME-07", "description": "A raw provider key injected into the evidence envelope, and the envelope allowlist disabled — each must be KILLED.", "test_file": "tests/infra-read/envelope.test.ts"},
+    {"id": "ME-08", "description": "Each X-R1 registry reset dropped, the preflight reset dropped, terminal prompt enabled, system isolation dropped, normative guard removed — each must be KILLED.", "test_file": "tests/infra-read/xcc1-normative.test.ts"},
+    {"id": "ME-09", "description": "The battery deliberately fed a behaviour-neutral survivor (--self-test) must report it UNEXPECTED and FAIL.", "test_file": "tests/infra-read/mutation-verdict.test.ts"},
+    {"id": "ME-10", "description": "Retained: GitHub and Vercel exact-shape (POST/body) checks, the Vercel write-operation-id check, G-R1 first (G-R2 before G-R1), RC-9b, RNA-1, freshness, projection, XCC-1 env/listing, stale DN-0 head, post-certification MODIFY, env-value detector, deploy-hook url — each must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "ME-11", "description": "DN-0 residual-vector check removed, origin-shape check removed, --name-only dropped, fetch reset dropped, RC-9a identity assertion removed — each must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"}
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

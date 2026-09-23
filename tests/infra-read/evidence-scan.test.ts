@@ -6,7 +6,7 @@ import { describe, it, expect, afterAll } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { DETECTORS, scanFiles, scanText } from '../../scripts/infra-read/evidence-scan'
+import { DETECTORS, classifyFile, classifyWriteSet, scanFiles, scanText } from '../../scripts/infra-read/evidence-scan'
 import { fakeDeployHookUrl, fakeGithubToken } from './fixtures'
 
 const j = (...parts: string[]) => parts.join('')
@@ -22,6 +22,18 @@ const positives: [string, string][] = [
   ['ENV_VALUE_FIELD', '{"key":"X","value":"plain-value"}'],
   ['URL_USERINFO', j('https://', 'user:pw', '@github.com/x.git')],
   ['OPAQUE_HIGH_ENTROPY', j(' ', 'Ab3'.repeat(15), ' ')],
+  // v1.0.5 free-text detectors. Every one of these sits inside an otherwise
+  // allowed textual field (a description, a name, a log line).
+  ['VERCEL_VCP_TOKEN', j('deployment note: ', 'vc', 'p_', 'a1B2c3D4e5F6g7H8i9J0')],
+  ['URL_USERINFO', j('remote https://', 'x-access-token', '@github.com/o/r.git')],
+  ['URL_USERINFO', j('see https://', 'ghx0123456789abcdef', '@github.com/o/r')],
+  ['ENV_ASSIGNMENT_SECRET', j('GH_', 'TOKEN=', 'abcdef0123456789')],
+  ['ENV_ASSIGNMENT_SECRET', j('export Vercel_', 'Token=', 'abcdef0123456789')],
+  ['ENV_ASSIGNMENT_SECRET', j('set gh_', 'token="', 'abcdef0123456789"')],
+  ['ENV_ASSIGNMENT_SECRET', j('$env:GH_', 'TOKEN = "', 'abcdef0123456789"')],
+  ['ENV_ASSIGNMENT_SECRET', j('NPM_AUTH', '_TOKEN=', 'abcdef0123456789')],
+  ['KEYWORD_ADJACENT_OPAQUE', j('tok', 'en: ', 'Qw7'.repeat(8))],
+  ['KEYWORD_ADJACENT_OPAQUE', j('?tok', 'en=', 'Qw7'.repeat(8))],
 ]
 
 describe('supplemental evidence scan', () => {
@@ -47,6 +59,25 @@ describe('supplemental evidence scan', () => {
     expect(scanText(benign)).toEqual([])
   })
 
+  it('v1.0.5 detectors stay silent on references, source code and bare ids', () => {
+    const benign = [
+      j('GH_', 'TOKEN=$GH_TOKEN_FROM_VAULT'), j('VERCEL_', 'TOKEN=%VERCEL_TOKEN%'),
+      j("const GH_TOKEN_ENV = ", "'GH_TOKEN'"), j('CREDENTIAL_NAME_RE = /', 'TOKEN|SECRET/'),
+      'https://github.com/lorenzozanello/uellix-antigravity.git', 'git@github.com:o/r.git',
+      // A classic 24-char Vercel id with no credential keyword is shape-identical to a
+      // classic token: it is deliberately NOT flagged (residual, see v1.0.5).
+      JSON.stringify({ uid: 'Zx9'.repeat(8), teamId: 'team_' + 'Zx9'.repeat(8) }),
+      'vcp_short', 'the vcp_ prefix',
+    ]
+    for (const t of benign) expect(scanText(t)).toEqual([])
+  })
+
+  it('KNOWN FALSE POSITIVE, retained (entropy NB stays OPEN): a long separator-segmented identifier', () => {
+    // Measured in committed authority keys. Exempting >=3 separators would also
+    // exempt ~13% of random 40-char base64url tokens, a material weakening.
+    expect(scanText(j(' class_for_DN-7_DN-8_DN-9_DN-10_DN-11_DN-12', ' ')).map((f) => f.detector)).toEqual(['OPAQUE_HIGH_ENTROPY'])
+  })
+
   it('reports detector and offset only — never the matched secret', () => {
     const tok = fakeGithubToken()
     const findings = scanText(`prefix ${tok}`)
@@ -59,6 +90,29 @@ describe('supplemental evidence scan', () => {
 
   it('an EMPTY file set is a failure, not a vacuous pass', () => {
     expect(() => scanFiles([])).toThrow(/STOP_EVIDENCE_SCAN_EMPTY_SET/)
+  })
+
+  describe('write-set classification (SEN-D2)', () => {
+    const clean = { designated: undefined }
+    it('an undesignated file is CLEAN only with zero findings, otherwise FAIL', () => {
+      expect(classifyFile([], clean.designated)).toBe('CLEAN')
+      expect(classifyFile([{ detector: 'URL_USERINFO', offset: 1 }], clean.designated)).toBe('FAIL')
+    })
+    it('a designated fixture is EXPECTED_DETECTIONS only with EXACTLY its declared counts', () => {
+      const d = { URL_USERINFO: 2 }
+      expect(classifyFile([{ detector: 'URL_USERINFO', offset: 1 }, { detector: 'URL_USERINFO', offset: 9 }], d)).toBe('EXPECTED_DETECTIONS')
+      expect(classifyFile([{ detector: 'URL_USERINFO', offset: 1 }], d)).toBe('FAIL') // detector regression
+      expect(classifyFile([{ detector: 'URL_USERINFO', offset: 1 }, { detector: 'URL_USERINFO', offset: 9 }, { detector: 'VERCEL_VCP_TOKEN', offset: 20 }], d)).toBe('FAIL') // extra leak
+      expect(classifyFile([], {})).toBe('FAIL') // an empty designation is not a suppression
+    })
+    it('a set: stale designations and empty sets are errors; one FAIL fails the set', () => {
+      const texts: Record<string, string> = { 'a.ts': 'plain', 'b.test.ts': j('https://', 'u:p', '@h/x') }
+      const read = (p: string) => texts[p]
+      expect(classifyWriteSet(['a.ts', 'b.test.ts'], { 'b.test.ts': { URL_USERINFO: 1 } }, read).pass).toBe(true)
+      expect(classifyWriteSet(['a.ts', 'b.test.ts'], {}, read).pass).toBe(false)
+      expect(() => classifyWriteSet(['a.ts'], { 'gone.ts': { URL_USERINFO: 1 } }, read)).toThrow(/STOP_EXPECTED_DETECTIONS_STALE/)
+      expect(() => classifyWriteSet([], {}, read)).toThrow(/STOP_EVIDENCE_SCAN_EMPTY_SET/)
+    })
   })
 
   it('scans a file set and reports per-file findings', () => {

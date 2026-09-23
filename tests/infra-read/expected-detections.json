@@ -1,0 +1,17 @@
+{
+ "purpose": "SEN-E2 (v1.0.5): the ONLY files of the executor write set allowed to trip the supplemental detectors, each with its EXACT per-detector count. Every other file of the write set must scan CLEAN. An extra detection in a designated file is a leak; a missing one is a detector regression. Never a global suppression.",
+ "write_set": "git diff --name-only 3dc12909bb5b584ebc2266900659ab6f158d9eef..HEAD (the executor lanes R3 and R4), all files.",
+ "command": "npx tsx scripts/infra-read/evidence-scan.ts --write-set-manifest tests/infra-read/expected-detections.json $(git diff --name-only 3dc12909bb5b584ebc2266900659ab6f158d9eef HEAD)",
+ "designated_positive_fixtures": {
+  "tests/infra-read/evidence-scan.test.ts": {"COOKIE_MATERIAL": 1, "ENV_VALUE_FIELD": 1, "OPAQUE_HIGH_ENTROPY": 1},
+  "tests/infra-read/safe-read-executor.test.ts": {"URL_USERINFO": 2},
+  "tests/infra-read/xcc1-local.test.ts": {"URL_USERINFO": 1},
+  "tests/infra-read/xcc1-normative.test.ts": {"URL_USERINFO": 3}
+ },
+ "why_each_is_a_fixture": {
+  "tests/infra-read/evidence-scan.test.ts": "Positive detector fixtures (a cookie header and an env value row) and the pinned known entropy false positive. No credential.",
+  "tests/infra-read/safe-read-executor.test.ts": "X-R1 guard mutants: an origin with user:password and one with a bare user name, both of which the guard must refuse. No credential.",
+  "tests/infra-read/xcc1-local.test.ts": "A hostile global gitconfig whose insteadOf rewrite injects a user name, which the live XCC-1 test must defeat. No credential.",
+  "tests/infra-read/xcc1-normative.test.ts": "Normative-contract mutants: an insteadOf with userinfo, a userinfo origin, and a listing line carrying an insteadOf rewrite. No credential."
+ }
+}

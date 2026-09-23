@@ -18,9 +18,30 @@ import {
   ANTIGRAVITY_PROJECT, FIXED_PROTECTED_BRANCHES, RELEASE_BRANCH, Refusal, type Params,
 } from './ops'
 import { type EvidenceRecord, type SafeReadExecutor, type Clock, systemClock } from './executor'
+import { assessCertificationEvent, type CertificationEventRequirement } from './certification'
 
 export interface GitResult { readonly status: number | null; readonly stdout: string; readonly stderr: string }
-export interface LocalGit { run(args: readonly string[]): GitResult }
+/** envOverrides are ADDED to the caller's environment for that single git invocation. */
+export interface LocalGit { run(args: readonly string[], envOverrides?: Readonly<Record<string, string>>): GitResult }
+
+/**
+ * DN-0 fetch (v1.0.5). The fetch runs INSIDE the repository, because its
+ * semantics (remote, refspecs, prune) come from repository configuration, and
+ * with system configuration intact, because the system gitconfig sets
+ * http.sslbackend: isolating it would change the TLS backend. So XCC-1's full
+ * isolation cannot be applied without changing what the fetch does. What CAN
+ * be applied without changing it for a public repository is applied: helper,
+ * askpass and extraHeader resets, no terminal prompt, no GCM UI. A public
+ * repository needs no credential, so these change nothing unless a credential
+ * would otherwise have been presented, in which case the fetch now fails.
+ */
+export const DN0_FETCH_ARGS = ['-c', 'credential.helper=', '-c', 'core.askPass=', '-c', 'http.extraHeader=', 'fetch', 'origin', '--prune'] as const
+export const DN0_FETCH_ENV: Readonly<Record<string, string>> = { GIT_ASKPASS: '', SSH_ASKPASS: '', GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' }
+/** Residual vectors the resets cannot neutralize inside a repository; their ABSENCE is checked before the fetch. */
+export const DN0_FETCH_RESIDUAL_VECTOR_REGEX = '(^url\\..*\\.(insteadof|pushinsteadof)$)|(^http\\..*cookiefile$)'
+/** The fetched remote must be https with no userinfo: an ssh remote presents a key, a userinfo URL a token. */
+export const DN0_REMOTE_URL_KEY_REGEX = '^remote\\.origin\\.url$'
+export const DN0_REMOTE_URL_SAFE_VALUE_REGEX = '^https://[^/@]+/'
 
 export interface Dn0Config {
   readonly expectedBranch: string
@@ -30,8 +51,8 @@ export interface Dn0Config {
   readonly parentBinding: string
   readonly integrationRef: string
   readonly pins: readonly { readonly path: string; readonly blob: string }[]
-  /** Each event file must parse as JSON and its VERDICT.verdict must match `verdict` exactly. */
-  readonly certificationEvents: readonly { readonly path: string; readonly verdict: RegExp }[]
+  /** Each event must satisfy the certification predicate for its EXACT candidate (certification.ts); no verdict name is configured. */
+  readonly certificationEvents: readonly CertificationEventRequirement[]
 }
 
 export interface Dn0Result {
@@ -48,8 +69,8 @@ export interface Dn0Result {
   readonly certification_events_verified: number
 }
 
-function ok(git: LocalGit, args: readonly string[], why: string): string {
-  const r = git.run(args)
+function ok(git: LocalGit, args: readonly string[], why: string, env?: Readonly<Record<string, string>>): string {
+  const r = git.run(args, env)
   if (r.status !== 0) throw new Refusal('STOP_STALE_DN0', why)
   return r.stdout.trim()
 }
@@ -70,7 +91,15 @@ export function measureDn0(git: LocalGit, cfg: Dn0Config, clock: Clock = systemC
     }
     additions.push(file)
   }
-  ok(git, ['fetch', 'origin', '--prune'], 'fetch failed')
+  // Residual-vector checks. --name-only: configuration VALUES never enter this
+  // process, so a credential-bearing value is refused without being observed.
+  // Exit 1 means no insteadOf / cookieFile key exists at any scope.
+  const residual = git.run(['config', '--name-only', '--get-regexp', DN0_FETCH_RESIDUAL_VECTOR_REGEX])
+  if (residual.status !== 1) throw new Refusal('STOP_DN0_FETCH_CREDENTIAL_VECTOR', 'an insteadOf or cookieFile key is configured; the DN-0 fetch cannot be shown credential-free')
+  // Exit 0 means origin's url matches https-without-userinfo (value-regex match, value not printed).
+  const remote = git.run(['config', '--name-only', '--get-regexp', DN0_REMOTE_URL_KEY_REGEX, DN0_REMOTE_URL_SAFE_VALUE_REGEX])
+  if (remote.status !== 0) throw new Refusal('STOP_DN0_FETCH_CREDENTIAL_VECTOR', 'origin is not an https URL without userinfo; the DN-0 fetch could present a credential')
+  ok(git, DN0_FETCH_ARGS, 'fetch failed', DN0_FETCH_ENV)
   const integration_head = ok(git, ['rev-parse', cfg.integrationRef], 'integration head unreadable')
   const integration_tree = ok(git, ['rev-parse', `${cfg.integrationRef}^{tree}`], 'integration tree unreadable')
   ok(git, ['merge-base', '--is-ancestor', cfg.parentBinding, 'HEAD'], 'parent binding is not an ancestor')
@@ -81,12 +110,12 @@ export function measureDn0(git: LocalGit, cfg: Dn0Config, clock: Clock = systemC
   }
   let events = 0
   for (const ev of cfg.certificationEvents) {
-    const raw = ok(git, ['show', `HEAD:${ev.path}`], `certification event ${ev.path} absent`)
-    let verdict: unknown
-    try { verdict = (JSON.parse(raw) as { VERDICT?: { verdict?: unknown } }).VERDICT?.verdict } catch { verdict = undefined }
-    if (typeof verdict !== 'string' || !ev.verdict.test(verdict)) {
-      throw new Refusal('STOP_ARMING_LIMB1_UNSATISFIED', `certification event ${ev.path} does not record a passing VERDICT.verdict`)
-    }
+    const shown = git.run(['show', `HEAD:${ev.path}`])
+    if (shown.status !== 0) throw new Refusal('STOP_ARMING_LIMB1_UNSATISFIED', `certification event ${ev.path} is absent`)
+    const a = assessCertificationEvent(shown.stdout, ev)
+    if (!a.ok) throw new Refusal('STOP_ARMING_LIMB1_UNSATISFIED', `certification event ${ev.path}: ${a.reason}`)
+    // The certified candidate must be part of the history being executed.
+    ok(git, ['merge-base', '--is-ancestor', ev.certifiedCandidate, 'HEAD'], `certified candidate of ${ev.path} is not an ancestor of HEAD`)
     events++
   }
   if (ok(git, ['rev-parse', 'HEAD'], 'HEAD unreadable') !== head) throw new Refusal('STOP_STALE_DN0', 'HEAD moved during DN-0')
@@ -122,12 +151,22 @@ function firstActiveHost(projection: unknown): Record<string, unknown> | undefin
   return (hosts.find((h) => (h as Record<string, unknown>).active === true) ?? hosts[0]) as Record<string, unknown> | undefined
 }
 
-export function runRuntimeRc9a(ex: SafeReadExecutor, clock: Clock = systemClock): Rc9aResult {
+/** The executor identity RC-9a must ASSERT, not merely record (v1.0.5). */
+export interface ExpectedIdentity {
+  readonly githubLogin: string
+  readonly githubTokenSource: string
+  readonly vercelUsername: string
+}
+
+export const EXECUTOR_IDENTITY: ExpectedIdentity = { githubLogin: 'lorenzozanello', githubTokenSource: 'keyring', vercelUsername: 'lorenzozanello-5040' }
+
+export function runRuntimeRc9a(ex: SafeReadExecutor, clock: Clock = systemClock, expected: ExpectedIdentity = EXECUTOR_IDENTITY): Rc9aResult {
   const records: EvidenceRecord[] = []
   const g = ex.run('PACMI-G1'); records.push(g)
   const host = firstActiveHost(g.projection)
   const scopes = host?.scopes
-  const gOk = !!host && typeof host.login === 'string' && (Array.isArray(scopes) ? scopes.length > 0 : typeof scopes === 'string' && scopes !== '')
+  const gOk = !!host && host.login === expected.githubLogin && host.tokenSource === expected.githubTokenSource &&
+    (Array.isArray(scopes) ? scopes.length > 0 : typeof scopes === 'string' && scopes !== '')
 
   const v1 = ex.run('PACMI-V1'); records.push(v1)
   const v2 = ex.run('PACMI-V2'); records.push(v2)
@@ -136,7 +175,7 @@ export function runRuntimeRc9a(ex: SafeReadExecutor, clock: Clock = systemClock)
   const role = members.length === 1 && typeof members[0].role === 'string' ? members[0].role : undefined
   const identity = ex.state.vercelUsername
   // DF-12: the permission answer on PLANE-V is the ROLE; team context is never substituted for it.
-  const vOk = typeof identity === 'string' && typeof role === 'string'
+  const vOk = identity === expected.vercelUsername && typeof role === 'string'
 
   ex.xcc1Preflight()
   const xOk = ex.state.xcc1PreflightPassed
@@ -224,12 +263,13 @@ export interface PhaseDeps {
   readonly git: LocalGit
   readonly dn0: Dn0Config
   readonly clock?: Clock
+  readonly expectedIdentity?: ExpectedIdentity
 }
 
 export function runGovernedReadPhase(deps: PhaseDeps): GovernedReadBundle {
   const { executor: ex, git } = deps
   const clock = deps.clock ?? systemClock
-  const rc9a = runRuntimeRc9a(ex, clock)
+  const rc9a = runRuntimeRc9a(ex, clock, deps.expectedIdentity)
   if (!rc9a.all_planes_satisfied) throw new Refusal('STOP_RC9_UNRESOLVED', 'runtime RC-9a did not characterize all three planes')
 
   const dn0 = measureDn0(git, deps.dn0, clock) // LAST pre-read act
@@ -300,6 +340,21 @@ export function runGovernedReadPhase(deps: PhaseDeps): GovernedReadBundle {
     rc9a, dn0, ac1: { ...ac1, armed_at_runtime: armed }, records, limb_d, unresolved,
     not_executed_by_design: ['V-R4 (F_IMMEDIATE_ONLY_BEFORE_MUTATION: bracket M-7, never in the read-only phase)'],
   }
+}
+
+/** Envelope allowlist for the written bundle summary (records reduced to op ids). */
+export const BUNDLE_SUMMARY_KEYS = ['protocol', 'rc9a', 'dn0', 'ac1', 'records', 'limb_d', 'unresolved', 'not_executed_by_design'] as const
+export const RC9A_SUMMARY_KEYS = ['measured_utc', 'planes', 'all_planes_satisfied', 'records', 'refresh_side_effect_disclosure'] as const
+
+export function assertBundleEnvelopeConforms(summary: unknown): void {
+  const check = (obj: unknown, allowed: readonly string[], where: string) => {
+    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', `${where} is not an object`)
+    for (const k of Object.keys(obj)) if (!allowed.includes(k)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', `${where} carries key ${k} outside the envelope allowlist`)
+  }
+  check(summary, BUNDLE_SUMMARY_KEYS, 'bundle')
+  const s = summary as Record<string, unknown>
+  check(s.rc9a, RC9A_SUMMARY_KEYS, 'bundle.rc9a')
+  if (!Array.isArray(s.records) || s.records.some((r) => typeof r !== 'string')) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'bundle.records must be op ids only')
 }
 
 /** After the reads, the caller commits evidence. This verifies that commit's parent is the DN-0 HEAD and that it only adds evidence. */
