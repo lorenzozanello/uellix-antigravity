@@ -29,6 +29,9 @@ const LAUNCHER = 100
 function p(pid: number, ppid: number, name: string, extra: Partial<PebObservedProcess> = {}): PebObservedProcess {
   return {
     pid,
+    // Distinct per pid; these controls aggregate by pid (conservatively), so no fixture reuses one.
+    createdMs: 1_000_000 + pid,
+    lastSeenMs: 0,
     ppid,
     name,
     cmdReadable: true,

@@ -40,18 +40,31 @@ export const ROUTE_B_PRECEDENT = {
   format_string: 'ALTER ROLE %I LOGIN PASSWORD %L',
 } as const
 
-/** The pinned statements, as the driver sends them: bound parameters appear as $1. */
+/**
+ * The pinned statements, as the driver sends them: bound parameters appear as $1.
+ *
+ * RB-DELTA-4 (owner decision N11_PASSWORD_TRANSPORT =
+ * CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER): the value bound and formatted
+ * is the client-derived SCRAM-SHA-256 VERIFIER (db/custody/scram-verifier.ts),
+ * never the plaintext. PostgreSQL stores a string already in SCRAM format as-is.
+ * The DO block refuses anything that is not a verifier BEFORE the ALTER ROLE,
+ * so a plaintext can never be hashed server-side, stored, or handed to a
+ * password-check hook through this statement.
+ */
 export const ROUTE_B_STATEMENTS = {
   SET_ROLE: "SELECT set_config('uellix.rotating_role', $1, true)",
-  SET_PASSWORD: "SELECT set_config('uellix.rotating_password', $1, true)",
+  SET_VERIFIER: "SELECT set_config('uellix.rotating_verifier', $1, true)",
   SET_VALID_UNTIL: "SELECT set_config('uellix.rotating_valid_until', $1, true)",
   DO_BLOCK: [
     'DO $rotate$',
     'BEGIN',
+    "  IF current_setting('uellix.rotating_verifier') !~ '^SCRAM-SHA-256\\$[0-9]+:[A-Za-z0-9+/=]+\\$[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+$' THEN",
+    "    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'D1_VERIFIER_REQUIRED';",
+    '  END IF;',
     '  EXECUTE format(',
     "    'ALTER ROLE %I PASSWORD %L VALID UNTIL %L',",
     "    current_setting('uellix.rotating_role'),",
-    "    current_setting('uellix.rotating_password'),",
+    "    current_setting('uellix.rotating_verifier'),",
     "    current_setting('uellix.rotating_valid_until')",
     '  );',
     'EXCEPTION WHEN OTHERS THEN',
@@ -60,6 +73,13 @@ export const ROUTE_B_STATEMENTS = {
     '$rotate$',
   ].join('\n'),
 } as const
+
+/** The password transport the route-B contract implements (PMR-10 maps AC-7 to it). */
+export const ROUTE_B_PASSWORD_TRANSPORT = 'CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER' as const
+
+/** Route-B session binding: the DSN contract's database and port (the auditor DSN the harness measures is host:5432/postgres). */
+export const ROUTE_B_DATABASE = 'postgres'
+export const ROUTE_B_PORT = 5432
 
 /** The bound value of SET_ROLE. Fixed: MR-2 acts on one role only. */
 export const ROUTE_B_ROLE = 'uellix_auditor'
@@ -104,6 +124,16 @@ export const ROUTE_B_DELTAS: readonly RouteBDelta[] = [
     ],
     status: 'DERIVED_SAFETY_ADDITION_UNMEASURED',
   },
+  {
+    id: 'RB-DELTA-4',
+    change: 'The bound and formatted value is the client-derived SCRAM-SHA-256 verifier, never the plaintext; the DO block refuses (D1_VERIFIER_REQUIRED) any value that is not a verifier before the ALTER ROLE. RB-DELTA-3 is kept, but it no longer carries the plaintext: the recertification measured that the CONTEXT line of ANY log message emitted during the EXECUTE (not only an error) quotes the formatted statement.',
+    derived_from: [
+      'Owner decision N11_PASSWORD_TRANSPORT = CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER (docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N11_PASSWORD_TRANSPORT_OWNER_DECISION_v1.0.0.json)',
+      'Recertification of 979b1440: plaintext measured in logs via log_parser_stats, log_lock_waits, a startup GUC and a pg_tle passcheck hook',
+      'PostgreSQL stores a password string already in SCRAM-SHA-256 format as the verifier, without re-hashing it',
+    ],
+    status: 'DERIVED_FROM_AUTHORITY',
+  },
 ]
 
 export interface ContractClause {
@@ -120,7 +150,7 @@ export const OPERATOR_TOOL_CONTRACT: readonly ContractClause[] = [
   { id: 'OT-3', clause: 'The operator\'s privileged connection material is read from UELLIX_D1_MINT_OPERATOR_DATABASE_URL in the tool\'s own environment and removed from it before any child is spawned. HOW that variable is supplied is NOT decided here and belongs to the future execution authority.', source: 'lane mandate section 3', measuredBy: 'DEPOSITOR_ENV_CLEAN' },
   { id: 'OT-4', clause: 'The target host is INJECTED as --target-host (non-secret): the execution procedure sets it to the N04-verified direct host of the pinned project, and the harness to an RFC 6761 .invalid host, so no test names or can reach a real project. Before the driver is constructed, the privileged connection host must equal it; anything else is refused with no driver call. The N30 depositor independently refuses a production DSN that does not name the pinned staging host.', source: 'HC_1.placement (after target identity is verified BY REF); TARGET_IDENTITY; recertification nonblocker on the harness naming the real staging host', measuredBy: 'REFUSES_UNPINNED_TARGET' },
   { id: 'OT-5', clause: 'The new value is generated inside the tool: >= 32 bytes from a CSPRNG, base64url (>= 43 characters of [A-Za-z0-9_-]).', source: 'generation_requirements.entropy/encoding', measuredBy: 'SECRET_SHAPE' },
-  { id: 'OT-6', clause: 'One transaction: exactly SET_ROLE, SET_PASSWORD, SET_VALID_UNTIL, DO_BLOCK, in that order, then COMMIT. The value and the expiry travel ONLY as bound parameters; no statement text contains the value.', source: 'set_config bound-parameter pattern; RB-DELTA-1..3', measuredBy: 'SEQUENCE+BOUND_ONLY' },
+  { id: 'OT-6', clause: 'One transaction: exactly SET_ROLE, SET_VERIFIER, SET_VALID_UNTIL, DO_BLOCK, in that order, then COMMIT. The verifier and the expiry travel ONLY as bound parameters; no statement text contains either.', source: 'set_config bound-parameter pattern; RB-DELTA-1..4', measuredBy: 'SEQUENCE+BOUND_ONLY' },
   { id: 'OT-7', clause: 'The expiry parameter equals the then-current N09 passed as --valid-until (strict UTC Z form).', source: 'OD-3; N09', measuredBy: 'VALID_UNTIL_EQUALS_N09' },
   { id: 'OT-8', clause: 'The built N30 depositor is spawned as a child with an argument array (no shell) and an allowlisted environment (no privileged material, no value). It receives the auditor DSN on stdin once COMMIT is acknowledged OR once the commit outcome is UNKNOWN (the value may be live, so it must be in custody); its stdin is closed empty ONLY when COMMIT was provably never requested.', source: 'DAG v1.0.4 N30_ADJACENCY_RULE; DAG v1.0.6 COMMIT_OUTCOME_MODEL.N30_CUSTODY_UNDER_COMMIT_OUTCOME_UNKNOWN', measuredBy: 'HANDOFF_AFTER_COMMIT+CANDIDATE_RETAINED_IN_CUSTODY+NO_HANDOFF_WITHOUT_COMMIT+DEPOSITOR_ARGV_CLEAN+DEPOSITOR_ENV_CLEAN' },
   { id: 'OT-9', clause: 'The value never appears in argv, a file, the tool\'s stdout or stderr, or any log.', source: 'WHERE_THE_PASSWORD_MUST_NOT_TRAVEL', measuredBy: 'OUTPUT_CLEAN+FILES_CLEAN+DEPOSITOR_ARGV_CLEAN' },
@@ -129,6 +159,9 @@ export const OPERATOR_TOOL_CONTRACT: readonly ContractClause[] = [
   { id: 'OT-11', clause: 'The tool lets go of every reference it can (no global, no cache, process exits promptly). JavaScript strings are not zeroable; this is disclosed, not claimed.', source: 'OF-CUST-1 analogue', measuredBy: null },
   { id: 'OT-13', clause: 'The driver at --driver-root must report postgres 3.4.9 before it is loaded; any other version is refused with no driver call.', source: 'operator-channel execution authority OPERATOR_TOOL_CONTRACT_ADDITIONS; ROUTE_B_DRIVER', measuredBy: 'REFUSES_WRONG_DRIVER_VERSION' },
   { id: 'OT-14', clause: 'The operator URL must name --operator-principal, the principal the certified OEP-1 evidence observed; any other is refused with no driver call.', source: 'operator-channel execution authority OPERATOR_TOOL_CONTRACT_ADDITIONS; OEP-1 invalidation predicate IP-3', measuredBy: 'REFUSES_WRONG_OPERATOR_PRINCIPAL' },
+  { id: 'OT-15', clause: 'The plaintext is used for exactly two things: deriving the SCRAM-SHA-256 verifier in the tool (db/custody/scram-verifier.ts semantics) and the auditor DSN written to the N30 depositor stdin after the database act. The only password-related value sent to PostgreSQL is a verifier that verifies against that plaintext; the plaintext appears in no statement text, bind value or connection option.', source: 'owner decision N11_PASSWORD_TRANSPORT = CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER; RB-DELTA-4', measuredBy: 'VERIFIER_ONLY+PLAINTEXT_NEVER_SENT' },
+  { id: 'OT-16', clause: 'Startup is closed and the session is bound: the operator URL carries no query and no fragment; its host, port and database equal --target-host, --target-port and --target-database EXACTLY (never a prefix or suffix); the driver is constructed from explicit options (host, port, database, username, password, ssl, prepare, max) with no connection parameters, so no startup GUC can ride in.', source: 'recertification of 979b1440 (startup GUC via URL query; host by startsWith survived; database not bound)', measuredBy: 'STARTUP_CLOSED+REFUSES_URL_QUERY+REFUSES_WRONG_DATABASE+REFUSES_HOST_LOOKALIKE' },
+  { id: 'OT-17', clause: 'The driver is bound by content: the sha256 digest of the files of the postgres package at --driver-root equals --driver-digest, checked before it is loaded; the version check (OT-13) stays.', source: 'recertification nonblocker: the driver was bound only by its version', measuredBy: 'REFUSES_DRIVER_DIGEST_MISMATCH' },
 ]
 
 /**

@@ -32,8 +32,9 @@ import { evaluateCandidateBinding, gatherCandidateFacts, type CandidateFacts } f
 import { AC1_AUTHORIZED_SURFACE, P1_STATEMENTS } from '../../db/custody/p1-reads'
 import { N14_BODY } from '../../db/custody/n14-observation'
 import { AC3_DEFERRED_ROWS, N21_BODY, N22_BODY, n21ExitFromRows, n22ExitFromRows, n22Rows, type PvRow } from '../../db/custody/n22-poststate'
-import { OEP1_PROBE_STATEMENTS, OEP1_SETTINGS, OPERATOR_CHANNEL_CONTRACT, TOOL_SPAWN_FLAGS, acceptsPipedInput, hiddenPromptPrecondition } from '../../db/custody/mint-operator-channel'
-import { gatherOperatorChannelFacts, oep1EvidenceReasons, type OperatorChannelFacts } from './d1-mint-operator-evidence'
+import { OEP1_DERIVED_MATERIAL_SETTINGS, OEP1_EXPECTED_CLIENT_SETTINGS, OEP1_PROBE_STATEMENTS, OPERATOR_CHANNEL_CONTRACT, TOOL_SPAWN_FLAGS, acceptsPipedInput, driverDigest, hiddenPromptPrecondition } from '../../db/custody/mint-operator-channel'
+import { ROUTE_B_PASSWORD_TRANSPORT } from '../../db/custody/mint-route-b-contract'
+import { gatherOperatorChannelFacts, oep1EvidenceReasons, routeBTransportFacts, type OperatorChannelFacts } from './d1-mint-operator-evidence'
 import { buildLauncherClosure } from './d1-mint-operator-channel-build'
 import { PROBE_FORBIDDEN_SOURCE_TOKENS } from './d1-oep1-probe-harness'
 import { deriveEffectiveSchedule } from './d1-effective-schedule'
@@ -89,6 +90,9 @@ export interface ImplementationFacts {
     readonly parentSurfaceDerived: boolean
     readonly n06RefusesOmittedParent: boolean
     readonly mintNeedsOep1Evidence: boolean
+    /** DAG v1.0.8 AC-7: the route-B transport as implemented, and the DO-block guard. */
+    readonly passwordTransport: string
+    readonly doBlockGuarded: boolean
   }
 }
 
@@ -210,13 +214,15 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
     if (c.launcherBuildDigest === null) r.push('the launcher could not be rebuilt from this repository')
     else if (c.binding !== null && c.launcherBuildDigest !== c.binding.launcher_build_digest) r.push('STALE LAUNCHER PIN: the launcher rebuilt from this repository is not the pinned build')
     if (JSON.stringify(c.authorityStates.clauseIds) !== JSON.stringify(OPERATOR_CHANNEL_CONTRACT.map((x) => x.id))) r.push('the channel clause ids in the authority are not the implementation ones')
-    if (JSON.stringify(c.authorityStates.settingsList) !== JSON.stringify(OEP1_SETTINGS)) r.push('the OEP-1 closed settings list in the authority is not the implementation one')
+    if (JSON.stringify(c.authorityStates.derivedSettingsList) !== JSON.stringify(OEP1_DERIVED_MATERIAL_SETTINGS)) r.push('the derived-material settings list in the authority is not the implementation one')
+    if (JSON.stringify(c.authorityStates.expectedClientSettings) !== JSON.stringify(OEP1_EXPECTED_CLIENT_SETTINGS)) r.push('the expected client settings in the authority are not the implementation ones')
     if (JSON.stringify(c.authorityStates.probeStatements) !== JSON.stringify(OEP1_PROBE_STATEMENTS)) r.push('the pinned probe statements in the authority are not byte-identical to the implementation')
     return r
   },
   'PMR-12_OPERATOR_CREDENTIAL_INVENTORIED': (i) => [...i.operatorChannel.operatorSectionReasons],
-  'PMR-13_OEP1_LOGGING_POSTURE_CLOSED': (i) =>
-    oep1EvidenceReasons(i.operatorChannel.oep1.facts, { binding: i.operatorChannel.binding, targetHost: i.operatorChannel.oep1.targetHost, n08: i.operatorChannel.oep1.n08 }),
+  // Superseded by PMR-14 in DAG v1.0.8 (the closed-list design failed its recertification); kept registered so a chain that still carries it is evaluated, never satisfied.
+  'PMR-13_OEP1_LOGGING_POSTURE_CLOSED': () => ['PMR-13 is superseded by PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED (DAG v1.0.8) and cannot be satisfied on its own'],
+  'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED': (i) => oep1EvidenceReasons(i.operatorChannel.oep1.facts, i.operatorChannel.oep1.ctx),
   'PMR-10_RULINGS_MATCH_IMPLEMENTATION': (i) => {
     const { active } = effectiveRulings(i.chain)
     const f = i.implementation
@@ -269,6 +275,11 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
       if (!oc.parentSurfaceDerived) r.push('AC-6: the derived operator surfaces do not name the parent launcher')
       if (!oc.n06RefusesOmittedParent) r.push('AC-6: an inventory omitting the parent launcher surface is not refused')
     } else if (ac6 !== undefined) r.push(`AC-6 ruling outcome ${ac6.outcome} has no implementation mapping`)
+    const ac7 = active['AC-7']
+    if (ac7?.outcome === 'CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER') {
+      if (oc.passwordTransport !== 'CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER') r.push('AC-7: the route-B transport is not the client-side SCRAM verifier')
+      if (!oc.doBlockGuarded) r.push('AC-7: the DO block does not refuse a non-verifier before the ALTER ROLE')
+    } else if (ac7 !== undefined) r.push(`AC-7 ruling outcome ${ac7.outcome} has no implementation mapping`)
     return r
   },
 }
@@ -470,7 +481,10 @@ export function measureOperatorChannel(): ImplementationFacts['operatorChannel']
       PROBE_FORBIDDEN_SOURCE_TOKENS.length > 0 && Object.values(OEP1_PROBE_STATEMENTS).every((s) => PROBE_FORBIDDEN_SOURCE_TOKENS.every((tok) => !s.includes(tok)) && !mutation.test(s)),
     parentSurfaceDerived: derived.some((s) => s.surface === 'OPERATOR_CREDENTIAL_LAUNCHER_SURFACE'),
     n06RefusesOmittedParent: checkOperatorCredentialSection(withoutParent).length > 0,
-    mintNeedsOep1Evidence: oep1EvidenceReasons({ path: null, evidence: null, channelEvent: null }, { binding: null, targetHost: null, n08: null }).length > 0,
+    mintNeedsOep1Evidence:
+      oep1EvidenceReasons({ path: null, evidence: null, channelEvent: null }, { binding: null, targetHost: null, n08: null, driverDigest: null, transport: ROUTE_B_PASSWORD_TRANSPORT, doBlockGuarded: true }).length > 0,
+    passwordTransport: routeBTransportFacts().transport,
+    doBlockGuarded: routeBTransportFacts().doBlockGuarded,
   }
 }
 
@@ -532,6 +546,13 @@ export function gatherPostMintInputs(root: string): PostMintInputs {
       buildDigest: (r) => buildLauncherClosure(r).digest,
       operatorSectionReasons: checkOperatorCredentialSection,
       effectiveN08: (r) => deriveEffectiveSchedule(r).N08,
+      driverDigest: (r) => {
+        try {
+          return driverDigest(join(r, 'node_modules', 'postgres'))
+        } catch {
+          return null
+        }
+      },
     }),
   }
 }

@@ -1,0 +1,131 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.1",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "EXECUTION_AUTHORITY_AMENDMENT",
+  "document_class": "OPERATOR_CHANNEL_AMENDMENT__SCRAM_VERIFIER_TRANSPORT__OEP1_V2__SESSION_BINDING__APPEND_ONLY__NO_EXECUTION_BY_ITSELF",
+  "append_only": true,
+  "supersedes": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_v1.0.0.json",
+  "supersedes_note": "v1.0.0 is not edited. This link REPLACES exactly the sections listed in REPLACES_SECTIONS (the effective authority is v1.0.0 with those sections taken from here; scripts/custody/d1-mint-operator-evidence.ts readEffectiveChannelAuthority). Every other v1.0.0 section stays in force.",
+  "REPLACES_SECTIONS": ["CHANNEL_BINDING", "CHANNEL_CONTRACT", "OPERATOR_TOOL_CONTRACT_ADDITIONS", "EXECUTION_PROCEDURE", "OEP1_PROBE_CONTRACT", "OEP1_EVIDENCE_CONTRACT", "HC1_SCOPE"],
+  "mission_id": "CV1-D1-OEP1-PLAINTEXT-ELIMINATION-REMEDIATION-R2",
+  "lane": "CV1-D1-OEP1-PLAINTEXT-ELIMINATION-REMEDIATION-R2",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "AS_OF_BASE_SHA": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+  "owner_decision": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N11_PASSWORD_TRANSPORT_OWNER_DECISION_v1.0.0.json (N11_PASSWORD_TRANSPORT = CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER)",
+  "dag_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.8.json",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+  "WHY": "The recertification of 979b1440 failed OEP-1: the route-B plaintext reached PostgreSQL and was measured in logs through the CONTEXT line of the nested EXECUTE, while a closed list of logging settings said PASS. The owner removed the plaintext from the server boundary; this amendment carries that into the channel, rebuilds OEP-1 around PLAINTEXT_PASSWORD_SERVER_EXPOSURE = IMPOSSIBLE_BY_CONSTRUCTION, binds the session, and re-pins the channel.",
+  "PASSWORD_TRANSPORT": {
+    "decision": "CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER",
+    "route_b": "db/custody/mint-route-b-contract.ts ROUTE_B_STATEMENTS: SET_VERIFIER binds the client-derived verifier; the DO block refuses (D1_VERIFIER_REQUIRED) any value not in SCRAM-SHA-256 format before the ALTER ROLE; RB-DELTA-4.",
+    "derivation": "db/custody/scram-verifier.ts semantics (RFC 5802/7677, PostgreSQL format SCRAM-SHA-256$<iter>:<salt>$<StoredKey>:<ServerKey>), reproduced byte-exactly against the RFC 7677 exchange; the mint tool derives it inline.",
+    "entropy": "Governed, not chosen: capability SECRET_GENERATION_CONTRACT.generation_requirements.entropy ('At least 32 bytes from a cryptographically secure random source'); base64url, on which SASLprep is the identity.",
+    "iterations_and_salt": "PostgreSQL defaults (4096 iterations, 16-byte CSPRNG salt): what the server itself would use.",
+    "plaintext_path": "The plaintext exists only in the mint tool: it derives the verifier and, after the database act, goes to the N30 depositor stdin (OT-15). It is never in statement text, bind values, startup parameters, server-side variables or functions.",
+    "verifier_is_not_directly_usable": "Authentication needs ClientKey-derived proof; the verifier holds StoredKey = H(ClientKey). Stated limits: StoredKey plus a CAPTURED exchange yields ClientKey; ServerKey lets its holder impersonate the server. Measured: the verifier used as a password fails (disposable proof)."
+  },
+  "CHANNEL_BINDING": {
+    "launcher_build_digest": "40bb037936f3eb1c4a9bdee83d7b3ea7709da46657714c94809f35d43a192603",
+    "launcher_build_rule": "Unchanged from v1.0.0 (deterministic LF build of the launcher closure).",
+    "tools": {
+      "probe": { "file": "d1-oep1-probe-tool-v2.js", "sha256": "117ad54403eb6c43713c34b445d8c28abcb65615ece61e222b2b084c46a6f17f" },
+      "mint": { "file": "d1-mint-operator-tool-v2.js", "sha256": "9d5aea3a6bce4e9ab94f96ab4bd0903d8aef0bd9f9f2b6bda8996417b11a0836" }
+    },
+    "tools_directory": { "base_env": "LOCALAPPDATA", "relative": "uellix-d1-mint-operator-channel/tools" },
+    "versioned_files": "The v2 tools have their own file names; the v1.0.0-pinned files (d1-mint-operator-tool.js, d1-oep1-probe-tool.js) are left in place, unchanged, so the failed candidate 979b1440 stays reproducible.",
+    "invalidation": "TOOL_BINDING unchanged: any other byte is another channel."
+  },
+  "CHANNEL_CONTRACT": {
+    "clause_ids": ["OC-1", "OC-2", "OC-3", "OC-4", "OC-5", "OC-6", "OC-7", "OC-8", "OC-9", "OC-10", "OC-11", "OC-12"],
+    "clauses_source": "db/custody/mint-operator-channel.ts OPERATOR_CHANNEL_CONTRACT; OC-11 (session bound, startup closed) and OC-12 (the probe only for a certified channel) are new; OC-9 now states the several non-zeroable heap copies the recertification measured instead of 'one string'."
+  },
+  "OPERATOR_TOOL_CONTRACT_ADDITIONS": {
+    "OT-1_at_run_time": "Unchanged: each tool refuses if its own directory has a .git ancestor (measured on the real tools).",
+    "OT-13": "Unchanged: driver version 3.4.9 before load.",
+    "OT-14": "Unchanged: the mint's operator principal is the OEP-1-observed one.",
+    "OT-15": "Only the SCRAM-SHA-256 verifier is sent; the plaintext derives it and goes to the depositor stdin only (harness VERIFIER_ONLY + PLAINTEXT_NEVER_SENT).",
+    "OT-16": "Startup closed and session bound: no query/fragment; exact host, port, database; driver from explicit options (harness STARTUP_CLOSED + refusal scenarios).",
+    "OT-17": "Driver bound by content: the digest of its files equals --driver-digest before load."
+  },
+  "EXECUTION_PROCEDURE": {
+    "gate": "pnpm custody:operator-channel:gate -- --mode=probe|mint --channel-dir=<outside the repository> [--write]",
+    "derivations": {
+      "targetHost": "N04 arm A, only when evaluateN04 is SATISFIED",
+      "targetPort": "route-B ROUTE_B_PORT (5432)",
+      "targetDatabase": "route-B ROUTE_B_DATABASE (postgres)",
+      "validUntil": "the effective N09, mint only (never N08)",
+      "driverRoot": "the repository root; node_modules/postgres version 3.4.9",
+      "driverDigest": "sha256 over the files of node_modules/postgres (realpath)",
+      "depositor": "the built N30 depositor, mint only",
+      "tool": "effective CHANNEL_BINDING.tools[mode]",
+      "launcherDigest": "effective CHANNEL_BINDING.launcher_build_digest",
+      "operatorPrincipal": "the certified OEP-1 evidence's operator_principal, mint only"
+    },
+    "stop_on": ["STOP_PLAN_MISMATCH (any field)", "STOP_STALE_TOOL_HASH / STOP_STALE_LAUNCHER_HASH", "STOP_DIRTY", "STOP_SCHEDULE_ELAPSED", "N04 not SATISFIED", "a schedule or channel-authority chain error", "OC-12: probe planning without a certification of the channel as pinned", "mint planning without closed OEP-1 evidence"]
+  },
+  "OEP1_PROBE_CONTRACT": {
+    "central_invariant": "PLAINTEXT_PASSWORD_SERVER_EXPOSURE = IMPOSSIBLE_BY_CONSTRUCTION. OEP-1 no longer asks a server whether it would log the plaintext: the plaintext never reaches it. The probe proves the SESSION the mint will use.",
+    "what_the_probe_proves": {
+      "TARGET_SESSION_BOUND": "current_user = session_user = the operator principal; current_database() = the route-B database; server_version_num >= 100000 (SCRAM verifiers accepted) — observed inside the session on the N04 host and route-B port the tool bound.",
+      "STARTUP_PARAMETERS_CLOSED": "the settings whose source is 'client' are EXACTLY the measured postgres.js 3.4.9 set (application_name=postgres.js, client_encoding=UTF8): no startup GUC rode in.",
+      "PROBE_MINT_CONFIGURATION_COHERENT": "host, port, database, principal, driver digest and startup set of the probe session = those the mint session will use (session fingerprint)."
+    },
+    "what_it_no_longer_infers": "Whether any logging setting, extension, hook or lock wait would record the PLAINTEXT. That class is open (the recertification's finding) and is closed by construction instead.",
+    "expected_client_settings": [["application_name", "postgres.js"], ["client_encoding", "UTF8"]],
+    "derived_settings_list": ["auto_explain.log_min_duration", "auto_explain.log_nested_statements", "debug_print_parse", "debug_print_plan", "debug_print_rewritten", "log_lock_waits", "log_min_duration_statement", "log_min_error_statement", "log_parser_stats", "log_planner_stats", "log_statement", "log_statement_stats", "pg_stat_statements.track", "pg_stat_statements.track_utility", "pgaudit.log", "pgaudit.role", "pgtle.enable_password_check", "shared_preload_libraries"],
+    "derived_material_exposure": "Informational classification of whether the VERIFIER could be logged (POSSIBLE / NOT_INDICATED / UNKNOWN; never 'absent'). It gates nothing about the plaintext and is never merged with PLAINTEXT_NOT_PRESENT.",
+    "statements": {
+      "IDENTITY": "SELECT current_user AS current_user_name, session_user AS session_user_name, current_database() AS database_name, current_setting('server_version_num') AS server_version_num",
+      "CLIENT_SETTINGS": "SELECT name, setting FROM pg_catalog.pg_settings WHERE source = 'client' ORDER BY name",
+      "DERIVED_MATERIAL_SETTINGS": "SELECT name, setting, source FROM pg_catalog.pg_settings WHERE name = ANY($1::text[]) ORDER BY name"
+    },
+    "transaction": "ONE, BEGIN READ ONLY; the derived list is the only bound parameter; nothing through unsafe().",
+    "probe_contract_clauses": "PC-1..PC-6 in scripts/custody/d1-oep1-probe-harness.ts (measured on the real probe tool v2)."
+  },
+  "OEP1_EVIDENCE_CONTRACT": {
+    "path": "docs/ops/release/FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v<semver>.json (append-only; the highest version is effective)",
+    "evidence_class": "D1_OEP1_EVIDENCE_V2",
+    "required_fields": ["evidence_class", "append_only", "target_host", "target_port", "target_database", "operator_principal", "observation {identity, client_settings, derived_settings}", "sub_verdicts {PLAINTEXT_NOT_SERVER_VISIBLE, TARGET_SESSION_BOUND, STARTUP_PARAMETERS_CLOSED, TOOL_HASH_BOUND, PROBE_MINT_CONFIGURATION_COHERENT}", "verdict (CLOSED only when every gating sub-verdict is PASS)", "derived_material_exposure {classification, emitters}", "derived_settings_list", "probe_tool_sha256", "mint_tool_sha256", "launcher_build_digest", "driver_digest", "session_fingerprint", "observed_at_utc", "invalidation_predicates", "channel_certification_event"],
+    "recomputation": "PMR-14 RECOMPUTES every sub-verdict and the derived classification from the observation and the repository (never trusts the record); a consistent non-PASS record does not close OEP-1 (recertification survivor E1).",
+    "invalidation_predicates": [
+      "IP-1: any CHANNEL_BINDING pin differs from the evidence's hashes.",
+      "IP-2: N04's host, the route-B port or database differ from the evidence's.",
+      "IP-3: the mint's operator URL names another principal (launcher OC-4 and mint OT-14 refuse).",
+      "IP-4: observed_at_utc is not before the effective N08.",
+      "IP-5: a later OEP-1 evidence version exists (it becomes effective and must itself close OEP-1).",
+      "IP-6: the channel certification event is not a terminal PASS for an ancestor carrying the same effective CHANNEL_BINDING.",
+      "IP-7: the driver digest differs from the repository's."
+    ]
+  },
+  "HC1_SCOPE": {
+    "owner_decision": "Unchanged from v1.0.0 (HC1_SCOPE_DECISION, six items).",
+    "statements_to_present": {
+      "HC1-S1": "target: the exact project ref, selected by ref (N04)",
+      "HC1-S2": "role: uellix_auditor",
+      "HC1-S3": "MR-2 replaces any existing credential and breaks any unrecorded consumer (HU-4)",
+      "HC1-S4": "VALID UNTIL: the effective N09",
+      "HC1-S5": "custody and delivery: WCM under the custodian, N30 deposit, process-scoped delivery per the N06 inventory",
+      "HC1-S6": "retirement: the effective N31 removal, no later than N09",
+      "HC1-S7": "the ONE use of the operator's privileged credential for this MR-2, through the certified channel (launcher digest, mint tool v2 sha256), with the OEP-1 v2 observation time and sub-verdicts, and the transport: only a SCRAM-SHA-256 verifier reaches PostgreSQL"
+    }
+  },
+  "TLS_TRUST_BOUNDARY": {
+    "status": "OPEN_OWNER_BOUNDARY — not decided here, not weakened here",
+    "measured": "Both tools connect with ssl: 'require', which in postgres.js 3.4.9 means rejectUnauthorized = false: the session is encrypted but the server is not authenticated. postgres.js 3.4.9 implements no SCRAM channel binding (no -PLUS mechanism).",
+    "consequence": "A man-in-the-middle holding a certificate could relay the operator's SCRAM exchange and act inside the privileged session (for instance install a verifier of its own choosing). The plaintext fix does NOT depend on TLS (the plaintext is never sent) and is not weakened by this.",
+    "why_not_implemented": "Verifying the server needs a root of trust (which CA, pinned how). No D-1 authority governs it; the repository's operator runner (db/hosted/operator-runner.ts) requires verify-full with an operator-supplied PGSSLROOTCERT but fixes no CA identity. Choosing one is a trust-policy decision reserved to the owner."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No probe, mint, deposit, delivery or hosted connection occurs by this amendment.",
+    "No certification event is written by the authoring lane.",
+    "HC-1 is not requested and N11 is not authorized."
+  ],
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": "0 hosted; disposable local PostgreSQL only",
+  "PROVIDER_MUTATIONS_EXECUTED": 0,
+  "required_independent_review": "MANDATORY: short independent recertification of the remediation.",
+  "final_state": "OPERATOR_CHANNEL_V1_0_1__SCRAM_VERIFIER_TRANSPORT__OEP1_V2__SESSION_BOUND__TOOLS_V2_PINNED__TLS_BOUNDARY_OPEN",
+  "next_gate": "Short independent recertification of the remediation (PHASE 1)."
+}

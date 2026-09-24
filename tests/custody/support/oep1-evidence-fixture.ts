@@ -1,38 +1,57 @@
 // tests/custody/support/oep1-evidence-fixture.ts
 //
-// A SYNTHETIC OEP-1 evidence that satisfies OEP1_EVIDENCE_CONTRACT, bound to
-// the pins and host the repository carries NOW, with a synthetic channel
-// certification event. It lets a positive control show PMR-13 able to say
-// yes; every negative control changes one field. It is never written to the
-// repository: PHASE 2 has not run.
+// A SYNTHETIC OEP-1 v2 evidence that satisfies OEP1_EVIDENCE_CONTRACT, bound to
+// the pins, host and driver digest the repository carries NOW, with a
+// synthetic channel certification event. It lets a positive control show
+// PMR-14 able to say yes; every negative control changes one field. It is
+// never written to the repository: PHASE 2 has not run.
 
-import { OEP1_SETTINGS, evaluateOep1 } from '@/db/custody/mint-operator-channel'
-import { OEP1_EVIDENCE_CLASS, type ChannelBinding, type Oep1EvidenceFacts } from '@/scripts/custody/d1-mint-operator-evidence'
-import { CANNED_SAFE_ROWS, PROBE_HARNESS_PRINCIPAL } from '@/scripts/custody/d1-oep1-probe-harness'
+import { OEP1_DERIVED_MATERIAL_SETTINGS, OEP1_EXPECTED_CLIENT_SETTINGS, classifyDerivedMaterialExposure } from '@/db/custody/mint-operator-channel'
+import { ROUTE_B_DATABASE, ROUTE_B_PORT } from '@/db/custody/mint-route-b-contract'
+import { OEP1_EVIDENCE_CLASS, sessionFingerprint, type Oep1EvidenceFacts, type Oep1RepoContext } from '@/scripts/custody/d1-mint-operator-evidence'
+import { CANNED_DERIVED_ROWS, PROBE_HARNESS_PRINCIPAL } from '@/scripts/custody/d1-oep1-probe-harness'
 
-export function goodOep1Evidence(binding: ChannelBinding, targetHost: string, observedAtUtc: string): Record<string, unknown> {
-  const observation = { rows: CANNED_SAFE_ROWS, extensions: ['pg_stat_statements'] }
+export function goodOep1Evidence(ctx: Oep1RepoContext, observedAtUtc: string): Record<string, unknown> {
+  const principal = PROBE_HARNESS_PRINCIPAL
+  const observation = {
+    identity: { current_user: principal, session_user: principal, database: ROUTE_B_DATABASE, server_version_num: '170006' },
+    client_settings: OEP1_EXPECTED_CLIENT_SETTINGS,
+    derived_settings: CANNED_DERIVED_ROWS,
+  }
+  const b = ctx.binding!
   return {
     evidence_class: OEP1_EVIDENCE_CLASS,
     append_only: true,
-    target_host: targetHost,
-    operator_principal: PROBE_HARNESS_PRINCIPAL,
-    identity: { current_user: PROBE_HARNESS_PRINCIPAL, session_user: PROBE_HARNESS_PRINCIPAL },
-    probe_tool_sha256: binding.tools.probe.sha256,
-    launcher_build_digest: binding.launcher_build_digest,
-    observed_at_utc: observedAtUtc,
-    settings_list: [...OEP1_SETTINGS],
+    target_host: ctx.targetHost,
+    target_port: ROUTE_B_PORT,
+    target_database: ROUTE_B_DATABASE,
+    operator_principal: principal,
     observation,
-    verdict: evaluateOep1(observation).verdict,
-    invalidation_predicates: ['IP-1', 'IP-2', 'IP-3', 'IP-4', 'IP-5', 'IP-6'],
+    sub_verdicts: {
+      PLAINTEXT_NOT_SERVER_VISIBLE: 'PASS',
+      TARGET_SESSION_BOUND: 'PASS',
+      STARTUP_PARAMETERS_CLOSED: 'PASS',
+      TOOL_HASH_BOUND: 'PASS',
+      PROBE_MINT_CONFIGURATION_COHERENT: 'PASS',
+    },
+    verdict: 'CLOSED',
+    derived_material_exposure: classifyDerivedMaterialExposure(CANNED_DERIVED_ROWS),
+    derived_settings_list: [...OEP1_DERIVED_MATERIAL_SETTINGS],
+    probe_tool_sha256: b.tools.probe.sha256,
+    mint_tool_sha256: b.tools.mint.sha256,
+    launcher_build_digest: b.launcher_build_digest,
+    driver_digest: ctx.driverDigest,
+    session_fingerprint: sessionFingerprint({ host: ctx.targetHost!, port: ROUTE_B_PORT, database: ROUTE_B_DATABASE, principal, driverDigest: ctx.driverDigest! }),
+    observed_at_utc: observedAtUtc,
+    invalidation_predicates: ['IP-1', 'IP-2', 'IP-3', 'IP-4', 'IP-5', 'IP-6', 'IP-7'],
     channel_certification_event: 'docs/ops/release/FIBDB053_D1_AUDITOR_PREHC1_PACKAGE_CERTIFICATION_000000000000_v1.0.0.json',
   }
 }
 
-export function goodOep1Facts(binding: ChannelBinding, targetHost: string, observedAtUtc: string): Oep1EvidenceFacts {
+export function goodOep1Facts(ctx: Oep1RepoContext, observedAtUtc: string): Oep1EvidenceFacts {
   return {
-    path: 'docs/ops/release/FIBDB053_D1_AUDITOR_OEP1_LOGGING_POSTURE_EVIDENCE_v1.0.0.json',
-    evidence: goodOep1Evidence(binding, targetHost, observedAtUtc),
-    channelEvent: { exists: true, terminalPass: true, candidateIsAncestorOfHead: true, bindingAtCandidate: binding },
+    path: 'docs/ops/release/FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v1.0.0.json',
+    evidence: goodOep1Evidence(ctx, observedAtUtc),
+    channelEvent: { exists: true, terminalPass: true, candidateIsAncestorOfHead: true, bindingAtCandidate: ctx.binding },
   }
 }

@@ -10,8 +10,9 @@
 import { EventEmitter } from 'node:events'
 import { PassThrough } from 'node:stream'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -26,8 +27,9 @@ import {
 } from '@/db/custody/mint-operator-channel'
 import { PLAN_SCHEMA, parsePlan, runLauncher, toolArgs, type ChannelPlan, type LauncherIo } from '@/scripts/custody/d1-mint-operator-launcher'
 import { buildLauncherClosure } from '@/scripts/custody/d1-mint-operator-channel-build'
-import { checkExecutables, checkUtcMargin, derivePlan, deriveTargetHost, routeBDriver, verifyPlan } from '@/scripts/custody/d1-mint-operator-plan'
-import { readChannelBinding } from '@/scripts/custody/d1-mint-operator-evidence'
+import { checkExecutables, checkUtcMargin, derivePlan, deriveTargetHost, findChannelCertification, preExecutionStops, routeBDriver, verifyPlan } from '@/scripts/custody/d1-mint-operator-plan'
+import { readChannelBinding, routeBTransportFacts, type ChannelEventFacts } from '@/scripts/custody/d1-mint-operator-evidence'
+import { goodOep1Facts } from './support/oep1-evidence-fixture'
 import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
 
 const ROOT = process.cwd()
@@ -81,10 +83,13 @@ function plan(over: Partial<ChannelPlan> = {}): ChannelPlan {
     schema: PLAN_SCHEMA,
     mode: 'probe',
     targetHost: SYNTH_HOST,
+    targetPort: 5432,
+    targetDatabase: 'postgres',
     operatorPrincipal: null,
     validUntil: null,
     driverRoot: 'C:/driver-root',
     driverVersion: '3.4.9',
+    driverDigest: 'c'.repeat(64),
     depositor: null,
     tool: { path: 'C:/tools/probe.js', sha256: sha(TOOL_BYTES) },
     launcherDigest: 'a'.repeat(64),
@@ -193,7 +198,7 @@ describe('P-3: one child, the value only in its environment block', () => {
     const c = h.calls[0]!
     expect(c.command).toBe('C:/node.exe')
     expect(c.args).toEqual(toolArgs(plan()))
-    expect(Object.keys(c.options.env).sort()).toEqual([...TOOL_ENV_ALLOWLIST.filter((k) => h.io.env[k] !== undefined), OPERATOR_ENV_VAR_NAME].sort())
+    expect(Object.keys(c.options.env).sort()).toEqual(['PATH', 'SystemRoot', 'TEMP', OPERATOR_ENV_VAR_NAME].sort())
     expect(c.options.env[OPERATOR_ENV_VAR_NAME]).toBe(url(SYNTH_HOST))
     expect(c.options.env.HOME_SECRET_LIKE).toBeUndefined()
     // Literal, not TOOL_SPAWN_FLAGS: a comparison with the constant under test would accept any value it held.
@@ -207,10 +212,30 @@ describe('P-3: one child, the value only in its environment block', () => {
     expect(all).not.toContain(PASSWORD)
     expect(all).toContain('"launcher":"TOOL_EXITED"')
   })
+  it('R2-N-L1: a launcher run leaves the REAL process environment untouched (not only the injected one)', async () => {
+    const h = harness({ stdin: tty(`${url(SYNTH_HOST)}\r`) })
+    const realBefore = { ...process.env }
+    expect(await h.run()).toBe(0)
+    expect(process.env[OPERATOR_ENV_VAR_NAME]).toBeUndefined()
+    expect({ ...process.env }).toEqual(realBefore)
+  })
+  it('R2-N-X08: the tool environment allowlist is exactly this literal, not the constant under test', () => {
+    expect([...TOOL_ENV_ALLOWLIST]).toEqual(['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path', 'TEMP', 'TMP'])
+  })
   it('the mint tool argv carries the plan fields and nothing secret', () => {
     const p = plan({ mode: 'mint', operatorPrincipal: 'postgres', validUntil: '2026-09-29T14:00:00.000Z', depositor: 'C:/c/deposit.js' })
     const args = toolArgs(p)
-    expect(args).toEqual([p.tool.path, '--driver-root=C:/driver-root', `--target-host=${SYNTH_HOST}`, '--depositor=C:/c/deposit.js', '--valid-until=2026-09-29T14:00:00.000Z', '--operator-principal=postgres'])
+    expect(args).toEqual([
+      p.tool.path,
+      '--driver-root=C:/driver-root',
+      `--driver-digest=${'c'.repeat(64)}`,
+      `--target-host=${SYNTH_HOST}`,
+      '--target-port=5432',
+      '--target-database=postgres',
+      '--depositor=C:/c/deposit.js',
+      '--valid-until=2026-09-29T14:00:00.000Z',
+      '--operator-principal=postgres',
+    ])
     expect(() => assertToolArgvIsClean(args, Buffer.from(url(SYNTH_HOST)), Buffer.from(PASSWORD))).not.toThrow()
   })
 })
@@ -225,6 +250,20 @@ describe('refusals, each before anything is spawned', () => {
   })
   it('N-WRONG-HOST: a string naming another host is refused', async () => {
     await refused(harness({ stdin: tty(`${url('db.elsewhere.invalid')}\r`) }), 'CHANNEL_WRONG_HOST')
+  })
+  it.each([
+    ['a host that only STARTS with the planned host (X06)', `${SYNTH_HOST}.lookalike.invalid`, 'CHANNEL_WRONG_HOST'],
+    ['a host that only ENDS with the planned host', `evil${SYNTH_HOST}`, 'CHANNEL_WRONG_HOST'],
+  ])('R2-N-STARTUP: %s is refused', async (_n, host, code) => {
+    await refused(harness({ stdin: tty(`${url(host)}\r`) }), code)
+  })
+  it.each([
+    ['a startup GUC in the query', `${url(SYNTH_HOST)}?debug_print_parse=on`, 'CHANNEL_STARTUP_PARAMETERS'],
+    ['a fragment', `${url(SYNTH_HOST)}#x`, 'CHANNEL_STARTUP_PARAMETERS'],
+    ['another port', url(SYNTH_HOST).replace(':5432/', ':6543/'), 'CHANNEL_WRONG_PORT'],
+    ['another database', url(SYNTH_HOST).replace(':5432/postgres', ':5432/template1'), 'CHANNEL_WRONG_DATABASE'],
+  ])('R2-N-STARTUP: %s is refused before spawn', async (_n, value, code) => {
+    await refused(harness({ stdin: tty(`${value}\r`) }), code)
   })
   it('N-WRONG-HOST (principal): for the mint, a string naming another principal is refused', async () => {
     const p = plan({ mode: 'mint', operatorPrincipal: 'postgres', validUntil: '2026-09-29T14:00:00.000Z', depositor: 'C:/d.js' })
@@ -289,13 +328,16 @@ describe('the value is checked before any process exists', () => {
 
 describe('P-4 and the execution-procedure STOPs (plan derived from the repository only)', () => {
   const NOW = '2026-09-24T12:00:00.000Z'
-  const derived = derivePlan(ROOT, { mode: 'probe', toolsDir: 'C:/tools', depositor: null, head: 'c'.repeat(40), nowUtc: NOW })
+  const CERTIFIED: ChannelEventFacts = { exists: true, terminalPass: true, candidateIsAncestorOfHead: true, bindingAtCandidate: BINDING }
+  const derived = derivePlan(ROOT, { mode: 'probe', toolsDir: 'C:/tools', depositor: null, head: 'c'.repeat(40), nowUtc: NOW, channelCertification: CERTIFIED })
   it('the probe plan derives with no reason, from N04, route B and the binding', () => {
     expect(derived.reasons).toEqual([])
     const p = derived.plan!
     expect(p.targetHost).toBe(deriveTargetHost(ROOT).host)
     expect(p.driverVersion).toBe('3.4.9')
     expect(p.driverRoot).toBe(routeBDriver(ROOT).driverRoot)
+    expect(p.driverDigest).toBe(routeBDriver(ROOT).digest)
+    expect([p.targetPort, p.targetDatabase]).toEqual([5432, 'postgres'])
     expect(p.tool).toEqual({ path: join('C:/tools', BINDING!.tools.probe.file), sha256: BINDING!.tools.probe.sha256 })
     expect(p.launcherDigest).toBe(BINDING!.launcher_build_digest)
     expect(verifyPlan(p, p)).toEqual([])
@@ -305,12 +347,60 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     ['validUntil', { validUntil: '2099-01-01T00:00:00.000Z' }],
     ['driverRoot', { driverRoot: 'C:/another-root' }],
     ['driverVersion', { driverVersion: '3.4.8' }],
+    ['driverDigest', { driverDigest: 'f'.repeat(64) }],
+    ['targetPort', { targetPort: 6543 }],
+    ['targetDatabase', { targetDatabase: 'template1' }],
     ['tool.sha256', { tool: { path: join('C:/tools', BINDING!.tools.probe.file), sha256: 'f'.repeat(64) } }],
     ['launcherDigest', { launcherDigest: 'f'.repeat(64) }],
     ['operatorPrincipal', { operatorPrincipal: 'someone' }],
   ] as Array<[string, Partial<ChannelPlan>]>)('a plan on disk whose %s differs -> STOP_PLAN_MISMATCH', (field, over) => {
     const r = verifyPlan({ ...derived.plan!, ...over }, derived.plan!)
     expect(r).toEqual([`STOP_PLAN_MISMATCH: ${field} on disk differs from the repository derivation`])
+  })
+  it('R2-N-PROBE-UNCERTIFIED (OC-12): the probe cannot be planned for a channel no certification event certifies', () => {
+    const none = derivePlan(ROOT, { mode: 'probe', toolsDir: 'C:/tools', depositor: null, head: 'c'.repeat(40), nowUtc: NOW, channelCertification: null })
+    expect(none.plan).toBeNull()
+    expect(none.reasons.join(' ')).toMatch(/OC-12: no channel certification event/)
+    const otherPins = derivePlan(ROOT, { mode: 'probe', toolsDir: 'C:/tools', depositor: null, head: 'c'.repeat(40), nowUtc: NOW, channelCertification: { ...CERTIFIED, bindingAtCandidate: { ...BINDING!, launcher_build_digest: 'a'.repeat(64) } } })
+    expect(otherPins.reasons.join(' ')).toMatch(/OC-12: the certified candidate carried different channel pins/)
+    // The real gather says exactly what the tree carries: OC-12 refuses while no event certifies the channel
+    // as pinned now, and stops refusing once one does (never pinned to the pre-certification state).
+    const real = derivePlan(ROOT, { mode: 'probe', toolsDir: 'C:/tools', depositor: null, head: 'c'.repeat(40), nowUtc: NOW }).reasons.join(' ')
+    if (findChannelCertification(ROOT, BINDING).event === null) expect(real).toMatch(/OC-12/)
+    else expect(real).not.toMatch(/OC-12/)
+  })
+  it('R2-N-P1: with closed OEP-1 evidence the mint plan carries the effective N09 as VALID UNTIL, never N08', () => {
+    const sched = deriveEffectiveSchedule(ROOT)
+    const ctx = { binding: BINDING, targetHost: deriveTargetHost(ROOT).host, n08: sched.N08, driverDigest: routeBDriver(ROOT).digest, ...routeBTransportFacts() }
+    const m = derivePlan(ROOT, { mode: 'mint', toolsDir: 'C:/tools', depositor: 'C:/c/deposit.js', head: 'c'.repeat(40), nowUtc: NOW, oep1Facts: goodOep1Facts(ctx, NOW) })
+    expect(m.reasons).toEqual([])
+    expect(m.plan!.validUntil).toBe(sched.N09)
+    expect(m.plan!.validUntil).not.toBe(sched.N08)
+    expect(m.plan!.operatorPrincipal).toBe('postgres')
+    expect(m.plan!.tool.sha256).toBe(BINDING!.tools.mint.sha256)
+  })
+  it('R2-N-P6: a dirty worktree is STOP_DIRTY; a clean one with the pinned launcher and time left stops on nothing', () => {
+    const n08 = deriveEffectiveSchedule(ROOT).N08
+    const base = { clean: true, launcherBuiltDigest: BINDING!.launcher_build_digest, pinnedLauncherDigest: BINDING!.launcher_build_digest, nowUtc: NOW, n08 }
+    expect(preExecutionStops(base)).toEqual([])
+    expect(preExecutionStops({ ...base, clean: false })).toEqual(['STOP_DIRTY: the worktree carries changes; the plan must be derived from a committed state'])
+    expect(preExecutionStops({ ...base, launcherBuiltDigest: '0'.repeat(64) })).toEqual(['STOP_STALE_LAUNCHER_HASH: the launcher built from this repository is not the pinned build'])
+  })
+  it('R2-N-P10: when N04 is NOT_SATISFIED there is no target host and no plan', () => {
+    const r = mkdtempSync(join(tmpdir(), 'd1-n04-bypass-'))
+    const copy = (rel: string) => {
+      mkdirSync(dirname(join(r, rel)), { recursive: true })
+      cpSync(join(ROOT, rel), join(r, rel))
+    }
+    copy('docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json')
+    copy('docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json')
+    const inv = join(r, 'docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json')
+    const doc = JSON.parse(readFileSync(inv, 'utf8')) as { entries: Array<Record<string, unknown>> }
+    doc.entries[0]!.target_project_ref = 'ctaxtgujyyprgynmnvtq'
+    writeFileSync(inv, JSON.stringify(doc))
+    const t = deriveTargetHost(r)
+    expect(t.host).toBeNull()
+    expect(t.reasons.join(' ')).toMatch(/^N04: /)
   })
   it('the mint cannot be planned without closed OEP-1 evidence', () => {
     const m = derivePlan(ROOT, { mode: 'mint', toolsDir: 'C:/tools', depositor: 'C:/c/deposit.js', head: 'c'.repeat(40), nowUtc: NOW })

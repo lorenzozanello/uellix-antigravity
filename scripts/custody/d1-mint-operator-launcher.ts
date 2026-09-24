@@ -44,6 +44,9 @@ export interface ChannelPlan {
   readonly mode: ChannelMode
   /** N04's authorized direct host. */
   readonly targetHost: string
+  /** The route-B session's port and database (OC-11). */
+  readonly targetPort: number
+  readonly targetDatabase: string
   /** Mint only: the principal the certified OEP-1 evidence observed. Null for the probe. */
   readonly operatorPrincipal: string | null
   /** Mint only: the effective N09. */
@@ -51,6 +54,8 @@ export interface ChannelPlan {
   /** Route B: the root createRequire resolves `postgres` from, and the version found there. */
   readonly driverRoot: string
   readonly driverVersion: string
+  /** OT-17: sha256 over the driver package's files, re-derived by the gate from the repository. */
+  readonly driverDigest: string
   /** Mint only: the built N30 depositor. */
   readonly depositor: string | null
   readonly tool: { readonly path: string; readonly sha256: string }
@@ -74,6 +79,9 @@ export function parsePlan(text: string): ChannelPlan {
     p.schema === PLAN_SCHEMA &&
     (p.mode === 'probe' || p.mode === 'mint') &&
     str('targetHost') &&
+    typeof p.targetPort === 'number' &&
+    str('targetDatabase') &&
+    hex(p.driverDigest, 64) &&
     str('driverRoot') &&
     str('driverVersion') &&
     typeof tool?.path === 'string' &&
@@ -90,7 +98,13 @@ export function parsePlan(text: string): ChannelPlan {
 
 /** The tool's argv, from the plan only. Non-secret by construction; re-checked against the value before spawn. */
 export function toolArgs(plan: ChannelPlan): string[] {
-  const common = [`--driver-root=${plan.driverRoot}`, `--target-host=${plan.targetHost}`]
+  const common = [
+    `--driver-root=${plan.driverRoot}`,
+    `--driver-digest=${plan.driverDigest}`,
+    `--target-host=${plan.targetHost}`,
+    `--target-port=${plan.targetPort}`,
+    `--target-database=${plan.targetDatabase}`,
+  ]
   if (plan.mode === 'probe') return [plan.tool.path, ...common]
   return [plan.tool.path, ...common, `--depositor=${plan.depositor!}`, `--valid-until=${plan.validUntil!}`, `--operator-principal=${plan.operatorPrincipal!}`]
 }

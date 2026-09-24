@@ -38,20 +38,22 @@ import { spawn } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
-import { OPERATOR_ENV_VAR_NAME } from '../../db/custody/mint-operator-channel'
-import { PebObserver, type PebDump } from './n05-peb-observer'
+import { OPERATOR_ENV_VAR_NAME, driverDigest } from '../../db/custody/mint-operator-channel'
+import { PebObserver, childrenOf, identityReasons, recordForSpawn, type PebDump, type PebObservedProcess } from './n05-peb-observer'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 import { buildLauncherClosure, writeLauncherBuild } from './d1-mint-operator-channel-build'
 import { defaultToolsDir, readChannelBinding, sha256Hex } from './d1-mint-operator-evidence'
 import { FAKE_DEPOSITOR, FAKE_DRIVER } from './d1-mint-tool-contract-harness'
-import { CANNED_SAFE_ROWS, FAKE_PROBE_DRIVER } from './d1-oep1-probe-harness'
-import { OEP1_PROBE_STATEMENTS } from '../../db/custody/mint-operator-channel'
+import { FAKE_PROBE_DRIVER, writeCannedProbeAnswers } from './d1-oep1-probe-harness'
 import { deriveEffectiveSchedule } from './d1-effective-schedule'
 import { PLAN_SCHEMA, type ChannelPlan } from './d1-mint-operator-launcher'
 
 type State = 'PASSED' | 'FAILED' | 'NOT_RUN'
 interface Run {
   readonly pid: number
+  /** The spawn window (ms since the Unix epoch): binds the observed record by (pid, creation time), never by pid alone. */
+  readonly startedMs: number
+  readonly endedMs: number
   readonly lines: Record<string, unknown>[]
   readonly raw: string
   readonly exitCode: number | null
@@ -59,6 +61,7 @@ interface Run {
 
 function startNode(entry: string, args: string[], opts: { stdin?: string; console?: 'shared' | 'none' | 'hidden'; cwd: string }): Promise<Run> {
   return new Promise((resolve) => {
+    const startedMs = Date.now()
     // 'none' = DETACHED_PROCESS (no console at all); 'hidden' = CREATE_NO_WINDOW (a console without a window).
     const child = spawn(process.execPath, [entry, ...args], { cwd: opts.cwd, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: opts.console === 'hidden', detached: opts.console === 'none' })
     let raw = ''
@@ -80,7 +83,7 @@ function startNode(entry: string, args: string[], opts: { stdin?: string; consol
           /* not JSON */
         }
       }
-      resolve({ pid: child.pid ?? -1, lines, raw, exitCode: code })
+      resolve({ pid: child.pid ?? -1, startedMs, endedMs: Date.now(), lines, raw, exitCode: code })
     })
   })
 }
@@ -121,42 +124,46 @@ export async function demonstrate(root: string, outDir: string): Promise<{ overa
   const url = ['postgresql:', '//postgres:', password, '@', host, ':5432/postgres'].join('')
   const governed = [Buffer.from(url, 'latin1'), Buffer.from(password, 'latin1')]
   const fixtureRaw = Buffer.from(`d1-channel-fixture-${randomBytes(12).toString('hex')}`, 'latin1')
-  const mintRoot = join(out, 'mint-driver-root')
-  mkdirSync(join(mintRoot, 'node_modules', 'postgres'), { recursive: true })
-  writeFileSync(join(mintRoot, 'package.json'), '{"name":"demo-mint-driver-root","private":true}')
-  writeFileSync(join(mintRoot, 'node_modules', 'postgres', 'package.json'), JSON.stringify({ name: 'postgres', main: 'index.js', version: '3.4.9' }))
-  writeFileSync(join(mintRoot, 'node_modules', 'postgres', 'index.js'), FAKE_DRIVER)
+  // Each run gets its OWN driver root: the fake drivers record what they were
+  // handed inside their package directory, which changes the driver digest
+  // (OT-17), so a root reused after its first run is refused as unpinned.
   const depositor = join(out, 'depositor', 'fake-n30-deposit.js')
   mkdirSync(join(out, 'depositor'), { recursive: true })
   writeFileSync(depositor, FAKE_DEPOSITOR)
-  const probeRoot = join(out, 'probe-driver-root')
-  const probeDriver = join(probeRoot, 'node_modules', 'postgres')
-  mkdirSync(probeDriver, { recursive: true })
-  writeFileSync(join(probeRoot, 'package.json'), '{"name":"demo-probe-driver-root","private":true}')
-  writeFileSync(join(probeDriver, 'package.json'), JSON.stringify({ name: 'postgres', main: 'index.js', version: '3.4.9' }))
-  writeFileSync(join(probeDriver, 'index.js'), FAKE_PROBE_DRIVER)
-  writeFileSync(join(probeDriver, 'HOLD'), '1500')
-  writeFileSync(
-    join(probeDriver, 'canned.json'),
-    JSON.stringify([
-      { text: OEP1_PROBE_STATEMENTS.IDENTITY, rows: [{ current_user_name: 'postgres', session_user_name: 'postgres' }] },
-      { text: OEP1_PROBE_STATEMENTS.SETTINGS, rows: CANNED_SAFE_ROWS },
-      { text: OEP1_PROBE_STATEMENTS.EXTENSIONS, rows: [] },
-    ])
-  )
   const cwd = join(out, 'cwd')
   mkdirSync(cwd, { recursive: true })
   const n09 = deriveEffectiveSchedule(root).N09!
-  const base = { schema: PLAN_SCHEMA as typeof PLAN_SCHEMA, targetHost: host, driverVersion: '3.4.9', launcherDigest: build.digest, derivedAtHead: '0'.repeat(40), derivedAtUtc: new Date().toISOString() }
-  const mintPlan: ChannelPlan = { ...base, mode: 'mint', operatorPrincipal: 'postgres', validUntil: n09, driverRoot: mintRoot, depositor, tool: { path: mintTool, sha256: binding.tools.mint.sha256 } }
-  const probePlan: ChannelPlan = { ...base, mode: 'probe', operatorPrincipal: null, validUntil: null, driverRoot: probeRoot, depositor: null, tool: { path: probeTool, sha256: binding.tools.probe.sha256 } }
-  const planFile = (name: string, p: ChannelPlan) => {
-    const f = join(out, name)
+  const base = { schema: PLAN_SCHEMA as typeof PLAN_SCHEMA, targetHost: host, targetPort: 5432, targetDatabase: 'postgres', driverVersion: '3.4.9', launcherDigest: build.digest, derivedAtHead: '0'.repeat(40), derivedAtUtc: new Date().toISOString() }
+  const driverRootFor = (tag: string, driverSource: string, extra: (dir: string) => void): { driverRoot: string; driverDigest: string } => {
+    const driverRoot = join(out, `driver-root-${tag}`)
+    const dir = join(driverRoot, 'node_modules', 'postgres')
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(driverRoot, 'package.json'), JSON.stringify({ name: `demo-driver-root-${tag}`, private: true }))
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'postgres', main: 'index.js', version: '3.4.9' }))
+    writeFileSync(join(dir, 'index.js'), driverSource)
+    extra(dir)
+    return { driverRoot, driverDigest: driverDigest(dir) }
+  }
+  const planFile = (tag: string, mode: 'mint' | 'probe'): string => {
+    const p: ChannelPlan =
+      mode === 'mint'
+        ? { ...base, mode, operatorPrincipal: 'postgres', validUntil: n09, ...driverRootFor(tag, FAKE_DRIVER, () => undefined), depositor, tool: { path: mintTool, sha256: binding.tools.mint.sha256 } }
+        : {
+            ...base,
+            mode,
+            operatorPrincipal: null,
+            validUntil: null,
+            ...driverRootFor(tag, FAKE_PROBE_DRIVER, (dir) => {
+              writeFileSync(join(dir, 'HOLD'), '1500')
+              writeCannedProbeAnswers(dir)
+            }),
+            depositor: null,
+            tool: { path: probeTool, sha256: binding.tools.probe.sha256 },
+          }
+    const f = join(out, `plan-${tag}.json`)
     writeFileSync(f, JSON.stringify(p))
     return f
   }
-  const mintPlanFile = planFile('plan-mint.json', mintPlan)
-  const probePlanFile = planFile('plan-probe.json', probePlan)
 
   // Mutant launcher builds: the exact failure modes the channel must not have, which the observer MUST catch.
   const mutant = (name: string, file: string, from: string, to: string): string => {
@@ -182,41 +189,44 @@ export async function demonstrate(root: string, outDir: string): Promise<{ overa
   let final: PebDump | null = null
   try {
     // OBS0: a planted fixture the observer must see.
+    const fxStarted = Date.now()
     const fx = spawn(process.execPath, ['-e', 'const t=Date.now();while(Date.now()-t<1200){}'], { stdio: 'ignore', windowsHide: false, env: { ...process.env, D1_OBSERVER_FIXTURE: fixtureRaw.toString('latin1') } })
     await new Promise((r) => fx.on('close', r))
+    const fixtureWindow = { fromMs: fxStarted, toMs: Date.now() }
     const fixturePid = fx.pid ?? -1
 
     await observer.mark('mint')
-    runs.mint = await startNode(launcher, [`--plan=${mintPlanFile}`], { stdin: `${url}\n`, cwd })
+    runs.mint = await startNode(launcher, [`--plan=${planFile('mint', 'mint')}`], { stdin: `${url}\n`, cwd })
     await observer.mark('probe')
-    runs.probe = await startNode(launcher, [`--plan=${probePlanFile}`], { stdin: `${url}\n`, cwd })
+    runs.probe = await startNode(launcher, [`--plan=${planFile('probe', 'probe')}`], { stdin: `${url}\n`, cwd })
     await observer.mark('noconsole')
-    runs.noConsole = await startNode(launcher, [`--plan=${probePlanFile}`], { stdin: `${url}\n`, cwd, console: 'none' })
+    runs.noConsole = await startNode(launcher, [`--plan=${planFile('noconsole', 'probe')}`], { stdin: `${url}\n`, cwd, console: 'none' })
     await observer.mark('hidden')
-    runs.hidden = await startNode(launcher, [`--plan=${probePlanFile}`], { stdin: `${url}\n`, cwd, console: 'hidden' })
+    runs.hidden = await startNode(launcher, [`--plan=${planFile('hidden', 'probe')}`], { stdin: `${url}\n`, cwd, console: 'hidden' })
     await observer.mark('mutant_hide')
-    runs.mutHide = await startNode(hideMutant, [`--plan=${mintPlanFile}`], { stdin: `${url}\n`, cwd })
+    runs.mutHide = await startNode(hideMutant, [`--plan=${planFile('mut-hide', 'mint')}`], { stdin: `${url}\n`, cwd })
     await observer.mark('mutant_penv')
-    runs.mutPenv = await startNode(penvMutant, [`--plan=${mintPlanFile}`], { stdin: `${url}\n`, cwd })
+    runs.mutPenv = await startNode(penvMutant, [`--plan=${planFile('mut-penv', 'mint')}`], { stdin: `${url}\n`, cwd })
     final = await observer.stop()
 
     const P = final.processes
-    const kids = (pid: number) => P.filter((p) => p.ppid === pid)
     const toolPidOf = (r: Run) => Number(r.lines.find((l) => l.launcher === 'TOOL_SPAWNED')?.pid ?? -1)
     const describeRun = (r: Run) => {
       const tool = toolPidOf(r)
-      const launcherP = P.find((p) => p.pid === r.pid)
-      const toolP = P.find((p) => p.pid === tool)
-      const toolKids = kids(tool)
-      const tree = new Set<number>([r.pid, tool, ...kids(r.pid).map((p) => p.pid), ...toolKids.map((p) => p.pid), ...toolKids.flatMap((k) => kids(k.pid).map((p) => p.pid))])
-      const inTree = P.filter((p) => tree.has(p.pid))
+      const window = { fromMs: r.startedMs, toMs: r.endedMs }
+      const launcherP = recordForSpawn(P, r.pid, window) ?? undefined
+      const toolP = recordForSpawn(P, tool, window) ?? undefined
+      const kidsOf = (x: PebObservedProcess | undefined) => (x === undefined ? [] : childrenOf(P, x))
+      const toolKids = kidsOf(toolP)
+      const inTree = [...new Set([launcherP, toolP, ...kidsOf(launcherP), ...toolKids, ...toolKids.flatMap((k) => kidsOf(k))].filter((x): x is PebObservedProcess => x !== undefined))]
       const conhosts = inTree.filter((p) => /^conhost/i.test(p.name))
       const depositors = toolKids.filter((p) => !/^conhost/i.test(p.name))
       return { tool, launcherP, toolP, depositors, conhosts, inTree }
     }
     const holders = <T extends { govEnv: number; envVar: boolean }>(ps: readonly T[]): T[] => ps.filter((p) => p.govEnv !== 0 || p.envVar)
 
-    c.OBS0_OBSERVER_SEES_FIXTURE = pf(P.some((p) => p.pid === fixturePid && p.fixEnv !== 0))
+    c.OBS0_OBSERVER_SEES_FIXTURE = pf((recordForSpawn(P, fixturePid, fixtureWindow)?.fixEnv ?? 0) !== 0)
+    c.OBS_IDENTITY_KEYED = pf(identityReasons(final).length === 0)
     for (const [key, r, expectLine] of [
       ['CH_MINT', runs.mint!, (l: Record<string, unknown>) => l.mint === 'COMMITTED'],
       ['CH_PROBE', runs.probe!, (l: Record<string, unknown>) => l.probe === 'OBSERVED'],
@@ -227,7 +237,7 @@ export async function demonstrate(root: string, outDir: string): Promise<{ overa
       c[`${key}_VALUE_IN_TOOL_BLOCK`] = pf(d.toolP !== undefined && d.toolP.govEnv !== 0 && d.toolP.envVar)
       c[`${key}_LAUNCHER_BLOCK_CLEAN`] = pf(d.launcherP !== undefined && d.launcherP.envReadable && !d.launcherP.envVar && d.launcherP.govEnv === 0)
       c[`${key}_NO_CONHOST_HOLDS_IT`] = pf(holders(d.conhosts).length === 0)
-      c[`${key}_ONLY_THE_TOOL_HOLDS_IT`] = pf(holders(d.inTree).length === 1 && holders(d.inTree)[0]!.pid === d.tool)
+      c[`${key}_ONLY_THE_TOOL_HOLDS_IT`] = pf(holders(d.inTree).length === 1 && holders(d.inTree)[0] === d.toolP)
       if (key === 'CH_MINT') c.CH_MINT_DEPOSITOR_OBSERVED_AND_CLEAN = pf(d.depositors.length >= 1 && d.depositors.every((p) => p.envReadable && !p.envVar && p.govEnv === 0))
       c[`${key}_OUTCOME`] = pf(r.exitCode === 0 && r.lines.some(expectLine))
     }
@@ -256,6 +266,8 @@ export async function demonstrate(root: string, outDir: string): Promise<{ overa
       topology: 'demonstration -> built launcher (console, bare node, piped synthetic input) -> pinned outside tool (bare node) [-> fake depositor for the mint]',
       observer: { polls: final.polls, processes_observed: P.length },
       controls: c,
+      // Exit codes and closed-vocabulary codes only (OUTPUT_CLEAN already shows no value is in them).
+      run_outcomes: Object.fromEntries(Object.entries(runs).map(([k, r]) => [k, { exit: r.exitCode, codes: r.lines.map((l) => String(l.code ?? l.launcher ?? l.probe ?? l.mint ?? l.error ?? l.refused ?? Object.keys(l).join('+'))) }])),
       failed,
       history_file_present: existsSync(history),
       overall,

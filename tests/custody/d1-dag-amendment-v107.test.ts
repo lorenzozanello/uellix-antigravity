@@ -16,7 +16,8 @@ import { CONJUNCT_EVALUATORS, effectiveRulings, evaluatePostMintConjuncts, gathe
 import { checkOperatorCredentialSection, deriveOperatorCredentialSurfaces } from '@/scripts/custody/d1-delivery-matrix'
 import { evaluateN06InRepo, type NodeState } from '@/scripts/custody/d1-n06-closure'
 import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
-import { OPERATOR_CHANNEL_CONTRACT, OEP1_PROBE_STATEMENTS, OEP1_SETTINGS } from '@/db/custody/mint-operator-channel'
+import { OPERATOR_CHANNEL_CONTRACT, OEP1_DERIVED_MATERIAL_SETTINGS, OEP1_EXPECTED_CLIENT_SETTINGS, OEP1_PROBE_STATEMENTS } from '@/db/custody/mint-operator-channel'
+import { readEffectiveChannelAuthority, workingTreeSource } from '@/scripts/custody/d1-mint-operator-evidence'
 
 const ROOT = process.cwd()
 const V107 = 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.7.json' as const
@@ -81,11 +82,21 @@ describe('P-8: the rulings and conjuncts, as the chain reader sees them', () => 
       expect(t).not.toMatch(/UELLIX-D1-AUDITOR-|UELLIX-N05-SENTINEL-[0-9A-F]{6,}/)
     }
   })
-  it('the authority states the implementation byte for byte (clause ids, closed list, probe statements)', () => {
-    const w2 = JSON.parse(readFileSync(join(ROOT, AUTHORITY), 'utf8')) as { CHANNEL_CONTRACT: { clause_ids: string[] }; OEP1_PROBE_CONTRACT: { settings_list: string[]; statements: Record<string, string> } }
-    expect(w2.CHANNEL_CONTRACT.clause_ids).toEqual(OPERATOR_CHANNEL_CONTRACT.map((c) => c.id))
-    expect(w2.OEP1_PROBE_CONTRACT.settings_list).toEqual(OEP1_SETTINGS)
-    expect(w2.OEP1_PROBE_CONTRACT.statements).toEqual(OEP1_PROBE_STATEMENTS)
+  it('the EFFECTIVE authority (v1.0.0 as amended append-only by v1.0.1) states the implementation byte for byte', () => {
+    // v1.0.0 is a sealed record of what 979b1440 implemented; it is not edited. The
+    // sections the R2 amendment replaces are read through the supersedes chain.
+    const eff = readEffectiveChannelAuthority(workingTreeSource(ROOT))
+    expect(eff.errors).toEqual([])
+    expect(eff.chain).toEqual([AUTHORITY, 'docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json'])
+    const doc = eff.doc as { CHANNEL_CONTRACT: { clause_ids: string[] }; OEP1_PROBE_CONTRACT: { expected_client_settings: unknown; derived_settings_list: string[]; statements: Record<string, string> } }
+    expect(doc.CHANNEL_CONTRACT.clause_ids).toEqual(OPERATOR_CHANNEL_CONTRACT.map((c) => c.id))
+    expect(doc.OEP1_PROBE_CONTRACT.derived_settings_list).toEqual([...OEP1_DERIVED_MATERIAL_SETTINGS])
+    expect(doc.OEP1_PROBE_CONTRACT.expected_client_settings).toEqual(OEP1_EXPECTED_CLIENT_SETTINGS)
+    expect(doc.OEP1_PROBE_CONTRACT.statements).toEqual(OEP1_PROBE_STATEMENTS)
+  })
+  it('the v1.0.0 record itself is unchanged history: it still states the ten clauses 979b1440 implemented', () => {
+    const w2 = JSON.parse(readFileSync(join(ROOT, AUTHORITY), 'utf8')) as { CHANNEL_CONTRACT: { clause_ids: string[] } }
+    expect(w2.CHANNEL_CONTRACT.clause_ids).toEqual(['OC-1', 'OC-2', 'OC-3', 'OC-4', 'OC-5', 'OC-6', 'OC-7', 'OC-8', 'OC-9', 'OC-10'])
   })
 })
 
@@ -111,12 +122,10 @@ describe('the live state of this successor', () => {
     expect(byId['PMR-11_OPERATOR_CHANNEL_BOUND']).toMatchObject({ satisfied: true, reasons: [] })
     expect(byId['PMR-12_OPERATOR_CREDENTIAL_INVENTORIED']).toMatchObject({ satisfied: true, reasons: [] })
   })
-  it('PMR-13 is exactly what the OEP-1 evidence on disk mechanically gives (never pinned to the pre-PHASE-2 state)', () => {
-    // Pinning "open" here would turn the PHASE 2 candidate red the moment its evidence lands
-    // (the self-invalidating live-state pin). The state is derived from what exists.
-    const pmr13 = byId['PMR-13_OEP1_LOGGING_POSTURE_CLOSED']!
-    if (inputs.operatorChannel.oep1.facts.evidence === null) expect(pmr13).toMatchObject({ satisfied: false, reasons: ['no OEP-1 evidence exists (PHASE 2 has not run)'] })
-    else expect(pmr13.satisfied).toBe(pmr13.reasons.length === 0)
+  it('PMR-13 is no longer a live conjunct (v1.0.8 supersedes it by PMR-14), and its evaluator can never say yes', () => {
+    expect(byId['PMR-13_OEP1_LOGGING_POSTURE_CLOSED']).toBeUndefined()
+    expect(byId['PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED']).toBeDefined()
+    expect(CONJUNCT_EVALUATORS['PMR-13_OEP1_LOGGING_POSTURE_CLOSED']!(inputs)).toEqual(['PMR-13 is superseded by PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED (DAG v1.0.8) and cannot be satisfied on its own'])
   })
 })
 

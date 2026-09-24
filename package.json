@@ -107,6 +107,7 @@
     "custody:operator-channel:build": "tsx scripts/custody/d1-mint-operator-channel-build.ts",
     "custody:operator-channel:demonstrate": "tsx scripts/custody/d1-mint-operator-channel-demonstration.ts",
     "custody:operator-channel:mutation": "tsx scripts/custody/d1-mint-operator-channel-mutation.ts",
+    "custody:scram:disposable-proof": "tsx scripts/custody/d1-scram-disposable-proof.ts",
     "custody:production:demonstrate": "tsx scripts/custody/d1-production-topology-demonstration.ts",
     "authority:repin": "tsx scripts/authority-repin.mts",
     "dry-run:runtime-helper": "bash scripts/runtime-helper-contract-dry-run.sh",

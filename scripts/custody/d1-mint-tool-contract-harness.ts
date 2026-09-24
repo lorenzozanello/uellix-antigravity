@@ -6,12 +6,13 @@
 // The candidate is a file OUTSIDE the repository. The harness gives it:
 //   - a FAKE `postgres` driver that follows postgres.js's begin() shape
 //     (callback in try with ROLLBACK; COMMIT AFTER the callback, outside the
-//     try) and records every call, with bound parameters, beside itself;
+//     try) and records every call, with bound parameters and the options it
+//     was constructed with, beside itself;
 //   - a FAKE N30 depositor that records its argv, environment and the exact
 //     bytes it received on stdin, beside itself, and answers like N30;
-//   - a synthetic privileged DSN and --target-host naming an RFC 6761
-//     `.invalid` host, so nothing in the harness names or could reach a real
-//     project;
+//   - a synthetic privileged connection string and --target-host naming an
+//     RFC 6761 `.invalid` host, so nothing in the harness names or could reach
+//     a real project;
 //   - a working directory and TEMP/TMP of its own, which are searched after.
 //
 // SCENARIOS pressure every commit boundary B-1 of the recertification named:
@@ -28,12 +29,18 @@
 //   KILLED_DURING_COMMIT      the process dies on COMMIT: no terminal line.
 //   COMMIT_NO_FINAL_OUTPUT    COMMIT never answers; the run is ended from outside
 //                             and leaves no terminal line.
-//   UNPINNED_TARGET           the privileged connection names another host.
+// and every refusal that must happen BEFORE any driver call:
+//   UNPINNED_TARGET, HOST_LOOKALIKE (a host that only shares a prefix),
+//   URL_WITH_QUERY (a startup GUC riding in the URL), WRONG_DATABASE, WRONG_PORT,
+//   WRONG_DRIVER_VERSION, DRIVER_DIGEST_MISMATCH, WRONG_OPERATOR_PRINCIPAL,
+//   TOOL_INSIDE_GIT_TREE.
 //
-// NB-1: the four "throws on COMMIT" classes differ ONLY in the error they
-// carry. A tool that keys its classification on an error code, or on the
-// presence of a SQLSTATE, passes one of them and fails another; only a tool
-// that keys on "was COMMIT requested, and was it acknowledged" passes all four.
+// PLAINTEXT ELIMINATION (owner decision N11_PASSWORD_TRANSPORT =
+// CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER; OT-15): the plaintext is
+// recovered from the depositor's stdin (the one place it is allowed to go),
+// then searched for in EVERY recorded driver event — statement texts, bind
+// values and construction options. It must occur zero times, and the value
+// bound by SET_VERIFIER must be a SCRAM-SHA-256 verifier of it.
 //
 // It cannot see everything: a candidate could open a socket of its own or
 // write outside the directories it was given. The harness measures the
@@ -43,7 +50,9 @@ import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { checkDsnShape } from '../../db/custody/production-custody'
-import { COMMIT_UNKNOWN_TOKEN, ROUTE_B_ROLE, ROUTE_B_STATEMENTS, classifyToolRun } from '../../db/custody/mint-route-b-contract'
+import { COMMIT_UNKNOWN_TOKEN, ROUTE_B_DATABASE, ROUTE_B_PORT, ROUTE_B_ROLE, ROUTE_B_STATEMENTS, classifyToolRun } from '../../db/custody/mint-route-b-contract'
+import { SCRAM_VERIFIER_PATTERN, verifierMatches } from '../../db/custody/scram-verifier'
+import { driverDigest } from '../../db/custody/mint-operator-channel'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 
 export type Scenario =
@@ -57,13 +66,36 @@ export type Scenario =
   | 'KILLED_DURING_COMMIT'
   | 'COMMIT_NO_FINAL_OUTPUT'
   | 'UNPINNED_TARGET'
+  /** OT-16: a host that only shares a prefix with --target-host (a startsWith comparison would accept it). */
+  | 'HOST_LOOKALIKE'
+  /** OT-16: a query parameter in the operator URL (postgres.js would forward it as a startup GUC). */
+  | 'URL_WITH_QUERY'
+  /** OT-16: another database than --target-database. */
+  | 'WRONG_DATABASE'
+  /** OT-16: another port than --target-port. */
+  | 'WRONG_PORT'
   /** OT-13: a driver at --driver-root whose package version is not the route-B one. */
   | 'WRONG_DRIVER_VERSION'
+  /** OT-17: a driver whose files differ from --driver-digest. */
+  | 'DRIVER_DIGEST_MISMATCH'
   /** OT-14: the operator URL names another principal than --operator-principal. */
   | 'WRONG_OPERATOR_PRINCIPAL'
   /** OT-1 at run time: the tool file lies inside a git work tree. */
   | 'TOOL_INSIDE_GIT_TREE'
 type State = 'PASSED' | 'FAILED'
+
+/** The scenarios the tool must refuse before any driver call, with the check that measures each. */
+export const REFUSAL_SCENARIOS: Readonly<Partial<Record<Scenario, string>>> = {
+  UNPINNED_TARGET: 'REFUSES_UNPINNED_TARGET',
+  HOST_LOOKALIKE: 'REFUSES_HOST_LOOKALIKE',
+  URL_WITH_QUERY: 'REFUSES_URL_QUERY',
+  WRONG_DATABASE: 'REFUSES_WRONG_DATABASE',
+  WRONG_PORT: 'REFUSES_WRONG_PORT',
+  WRONG_DRIVER_VERSION: 'REFUSES_WRONG_DRIVER_VERSION',
+  DRIVER_DIGEST_MISMATCH: 'REFUSES_DRIVER_DIGEST_MISMATCH',
+  WRONG_OPERATOR_PRINCIPAL: 'REFUSES_WRONG_OPERATOR_PRINCIPAL',
+  TOOL_INSIDE_GIT_TREE: 'REFUSES_INSIDE_GIT_TREE',
+}
 
 /** How the fake driver fails AFTER COMMIT was requested, per scenario. `throw` carries the error's own properties. */
 export type CommitFailure =
@@ -89,20 +121,25 @@ export const COMMIT_FAILURES: Readonly<Partial<Record<Scenario, CommitFailure & 
 /** The only target the harness ever names. RFC 6761: guaranteed never to resolve. */
 export const HARNESS_TARGET_HOST = 'db.harness-target.invalid'
 const OTHER_HOST = 'db.harness-other.invalid'
+/** A host that STARTS WITH the target host. */
+const LOOKALIKE_HOST = `${HARNESS_TARGET_HOST}.lookalike.invalid`
 /** The principal the harness's synthetic operator URL names, passed as --operator-principal. */
 export const HARNESS_OPERATOR_PRINCIPAL = 'postgres'
 /** The route-B driver version the fake driver reports (OT-13). */
 export const HARNESS_DRIVER_VERSION = '3.4.9'
+/** The only construction option keys a conforming tool passes (OT-16: no `connection`, no URL). */
+export const ALLOWED_DRIVER_OPTION_KEYS = ['database', 'host', 'max', 'onnotice', 'password', 'port', 'prepare', 'ssl', 'username'] as const
 
-/** Exported for the operator-channel PEB demonstration (same bytes the harness uses). */
+/** Exported for the operator-channel PEB demonstration and the disposable proof (same bytes the harness uses). */
 export const FAKE_DRIVER = `'use strict'
 const fs = require('node:fs'); const path = require('node:path')
 const LOG = path.join(__dirname, 'driver-log.jsonl')
 const rec = (o) => fs.appendFileSync(LOG, JSON.stringify({ at: Date.now(), ...o }) + '\\n')
 const flag = (n) => fs.existsSync(path.join(__dirname, n))
-module.exports = function postgres(url, opts) {
-  rec({ event: 'construct', host: new URL(url).hostname, ssl: opts && opts.ssl, prepare: opts && opts.prepare })
-  const q = (strings, ...values) => { const text = strings.reduce((a, s, i) => a + (i ? '$' + i : '') + s, ''); rec({ event: 'query', text, params: values }); return Promise.resolve([]) }
+module.exports = function postgres(a, b) {
+  if (typeof a === 'string') rec({ event: 'construct', form: 'url', host: new URL(a).hostname, query: new URL(a).search, ssl: b && b.ssl, prepare: b && b.prepare, keys: Object.keys(b || {}).sort(), connection: (b && b.connection) || null })
+  else rec({ event: 'construct', form: 'options', host: a.host, port: a.port, database: a.database, username: a.username, hasPassword: typeof a.password === 'string', ssl: a.ssl, prepare: a.prepare, keys: Object.keys(a).sort(), connection: a.connection || null })
+  const q = (strings, ...values) => { const text = strings.reduce((acc, s, i) => acc + (i ? '$' + i : '') + s, ''); rec({ event: 'query', text, params: values }); return Promise.resolve([]) }
   q.unsafe = (text, params) => { rec({ event: 'unsafe', text, params: params || [] }); if (flag('FAIL_DO') && text.includes('DO $rotate$')) return Promise.reject(Object.assign(new Error('fake failure'), { code: 'XX000' })); return Promise.resolve([]) }
   return {
     // postgres.js scope(): callback inside try/catch with ROLLBACK; COMMIT after it, OUTSIDE the try.
@@ -167,6 +204,12 @@ export interface HarnessResult {
   readonly classification: ReturnType<typeof classifyToolRun>
 }
 
+/** The plaintext the tool handed to the depositor, parsed from the auditor DSN on its stdin (null if none). */
+function plaintextOf(dsn: string): string | null {
+  const m = /^postgresql:\/\/uellix_auditor:([^@]+)@/.exec(dsn)
+  return m === null ? null : m[1]!
+}
+
 export function runMintToolContractHarness(params: {
   readonly repoRoot: string
   readonly toolPath: string
@@ -193,14 +236,19 @@ export function runMintToolContractHarness(params: {
   if (flag !== undefined) writeFileSync(join(driverDir, flag), '')
   const commitFailure = COMMIT_FAILURES[params.scenario]
   if (commitFailure !== undefined) writeFileSync(join(driverDir, 'COMMIT_FAILURE'), JSON.stringify(commitFailure))
+  // OT-17: the digest the plan would carry, of the driver as it lies BEFORE the run.
+  const pinnedDriverDigest = params.scenario === 'DRIVER_DIGEST_MISMATCH' ? '0'.repeat(64) : driverDigest(driverDir)
   // Carrier lost: the run leaves no terminal line (killed, or ended from outside while COMMIT hangs).
   const carrierLost = commitFailure?.mode === 'exit' || commitFailure?.mode === 'hang'
   const depositor = join(depositorDir, 'fake-n30-deposit.js')
   writeFileSync(depositor, FAKE_DEPOSITOR)
 
   const adminPassword = `harness-admin-${Date.now().toString(36)}-synthetic`
-  const host = params.scenario === 'UNPINNED_TARGET' ? OTHER_HOST : HARNESS_TARGET_HOST
-  const adminUrl = ['postgresql:', '//postgres:', adminPassword, '@', host, ':5432/postgres'].join('')
+  const host = params.scenario === 'UNPINNED_TARGET' ? OTHER_HOST : params.scenario === 'HOST_LOOKALIKE' ? LOOKALIKE_HOST : HARNESS_TARGET_HOST
+  const database = params.scenario === 'WRONG_DATABASE' ? 'template1' : ROUTE_B_DATABASE
+  const port = params.scenario === 'WRONG_PORT' ? 6543 : ROUTE_B_PORT
+  const query = params.scenario === 'URL_WITH_QUERY' ? '?debug_print_parse=on' : ''
+  const adminUrl = ['postgresql:', `//${HARNESS_OPERATOR_PRINCIPAL}:`, adminPassword, '@', host, `:${port}/${database}${query}`].join('')
 
   const env: Record<string, string> = { UELLIX_D1_MINT_OPERATOR_DATABASE_URL: adminUrl, TEMP: temp, TMP: temp }
   for (const k of ['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path']) {
@@ -218,36 +266,46 @@ export function runMintToolContractHarness(params: {
   const principal = params.scenario === 'WRONG_OPERATOR_PRINCIPAL' ? 'someone_else' : HARNESS_OPERATOR_PRINCIPAL
   const run = spawnSync(
     process.execPath,
-    [toolToRun, `--driver-root=${driverRoot}`, `--depositor=${depositor}`, `--valid-until=${params.validUntil}`, `--target-host=${HARNESS_TARGET_HOST}`, `--operator-principal=${principal}`],
+    [
+      toolToRun,
+      `--driver-root=${driverRoot}`,
+      `--driver-digest=${pinnedDriverDigest}`,
+      `--depositor=${depositor}`,
+      `--valid-until=${params.validUntil}`,
+      `--target-host=${HARNESS_TARGET_HOST}`,
+      `--target-port=${ROUTE_B_PORT}`,
+      `--target-database=${ROUTE_B_DATABASE}`,
+      `--operator-principal=${principal}`,
+    ],
     { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', timeout: commitFailure?.mode === 'hang' ? 8_000 : 60_000, windowsHide: true }
   )
   const toolOutput = `${run.stdout ?? ''}${run.stderr ?? ''}`
   const classification = classifyToolRun(run.stdout ?? '')
 
   const driverLog = join(driverDir, 'driver-log.jsonl')
-  const events = existsSync(driverLog)
-    ? readFileSync(driverLog, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l) as { at: number; event: string; text?: string; params?: unknown[]; host?: string; ssl?: unknown })
-    : []
+  const rawEvents = existsSync(driverLog) ? readFileSync(driverLog, 'utf8') : ''
+  const events = rawEvents
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((l) => JSON.parse(l) as { at: number; event: string; text?: string; params?: unknown[]; host?: string; port?: unknown; database?: unknown; username?: unknown; form?: string; query?: string; keys?: string[]; connection?: unknown; ssl?: unknown })
   const depLogPath = join(depositorDir, 'depositor-log.json')
   const dep = existsSync(depLogPath) ? (JSON.parse(readFileSync(depLogPath, 'utf8')) as { at: number; argv: string[]; env: Record<string, string>; stdin: string }) : null
 
-  const pwQuery = events.find((e) => e.event === 'query' && e.text === ROUTE_B_STATEMENTS.SET_PASSWORD)
-  const secret = typeof pwQuery?.params?.[0] === 'string' ? (pwQuery.params[0] as string) : null
-  const reps = secret === null ? [] : [secret, Buffer.from(secret).toString('base64')]
-  const leaks = (text: string): boolean => reps.some((r) => text.includes(r))
-  const adminLeaks = (text: string): boolean => text.includes(adminPassword) || text.includes(adminUrl)
-  const expectedDsn = secret === null ? null : ['postgresql:', `//${ROUTE_B_ROLE}:`, secret, `@${HARNESS_TARGET_HOST}:5432/postgres`].join('')
+  const verifierQuery = events.find((e) => e.event === 'query' && e.text === ROUTE_B_STATEMENTS.SET_VERIFIER)
+  const verifier = typeof verifierQuery?.params?.[0] === 'string' ? (verifierQuery.params[0] as string) : null
   const received = dep?.stdin.replace(/\r?\n$/, '') ?? ''
-  const handedOver = dep !== null && received === expectedDsn && checkDsnShape(Buffer.from(received), 'synthetic') === null && (dep.stdin.match(/\n/g)?.length ?? 0) <= 1
+  const plaintext = dep === null ? null : plaintextOf(received)
+  const reps = (s: string | null): string[] => (s === null ? [] : [s, Buffer.from(s).toString('base64')])
+  const leaksPlain = (text: string): boolean => reps(plaintext).some((r) => text.includes(r))
+  const leaksDerived = (text: string): boolean => verifier !== null && text.includes(verifier)
+  const adminLeaks = (text: string): boolean => text.includes(adminPassword) || text.includes(adminUrl)
+  const expectedDsn = plaintext === null ? null : ['postgresql:', `//${ROUTE_B_ROLE}:`, plaintext, `@${HARNESS_TARGET_HOST}:${ROUTE_B_PORT}/${ROUTE_B_DATABASE}`].join('')
+  const handedOver = dep !== null && expectedDsn !== null && received === expectedDsn && checkDsnShape(Buffer.from(received), 'synthetic') === null && (dep.stdin.match(/\n/g)?.length ?? 0) <= 1
 
-  if (params.scenario === 'UNPINNED_TARGET') {
-    checks.REFUSES_UNPINNED_TARGET = pf(run.status !== 0 && events.length === 0 && !adminLeaks(toolOutput))
-  } else if (params.scenario === 'WRONG_DRIVER_VERSION') {
-    checks.REFUSES_WRONG_DRIVER_VERSION = pf(run.status !== 0 && events.length === 0 && dep === null && !adminLeaks(toolOutput))
-  } else if (params.scenario === 'WRONG_OPERATOR_PRINCIPAL') {
-    checks.REFUSES_WRONG_OPERATOR_PRINCIPAL = pf(run.status !== 0 && events.length === 0 && dep === null && !adminLeaks(toolOutput))
-  } else if (params.scenario === 'TOOL_INSIDE_GIT_TREE') {
-    checks.REFUSES_INSIDE_GIT_TREE = pf(run.status !== 0 && events.length === 0 && dep === null && !adminLeaks(toolOutput))
+  const refusal = REFUSAL_SCENARIOS[params.scenario]
+  if (refusal !== undefined) {
+    checks[refusal] = pf(run.status !== 0 && events.length === 0 && dep === null && !adminLeaks(toolOutput))
   } else if (params.scenario === 'FAILS_BEFORE_TRANSACTION') {
     checks.SEQUENCE = pf(JSON.stringify(events.map((e) => e.event)) === JSON.stringify(['construct', 'BEGIN_FAILED', 'end']))
     checks.CLASSIFIED_DEFINITELY_NOT_COMMITTED = pf(classification.outcome === 'DEFINITELY_NOT_COMMITTED')
@@ -268,33 +326,51 @@ export function runMintToolContractHarness(params: {
       'construct',
       'BEGIN',
       `query:${ROUTE_B_STATEMENTS.SET_ROLE}`,
-      `query:${ROUTE_B_STATEMENTS.SET_PASSWORD}`,
+      `query:${ROUTE_B_STATEMENTS.SET_VERIFIER}`,
       `query:${ROUTE_B_STATEMENTS.SET_VALID_UNTIL}`,
       `unsafe:${ROUTE_B_STATEMENTS.DO_BLOCK}`,
       ...tail,
     ]
     checks.SEQUENCE = pf(JSON.stringify(shape) === JSON.stringify(expected))
     checks.TLS_REQUIRED = pf(events[0]?.ssl === 'require')
+    // OT-16: explicit options, the exact session, nothing that can carry a startup GUC.
+    const c = events[0]
+    checks.STARTUP_CLOSED = pf(
+      c !== undefined &&
+        c.form === 'options' &&
+        c.host === HARNESS_TARGET_HOST &&
+        c.port === ROUTE_B_PORT &&
+        c.database === ROUTE_B_DATABASE &&
+        c.username === HARNESS_OPERATOR_PRINCIPAL &&
+        c.connection === null &&
+        (c.keys ?? []).every((k) => (ALLOWED_DRIVER_OPTION_KEYS as readonly string[]).includes(k))
+    )
     const roleQ = events.find((e) => e.text === ROUTE_B_STATEMENTS.SET_ROLE)
     const vuQ = events.find((e) => e.text === ROUTE_B_STATEMENTS.SET_VALID_UNTIL)
     const doQ = events.find((e) => e.event === 'unsafe')
     checks.BOUND_ONLY = pf(
-      secret !== null &&
-        events.every((e) => !(e.text ?? '').includes(secret)) &&
+      verifier !== null &&
+        events.every((e) => !(e.text ?? '').includes(verifier)) &&
         roleQ?.params?.length === 1 &&
         roleQ.params[0] === ROUTE_B_ROLE &&
-        pwQuery?.params?.length === 1 &&
+        verifierQuery?.params?.length === 1 &&
         (doQ?.params?.length ?? 0) === 0
     )
-    checks.SECRET_SHAPE = pf(secret !== null && /^[A-Za-z0-9_-]{43,}$/.test(secret))
+    checks.VERIFIER_FORMAT = pf(verifier !== null && SCRAM_VERIFIER_PATTERN.test(verifier))
     checks.VALID_UNTIL_EQUALS_N09 = pf(vuQ?.params?.length === 1 && vuQ.params[0] === params.validUntil)
-    checks.OUTPUT_CLEAN = pf(!leaks(toolOutput) && !adminLeaks(toolOutput))
+    checks.OUTPUT_CLEAN = pf(!leaksPlain(toolOutput) && !leaksDerived(toolOutput) && !adminLeaks(toolOutput))
     const toolFiles = [...filesUnder(cwd), ...filesUnder(temp)]
-    checks.FILES_CLEAN = pf(toolFiles.every((f) => !leaks(readFileSync(f, 'latin1')) && !adminLeaks(readFileSync(f, 'latin1'))))
+    checks.FILES_CLEAN = pf(toolFiles.every((f) => !leaksPlain(readFileSync(f, 'latin1')) && !leaksDerived(readFileSync(f, 'latin1')) && !adminLeaks(readFileSync(f, 'latin1'))))
+    if (plaintext !== null) {
+      // OT-15: the plaintext is known ONLY because the depositor received it; it must be nowhere the driver saw.
+      checks.SECRET_SHAPE = pf(/^[A-Za-z0-9_-]{43,}$/.test(plaintext))
+      checks.VERIFIER_ONLY = pf(verifier !== null && verifier !== plaintext && verifierMatches(verifier, plaintext))
+      checks.PLAINTEXT_NEVER_SENT = pf(rawEvents.length > 0 && !leaksPlain(rawEvents))
+    }
     if (!carrierLost) {
-      checks.DEPOSITOR_ARGV_CLEAN = pf(dep !== null && !dep.argv.some((a) => leaks(a) || adminLeaks(a)))
+      checks.DEPOSITOR_ARGV_CLEAN = pf(dep !== null && !dep.argv.some((a) => leaksPlain(a) || leaksDerived(a) || adminLeaks(a)))
       checks.DEPOSITOR_ENV_CLEAN = pf(
-        dep !== null && dep.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL === undefined && Object.values(dep.env).every((v) => !leaks(v) && !adminLeaks(v))
+        dep !== null && dep.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL === undefined && Object.values(dep.env).every((v) => !leaksPlain(v) && !leaksDerived(v) && !adminLeaks(v))
       )
     }
     const commitRequestedAt = events.find((e) => e.event === 'COMMIT_REQUESTED')?.at ?? Number.POSITIVE_INFINITY

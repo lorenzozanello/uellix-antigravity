@@ -44,15 +44,16 @@ const THIS_FILE = 'tests/custody/d1-cert-event-termination.test.ts'
 const NESTED_MARKER = 'UELLIX_D1_TERMINATION_NESTED'
 const NESTED = process.env[NESTED_MARKER] === '1'
 const PMR9 = 'PMR-9_CANDIDATE_CERTIFIED'
-const PMR13 = 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'
+const PMR14 = 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'
 /**
- * DAG v1.0.7: a certified candidate may still be NOT_READY for ONE designed reason, derived here
+ * DAG v1.0.7/v1.0.8: a certified candidate may still be NOT_READY for ONE designed reason, derived here
  * WITHOUT the evaluator: the operator channel is certified BEFORE its OEP-1 probe runs (owner
- * decision OEP1_PROBE = C), so while no OEP-1 evidence file exists PMR-13 is open by design.
+ * decision OEP1_PROBE = C), so while no OEP-1 evidence file exists PMR-14 (which superseded PMR-13
+ * in v1.0.8) is open by design.
  * Once the evidence exists this set is empty and B demands READY exactly as before.
  */
 const OPEN_BY_DESIGN = (dir: string): string[] =>
-  existsSync(join(dir, 'docs/ops/release')) && readdirSync(join(dir, 'docs/ops/release')).some((n) => OEP1_EVIDENCE_PATTERN.test(n)) ? [] : [PMR13]
+  existsSync(join(dir, 'docs/ops/release')) && readdirSync(join(dir, 'docs/ops/release')).some((n) => OEP1_EVIDENCE_PATTERN.test(n)) ? [] : [PMR14]
 const sorted = (x: readonly string[]) => [...x].sort()
 const FROZEN_INTEGRATION =
   /= ([0-9a-f]{40})/.exec(String((JSON.parse(readFileSync(join(SOURCE, PATHS.capability), 'utf8')) as { AS_OF_INTEGRATION_REF: string }).AS_OF_INTEGRATION_REF))?.[1] ?? ''

@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { deriveGraphFacts, hardPredecessorsOf } from '@/scripts/custody/d1-dag-validate'
+import { GRAPH_SOURCES, deriveGraphFacts, hardPredecessorsOf } from '@/scripts/custody/d1-dag-validate'
 import { CONJUNCT_EVALUATORS } from '@/scripts/custody/d1-pre-hc1-post-mint'
 import { AUTHORITY_CONFLICTS, P1_STATEMENTS } from '@/db/custody/p1-reads'
 import { ROUTE_B_DELTAS } from '@/db/custody/mint-route-b-contract'
@@ -65,8 +65,12 @@ describe('what v1.0.5 declares is what the code does', () => {
     expect(P1_STATEMENTS.TABLE_PRIVILEGES.ruling).toBe('AC-1')
     expect(P1_STATEMENTS.FUNCTION_EXECUTE.ruling).toBe('AC-3')
   })
-  it('names each Route B delta for ruling', () => {
-    for (const d of ROUTE_B_DELTAS) expect(text).toContain(d.id)
+  it('names each Route B delta for ruling: v1.0.5 the three it ruled, and every later delta a later amendment of the chain', () => {
+    // v1.0.5 is sealed history: it names the deltas that existed when it was written. A delta added later
+    // (RB-DELTA-4, AC-7) must be named by a later amendment -- never by editing this one.
+    for (const id of ['RB-DELTA-1', 'RB-DELTA-2', 'RB-DELTA-3']) expect(text).toContain(id)
+    const chain = GRAPH_SOURCES.map((f) => readFileSync(join(process.cwd(), 'docs', 'ops', 'release', f), 'utf8'))
+    for (const d of ROUTE_B_DELTAS) expect(chain.some((t) => t.includes(d.id)), d.id).toBe(true)
   })
   it('records no vault locator and no credential-shaped text', () => {
     expect(text).not.toMatch(/UELLIX-D1-AUDITOR-|UELLIX-N05-SENTINEL-[0-9A-F]{6,}/)

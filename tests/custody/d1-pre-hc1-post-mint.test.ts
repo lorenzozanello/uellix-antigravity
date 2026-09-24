@@ -41,14 +41,16 @@ const GOOD_EVENT = {
   },
 }
 
-/** DAG v1.0.7: the real channel facts plus a synthetic OEP-1 evidence that satisfies its contract (PHASE 2 has not run). */
+/** DAG v1.0.7/v1.0.8: the real channel facts plus a synthetic OEP-1 v2 evidence that satisfies its contract (PHASE 2 has not run). */
 const BINDING = REAL.operatorChannel.binding!
-const HOST = REAL.operatorChannel.oep1.targetHost!
-const OBSERVED_AT = new Date(Date.parse(REAL.operatorChannel.oep1.n08!) - 86_400_000).toISOString()
-const GOOD_CHANNEL = { ...REAL.operatorChannel, oep1: { ...REAL.operatorChannel.oep1, facts: goodOep1Facts(BINDING, HOST, OBSERVED_AT) } }
+const CTX = REAL.operatorChannel.oep1.ctx
+const OBSERVED_AT = new Date(Date.parse(CTX.n08!) - 86_400_000).toISOString()
+const GOOD_CHANNEL = { ...REAL.operatorChannel, oep1: { ...REAL.operatorChannel.oep1, facts: goodOep1Facts(CTX, OBSERVED_AT) } }
 const withEvidence = (over: Record<string, unknown>) => ({
-  operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { ...GOOD_CHANNEL.oep1.facts, evidence: { ...goodOep1Evidence(BINDING, HOST, OBSERVED_AT), ...over } } } },
+  operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { ...GOOD_CHANNEL.oep1.facts, evidence: { ...goodOep1Evidence(CTX, OBSERVED_AT), ...over } } } },
 })
+const withCtx = (over: Record<string, unknown>) => ({ operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, ctx: { ...CTX, ...over } } } })
+const GOOD_OBS = goodOep1Evidence(CTX, OBSERVED_AT).observation as { client_settings: unknown[] }
 const withChannelEvent = (over: Record<string, unknown>) => ({
   operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { ...GOOD_CHANNEL.oep1.facts, channelEvent: { ...GOOD_CHANNEL.oep1.facts.channelEvent!, ...over } } } },
 })
@@ -150,20 +152,53 @@ describe('negative controls (one input each)', () => {
     ['CONTROL launcher cannot be rebuilt', { operatorChannel: { ...GOOD_CHANNEL, launcherBuildDigest: null } }, 'PMR-11_OPERATOR_CHANNEL_BOUND'],
     ['CONTROL channel authority absent', { operatorChannel: { ...GOOD_CHANNEL, bindingReasons: ['the operator-channel execution authority is absent'] } }, 'PMR-11_OPERATOR_CHANNEL_BOUND'],
     ['CONTROL authority probe statement drifts from code', { operatorChannel: { ...GOOD_CHANNEL, authorityStates: { ...GOOD_CHANNEL.authorityStates, probeStatements: { ...GOOD_CHANNEL.authorityStates.probeStatements, SETTINGS: 'SELECT 1' } } } }, 'PMR-11_OPERATOR_CHANNEL_BOUND'],
-    ['CONTROL authority settings list drifts from code', { operatorChannel: { ...GOOD_CHANNEL, authorityStates: { ...GOOD_CHANNEL.authorityStates, settingsList: ['log_statement'] } } }, 'PMR-11_OPERATOR_CHANNEL_BOUND'],
+    ['CONTROL authority settings list drifts from code', { operatorChannel: { ...GOOD_CHANNEL, authorityStates: { ...GOOD_CHANNEL.authorityStates, derivedSettingsList: ['log_statement'] } } }, 'PMR-11_OPERATOR_CHANNEL_BOUND'],
     ['CONTROL operator surface omitted from N06', { operatorChannel: { ...GOOD_CHANNEL, operatorSectionReasons: ['operator_credential omits surface OPERATOR_CREDENTIAL_LAUNCHER_SURFACE'] } }, 'PMR-12_OPERATOR_CREDENTIAL_INVENTORIED'],
-    ['CONTROL no OEP-1 evidence', { operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { path: null, evidence: null, channelEvent: null } } } }, 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence from another probe tool', withEvidence({ probe_tool_sha256: 'f'.repeat(64) }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence from another launcher', withEvidence({ launcher_build_digest: 'f'.repeat(64) }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence on another host', withEvidence({ target_host: 'db.other.supabase.co' }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence recorded PASS over an unsafe posture', withEvidence({ observation: { rows: [{ name: 'log_statement', setting: 'all', source: 't' }], extensions: [] } }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence with a partial settings list', withEvidence({ settings_list: ['log_statement'] }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence observed at/after N08', withEvidence({ observed_at_utc: REAL.operatorChannel.oep1.n08 }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence principal differs from the session', withEvidence({ operator_principal: 'someone_else' }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL OEP-1 evidence without invalidation predicates', withEvidence({ invalidation_predicates: [] }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL channel event certifies a non-ancestor', withChannelEvent({ candidateIsAncestorOfHead: false }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL channel event is not a PASS', withChannelEvent({ terminalPass: false }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
-    ['CONTROL certified candidate carried other pins (probe not through the certified channel)', withChannelEvent({ bindingAtCandidate: { ...BINDING, launcher_build_digest: 'a'.repeat(64) } }), 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'],
+    ['CONTROL no OEP-1 evidence', { operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { path: null, evidence: null, channelEvent: null } } } }, 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence from another probe tool', withEvidence({ probe_tool_sha256: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence from another launcher', withEvidence({ launcher_build_digest: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence on another host', withEvidence({ target_host: 'db.other.supabase.co' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence recorded PASS over an injected startup GUC', withEvidence({ observation: { ...(GOOD_OBS as object), client_settings: [...GOOD_OBS.client_settings, ['debug_print_parse', 'on']] } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    // R2-N-E1: a CONSISTENT non-PASS record (recorded = recomputed) must still not close OEP-1.
+    [
+      'CONTROL E1 consistent FAIL evidence is not a closure',
+      withEvidence({
+        observation: { ...(GOOD_OBS as object), client_settings: [...GOOD_OBS.client_settings, ['debug_print_parse', 'on']] },
+        sub_verdicts: { PLAINTEXT_NOT_SERVER_VISIBLE: 'PASS', TARGET_SESSION_BOUND: 'PASS', STARTUP_PARAMETERS_CLOSED: 'FAIL', TOOL_HASH_BOUND: 'PASS', PROBE_MINT_CONFIGURATION_COHERENT: 'PASS' },
+        verdict: 'NOT_CLOSED',
+      }),
+      'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED',
+    ],
+    // R2-N-E1, each branch alone: the record's own verdict is not recomputed, so an all-PASS record that
+    // itself says NOT_CLOSED must be refused by the verdict check alone ...
+    ['CONTROL E1 every sub-verdict PASS but the record says NOT_CLOSED', withEvidence({ verdict: 'NOT_CLOSED' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    // ... and a consistent FAIL recorded as CLOSED must be refused by the sub-verdict gate alone.
+    [
+      'CONTROL E1 consistent FAIL recorded as CLOSED',
+      withEvidence({
+        observation: { ...(GOOD_OBS as object), client_settings: [...GOOD_OBS.client_settings, ['debug_print_parse', 'on']] },
+        sub_verdicts: { PLAINTEXT_NOT_SERVER_VISIBLE: 'PASS', TARGET_SESSION_BOUND: 'PASS', STARTUP_PARAMETERS_CLOSED: 'FAIL', TOOL_HASH_BOUND: 'PASS', PROBE_MINT_CONFIGURATION_COHERENT: 'PASS' },
+        verdict: 'CLOSED',
+      }),
+      'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED',
+    ],
+    ['CONTROL OEP-1 evidence from another mint tool', withEvidence({ mint_tool_sha256: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence with another driver digest', withEvidence({ driver_digest: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence with another session fingerprint', withEvidence({ session_fingerprint: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence on another port', withEvidence({ target_port: 6543 }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence on another database', withEvidence({ target_database: 'template1' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 derived classification recorded wrong', withEvidence({ derived_material_exposure: { classification: 'POSSIBLE', emitters: [] } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL plaintext transport regressed (not the SCRAM verifier)', withCtx({ transport: 'PLAINTEXT_SET_CONFIG' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL DO block unguarded', withCtx({ doBlockGuarded: false }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL AC-7 transport regressed in the implementation', { implementation: { ...ALL_GOOD.implementation, operatorChannel: { ...ALL_GOOD.implementation.operatorChannel, passwordTransport: 'PLAINTEXT_SET_CONFIG' } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
+    ['CONTROL AC-7 DO block unguarded in the implementation', { implementation: { ...ALL_GOOD.implementation, operatorChannel: { ...ALL_GOOD.implementation.operatorChannel, doBlockGuarded: false } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
+    ['CONTROL OEP-1 evidence with a partial derived list', withEvidence({ derived_settings_list: ['log_statement'] }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence observed at/after N08', withEvidence({ observed_at_utc: CTX.n08 }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence principal differs from the session', withEvidence({ operator_principal: 'someone_else' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL OEP-1 evidence without invalidation predicates', withEvidence({ invalidation_predicates: [] }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL channel event certifies a non-ancestor', withChannelEvent({ candidateIsAncestorOfHead: false }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL channel event is not a PASS', withChannelEvent({ terminalPass: false }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL certified candidate carried other pins (probe not through the certified channel)', withChannelEvent({ bindingAtCandidate: { ...BINDING, launcher_build_digest: 'a'.repeat(64) } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL AC-4 tool spawned with windowsHide', { implementation: { ...impl, operatorChannel: { ...impl.operatorChannel, spawnFlags: { windowsHide: true, detached: false, shell: false } } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-4 prompt accepts a non-console', { implementation: { ...impl, operatorChannel: { ...impl.operatorChannel, refusesNonTtyPrompt: false } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-4 piped input for a real host', { implementation: { ...impl, operatorChannel: { ...impl.operatorChannel, pipedOnlyForInvalidHosts: false } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],

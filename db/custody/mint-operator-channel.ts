@@ -36,6 +36,9 @@
 // as a Buffer (zeroed) and as the one JavaScript string spawn() requires (not
 // zeroable), for the launcher's short life — the OF-CUST-1 analogue.
 
+import { createHash } from 'node:crypto'
+import { readFileSync, readdirSync, realpathSync, statSync } from 'node:fs'
+import { join, relative, sep } from 'node:path'
 import { assertArgvIsClean } from './process-delivery'
 import { encodeBase64Bytes } from './base64-bytes'
 
@@ -201,7 +204,11 @@ export function acceptsPipedInput(targetHost: string): boolean {
 
 export interface OperatorUrlFacts {
   readonly host: string
+  readonly port: string
+  readonly database: string
   readonly username: string
+  /** A query or fragment would become startup parameters in postgres.js (OC-11). */
+  readonly hasStartupParameters: boolean
   /** The password bytes as they appear in the string (percent-encoded form), for argv checks. */
   readonly passwordRaw: Buffer
 }
@@ -223,14 +230,33 @@ export function inspectOperatorUrl(secret: Buffer): OperatorUrlFacts {
   }
   if (url.protocol !== 'postgresql:' && url.protocol !== 'postgres:') throw new OperatorChannelError('CHANNEL_MALFORMED_INPUT', 'The input is not a PostgreSQL connection URL.')
   if (url.username === '' || url.password === '') throw new OperatorChannelError('CHANNEL_MALFORMED_INPUT', 'The connection URL names no user or no password.')
-  return { host: url.hostname.toLowerCase(), username: decodeURIComponent(url.username), passwordRaw: Buffer.from(url.password, 'utf8') }
+  return {
+    host: url.hostname.toLowerCase(),
+    port: url.port === '' ? '5432' : url.port,
+    database: decodeURIComponent(url.pathname.replace(/^\//, '')),
+    username: decodeURIComponent(url.username),
+    hasStartupParameters: url.search !== '' || url.hash !== '',
+    passwordRaw: Buffer.from(url.password, 'utf8'),
+  }
 }
 
-/** The pre-spawn checks the plan binds: the host is N04's, and for the mint the principal is the one OEP-1 observed. */
-export function checkOperatorUrlAgainstPlan(facts: OperatorUrlFacts, plan: { readonly targetHost: string; readonly operatorPrincipal: string | null }): void {
+/**
+ * The pre-spawn checks the plan binds (OC-4, OC-11): no startup parameters; the
+ * host is N04's EXACTLY (never a prefix or suffix); the port and database are
+ * the route-B session's; for the mint, the principal is the one OEP-1 observed.
+ */
+export function checkOperatorUrlAgainstPlan(
+  facts: OperatorUrlFacts,
+  plan: { readonly targetHost: string; readonly targetPort: number; readonly targetDatabase: string; readonly operatorPrincipal: string | null }
+): void {
+  if (facts.hasStartupParameters) {
+    throw new OperatorChannelError('CHANNEL_STARTUP_PARAMETERS', 'The connection string carries a query or fragment, which the driver would send as startup parameters. Nothing was spawned.')
+  }
   if (facts.host !== plan.targetHost.toLowerCase()) {
     throw new OperatorChannelError('CHANNEL_WRONG_HOST', 'The connection string does not name the planned target host (derived from N04). Nothing was spawned.')
   }
+  if (facts.port !== String(plan.targetPort)) throw new OperatorChannelError('CHANNEL_WRONG_PORT', 'The connection string does not name the planned port. Nothing was spawned.')
+  if (facts.database !== plan.targetDatabase) throw new OperatorChannelError('CHANNEL_WRONG_DATABASE', 'The connection string does not name the planned database. Nothing was spawned.')
   if (plan.operatorPrincipal !== null && facts.username !== plan.operatorPrincipal) {
     throw new OperatorChannelError('CHANNEL_WRONG_PRINCIPAL', 'The connection string names a different principal from the one the OEP-1 evidence observed. Nothing was spawned.')
   }
@@ -285,142 +311,142 @@ export const OPERATOR_CHANNEL_CONTRACT: readonly ChannelClause[] = [
   { id: 'OC-1', clause: 'The launcher runs only from a console: stdin is a TTY and the process is attached to a console (bridge `console` op), checked before any prompt.', source: 'AC-4 "en su propio entorno con consola"; process-delivery B-1 model', measuredBy: 'N-CONHOST, P-3' },
   { id: 'OC-2', clause: 'The connection string is read in raw mode; no byte of it is written to any stream; a stream that does not report raw is refused.', source: 'AC-4 "se solicita sin eco"', measuredBy: 'N-ECHO' },
   { id: 'OC-3', clause: 'Piped input is refused unless the planned target is an RFC 6761 .invalid host (synthetic demonstration only).', source: 'AC-4 "solo ... durante la ejecución autorizada"', measuredBy: 'N-SYNTHETIC-MODE-REAL-HOST' },
-  { id: 'OC-4', clause: 'Before any process is created, the string must name the planned host (N04) and, for the mint, the principal the certified OEP-1 evidence observed.', source: 'EXECUTION_PROCEDURE "target-host derivado exclusivamente de N04 ... cualquier mismatch => STOP"', measuredBy: 'N-WRONG-HOST' },
-  { id: 'OC-5', clause: 'The launcher refuses to run if the variable is already set in its own environment, and never writes process.env.', source: 'AC-6 "no dejar secreto en parent process.env"', measuredBy: 'N-PARENT-ENV' },
-  { id: 'OC-6', clause: 'The tool receives the value only in its own environment block, built from TOOL_ENV_ALLOWLIST plus the one variable; argv carries neither the string nor its password, raw or base64.', source: 'AC-4 "no aparece en argv"; AC-6 "no transmitirlo a procesos no autorizados"', measuredBy: 'N-ARGV, P-3' },
+  { id: 'OC-4', clause: 'Before any process is created, the string must name the planned host (N04) EXACTLY and, for the mint, the principal the certified OEP-1 evidence observed.', source: 'EXECUTION_PROCEDURE "target-host derivado exclusivamente de N04 ... cualquier mismatch => STOP"', measuredBy: 'N-WRONG-HOST, R2-N-STARTUP' },
+  { id: 'OC-5', clause: 'The launcher refuses to run if the variable is already set in its own environment, and never writes process.env.', source: 'AC-6 "no dejar secreto en parent process.env"', measuredBy: 'N-PARENT-ENV, R2-N-L1' },
+  { id: 'OC-6', clause: 'The tool receives the value only in its own environment block, built from TOOL_ENV_ALLOWLIST plus the one variable; argv carries neither the string nor its password, raw or base64.', source: 'AC-4 "no aparece en argv"; AC-6 "no transmitirlo a procesos no autorizados"', measuredBy: 'N-ARGV, P-3, R2-N-X08' },
   { id: 'OC-7', clause: 'The tool is spawned with windowsHide:false, detached:false, shell:false, so it shares the launcher console (no new conhost) and stays inside its kill-on-close job.', source: 'AC-6 "probar ausencia de herencia accidental hacia conhost"', measuredBy: 'P-3, N-CONHOST' },
   { id: 'OC-8', clause: 'The tool file is the pinned one: its sha256 equals the plan and the CHANNEL_BINDING pin, checked before the prompt.', source: 'TOOL_BINDING', measuredBy: 'N-STALE-TOOL-HASH' },
-  { id: 'OC-9', clause: 'The launcher zeroes its Buffer after spawn, relays only the tool\'s JSON lines, writes no file, and exits with the tool.', source: 'AC-6 "tener lifetime acotado; ser destruida después del child"', measuredBy: 'N-FILE-TEMP, P-10' },
-  { id: 'OC-10', clause: 'The plan (target host, valid-until, driver root and version, depositor, tool and launcher hashes, principal) is re-derived from the repository by the pre-execution gate; any field that differs is STOP.', source: 'EXECUTION_PROCEDURE', measuredBy: 'N-WRONG-HOST, N-WRONG-VALID-UNTIL, N-WRONG-DRIVER-ROOT, N-STALE-TOOL-HASH' },
+  { id: 'OC-9', clause: 'The launcher zeroes its Buffers after spawn, relays only the tool\'s JSON lines, writes no file, and exits with the tool. Its heap still holds several non-zeroable copies of the string (the environment entry and what Node/libuv derive from it): disclosed, not claimed away.', source: 'AC-6 "tener lifetime acotado; ser destruida después del child"; recertification nonblocker (6-8 heap copies)', measuredBy: 'N-FILE-TEMP, P-10' },
+  { id: 'OC-10', clause: 'The plan (target host, port, database, valid-until, driver root, version and digest, depositor, tool and launcher hashes, principal) is re-derived from the repository by the pre-execution gate; any field that differs is STOP, as is a dirty worktree.', source: 'EXECUTION_PROCEDURE', measuredBy: 'N-WRONG-HOST, N-WRONG-VALID-UNTIL, N-WRONG-DRIVER-ROOT, N-STALE-TOOL-HASH, R2-N-P1, R2-N-P6, R2-N-P10' },
+  { id: 'OC-11', clause: 'The session is bound and its startup is closed: the string carries no query and no fragment, and names exactly the planned port and database; the tools build the driver from explicit options (OT-16), whose only client-sourced settings are the ones measured for postgres.js 3.4.9 (OEP1_EXPECTED_CLIENT_SETTINGS).', source: 'recertification of 979b1440 (startup GUC via URL; database not bound; host startsWith survived)', measuredBy: 'R2-N-STARTUP' },
+  { id: 'OC-12', clause: 'The probe is planned only after a terminal-PASS certification event certifies an ancestor candidate whose operator-channel authority carries the same CHANNEL_BINDING.', source: 'owner OEP1_PROBE = C ("se ejecutará por el canal ya certificado"); recertification nonblocker', measuredBy: 'R2-N-PROBE-UNCERTIFIED' },
 ]
 
 // ---------------------------------------------------------------------------
-// OEP-1: the minimal non-secret verification of the hosted logging posture
+// OEP-1, reconstructed around PLAINTEXT_PASSWORD_SERVER_EXPOSURE = IMPOSSIBLE_BY_CONSTRUCTION
+// ---------------------------------------------------------------------------
+//
+// The failed design asked a hosted server, through a closed list of logging
+// settings, whether it would log the plaintext. The recertification showed the
+// class is open (any emitter during the nested EXECUTE quotes it). The plaintext
+// no longer reaches the server at all (route-B RB-DELTA-4, OT-15), so OEP-1 no
+// longer infers anything about logging for the PLAINTEXT. What it still needs,
+// and what the PHASE 2 probe proves, is that the privileged session the mint
+// will use is the one the channel was certified for:
+//
+//   PLAINTEXT_NOT_SERVER_VISIBLE      by construction (transport, DO guard,
+//                                     certified mint tool), never from logs
+//   TARGET_SESSION_BOUND              observed: principal, database; bound: N04 host, port
+//   STARTUP_PARAMETERS_CLOSED         observed: the client-sourced settings are exactly
+//                                     the measured postgres.js set
+//   TOOL_HASH_BOUND                   evidence hashes = the certified pins
+//   PROBE_MINT_CONFIGURATION_COHERENT the probe's session fingerprint = the mint's
+//
+// DERIVED_MATERIAL_EXPOSURE (can the VERIFIER be logged?) is classified
+// separately and never counted as, or confused with, PLAINTEXT_NOT_PRESENT.
+
+/** Measured on disposable PostgreSQL 17.6 (supabase image) with postgres.js 3.4.9 built from explicit options. */
+export const OEP1_EXPECTED_CLIENT_SETTINGS: ReadonlyArray<readonly [string, string]> = [
+  ['application_name', 'postgres.js'],
+  ['client_encoding', 'UTF8'],
+]
+
+/** Settings read ONLY to classify derived-material (verifier) exposure. Informational; they gate nothing about the plaintext. */
+export const OEP1_DERIVED_MATERIAL_SETTINGS: readonly string[] = [
+  'auto_explain.log_min_duration',
+  'auto_explain.log_nested_statements',
+  'debug_print_parse',
+  'debug_print_plan',
+  'debug_print_rewritten',
+  'log_lock_waits',
+  'log_min_duration_statement',
+  'log_min_error_statement',
+  'log_parser_stats',
+  'log_planner_stats',
+  'log_statement',
+  'log_statement_stats',
+  'pg_stat_statements.track',
+  'pg_stat_statements.track_utility',
+  'pgaudit.log',
+  'pgaudit.role',
+  'pgtle.enable_password_check',
+  'shared_preload_libraries',
+].sort()
+
+/** The probe's statements, as the driver sends them ($n = bound). Nothing else, inside BEGIN READ ONLY. */
+export const OEP1_PROBE_STATEMENTS = {
+  IDENTITY: "SELECT current_user AS current_user_name, session_user AS session_user_name, current_database() AS database_name, current_setting('server_version_num') AS server_version_num",
+  CLIENT_SETTINGS: "SELECT name, setting FROM pg_catalog.pg_settings WHERE source = 'client' ORDER BY name",
+  DERIVED_MATERIAL_SETTINGS: 'SELECT name, setting, source FROM pg_catalog.pg_settings WHERE name = ANY($1::text[]) ORDER BY name',
+} as const
+
+export interface Oep1Observation {
+  readonly identity: { readonly current_user: string; readonly session_user: string; readonly database: string; readonly server_version_num: string }
+  readonly client_settings: ReadonlyArray<readonly [string, string]>
+  readonly derived_settings: ReadonlyArray<{ readonly name: string; readonly setting: string; readonly source?: string }>
+}
+
+export type SubVerdict = 'PASS' | 'FAIL'
+
+/** The two sub-verdicts an observation decides by itself. */
+export function evaluateOep1Session(o: Oep1Observation, expect: { readonly principal: string; readonly database: string }): {
+  readonly TARGET_SESSION_BOUND: SubVerdict
+  readonly STARTUP_PARAMETERS_CLOSED: SubVerdict
+  readonly reasons: readonly string[]
+} {
+  const r: string[] = []
+  const id = o.identity
+  const bound = id.current_user === expect.principal && id.session_user === expect.principal && id.database === expect.database && Number(id.server_version_num) >= 100000
+  if (!bound) r.push('TARGET_SESSION_BOUND: the observed principal/database/server version is not the planned session')
+  const closed = JSON.stringify(o.client_settings.map(([n, s]) => [n, s])) === JSON.stringify(OEP1_EXPECTED_CLIENT_SETTINGS.map(([n, s]) => [n, s]))
+  if (!closed) r.push('STARTUP_PARAMETERS_CLOSED: the client-sourced settings are not exactly the measured postgres.js set')
+  return { TARGET_SESSION_BOUND: bound ? 'PASS' : 'FAIL', STARTUP_PARAMETERS_CLOSED: closed ? 'PASS' : 'FAIL', reasons: r }
+}
+
+/**
+ * Could the VERIFIER (derived material) reach a server log? Informational:
+ * POSSIBLE when any known emitter is on, NOT_INDICATED when none of the read
+ * settings indicates it, UNKNOWN when a setting was not visible. The class is
+ * open (the recertification's lesson), so NOT_INDICATED is never "absent".
+ */
+export function classifyDerivedMaterialExposure(derived: Oep1Observation['derived_settings']): { readonly classification: 'POSSIBLE' | 'NOT_INDICATED' | 'UNKNOWN'; readonly emitters: readonly string[] } {
+  const by = new Map(derived.map((d) => [d.name, String(d.setting).trim().toLowerCase()]))
+  const emitters: string[] = []
+  const on = (n: string, pred: (v: string) => boolean) => {
+    const v = by.get(n)
+    if (v !== undefined && pred(v)) emitters.push(n)
+  }
+  for (const n of ['debug_print_parse', 'debug_print_plan', 'debug_print_rewritten', 'log_lock_waits', 'log_parser_stats', 'log_planner_stats', 'log_statement_stats', 'pgtle.enable_password_check']) on(n, (v) => v === 'on')
+  on('log_statement', (v) => v !== 'none')
+  on('log_min_duration_statement', (v) => v !== '-1')
+  on('auto_explain.log_min_duration', (v) => v !== '-1')
+  on('pgaudit.log', (v) => v !== '' && v !== 'none')
+  on('pgaudit.role', (v) => v !== '')
+  on('pg_stat_statements.track', (v) => v === 'all')
+  const missing = OEP1_DERIVED_MATERIAL_SETTINGS.filter((n) => !by.has(n) && !n.includes('.'))
+  return { classification: emitters.length > 0 ? 'POSSIBLE' : missing.length > 0 ? 'UNKNOWN' : 'NOT_INDICATED', emitters }
+}
+
+// ---------------------------------------------------------------------------
+// OT-17: the driver bound by content, not only by version
 // ---------------------------------------------------------------------------
 
 /**
- * The CLOSED list of settings the probe observes. Every one decides whether the
- * mint's statements (three bound set_config SELECTs, one DO block whose EXECUTE
- * formats the password into a nested ALTER ROLE) could be recorded with the
- * value, or names a library that could record it.
+ * sha256 over the sorted "<relative posix path>:<sha256 of bytes>\n" lines of
+ * every file of the package directory, after resolving symlinks (pnpm links
+ * node_modules/postgres into its store). The tools compute the same thing,
+ * inline, before loading the driver.
  */
-export const OEP1_CORE_SETTINGS = [
-  'log_statement',
-  'log_min_duration_statement',
-  'log_min_duration_sample',
-  'log_statement_sample_rate',
-  'log_transaction_sample_rate',
-  'log_parameter_max_length',
-  'log_parameter_max_length_on_error',
-  'log_min_error_statement',
-  'debug_print_parse',
-  'debug_print_rewritten',
-  'debug_print_plan',
-  'shared_preload_libraries',
-  'session_preload_libraries',
-  'local_preload_libraries',
-] as const
-
-/** Library-scoped settings, required visible only when their library is preloaded. */
-export const OEP1_LIBRARY_SETTINGS = {
-  pgaudit: ['pgaudit.log', 'pgaudit.log_parameter', 'pgaudit.log_statement', 'pgaudit.role'],
-  auto_explain: ['auto_explain.log_min_duration', 'auto_explain.log_nested_statements', 'auto_explain.log_parameter_max_length'],
-  pg_stat_statements: ['pg_stat_statements.track', 'pg_stat_statements.track_utility'],
-} as const
-
-/** Libraries that record statement text and for which no rule is derived here: loaded -> INCONCLUSIVE. */
-export const OEP1_UNRULED_STATEMENT_RECORDERS = ['pg_stat_monitor', 'pg_store_plans', 'pg_qualstats'] as const
-
-export const OEP1_SETTINGS: readonly string[] = [...OEP1_CORE_SETTINGS, ...Object.values(OEP1_LIBRARY_SETTINGS).flat()].sort()
-
-/** The probe's statements, as the driver sends them ($n = bound). The probe sends these and nothing else, inside BEGIN READ ONLY. */
-export const OEP1_PROBE_STATEMENTS = {
-  IDENTITY: 'SELECT current_user AS current_user_name, session_user AS session_user_name',
-  SETTINGS: 'SELECT name, setting, source FROM pg_catalog.pg_settings WHERE name = ANY($1::text[]) ORDER BY name',
-  EXTENSIONS: 'SELECT extname FROM pg_catalog.pg_extension WHERE extname = ANY($1::text[]) ORDER BY extname',
-} as const
-
-export const OEP1_EXTENSION_NAMES = [...Object.keys(OEP1_LIBRARY_SETTINGS), ...OEP1_UNRULED_STATEMENT_RECORDERS].sort()
-
-export interface Oep1Observation {
-  readonly rows: readonly { readonly name: string; readonly setting: string; readonly source?: string }[]
-  readonly extensions: readonly string[]
-}
-
-export type Oep1Verdict = 'PASS' | 'FAIL' | 'INCONCLUSIVE'
-
-/** Library names out of a *_preload_libraries value: comma list, quoting and $libdir/ prefixes removed. */
-export function preloadedLibraries(values: readonly string[]): string[] {
-  return values
-    .flatMap((v) => v.split(','))
-    .map((x) => x.trim().replace(/^"|"$/g, '').replace(/^\$libdir\//, '').toLowerCase())
-    .filter((x) => x !== '')
-}
-
-/**
- * The verdict. PASS only when every required setting is VISIBLE and every rule
- * holds; any invisible required setting is INCONCLUSIVE; any unsafe value is
- * FAIL. Only PASS closes OEP-1.
- */
-export function evaluateOep1(o: Oep1Observation): { readonly verdict: Oep1Verdict; readonly failures: readonly string[]; readonly missing: readonly string[] } {
-  const by = new Map(o.rows.map((r) => [r.name, String(r.setting)]))
-  const failures: string[] = []
-  const missing: string[] = []
-  const need = (name: string): string | null => {
-    const v = by.get(name)
-    if (v === undefined) {
-      missing.push(name)
-      return null
+export function driverDigest(packageDir: string): string {
+  const root = realpathSync(packageDir)
+  const lines: string[] = []
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      if (statSync(p).isDirectory()) walk(p)
+      else lines.push(`${relative(root, p).split(sep).join('/')}:${createHash('sha256').update(readFileSync(p)).digest('hex')}\n`)
     }
-    return v.trim().toLowerCase()
   }
-  const rule = (ok: boolean, why: string): void => {
-    if (!ok) failures.push(why)
-  }
-  for (const name of o.rows.map((r) => r.name)) if (!OEP1_SETTINGS.includes(name)) failures.push(`the observation carries ${name}, which is not in the closed list`)
-
-  const logStatement = need('log_statement')
-  if (logStatement !== null) rule(logStatement === 'none' || logStatement === 'ddl', `log_statement = ${logStatement} would log the SELECT set_config statements with their parameters`)
-  const minDur = need('log_min_duration_statement')
-  if (minDur !== null) rule(minDur === '-1', `log_min_duration_statement = ${minDur} logs statements (with parameters) by duration`)
-  const sampleDur = need('log_min_duration_sample')
-  const sampleRate = need('log_statement_sample_rate')
-  if (sampleDur !== null && sampleRate !== null) rule(sampleDur === '-1' || Number(sampleRate) === 0, `log_min_duration_sample = ${sampleDur} with log_statement_sample_rate = ${sampleRate} samples statements into the log`)
-  const txRate = need('log_transaction_sample_rate')
-  if (txRate !== null) rule(Number(txRate) === 0, `log_transaction_sample_rate = ${txRate} logs every statement of sampled transactions`)
-  need('log_parameter_max_length')
-  const onError = need('log_parameter_max_length_on_error')
-  if (onError !== null) rule(onError === '0', `log_parameter_max_length_on_error = ${onError} writes bound parameters of a failing statement to the log`)
-  need('log_min_error_statement')
-  for (const d of ['debug_print_parse', 'debug_print_rewritten', 'debug_print_plan']) {
-    const v = need(d)
-    if (v !== null) rule(v === 'off', `${d} = ${v} writes query trees (including the EXECUTEd statement) to the log`)
-  }
-  const preload = ['shared_preload_libraries', 'session_preload_libraries', 'local_preload_libraries'].map((n) => need(n)).filter((v): v is string => v !== null)
-  const libs = preloadedLibraries(preload)
-
-  if (libs.includes('pgaudit')) {
-    const log = need('pgaudit.log')
-    const role = need('pgaudit.role')
-    need('pgaudit.log_parameter')
-    need('pgaudit.log_statement')
-    if (log !== null) rule(log === 'none' || log === '', `pgaudit.log = ${log}: session audit logging could record the nested ALTER ROLE`)
-    if (role !== null) rule(role === '', `pgaudit.role = ${role}: object audit logging is configured`)
-  }
-  if (libs.includes('auto_explain')) {
-    const d = need('auto_explain.log_min_duration')
-    need('auto_explain.log_nested_statements')
-    need('auto_explain.log_parameter_max_length')
-    if (d !== null) rule(d === '-1', `auto_explain.log_min_duration = ${d} logs statement text`)
-  }
-  if (libs.includes('pg_stat_statements')) {
-    const track = need('pg_stat_statements.track')
-    const utility = need('pg_stat_statements.track_utility')
-    if (track !== null && utility !== null) rule(!(track === 'all' && utility === 'on'), 'pg_stat_statements.track = all with track_utility = on stores the nested ALTER ROLE text')
-  }
-  for (const r of OEP1_UNRULED_STATEMENT_RECORDERS) {
-    if (libs.includes(r)) missing.push(`(${r} is preloaded and no rule for it is derived)`)
-  }
-  const verdict: Oep1Verdict = failures.length > 0 ? 'FAIL' : missing.length > 0 ? 'INCONCLUSIVE' : 'PASS'
-  return { verdict, failures, missing }
+  walk(root)
+  return createHash('sha256').update(lines.sort().join('')).digest('hex')
 }

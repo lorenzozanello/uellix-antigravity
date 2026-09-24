@@ -21,6 +21,21 @@
 // The needles arrive on stdin, never on its argv, and its own environment is a
 // four-variable allowlist. It is demonstration scaffolding, not production
 // code, which is why it lives under scripts/custody/.
+//
+// IDENTITY (R2, recert finding on the PID-keyed observer). A Windows PID is
+// reused as soon as a process is gone. Records are keyed by (pid, creation
+// time), and the creation time, the image name and the parent pid are read
+// through the SAME handle the PEB is read from, so one record never merges two
+// processes and a new process that reuses a baseline PID is still inspected.
+// Parent/child is resolved by `parentOf`: the parent of a child is the record
+// with that pid created most recently BEFORE the child.
+//
+// WHAT IT DOES NOT GUARANTEE. It polls (~15ms plus the time to open every
+// process); a process that lives and dies between two polls is never seen, and
+// a protected process it cannot open is recorded unreadable. Its findings are
+// evidence of PRESENCE; an absence is only as strong as the controls that show
+// the observed process WAS read (envReadable, reads > 0) and the planted
+// fixture it must see (OBS0).
 
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createInterface } from 'node:readline'
@@ -49,16 +64,18 @@ public static class UellixPebObserver {
   [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
   [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
   [DllImport("kernel32.dll", SetLastError = true)] static extern bool ReadProcessMemory(IntPtr h, IntPtr addr, byte[] buf, IntPtr size, out IntPtr read);
+  [DllImport("kernel32.dll")] static extern bool GetProcessTimes(IntPtr h, out long creation, out long exit, out long kernel, out long user);
+  [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "QueryFullProcessImageNameW")] static extern bool QueryImage(IntPtr h, int flags, StringBuilder sb, ref int size);
 
-  class Rec { public int pid; public int ppid = -1; public string name; public bool cmdReadable; public bool envReadable; public bool envVar; public int govCmd; public int govEnv; public int fixCmd; public int fixEnv; public int classes; public int reads; public bool alive; public string first; }
+  class Rec { public string key; public int pid; public long created; public long lastSeen; public int ppid = -1; public string name; public bool cmdReadable; public bool envReadable; public bool envVar; public int govCmd; public int govEnv; public int fixCmd; public int fixEnv; public int classes; public int reads; public bool alive; public string first; }
 
   static byte[] varName;
   static List<byte[]> gov = new List<byte[]>();
   static List<byte[]> fix = new List<byte[]>();
   static List<byte[]> cls = new List<byte[]>();
-  static Dictionary<int, Rec> recs = new Dictionary<int, Rec>();
-  static HashSet<int> baseline = new HashSet<int>();
-  static HashSet<int> watch = new HashSet<int>();
+  static Dictionary<string, Rec> recs = new Dictionary<string, Rec>();
+  static HashSet<string> baseline = new HashSet<string>();
+  static HashSet<string> watch = new HashSet<string>();
   static object gate = new object();
   static volatile bool stop = false;
   static volatile string label = "start";
@@ -76,6 +93,25 @@ public static class UellixPebObserver {
     return b;
   }
   static IntPtr ReadPtr(IntPtr h, IntPtr a) { byte[] b = Read(h, a, 8); return b == null ? IntPtr.Zero : (IntPtr)BitConverter.ToInt64(b, 0); }
+  static long NowMs() { return (DateTime.UtcNow.ToFileTimeUtc() - 116444736000000000L) / 10000; }
+  /** Creation time (ms since the Unix epoch) of the process behind THIS handle; 0 when unknowable. */
+  static long Created(IntPtr h) {
+    long c, e, k, u;
+    if (h == IntPtr.Zero || !GetProcessTimes(h, out c, out e, out k, out u) || c <= 0) return 0;
+    return (c - 116444736000000000L) / 10000;
+  }
+  static string ImageName(IntPtr h, string fallback) {
+    StringBuilder sb = new StringBuilder(1024); int n = sb.Capacity;
+    if (h == IntPtr.Zero || !QueryImage(h, 0, sb, ref n)) return fallback;
+    string s = sb.ToString(); int i = s.LastIndexOf('\\'); if (i >= 0) s = s.Substring(i + 1);
+    if (s.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) s = s.Substring(0, s.Length - 4);
+    return s;
+  }
+  static string KeyOf(int pid, long created) { return pid.ToString() + "@" + created.ToString(); }
+  static string KeyOfPid(int pid) {
+    IntPtr h = Open(pid);
+    try { return KeyOf(pid, Created(h)); } finally { if (h != IntPtr.Zero) CloseHandle(h); }
+  }
 
   static int Peb(IntPtr h, out byte[] cmd, out byte[] env) {
     cmd = null; env = null;
@@ -113,10 +149,17 @@ public static class UellixPebObserver {
   }
   static int Mask(byte[] hay, List<byte[]> nds) { int m = 0; for (int i = 0; i < nds.Count; i++) if (Has(hay, nds[i])) m |= (1 << i); return m; }
 
-  static void Inspect(int pid, string name) {
-    Rec r;
-    lock (gate) { if (!recs.TryGetValue(pid, out r)) { r = new Rec(); r.pid = pid; r.name = name; r.first = label; recs[pid] = r; } r.alive = true; }
+  static void Inspect(int pid, string snapshotName, HashSet<string> seen) {
     IntPtr h = Open(pid);
+    long created = Created(h);
+    string key = KeyOf(pid, created);
+    lock (gate) seen.Add(key);
+    if (baseline.Contains(key) && !watch.Contains(key)) { if (h != IntPtr.Zero) CloseHandle(h); return; }
+    Rec r;
+    lock (gate) {
+      if (!recs.TryGetValue(key, out r)) { r = new Rec(); r.key = key; r.pid = pid; r.created = created; r.name = ImageName(h, snapshotName); r.first = label; recs[key] = r; }
+      r.alive = true; r.lastSeen = NowMs();
+    }
     if (h == IntPtr.Zero) return;
     try {
       byte[] cmd, env; int ppid = Peb(h, out cmd, out env);
@@ -131,14 +174,12 @@ public static class UellixPebObserver {
 
   static void Loop() {
     while (!stop) {
-      HashSet<int> seen = new HashSet<int>();
+      HashSet<string> seen = new HashSet<string>();
       foreach (Process pr in Process.GetProcesses()) {
-        seen.Add(pr.Id);
-        if (baseline.Contains(pr.Id) && !watch.Contains(pr.Id)) continue;
         string nm = "?"; try { nm = pr.ProcessName; } catch { }
-        try { Inspect(pr.Id, nm); } catch { }
+        try { Inspect(pr.Id, nm, seen); } catch { }
       }
-      lock (gate) { foreach (Rec r in recs.Values) if (!seen.Contains(r.pid)) r.alive = false; }
+      lock (gate) { foreach (Rec r in recs.Values) if (!seen.Contains(r.key)) r.alive = false; }
       Interlocked.Increment(ref polls);
       Thread.Sleep(15);
     }
@@ -151,7 +192,7 @@ public static class UellixPebObserver {
     lock (gate) {
       foreach (Rec r in recs.Values) {
         if (!first) sb.Append(","); first = false;
-        sb.Append("{\"pid\":").Append(r.pid).Append(",\"ppid\":").Append(r.ppid)
+        sb.Append("{\"pid\":").Append(r.pid).Append(",\"createdMs\":").Append(r.created).Append(",\"lastSeenMs\":").Append(r.lastSeen).Append(",\"ppid\":").Append(r.ppid)
           .Append(",\"name\":\"").Append((r.name ?? "?").Replace("\"", "")).Append("\"")
           .Append(",\"cmdReadable\":").Append(r.cmdReadable ? "true" : "false")
           .Append(",\"envReadable\":").Append(r.envReadable ? "true" : "false")
@@ -171,9 +212,9 @@ public static class UellixPebObserver {
     foreach (string s in govB64) gov.Add(Convert.FromBase64String(s));
     foreach (string s in fixB64) fix.Add(Convert.FromBase64String(s));
     foreach (string s in clsB64) cls.Add(Convert.FromBase64String(s));
-    foreach (Process p in Process.GetProcesses()) baseline.Add(p.Id);
-    watch.Add(root);
-    foreach (Process p in Process.GetProcessesByName("explorer")) watch.Add(p.Id);
+    foreach (Process p in Process.GetProcesses()) baseline.Add(KeyOfPid(p.Id));
+    watch.Add(KeyOfPid(root));
+    foreach (Process p in Process.GetProcessesByName("explorer")) watch.Add(KeyOfPid(p.Id));
     Thread t = new Thread(Loop); t.IsBackground = true; t.Start();
     while (polls < 2) Thread.Sleep(5);
     Console.Out.WriteLine("{\"kind\":\"READY\"}"); Console.Out.Flush();
@@ -194,6 +235,10 @@ $cfg = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String([Console]::In
 /** One observed process. Booleans and masks only — never content. */
 export interface PebObservedProcess {
   readonly pid: number
+  /** Creation time, ms since the Unix epoch, read through the same handle as the PEB; 0 when unknowable. */
+  readonly createdMs: number
+  /** Observer clock (ms since the Unix epoch) of the last poll that saw it. */
+  readonly lastSeenMs: number
   readonly ppid: number
   readonly name: string
   readonly cmdReadable: boolean
@@ -217,6 +262,51 @@ export interface PebObservedProcess {
 export interface PebDump {
   readonly polls: number
   readonly processes: readonly PebObservedProcess[]
+}
+
+/** The identity of an observed process: a PID alone is not one (Windows reuses it). */
+export const processKey = (p: Pick<PebObservedProcess, 'pid' | 'createdMs'>): string => `${p.pid}@${p.createdMs}`
+
+/**
+ * The record for a process the caller spawned itself: the one with that pid
+ * whose creation falls inside the caller's spawn window. Fails closed: null
+ * when none, or more than one, does.
+ */
+export function recordForSpawn(processes: readonly PebObservedProcess[], pid: number, window: { fromMs: number; toMs: number }, skewMs = 50): PebObservedProcess | null {
+  const hits = processes.filter((p) => p.pid === pid && p.createdMs > 0 && p.createdMs >= window.fromMs - skewMs && p.createdMs <= window.toMs + skewMs)
+  return hits.length === 1 ? hits[0]! : null
+}
+
+/**
+ * The parent record of a child: among the records carrying the child's ppid,
+ * the one created most recently BEFORE the child (a parent predates its
+ * children, and a later process reusing that pid cannot be the parent of a
+ * child created before it). Null when no record qualifies or the child's own
+ * creation time is unknown.
+ */
+export function parentOf(processes: readonly PebObservedProcess[], child: PebObservedProcess): PebObservedProcess | null {
+  if (child.createdMs <= 0 || child.ppid < 0) return null
+  let best: PebObservedProcess | null = null
+  for (const p of processes) {
+    if (p.pid !== child.ppid || p.createdMs <= 0 || p.createdMs > child.createdMs) continue
+    if (best === null || p.createdMs > best.createdMs) best = p
+  }
+  return best
+}
+
+/** The children of a record, resolved by `parentOf` — never by pid equality alone. */
+export function childrenOf(processes: readonly PebObservedProcess[], parent: PebObservedProcess): PebObservedProcess[] {
+  const key = processKey(parent)
+  return processes.filter((c) => c !== parent && parentOf(processes, c) !== null && processKey(parentOf(processes, c)!) === key)
+}
+
+/** Structural identity checks of a dump: every key is unique, and no readable record lacks a creation time. */
+export function identityReasons(d: PebDump): string[] {
+  const reasons: string[] = []
+  const keys = d.processes.map(processKey)
+  if (new Set(keys).size !== keys.length) reasons.push('two records share one (pid, creation time) identity')
+  for (const p of d.processes) if ((p.envReadable || p.cmdReadable) && p.createdMs <= 0) reasons.push(`pid ${p.pid} was read without a creation time`)
+  return reasons
 }
 
 /** UTF-16LE, which is how Windows stores both the command line and the environment block. */

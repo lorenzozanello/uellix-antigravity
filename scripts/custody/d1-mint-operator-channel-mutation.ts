@@ -3,7 +3,10 @@
 //   pnpm custody:operator-channel:mutation [-- --only=M-ECHO,M-HOST-CHECK] [--check-anchors]
 //
 // THE MUTATION CONTROLS OF THE OPERATOR-CHANNEL SUCCESSOR (manifest
-// FIBDB-053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1, mutation_controls). Each
+// FIBDB-053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1, mutation_controls, and its
+// R2 amendment v1.0.1: R2-M-E1 .. R2-M-X08 re-kill the survivors the
+// recertification of 979b1440 found, plus the SCRAM transport, the startup /
+// database binding, OC-12 and the observer identity). Each
 // mutant removes ONE safety guarantee from the real source, runs the targeted
 // test files, and must turn them RED. The comment-only self-test must SURVIVE
 // (GREEN): a battery that can report nothing but RED proves nothing.
@@ -31,10 +34,16 @@ const LA = 'scripts/custody/d1-mint-operator-launcher.ts'
 const PL = 'scripts/custody/d1-mint-operator-plan.ts'
 const EV = 'scripts/custody/d1-mint-operator-evidence.ts'
 const N6 = 'scripts/custody/d1-n06-closure.ts'
+const RB = 'db/custody/mint-route-b-contract.ts'
+const SC = 'db/custody/scram-verifier.ts'
+const OB = 'scripts/custody/n05-peb-observer.ts'
 const T_CH = 'tests/custody/d1-mint-operator-channel.test.ts'
 const T_PR = 'tests/custody/d1-oep1-probe-contract.test.ts'
 const T_V7 = 'tests/custody/d1-dag-amendment-v107.test.ts'
 const T_PM = 'tests/custody/d1-pre-hc1-post-mint.test.ts'
+const T_RB = 'tests/custody/d1-mint-route-b-contract.test.ts'
+const T_SC = 'tests/custody/d1-scram-verifier.test.ts'
+const T_PEB = 'tests/custody/d1-peb-identity.test.ts'
 
 export const MUTANTS: readonly Mutant[] = [
   { id: 'M-ECHO', file: CH, from: '          buf[len++] = b\n', to: '          buf[len++] = b\n          output.write(String.fromCharCode(b))\n', tests: [T_CH], expect: 'RED' },
@@ -50,8 +59,36 @@ export const MUTANTS: readonly Mutant[] = [
   { id: 'M-TOOL-HASH', file: LA, from: '  if (sha256Hex(toolBytes) !== plan.tool.sha256) throw', to: '  if (false) throw', tests: [T_CH], expect: 'RED' },
   { id: 'M-SYNTHETIC-GATE', file: CH, from: '  return /\\.invalid$/i.test(targetHost)', to: '  return targetHost.length > 0', tests: [T_CH], expect: 'RED' },
   { id: 'M-N06-OPERATOR', file: N6, from: ', ...checkOperatorCredentialSection(inv.operator_credential)]', to: ']', tests: [T_V7], expect: 'RED' },
-  { id: 'M-OEP1-VERDICT', file: CH, from: "  if (logStatement !== null) rule(logStatement === 'none' || logStatement === 'ddl',", to: '  if (logStatement !== null) rule(true,', tests: [T_PR], expect: 'RED' },
-  { id: 'M-PMR13-PINS', file: EV, from: '    if (s(\'probe_tool_sha256\') !== ctx.binding.tools.probe.sha256)', to: '    if (false)', tests: [T_PM], expect: 'RED' },
+  // --- R2: the survivors of the recertification of 979b1440, each killed by a behavioural test ---
+  // E1: a CONSISTENT non-PASS OEP-1 record (recorded = recomputed) was accepted as a closure.
+  { id: 'R2-M-E1', file: EV, from: "  if (e.verdict !== 'CLOSED') r.push(", to: '  if (false) r.push(', tests: [T_PM], expect: 'RED' },
+  // The sub-verdict gate alone is an EQUIVALENT mutant: recomputing already pushes a reason for every
+  // FAIL sub-verdict (measured: the single-line mutant survived). The regression E1 needs BOTH gone.
+  { id: 'R2-M-E1-SUBVERDICTS', file: EV, from: "  r.push(...re.reasons)\n  const recorded = (e.sub_verdicts ?? {}) as Record<string, unknown>\n  for (const k of OEP1_GATING_SUBVERDICTS) if (recorded[k] !== re.subVerdicts[k]) r.push(`the recorded ${k} ${String(recorded[k])} is not the recomputed ${re.subVerdicts[k]}`)\n  // E1: a consistent non-PASS record is still not a closure. Only CLOSED, with every gating sub-verdict PASS, closes OEP-1.\n  if (e.verdict !== 'CLOSED') r.push(`the recorded verdict ${String(e.verdict)} is not CLOSED; only CLOSED closes OEP-1`)\n  if (OEP1_GATING_SUBVERDICTS.some((k) => re.subVerdicts[k] !== 'PASS')) r.push('a gating sub-verdict is not PASS')\n", to: "  const recorded = (e.sub_verdicts ?? {}) as Record<string, unknown>\n  for (const k of OEP1_GATING_SUBVERDICTS) if (recorded[k] !== re.subVerdicts[k]) r.push(`the recorded ${k} ${String(recorded[k])} is not the recomputed ${re.subVerdicts[k]}`)\n  // E1: a consistent non-PASS record is still not a closure. Only CLOSED, with every gating sub-verdict PASS, closes OEP-1.\n  if (e.verdict !== 'CLOSED') r.push(`the recorded verdict ${String(e.verdict)} is not CLOSED; only CLOSED closes OEP-1`)\n", tests: [T_PM], expect: 'RED' },
+  // X06: the host check by prefix.
+  { id: 'R2-M-X06', file: CH, from: '  if (facts.host !== plan.targetHost.toLowerCase()) {', to: '  if (!facts.host.startsWith(plan.targetHost.toLowerCase())) {', tests: [T_CH], expect: 'RED' },
+  // P1: VALID UNTIL from N08.
+  { id: 'R2-M-P1', file: PL, from: '    validUntil = sched.N09\n', to: '    validUntil = sched.N08\n', tests: [T_CH], expect: 'RED' },
+  // P6: a dirty worktree not a STOP.
+  { id: 'R2-M-P6', file: PL, from: '  if (!p.clean) r.push(', to: '  if (false) r.push(', tests: [T_CH], expect: 'RED' },
+  // P10: the target host returned whatever N04 says.
+  { id: 'R2-M-P10', file: PL, from: "  return n04.status === 'SATISFIED' ? {", to: '  return true ? {', tests: [T_CH], expect: 'RED' },
+  // L1: the launcher writes the REAL process environment.
+  { id: 'R2-M-L1', file: LA, from: '    child = io.spawn(', to: "    process.env[OPERATOR_ENV_VAR_NAME] = secret.toString('utf8')\n    child = io.spawn(", tests: [T_CH], expect: 'RED' },
+  // X08: the tool environment allowlist widened.
+  { id: 'R2-M-X08', file: CH, from: "export const TOOL_ENV_ALLOWLIST = ['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path', 'TEMP', 'TMP'] as const", to: "export const TOOL_ENV_ALLOWLIST = ['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path', 'TEMP', 'TMP', 'USERPROFILE'] as const", tests: [T_CH], expect: 'RED' },
+  // --- R2: the SCRAM transport and the session binding ---
+  { id: 'R2-M-STARTUP-QUERY', file: CH, from: "    hasStartupParameters: url.search !== '' || url.hash !== '',", to: '    hasStartupParameters: false,', tests: [T_CH], expect: 'RED' },
+  { id: 'R2-M-DATABASE', file: CH, from: '  if (facts.database !== plan.targetDatabase) throw', to: '  if (false) throw', tests: [T_CH], expect: 'RED' },
+  { id: 'R2-M-PLAN-DRIVER-DIGEST', file: PL, from: "    ['driverDigest', onDisk.driverDigest, derived.driverDigest],\n", to: '', tests: [T_CH], expect: 'RED' },
+  { id: 'R2-M-OC12', file: PL, from: '    reasons.push(...channelCertificationReasons(cert, binding).map((x) => `OC-12: ${x}`))', to: '    void cert', tests: [T_CH], expect: 'RED' },
+  { id: 'R2-M-OEP1-STARTUP-CLOSED', file: CH, from: '  const closed = JSON.stringify(o.client_settings', to: '  const closed = true || JSON.stringify(o.client_settings', tests: [T_PR, T_PM], expect: 'RED' },
+  { id: 'R2-M-PMR14-PINS', file: EV, from: "  const hashes = b !== null && s('probe_tool_sha256') === b.tools.probe.sha256 && s('mint_tool_sha256') === b.tools.mint.sha256", to: "  const hashes = b !== null && s('mint_tool_sha256') === b.tools.mint.sha256", tests: [T_PM], expect: 'RED' },
+  { id: 'R2-M-TRANSPORT', file: RB, from: "export const ROUTE_B_PASSWORD_TRANSPORT = 'CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER' as const", to: "export const ROUTE_B_PASSWORD_TRANSPORT = 'PLAINTEXT_SET_CONFIG' as const", tests: [T_PM], expect: 'RED' },
+  { id: 'R2-M-GUARD-REGEX', file: RB, from: "!~ '^SCRAM-SHA-256", to: "!~ '^.*|^SCRAM-SHA-256", tests: [T_RB], expect: 'RED' },
+  { id: 'R2-M-SCRAM-KEY', file: SC, from: "  const clientKey = hmac(saltedPassword, 'Client Key')", to: "  const clientKey = hmac(saltedPassword, 'Client key')", tests: [T_SC], expect: 'RED' },
+  // F: the observer's parent resolution by pid alone (a later reuser adopts the child).
+  { id: 'R2-M-PID-REUSE', file: OB, from: '    if (p.pid !== child.ppid || p.createdMs <= 0 || p.createdMs > child.createdMs) continue', to: '    if (p.pid !== child.ppid) continue', tests: [T_PEB], expect: 'RED' },
   { id: 'M-SELF-TEST', file: PL, from: '// CLI\n', to: '// CLI (comment-only self-test mutant)\n', tests: [T_CH], expect: 'GREEN' },
 ]
 
