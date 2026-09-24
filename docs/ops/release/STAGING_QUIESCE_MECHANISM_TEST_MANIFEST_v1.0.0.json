@@ -1,0 +1,222 @@
+{
+  "manifest_id": "CV1-STAGING-QUIESCE-MECHANISM",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "db/hosted/target-identity.ts",
+    "db/safety/local-stack.ts",
+    "supabase/config.toml",
+    "db/baseline/README.md"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SENT-NO-SECRET-VALUE",
+      "purpose": "Proves that no password, access token, DSN, connection string, anon key, service-role key or environment-variable VALUE appears anywhere in either artifact of this pair. The check is a secret scan over the write set; its purpose is SSL-08 conformance, which forbids a secret VALUE in any evidence packet, gate record or stage declaration at any stage."
+    },
+    {
+      "id": "SENT-PRODUCTION-REF-IS-VETO-ONLY",
+      "purpose": "Proves that every occurrence of the production project ref ctaxtgujyyprgynmnvtq in this pair sits in a VETO or FINDING context, and never in a target, source, restore-target, witness-target or authorized-operation context. Its purpose is to make the production boundary machine-checkable rather than a matter of reading tone."
+    },
+    {
+      "id": "SENT-NO-INVENTED-IDENTIFIER",
+      "purpose": "Proves that no ODS ordinal, HPO-ODS grant id, W2 identifier, migration ordinal or Controller entry is allocated or reserved by this pair. Its purpose is the lane's explicit prohibition on inventing an authority identifier that no adjudication has issued."
+    },
+    {
+      "id": "SENT-NO-PROVIDER-NAME-SELECTION",
+      "purpose": "Proves that the pair never selects a Supabase project by provider-side display name. The parent lane measured live that the VETOED production ref carries the display name 'uellix-staging', so any name-based selection selects the vetoed project. The marker is the absence of that display name in every selection context."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-Q1",
+      "description": "Both artifacts of the pair parse as valid JSON, and the manifest validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json with ZERO violations, checked by an explicit validator run over the schema rather than inferred from any repository gate. No gate in this repository validates a TEST_MANIFEST against its schema — it is only a protected path — so a claim of schema conformance that rests on a gate PASS is vacuous and is not accepted here.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q2",
+      "description": "The authority's writer inventory enumerates exactly sixteen classes with ids W-1 through W-16, with no gap, no duplicate and no id outside that range, and every class carries exactly one of KNOWN_WRITER, NON_WRITER, UNKNOWN or NON_EXISTENT_AT_THIS_TREE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q3",
+      "description": "Every measured claim in the writer inventory is re-derivable from tree 2c606a43825623005d3ded38581da8431ac04f26 by the method the claim names: the 'use server' file count, the route-handler count and their HTTP methods, the two gating source constants and their blob SHAs, the absence of vercel.json and vercel.ts, the empty queue/cron dependency match in package.json, the five CREATE EXTENSION statements in db/baseline/stella_g2_schema.sql, and the DATABASE_URL guard in .github/workflows/p1a-validation.yml.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q4",
+      "description": "The declared PR #201 state is verbatim: FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json final_state equals the literal string 'FIBDB053_RUNTIME_STAGING_BINDING_AUTHORITY_AUTHORED__NOT_EXECUTED' at blob 6549cd9c2f5a3f2097a489bd0f392cf9fa78c817. This single fact carries SECTION_D's entire reduction and must be re-read, not trusted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q5",
+      "description": "Every clause the authority quotes from the Recovery authority, its amendment, the owner-ratification record or PR #201 is verbatim-identical to the text at the pinned blob SHA, and the surrounding reading does not change its scope. Quotation drift in an adjudication that turns on quoted text is a material defect.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q6",
+      "description": "SECTION_C assesses exactly eleven mechanisms M-1..M-11, and each carries every field the lane brief requires: what it prevents, what it does not prevent, mutation required, evidence available, rollback, blast radius, interaction with PR #201, whether another deployment is required, whether it touches production, and whether it requires database or DDL authority. A mechanism missing a field is an incomplete assessment, not a shorter one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q7",
+      "description": "The proof contract enumerates PQ-1 through PQ-10 with no gap, and each PQ resolves to a recorded value, an explicit comparison, or an explicit UNKNOWN. No PQ is satisfiable by prose alone.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q8",
+      "description": "Each of OD-Q1..OD-Q4 carries all five required parts — question, options, measured consequences, recommendation, what remains blocked — plus an explicit statement of why it is not an engineering decision.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q9",
+      "description": "The three Recovery artifacts and the PR #201 authority are byte-unchanged by this lane: their blob SHAs at this branch HEAD equal 154c3d1d396784ae7189b8088669b0ef8231de67, 25749aee095b56e01b7a1aaa0ad2d5d37d5961fc, 876fc76cedc3e83f44b7c76221f0bc812d35ee5d and 6549cd9c2f5a3f2097a489bd0f392cf9fa78c817 respectively.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q10",
+      "description": "The write set of this lane is exactly two new files under docs/ops/release/ and zero modified files, verified with git diff --name-status against the parent SHA 4df9e6d37de19a15560993f1d67331bfa498008b and with an untracked-files=all status.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q11",
+      "description": "IG-1 is stated as ADDRESSED_NOT_CLOSED and IG-2 as CLOSED_SUBJECT_TO_CERTIFICATION, and the artifact's final_state and next_gate both keep IG-1 open. An artifact that declared IG-1 closed by its own authorship would assert the very permission it is requesting.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-Q12",
+      "description": "A semantic walk of every string leaf of both artifacts, rather than a grep for known ids, finds no residual claim that any hosted mutation, live management-plane read or database connection was performed by this lane. Superseding a clause by name does not sweep its restatements, so the sweep is by semantic pattern over the whole document.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-Q1",
+      "description": "NO hosted mutation occurred. No Vercel deployment, environment-variable act, alias act, scale change or project setting change; no Supabase configuration mutation; no database connection of any kind; no write lock; no role or ACL change; no credential generation. Verified by the absence of any such act in the lane transcript and by the artifacts' own PS-Q3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q2",
+      "description": "NO live management-plane READ occurred either. Unlike the parent lane, which recorded read-only CLI reads as its OF-2, this lane performed none, and therefore asserts no hosted property as measured. A certifier finding any hosted property asserted as MEASURED has found a defect.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q3",
+      "description": "NO secret value of any class appears in either artifact: no password, DSN, connection string, access token, anon key, service-role key or environment-variable value. Project refs are identifiers, are public in every URL the project serves, and are not secret values.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q4",
+      "description": "The production ref ctaxtgujyyprgynmnvtq NEVER appears in a target, source, restore-target, witness-target or authorized-operation context. Every occurrence is a veto or a finding.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q5",
+      "description": "NO Supabase project is selected by provider-side display name anywhere in the pair. Selection is by ref only.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q6",
+      "description": "The authority does NOT authorize any backup, restore, PITR, branch clone with data, DDL, DML, Stage-A application or production operation. SECTION_G's authorized list AQ-1..AQ-5 is read in full and contains none of them.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q7",
+      "description": "The authority does NOT consume, enlarge, narrow or reinterpret PR #201's AUTH-1..AUTH-4, its BOUNDED_RETRY_RULE, its ENVIRONMENT_SCOPE_CORRECTION or its frozen target identity form. It constrains only WHEN that authority may be exercised, and records that constraint as an explicit dependency DEP-1 rather than as an amendment.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q8",
+      "description": "The pair allocates NO ODS ordinal, HPO-ODS grant id, W2 identifier, migration ordinal or Controller entry, and reserves none for future use.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q9",
+      "description": "NO writer class is dispositioned NON_WRITER on the strength of a source attestation alone. In particular, W-10 pg_cron is dispositioned UNKNOWN and fails closed despite five source attestations asserting its absence, because the only extension dump in the tree is of the LOCAL rehearsal container and says nothing about the hosted project.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q10",
+      "description": "NO mechanism is accepted whose evidence cannot prove the property it claims. A maintenance page is explicitly refused as proof at PQ-8, and M-2, M-3, M-5, M-6, M-7, M-8, M-9 and M-10 are rejected with a stated measured ground rather than on convenience.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q11",
+      "description": "NO human confirmation bundles materially distinct acts. HCQ-1 entering the abstention, HCQ-2 accepting the verdict rule and HCQ-3 leaving the abstention are confirmed separately, and none of them confirms any act belonging to PR #201 or to the Recovery authority.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q12",
+      "description": "NO owner decision is invented to cover an engineering inconvenience. The authority names three questions it explicitly refuses to hand the owner — the viability of the rejected mechanisms, the read-only requirement on the witness, and whether a maintenance page can be proof — and decides all three itself on measured grounds.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q13",
+      "description": "The proof contract does NOT accept a VOID window converted into an ACCEPT. PQ-3 forbids the conversion in terms, because it would silently deliver the posture the owner refused at OD-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-Q14",
+      "description": "The authority does NOT name a literal SQL witness expression it has not validated against the hosted engine build. PQ-4 specifies the witness by required properties and requires validation on the disposable harness at the same build before execution. A named literal would read as stronger evidence than the lane actually holds.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MC-Q1",
+      "description": "Deleting THE_TREE_VALIDITY_CAVEAT from the writer inventory must be CAUGHT. Without it the inventory reads as a property of the running system rather than of tree 2c606a43, and the two constant-gated POST handlers would silently be treated as non-writers for a deployment built from any commit. The caveat is the only thing preventing that inference.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-Q2",
+      "description": "Deleting the LOCAL-ONLY provenance note from W-5, W-6, W-7, W-10 or W-11 must be CAUGHT. Without it, supabase/config.toml and db/baseline/stella_g2_schema.sql read as hosted measurements, and six UNKNOWN classes would flip to measured dispositions on evidence that describes a loopback container.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-Q3",
+      "description": "Deleting PQ-3's on_void clause must be CAUGHT. Without it, a lane facing a voided window has no stated bar against reclassifying the observed writes as acceptable losses, which is precisely the ACCEPT posture the owner declined.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-Q4",
+      "description": "Deleting PQ-4's read-only constraint must be CAUGHT. A witness that itself consumes a transaction id makes W1 differ from W0 unconditionally, so every window voids and the contract silently becomes unsatisfiable rather than merely strict.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-Q5",
+      "description": "Deleting M-11.known_conservatism must be CAUGHT. Without the stated autovacuum caveat, HCQ-2 would be confirmed by an owner who believes a void implies a real write, and OD-Q2 would be a decision taken on a false premise.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-Q6",
+      "description": "Deleting DEP-1 from SECTION_F must be CAUGHT. Without it, M-1's reduction appears to hold unconditionally, when in fact it evaporates the moment PR #201's AUTH-1 executes.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-Q7",
+      "description": "Deleting OF-Q2 must be CAUGHT. It is the lane's own flag on its most contestable move — substituting detection for prevention — and its removal would present a contested adjudication as settled and deprive the certifier of the target the author believes is weakest.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-Q8",
+      "description": "Changing IG-1's status from ADDRESSED_NOT_CLOSED to CLOSED must be CAUGHT. The artifact would then assert the permission it exists to request, which is the silent authority expansion the owner-ratification record already refused to perform once.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}
