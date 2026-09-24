@@ -24,7 +24,7 @@ import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { compensationGate } from './d1-post-mint'
-import { checkInventorySurfaces, deriveDeliveries, type Delivery } from './d1-delivery-matrix'
+import { checkInventorySurfaces, checkOperatorCredentialSection, deriveDeliveries, deriveOperatorCredentialSurfaces, type Delivery } from './d1-delivery-matrix'
 import { PRODUCTION_ENTRY_POINTS, deriveClosure } from './build-production-entrypoints'
 import { CONSUMER_ENTRY } from './d1-deliver-n13'
 import { GRAPH_SOURCES, deriveGraphLineage } from './d1-dag-validate'
@@ -32,6 +32,11 @@ import { evaluateCandidateBinding, gatherCandidateFacts, type CandidateFacts } f
 import { AC1_AUTHORIZED_SURFACE, P1_STATEMENTS } from '../../db/custody/p1-reads'
 import { N14_BODY } from '../../db/custody/n14-observation'
 import { AC3_DEFERRED_ROWS, N21_BODY, N22_BODY, n21ExitFromRows, n22ExitFromRows, n22Rows, type PvRow } from '../../db/custody/n22-poststate'
+import { OEP1_PROBE_STATEMENTS, OEP1_SETTINGS, OPERATOR_CHANNEL_CONTRACT, TOOL_SPAWN_FLAGS, acceptsPipedInput, hiddenPromptPrecondition } from '../../db/custody/mint-operator-channel'
+import { gatherOperatorChannelFacts, oep1EvidenceReasons, type OperatorChannelFacts } from './d1-mint-operator-evidence'
+import { buildLauncherClosure } from './d1-mint-operator-channel-build'
+import { PROBE_FORBIDDEN_SOURCE_TOKENS } from './d1-oep1-probe-harness'
+import { deriveEffectiveSchedule } from './d1-effective-schedule'
 
 export const OWNER_DECISION = 'docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0.json'
 export const REGISTRY = 'docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json'
@@ -75,6 +80,16 @@ export interface ImplementationFacts {
   readonly deferredRowVerdicts: readonly string[]
   readonly n22ExitOnCleanInput: boolean
   readonly n21ExitOnCleanInput: boolean
+  /** DAG v1.0.7 AC-4/AC-5/AC-6, measured by calling the channel code. */
+  readonly operatorChannel: {
+    readonly spawnFlags: Readonly<Record<string, boolean>>
+    readonly refusesNonTtyPrompt: boolean
+    readonly pipedOnlyForInvalidHosts: boolean
+    readonly probeStatementsReadOnly: boolean
+    readonly parentSurfaceDerived: boolean
+    readonly n06RefusesOmittedParent: boolean
+    readonly mintNeedsOep1Evidence: boolean
+  }
 }
 
 export interface PostMintInputs {
@@ -93,6 +108,8 @@ export interface PostMintInputs {
   readonly currentClosureBlobs: Readonly<Record<string, Record<string, string>>>
   readonly implementation: ImplementationFacts
   readonly candidate: CandidateFacts
+  /** DAG v1.0.7: the operator channel's pins, inventory section and OEP-1 evidence, as they are in the repository. */
+  readonly operatorChannel: OperatorChannelFacts
 }
 
 type Evaluator = (i: PostMintInputs) => string[]
@@ -187,6 +204,19 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
   // Superseded by PMR-9 in v1.0.6; kept registered so a chain that still carries it is evaluated, not ignored.
   'PMR-8_PACKAGE_CERTIFIED_AT_CURRENT_BLOBS': () => ['PMR-8 is superseded by PMR-9_CANDIDATE_CERTIFIED (DAG v1.0.6) and cannot be satisfied on its own'],
   'PMR-9_CANDIDATE_CERTIFIED': (i) => [...evaluateCandidateBinding(i.candidate).reasons],
+  'PMR-11_OPERATOR_CHANNEL_BOUND': (i) => {
+    const c = i.operatorChannel
+    const r: string[] = [...c.bindingReasons]
+    if (c.launcherBuildDigest === null) r.push('the launcher could not be rebuilt from this repository')
+    else if (c.binding !== null && c.launcherBuildDigest !== c.binding.launcher_build_digest) r.push('STALE LAUNCHER PIN: the launcher rebuilt from this repository is not the pinned build')
+    if (JSON.stringify(c.authorityStates.clauseIds) !== JSON.stringify(OPERATOR_CHANNEL_CONTRACT.map((x) => x.id))) r.push('the channel clause ids in the authority are not the implementation ones')
+    if (JSON.stringify(c.authorityStates.settingsList) !== JSON.stringify(OEP1_SETTINGS)) r.push('the OEP-1 closed settings list in the authority is not the implementation one')
+    if (JSON.stringify(c.authorityStates.probeStatements) !== JSON.stringify(OEP1_PROBE_STATEMENTS)) r.push('the pinned probe statements in the authority are not byte-identical to the implementation')
+    return r
+  },
+  'PMR-12_OPERATOR_CREDENTIAL_INVENTORIED': (i) => [...i.operatorChannel.operatorSectionReasons],
+  'PMR-13_OEP1_LOGGING_POSTURE_CLOSED': (i) =>
+    oep1EvidenceReasons(i.operatorChannel.oep1.facts, { binding: i.operatorChannel.binding, targetHost: i.operatorChannel.oep1.targetHost, n08: i.operatorChannel.oep1.n08 }),
   'PMR-10_RULINGS_MATCH_IMPLEMENTATION': (i) => {
     const { active } = effectiveRulings(i.chain)
     const f = i.implementation
@@ -220,6 +250,25 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
       if (!f.n22ExitOnCleanInput) r.push('N22 cannot meet its exit on a clean input while AC-3 defers PV-24/PV-25')
       if (!f.n21ExitOnCleanInput) r.push('N21 cannot meet its exit on a clean input while AC-3 defers its EXECUTE rows')
     } else if (ac3 !== undefined) r.push(`AC-3 ruling outcome ${ac3.outcome} has no implementation mapping`)
+    const oc = f.operatorChannel
+    const ac4 = active['AC-4']
+    if (ac4?.outcome === 'OPTION_A') {
+      if (JSON.stringify(oc.spawnFlags) !== JSON.stringify({ windowsHide: false, detached: false, shell: false })) r.push('AC-4: the tool spawn flags are not windowsHide:false, detached:false, shell:false')
+      if (!oc.refusesNonTtyPrompt) r.push('AC-4: the prompt does not refuse a non-console input')
+      if (!oc.pipedOnlyForInvalidHosts) r.push('AC-4: piped input is accepted for a host that is not RFC 6761 .invalid')
+    } else if (ac4 !== undefined) r.push(`AC-4 ruling outcome ${ac4.outcome} has no implementation mapping`)
+    const ac5 = active['AC-5']
+    if (ac5?.outcome === 'AUTHORIZE_NARROW_N11_OPERATOR_CREDENTIAL_EXCEPTION') {
+      const tools = i.operatorChannel.binding === null ? [] : Object.keys(i.operatorChannel.binding.tools).sort()
+      if (JSON.stringify(tools) !== JSON.stringify(['mint', 'probe'])) r.push('AC-5: the channel does not pin exactly the mint and probe tools')
+      if (!oc.probeStatementsReadOnly) r.push('AC-5: a pinned probe statement carries a mutation token')
+      if (!oc.mintNeedsOep1Evidence) r.push('AC-5: the mint can be planned without closed OEP-1 evidence')
+    } else if (ac5 !== undefined) r.push(`AC-5 ruling outcome ${ac5.outcome} has no implementation mapping`)
+    const ac6 = active['AC-6']
+    if (ac6?.outcome === 'INVENTORY_EPHEMERAL_PARENT_LAUNCHER_AS_CREDENTIAL_BEARING_SURFACE') {
+      if (!oc.parentSurfaceDerived) r.push('AC-6: the derived operator surfaces do not name the parent launcher')
+      if (!oc.n06RefusesOmittedParent) r.push('AC-6: an inventory omitting the parent launcher surface is not refused')
+    } else if (ac6 !== undefined) r.push(`AC-6 ruling outcome ${ac6.outcome} has no implementation mapping`)
     return r
   },
 }
@@ -404,6 +453,24 @@ export function measureImplementation(): ImplementationFacts {
     deferredRowVerdicts: cleanRows.filter((r) => r.id === 'PV-24' || r.id === 'PV-25').map((r) => r.verdict),
     n22ExitOnCleanInput: n22ExitFromRows(cleanRows, true),
     n21ExitOnCleanInput: n21ExitFromRows(n21Rows),
+    operatorChannel: measureOperatorChannel(),
+  }
+}
+
+/** AC-4/AC-5/AC-6 facts, by calling the channel code (never by reading its prose). */
+export function measureOperatorChannel(): ImplementationFacts['operatorChannel'] {
+  const derived = deriveOperatorCredentialSurfaces()
+  const withoutParent = { persistence: 'NONE', human_custodian: 'x', processes_or_environments: derived.filter((s) => s.surface !== 'OPERATOR_CREDENTIAL_LAUNCHER_SURFACE') }
+  const mutation = /\b(ALTER|INSERT|UPDATE|DELETE|TRUNCATE|GRANT|REVOKE|CREATE|DROP|SET)\b/i
+  return {
+    spawnFlags: { ...TOOL_SPAWN_FLAGS },
+    refusesNonTtyPrompt: hiddenPromptPrecondition({ isTTY: false }) !== null && hiddenPromptPrecondition({ isTTY: true }) === null,
+    pipedOnlyForInvalidHosts: acceptsPipedInput('db.synthetic.invalid') && !acceptsPipedInput('db.bvyzblhqymxruxdguaee.supabase.co') && !acceptsPipedInput('invalid.example.com'),
+    probeStatementsReadOnly:
+      PROBE_FORBIDDEN_SOURCE_TOKENS.length > 0 && Object.values(OEP1_PROBE_STATEMENTS).every((s) => PROBE_FORBIDDEN_SOURCE_TOKENS.every((tok) => !s.includes(tok)) && !mutation.test(s)),
+    parentSurfaceDerived: derived.some((s) => s.surface === 'OPERATOR_CREDENTIAL_LAUNCHER_SURFACE'),
+    n06RefusesOmittedParent: checkOperatorCredentialSection(withoutParent).length > 0,
+    mintNeedsOep1Evidence: oep1EvidenceReasons({ path: null, evidence: null, channelEvent: null }, { binding: null, targetHost: null, n08: null }).length > 0,
   }
 }
 
@@ -461,5 +528,10 @@ export function gatherPostMintInputs(root: string): PostMintInputs {
     currentClosureBlobs,
     implementation: measureImplementation(),
     candidate: gatherCandidateFacts(root),
+    operatorChannel: gatherOperatorChannelFacts(root, {
+      buildDigest: (r) => buildLauncherClosure(r).digest,
+      operatorSectionReasons: checkOperatorCredentialSection,
+      effectiveN08: (r) => deriveEffectiveSchedule(r).N08,
+    }),
   }
 }

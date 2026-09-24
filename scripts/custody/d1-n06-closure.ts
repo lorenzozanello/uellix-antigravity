@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { checkPlannedRemoval, computeValidUntilUtc } from './d1-n09-valid-until'
 import { hardPredecessorsOf } from './d1-dag-validate'
-import { checkInventorySurfaces } from './d1-delivery-matrix'
+import { checkInventorySurfaces, checkOperatorCredentialSection } from './d1-delivery-matrix'
 
 const CAPABILITY_AUTHORITY = 'docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json'
 export const CUSTODY_INVENTORY = 'docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json'
@@ -164,7 +164,7 @@ export function evaluateN06InRepo(
   plannedFinalWitnessUtc: string | null,
   predecessorStates: Readonly<Record<string, NodeState>>
 ): N06Evaluation {
-  const inv = JSON.parse(readFileSync(join(repoRoot, CUSTODY_INVENTORY), 'utf8')) as { entries: Array<Record<string, unknown>> }
+  const inv = JSON.parse(readFileSync(join(repoRoot, CUSTODY_INVENTORY), 'utf8')) as { entries: Array<Record<string, unknown>>; operator_credential?: unknown }
   if (inv.entries.length !== 1) throw new Error(`The custody inventory holds ${inv.entries.length} entries; exactly one is required.`)
   const entry = inv.entries[0]!
   return evaluateN06({
@@ -173,6 +173,7 @@ export function evaluateN06InRepo(
     plannedFinalWitnessUtc,
     predecessorStates,
     hardPredecessors: hardPredecessorsOf('N06'),
-    topologyReasons: checkInventorySurfaces(repoRoot, entry.processes_or_environments),
+    // AC-6: the operator credential's holders are inventoried too (their own section; not the auditor entry).
+    topologyReasons: [...checkInventorySurfaces(repoRoot, entry.processes_or_environments), ...checkOperatorCredentialSection(inv.operator_credential)],
   })
 }

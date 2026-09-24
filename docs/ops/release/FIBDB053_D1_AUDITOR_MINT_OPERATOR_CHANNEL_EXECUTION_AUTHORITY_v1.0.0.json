@@ -1,0 +1,175 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "document_class": "OPERATOR_CHANNEL_EXECUTION_AUTHORITY__OT3_CHANNEL__NA23_NARROW_EXCEPTION__SSL06_OPERATOR_SURFACES__OEP1_PROBE_CONTRACT__TOOL_BINDING__APPEND_ONLY__NO_EXECUTION_BY_ITSELF",
+  "append_only": true,
+  "mission_id": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "lane": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "AS_OF_BASE_SHA": "3cf9d2ffd2aabd056a7c69a3f9c2450edc4cb0c9",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_v1.0.0.json",
+  "owner_decisions": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0.json",
+  "dag_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.7.json",
+  "WHAT_THIS_AUTHORITY_IS": "The 'future execution authority' that OT-3 (db/custody/mint-route-b-contract.ts), the post-mint completeness record and the mint-route owner decision each left the operator channel to. It decides the channel as the owner ratified it (AC-4 OPTION_A), bounds operator credential use to the owner's narrow exception (AC-5), inventories the operator credential's holders (AC-6), fixes the execution procedure and the tool binding, and states the OEP-1 probe contract for PHASE 2. It subordinates to the capability EXECUTION_AUTHORITY and the certified DAG; it widens nothing they did not, except where an owner ruling in DAG v1.0.7 says so.",
+  "SUPERSEDES_ONLY": {
+    "OT-3.how_supplied": "The clause 'HOW that variable is supplied is NOT decided here and belongs to the future execution authority' is answered here (CHANNEL_CONTRACT). OT-3's other content (read from UELLIX_D1_MINT_OPERATOR_DATABASE_URL, removed before any child) stands.",
+    "NON_AUTHORIZATIONS[23]": "Narrowed ONLY as AC-5 states (NA23_EXCEPTION below). Every other non-authorization of the capability authority stands."
+  },
+  "CHANNEL_BINDING": {
+    "launcher_build_digest": "18871829e026ae20dfe56f22a665ad58f7b322d735c46c9bcd9cc09c03a318a4",
+    "launcher_build_rule": "scripts/custody/d1-mint-operator-channel-build.ts buildLauncherClosure(): the runtime closure of scripts/custody/d1-mint-operator-launcher.ts, each source CRLF->LF normalized, emitted by TypeScript with newLine LF; digest = sha256 over the sorted '<path>:<sha256 of emitted bytes>\\n' lines. Deterministic across hosts; rebuilt and compared by PMR-11 and by the pre-execution gate.",
+    "tools": {
+      "probe": { "file": "d1-oep1-probe-tool.js", "sha256": "3c47f81e512d9bbaecb7b61c92ead6fe6608cc85f4f47f8492af919a1ebb7977" },
+      "mint": { "file": "d1-mint-operator-tool.js", "sha256": "ecef0bf03e0564f42692b9d948ce96fa6f9c1574a5d9d6b5d1cf99f13bb20fcf" }
+    },
+    "tools_directory": { "base_env": "LOCALAPPDATA", "relative": "uellix-d1-mint-operator-channel/tools" },
+    "why_the_tools_are_outside": "SECRET_GENERATION_CONTRACT.generated_where forbids a repository script that can reach a hosted target (and db/custody/mint-route-b-contract.ts findRepositoryHostedLiveMintScripts enforces it for the mint). The tools therefore live outside every git work tree (each refuses at run time if its own directory has a .git ancestor), and the repository holds their sha256. The certifier reads them at the directory above on the operator workstation.",
+    "invalidation": "TOOL_BINDING: 'Cualquier cambio posterior invalida la preparación y exige re-evaluación.' A different byte in either tool or in the launcher closure is a different channel: a new pin, a new candidate, a new certification."
+  },
+  "CHANNEL_CONTRACT": {
+    "clause_ids": ["OC-1", "OC-2", "OC-3", "OC-4", "OC-5", "OC-6", "OC-7", "OC-8", "OC-9", "OC-10"],
+    "clauses_source": "db/custody/mint-operator-channel.ts OPERATOR_CHANNEL_CONTRACT (the clause text lives in code, next to what it binds; PMR-11 compares these ids with it).",
+    "channel": "The owner (Lorenzo Zanello) runs, from his own console, under bare node, the pinned launcher build with a plan written by the pre-execution gate. The launcher asks for the operator connection string in raw mode (nothing echoed), checks it names N04's host (and, for the mint, the OEP-1-observed principal), and spawns ONE pinned tool with the value only in that tool's environment block (allowlisted environment, windowsHide:false, detached:false, shell:false, secret-free argv). The launcher never writes its process.env, a file, or the value to any stream; its Buffer is zeroed; the one environment string spawn() requires is not zeroable and is disclosed (OF-CUST-1 analogue).",
+    "the_value_is_never": ["sent to Claude", "printed", "persisted", "written to a file", "in argv", "in shell history (the keystrokes go to the raw-mode launcher, never to the shell line editor)", "in the repository"],
+    "synthetic_path": "Piped input is accepted ONLY when the plan's target is an RFC 6761 .invalid host, so the PEB demonstration can run without a console keystroke and can never reach a real target."
+  },
+  "OPERATOR_TOOL_CONTRACT_ADDITIONS": {
+    "OT-1_at_run_time": "Each tool refuses (TOOL_INSIDE_A_GIT_WORK_TREE) if its own directory has a .git ancestor. Measured by the harness scenario TOOL_INSIDE_GIT_TREE on the real tools (the fake-only fixtures are rendered under the OS temp directory, itself inside a git work tree on the authoring workstation, and cannot carry this check).",
+    "OT-13": "The driver at --driver-root must report postgres 3.4.9 before it is loaded; any other version is refused with no driver call (WRONG_DRIVER_VERSION).",
+    "OT-14": "The mint tool refuses an operator URL whose user is not --operator-principal, the principal the certified OEP-1 evidence observed (WRONG_OPERATOR_PRINCIPAL)."
+  },
+  "NA23_EXCEPTION": {
+    "ruling": "AC-5 AUTHORIZE_NARROW_N11_OPERATOR_CREDENTIAL_EXCEPTION",
+    "authorized_uses": [
+      "PHASE 2: ONE read-only OEP-1 probe through the certified channel (probe tool, OEP1_PROBE_CONTRACT), before HC-1, after the channel's independent PASS.",
+      "N11/MR-2: ONE route-B mint through the certified channel (mint tool), after a fresh HC-1 whose statements include HC1-S7."
+    ],
+    "not_authorized": ["P1 reads", "any other DB act", "any other consumer or tool", "reuse after the authorized run", "persistence of the credential"],
+    "why_the_probe_is_inside_the_exception": "The owner's OEP1_PROBE = C ratification defines PHASE 2 as 'una lectura real, fija y read-only ... por el canal ya certificado'. It is the owner's own authorization of that read; this authority records its bound (probe tool only, three pinned read-only statements)."
+  },
+  "SSL06_OPERATOR_CREDENTIAL": {
+    "ruling": "AC-6 INVENTORY_EPHEMERAL_PARENT_LAUNCHER_AS_CREDENTIAL_BEARING_SURFACE",
+    "inventory": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json operator_credential (its own section; the single auditor entry is not used for it).",
+    "surfaces": ["OPERATOR_CREDENTIAL_LAUNCHER_SURFACE", "OPERATOR_CREDENTIAL_TOOL_SURFACE"],
+    "derived_by": "scripts/custody/d1-delivery-matrix.ts deriveOperatorCredentialSurfaces(); checked by N06 and PMR-12.",
+    "peb_measurement": "scripts/custody/d1-mint-operator-channel-demonstration.ts: on a synthetic value, the value is in the environment block of the tool ONLY — not the launcher's own block, not the depositor's, not any conhost.exe — and in no argv, file or history (execution record)."
+  },
+  "EXECUTION_PROCEDURE": {
+    "gate": "pnpm custody:operator-channel:gate -- --mode=probe|mint --channel-dir=<outside the repository> [--write]",
+    "derivations": {
+      "targetHost": "N04 arm A: TARGET_IDENTITY.authorized_direct_host, only when evaluateN04 is SATISFIED",
+      "validUntil": "the effective N09 (scripts/custody/d1-effective-schedule.ts), mint only",
+      "driverRoot": "route B: the repository root; node_modules/postgres must report 3.4.9",
+      "depositor": "the built N30 depositor (build-production-entrypoints), mint only",
+      "tool": "CHANNEL_BINDING.tools[mode] under CHANNEL_BINDING.tools_directory",
+      "launcherDigest": "CHANNEL_BINDING.launcher_build_digest",
+      "operatorPrincipal": "the certified OEP-1 evidence's operator_principal, mint only; no evidence -> the mint cannot be planned"
+    },
+    "stop_on": ["any plan field that differs from the derivation (STOP_PLAN_MISMATCH)", "a tool or launcher byte that differs from its pin (STOP_STALE_TOOL_HASH / STOP_STALE_LAUNCHER_HASH)", "a dirty worktree (STOP_DIRTY)", "the UTC clock at or past N08 (STOP_SCHEDULE_ELAPSED)", "N04 not SATISFIED", "a schedule chain error"],
+    "run": "The gate prints the one command the owner types: node <channel-dir>/launcher/scripts/custody/d1-mint-operator-launcher.js --plan=<channel-dir>/plan-<mode>.json. It is run immediately after a gate PASS without --write (verify), from the owner console."
+  },
+  "OEP1_PROBE_CONTRACT": {
+    "what_it_verifies": "Whether the hosted server, in the OPERATOR's session (role-level settings override system ones: docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json measured supabase_admin's ROLE-level log_statement), would record the mint's bound parameters or the nested ALTER ROLE the DO block EXECUTEs.",
+    "settings_list": [
+      "auto_explain.log_min_duration",
+      "auto_explain.log_nested_statements",
+      "auto_explain.log_parameter_max_length",
+      "debug_print_parse",
+      "debug_print_plan",
+      "debug_print_rewritten",
+      "local_preload_libraries",
+      "log_min_duration_sample",
+      "log_min_duration_statement",
+      "log_min_error_statement",
+      "log_parameter_max_length",
+      "log_parameter_max_length_on_error",
+      "log_statement",
+      "log_statement_sample_rate",
+      "log_transaction_sample_rate",
+      "pg_stat_statements.track",
+      "pg_stat_statements.track_utility",
+      "pgaudit.log",
+      "pgaudit.log_parameter",
+      "pgaudit.log_statement",
+      "pgaudit.role",
+      "session_preload_libraries",
+      "shared_preload_libraries"
+    ],
+    "extension_names": ["auto_explain", "pg_qualstats", "pg_stat_monitor", "pg_stat_statements", "pg_store_plans", "pgaudit"],
+    "statements": {
+      "IDENTITY": "SELECT current_user AS current_user_name, session_user AS session_user_name",
+      "SETTINGS": "SELECT name, setting, source FROM pg_catalog.pg_settings WHERE name = ANY($1::text[]) ORDER BY name",
+      "EXTENSIONS": "SELECT extname FROM pg_catalog.pg_extension WHERE extname = ANY($1::text[]) ORDER BY extname"
+    },
+    "transaction": "ONE, BEGIN READ ONLY; the lists travel only as bound parameters; nothing through unsafe().",
+    "probe_contract_clauses": "PC-1..PC-6 in scripts/custody/d1-oep1-probe-harness.ts (measured on the real probe tool, execution record).",
+    "verdict_rules": "db/custody/mint-operator-channel.ts evaluateOep1(): PASS only if every required setting is VISIBLE and: log_statement in {none, ddl}; log_min_duration_statement = -1; duration sampling off (log_min_duration_sample = -1 or log_statement_sample_rate = 0); log_transaction_sample_rate = 0; log_parameter_max_length_on_error = 0; debug_print_parse/rewritten/plan = off; if pgaudit is preloaded, pgaudit.log is none/empty and pgaudit.role empty; if auto_explain is preloaded, auto_explain.log_min_duration = -1; if pg_stat_statements is preloaded, NOT (track = all AND track_utility = on). An invisible required setting, or a preloaded unruled statement recorder (pg_stat_monitor, pg_store_plans, pg_qualstats), is INCONCLUSIVE; an unsafe value is FAIL. Only PASS closes OEP-1.",
+    "why_log_statement_ddl_is_safe": "log_statement = ddl logs top-level DDL a client sends. The mint's top-level statements are three SELECT set_config calls (not DDL) and one DO statement (not in the ddl class); the ALTER ROLE is EXECUTEd inside the DO block and is not a client statement.",
+    "residual_disclosed": "The posture can change between the probe and N11 (time of check vs time of use). No in-act re-read is authorized (AC-5 excludes other DB acts); the evidence's timestamp and the invalidation predicates bound it, and the owner sees the observation time at HC-1."
+  },
+  "OEP1_EVIDENCE_CONTRACT": {
+    "path": "docs/ops/release/FIBDB053_D1_AUDITOR_OEP1_LOGGING_POSTURE_EVIDENCE_v<semver>.json (append-only; the highest version is the effective one)",
+    "required_fields": {
+      "evidence_class": "D1_OEP1_LOGGING_POSTURE_EVIDENCE",
+      "append_only": "true",
+      "target_host": "N04's authorized direct host",
+      "operator_principal": "the observed session_user, equal to current_user",
+      "identity": "{ current_user, session_user } as observed",
+      "probe_tool_sha256": "CHANNEL_BINDING.tools.probe.sha256",
+      "launcher_build_digest": "CHANNEL_BINDING.launcher_build_digest",
+      "observed_at_utc": "strict UTC, before the effective N08",
+      "settings_list": "exactly OEP1_PROBE_CONTRACT.settings_list",
+      "observation": "{ rows, extensions } exactly as the probe printed them",
+      "verdict": "evaluateOep1(observation).verdict, recomputed by PMR-13 and required to be PASS",
+      "invalidation_predicates": "the list below",
+      "channel_certification_event": "the certification event of the channel candidate (a terminal PASS, 0 blocking, for an ancestor of HEAD whose operator-channel authority carries the same CHANNEL_BINDING)"
+    },
+    "invalidation_predicates": [
+      "IP-1: any CHANNEL_BINDING pin differs from the evidence's hashes (a different channel observed or will act).",
+      "IP-2: N04's host differs from target_host.",
+      "IP-3: the mint's operator URL names another principal (the launcher and the mint tool refuse: OC-4, OT-14).",
+      "IP-4: observed_at_utc is not before the effective N08 (a schedule change or elapsed time voids it).",
+      "IP-5: a later OEP-1 evidence version exists (it becomes the effective one and must itself close OEP-1).",
+      "IP-6: the channel certification event it names is not a terminal PASS for an ancestor carrying the same pins."
+    ],
+    "focused_recertification": "Per the owner: the OEP-1 evidence delta alone is independently recertified; that recertification's event certifies the candidate carrying the evidence (PMR-9), and PMR-13 then holds."
+  },
+  "HC1_SCOPE": {
+    "owner_decision": "HC1_SCOPE_DECISION: HC-1 deberá confirmar explícitamente: 1. MR-2; 2. el uso único de la credencial privilegiada del operador por este canal certificado; 3. target; 4. role; 5. VALID UNTIL; 6. custody/delivery/retirement contract.",
+    "statements_to_present": {
+      "HC1-S1": "target: the exact project ref, selected by ref (N04)",
+      "HC1-S2": "role: uellix_auditor",
+      "HC1-S3": "MR-2 replaces any existing credential and breaks any unrecorded consumer (HU-4)",
+      "HC1-S4": "VALID UNTIL: the effective N09",
+      "HC1-S5": "custody and delivery: WCM under the custodian, N30 deposit, process-scoped delivery per the N06 inventory",
+      "HC1-S6": "retirement: the effective N31 removal, no later than N09",
+      "HC1-S7": "the ONE use of the operator's privileged credential for this MR-2, through the certified channel whose launcher digest and mint tool sha256 are stated, with the OEP-1 observation time and verdict"
+    },
+    "values_at_hc1": "Derived at HC-1 time from the repository and the gate; never copied from this document."
+  },
+  "PHASES": {
+    "PHASE_1": "This successor: authority, owner record, DAG v1.0.7, schedule v1.0.1, channel implementation, outside tools pinned, harnesses, PEB demonstration, gates, CI -> READY_FOR_INDEPENDENT_RECERT. No real credential, no hosted connection.",
+    "PHASE_2": "Only after the channel's independent PASS and its certification event: the OEP-1 probe, once, through the certified channel; its evidence appended; a focused independent recertification of that delta; its event.",
+    "THEN": "fresh PRE-HC1 -> UTC margin (gate) -> HC-1 (HC1-S1..S7) -> N11 immediately."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "This authority executes nothing. No probe, mint, deposit, delivery or hosted connection occurs by it.",
+    "No operator credential is requested or used in PHASE 1.",
+    "No certification event is written by the authoring lane.",
+    "PASSWORD NULL remains under its own separate human confirmation."
+  ],
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": 0,
+  "self_check": {
+    "no_secret_value": "No credential, DSN, userinfo, password, hash of a secret, vault handle or entry key appears in this document. The sha256 values are of tool and launcher CODE.",
+    "pins_are_checked_by_code": "PMR-11 rebuilds the launcher and compares; the gate hashes the tool files; a stale pin is RED/STOP, never a warning."
+  },
+  "required_independent_review": "MANDATORY, with the DAG v1.0.7 amendment and the successor package.",
+  "final_state": "OPERATOR_CHANNEL_DECIDED_AND_IMPLEMENTED__TOOLS_PINNED__OEP1_CONTRACT_STATED__NOT_EXECUTED",
+  "next_gate": "Independent recertification of the operator-channel successor (PHASE 1)."
+}

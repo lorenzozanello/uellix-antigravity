@@ -123,7 +123,7 @@ describe('the harness measures a conforming candidate at every commit boundary',
     let status = 0
     let out = ''
     try {
-      out = execFileSync(process.execPath, [tool, `--driver-root=${REPO}`, `--depositor=${join(dir, 'none.js')}`, `--valid-until=${N09}`, `--target-host=${HARNESS_TARGET_HOST}`], {
+      out = execFileSync(process.execPath, [tool, `--driver-root=${REPO}`, `--depositor=${join(dir, 'none.js')}`, `--valid-until=${N09}`, `--target-host=${HARNESS_TARGET_HOST}`, '--operator-principal=postgres'], {
         env: { ...process.env, UELLIX_D1_MINT_OPERATOR_DATABASE_URL: ['postgresql:', '//postgres:', 'x', '@', HARNESS_TARGET_HOST, ':5432/postgres'].join('') },
         encoding: 'utf8',
       })
@@ -195,11 +195,22 @@ describe('the harness FAILS each non-conforming candidate on the clause it break
     ['NO_TARGET_PIN', 'UNPINNED_TARGET', 'REFUSES_UNPINNED_TARGET'],
     ['AMBIGUITY_AS_NOT_COMMITTED', 'COMMIT_TRANSPORT_LOST', 'CLASSIFIED_COMMIT_OUTCOME_UNKNOWN'],
     ['AMBIGUITY_DROPS_CANDIDATE', 'COMMIT_TRANSPORT_LOST', 'CANDIDATE_RETAINED_IN_CUSTODY'],
+    // OT-13 / OT-14 (operator-channel successor): each broken clause fails exactly its check.
+    ['NO_DRIVER_VERSION_CHECK', 'WRONG_DRIVER_VERSION', 'REFUSES_WRONG_DRIVER_VERSION'],
+    ['NO_PRINCIPAL_CHECK', 'WRONG_OPERATOR_PRINCIPAL', 'REFUSES_WRONG_OPERATOR_PRINCIPAL'],
   ]
   it.each(cases)('%s under %s -> %s FAILED', (variant, scenario, check) => {
     const r = harness(variant, scenario)
     expect(r.checks[check]).toBe('FAILED')
     expect(r.overall).toBe('DOES_NOT_CONFORM')
+  })
+  it.each([
+    ['WRONG_DRIVER_VERSION', 'REFUSES_WRONG_DRIVER_VERSION'],
+    ['WRONG_OPERATOR_PRINCIPAL', 'REFUSES_WRONG_OPERATOR_PRINCIPAL'],
+  ] as Array<[Scenario, string]>)('a conforming tool refuses %s before any driver call (%s)', (scenario, check) => {
+    const r = harness('CONFORMING', scenario)
+    expect(r.checks).toEqual({ OUTSIDE_REPOSITORY: 'PASSED', [check]: 'PASSED' })
+    expect(r.overall).toBe('CONFORMS')
   })
   it('the two ambiguity variants still conform when COMMIT is acknowledged (the defect is only on the unknown path)', () => {
     expect(allPassed(harness('AMBIGUITY_AS_NOT_COMMITTED', 'SUCCESS'))).toBe(true)

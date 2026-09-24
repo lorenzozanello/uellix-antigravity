@@ -41,6 +41,11 @@ export const EXECUTION_ENTRY_POINTS: readonly string[] = [
   'scripts/custody/d1-mint-tool-contract-harness.ts',
   'scripts/custody/d1-production-topology-demonstration.ts',
   'scripts/custody/d1-n30-deposit.ts',
+  // Operator channel (DAG v1.0.7): the launcher, its pre-execution gate, and the probe contract harness.
+  'scripts/custody/d1-mint-operator-launcher.ts',
+  'scripts/custody/d1-mint-operator-plan.ts',
+  'scripts/custody/d1-oep1-probe-harness.ts',
+  'scripts/custody/d1-mint-operator-channel-demonstration.ts',
 ]
 
 export const AUTHORITY_PREFIXES: readonly string[] = [

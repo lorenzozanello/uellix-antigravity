@@ -57,6 +57,12 @@ export type Scenario =
   | 'KILLED_DURING_COMMIT'
   | 'COMMIT_NO_FINAL_OUTPUT'
   | 'UNPINNED_TARGET'
+  /** OT-13: a driver at --driver-root whose package version is not the route-B one. */
+  | 'WRONG_DRIVER_VERSION'
+  /** OT-14: the operator URL names another principal than --operator-principal. */
+  | 'WRONG_OPERATOR_PRINCIPAL'
+  /** OT-1 at run time: the tool file lies inside a git work tree. */
+  | 'TOOL_INSIDE_GIT_TREE'
 type State = 'PASSED' | 'FAILED'
 
 /** How the fake driver fails AFTER COMMIT was requested, per scenario. `throw` carries the error's own properties. */
@@ -83,8 +89,13 @@ export const COMMIT_FAILURES: Readonly<Partial<Record<Scenario, CommitFailure & 
 /** The only target the harness ever names. RFC 6761: guaranteed never to resolve. */
 export const HARNESS_TARGET_HOST = 'db.harness-target.invalid'
 const OTHER_HOST = 'db.harness-other.invalid'
+/** The principal the harness's synthetic operator URL names, passed as --operator-principal. */
+export const HARNESS_OPERATOR_PRINCIPAL = 'postgres'
+/** The route-B driver version the fake driver reports (OT-13). */
+export const HARNESS_DRIVER_VERSION = '3.4.9'
 
-const FAKE_DRIVER = `'use strict'
+/** Exported for the operator-channel PEB demonstration (same bytes the harness uses). */
+export const FAKE_DRIVER = `'use strict'
 const fs = require('node:fs'); const path = require('node:path')
 const LOG = path.join(__dirname, 'driver-log.jsonl')
 const rec = (o) => fs.appendFileSync(LOG, JSON.stringify({ at: Date.now(), ...o }) + '\\n')
@@ -117,7 +128,7 @@ module.exports = function postgres(url, opts) {
 module.exports.__UELLIX_CONTRACT_FAKE__ = true
 `
 
-const FAKE_DEPOSITOR = `'use strict'
+export const FAKE_DEPOSITOR = `'use strict'
 const fs = require('node:fs'); const path = require('node:path')
 const chunks = []
 let firstAt = null
@@ -176,7 +187,7 @@ export function runMintToolContractHarness(params: {
   const temp = join(work, 'temp')
   for (const d of [driverDir, depositorDir, cwd, temp]) mkdirSync(d, { recursive: true })
   writeFileSync(join(driverRoot, 'package.json'), '{"name":"harness-driver-root","private":true}')
-  writeFileSync(join(driverDir, 'package.json'), '{"name":"postgres","main":"index.js"}')
+  writeFileSync(join(driverDir, 'package.json'), JSON.stringify({ name: 'postgres', main: 'index.js', version: params.scenario === 'WRONG_DRIVER_VERSION' ? '3.4.8' : HARNESS_DRIVER_VERSION }))
   writeFileSync(join(driverDir, 'index.js'), FAKE_DRIVER)
   const flag = FLAG_FOR[params.scenario]
   if (flag !== undefined) writeFileSync(join(driverDir, flag), '')
@@ -196,9 +207,18 @@ export function runMintToolContractHarness(params: {
     const val = process.env[k]
     if (val !== undefined) env[k] = val
   }
+  // OT-1 at run time: the same bytes, copied under a directory that carries a .git entry.
+  let toolToRun = resolvePath(params.toolPath)
+  if (params.scenario === 'TOOL_INSIDE_GIT_TREE') {
+    const gitTree = join(work, 'in-git-tree')
+    mkdirSync(join(gitTree, '.git'), { recursive: true })
+    toolToRun = join(gitTree, 'tool.js')
+    writeFileSync(toolToRun, readFileSync(resolvePath(params.toolPath)))
+  }
+  const principal = params.scenario === 'WRONG_OPERATOR_PRINCIPAL' ? 'someone_else' : HARNESS_OPERATOR_PRINCIPAL
   const run = spawnSync(
     process.execPath,
-    [resolvePath(params.toolPath), `--driver-root=${driverRoot}`, `--depositor=${depositor}`, `--valid-until=${params.validUntil}`, `--target-host=${HARNESS_TARGET_HOST}`],
+    [toolToRun, `--driver-root=${driverRoot}`, `--depositor=${depositor}`, `--valid-until=${params.validUntil}`, `--target-host=${HARNESS_TARGET_HOST}`, `--operator-principal=${principal}`],
     { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', timeout: commitFailure?.mode === 'hang' ? 8_000 : 60_000, windowsHide: true }
   )
   const toolOutput = `${run.stdout ?? ''}${run.stderr ?? ''}`
@@ -222,6 +242,12 @@ export function runMintToolContractHarness(params: {
 
   if (params.scenario === 'UNPINNED_TARGET') {
     checks.REFUSES_UNPINNED_TARGET = pf(run.status !== 0 && events.length === 0 && !adminLeaks(toolOutput))
+  } else if (params.scenario === 'WRONG_DRIVER_VERSION') {
+    checks.REFUSES_WRONG_DRIVER_VERSION = pf(run.status !== 0 && events.length === 0 && dep === null && !adminLeaks(toolOutput))
+  } else if (params.scenario === 'WRONG_OPERATOR_PRINCIPAL') {
+    checks.REFUSES_WRONG_OPERATOR_PRINCIPAL = pf(run.status !== 0 && events.length === 0 && dep === null && !adminLeaks(toolOutput))
+  } else if (params.scenario === 'TOOL_INSIDE_GIT_TREE') {
+    checks.REFUSES_INSIDE_GIT_TREE = pf(run.status !== 0 && events.length === 0 && dep === null && !adminLeaks(toolOutput))
   } else if (params.scenario === 'FAILS_BEFORE_TRANSACTION') {
     checks.SEQUENCE = pf(JSON.stringify(events.map((e) => e.event)) === JSON.stringify(['construct', 'BEGIN_FAILED', 'end']))
     checks.CLASSIFIED_DEFINITELY_NOT_COMMITTED = pf(classification.outcome === 'DEFINITELY_NOT_COMMITTED')

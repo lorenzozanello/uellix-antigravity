@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { deriveGraphFacts, hardPredecessorsOf } from '@/scripts/custody/d1-dag-validate'
+import { GRAPH_SOURCES, deriveGraphFacts, hardPredecessorsOf } from '@/scripts/custody/d1-dag-validate'
 import { CONJUNCT_EVALUATORS, effectiveRulings, readChain } from '@/scripts/custody/d1-pre-hc1-post-mint'
 import { P1_STATEMENTS } from '@/db/custody/p1-reads'
 import { COMMIT_UNKNOWN_TOKEN } from '@/db/custody/mint-route-b-contract'
@@ -24,8 +24,11 @@ const a = JSON.parse(text) as Record<string, unknown> & {
   COMMIT_OUTCOME_MODEL: { token: string }
   CERTIFICATION_EVENT_CONTRACT: { authorized_post_certification_delta: string }
 }
-const facts = deriveGraphFacts()
-const chain = readChain(ROOT)
+// Measured through v1.0.6 itself (the pattern of v1.0.5's test): a later amendment has its own file,
+// and this one keeps certifying the graph and the chain as they stood when v1.0.6 was written.
+const V106 = 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.6.json' as const
+const facts = deriveGraphFacts({ throughSource: V106 })
+const chain = readChain(ROOT, GRAPH_SOURCES.slice(0, GRAPH_SOURCES.indexOf(V106) + 1))
 
 describe('v1.0.6 leaves the graph as it was', () => {
   it('reads seven sources, adds nothing, fails nothing, keeps HC-1 immediately before N11', () => {

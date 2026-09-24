@@ -229,3 +229,63 @@ export function checkInventorySurfaces(repoRoot: string, listed: unknown): strin
   for (const id of byId.keys()) if (!derived.some((s) => s.surface === id)) reasons.push(`processes_or_environments lists ${id}, which the production topology does not have`)
   return reasons
 }
+
+// ---------------------------------------------------------------------------
+// SSL-06 for the OPERATOR credential (owner decision AC-6,
+// INVENTORY_EPHEMERAL_PARENT_LAUNCHER_AS_CREDENTIAL_BEARING_SURFACE)
+// ---------------------------------------------------------------------------
+// The operator's privileged connection string is not the auditor credential,
+// so it is not listed under the auditor's single inventory entry; it has its
+// own section, `operator_credential`, and N06 checks it against this derived
+// list exactly as it checks the auditor's surfaces.
+
+export type OperatorSurfaceId = 'OPERATOR_CREDENTIAL_LAUNCHER_SURFACE' | 'OPERATOR_CREDENTIAL_TOOL_SURFACE'
+
+export interface OperatorSurface {
+  readonly surface: OperatorSurfaceId
+  readonly kind: string
+  readonly holds_the_value: string
+  readonly lifetime: string
+  readonly destroyed: string
+  readonly basis: string
+}
+
+export function deriveOperatorCredentialSurfaces(): OperatorSurface[] {
+  return [
+    {
+      surface: 'OPERATOR_CREDENTIAL_LAUNCHER_SURFACE',
+      kind: 'PROCESS_HEAP_RESIDUAL',
+      holds_the_value:
+        'The built d1-mint-operator-launcher.js, one run, from the owner console: the raw-mode console input in one Buffer (zeroed right after spawn) and the one environment string spawn() requires plus what Node/libuv derive from it (NOT zeroable). It never carries the value in its own environment block, argv, output or any file.',
+      lifetime: 'One run: from the prompt to the exit of its one child tool. Short-lived, bare node, from a console.',
+      destroyed: 'At process exit, after the child tool exits.',
+      basis: 'AC-6; OPERATOR_CHANNEL_CONTRACT OC-1..OC-9; PEB-measured on a synthetic value by the operator-channel demonstration.',
+    },
+    {
+      surface: 'OPERATOR_CREDENTIAL_TOOL_SURFACE',
+      kind: 'PROCESS_ENVIRONMENT_BLOCK',
+      holds_the_value:
+        'UELLIX_D1_MINT_OPERATOR_DATABASE_URL in the environment block of exactly ONE pinned tool process per run (the OEP-1 probe tool or the route-B mint tool), created at CreateProcess, sharing the launcher console, inside its kill-on-close job; the tool deletes it from process.env before any child and holds it in the driver connection for its one run. The N30 depositor it may start receives an allowlisted environment without it.',
+      lifetime: 'The tool\'s lifetime; the block is destroyed by the OS at exit, including on kill.',
+      destroyed: 'At tool exit.',
+      basis: 'AC-4/AC-5; OT-3/OT-8 (mint), PC-3/PC-5 (probe); harness-measured on the real outside tools; PEB-measured on a synthetic value.',
+    },
+  ]
+}
+
+/** What the inventory's operator_credential section must list: exactly the derived operator surfaces. */
+export function checkOperatorCredentialSection(section: unknown): string[] {
+  const r: string[] = []
+  if (section === null || typeof section !== 'object') return ['the inventory has no operator_credential section (SSL-06 for the operator credential)']
+  const s = section as Record<string, unknown>
+  if (s.persistence !== 'NONE') r.push('operator_credential.persistence is not NONE')
+  if (typeof s.human_custodian !== 'string' || s.human_custodian === '') r.push('operator_credential.human_custodian is absent')
+  const listed = s.processes_or_environments
+  if (!Array.isArray(listed)) return [...r, 'operator_credential.processes_or_environments is not a list']
+  const ids = (listed as Array<Record<string, unknown>>).map((x) => String(x.surface))
+  const derived = deriveOperatorCredentialSurfaces().map((x) => x.surface)
+  for (const d of derived) if (!ids.includes(d)) r.push(`operator_credential omits surface ${d}`)
+  for (const id of ids) if (!derived.includes(id as OperatorSurfaceId)) r.push(`operator_credential lists ${id}, which the operator channel does not have`)
+  if (new Set(ids).size !== ids.length) r.push('operator_credential lists a surface twice')
+  return r
+}

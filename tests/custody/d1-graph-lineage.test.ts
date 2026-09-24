@@ -27,7 +27,13 @@ function copyRoot(): string {
   return root
 }
 const release = (root: string) => join(root, RELEASE)
-const good107 = { version: '1.0.7', amends: `${RELEASE}/${BASE}`, append_only: true }
+// The next amendment is the one after the LAST registered source, whatever version that is:
+// a fixed literal becomes the live amendment once the lineage grows past it.
+const LAST = /_v(\d+)\.(\d+)\.(\d+)\.json$/.exec(GRAPH_SOURCES[GRAPH_SOURCES.length - 1]!)!
+const NEXT = `${LAST[1]}.${LAST[2]}.${Number(LAST[3]) + 1}`
+const AFTER_NEXT = `${LAST[1]}.${LAST[2]}.${Number(LAST[3]) + 2}`
+const esc = (v: string) => v.replace(/\./g, '\\.')
+const goodNext = { version: NEXT, amends: `${RELEASE}/${BASE}`, append_only: true }
 
 describe('the lineage on disk', () => {
   it('is exactly the pinned GRAPH_SOURCES, in version order, with no error', () => {
@@ -38,12 +44,12 @@ describe('the lineage on disk', () => {
 
 describe('NB-6 controls: every deviation is an error, never a silent skip', () => {
   const cases: Array<[string, (root: string) => void, RegExp]> = [
-    ['an unregistered successor amendment', (r) => writeFileSync(join(release(r), amendment('1.0.7')), JSON.stringify(good107)), /is not the pinned GRAPH_SOURCES/],
+    ['an unregistered successor amendment', (r) => writeFileSync(join(release(r), amendment(NEXT)), JSON.stringify(goodNext)), /is not the pinned GRAPH_SOURCES/],
     ['a registered amendment missing', (r) => rmSync(join(release(r), amendment('1.0.4'))), /is not the pinned GRAPH_SOURCES/],
     ['a second file claiming an existing version', (r) => writeFileSync(join(release(r), 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.3.json'), JSON.stringify({ version: '1.0.3' })), /appears more than once/],
-    ['an amendment whose body declares another version', (r) => writeFileSync(join(release(r), amendment('1.0.7')), JSON.stringify({ ...good107, version: '1.0.8' })), /declares version 1\.0\.8, not 1\.0\.7/],
-    ['an amendment of another authority', (r) => writeFileSync(join(release(r), amendment('1.0.7')), JSON.stringify({ ...good107, amends: `${RELEASE}/SOMETHING_ELSE.json` })), /does not amend the lineage base/],
-    ['a lineage-named file that is not JSON', (r) => writeFileSync(join(release(r), amendment('1.0.7')), 'not json'), /is not JSON/],
+    ['an amendment whose body declares another version', (r) => writeFileSync(join(release(r), amendment(NEXT)), JSON.stringify({ ...goodNext, version: AFTER_NEXT })), new RegExp(`declares version ${esc(AFTER_NEXT)}, not ${esc(NEXT)}`)],
+    ['an amendment of another authority', (r) => writeFileSync(join(release(r), amendment(NEXT)), JSON.stringify({ ...goodNext, amends: `${RELEASE}/SOMETHING_ELSE.json` })), /does not amend the lineage base/],
+    ['a lineage-named file that is not JSON', (r) => writeFileSync(join(release(r), amendment(NEXT)), 'not json'), /is not JSON/],
     ['the base missing', (r) => rmSync(join(release(r), BASE)), /lineage base .* is missing/],
   ]
   it.each(cases)('%s', (_name, change, why) => {
@@ -61,7 +67,7 @@ describe('NB-6 controls: every deviation is an error, never a silent skip', () =
   it('an arbitrary JSON that does not claim the lineage name is not read at all', () => {
     const r = copyRoot()
     try {
-      writeFileSync(join(release(r), 'FIBDB053_D1_AUDITOR_SOMETHING_AMENDMENT_v1.0.7.json'), JSON.stringify(good107))
+      writeFileSync(join(release(r), `FIBDB053_D1_AUDITOR_SOMETHING_AMENDMENT_v${NEXT}.json`), JSON.stringify(goodNext))
       expect(deriveGraphLineage(release(r))).toEqual({ sources: [...GRAPH_SOURCES], errors: [] })
     } finally {
       rmSync(r, { recursive: true, force: true })

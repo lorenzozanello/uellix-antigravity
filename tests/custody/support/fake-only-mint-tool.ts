@@ -8,6 +8,12 @@
 // mint script (the detector in db/custody/mint-route-b-contract.ts keys on
 // exactly that guard).
 //
+// It does NOT implement OT-1's run-time git-tree refusal: it is rendered under
+// the OS temp directory, which on the authoring workstation is itself inside a
+// git work tree, so that refusal would stop every scenario. The harness's
+// TOOL_INSIDE_GIT_TREE scenario is therefore run against the real outside tool
+// only (execution record), never against this fixture.
+//
 // It carries no real target: the host it pins is whatever --target-host says,
 // and the harness passes an RFC 6761 `.invalid` host.
 //
@@ -31,6 +37,10 @@ export type ToolVariant =
   | 'COMMIT_CLASSIFIED_BY_CODE'
   /** NB-1 survivor strategy: a SQLSTATE-bearing error is read as a definite rollback. */
   | 'COMMIT_CLASSIFIED_BY_SQLSTATE'
+  /** OT-13 broken: any driver version is accepted. */
+  | 'NO_DRIVER_VERSION_CHECK'
+  /** OT-14 broken: the operator principal is not compared. */
+  | 'NO_PRINCIPAL_CHECK'
 
 export function renderFakeOnlyMintTool(variant: ToolVariant = 'CONFORMING'): string {
   const v = (name: ToolVariant, yes: string, no: string): string => (variant === name ? yes : no)
@@ -62,7 +72,7 @@ const out = (o) => process.stdout.write(JSON.stringify(o) + '\\n')
 const argOf = (k) => { const a = process.argv.slice(2).find((x) => x.startsWith(k)); return a === undefined ? undefined : a.slice(k.length) }
 
 async function main() {
-  const KNOWN = ['--driver-root=', '--depositor=', '--valid-until=', '--target-host=']
+  const KNOWN = ['--driver-root=', '--depositor=', '--valid-until=', '--target-host=', '--operator-principal=']
   for (const a of process.argv.slice(2)) if (!KNOWN.some((k) => a.startsWith(k))) { out({ refused: 'UNKNOWN_ARGUMENT' }); return 2 }
   const validUntil = argOf('--valid-until=') || ''
   if (!/^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d{3})?Z$/.test(validUntil)) { out({ refused: 'VALID_UNTIL' }); return 2 }
@@ -71,8 +81,14 @@ async function main() {
   const adminUrl = process.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL
   ${v('ADMIN_ENV_LEAKED_TO_DEPOSITOR', '', 'delete process.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL')}
   if (!adminUrl) { out({ refused: 'NO_OPERATOR_CONNECTION' }); return 2 }
+  const principal = argOf('--operator-principal=') || ''
+  if (principal === '') { out({ refused: 'NO_OPERATOR_PRINCIPAL' }); return 2 }
+  ${v('NO_PRINCIPAL_CHECK', '', "if (decodeURIComponent(new URL(adminUrl).username) !== principal) { out({ refused: 'OPERATOR_PRINCIPAL_NOT_THE_OBSERVED_ONE' }); return 2 }")}
   ${v('NO_TARGET_PIN', '', "if (new URL(adminUrl).hostname !== targetHost) { out({ refused: 'OPERATOR_TARGET_NOT_THE_PINNED_HOST' }); return 2 }")}
 
+  let version = null
+  try { version = JSON.parse(fs.readFileSync(path.join(argOf('--driver-root=') || '', 'node_modules', 'postgres', 'package.json'), 'utf8')).version } catch { version = null }
+  ${v('NO_DRIVER_VERSION_CHECK', '', "if (version !== '3.4.9') { out({ refused: 'DRIVER_VERSION_NOT_ROUTE_B' }); return 2 }")}
   const req = createRequire(path.join(argOf('--driver-root=') || '', 'package.json'))
   const postgres = req('postgres')
   // FAKE-ONLY GUARD: this fixture refuses every real driver.

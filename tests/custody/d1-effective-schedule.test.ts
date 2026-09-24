@@ -22,6 +22,10 @@ import { supersessionBody, writeValidScheduleChange } from './support/d1-schedul
 const ROOT = process.cwd()
 const LIVE = deriveEffectiveSchedule(ROOT)
 const LIVE_DOC = JSON.parse(readFileSync(join(ROOT, LIVE.source), 'utf8'))
+// The next link is the one after the EFFECTIVE link, whatever version that is: a fixed
+// literal would overwrite the live link once the chain grows past it.
+const LIVE_VERSION = /_v(\d+)\.(\d+)\.(\d+)\.json$/.exec(LIVE.source)
+const NEXT = LIVE_VERSION === null ? '1.0.0' : `${LIVE_VERSION[1]}.${LIVE_VERSION[2]}.${Number(LIVE_VERSION[3]) + 1}`
 
 const roots: string[] = []
 afterEach(() => {
@@ -63,10 +67,10 @@ describe('changing N08/N31 with an otherwise valid schedule re-derives, it is no
     const r = copyRoot()
     const N08 = new Date(Date.parse(LIVE.N08!) + 3 * 86_400_000).toISOString().replace('.000Z', 'Z')
     const N31 = new Date(Date.parse(N08) + 2 * 3_600_000).toISOString().replace('.000Z', 'Z')
-    writeValidScheduleChange(r, '1.0.1', N08, N31)
+    writeValidScheduleChange(r, NEXT, N08, N31)
     const eff = deriveEffectiveSchedule(r)
     expect(eff.errors).toEqual([])
-    expect(eff).toMatchObject({ N08, N31, N09: computeValidUntilUtc(N08), source: scheduleSupersessionPath('1.0.1') })
+    expect(eff).toMatchObject({ N08, N31, N09: computeValidUntilUtc(N08), source: scheduleSupersessionPath(NEXT) })
     const inv = JSON.parse(readFileSync(join(r, 'docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json'), 'utf8'))
     const states = JSON.parse(readFileSync(join(ROOT, SCHEDULE_BASE), 'utf8')).N06_EVALUATION.predecessor_states as Record<string, NodeState>
     const ev = evaluateN06({ rootClause: readRootClause(ROOT), entry: inv.entries[0], plannedFinalWitnessUtc: eff.N08, predecessorStates: states, hardPredecessors: hardPredecessorsOf('N06') })
@@ -85,7 +89,7 @@ describe('PRE-HC1 reads the EFFECTIVE schedule, not a fixed record', () => {
     for (const d of ['docs/ops/owner-ratifications', 'docs/ops/fib']) cpSync(join(ROOT, d), join(r, d), { recursive: true })
     const N08 = new Date(Date.parse(LIVE.N08!) + 86_400_000).toISOString().replace('.000Z', 'Z')
     const N31 = new Date(Date.parse(N08) + 3_600_000).toISOString().replace('.000Z', 'Z')
-    writeValidScheduleChange(r, '1.0.1', N08, N31)
+    writeValidScheduleChange(r, NEXT, N08, N31)
     expect(deriveUpstreamStates(r).states).toMatchObject({ N06: 'SATISFIED', N09: 'SATISFIED' })
     // Now put the inventory back on the previous schedule: both checks against the effective one fail.
     const inv = join(r, 'docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json')
@@ -99,16 +103,16 @@ describe('PRE-HC1 reads the EFFECTIVE schedule, not a fixed record', () => {
 describe('every broken link is an error, never a silent pick', () => {
   const next = () => ({ supersedes: LIVE.source, N08: LIVE.N08!, N31: LIVE.N31! })
   const cases: Array<[string, (r: string) => void, RegExp]> = [
-    ['a hand-chosen N09', (r) => put(r, scheduleSupersessionPath('1.0.1'), supersessionBody({ ...next(), N09: new Date(Date.parse(LIVE.N09!) + 3_600_000).toISOString() })), /is not computeValidUntilUtc\(N08\)/],
-    ['N08 that is not the signed owner value', (r) => put(r, scheduleSupersessionPath('1.0.1'), { ...supersessionBody(next()), N08: { value: LIVE.N31 } }), /N08 is not the owner's signed value/],
-    ['an unsigned link', (r) => put(r, scheduleSupersessionPath('1.0.1'), { ...supersessionBody(next()), OWNER_INPUTS_SIGNED: { ...supersessionBody(next()).OWNER_INPUTS_SIGNED as object, SIGNED: 'NO' } }), /does not carry the owner's signed inputs/],
-    ['a link that skips the one before it', (r) => put(r, scheduleSupersessionPath('1.0.1'), supersessionBody({ ...next(), supersedes: SCHEDULE_BASE })), /not the link before it/],
+    ['a hand-chosen N09', (r) => put(r, scheduleSupersessionPath(NEXT), supersessionBody({ ...next(), N09: new Date(Date.parse(LIVE.N09!) + 3_600_000).toISOString() })), /is not computeValidUntilUtc\(N08\)/],
+    ['N08 that is not the signed owner value', (r) => put(r, scheduleSupersessionPath(NEXT), { ...supersessionBody(next()), N08: { value: LIVE.N31 } }), /N08 is not the owner's signed value/],
+    ['an unsigned link', (r) => put(r, scheduleSupersessionPath(NEXT), { ...supersessionBody(next()), OWNER_INPUTS_SIGNED: { ...supersessionBody(next()).OWNER_INPUTS_SIGNED as object, SIGNED: 'NO' } }), /does not carry the owner's signed inputs/],
+    ['a link that skips the one before it', (r) => put(r, scheduleSupersessionPath(NEXT), supersessionBody({ ...next(), supersedes: SCHEDULE_BASE })), /not the link before it/],
     ['a duplicate version', (r) => put(r, 'docs/ops/release/FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.00.json', supersessionBody(next())), /appears more than once/],
-    ['a removal before the witness', (r) => put(r, scheduleSupersessionPath('1.0.1'), supersessionBody({ ...next(), N31: new Date(Date.parse(LIVE.N08!) - 1000).toISOString() })), /EARLIER than the planned FINAL WITNESS/],
-    ['a removal after the expiry', (r) => put(r, scheduleSupersessionPath('1.0.1'), supersessionBody({ ...next(), N31: new Date(Date.parse(LIVE.N09!) + 1000).toISOString() })), /LATER than the expiry/],
-    ['a link that is not append-only', (r) => put(r, scheduleSupersessionPath('1.0.1'), { ...supersessionBody(next()), append_only: false }), /is not append-only/],
-    ['a link that is not JSON', (r) => put(r, scheduleSupersessionPath('1.0.1'), 'not json'), /is not JSON/],
-    ['a date-only N08', (r) => put(r, scheduleSupersessionPath('1.0.1'), supersessionBody({ ...next(), N08: LIVE.N08!.slice(0, 10), N09: 'x' })), /N08/],
+    ['a removal before the witness', (r) => put(r, scheduleSupersessionPath(NEXT), supersessionBody({ ...next(), N31: new Date(Date.parse(LIVE.N08!) - 1000).toISOString() })), /EARLIER than the planned FINAL WITNESS/],
+    ['a removal after the expiry', (r) => put(r, scheduleSupersessionPath(NEXT), supersessionBody({ ...next(), N31: new Date(Date.parse(LIVE.N09!) + 1000).toISOString() })), /LATER than the expiry/],
+    ['a link that is not append-only', (r) => put(r, scheduleSupersessionPath(NEXT), { ...supersessionBody(next()), append_only: false }), /is not append-only/],
+    ['a link that is not JSON', (r) => put(r, scheduleSupersessionPath(NEXT), 'not json'), /is not JSON/],
+    ['a date-only N08', (r) => put(r, scheduleSupersessionPath(NEXT), supersessionBody({ ...next(), N08: LIVE.N08!.slice(0, 10), N09: 'x' })), /N08/],
   ]
   it.each(cases)('%s', (_name, change, why) => {
     const r = copyRoot()

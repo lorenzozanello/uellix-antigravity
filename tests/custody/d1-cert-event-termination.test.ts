@@ -9,9 +9,11 @@
 // on a disposable real-git copy, with a SYNTHETIC event (never the real one):
 //
 //   A  the candidate, no event          -> PMR-9 unsatisfied, N10 NOT_READY
-//   B  candidate + ONLY a correct event -> PMR-9 satisfied, N10 READY, and the
-//                                          COMPLETE custody suite, THIS FILE
-//                                          INCLUDED, is green at the successor
+//   B  candidate + ONLY a correct event -> PMR-9 satisfied, N10 READY unless an
+//                                          evidence-gated conjunct is open (see
+//                                          OPEN_BY_DESIGN), and the COMPLETE
+//                                          custody suite, THIS FILE INCLUDED, is
+//                                          green at the successor
 //   C  anything else after the event, a wrong event, or a schedule written
 //      after certification            -> N10 NOT_READY
 //
@@ -26,12 +28,13 @@
 // never from console text (CI #429 failed on ANSI-coloured output).
 
 import { execFileSync, spawnSync } from 'node:child_process'
-import { appendFileSync, readFileSync, readdirSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { eventPathFor, evaluateCandidateBinding, gatherCandidateFacts } from '@/scripts/custody/d1-candidate-certification'
 import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
+import { OEP1_EVIDENCE_PATTERN } from '@/scripts/custody/d1-mint-operator-evidence'
 import { PATHS, evaluatePreHc1 } from '@/scripts/custody/d1-pre-hc1'
 import { createTerminationRepo, type TerminationRepo } from './support/d1-termination-repo'
 import { writeValidScheduleChange } from './support/d1-schedule-fixture'
@@ -41,6 +44,16 @@ const THIS_FILE = 'tests/custody/d1-cert-event-termination.test.ts'
 const NESTED_MARKER = 'UELLIX_D1_TERMINATION_NESTED'
 const NESTED = process.env[NESTED_MARKER] === '1'
 const PMR9 = 'PMR-9_CANDIDATE_CERTIFIED'
+const PMR13 = 'PMR-13_OEP1_LOGGING_POSTURE_CLOSED'
+/**
+ * DAG v1.0.7: a certified candidate may still be NOT_READY for ONE designed reason, derived here
+ * WITHOUT the evaluator: the operator channel is certified BEFORE its OEP-1 probe runs (owner
+ * decision OEP1_PROBE = C), so while no OEP-1 evidence file exists PMR-13 is open by design.
+ * Once the evidence exists this set is empty and B demands READY exactly as before.
+ */
+const OPEN_BY_DESIGN = (dir: string): string[] =>
+  existsSync(join(dir, 'docs/ops/release')) && readdirSync(join(dir, 'docs/ops/release')).some((n) => OEP1_EVIDENCE_PATTERN.test(n)) ? [] : [PMR13]
+const sorted = (x: readonly string[]) => [...x].sort()
 const FROZEN_INTEGRATION =
   /= ([0-9a-f]{40})/.exec(String((JSON.parse(readFileSync(join(SOURCE, PATHS.capability), 'utf8')) as { AS_OF_INTEGRATION_REF: string }).AS_OF_INTEGRATION_REF))?.[1] ?? ''
 
@@ -114,7 +127,7 @@ describe('the certifier move terminates', () => {
     expect(R.g('status', '--porcelain', '--untracked-files=all')).toBe('')
   })
 
-  it('A: at the candidate, with no event, PMR-9 is the only unsatisfied thing and N10 is NOT_READY', () => {
+  it('A: at the candidate, with no event, PMR-9 (plus only what is open by design) is unsatisfied and N10 is NOT_READY', () => {
     R.resetToCandidate()
     expect(evaluateCandidateBinding(gatherCandidateFacts(R.dir)).eligible).toBe(false)
     // The schedule that will be executed is already in the candidate.
@@ -122,10 +135,11 @@ describe('the certifier move terminates', () => {
     expect(schedule.errors).toEqual([])
     const ev = evaluateAt(R.candidate)
     expect(ev.n01.tokens).toEqual([])
-    expect(ev.n10).toEqual({ readiness: 'NOT_READY', unsatisfied: [PMR9] })
+    expect(ev.n10.readiness).toBe('NOT_READY')
+    expect(sorted(ev.n10.unsatisfied)).toEqual(sorted([PMR9, ...OPEN_BY_DESIGN(R.dir)]))
   }, 180_000)
 
-  it('B: schedule -> candidate -> ONLY a correct event: PMR-9 satisfied, N10 READY, and the COMPLETE custody suite (this file included) green', () => {
+  it('B: schedule -> candidate -> ONLY a correct event: PMR-9 satisfied, N10 READY unless open by design, and the COMPLETE custody suite (this file included) green', () => {
     R.resetToCandidate()
     const scheduleAtCandidate = deriveEffectiveSchedule(R.dir)
     const successor = commitEventOnCandidate()
@@ -138,7 +152,8 @@ describe('the certifier move terminates', () => {
     expect(binding.eligible).toBe(true)
     const ev = evaluateAt(successor)
     expect(ev.n01.tokens).toEqual([])
-    expect(ev.n10).toEqual({ readiness: 'READY_FOR_HUMAN_CONFIRMATION', unsatisfied: [] })
+    const open = OPEN_BY_DESIGN(R.dir)
+    expect(ev.n10).toEqual(open.length === 0 ? { readiness: 'READY_FOR_HUMAN_CONFIRMATION', unsatisfied: [] } : { readiness: 'NOT_READY', unsatisfied: open })
 
     if (NESTED) return // depth bound: the nested run is this very assertion, one level up
 
@@ -179,7 +194,7 @@ describe('C: anything but the event alone is NOT_READY', () => {
     expect(ev.n10.unsatisfied).toContain(PMR9)
   }, 180_000)
 
-  it('candidate -> event -> a VALID schedule change: the certification no longer binds (NOT_READY by PMR-9 alone)', () => {
+  it('candidate -> event -> a VALID schedule change: the certification no longer binds (NOT_READY by PMR-9, plus only what is open by design)', () => {
     commitEventOnCandidate()
     const s = deriveEffectiveSchedule(R.dir)
     writeValidScheduleChange(R.dir, '9.9.9', later(s.N08!, 1), later(s.N31!, 1))
@@ -188,7 +203,9 @@ describe('C: anything but the event alone is NOT_READY', () => {
     expect(moved.errors).toEqual([])
     expect(moved.N08).not.toBe(s.N08)
     // The schedule itself re-derives (N06/N09 hold); only the certification is lost.
-    expect(evaluateAt(head).n10).toEqual({ readiness: 'NOT_READY', unsatisfied: [PMR9] })
+    const n10 = evaluateAt(head).n10
+    expect(n10.readiness).toBe('NOT_READY')
+    expect(sorted(n10.unsatisfied)).toEqual(sorted([PMR9, ...OPEN_BY_DESIGN(R.dir)]))
   }, 180_000)
 
   it('event + an uncommitted edit -> NOT_READY', () => {
@@ -217,13 +234,15 @@ describe('C: anything but the event alone is NOT_READY', () => {
     ['a self-certification', () => ({ over: { certifier_is_not_the_author: false } })],
     ['a digest of a different package', () => ({ over: { package_closure_digest: '0'.repeat(64) } })],
   ]
-  it.each(wrongEvents)('%s -> NOT_READY, and PMR-9 is the only reason', (_name, make) => {
+  it.each(wrongEvents)('%s -> NOT_READY, and PMR-9 is the only reason beyond what is open by design', (_name, make) => {
     R.resetToCandidate()
     const { over, path } = make(R)
     expect(over.candidate_commit ?? R.candidate).toMatch(/^[0-9a-f]{40}$/)
     if (over.candidate_commit !== undefined) expect(over.candidate_commit).not.toBe(R.candidate)
     const head = commitEventOnCandidate(over, path)
     expect(evaluateCandidateBinding(gatherCandidateFacts(R.dir)).eligible).toBe(false)
-    expect(evaluateAt(head).n10).toEqual({ readiness: 'NOT_READY', unsatisfied: [PMR9] })
+    const n10 = evaluateAt(head).n10
+    expect(n10.readiness).toBe('NOT_READY')
+    expect(sorted(n10.unsatisfied)).toEqual(sorted([PMR9, ...OPEN_BY_DESIGN(R.dir)]))
   }, 180_000)
 })

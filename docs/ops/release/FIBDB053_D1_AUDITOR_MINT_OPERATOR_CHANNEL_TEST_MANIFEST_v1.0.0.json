@@ -1,0 +1,117 @@
+{
+  "manifest_id": "FIBDB053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "node_or_batch": "batch",
+  "authority_reference": "db/custody/mint-route-b-contract.ts:120 (OT-3 channel NOT decided); docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json:1597 (NON_AUTHORIZATIONS[23] operator credential use); docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json:841 (SSL-06 CONSEQUENT_BINDING_REQUIREMENT); docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.6.json:198 (OEP-1_HOSTED_LOGGING_POSTURE); docs/ops/release/FIBDB053_D1_AUDITOR_POST_MINT_COMPLETENESS_EXECUTION_RECORD_v1.0.0.json:80 (channel belongs to the future execution authority); docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0.json (owner decisions OT3_CHANNEL=OPTION_A, NA23 narrow exception, SSL06 parent-launcher surface, EXECUTION_PROCEDURE, TOOL_BINDING, HC1_SCOPE, OEP1 NOT_WAIVED, OEP1_PROBE=C, schedule N08/N31)",
+  "dependencies": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PREHC1_PACKAGE_CERTIFICATION_d0c56661e1bf_v1.0.0.json (certification event of the predecessor candidate d0c56661; present, PASS_WITH_NONBLOCKING_FINDINGS, 0 blocking)",
+    "N05 SATISFIED (CERT-OCC-CUSTODY-REALIZATION-R2): the process-scoped delivery primitives reused unmodified (CONSUMER_SPAWN_FLAGS, assertArgvIsClean, isProcessAttachedToConsole)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "S-OPERATOR-URL",
+      "purpose": "A synthetic operator connection string (RFC 6761 .invalid host, synthetic password) must appear ONLY in the environment block of the one child tool process: never in the launcher's own environment block, argv, stdout/stderr, cwd/TEMP files, PSReadLine history, the depositor's environment/argv, or any conhost.exe environment block (PEB-measured)."
+    },
+    {
+      "id": "S-OPERATOR-PASSWORD",
+      "purpose": "The password component of the synthetic operator URL, searched separately (raw and base64) so a partial leak of the credential without its URL framing is still caught."
+    },
+    {
+      "id": "S-GENERATED-VALUE",
+      "purpose": "The tool-generated auditor value under the fake driver must never appear in statement text, tool output or files (existing OT-9, re-run against the real outside tool)."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P-1",
+      "description": "The effective schedule resolves through N06 closure -> v1.0.0 -> v1.0.1 with zero errors: N08 2026-09-28T14:00:00Z, N31 2026-09-28T18:00:00Z, N09 = computeValidUntilUtc(N08) executed; the inventory expiry/removal equal the effective values.",
+      "test_file": "tests/custody/d1-effective-schedule.test.ts"
+    },
+    {
+      "id": "P-2",
+      "description": "The launcher build is deterministic (CRLF-normalized source, LF emit) and its digest equals the digest pinned in the execution authority's CHANNEL_BINDING.",
+      "test_file": "tests/custody/d1-mint-operator-channel.test.ts"
+    },
+    {
+      "id": "P-3",
+      "description": "The launcher core, given a TTY stream double, reads the secret in raw mode, writes no character of it, restores cooked mode, and spawns exactly one child with an allowlisted environment carrying the operator variable, windowsHide:false, detached:false, shell:false, argv free of the secret.",
+      "test_file": "tests/custody/d1-mint-operator-channel.test.ts"
+    },
+    {
+      "id": "P-4",
+      "description": "The plan derived from the repository (N04 direct host, effective N09, route-B driver root with postgres 3.4.9, pinned tool/probe/launcher hashes) verifies clean against itself.",
+      "test_file": "tests/custody/d1-mint-operator-channel.test.ts"
+    },
+    {
+      "id": "P-5",
+      "description": "The OEP-1 probe contract harness: a CONFORMING fake-only probe fixture opens exactly one READ ONLY transaction, sends only the pinned probe statement, spawns no child, prints only settings rows and identity names, and refuses an unpinned host and a wrong driver version.",
+      "test_file": "tests/custody/d1-oep1-probe-contract.test.ts"
+    },
+    {
+      "id": "P-6",
+      "description": "The OEP-1 verdict function returns PASS only for a canned safe posture (log_statement none/ddl, duration/sampling logging off, no parameter logging on error, debug_print_* off, no loaded auditing/explain/statement-tracking facility that would record the nested ALTER ROLE).",
+      "test_file": "tests/custody/d1-oep1-probe-contract.test.ts"
+    },
+    {
+      "id": "P-7",
+      "description": "N06 is SATISFIED with the operator-credential section listing exactly the derived operator surfaces (OPERATOR_CREDENTIAL_LAUNCHER_SURFACE, OPERATOR_CREDENTIAL_TOOL_SURFACE).",
+      "test_file": "tests/custody/d1-n06-closure.test.ts"
+    },
+    {
+      "id": "P-8",
+      "description": "The chain reads DAG v1.0.7: AC-4/AC-5/AC-6 declared and ruled by the SIGNED owner record; PMR-11/PMR-12/PMR-13 registered with evaluators; graph counts unchanged (0 nodes, 0 edges added).",
+      "test_file": "tests/custody/d1-dag-amendment-v107.test.ts"
+    },
+    {
+      "id": "P-9",
+      "description": "Termination: the successor candidate + ONLY a correct certification event -> PMR-9 satisfied and the unsatisfied set is exactly the evidence-gated set (PMR-13 while no OEP-1 evidence exists), and the complete custody suite (termination file included) is green in the copy.",
+      "test_file": "tests/custody/d1-cert-event-termination.test.ts"
+    },
+    {
+      "id": "P-10",
+      "description": "Real outside mint tool and probe tool measured by the contract harnesses (all scenarios CONFORMS) and the synthetic PEB channel demonstration (secret only in the tool's environment block; launcher, depositor, conhost, argv, files, history clean) recorded in the execution record.",
+      "test_file": "scripts/custody/d1-mint-operator-channel-demonstration.ts"
+    }
+  ],
+  "negative_controls": [
+    { "id": "N-ECHO", "description": "A prompt reader that writes the typed bytes, or that does not enter raw mode, or that is not raw after setRawMode, is refused / detected.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-ARGV", "description": "A child argv carrying the operator URL or its password (raw or base64) is refused before spawn.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-PARENT-ENV", "description": "The launcher refuses to run if the operator variable is already present in its own process.env, and never writes process.env (asserted before/after).", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-FILE-TEMP", "description": "No file under the launcher cwd/TEMP or the tool cwd/TEMP carries the sentinel after a run (demonstration + harness FILES_CLEAN).", "test_file": "scripts/custody/d1-mint-operator-channel-demonstration.ts" },
+    { "id": "N-HISTORY", "description": "The PSReadLine history file does not contain the sentinel after the demonstration, and the launch command line carries no secret.", "test_file": "scripts/custody/d1-mint-operator-channel-demonstration.ts" },
+    { "id": "N-CONHOST", "description": "No conhost.exe environment block carries the sentinel (PEB); a launcher without a console is refused before the prompt.", "test_file": "scripts/custody/d1-mint-operator-channel-demonstration.ts" },
+    { "id": "N-DEPOSITOR", "description": "The depositor's environment block and argv carry neither the operator variable name nor the sentinel (harness DEPOSITOR_ENV_CLEAN + PEB).", "test_file": "scripts/custody/d1-mint-operator-channel-demonstration.ts" },
+    { "id": "N-WRONG-HOST", "description": "A plan whose target host differs from the N04 derivation -> STOP; an operator URL whose host differs from the plan -> launcher refuses before spawn; tool refuses an unpinned privileged host.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-WRONG-VALID-UNTIL", "description": "A plan whose valid-until differs from the effective N09 -> STOP.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-WRONG-DRIVER-ROOT", "description": "A plan whose driver root differs from the route-B driver root, or whose postgres version is not 3.4.9 -> STOP; the tool refuses a driver of another version before constructing a client.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-STALE-TOOL-HASH", "description": "A tool/probe/launcher file whose sha256 differs from the pin (one byte changed) -> STOP at the pre-execution gate and in the launcher before the prompt; a launcher source change without a pin update turns P-2 RED.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-SURFACE-OMITTED", "description": "Removing either operator surface from the inventory section, or adding an undeclared one -> N06 NOT_SATISFIED and PMR-12 unsatisfied.", "test_file": "tests/custody/d1-n06-closure.test.ts" },
+    { "id": "N-SCHEDULE-MISMATCH", "description": "Inventory still carrying the v1.0.0 expiry/removal against the v1.0.1 schedule -> N06 NOT_SATISFIED; a v1.0.1 carrying the old N09 or superseding the wrong link -> schedule chain error.", "test_file": "tests/custody/d1-effective-schedule.test.ts" },
+    { "id": "N-SYNTHETIC-MODE-REAL-HOST", "description": "Non-TTY (piped) secret input is refused unless the plan's target host is an RFC 6761 .invalid host.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "N-PROBE-MUTATES", "description": "Probe fixture variants that open a read-write transaction, send any statement besides the pinned one, send set_config/ALTER/DO, spawn a child, or print the operator URL are DOES_NOT_CONFORM.", "test_file": "tests/custody/d1-oep1-probe-contract.test.ts" },
+    { "id": "N-OEP1-VERDICT", "description": "Each unsafe posture (log_statement all/mod, duration logging on, sampling on, parameter logging on error, debug_print on, pgaudit loaded with logging, pg_stat_statements track all+utility, auto_explain logging) -> FAIL; any required setting invisible -> INCONCLUSIVE; neither closes OEP-1.", "test_file": "tests/custody/d1-oep1-probe-contract.test.ts" },
+    { "id": "N-OEP1-EVIDENCE", "description": "PMR-13 is unsatisfied with no evidence, and with evidence whose hashes differ from the certified pins, whose target differs from N04, whose settings list is not exactly the closed list, whose verdict is not PASS, or whose channel certification event does not certify an ancestor candidate carrying the same pins.", "test_file": "tests/custody/d1-dag-amendment-v107.test.ts" },
+    { "id": "N-FORGED-RULING", "description": "An AC-4/5/6 ruling whose owner record is unsigned or carries another outcome -> PMR-7 unsatisfied.", "test_file": "tests/custody/d1-dag-amendment-v107.test.ts" }
+  ],
+  "mutation_controls": [
+    { "id": "M-ECHO", "description": "Launcher prompt writes each typed byte -> N-ECHO RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-NO-RAW", "description": "setRawMode(true) removed -> N-ECHO RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-ENV-SPREAD", "description": "Child env built from {...process.env} instead of the allowlist -> P-3 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-PARENT-ENV-WRITE", "description": "Launcher assigns process.env[operator var] -> N-PARENT-ENV RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-WINDOWS-HIDE", "description": "windowsHide:true on the tool spawn -> P-3 RED (and the conhost leak it causes is the B-1 class).", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-ARGV-CHECK", "description": "argv secret check removed -> N-ARGV RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-HOST-CHECK", "description": "Launcher URL-host == plan-host check removed -> N-WRONG-HOST RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-PLAN-HOST", "description": "verifyPlan ignores targetHost -> N-WRONG-HOST RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-PLAN-VALID-UNTIL", "description": "verifyPlan ignores validUntil -> N-WRONG-VALID-UNTIL RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-PLAN-DRIVER", "description": "verifyPlan ignores driverRoot/driverVersion -> N-WRONG-DRIVER-ROOT RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-TOOL-HASH", "description": "Launcher tool sha256 check removed -> N-STALE-TOOL-HASH RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-SYNTHETIC-GATE", "description": "Piped input accepted for any host -> N-SYNTHETIC-MODE-REAL-HOST RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-N06-OPERATOR", "description": "N06 operator-surface check dropped -> N-SURFACE-OMITTED RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-OEP1-VERDICT", "description": "One unsafe-posture rule removed from the verdict -> N-OEP1-VERDICT RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-PMR13-PINS", "description": "PMR-13 stops comparing evidence hashes to the pins -> N-OEP1-EVIDENCE RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "M-SELF-TEST", "description": "A comment-only mutant must SURVIVE (the battery can report green); a battery that reports every mutant RED including this one is itself defective.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" }
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}
