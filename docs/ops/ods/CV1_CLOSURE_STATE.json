@@ -1,0 +1,648 @@
+{
+  "state_id": "CV1_CLOSURE_STATE",
+  "schema_version": "1.0.0",
+  "state_class": "OPERATIONAL_DERIVED_STATE",
+  "not_authority": true,
+  "description": "Operational closure state for Commercial V1, seeded conservatively by lane CV1-DEVOS-OPUS55-AND-CLOSURE-STATE-R1. NOT authority and NOT append-only: every value is a pointer to evidence and is re-checkable with `pnpm ops:closure-state -- validate --verify-git`. Frozen authority, certified artifacts and docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json (the canonical gate ledger) win on any conflict; this state assigns no ledger gate state. Branch-local facts are marked BRANCH_LOCAL and NOT_INTEGRATED; none of the four records is integrated into integration/commercial-v1 at the integration base.",
+  "revision": 1,
+  "as_of": "2026-09-24T13:05:00Z",
+  "written_by_lane": "CV1-DEVOS-OPUS55-AND-CLOSURE-STATE-R1",
+  "integration_base": {
+    "branch": "integration/commercial-v1",
+    "sha": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "tree_sha": "7228f833c57bfd37fe025546d939ecd46336159c"
+  },
+  "records": [
+    {
+      "gate_id": "INFRA_CONTROL_PLANE_READ",
+      "milestone": "CV1 infra control-plane governed reads (PR #214 lineage): v1.0.9 candidate, recert materialization, executed read bundle",
+      "lifecycle_state": "EVIDENCED",
+      "implementation_status": "IMPLEMENTED",
+      "integration_status": "NOT_INTEGRATED",
+      "candidate_sha": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2",
+      "tree_sha": "db2d83ff70fd5c58f04af0b88fc972a871d90e54",
+      "lineage_shas": {
+        "materialization": "3190d3eebee71cf684f55ab6b1722c9cd7da7300",
+        "evidence_head": "1a26a144094ff0d1b5cac2b97d1c01519b509fff"
+      },
+      "authority": {
+        "path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.9.json",
+        "ref": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2"
+      },
+      "authority_version": "1.0.9",
+      "certification": {
+        "certification_id": "INFRA_E7C8E67B59BF_DELTA_RECERT_IC",
+        "kind": "INDEPENDENT",
+        "verdict": "INFRA_L7_DEPLOYMENT_REPO_WITNESS_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+        "scope": "BRANCH_LOCAL",
+        "certified_sha": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2",
+        "certified_authority_version": "1.0.9",
+        "certified_package_digest": "4b584f3fcadc8a5e0ec25a7213b68959ebf1e0c6d9104d0c503624affb663e9f",
+        "evidence_fact_id": "INFRA-RECERT-VERDICT"
+      },
+      "certification_status": "CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_inherits_from": null,
+      "covered_paths": [
+        "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.9.json",
+        "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.9.json",
+        "scripts/infra-read/evidence-adjudication.ts",
+        "scripts/infra-read/executor.ts",
+        "scripts/infra-read/mutation-battery.mjs",
+        "scripts/infra-read/run-governed-reads.ts",
+        "tests/infra-read/entrypoint.test.ts",
+        "tests/infra-read/l7-deployment-repo.test.ts"
+      ],
+      "covered_package_digest": "4b584f3fcadc8a5e0ec25a7213b68959ebf1e0c6d9104d0c503624affb663e9f",
+      "evidence": [
+        {
+          "fact_id": "INFRA-AUTH-VERSION",
+          "class": "REPOSITORY_FACT",
+          "claim": "Governing amendment is v1.0.9.",
+          "ref": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2",
+          "path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.9.json",
+          "field": "version",
+          "value": "1.0.9",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-RECERT-VERDICT",
+          "class": "INDEPENDENT_CERTIFICATION",
+          "claim": "Independent focused recert of e7c8e67b (separate review conversation) materialized at 3190d3ee.",
+          "ref": "3190d3eebee71cf684f55ab6b1722c9cd7da7300",
+          "path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_E7C8E67B59BF_IC_v1.0.0.json",
+          "field": "VERDICT.verdict",
+          "value": "INFRA_L7_DEPLOYMENT_REPO_WITNESS_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-RECERT-BLOCKING-COUNT",
+          "class": "REPOSITORY_FACT",
+          "claim": "The recert records zero blocking findings.",
+          "ref": "3190d3eebee71cf684f55ab6b1722c9cd7da7300",
+          "path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_E7C8E67B59BF_IC_v1.0.0.json",
+          "field": "VERDICT.blocking_findings",
+          "value": 0,
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-RECERT-CANDIDATE",
+          "class": "REPOSITORY_FACT",
+          "claim": "The recert binds exactly candidate e7c8e67b.",
+          "ref": "3190d3eebee71cf684f55ab6b1722c9cd7da7300",
+          "path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_E7C8E67B59BF_IC_v1.0.0.json",
+          "field": "CERTIFIED_CANDIDATE.candidate_head",
+          "value": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-IMPL-PATH",
+          "class": "REPOSITORY_FACT",
+          "claim": "The read executor exists at the candidate (branch-local).",
+          "ref": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2",
+          "path": "scripts/infra-read/executor.ts",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-ARMED-AT-RUNTIME",
+          "class": "REPOSITORY_FACT",
+          "claim": "The executed bundle records all three arming limbs true at runtime.",
+          "ref": "1a26a144094ff0d1b5cac2b97d1c01519b509fff",
+          "path": "docs/ops/release/evidence/CV1_INFRA_READ_EXEC_E7C8E67B59BF/BUNDLE_SUMMARY.json",
+          "field": "ac1.armed_at_runtime",
+          "value": true,
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-DN0-HEAD",
+          "class": "REPOSITORY_FACT",
+          "claim": "The pre-read check ran against head 3190d3ee (the materialization).",
+          "ref": "1a26a144094ff0d1b5cac2b97d1c01519b509fff",
+          "path": "docs/ops/release/evidence/CV1_INFRA_READ_EXEC_E7C8E67B59BF/BUNDLE_SUMMARY.json",
+          "field": "dn0.head",
+          "value": "3190d3eebee71cf684f55ab6b1722c9cd7da7300",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-DN0-MEASURED",
+          "class": "REPOSITORY_FACT",
+          "claim": "Pre-read check timestamp (used as observed_at).",
+          "ref": "1a26a144094ff0d1b5cac2b97d1c01519b509fff",
+          "path": "docs/ops/release/evidence/CV1_INFRA_READ_EXEC_E7C8E67B59BF/BUNDLE_SUMMARY.json",
+          "field": "dn0.measured_utc",
+          "value": "2026-09-24T03:25:40.587Z",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "INFRA-EXEC-READS",
+          "class": "PROVIDER_OBSERVATION",
+          "claim": "The governed provider reads themselves (85 records + BUNDLE_SUMMARY), observed by the PR #214 lane, not by this lane.",
+          "observation_id": "OBS-INFRA-READ-EXEC-E7C8E67B59BF"
+        },
+        {
+          "fact_id": "INFRA-PR-STATE",
+          "class": "PROVIDER_OBSERVATION",
+          "claim": "PR #214 OPEN, draft, head 1a26a144 (branch codex/cv1-infra-control-plane-read-authority-r1, base codex/cv1-infra-execution-dag-authority-r1).",
+          "observation_id": "OBS-GITHUB-PR-HEADS-20260924T130321Z"
+        }
+      ],
+      "evidence_freshness": "SHA_BOUND",
+      "evidence_expires_at": null,
+      "observed_at": "2026-09-24T03:25:40.587Z",
+      "invalidated_by": [
+        {
+          "predicate_id": "INFRA-COVERED-PACKAGE",
+          "kind": "COVERED_PATH_CHANGED",
+          "fired": false,
+          "description": "Any of the 8 certified delta paths differs from the certified package (digest recomputed by --verify-git)."
+        },
+        {
+          "predicate_id": "INFRA-AUTHORITY-SUCCESSOR",
+          "kind": "AUTHORITY_CHANGED",
+          "fired": false,
+          "description": "A successor to amendment v1.0.9 governs the read."
+        }
+      ],
+      "dependencies": [],
+      "blocking_findings": [],
+      "branch": "codex/cv1-infra-control-plane-read-authority-r1",
+      "pr": 214,
+      "execution_allowed": false,
+      "risk_tier": "HIGH",
+      "next_legal_act": "Independent review of the 1a26a144 evidence bundle, then an owner closure decision (HUMAN_DECISION) before CLOSED. Integration of PR #214 into integration/commercial-v1 is a separate governed act. This state authorizes no re-execution.",
+      "unconfirmed": [
+        {
+          "fact": "EC-1 serialized and decoded-leaf scans PASS for the 1a26a144 bundle.",
+          "searched": "All files added by 3190d3ee..1a26a144 and the commit message of 1a26a144.",
+          "status": "NOT_FOUND",
+          "why_unconfirmed": "Stated only in the commit message; no evidence file contains an EC-1 result.",
+          "impact": "Evidence-privacy status of the bundle rests on a commit message; weakens EVIDENCED, does not change lifecycle.",
+          "next_evidence_required": "A committed EC-1 scan record bound to 1a26a144, or an independent re-run of the scan."
+        },
+        {
+          "fact": "Adjudication of the three G-R2.A records with outcome HTTP_404 (003/006/009).",
+          "searched": "Record outcomes in the 1a26a144 bundle (read by a read-only investigator; not re-read by the parent).",
+          "status": "UNCONFIRMED",
+          "why_unconfirmed": "BUNDLE_SUMMARY lists no unresolved items, but how the 404s are adjudicated was not read.",
+          "impact": "Could matter to the independent review of the bundle before CLOSED.",
+          "next_evidence_required": "Read the adjudication of G-R2.A 404 outcomes in the PR #214 authority/evidence at 1a26a144."
+        }
+      ],
+      "notes": "EXECUTED and EVIDENCED on the PR #214 branch only; not CLOSED and not integrated."
+    },
+    {
+      "gate_id": "FIBDB053_D1_AUDITOR",
+      "milestone": "FIBDB-053 D-1 auditor: successor operator-channel candidate (PR #219)",
+      "lifecycle_state": "AUTHORED",
+      "implementation_status": "IMPLEMENTED",
+      "integration_status": "NOT_INTEGRATED",
+      "candidate_sha": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+      "tree_sha": "ac00fc4da4ae192144355dd515356670470142ca",
+      "lineage_shas": {},
+      "authority": {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.7.json",
+        "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc"
+      },
+      "authority_version": "1.0.7",
+      "certification": null,
+      "certification_status": "PENDING_INDEPENDENT_RECERT",
+      "certification_inherits_from": null,
+      "covered_paths": [
+        "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.7.json",
+        "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0.json",
+        "docs/ops/release/FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.1.json"
+      ],
+      "covered_package_digest": "1fed1cf77cbcfcdb6939c214c6ae1516ce1cd67be617451644fb13789d90aa71",
+      "evidence": [
+        {
+          "fact_id": "D1-FINAL-STATE",
+          "class": "REPOSITORY_FACT",
+          "claim": "The candidate's execution record declares itself ready for independent recert.",
+          "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0.json",
+          "field": "final_state",
+          "value": "READY_FOR_INDEPENDENT_RECERT",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "D1-DAG-VERSION",
+          "class": "REPOSITORY_FACT",
+          "claim": "Governing DAG amendment is v1.0.7.",
+          "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.7.json",
+          "field": "version",
+          "value": "1.0.7",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "D1-SCHEDULE-N08",
+          "class": "REPOSITORY_FACT",
+          "claim": "Branch-local schedule N08.",
+          "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0.json",
+          "field": "SCHEDULE.N08",
+          "value": "2026-09-28T14:00:00Z",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "D1-SCHEDULE-N31",
+          "class": "REPOSITORY_FACT",
+          "claim": "Branch-local schedule N31.",
+          "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0.json",
+          "field": "SCHEDULE.N31",
+          "value": "2026-09-28T18:00:00Z",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "D1-SCHEDULE-N09",
+          "class": "REPOSITORY_FACT",
+          "claim": "Branch-local schedule N09.",
+          "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0.json",
+          "field": "SCHEDULE.N09",
+          "value": "2026-09-29T14:00:00.000Z",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "D1-PREHC1",
+          "class": "REPOSITORY_FACT",
+          "claim": "PRE-HC1 is NOT_READY at this candidate, by PMR-9 and PMR-13 only.",
+          "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0.json",
+          "field": "PRE_HC1_STATE_OF_THIS_CANDIDATE.expected_before_its_event",
+          "value": "N10 NOT_READY by PMR-9 (not certified) and PMR-13 (no OEP-1 evidence) only",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "D1-IMPL-PATH",
+          "class": "REPOSITORY_FACT",
+          "claim": "The operator-channel implementation exists at the candidate (branch-local).",
+          "ref": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+          "path": "db/custody/mint-operator-channel.ts",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "D1-PR-STATE",
+          "class": "PROVIDER_OBSERVATION",
+          "claim": "PR #219 OPEN, draft, head 979b1440 (branch codex/cv1-d1-auditor-custody-realization-r1, base codex/cv1-d1-auditor-consolidated-closure-r1).",
+          "observation_id": "OBS-GITHUB-PR-HEADS-20260924T130321Z"
+        }
+      ],
+      "evidence_freshness": "SHA_BOUND",
+      "evidence_expires_at": null,
+      "observed_at": null,
+      "invalidated_by": [
+        {
+          "predicate_id": "D1-COVERED-PACKAGE",
+          "kind": "COVERED_PATH_CHANGED",
+          "fired": false,
+          "description": "Any cited D-1 authority/record/schedule file differs from the digest recorded here."
+        },
+        {
+          "predicate_id": "D1-CANDIDATE-MOVED",
+          "kind": "BINDING_CHANGED",
+          "fired": false,
+          "description": "PR #219 head moves off 979b1440 (a new successor candidate)."
+        }
+      ],
+      "dependencies": [],
+      "blocking_findings": [
+        {
+          "finding_id": "PMR-9",
+          "status": "OPEN",
+          "summary": "Candidate not certified; closes only by independent recert of 979b1440.",
+          "evidence_fact_id": "D1-PREHC1"
+        },
+        {
+          "finding_id": "PMR-13",
+          "status": "OPEN",
+          "summary": "No OEP-1 evidence; by design remains open after the recert event.",
+          "evidence_fact_id": "D1-PREHC1"
+        }
+      ],
+      "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+      "pr": 219,
+      "execution_allowed": false,
+      "risk_tier": "HIGH",
+      "next_legal_act": "Independent recertification of candidate 979b1440. After a PASS: OEP-1 probe evidence for PMR-13. N08/N31/N09 are branch-local schedule values and authorize nothing by themselves.",
+      "unconfirmed": []
+    },
+    {
+      "gate_id": "RECOVERY_INTEGRATION_SUCCESSOR",
+      "milestone": "Staging Recovery integration successor + certification-occurrence contract D9 (PR #221)",
+      "lifecycle_state": "AUTHORED",
+      "implementation_status": "NOT_APPLICABLE",
+      "integration_status": "NOT_INTEGRATED",
+      "candidate_sha": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+      "tree_sha": "be69aece52565256f997e06f5812af36432f1d83",
+      "lineage_shas": {},
+      "authority": {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418"
+      },
+      "authority_version": "1.0.3",
+      "certification": null,
+      "certification_status": "PENDING_INDEPENDENT_RECERT",
+      "certification_inherits_from": null,
+      "covered_paths": [
+        "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.3.json",
+        "tests/release/staging-recovery-integration-successor.test.ts"
+      ],
+      "covered_package_digest": "3966622259de18f6a7005612583072b4855fb330b0fe2c18bed15a438a94ce97",
+      "evidence": [
+        {
+          "fact_id": "RIS-FINAL-STATE",
+          "class": "REPOSITORY_FACT",
+          "claim": "Amendment v1.0.3 is authored and ready for independent recert.",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "field": "final_state",
+          "value": "RECOVERY_INTEGRATION_SUCCESSOR_AND_CERT_CONTRACT_AUTHORED__READY_FOR_INDEPENDENT_RECERT",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "RIS-VERSION",
+          "class": "REPOSITORY_FACT",
+          "claim": "Recovery execution authority amendment version.",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "field": "version",
+          "value": "1.0.3",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "RIS-EVENT-A-POLICY",
+          "class": "REPOSITORY_FACT",
+          "claim": "Event-A policy is PENDING (no option selected, no decider).",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "field": "SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY.EVENT_A_POLICY.status",
+          "value": "PENDING",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "RIS-EVENT-A-REACHABLE",
+          "class": "REPOSITORY_FACT",
+          "claim": "Event A is currently not reachable.",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "field": "SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY.CURRENT_EVENT_A_REACHABLE",
+          "value": "NO",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "RIS-D9-CONTRACT",
+          "class": "REPOSITORY_FACT",
+          "claim": "D9 defines the certification-occurrence contract.",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "field": "SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT.contract_id",
+          "value": "STAGING_RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT_V1",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "RIS-D9-STATUS",
+          "class": "REPOSITORY_FACT",
+          "claim": "D9 takes effect only after independent recert of this artifact.",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "field": "SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT.status",
+          "value": "NEW_AUTHORITY__EFFECTIVE_ONLY_AFTER_INDEPENDENT_RECERTIFICATION_OF_THIS_ARTIFACT",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "RIS-PR-STATE",
+          "class": "PROVIDER_OBSERVATION",
+          "claim": "PR #221 OPEN, draft, head a9ddc4d2 (branch codex/cv1-recovery-integration-successor-r1, base codex/cv1-staging-recovery-authority-r1).",
+          "observation_id": "OBS-GITHUB-PR-HEADS-20260924T130321Z"
+        }
+      ],
+      "evidence_freshness": "SHA_BOUND",
+      "evidence_expires_at": null,
+      "observed_at": null,
+      "invalidated_by": [
+        {
+          "predicate_id": "RIS-COVERED-PACKAGE",
+          "kind": "COVERED_PATH_CHANGED",
+          "fired": false,
+          "description": "Amendment v1.0.3, its test-manifest amendment or its test differ from the digest recorded here."
+        },
+        {
+          "predicate_id": "RIS-CANDIDATE-MOVED",
+          "kind": "BINDING_CHANGED",
+          "fired": false,
+          "description": "PR #221 head moves off a9ddc4d2."
+        }
+      ],
+      "dependencies": [],
+      "blocking_findings": [
+        {
+          "finding_id": "EVENT_A_POLICY_PENDING",
+          "status": "OPEN",
+          "summary": "Event-A policy is PENDING: an owner decision, not a lane's.",
+          "evidence_fact_id": "RIS-EVENT-A-POLICY"
+        }
+      ],
+      "branch": "codex/cv1-recovery-integration-successor-r1",
+      "pr": 221,
+      "execution_allowed": false,
+      "risk_tier": "HIGH",
+      "next_legal_act": "Independent recertification of candidate a9ddc4d2; D9 becomes effective only after it. The Event-A policy stays an owner decision (PENDING).",
+      "unconfirmed": []
+    },
+    {
+      "gate_id": "RECOVERY_OFFLINE",
+      "milestone": "Staging Recovery offline primitives, zero hosted contact (PR #220)",
+      "lifecycle_state": "AUTHORED",
+      "implementation_status": "IMPLEMENTED",
+      "integration_status": "NOT_INTEGRATED",
+      "candidate_sha": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+      "tree_sha": "29ed409689aff5ecd92c72c3ef001ebc6d15718a",
+      "lineage_shas": {},
+      "authority": {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "ref": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6"
+      },
+      "authority_version": "1.0.1",
+      "certification": {
+        "certification_id": "STAGING_RECOVERY_OFFLINE_FOCUSED_RECERT",
+        "kind": "INDEPENDENT",
+        "verdict": "STAGING_RECOVERY_OFFLINE_FOCUSED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+        "scope": "BRANCH_LOCAL",
+        "certified_sha": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+        "certified_authority_version": "1.0.1",
+        "certified_package_digest": null,
+        "evidence_fact_id": "ROFF-RECERT-SECOND-HAND"
+      },
+      "certification_status": "UNCONFIRMED",
+      "certification_inherits_from": null,
+      "covered_paths": [
+        "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST_v1.0.0.json",
+        "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+        "scripts/recovery",
+        "tests/recovery",
+        "tests/postgres/recovery-offline.pg.test.ts"
+      ],
+      "covered_package_digest": "4cb6e12479f1efc2790a9f4e8b86ce3baaf93a7ba2213c403f0d8b5701156d90",
+      "evidence": [
+        {
+          "fact_id": "ROFF-MANIFEST-TARGET",
+          "class": "REPOSITORY_FACT",
+          "claim": "The frozen implementation manifest targets an offline mechanism ready for independent recert.",
+          "ref": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+          "path": "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST_v1.0.0.json",
+          "field": "final_state_target",
+          "value": "STAGING_RECOVERY_OFFLINE_MECHANISM_IMPLEMENTED__ZERO_HOSTED_CONTACT__READY_FOR_INDEPENDENT_RECERT",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "ROFF-CONTROLLING-AMENDMENT",
+          "class": "REPOSITORY_FACT",
+          "claim": "Controlling amendment named by the manifest.",
+          "ref": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+          "path": "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST_v1.0.0.json",
+          "field": "controlling_authority.amendment",
+          "value": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "ROFF-AUTH-VERSION",
+          "class": "REPOSITORY_FACT",
+          "claim": "Controlling amendment version at the candidate.",
+          "ref": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "field": "version",
+          "value": "1.0.1",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "ROFF-IMPL-PATH",
+          "class": "REPOSITORY_FACT",
+          "claim": "The offline restore runner exists at the candidate (branch-local).",
+          "ref": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+          "path": "scripts/recovery/restore-runner.ts",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "ROFF-RECERT-SECOND-HAND",
+          "class": "REPOSITORY_FACT",
+          "claim": "The only in-repository trace of the independent focused recert is a second-hand, informational line in PR #221's amendment (KS-B). The recertifier's own record is not in the repository.",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "value": "Independent focused recertification reported STAGING_RECOVERY_OFFLINE_FOCUSED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS, 0 blocking.",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "ROFF-OCCURRENCE-PATH",
+          "class": "REPOSITORY_FACT",
+          "claim": "D9 reserves (does not create) this occurrence path for the offline recert.",
+          "ref": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "value": "docs/ops/release/recovery-certification-occurrences/OFFLINE_RECOVERY_IMPLEMENTATION_RECERT/8cf94dca3871cb087fe16afa47a3efa0a7cdafc6.json",
+          "scope": "BRANCH_LOCAL"
+        },
+        {
+          "fact_id": "ROFF-PR-STATE",
+          "class": "PROVIDER_OBSERVATION",
+          "claim": "PR #220 OPEN, draft, head 8cf94dca (branch codex/cv1-staging-recovery-offline-implementation-r1, base codex/cv1-staging-recovery-authority-r1).",
+          "observation_id": "OBS-GITHUB-PR-HEADS-20260924T130321Z"
+        }
+      ],
+      "evidence_freshness": "SHA_BOUND",
+      "evidence_expires_at": null,
+      "observed_at": null,
+      "invalidated_by": [
+        {
+          "predicate_id": "ROFF-COVERED-PACKAGE",
+          "kind": "COVERED_PATH_CHANGED",
+          "fired": false,
+          "description": "Any offline manifest, scripts/recovery or tests/recovery path differs from the digest recorded here."
+        },
+        {
+          "predicate_id": "ROFF-CANDIDATE-MOVED",
+          "kind": "BINDING_CHANGED",
+          "fired": false,
+          "description": "PR #220 head moves off 8cf94dca."
+        }
+      ],
+      "dependencies": ["RECOVERY_INTEGRATION_SUCCESSOR"],
+      "blocking_findings": [
+        {
+          "finding_id": "OCCURRENCE_NOT_MATERIALIZED",
+          "status": "OPEN",
+          "summary": "No authorized certification occurrence exists for 8cf94dca; the D9 contract that defines one is itself pending recert (RECOVERY_INTEGRATION_SUCCESSOR).",
+          "evidence_fact_id": "ROFF-OCCURRENCE-PATH"
+        }
+      ],
+      "branch": "codex/cv1-staging-recovery-offline-implementation-r1",
+      "pr": 220,
+      "execution_allowed": false,
+      "risk_tier": "MEDIUM",
+      "next_legal_act": "After RECOVERY_INTEGRATION_SUCCESSOR (a9ddc4d2) is independently recertified, a D9 occurrence-materializer lane writes exactly the reserved occurrence path from the recertifier's own report. Until then certification_status stays UNCONFIRMED and lifecycle AUTHORED.",
+      "unconfirmed": [
+        {
+          "fact": "Independent focused recert of 8cf94dca = STAGING_RECOVERY_OFFLINE_FOCUSED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS, 0 blocking.",
+          "searched": "Every tree path at 8cf94dca; every remote branch for recovery-certification-occurrences/; PR #221 amendment v1.0.3.",
+          "status": "UNCONFIRMED",
+          "why_unconfirmed": "The recertifier's own record is not in the repository; the only trace is second-hand and self-declared informational.",
+          "impact": "Blocks CERTIFIED for RECOVERY_OFFLINE; the certified package digest is unknown, so no inheritance is possible.",
+          "next_evidence_required": "The D9 occurrence file at the reserved path, written from the recertifier's own report after a9ddc4d2 is recertified."
+        }
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "observation_id": "OBS-GITHUB-PR-HEADS-20260924T130321Z",
+      "observed_at": "2026-09-24T13:03:21Z",
+      "provider": "GITHUB",
+      "surface": "pull requests #214 #219 #220 #221 (gh pr view, read-only)",
+      "projection": "number, headRefName, baseRefName, headRefOid, isDraft, state",
+      "observed_by": "CV1-DEVOS-OPUS55-AND-CLOSURE-STATE-R1",
+      "consumers": ["INFRA_CONTROL_PLANE_READ", "FIBDB053_D1_AUDITOR", "RECOVERY_INTEGRATION_SUCCESSOR", "RECOVERY_OFFLINE"],
+      "freshness_class": "EVENT_BOUND",
+      "expires_at": null,
+      "invalidated_by": [
+        {
+          "predicate_id": "OBS-PR-HEADS-PUSH",
+          "kind": "EXPLICIT_EVENT",
+          "fired": false,
+          "description": "A push to any of the four head branches, or any PR state/draft change, after observed_at."
+        }
+      ]
+    },
+    {
+      "observation_id": "OBS-INFRA-READ-EXEC-E7C8E67B59BF",
+      "observed_at": "2026-09-24T03:25:40.587Z",
+      "provider": "OTHER",
+      "surface": "GitHub + Vercel control-plane governed reads, classes G-R1..G-R5, V-R1..V-R3, X-R1 (V-R4 not executed by design)",
+      "projection": "85 governed read records + BUNDLE_SUMMARY as committed by the PR #214 lane",
+      "observed_by": "PR #214 lane (codex/cv1-infra-control-plane-read-authority-r1), not this lane",
+      "result_ref": "1a26a144094ff0d1b5cac2b97d1c01519b509fff",
+      "result_path": "docs/ops/release/evidence/CV1_INFRA_READ_EXEC_E7C8E67B59BF",
+      "consumers": ["INFRA_CONTROL_PLANE_READ"],
+      "freshness_class": "POINT_IN_TIME",
+      "expires_at": null,
+      "invalidated_by": []
+    }
+  ],
+  "unconfirmed": [
+    {
+      "fact": "Mapping of these records onto docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json canonical gates.",
+      "searched": "RELEASE_GATE_LEDGER_v1.0.0.json at the integration base (78 GATES, AS_OF_HEAD 88d95c65).",
+      "status": "UNCONFIRMED",
+      "why_unconfirmed": "The ledger is canonical authority recorded against an earlier head; this lane does not assign ledger gate states.",
+      "impact": "Closure state and ledger are parallel views; the ledger controls on conflict.",
+      "next_evidence_required": "A governed ledger-mapping lane (owner decision on whether closure-state records bind to ledger gate ids)."
+    },
+    {
+      "fact": "Vercel preview/deployment state of the four PR heads.",
+      "searched": "Not read by this lane.",
+      "status": "UNCONFIRMED",
+      "why_unconfirmed": "No Vercel read was performed; no fresh provider state is claimed.",
+      "impact": "None of the records depends on it at their current lifecycle.",
+      "next_evidence_required": "A recorded Vercel observation with consumers, if a record comes to depend on it."
+    }
+  ]
+}

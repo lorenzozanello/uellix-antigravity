@@ -47,7 +47,11 @@ pnpm ods:prestate -- --branch <b> --head <sha> --tree <sha> --clean
 pnpm authority:seal:verify
 pnpm ods:scope -- --base <sha> --allow <pattern> [--allow ...]
 pnpm ods:poststate -- --base <sha> --allow <pattern> [--test <path>] [--clean]
+pnpm ops:closure-state -- validate [--verify-git]   # CV1 closure state
 ```
+
+Program closure status lives in `docs/ops/ods/CV1_CLOSURE_STATE.json`
+(operational derived state, NOT authority; it points at evidence).
 
 ## 5. Fail-closed rules
 
@@ -69,7 +73,7 @@ pnpm ods:poststate -- --base <sha> --allow <pattern> [--test <path>] [--clean]
 - Cite exact SHA/path/identifier; never paste a whole authority when an index or range answers the question.
 - Continue an existing conversation when the lineage and authority are the same and context is reusable.
 - Start a clean conversation for a genuinely independent adversarial audit or a new authority domain.
-- Prefer direct work over subagents for grep/static/small sequential tasks. No skill or subagent proliferation.
+- Prefer direct work over subagents for grep/static/small sequential tasks. No skill or subagent proliferation (subagent rules: §12).
 
 ## 8. Worktree / branch discipline
 
@@ -88,9 +92,55 @@ pnpm ods:poststate -- --base <sha> --allow <pattern> [--test <path>] [--clean]
 
 ## 10. Report contract
 
+Order is fixed; `NEEDS_FROM_OWNER` always comes first (`NONE` when empty).
+
 ```
+NEEDS_FROM_OWNER   (or: NONE)
 RESULT
-EVIDENCE   (exact SHA/TREE/paths/gate output)
+DONE               (each done_when item, met/unmet)
+EVIDENCE           (exact SHA/TREE/paths/gate output)
+UNCONFIRMED        (per material fact: fact, searched, status,
+                    why_unconfirmed, impact, next_evidence_required)
 RISKS / OPEN FINDINGS
 NEXT AUTHORIZED ACTION
 ```
+
+Long-run details (§11–§14): `docs/ops/ods/ODS_LONG_RUN_OPERATING_STANDARD_v1.0.0.md`;
+skill `.claude/skills/uellix-long-run`.
+
+## 11. Long-run policy
+
+When a step does not require human input, continue automatically. A
+progress/status update is NOT a stopping condition: never stop merely to
+summarize, offer to continue, report pending CI/tests, or ask permission
+for an already-authorized next step. Poll bounded operations (CI, builds,
+test runs) to a terminal state. Stop ONLY on: a real HPO/owner decision;
+an authority contradiction; scope expansion; a protected/destructive/
+provider boundary requiring confirmation; branch/HEAD/prestate drift; a
+genuine gate failure not fixable within scope; no authorized work remaining.
+
+## 12. Subagents
+
+- Default: ONE writer (the parent) + read-only investigators only when the work is genuinely parallel.
+- The parent verifies every material subagent claim against the repository before relying on it.
+- Subagents never make owner decisions, expand authority, or certify their own writes.
+- Multiple writing subagents require explicit disjoint worktrees/write-sets and a declared integration order; otherwise prohibited.
+- No subagent for trivial grep or sequential work.
+
+## 13. Certification inheritance
+
+A certified fact may be inherited ONLY while none of its invalidation
+predicates has fired. Re-derive it only when: covered files changed;
+governing authority changed; package/tree/candidate binding changed;
+freshness expired; an explicit invalidator fired; the mission explicitly
+challenges it; or contradictory evidence appears. There is no global
+"earlier answers are settled" rule — inheritance is per fact, per predicate.
+
+## 14. RUN_STATE
+
+Long missions keep `%TEMP%\uellix-runs\<LANE>\RUN_STATE.json` (outside git):
+operational memory only — never authority, certification, or product
+evidence. On resume, re-measure branch/HEAD/tree first; repository facts
+beat RUN_STATE, and an unexplained HEAD change is drift (STOP). Shape and
+update rules: `docs/ops/ods/ODS_RUN_STATE_SCHEMA_v1.0.0.json`,
+`pnpm ops:closure-state -- run-state --file <path>`.
