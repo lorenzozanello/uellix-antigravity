@@ -1,0 +1,67 @@
+{
+ "package_id": "CV1_INFRA_LINK_REPO_WITNESS_INVENTORY_READ_OWNER_DECISION",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_LINK_REPO_WITNESS_INVENTORY_READ_OWNER_DECISION_v1.0.0",
+ "authority_class": "OWNER_RATIFICATION_RECORD__NOT_AN_EXECUTION_AUTHORITY",
+ "document_class": "OWNER_RATIFICATION__NO_HOSTED_MUTATION__NO_GOVERNED_READ__NO_SECRET_DISCLOSURE",
+ "append_only": true,
+ "mission_id": "CV1-INFRA-LINK-REPO-INVENTORY-WITNESS-AUTHORITY-AND-IMPLEMENTATION-R1",
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "supersedes_route_only": {
+  "record": "docs/ops/owner-ratifications/CV1_INFRA_LINK_REPO_WITNESS_READ_OWNER_DECISION_v1.0.0.json",
+  "what_is_superseded": "ONLY the choice of witness route (the ID-keyed lookup).",
+  "what_is_not_superseded": "Its historical facts: the ID-keyed authorization stands as recorded, unused, because its enabling condition failed (no officially documented or specified ID-keyed GitHub lookup was established). That record is neither rewritten nor deleted."
+ },
+ "materialized_at_base": {
+  "base_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "BASE_SHA": "dcbd0acce8f21248a796c939924610c77446f3b1",
+  "BASE_TREE": "a7c5febb82ef6cb8f13492a3815232598184c8d5",
+  "candidate_pr": "#214"
+ },
+ "RATIFICATION": {
+  "id": "LRW-2",
+  "owner_selected_decision_verbatim": "INFRA_LINK_REPO_WITNESS_INVENTORY_READ = AUTHORIZED",
+  "PURPOSE_verbatim": "Resolve V-R2.S2 projects[*].link.repoId to authoritative GitHub repository identity using an officially documented authenticated-repository inventory, solely to adjudicate projects[*].link.repo and TI-2.",
+  "PROVIDER_CAPABILITY_verbatim": "GitHub REST \"List repositories for the authenticated user\".",
+  "INPUT_TO_GITHUB_verbatim": "NONE from Vercel link.repo or link.org.",
+  "MATCH_KEY_verbatim": "numeric Vercel link.repoId compared only in memory against GitHub repository.id.",
+  "SCOPE_verbatim": "ONE additional governed read class. The operation may paginate only as needed to establish whether the numeric repoId exists exactly once in the authenticated user's accessible repository set.",
+  "REQUIRED_PROJECTION_verbatim": ["id", "name", "full_name", "owner.login"],
+  "RAW_INVENTORY_verbatim": "MUST NOT be persisted.",
+  "NONMATCHING_REPOSITORIES_verbatim": "MUST be discarded immediately after projection/comparison and MUST NOT enter evidence.",
+  "PROHIBITED_verbatim": [
+   "sending link.repo to GitHub",
+   "sending link.org to GitHub",
+   "repository search",
+   "contents/issues/commits/settings reads",
+   "persisting the repository inventory",
+   "persisting raw responses",
+   "using prior-run data",
+   "weakening secret detectors",
+   "using the undocumented GET /repositories/{repository_id} route"
+  ],
+  "FAILURE_SEMANTICS_verbatim": "authentication failure, permission failure, pagination failure, malformed response, zero matches, multiple matches, id mismatch, name mismatch, owner mismatch, type mismatch, UNKNOWN => STOP fail-closed.",
+  "SUCCESS_SEMANTICS_verbatim": "Only a same-run exact binding among: Vercel link.repoId / GitHub repository.id; Vercel link.repo / GitHub repository.name; Vercel link.org / GitHub owner.login; GitHub full_name / GitHub owner.login + \"/\" + repository.name; Vercel link.type = github may classify the OPAQUE_HIGH_ENTROPY hit at exactly V-R2.S2 / projects[*].link.repo as EXPECTED_PROVIDER_IDENTIFIER. ALL OTHER SECRET DETECTORS REMAIN ACTIVE.",
+  "owner_signature": "SIGNED = YES (given in the directing text; the owner states these are binding owner decisions)",
+  "disposition": "RATIFIED_AUTHORIZE_ONE_INVENTORY_WITNESS_READ_CLASS"
+ },
+ "STATUS": {
+  "implemented_by": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7.json (G-R5)",
+  "executed": "NO",
+  "certified": "NO"
+ },
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "It does not authorize any other read, any mutation, V-R4, M-8 or M-9.",
+  "It does not exempt any detector other than OPAQUE_HIGH_ENTROPY, at any path other than V-R2.S2 projects[*].link.repo, or without a same-run witness PASS.",
+  "It is not an execution authority, a certification or an arming act."
+ ],
+ "self_check": {
+  "SC-I1": "The owner's decision, purpose, capability, input, match key, scope, projection, inventory and non-match rules, prohibitions and failure/success semantics are recorded verbatim.",
+  "SC-I2": "The earlier ID-keyed decision record is untouched; only the route choice is superseded.",
+  "SC-I3": "The record is not marked EXECUTED or CERTIFIED."
+ },
+ "final_state": "LINK_REPO_WITNESS_INVENTORY_READ_AUTHORIZED__IMPLEMENTED_IN_V1.0.7__NOT_EXECUTED",
+ "next_gate": "ONE short independent recertification of the v1.0.7 delta; then a fresh human confirmation and a from-scratch execution."
+}

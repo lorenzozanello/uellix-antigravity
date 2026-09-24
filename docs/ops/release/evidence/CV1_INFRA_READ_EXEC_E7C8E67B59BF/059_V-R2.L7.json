@@ -1,0 +1,291 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:41.785Z",
+ "response_utc": "2026-09-24T03:27:43.538Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_7Ddxaf9cif8G7ad2GXAkWKcnUaB3",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-alifah8cm-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "b06d9489c468009bd0529166dcaeba56bdb04147",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779475667466
+   },
+   {
+    "uid": "dpl_C55RhuPQYzccsmEmdXcJ86mPiXun",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-5zsiihybv-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "6457f6fc036c69ba8b150a72620e446b67741b77",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779475650731
+   },
+   {
+    "uid": "dpl_HVs8C1i5LGjNoce8QJjZg47De5pm",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-ctiodno26-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "8f060be946f7dc657e24fe179fa0042d33db9aa9",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779465707601
+   },
+   {
+    "uid": "dpl_4DZaj2AY3yXAQQRXnCE5A6qgBBWp",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-2j3r2mwa8-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "e0ab92d9f19d06c4b529f49a640ebfe005c155ae",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779463973908
+   },
+   {
+    "uid": "dpl_Quadr1qcMZ75on8CuXyEpJxvt8zf",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-i84e0krge-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "1d36c70276326221546d964147af694608b450c2",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779461739176
+   },
+   {
+    "uid": "dpl_BeDNU9bikja2USH39qUhHH6Yb2vs",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-12mojj4pj-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "acb31fd99cd347328172a529436dfcf776ba78d5",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776975558989
+   },
+   {
+    "uid": "dpl_H9zrCvPv7WSG1DVLpVjDM9VW97Rs",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-dnmmnlat7-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "bb03793a4da9838784b070f1e9632289cc3c0863",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776975270577
+   },
+   {
+    "uid": "dpl_yqDozLaWNVU4iW5YYRr76kSaHuFD",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-c1afvb915-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "8463950361fdf3d3ac1c38f58c0b4e52551c244f",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776974699425
+   },
+   {
+    "uid": "dpl_9t5ABs21aJqEUGSidNEVjwib6Jzq",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-jwa081ob2-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "2389c7f420481d3e26468f359983ad5e779b5e36",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776974086280
+   },
+   {
+    "uid": "dpl_GrgA7scu4YNN6gznVyXVFFQqTi2n",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-fklv51iiw-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "b72b044b30c8f4201bb7964ec9966e75ba789944",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776960288323
+   },
+   {
+    "uid": "dpl_5xRnAVgWesrTzyFWYXyGStauRGki",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-n507lulj6-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a160b5aba30ec2ab45683af2e7f741059f3508ae",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776959302704
+   },
+   {
+    "uid": "dpl_CdsABP5Xn3gG7fc4HoiH1BFShtCB",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-n7btmgmrg-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "851d43ec39d9e9f4456f5b305028a502fbbde763",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776810212531
+   },
+   {
+    "uid": "dpl_45N9VqLfk8FU6sd2WQ1Vaz9pFtCk",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-ceidl2vu4-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "116e5d351aec178de5f6ee73c9a58e074ece4237",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776809936469
+   },
+   {
+    "uid": "dpl_J5vx2GVRnTghAjhUFHZZkGzWr7HN",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-dwsp1uhpf-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a90d960bd2c01a50b4f513d6c4165ed9394f501a",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776809806100
+   },
+   {
+    "uid": "dpl_2F1VTAwiidFVVnQcYpA4etrdrTmz",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-428ckhmea-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "93c28746b395870e984c30f728625642b7708a8b",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776809424068
+   },
+   {
+    "uid": "dpl_3ktTWaHHvTZbfY5k3jEizNW9CgN8",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-o7lqrqjjn-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "85f3adfbbb50a16dc738d2f548e6e4e6cc601a83",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776809059789
+   },
+   {
+    "uid": "dpl_5jQxuicGTAXgR2FL5htKHNG2bnCY",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-lvuefmojm-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "1811c8b03dfb193249237802b3c9c0d8d8683b53",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776808935447
+   },
+   {
+    "uid": "dpl_HBL4EA9Anh3sfdfqoxWTqHaxsQrh",
+    "name": "lorenzo-zanello",
+    "url": "lorenzo-zanello-oz7ktqns4-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "50db1c44f5360ff757e183b06ec6fc4ea7b44c32",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776808705036
+   }
+  ],
+  "pagination": {
+   "count": 18,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

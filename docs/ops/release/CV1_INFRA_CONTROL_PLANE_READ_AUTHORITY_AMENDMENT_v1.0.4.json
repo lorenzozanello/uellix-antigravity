@@ -1,0 +1,267 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.4",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.4",
+ "authority_class": "EXECUTOR_HARDENING_AMENDMENT__MACHINE_ENFORCED_READ_BOUNDARY__NOT_A_NEW_GRANT__NOT_AN_ARMING_ACT",
+ "document_class": "APPEND_ONLY_AMENDMENT__NO_GOVERNED_READ__NO_PACMI_CALL__NO_MUTATION__NO_M8__NO_M9",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "builds_on": [
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3.json"
+ ],
+ "certification_event_consumed": "docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json",
+ "mission_id": "CV1-INFRA-CONTROL-PLANE-READ-EXECUTOR-HARDENING-R3",
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.4.json",
+ "AS_OF_PRE_AMENDMENT_HEAD": "3dc12909bb5b584ebc2266900659ab6f158d9eef",
+ "AS_OF_PRE_AMENDMENT_TREE": "aa5763518e13678d9fc242350756a64942c4ad33",
+ "as_of_measurement_note": "Every host fact below was measured locally with ZERO network: installed CLI --help output, the installed git documentation, and `git credential fill` / `git config --list --show-origin` against a .invalid host. ZERO governed reads and ZERO PACMI calls were performed by this lane.",
+
+ "PURPOSE": {
+  "what_this_amendment_does": "Replaces 'the authority's controls plus executor discipline' (DF-13) with a MACHINE-ENFORCED read boundary, and closes the measured defects the arming-package certification reported, without redesigning the authority or widening any read.",
+  "what_it_does_not_do": [
+   "Does not add a read, widen a read's scope, or add a PACMI operation.",
+   "Does not execute any read or any PACMI call.",
+   "Does not arm the grant, and withdraws ARMED=true as a standing claim (see ARMED_STATE).",
+   "Does not edit v1.0.0 through v1.0.3, the RC-9a record, or either arming determination."
+  ]
+ },
+
+ "EXECUTOR_BOUNDARY": {
+  "id": "EB-1",
+  "rule": "NORMATIVE. Every governed read (V-R1..V-R4, G-R1..G-R4, X-R1) and every PACMI operation MUST be performed through the safe-read executor in scripts/infra-read/ and in no other way. Invoking gh, vercel or git directly for any of them is outside this authority and is refused under RC-10.",
+  "implementation": {
+   "registry": "scripts/infra-read/ops.ts — the CLOSED operation registry: every op's tool, fixed path pattern or fixed argv, freshness class, node ids and concrete field allowlist.",
+   "guards": "scripts/infra-read/guards.ts — invocation construction, EXACT-SHAPE validation, and in-process projection.",
+   "xcc1": "scripts/infra-read/xcc1.ts — the credential-free git environment and its runtime preflight.",
+   "executor": "scripts/infra-read/executor.ts — ordering, RC-9b, scope, RNA-1, freshness, post-projection conformance and detector re-check, validated evidence records.",
+   "protocol": "scripts/infra-read/protocol.ts — the terminating RC-9a -> DN-0 -> reads -> evidence protocol.",
+   "entry": "scripts/infra-read/run-governed-reads.ts — refuses unless --execute, --certified-candidate and --out are all supplied.",
+   "evidence_scan": "scripts/infra-read/evidence-scan.ts — supplemental, additive detectors."
+  },
+  "not_a_passthrough": "A caller names an op id and passes typed parameters. It never supplies an endpoint, a method, a flag, an argv or an environment. Parameters are validated against closed regexes (team_*, prj_*, 40-hex SHA, numeric ruleset id, governed branch names) and the built path is re-checked against the op's anchored pattern.",
+  "allowlist_not_denylist": "The operative control is an ALLOWLIST comparison: the built argv must equal, token for token, the ONE shape its op permits. Denylists exist only to give precise refusal tokens. Measured by mutation M02: emptying the gh denylist did NOT let `--show-token` through; it was still refused by the exact-shape check, under a different token.",
+  "tool_pinning": {"gh": "2.93.0", "vercel": "54.14.2", "rule": "The flag semantics were measured against these versions. Any other version fails closed with STOP_TOOL_VERSION_DRIFT."},
+  "process_model": "Every child is spawned with an argument array and shell:false. The Vercel CLI is run as `node <APPDATA>/npm/node_modules/vercel/dist/vc.js ...`, never through the .cmd shim, so no shell ever concatenates arguments."
+ },
+
+ "GITHUB_METHOD_GUARD": {
+  "only_shapes_permitted": [
+   "['api','--method','GET',<registry path>]",
+   "['api','--method','GET','--paginate','--slurp',<registry path>]  (list endpoints only)",
+   "['auth','status','--json','hosts']  (PACMI-G1 only)"
+  ],
+  "explicitly_refused_measured_on_gh_2.93.0": ["-f / --raw-field (implicit POST)", "-F / --field (implicit POST)", "--input (body)", "-X / --method other than the literal GET form, including --method=VALUE", "absence of --method (gh's GET default is not relied on)", "-H / --header", "-i / --include", "--verbose (full HTTP request and response)", "--hostname", "-q/--jq, -t/--template, --cache, -p/--preview, --silent", "--show-token"],
+  "environment": "GH_TOKEN, GITHUB_TOKEN, GH_ENTERPRISE_TOKEN, GITHUB_ENTERPRISE_TOKEN, GH_HOST, GH_DEBUG and DEBUG are removed, so the credential used is the keyring credential RC-9a characterizes. GH_PROMPT_DISABLED=1, GH_PAGER='', NO_COLOR=1.",
+  "failure_tokens": ["STOP_GH_NON_GET_OR_BODY_FORM", "STOP_READ_AUTHORITY_EXCEEDED", "STOP_CREDENTIAL_OVERRIDE_IN_ENV"]
+ },
+
+ "VERCEL_METHOD_GUARD": {
+  "measured_semantics_that_differ_from_gh": "In the installed Vercel CLI 54.14.2 bundle, `--method GET` combined with -f/-F sends the fields as a JSON BODY on a GET; it does NOT build a query string. The gh idiom `-X GET -f key=value` therefore cannot be used to express query parameters. All query parameters are encoded LITERALLY in the registry path.",
+  "only_shapes_permitted": [
+   "[<vc.js>,'api',<registry path containing its literal query>,'--method','GET','--raw']",
+   "[<vc.js>,'whoami','--format','json'] / ['teams','list','--format','json'] / ['teams','members','--format','json']  (PACMI only)"
+  ],
+  "explicitly_refused_measured_on_vercel_api_help": ["-f / --raw-field", "-F / --field", "--input", "-X and any --method other than the literal GET form", "absence of --method", "-H / --header", "-i / --include", "--verbose (documented as 'full request/response')", "--generate (e.g. --generate=curl emits a request that carries the token)", "--dangerously-skip-permissions", "--spec-url", "--refresh", "--silent", "--paginate (pagination is explicit via a literal &until=)", "-d/--debug", "-t/--token", "-S/--scope (DF-12: a context selector)", "--cwd, -Q/--global-config, -A/--local-config"],
+  "operation_ids_refused": "The endpoint must begin with '/' and match the op's anchored pattern. A provider operation identifier (e.g. deleteProject) can never be passed as the endpoint: STOP_VERCEL_WRITE_OPERATION_ID.",
+  "decrypt": "decrypt=false is part of V-R2.L5's literal pattern; decrypt=true cannot match any pattern in the registry.",
+  "environment": "VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID and DEBUG are removed.",
+  "failure_tokens": ["STOP_VERCEL_NON_GET_OR_BODY_FORM", "STOP_VERCEL_WRITE_OPERATION_ID", "STOP_READ_AUTHORITY_EXCEEDED", "STOP_CREDENTIAL_OVERRIDE_IN_ENV"]
+ },
+
+ "OUTPUT_PROJECTION": {
+  "rule": "Provider output is parsed in-process and reduced to the op's CONCRETE field allowlist. Unknown fields are dropped silently and never echoed. The raw object goes out of scope inside the executor and is never logged, written or serialized.",
+  "three_layers": [
+   "1. project(): only allowlisted leaves survive; presence-only fields (passwordProtection, trustedIps) become booleans.",
+   "2. assertProjectionConforms(): every leaf of what is about to become evidence must match the allowlist. This is what refuses a projector that was bypassed or mutated into passing the raw object (mutation M04, M17).",
+   "3. the supplemental detectors re-scan the projection; a secret-shaped value in an ALLOWLISTED field (e.g. a deploy-hook URL placed in a name) is still refused (mutation M09)."
+  ],
+  "validated_records_only": "Only records produced by the executor are marked validated; the entry point refuses to write anything else (STOP_UNVALIDATED_EVIDENCE).",
+  "allowlist_concretization": {
+   "V-R3": "v1.0.0 defined V-R3's allowlist by SUBTRACTION ('the whole Git integration block minus the prohibitions'), the one place RC-5's positive-allowlist rule did not hold. It is replaced by a concrete enumeration in ops.ts. Keys absent at read time are recorded as absent under RC-12, never read as absent features.",
+   "V-R1_autodeploy_locus": "LOCUS PIN, NOT SCOPE WIDENING. v1.0.0's V-R1 made the automatic-deployment limb MANDATORY but pinned no field. gitProviderOptions.createDeployments is the field a prior measurement of this project record found carrying that semantic content (2026-09-21, 'enabled'). It is added to V-R1's concrete allowlist as the locus of an obligation v1.0.0 already imposed. It remains RECALLED for the executing lane under RC-8: if absent, DN-1's limb is STOP_AUTODEPLOY_POSTURE_UNEXPOSED, not 'disabled'.",
+   "G-R2_witness": "G-R2.WITNESS reads the branch object (name, protected, commit.sha) for the SAME encoded path as limbs A and C. A 404 on protection is interpreted only if the witness resolved, so a mis-encoded branch name cannot be read as 'unprotected' (DF-3/DF-5 class)."
+  },
+  "failure_tokens": ["STOP_PROJECTION_NONCONFORMANT", "STOP_SECRET_BEARING_FIELD_RETURNED", "STOP_UNVALIDATED_EVIDENCE"]
+ },
+
+ "SUPPLEMENTAL_SECRET_SCAN": {
+  "rule": "ADDITIVE. pnpm secrets:scan is unchanged and still runs. Its green is NOT evidence of absence for the classes below, which it has no detector for.",
+  "detectors": ["GITHUB_TOKEN_FAMILY (gho_/ghp_/ghs_/ghu_/ghr_, github_pat_)", "VERCEL_DEPLOY_HOOK_URL", "AUTHORIZATION_HEADER (including GitHub's own 'Authorization: token <x>' form, a gap found by this lane's own test)", "BEARER_OR_BASIC_CREDENTIAL", "COOKIE_MATERIAL", "SECRET_KEYED_FIELD", "ENV_VALUE_FIELD", "URL_USERINFO", "OPAQUE_HIGH_ENTROPY (>=40 chars, mixed case and digits; pure lowercase hex SHAs excluded)"],
+  "applied_at": ["every projection, inside the executor, before a record exists", "every evidence file the entry point writes, before it reports success"],
+  "non_echo": "Findings report detector id and offset only, never the matched text.",
+  "empty_set_is_failure": "Scanning zero files is STOP_EVIDENCE_SCAN_EMPTY_SET, not a pass.",
+  "not_done_deliberately": "Exact-match comparison against the live credential values. That would require reading the token into the scanning process, which DF11 forbids."
+ },
+
+ "VR2_RNA1_RESOLUTION": {
+  "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json READS.reads[V-R2].exact_operation.step_4_role_limbs_per_project.rule",
+  "parent_text_verbatim": "For each project found, the eight limbs of DN-2's enumeration_that_must_be_covered_not_only_custom_domains are evaluated. Each limb is recorded as EVALUATED or NOT EVALUATED. A finding that evaluated fewer than all eight is a PARTIAL measurement and does not discharge DN-2.",
+  "the_contradiction": "V-R2's own purpose reads 'for EACH project other than uellix-antigravity', and RNA-1 withholds exactly the env-row read on uellix-antigravity (PMV-2, controlled by PR201). 'For each project found' literally authorized that read.",
+  "corrected_text": "For each project found OTHER THAN uellix-antigravity, the eight limbs of DN-2's enumeration_that_must_be_covered_not_only_custom_domains are evaluated. uellix-antigravity is excluded from EVERY step_4 limb (L1 domains, L3 aliases, L5 environment rows, L7 deployments), not only from L5, because DN-2's predicate is about projects other than uellix-antigravity. Each limb is recorded as EVALUATED or NOT EVALUATED. A finding that evaluated fewer than all eight is a PARTIAL measurement and does not discharge DN-2.",
+  "narrowing_not_widening": "This removes reads; it adds none.",
+  "mechanical_enforcement": "The executor refuses L1/L3/L5/L7 for any project whose inventoried name is uellix-antigravity or whose id was resolved as uellix-antigravity in the session (STOP_RNA1_ANTIGRAVITY_EXCLUDED), and refuses every role limb until the scope's inventory is complete, because before then the boundary cannot be checked (STOP_RNA1_BOUNDARY_UNVERIFIABLE)."
+ },
+
+ "FRESHNESS_CLASSIFICATION": {
+  "rule": "Not every authorized read belongs in the read-only phase. A current observation is evidence for its instant; it never permanently satisfies a future pre-mutation node.",
+  "EXECUTE_NOW": ["G-R1", "G-R2", "G-R3", "G-R4", "V-R1", "V-R2", "V-R3", "X-R1"],
+  "F_IMMEDIATE_ONLY_BEFORE_MUTATION": ["V-R4"],
+  "V-R4_reason": "DN-11's verification is a THROUGHOUT clause around M-7: a pre-act and a post-act reading bracketing the mutation. A reading taken in a read-only phase brackets nothing. The executor refuses V-R4 in READ_ONLY_CONTROL_PLANE_PHASE (STOP_FRESHNESS_CLASS_NOT_EXECUTABLE_IN_THIS_PHASE).",
+  "evidence_only_marker": "Every record carries prestate_validity = EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE.",
+  "consumers_that_must_re_read_immediately": [
+   "DN-14 (M-6): V-R3 re-captured immediately before the act; a read-phase V-R3 is DN-3 evidence, not M-6's prestate.",
+   "DN-7 (M-8): X-R1 (source head and release-ref absence), G-R2 limb D and V-R3's release-reference limb, immediately before the create.",
+   "DN-8/DN-9/DN-10 (M-3/M-1/M-9): G-R2 on the target ref, immediately before the protection act.",
+   "DN-12 (M-2): G-R3 then G-R2 on the measured default branch, immediately before the act.",
+   "DN-11 (M-7): V-R1, V-R4 (bracketing), G-R2 and G-R3, immediately around the act."
+  ]
+ },
+
+ "RC9B_ORDER": {
+  "rule": "RESTORED. G-R1 MUST precede G-R2, and G-R1 precedes every other G-R* read (TI-14 binds every later GitHub read to the repository identity G-R1 establishes).",
+  "why_it_was_lost": "RC-9's original text put the G-R1 permission object BEFORE the first read. The v1.0.2 split moved that capture into the first G-R1 read (RC-9b) to remove a circularity, and in doing so dropped the ordering it implied.",
+  "discharge": "RC-9b is discharged DURING G-R1: the projection must contain the permissions object with at least one boolean. If it does not, G-R2 is refused.",
+  "mechanical_enforcement": "STOP_GR1_NOT_FIRST for any G-R* before G-R1; STOP_RC9B_NOT_DISCHARGED for any G-R2 op without a successful G-R1 that captured the permission object in the SAME executor context."
+ },
+
+ "XCC1_EFFECTIVE_CONTRACT": {
+  "id": "XCC-1 (effective)",
+  "supersedes": {
+   "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_RC9A_EXECUTOR_RECORD_v1.0.0.json PLANE_X_GIT_REFS.NORMATIVE_COMMAND_CONTRACT_ADDENDUM",
+   "why_moved": "A normative command contract lived only in an evidence record. It is moved into the authority here, and the evidence record is left unedited.",
+   "parent_rule_verbatim": "X-R1 MUST be invoked with git credential helpers reset and terminal prompting disabled. The mandated form is: GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote <origin-url>",
+   "parent_guarantee_verbatim": "With the helper list reset to empty AND terminal prompting disabled, git has no mechanism by which to obtain or present a credential for an HTTPS remote. It cannot silently authenticate.",
+   "classification_of_the_parent_guarantee": "FALSE IN GENERAL. Measured on this host: core.askPass, GIT_ASKPASS and SSH_ASKPASS each return a password with that exact form. It held on this host only because none of the three was set, which is an environmental fact, not a property of the command."
+  },
+  "argv": ["git", "-c", "credential.helper=", "-c", "core.askPass=", "-c", "http.extraHeader=", "ls-remote", "https://github.com/lorenzozanello/uellix-antigravity.git"],
+  "environment": {
+   "rule": "Built from SCRATCH, not inherited. Only these variables exist: PATH, SystemRoot/SYSTEMROOT, WINDIR, TEMP, TMP, ComSpec/COMSPEC (passed through), plus the fixed set below. Anything else is STOP_XCC1_CONTRACT_VIOLATION.",
+   "fixed": {"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "<an EMPTY file in the isolation root>", "GIT_CEILING_DIRECTORIES": "<the isolation root>", "HOME": "<an empty directory in the isolation root>", "USERPROFILE": "<the same directory>", "GIT_TERMINAL_PROMPT": "0", "GIT_ASKPASS": "'' (DEFINED and EMPTY)", "SSH_ASKPASS": "''", "GCM_INTERACTIVE": "never"},
+   "cwd": "<isolation root>/work — strictly below the ceiling."
+  },
+  "vectors": [
+   {"vector": "credential.helper", "measured": "system gitconfig carries credential.helper=manager (Git Credential Manager) and a URL-scoped credential.https://dev.azure.com.* key.", "neutralized_by": "-c credential.helper= (measured: empties the list) AND removal of the system and global config sources."},
+   {"vector": "GIT_ASKPASS", "measured": "LIVE: returns a password with GIT_TERMINAL_PROMPT=0.", "neutralized_by": "defined-and-EMPTY GIT_ASKPASS. Measured: an empty GIT_ASKPASS cuts the whole chain even when core.askPass and SSH_ASKPASS are set. Measured: Node delivers an empty variable to a Windows child intact."},
+   {"vector": "core.askPass", "measured": "LIVE when GIT_ASKPASS is unset.", "neutralized_by": "-c core.askPass= plus the empty GIT_ASKPASS plus config-source removal."},
+   {"vector": "SSH_ASKPASS", "measured": "LIVE when GIT_ASKPASS is unset.", "neutralized_by": "SSH_ASKPASS='' plus the empty GIT_ASKPASS."},
+   {"vector": "terminal prompt", "established_from": "installed git.html: GIT_TERMINAL_PROMPT false disables terminal prompting.", "neutralized_by": "GIT_TERMINAL_PROMPT=0 — the LAST rung only."},
+   {"vector": "http.extraHeader", "established_from": "installed git-config.html: an empty value 'will reset the extra headers to the empty list'. An extraHeader is sent on every request, without a challenge.", "neutralized_by": "-c http.extraHeader= plus config-source removal plus the runtime preflight."},
+   {"vector": "url.<base>.insteadOf", "established_from": "installed git-config.html documents no reset form.", "neutralized_by": "config-source removal, verified by the runtime preflight (any file-origin entry is a breach)."},
+   {"vector": "http.cookieFile and client certificates", "neutralized_by": "config-source removal plus the runtime preflight."},
+   {"vector": "repository discovery", "measured": "C:/Users/Lorenzo/AppData/Local/Temp is ITSELF a git repository on this host; any git command run from a temp subdirectory discovers it and reads its .git/config (DF-14).", "neutralized_by": "GIT_CEILING_DIRECTORIES=<isolation root>, measured to stop discovery (exit 128, 'not a git repository')."},
+   {"vector": "credential-bearing URL / userinfo", "neutralized_by": "the URL is a registry constant; the guard requires protocol https: with empty username and password, and refuses any other URL."},
+   {"vector": "ssh remote / non-https scheme", "neutralized_by": "the same URL check."},
+   {"vector": ".netrc / _netrc", "status": "ESTABLISHED_BY_ISOLATION, NOT INDEPENDENTLY MEASURED: HOME and USERPROFILE point to an empty directory, so no netrc file exists where libcurl looks through those variables. Whether this libcurl build consults any other location was not measured.", "neutralized_by": "empty HOME/USERPROFILE."},
+   {"vector": "config injection through the environment (GIT_CONFIG_PARAMETERS, GIT_CONFIG_COUNT/KEY/VALUE, GIT_DIR, GIT_WORK_TREE)", "neutralized_by": "environment built from scratch; the static guard refuses any variable outside the permitted set."},
+   {"vector": "proxy with userinfo (HTTPS_PROXY etc.)", "neutralized_by": "not passed through. If this network requires a proxy, X-R1 fails visibly rather than presenting a proxy credential."}
+  ],
+  "runtime_preflight": {
+   "rule": "Immediately before X-R1, and as the PLANE-X leg of runtime RC-9a, run `git -c credential.helper= -c core.askPass= -c http.extraHeader= config --list --show-origin` with the exact X-R1 environment and cwd. It must list EXACTLY the three command-line resets and NOTHING from any file. Values are never read.",
+   "why_origins_and_not_only_keys": "A file-provided credential.helper SUBSTITUTED for a missing command-line reset has the same three key NAMES. Only the origin check sees it. Mutation M13 survived until a test exercised exactly that substitution.",
+   "failure_token": "STOP_XCC1_ISOLATION_BREACH"
+  },
+  "fail_closed_property_restated": "If the repository were not publicly readable, this form fails, because no credential source remains. This lane did not read visibility, so the contract is written to be correct under either visibility."
+ },
+
+ "PACMI_REFRESH_DISPOSITION": {
+  "measured": "The first PACMI-V1 call (vercel whoami) on 2026-09-22 found the CLI OAuth session expired and the stored expiry advanced afterwards: the provider-native client exchanged its refresh token for a new access token.",
+  "classification": "CREDENTIAL_LIFECYCLE_SIDE_EFFECT. Not a control-plane setting mutation: no project, team, integration, protection, deployment or environment state was changed. It was, however, a side effect, and it was not declared at the time; it is declared here.",
+  "secret_handling": "No refresh-token material was or is observed, printed or recorded.",
+  "consequence_for_rc9a": "Execution-time RC-9a records the CURRENT credential state at its instant. A historical expiry is never reused."
+ },
+
+ "EXPIRY_READ_WITHDRAWN": {
+  "finding_addressed": "AP-NB-EXPIRY-OUTSIDE-PACMI: the Vercel expiry was read from auth.json, a file read outside the provider-native PACMI set, from a file that also holds the token.",
+  "rule": "The executor does not read auth.json or any credential store. Vercel credential validity is established provider-natively by PACMI-V1 succeeding at the RC-9a instant, which immediately precedes the reads.",
+  "what_is_lost": "The absolute expiry timestamp. It is not needed: the protocol runs RC-9a, DN-0 and the reads back to back, and a credential that expires mid-run produces visible provider errors, not silent success."
+ },
+
+ "ARMED_STATE": {
+  "rule": "ARMED=true is WITHDRAWN AS A STANDING CLAIM. It was a correct determination at its instant (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION_v1.0.1.json), bound to eleven blobs, one session and a Vercel horizon that has since passed. This delta changes the effective package.",
+  "state_after_this_delta": {
+   "AUTHORITY_MECHANISM_CERTIFIED": true,
+   "EXECUTOR_HARDENING_PENDING_IC": true,
+   "ACTUAL_EXECUTION_NOT_YET_AUTHORIZED_BY_THIS_DELTA": true
+  },
+  "how_arming_now_happens": "At RUNTIME, by the executor, on every execution: runtime RC-9a (LIMB_3) -> DN-0 as the last pre-read act (LIMB_2, including verification that the three certification events exist and carry passing VERDICT.verdict values — LIMB_1) -> AC-1 evaluated -> reads. No further conceptual arming authority is needed or created.",
+  "certification_events_required_at_runtime": [
+   "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json",
+   "docs/ops/release/CV1_INFRA_RC9_ARMING_PACKAGE_IC_v1.0.0.json",
+   "docs/ops/release/CV1_INFRA_EXECUTOR_HARDENING_IC_v1.0.0.json (to be materialized from the bounded IC of THIS delta, with VERDICT.verdict matching ^INFRA_EXECUTOR_HARDENING_IC_PASS(_WITH_NONBLOCKING_FINDINGS)?$)"
+  ]
+ },
+
+ "TERMINATING_DN0_PROTOCOL": {
+  "sequence": [
+   "1. The candidate is committed and independently certified.",
+   "2. Runtime RC-9a: PACMI-G1, PACMI-V1, PACMI-V2, PACMI-V3 and the XCC-1 preflight — current credential state, all three planes.",
+   "3. DN-0 against the execution HEAD, as the LAST pre-read act.",
+   "4. NO COMMIT. Before EVERY read the executor re-checks that HEAD equals the DN-0 HEAD and the worktree is clean.",
+   "5. The governed reads, in the fixed order G-R1, G-R3, G-R2 (witness/A/C per governed ref, then rulesets), G-R4, V-R2 scopes, inventories and named target, V-R1, V-R3, V-R2 role limbs (other projects only), XCC-1 preflight, X-R1.",
+   "6. Only afterward, the evidence is committed, as ADDITIONS only, with parent == the DN-0 HEAD, verified by assertEvidenceCommitParent."
+  ],
+  "why_it_terminates": "DN-0 evidence is part of the post-read evidence commit. Nothing is committed between DN-0 and the reads, so the HEAD DN-0 measured is the HEAD the reads ran against. Committing DN-0 first would move HEAD, and a DN-0 'satisfied at this head and nowhere else' would have to be re-run forever.",
+  "post_certification_additions": "DN-0 accepts the certified candidate as an ancestor of HEAD only if every change since it is an ADDITION of a certification-event file (docs/ops/release/CV1_INFRA_*_IC_v*.json). Materializing this delta's own IC therefore does not invalidate the certification it records; any modification does."
+ },
+
+ "DERIVED_FINDING_DF-14": {
+  "id": "DF-14",
+  "severity": "MEDIUM",
+  "finding": "THE HOST'S TEMP DIRECTORY IS ITSELF A GIT REPOSITORY.",
+  "measured": "git rev-parse from a fresh subdirectory of C:/Users/Lorenzo/AppData/Local/Temp returns C:/Users/Lorenzo/AppData/Local/Temp as the toplevel. An 'isolated' git command naively run from a new temp directory inherits that repository's configuration.",
+  "why_it_matters": "The obvious isolation technique — run from an empty temp directory — silently fails on this host. Any configuration that repository carries (today only core.* keys) would apply to X-R1.",
+  "control": "GIT_CEILING_DIRECTORIES in the XCC-1 environment, plus the runtime preflight, which refuses ANY file-origin entry. Mutation M12 (ceiling removed) kills ten tests on this host.",
+  "not_done": "The repository at %TEMP% was not modified or removed. It belongs to the host's owner."
+ },
+
+ "MUTATION_RESULTS": {
+  "method": "Seventeen targeted mutations of the production code (scripts/infra-read/mutation-battery.mjs, reproducible), each run against tests/infra-read, each file restored from an in-memory byte copy and verified by SHA-256 (never git checkout).",
+  "results": [
+   "M01 gh exact-shape check removed — KILLED",
+   "M02 gh denylist emptied — KILLED on token precision; the refusal itself was PRESERVED by the exact-shape check (predicted to survive; the test pins the precise token)",
+   "M03 vercel exact-shape check removed — KILLED",
+   "M04 projection conformance disabled — KILLED",
+   "M05 G-R1-first check removed — KILLED",
+   "M06 RC-9b check removed — KILLED",
+   "M07 RNA-1 exclusion removed — KILLED",
+   "M08 freshness refusal removed — KILLED",
+   "M09 post-projection detectors removed — KILLED",
+   "M10 X-R1 preflight requirement removed — KILLED",
+   "M11 GIT_ASKPASS dropped from the XCC-1 env — KILLED (3 tests, including a live askpass invocation)",
+   "M12 ceiling dropped — KILLED (10 tests, via the %TEMP% repository)",
+   "M13 isolation listing accepts file origins — initially SURVIVED; KILLED after adding the substituted-helper test",
+   "M14 no-commit-since-DN-0 guard disabled — KILLED",
+   "M15 post-certification MODIFY accepted — KILLED",
+   "M16 env-value detector removed — KILLED",
+   "M17 V-R1 allowlist admits deploy-hook url — KILLED"
+  ]
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "Every prohibition of v1.0.0 through v1.0.3, unrelaxed.",
+  "No governed read and no PACMI call was executed by this lane, and none is authorized by this amendment. run-governed-reads.ts must not be run until this delta is independently certified and its IC event materialized.",
+  "No read is added and none is widened; V-R2 is narrowed.",
+  "No M-8, no M-9, no branch creation, no ref update, no Vercel or GitHub settings mutation, no deployment, no workflow edit, no Supabase contact.",
+  "No credential store is read by the executor; no credential value is observed, printed or recorded.",
+  "The repository at the host's %TEMP% was not modified."
+ ],
+
+ "self_check": {
+  "SC-H1": "v1.0.0-v1.0.3, the RC-9a record and both arming determinations are byte-identical; this delta adds files only.",
+  "SC-H2": "Every superseded parent text is quoted verbatim from the committed source.",
+  "SC-H3": "The method guards are allowlist comparisons of the whole argv; denylists only choose the refusal token (M02).",
+  "SC-H4": "Every XCC-1 vector is marked MEASURED, ESTABLISHED_FROM installed documentation, or ESTABLISHED_BY_ISOLATION with what was not measured stated.",
+  "SC-H5": "Zero governed reads and zero PACMI network calls were executed by this lane.",
+  "SC-H6": "Every test suite pairs refusals with proof the fake runner is installed; every mandated mutant is exercised; 17 production mutations were run and all are killed.",
+  "SC-H7": "Token- and hook-shaped fixture strings are assembled at runtime; none is a committed literal.",
+  "SC-H8": "ARMED=true is withdrawn as a standing claim and replaced by runtime AC-1 evaluation."
+ },
+
+ "final_state": "INFRA_EXECUTOR_HARDENED__ARMING_IC_MATERIALIZED__READY_FOR_BOUNDED_EXECUTOR_IC",
+ "next_gate": "ONE bounded independent IC of this execution-safety delta. On PASS, materialize it as docs/ops/release/CV1_INFRA_EXECUTOR_HARDENING_IC_v1.0.0.json, then run scripts/infra-read/run-governed-reads.ts: runtime RC-9a -> DN-0 (last) -> reads -> evidence committed afterward with parent == DN-0 HEAD."
+}

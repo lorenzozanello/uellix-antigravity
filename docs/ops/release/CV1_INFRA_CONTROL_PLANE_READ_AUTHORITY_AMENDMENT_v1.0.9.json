@@ -1,0 +1,828 @@
+{
+  "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+  "version": "1.0.9",
+  "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.9",
+  "authority_class": "BOUNDED_SCANNER_ADJUDICATION_EXTENSION__NO_NEW_READ__NO_NEW_PROJECTION_FIELD__NOT_AN_ARMING_ACT",
+  "document_class": "APPEND_ONLY_AMENDMENT__NO_GOVERNED_READ__NO_PACMI_CALL__NO_MUTATION__NO_M8__NO_M9",
+  "append_only": true,
+  "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+  "builds_on": [
+    "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7.json",
+    "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.8.json"
+  ],
+  "mission_id": "CV1-INFRA-L7-DEPLOYMENT-REPO-WITNESS-EXTENSION-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.9.json",
+  "AS_OF_PRE_AMENDMENT_HEAD": "b402c5d04cc04d8f7b5c20e9d91a68ffe90bec25",
+  "AS_OF_PRE_AMENDMENT_TREE": "e44b0be42a3ec6268e5ec442da568c528daa838e",
+  "as_of_measurement_note": "ZERO governed reads, ZERO PACMI calls, ZERO authenticated provider operations, ZERO real provider values, ZERO DB connections. Every value in the tests is synthetic and assembled at runtime; the provider is the fake world.",
+
+  "TRIGGER_AS_RECORDED": {
+    "lane": "CV1-INFRA-CONTROL-PLANE-READ-EXECUTION-R1",
+    "execution_head": "b402c5d04cc04d8f7b5c20e9d91a68ffe90bec25",
+    "certified_candidate": "00d6d38349890cb02320390191f41720a051d59d",
+    "stop": "STOP_SECRET_BEARING_FIELD_RETURNED at V-R2.L7, safe diagnostic deployments[*].meta.githubRepo, string, length 40, detector OPAQUE_HIGH_ENTROPY (the same structural shape as the V-R2.S2 link.repo finding).",
+    "why_it_stopped_correctly": "v1.0.7/v1.0.8 SCANNER_EXCEPTION covers ONLY V-R2.S2 projects[*].link.repo. It did not, and was never to be read as, covering V-R2.L7. This amendment does NOT reinterpret v1.0.8; it adds a separate, narrower rule.",
+    "execution_state": "The stopped execution is not resumed. No evidence was written, nothing of it is reused for freshness or as a witness."
+  },
+
+  "OWNER_DECISION_AS_RECEIVED": {
+    "decision": "OPTION 1: extend the existing SAME-RUN repository-identifier adjudication to V-R2.L7 deployments[*].meta.githubRepo, ONLY under the bounded conditions A-G below. This is NOT a global exception.",
+    "source": "Owner/program decision stated in the mission of lane CV1-INFRA-L7-DEPLOYMENT-REPO-WITNESS-EXTENSION-R1 (chat instruction, 2026-09-23). Recorded here; no separate ratification artifact was supplied."
+  },
+
+  "L7_ADJUDICATION_RULE": {
+    "rule": "NORMATIVE. An OPAQUE_HIGH_ENTROPY finding at op_id V-R2.L7, normalized_schema_path deployments[*].meta.githubRepo, is classified EXPECTED_PROVIDER_IDENTIFIER if and only if ALL of A-G hold for EVERY finding of that deployments page. Otherwise the certified STOP (STOP_SECRET_BEARING_FIELD_RETURNED with the v1.0.6 safe diagnostic) is unchanged.",
+    "conditions": {
+      "A": "detector_id = OPAQUE_HIGH_ENTROPY, and every finding of the page sits at exactly deployments[*].meta.githubRepo (a finding anywhere else, including the same value at deployments[*].name, STOPs the page).",
+      "B": "The value satisfies the v1.0.8 certified GitHub repository-name grammar (GITHUB_REPOSITORY_NAME_RE, reused, not redefined).",
+      "C": "The page was requested for a team + project enumerated in THIS run (existing preconditions: complete scope inventory, project in it, RNA-1 antigravity exclusion).",
+      "D": "That SAME team + project has a V-R2.S2 projects[*].link.repo that the SAME executor's G-R5 inventory witness adjudicated (the binding is written only by a successful finalizeRepositoryWitness()).",
+      "E": "The value is BYTE-FOR-BYTE equal (JavaScript ===) to that project's witnessed link.repo.",
+      "F": "The value trips no detector other than OPAQUE_HIGH_ENTROPY (checked on the value itself, and every located finding must be OPAQUE_HIGH_ENTROPY).",
+      "G": "The equality is derived only from the already-witnessed identifier: L7 performs no read, has no request input of its own, and the binding cannot be set by any other path."
+    },
+    "no_normalization": "No case folding, trim, Unicode normalization, URL parsing, .git stripping, owner stripping, slash normalization, fuzzy or substring match. Each is a tested STOP.",
+    "not_global": "Not authorized: every deployments[*].meta.githubRepo, every grammar-valid name, every name matching GitHub syntax, every 40-character value. V-R4.DEPLOYMENTS (the same meta field) remains F_IMMEDIATE_ONLY_BEFORE_MUTATION and is refused in this phase.",
+    "grammar_role": "Defense in depth only; the trust source is the same-run G-R5 witness via the same-project binding."
+  },
+
+  "SAME_PROJECT_BINDING": {
+    "mechanism": "Executor state witnessedLinkRepoByProject: key = [teamId, projectId], value = the witnessed link.repo. The teamId is the executor's own V-R2.S2 request parameter for the deferred page (pendingScope), never reparsed from evidence text. The L7 lookup key is the executor's own V-R2.L7 request parameters.",
+    "deployment_membership_basis": "REQUEST_SCOPE. A deployments page belongs to the project it was requested for (GET /v6/deployments?projectId=<id>&teamId=<id>, built by the executor). The certified L7 projection carries no per-deployment projectId, and none is added.",
+    "cross_project": "Project A's witnessed value presented on project B's page STOPs, whether or not B has its own adjudication. The same projectId under another team/scope STOPs.",
+    "conflict": "Two different witnessed values for one team + project STOP (STOP_WITNESS_UNKNOWN)."
+  },
+
+  "SAME_RUN_BINDING": {
+    "mechanism": "The binding is an instance field of SafeReadExecutor, created empty with every executor (one executor = one governed run), with no setter: it is written only by finalizeRepositoryWitness() after a successful witness verdict.",
+    "refused": ["historical G-R5 witness", "previous execution witness", "previous evidence bundle", "cached adjudication", "stale project mapping", "a pending (unfinalized) V-R2.S2 deferral", "a failed witness verdict (zero match, multiple match, name/owner/id mismatch)"]
+  },
+
+  "OWNER_CORROBORATION": {
+    "status": "UNAVAILABLE_IN_CERTIFIED_L7_PROJECTION",
+    "measured": "The certified V-R2.L7 allowlist (v1.0.0 field_allowlist 'deployment: uid, name, url, target, readyState, source, createdAt, meta.githubCommitSha, meta.githubCommitRef, meta.githubRepo'; scripts/infra-read/ops.ts V-R2.L7) has no owner/org field.",
+    "decision": "Not obtained: the L7 request is NOT widened, no projection field is added, no extra read is made. Each L7 adjudication records owner_corroboration = UNAVAILABLE_IN_CERTIFIED_L7_PROJECTION.",
+    "debt": "NONBLOCKING defense-in-depth debt (DEBT-L7-1). The witnessed link.org was itself bound to the GitHub owner.login by G-R5 for the source project."
+  },
+
+  "EVIDENCE_ADJUDICATION": {
+    "record_form": "A V-R2.L7 record carries AT MOST ONE scanner_adjudications entry, with exactly these keys: normalized_schema_path (deployments[*].meta.githubRepo), team_id, project_id, detector_id (OPAQUE_HIGH_ENTROPY: the raw detector finding), classification (EXPECTED_PROVIDER_IDENTIFIER: the final explanation status), basis (SAME_RUN_SAME_PROJECT_EXACT_EQUALITY_TO_WITNESSED_LINK_REPO: the adjudication basis), source_op_id (V-R2.S2) and source_normalized_schema_path (projects[*].link.repo): the source, source_basis (SAME_RUN_AUTHENTICATED_REPOSITORY_INVENTORY_ID_MATCH) and same_run_witness_op_id (G-R5): the same-run witness, exact_equality (true), owner_corroboration.",
+    "no_provider_value": "The entry carries only identifiers already present in the record's own endpoint and fixed tokens; the repository name is never duplicated into it.",
+    "envelope_binding": "assertEnvelopeConforms refuses an L7 entry whose team_id/project_id are not the record's own request scope (operation.endpoint prefix), any second entry, any other key or value, and any L7-form entry on another op.",
+    "EC1": "The EC-1 re-scan explains an L7 finding only if the record carries that entry for its own request scope, the finding is OPAQUE_HIGH_ENTROPY at projection.deployments[].meta.githubRepo (decoded) or inside that exact quoted \"githubRepo\": value (serialized), the value is grammar-valid and trips no other detector, AND the value is bound to that team + project both by the caller's lookup (in-run: the executor's same-run binding) and by a V-R2.S2 record of the SAME file set that adjudicated it. The standalone pre-commit CLI keeps the bundle binding. v1.0.7/v1.0.8 EC-1 rules for V-R2.S2 are unchanged; no existing evidence-scan detector or rule is weakened."
+  },
+
+  "EVENT_CHAIN": {
+    "successor_duty_discharged": "v1.0.8 EVENT_CHAIN: 00d6d383's delta recert (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_00D6D3834989_IC_v1.0.0.json, materialized at b402c5d0) is now a FIXED historical event.",
+    "rule": "NORMATIVE. dn0ConfigFor binds SEVEN events: 455b5426, 3dc12909, 81b56ed4, 4a3c2837, b25f2d32 and 00d6d383 (each fixed to the candidate it certified), and the delta recert of the executed candidate at its candidate-derived path.",
+    "historical_only": "The 00d6d383 event can never certify a later candidate (different candidate; different path) and is not edited.",
+    "new_candidate": "This delta's head is a NEW candidate; its delta recert path is derived from its SHA and is NOT materialized here (no self-certification)."
+  },
+
+  "PRESERVED": {
+    "statement": "Re-tested, unchanged: shared PRIVATE_KEY detector (object identity, runtime annotation isolation), V-R2.S2 grammar and deferral, G-R5 page-number-only request, pagination to an empty page, bounded memory, same-run inventory witness, TI-2 tuple, historical certification-event isolation. No read, operation, projection field or detector is added or removed.",
+    "registry": {"total_operations":25,"governed_read_operations":21,"pacmi_operations":4,"execute_now_read_classes":["G-R1","G-R2","G-R3","G-R4","G-R5","V-R1","V-R2","V-R3","X-R1"],"V-R4":"V-R4.DEPLOYMENTS F_IMMEDIATE_ONLY_BEFORE_MUTATION","ops_ts":"byte-identical to b402c5d0 (git diff --quiet)","l7_allowlist_unchanged":"deployments[].uid, name, url, target, readyState, source, createdAt, meta.githubCommitSha, meta.githubCommitRef, meta.githubRepo, pagination.next, pagination.count"}
+  },
+
+  "NONBLOCKING_DEBT": [
+    {"id": "DEBT-L7-1", "text": "Owner/org corroboration of meta.githubRepo is unavailable in the certified L7 projection (no githubOrg field); not obtained by widening, by design."},
+    {"id": "DEBT-L7-2", "text": "Deployment-to-project membership rests on the request scope (projectId query filter), the same basis every role limb L1/L3/L5/L7 already uses; no per-deployment projectId is projected."},
+    {"id": "DEBT-L7-3", "text": "The standalone EC-1 CLI binds an L7 value to the same bundle's V-R2.S2 adjudication, but (as for V-R2.S2 since v1.0.7) it cannot re-prove the same-run witness itself; the in-run EC-1 does."}
+  ],
+
+  "MUTATION_RESULTS": {
+   "method": "scripts/infra-read/mutation-battery.mjs on the final tree, seven chunks (10-minute command cap): unmutated tests/infra-read green first (432/432) before every chunk, each production mutant applied, tests/infra-read run, restored from an in-memory byte copy, SHA-verified.",
+   "aggregate": "MUTANTS=121 (M01-M18, N01-N30, D01-D10, W01-W32, P01-P10, L01-L21) AS_EXPECTED=121 UNEXPECTED=0 BATTERY=PASS; SELF_TEST=PASS (M05 KILLED next to the behaviour-neutral S01 SURVIVED -> BATTERY=FAIL, as required).",
+   "new_mutants": {
+    "L01": {
+     "mutation": "same-project binding removed (any witnessed project explains the value)",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    "L02": {
+     "mutation": "historical witness allowed (binding shared across executions)",
+     "verdict": "KILLED",
+     "failing_tests": 10
+    },
+    "L03": {
+     "mutation": "case folded before the comparison",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    "L04": {
+     "mutation": "grammar layer removed",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L05": {
+     "mutation": "equality removed (any grammar-valid, entropy-only value adjudicated)",
+     "verdict": "KILLED",
+     "failing_tests": 8
+    },
+    "L06": {
+     "mutation": "a non-entropy finding at the leaf accepted (entropy + another detector)",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L07": {
+     "mutation": "value-level other-detector check removed",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L08": {
+     "mutation": "bound to ANOTHER project's adjudication in the same team",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    "L09": {
+     "mutation": "team/scope dropped from the binding (project id only)",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L10": {
+     "mutation": "G-R5 provenance bypassed (binding recorded at V-R2.S2 deferral)",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    "L11": {
+     "mutation": "an unresolved (pending) V-R2.S2 accepted as the source",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    "L12": {
+     "mutation": "path restriction removed (the witnessed value explained at any L7 leaf)",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    "L13": {
+     "mutation": "exception globalized (every L7 finding explained)",
+     "verdict": "KILLED",
+     "failing_tests": 26
+    },
+    "L14": {
+     "mutation": "envelope: adjudication no longer bound to the record's own request scope",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L15": {
+     "mutation": "EC-1: the bundle's own V-R2.S2 binding dropped (caller lookup only)",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L16": {
+     "mutation": "EC-1: the in-run same-project lookup dropped (bundle only)",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L17": {
+     "mutation": "EC-1: L7 detector layer removed",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L18": {
+     "mutation": "EC-1: L7 grammar layer removed",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L19": {
+     "mutation": "EC-1: L7 adjudication no longer bound to the record's own request scope",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    "L20": {
+     "mutation": "the fixed 00d6d383 history event dropped from the chain",
+     "verdict": "KILLED",
+     "failing_tests": 27
+    },
+    "L21": {
+     "mutation": "the old 00d6d383 event accepted for the new candidate",
+     "verdict": "KILLED",
+     "failing_tests": 23
+    }
+   },
+   "honest_note": "Two first-draft L7 tests (strict prefix; fullwidth first letter) did not trip ANY detector (39-character runs, below OPAQUE_HIGH_ENTROPY's 40), so there was nothing to adjudicate and no STOP; they were rebuilt against a longer witnessed name so the variant itself trips the detector, and a separate test pins that a sub-threshold value is ordinary evidence. Operator incident: an auxiliary command imported mutation-battery.mjs, which executes it at top level; it was stopped mid-run leaving M17 applied to scripts/infra-read/ops.ts (a file this delta does not change). ops.ts was restored from git after its diff was confirmed to be exactly M17, --check-anchors returned OK for all 122 anchors, and ops.ts is byte-identical to b402c5d0. The battery was then re-run in full as recorded above.",
+   "considered_equivalent_not_in_battery": [
+    "Dropping the bindWitnessedLinkRepo check that the pending link.repo equals the adjudicated one: unreachable after a successful verdict (the witness already requires link.repo === name for every target)."
+   ],
+   "all_rows": [
+    {
+     "id": "M01",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M02",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M03",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "M04",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "M05",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M06",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M07",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M08",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "M09",
+     "verdict": "KILLED",
+     "failing_tests": 102
+    },
+    {
+     "id": "M10",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M11",
+     "verdict": "KILLED",
+     "failing_tests": 24
+    },
+    {
+     "id": "M12",
+     "verdict": "KILLED",
+     "failing_tests": 26
+    },
+    {
+     "id": "M13",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M14",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M15",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M16",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "M17",
+     "verdict": "KILLED",
+     "failing_tests": 13
+    },
+    {
+     "id": "M18",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "N01",
+     "verdict": "KILLED",
+     "failing_tests": 27
+    },
+    {
+     "id": "N02",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "N03",
+     "verdict": "KILLED",
+     "failing_tests": 6
+    },
+    {
+     "id": "N04",
+     "verdict": "KILLED",
+     "failing_tests": 6
+    },
+    {
+     "id": "N05",
+     "verdict": "KILLED",
+     "failing_tests": 6
+    },
+    {
+     "id": "N06",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "N07",
+     "verdict": "KILLED",
+     "failing_tests": 15
+    },
+    {
+     "id": "N08",
+     "verdict": "KILLED",
+     "failing_tests": 13
+    },
+    {
+     "id": "N09",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "N10",
+     "verdict": "KILLED",
+     "failing_tests": 4
+    },
+    {
+     "id": "N11",
+     "verdict": "KILLED",
+     "failing_tests": 4
+    },
+    {
+     "id": "N12",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "N13",
+     "verdict": "KILLED",
+     "failing_tests": 6
+    },
+    {
+     "id": "N14",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "N15",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "N16",
+     "verdict": "KILLED",
+     "failing_tests": 170
+    },
+    {
+     "id": "N17",
+     "verdict": "KILLED",
+     "failing_tests": 9
+    },
+    {
+     "id": "N18",
+     "verdict": "KILLED",
+     "failing_tests": 7
+    },
+    {
+     "id": "N19",
+     "verdict": "KILLED",
+     "failing_tests": 7
+    },
+    {
+     "id": "N20",
+     "verdict": "KILLED",
+     "failing_tests": 7
+    },
+    {
+     "id": "N21",
+     "verdict": "KILLED",
+     "failing_tests": 23
+    },
+    {
+     "id": "N22",
+     "verdict": "KILLED",
+     "failing_tests": 22
+    },
+    {
+     "id": "N23",
+     "verdict": "KILLED",
+     "failing_tests": 25
+    },
+    {
+     "id": "N24",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    {
+     "id": "N25",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "N26",
+     "verdict": "KILLED",
+     "failing_tests": 13
+    },
+    {
+     "id": "N27",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "N28",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "N29",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "N30",
+     "verdict": "KILLED",
+     "failing_tests": 4
+    },
+    {
+     "id": "D01",
+     "verdict": "KILLED",
+     "failing_tests": 15
+    },
+    {
+     "id": "D02",
+     "verdict": "KILLED",
+     "failing_tests": 18
+    },
+    {
+     "id": "D03",
+     "verdict": "KILLED",
+     "failing_tests": 18
+    },
+    {
+     "id": "D04",
+     "verdict": "KILLED",
+     "failing_tests": 15
+    },
+    {
+     "id": "D05",
+     "verdict": "KILLED",
+     "failing_tests": 18
+    },
+    {
+     "id": "D06",
+     "verdict": "KILLED",
+     "failing_tests": 15
+    },
+    {
+     "id": "D07",
+     "verdict": "KILLED",
+     "failing_tests": 88
+    },
+    {
+     "id": "D08",
+     "verdict": "KILLED",
+     "failing_tests": 12
+    },
+    {
+     "id": "D09",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "D10",
+     "verdict": "KILLED",
+     "failing_tests": 58
+    },
+    {
+     "id": "W01",
+     "verdict": "KILLED",
+     "failing_tests": 68
+    },
+    {
+     "id": "W02",
+     "verdict": "KILLED",
+     "failing_tests": 68
+    },
+    {
+     "id": "W03",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W04",
+     "verdict": "KILLED",
+     "failing_tests": 52
+    },
+    {
+     "id": "W05",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "W06",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "W07",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "W08",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "W09",
+     "verdict": "KILLED",
+     "failing_tests": 4
+    },
+    {
+     "id": "W10",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    {
+     "id": "W11",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "W12",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W13",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W14",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "W15",
+     "verdict": "KILLED",
+     "failing_tests": 65
+    },
+    {
+     "id": "W16",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W17",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "W18",
+     "verdict": "KILLED",
+     "failing_tests": 45
+    },
+    {
+     "id": "W19",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    {
+     "id": "W20",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W21",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W22",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W23",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W24",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    {
+     "id": "W25",
+     "verdict": "KILLED",
+     "failing_tests": 6
+    },
+    {
+     "id": "W26",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "W27",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W28",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W29",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W30",
+     "verdict": "KILLED",
+     "failing_tests": 7
+    },
+    {
+     "id": "W31",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "W32",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "P01",
+     "verdict": "KILLED",
+     "failing_tests": 14
+    },
+    {
+     "id": "P02",
+     "verdict": "KILLED",
+     "failing_tests": 4
+    },
+    {
+     "id": "P03",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    {
+     "id": "P04",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "P05",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "P06",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "P07",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "P08",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "P09",
+     "verdict": "KILLED",
+     "failing_tests": 23
+    },
+    {
+     "id": "P10",
+     "verdict": "KILLED",
+     "failing_tests": 27
+    },
+    {
+     "id": "L01",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    {
+     "id": "L02",
+     "verdict": "KILLED",
+     "failing_tests": 10
+    },
+    {
+     "id": "L03",
+     "verdict": "KILLED",
+     "failing_tests": 3
+    },
+    {
+     "id": "L04",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L05",
+     "verdict": "KILLED",
+     "failing_tests": 8
+    },
+    {
+     "id": "L06",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L07",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L08",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "L09",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L10",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "L11",
+     "verdict": "KILLED",
+     "failing_tests": 5
+    },
+    {
+     "id": "L12",
+     "verdict": "KILLED",
+     "failing_tests": 2
+    },
+    {
+     "id": "L13",
+     "verdict": "KILLED",
+     "failing_tests": 26
+    },
+    {
+     "id": "L14",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L15",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L16",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L17",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L18",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L19",
+     "verdict": "KILLED",
+     "failing_tests": 1
+    },
+    {
+     "id": "L20",
+     "verdict": "KILLED",
+     "failing_tests": 27
+    },
+    {
+     "id": "L21",
+     "verdict": "KILLED",
+     "failing_tests": 23
+    }
+   ]
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "Every prohibition of v1.0.0 through v1.0.8, unrelaxed. No read, projection field, request input or detector is added; no detector is weakened.",
+    "No adjudication of any finding other than OPAQUE_HIGH_ENTROPY at V-R2.S2 projects[*].link.repo (v1.0.7/v1.0.8) and, under A-G, at V-R2.L7 deployments[*].meta.githubRepo.",
+    "The stopped execution is not resumed and none of its partial results or freshness is reused.",
+    "No governed read is authorized until this delta is independently recertified, its certification event is materialized with exact-head CI green, and a NEW fresh human execution confirmation is given; the next execution runs from scratch (fresh RC-9a, fresh DN-0, all 9 EXECUTE_NOW read classes)."
+  ],
+
+  "final_state": "INFRA_L7_DEPLOYMENT_REPO_WITNESS_EXTENSION_AUTHORED__SAME_RUN_SAME_PROJECT_EXACT_MATCH_ONLY__READY_FOR_FOCUSED_RECERT",
+  "next_gate": "ONE focused independent recertification of b402c5d0..this head; on PASS, materialize it at this head's derived delta-recert path with exact-head CI green, then a NEW fresh human execution confirmation and a from-scratch execution (fresh RC-9a -> fresh DN-0 -> all 9 EXECUTE_NOW read classes)."
+}

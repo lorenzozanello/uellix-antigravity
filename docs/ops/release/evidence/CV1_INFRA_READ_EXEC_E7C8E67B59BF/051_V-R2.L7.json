@@ -1,0 +1,95 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_5HDGXZgrjAHMW6tqp3znlBShuyW9&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:23.365Z",
+ "response_utc": "2026-09-24T03:27:25.058Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_3NZdPiLXBzx75SEPZsHpzYooDrcq",
+    "name": "muttu-junio-2026",
+    "url": "muttu-junio-2026-fl6f5hhvz-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "b06858b0db874d1e55799883a37a0024dcc55912",
+     "githubRepo": "Muttu-Junio-2026"
+    },
+    "target": "production",
+    "createdAt": 1781556340085
+   },
+   {
+    "uid": "dpl_DCKzgohd2Wn82zAURkyvGc82hJdE",
+    "name": "muttu-junio-2026",
+    "url": "muttu-junio-2026-8b6w7exs8-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a9cf163ed5fab4ab186c3d66e888cceb83d60b5d",
+     "githubRepo": "Muttu-Junio-2026"
+    },
+    "target": "production",
+    "createdAt": 1781555936062
+   },
+   {
+    "uid": "dpl_5ynv3fCdVfUP5Q77q2MzJLGBrMNY",
+    "name": "muttu-junio-2026",
+    "url": "muttu-junio-2026-cs9eerygx-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "da71ca97d4895f8d0fe5f942f832eb778eb28a08",
+     "githubRepo": "Muttu-Junio-2026"
+    },
+    "target": "production",
+    "createdAt": 1781497200776
+   },
+   {
+    "uid": "dpl_GSB8jhvLo2oyLftxKGmCGbm8KSBu",
+    "name": "muttu-junio-2026",
+    "url": "muttu-junio-2026-5my9ocif1-lorenzozanello-5040s-projects.vercel.app",
+    "source": "import",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "2a976cebaee7f1136760f19f527f4819cc2c7714",
+     "githubRepo": "Muttu-Junio-2026"
+    },
+    "target": "production",
+    "createdAt": 1781496953509
+   }
+  ],
+  "pagination": {
+   "count": 4,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

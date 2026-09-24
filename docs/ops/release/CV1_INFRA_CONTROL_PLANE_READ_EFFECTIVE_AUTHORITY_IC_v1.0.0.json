@@ -1,0 +1,142 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0",
+ "authority_class": "INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT",
+ "document_class": "CERTIFICATION_EVENT_RECORD__NO_READ__NO_MUTATION__NO_ARMING_BY_ITSELF",
+ "append_only": true,
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01), lane CV1-INFRA-CONTROL-PLANE-READ-CLOSURE-ARMING-AW-R1",
+ "repository": "lorenzozanello/uellix-antigravity",
+
+ "WHAT_THIS_ARTIFACT_IS": {
+  "purpose": "The repository-resident materialization of the independent certification of the FULL EFFECTIVE control-plane read authority. It exists because the authority's own arming condition requires a certification that is MATERIALIZED, not merely reported, and because two prior certifications of this lineage were measured to be REPORTED_NOT_MATERIALIZED.",
+  "what_it_is_not": [
+   "NOT an authority. It grants nothing and permits no operation.",
+   "NOT an arming act by itself. It satisfies LIMB 1 of a three-limb conjunction and nothing more. See the v1.0.2 amendment's ARMING_CONJUNCTION.",
+   "NOT a re-performance of the certification. This lane did not conduct the review; it records the event so a successor can cite a repository artifact instead of a conversation.",
+   "NOT a claim that the reviewed candidate is free of nonblocking findings. Ten are reported."
+  ],
+  "the_distinction_this_record_turns_on": "A certification that happened but was never written to the tree is, to every future consumer, indistinguishable from one that did not happen. This record closes that gap for this lineage and for this candidate only."
+ },
+
+ "CERTIFIED_CANDIDATE": {
+  "candidate_head": "455b5426e11e5518606328dc0f1c3cd6bc7887ca",
+  "candidate_tree": "21038c06382045952d5c1b8202dba59531778a62",
+  "candidate_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "candidate_pr": "#214",
+  "parent_binding": "6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2 (PR #211 head after the RBD-1/RBD-2 owner ratification), verified an ancestor of the candidate head by git merge-base --is-ancestor at this record's authoring.",
+  "candidate_verification_performed_by_this_lane": "This lane independently re-derived the candidate head, its tree, and the ancestry of the ratified parent from git before writing them here. They are measured, not transcribed from the directing text."
+ },
+
+ "EFFECTIVE_PACKAGE_CERTIFIED": {
+  "rule": "The certification is of the EFFECTIVE authority: the v1.0.0 base plus the v1.0.1 reconciliation amendment, each with its companion manifest. A consumer applying this verdict to a different set of files is applying it to something that was not certified.",
+  "files": [
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json", "blob_sha": "a5a6d196f24b792eee723391f782c161149ee7d8"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0.json", "blob_sha": "1c24f1f54fd451f21b3721da175135abd8ffa2fe"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json", "blob_sha": "db678bd6706e1b3838119ee44fbdbf710f4bba1d"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob_sha": "a2566792aded0eceaea9c98381555622abc29a1f"}
+  ],
+  "pin_derivation": "All four blob_sha values were derived by git rev-parse HEAD:<path> at the candidate head 455b5426 and substituted mechanically. None was transcribed by hand.",
+  "PIN_RESOLUTION_GUARD": {
+   "rule": "No blob_sha in the files array may carry the drafting-placeholder suffix __PLACEHOLDER_SEE_NOTE. If one does in any committed tree, this record is DEFECTIVE and must not be relied upon: raise STOP_CERTIFICATION_PIN_UNRESOLVED.",
+   "status_at_materialization": "RESOLVED. The two v1.0.1 entries were written as guarded placeholders during drafting and were replaced by machine-derived values before commit; the guard is retained so the check remains runnable by a certifier rather than being a one-time drafting note.",
+   "why_the_guard_outlives_its_own_resolution": "A guard deleted once it passes cannot catch a regression. Retaining it, with its status recorded rather than its instruction left in the imperative, is the difference between a note and a control."
+  },
+  "nine_upstream_package_pins": "The nine EFFECTIVE_PACKAGE_CONSUMED pins of the v1.0.0 authority were independently re-derived 9/9 at the candidate head by this lane before writing this record."
+ },
+
+ "VERDICT": {
+  "verdict": "INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+  "blocking_findings": 0,
+  "nonblocking_findings": 10,
+  "scope_reviewed": "The full effective authority: node-by-node read-set derivation and an independent minimality test, which v1.0.0's own next_gate names as the two things a certifier must perform for itself.",
+  "provenance_of_this_verdict": {
+   "classification": "REPORTED_BY_DIRECTING_TEXT, MATERIALIZED_HERE.",
+   "what_that_means": "The verdict string and the two counts were supplied to this lane as directing text. This lane did not conduct the review and does not vouch for its substance. What this lane vouches for is that the event is now recorded against an independently-verified candidate identity, so the verdict is no longer a claim that exists only in conversation.",
+   "why_the_distinction_is_kept": "The programme has measured repeatedly that an affirmed-but-unmaterialized certification and a fabricated one are indistinguishable downstream. Recording the provenance honestly is what keeps this record evidence rather than decoration."
+  }
+ },
+
+ "REVIEWER_IDENTITY": {
+  "reviewer": "NOT_SUPPLIED",
+  "execution_timestamp": "NOT_SUPPLIED",
+  "why_left_unsupplied": "The directing text did not name the reviewing lane, model, or the instant the review executed. Inventing either would fabricate provenance for an event this lane did not witness, which is expressly forbidden by this lane's own directing mission and by the programme's no-historical-evidence-rewriting rule.",
+  "what_IS_dated": "This RECORD's materialization date (2026-09-22), which is when the event was written down, NOT when the review ran. The two must not be conflated by any consumer.",
+  "how_a_successor_closes_this": "A successor holding the actual certification output may append a successor record naming the reviewer and the execution instant. It may not edit this one."
+ },
+
+ "NONBLOCKING_FINDINGS": {
+  "reported_count": 10,
+  "enumeration_status": "PARTIAL BY CONSTRUCTION.",
+  "the_honest_statement": "The directing text supplied the COUNT (10) and the verdict, but did NOT supply the ten findings' own texts or the certifier's own identifiers for them. This lane therefore cannot reproduce the certifier's enumeration and does not pretend to. What it CAN do, and does below, is record the remediation targets the directing text itself names, under content-addressed identifiers in this record's OWN namespace, and state plainly that the mapping between them and the certifier's ten is UNKNOWN.",
+  "precedent_this_follows": "Identical in kind to UD-3 / CF-2 of docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json, which recorded 'the text of the five NB findings the directing text did not name' as an unknown and declared its consumption of that IC PARTIAL by construction rather than inferring the findings.",
+  "why_identifiers_are_content_addressed_rather_than_ordinal": "Numbering them NB-1..NB-10 would imply this lane knows the certifier's own ordering. It does not. Content-addressed identifiers carry no false ordinal claim.",
+  "identified_remediation_targets": [
+   {
+    "id": "EA-NB-ARMING-CONJUNCTION",
+    "substance": "Operative loci treat independent certification ALONE as sufficient to arm the grant, where WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.what_arming_requires writes arming as a conjunction of three requirements. next_gate ('On PASS, the grant is ARMED'), the_grant_is_not_yet_armed, manifest control N-R12 and mutation control MUT-R7 each anchor to certification only.",
+    "disposition": "REMEDIATED by CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json ARMING_CONJUNCTION and by the companion manifest amendment's corrected N-R12 / MUT-R7 plus new limb-specific mutation controls."
+   },
+   {
+    "id": "EA-NB-GR1-DN12-FORWARD-ONLY",
+    "substance": "G-R1 declares serves_nodes including DN-12, but the DN-12 row of NODE_TO_READ_MAP does not list G-R1. A forward-only edge: the read claims a node the normative map does not attribute to it.",
+    "disposition": "REMEDIATED by v1.0.2 MAP_NORMATIVITY_AND_EDGE_SYMMETRY. G-R1's required-input claim is corrected to DN-4 only; G-R1 is preserved and reclassified as also a CROSS_CUTTING_READINESS_AND_RC9_MEASUREMENT. The read itself is not removed."
+   },
+   {
+    "id": "EA-NB-GR4-DN4-FORWARD-ONLY",
+    "substance": "G-R4 declares serves_nodes = [DN-4], but NO row of NODE_TO_READ_MAP lists G-R4. A declared read with zero consumers in the map that defines it.",
+    "disposition": "REMEDIATED by v1.0.2. G-R4's required-input claim is corrected to the empty set and G-R4 is reclassified CORROBORATIVE_AUTHORIZED_READ. It remains explicitly authorized as the only non-circular falsification oracle for the workflow-corpus producibility parse. The read itself is not removed."
+   },
+   {
+    "id": "EA-NB-SC14-STALE-OWNER-DECISIONS",
+    "substance": "self_check SC-14 describes RNA-3 as 'the open owner decisions'. RBD-1 and RBD-2 were ratified by the owner and RNA-3 was already corrected by the v1.0.1 amendment; SC-14 is a stale consumer of the superseded state.",
+    "disposition": "REMEDIATED by v1.0.2 SUPERSEDED_PARENT_CLAUSES entry for SC-14. Narrow correction only; no broader prose cleanup performed."
+   },
+   {
+    "id": "EA-NB-GR4-NODE-NONMINIMAL",
+    "substance": "The independent minimality test found G-R4 removable without any required DAG fact being lost: DN-4's predicate is satisfied by the tracked-file workflow-corpus parse plus G-R2 limb E. G-R4 is therefore node-nonminimal, while remaining valuable as the only oracle for that parse that is not the parse itself.",
+    "disposition": "REMEDIATED by v1.0.2 as classification rather than deletion: G-R4 is represented as CORROBORATIVE_AUTHORIZED_READ, explicitly authorized and explicitly NOT a required node input. v1.0.0's own SC-20 already flagged G-R4 as the one read it would give up first; the certifier's finding is recorded as confirming that self-assessment."
+   }
+  ],
+  "unsupplied_remainder": {
+   "count_unaccounted": 5,
+   "arithmetic": "10 reported minus 5 identified above = 5 whose substance was not supplied to this lane.",
+   "status": "TEXT_NOT_SUPPLIED. Not closed, not addressed, not claimed to be addressed.",
+   "binding_instruction_to_any_certifier": "A reviewer holding the actual certification output MUST treat every finding of the ten that does not correspond to one of the five identified above as STILL OPEN, and MUST NOT read this record's PASS as evidence that all ten were dispositioned. This record's consumption of the certification is PARTIAL and says so.",
+   "why_this_is_recorded_rather_than_smoothed": "Recording five of ten and presenting the result as a complete disposition would manufacture closure for five findings nobody in this lane has seen."
+  }
+ },
+
+ "WHAT_THIS_EVENT_DOES_AND_DOES_NOT_SATISFY": {
+  "satisfies": "LIMB 1 of the arming conjunction: an independent certification of the full effective authority exists AND is materialized in the repository.",
+  "does_not_satisfy": [
+   "LIMB 2 (a fresh DN-0 freshness and binding rebaseline at the acting state, including re-derivation of the nine package pins and the required git identities).",
+   "LIMB 3 (RC-9 executor credential provenance and scope recorded before the first read)."
+  ],
+  "therefore": "This record ALONE does not arm the grant and must never be cited as having armed it. ARMED remains governed by the v1.0.2 amendment's ARMING_CONJUNCTION and by whatever arming-determination record follows.",
+  "the_failure_this_clause_prevents": "A successor finding a materialized PASS in the tree and concluding, from v1.0.0's own uncorrected next_gate wording, that arming follows automatically. That wording is exactly what EA-NB-ARMING-CONJUNCTION corrects."
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "This record authorizes no read, on any plane, under any condition.",
+  "This record authorizes no mutation, no M-8, no M-9, no branch creation, and no hosted act of any kind.",
+  "This record does not set ARMED to true and does not claim authority to.",
+  "This record does not close, weaken, or reinterpret RELEASE_CHECK_PRODUCIBILITY_GAP, EAD-5, the HPO-G-08/P1 lineage conflict, UD-5, RNA-1 or RNA-2.",
+  "This record does not vouch for the substance of the certification it materializes, only for the identity of the candidate it was reported against."
+ ],
+
+ "self_check": {
+  "SC-C1": "The candidate head, tree and parent ancestry were re-derived from git by this lane, not transcribed.",
+  "SC-C2": "The verdict string and counts are recorded as REPORTED_BY_DIRECTING_TEXT, not as this lane's own finding.",
+  "SC-C3": "Reviewer identity and execution timestamp are NOT_SUPPLIED rather than invented.",
+  "SC-C4": "The findings enumeration is declared PARTIAL, with the arithmetic (5 identified, 5 unsupplied) stated explicitly and the unsupplied remainder declared still open.",
+  "SC-C5": "Finding identifiers are content-addressed, carrying no claim about the certifier's own numbering.",
+  "SC-C6": "This record states in terms that it satisfies LIMB 1 only.",
+  "SC-C7": "Zero secret, token, credential or connection-string material appears anywhere in this record.",
+  "SC-C8": "Every blob_sha in EFFECTIVE_PACKAGE_CERTIFIED must be machine-derived before commit; the placeholder guard in PLACEHOLDER_NOTE is the control that catches a failure to do so."
+ },
+
+ "final_state": "EFFECTIVE_AUTHORITY_IC_MATERIALIZED__LIMB_1_SATISFIED__FINDINGS_ENUMERATION_PARTIAL__NOT_AN_ARMING_ACT",
+ "next_gate": "The arming conjunction in CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json. Limbs 2 and 3 are evaluated there and in the arming-determination record that follows it."
+}

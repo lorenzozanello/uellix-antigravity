@@ -1,0 +1,46 @@
+{
+  "manifest_id": "CV1-INFRA-LINK-REPO-INVENTORY-WITNESS",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7.json",
+  "dependencies": [
+    "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.6 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.6.json)",
+    "CV1_INFRA_LINK_REPO_WITNESS_INVENTORY_READ_OWNER_DECISION_v1.0.0 (docs/ops/owner-ratifications/CV1_INFRA_LINK_REPO_WITNESS_INVENTORY_READ_OWNER_DECISION_v1.0.0.json)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {"id": "SEN-G1", "purpose": "ZERO governed reads, ZERO authenticated provider operations, ZERO real provider values in this lane. Every provider response is the fake world."},
+    {"id": "SEN-G2", "purpose": "Synthetic repo-shaped values and inventories (up to 9,900 repositories) are assembled at runtime; none is a committed literal. Non-matching repository names, descriptions and URLs must appear in NO record."}
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {"id": "PG-1", "description": "Exact id/name/owner/full_name/type binding: the pending V-R2.S2 record is replaced by a validated record adjudicated EXPECTED_PROVIDER_IDENTIFIER; the G-R5 witness record carries only id and owner.login; pagination runs to the empty page in order.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "PG-2", "description": "Full governed phase with a deferred finding: G-R5 runs after the V-R2 inventory and before V-R1; the bundle has exactly 9 read classes and only validated records.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "PG-3", "description": "Without a deferred finding, G-R5 is not executed and the bundle records it NOT_REQUIRED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "PG-4", "description": "Bounded memory: 9,900 repositories retain exactly the target set and one matched identity.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "PG-5", "description": "The real dn0ConfigFor binds five events; the delta-recert path is derived from the candidate and permitted as a post-certification addition.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "PG-6", "description": "The evidence re-scan explains an adjudicated same-run value at both levels and nothing else.", "test_file": "tests/infra-read/repo-witness.test.ts"}
+  ],
+  "negative_controls": [
+    {"id": "NG-01", "description": "Wrong id, name, owner, full_name, case differences, duplicate and zero matches all STOP with their witness tokens.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "NG-02", "description": "401, 403, 429, timeout, malformed JSON / page / item, oversized page, page loop, page cap and a truncated traversal all STOP.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "NG-03", "description": "Non-github link.type, non-numeric or zero repoId, missing org, another detector on link.repo (token prefix, userinfo) and the same value at projects[*].name STOP at once with the certified diagnostic, and G-R5 never runs.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "NG-04", "description": "Request safety: every G-R5 argv is exactly the page request; the builder ignores repo / org / repoId / q and refuses malformed pages; the guard refuses a repo name, org, repoId path, owner/name path or search.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "NG-05", "description": "G-R5 is refused without a pending adjudication, out of order and after completion.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "NG-06", "description": "Cross-run: a completed witness in one execution gives another nothing; a fresh witness cannot be satisfied without its own pages; targets cannot be added mid-traversal.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "NG-07", "description": "TI-2: owner/name link.repo, a foreign org, a repoId other than G-R1's, a string repoId and a non-github type each STOP V-R1.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "NG-08", "description": "RC-9a: a credential without the repo scope STOPs before any read.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "NG-09", "description": "Evidence re-scan: no marker, marker without a same-run value, the value at another path and a marker on another op are all unexplained.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "NG-10", "description": "Neither fixed historical recert can stand in for the delta recert of a later candidate.", "test_file": "tests/infra-read/entrypoint.test.ts"}
+  ],
+  "mutation_controls": [
+    {"id": "MG-01", "description": "Repo name / org / repoId sent to GitHub (W01-W03) must be KILLED.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "MG-02", "description": "Raw page persisted, inventory accumulated, early pagination stop, duplicate or zero match ignored (W04-W08) must be KILLED.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "MG-03", "description": "Id binding by name, name / owner / full_name / type checks skipped, non-github deferral (W09-W14) must be KILLED.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "MG-04", "description": "Witness or adjudicated values shared across runs, hard-coded identity (W15-W17) must be KILLED.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "MG-05", "description": "OPAQUE_HIGH_ENTROPY suppressed globally, every detector suppressed on link.repo, 403 / 429 treated as success, projection broadened, another read class added, pending record validated early (W18-W24) must be KILLED.", "test_file": "tests/infra-read/repo-witness.test.ts"},
+    {"id": "MG-06", "description": "TI-2 reverted or unenforced, RC-9a repo scope dropped, evidence re-scan marker or same-run check dropped, delta-recert path fixed, loop detection or page cap removed (W25-W32) must be KILLED.", "test_file": "tests/infra-read/safe-read-executor.test.ts"},
+    {"id": "MG-07", "description": "Every earlier production mutant (M, N, D) re-killed on this tree; the battery still FAILS on a real survivor (self-test).", "test_file": "tests/infra-read/mutation-verdict.test.ts"}
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

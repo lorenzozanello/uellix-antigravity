@@ -1,0 +1,60 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_5HDGXZgrjAHMW6tqp3znlBShuyW9&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:18.145Z",
+ "response_utc": "2026-09-24T03:27:20.544Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "muttu-junio-2026-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-06-15T04:16:21.520Z",
+    "deploymentId": "dpl_3NZdPiLXBzx75SEPZsHpzYooDrcq",
+    "projectId": "prj_5HDGXZgrjAHMW6tqp3znlBShuyW9",
+    "uid": "84bbead4506b6c1ba70c33ddfd0e4f2f4c02a4558af463e22753f82f566c2e93969a834542f1911dcc497b7de88d675e08aad34821ac4a1e8b9fcd23f1b7303b"
+   },
+   {
+    "alias": "muttu-junio-2026.vercel.app",
+    "created": "2026-06-15T04:16:21.519Z",
+    "deploymentId": "dpl_3NZdPiLXBzx75SEPZsHpzYooDrcq",
+    "projectId": "prj_5HDGXZgrjAHMW6tqp3znlBShuyW9",
+    "uid": "97e75c84f2e043e57b88c9cbd786e05c0729174c0459a858a7744bb50d931bd0ebd554ddfd316f1694ae9507a83a3300520a85906d11c584fef841888844671c"
+   },
+   {
+    "alias": "muttu-junio-2026-git-main-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-06-15T04:15:53.662Z",
+    "deploymentId": "dpl_3NZdPiLXBzx75SEPZsHpzYooDrcq",
+    "projectId": "prj_5HDGXZgrjAHMW6tqp3znlBShuyW9",
+    "uid": "fa3e6097506e5ad7d9d4f0221d0e782ff6e109f255aff394bd283dd2e47b329dcc4c0da6740b0ba7bcd1c258bd7cd1d4804d4bbcbb37ea25392ec35659b65103"
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

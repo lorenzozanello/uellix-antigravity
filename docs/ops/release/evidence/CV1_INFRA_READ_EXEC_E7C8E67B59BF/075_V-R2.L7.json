@@ -1,0 +1,53 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_afJaFGY7kkL1NqE41zIO88HkFQCC&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:28:18.088Z",
+ "response_utc": "2026-09-24T03:28:19.878Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_BRr3tBzk2Fhvszi9eaj1pYP4y2SR",
+    "name": "proyecto-emprende",
+    "url": "proyecto-emprende-e3jqi0tcb-lorenzozanello-5040s-projects.vercel.app",
+    "source": "import",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "655476b1de451a8de2ae09a51b0d86ae621547b3",
+     "githubRepo": "Proyecto-Emprende"
+    },
+    "target": "production",
+    "createdAt": 1779460834603
+   }
+  ],
+  "pagination": {
+   "count": 1,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

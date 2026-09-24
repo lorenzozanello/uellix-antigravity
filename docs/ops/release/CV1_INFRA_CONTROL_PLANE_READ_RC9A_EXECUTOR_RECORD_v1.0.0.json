@@ -1,0 +1,193 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_RC9A_EXECUTOR_RECORD",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_RC9A_EXECUTOR_RECORD_v1.0.0",
+ "authority_class": "RC9A_EXECUTOR_PROVENANCE_RECORD__EVIDENCE_FOR_AC-1_LIMB_3__NOT_AN_ARMING_ACT",
+ "document_class": "RC9A_EVIDENCE__PACMI_ONLY__NO_DN_READ__NO_MUTATION__NO_SECRET_VALUE",
+ "append_only": true,
+ "discharges": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json ARMING_CONJUNCTION LIMB_3_RC9_EXECUTOR_PROVENANCE, via RC-9a as split by v1.0.2 RC-6",
+ "authorized_by": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3.json PRE_ARMING_CREDENTIAL_METADATA_INTROSPECTION, under owner ratification DF11",
+ "mission_id": "CV1-INFRA-RC9-DF11-INTROSPECTION-AND-ARMING-R2",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "measured_at_head": "5836145b2c07e35c0815b09f9eee51cd0efc91b9",
+
+ "SECRET_SAFETY_DECLARATION": {
+  "rule": "This record contains ZERO secret values. No token, refresh token, cookie, Authorization header, DSN, environment value, deploy-hook URL, or credential substring appears anywhere in it.",
+  "what_IS_recorded": "Identity, provider-reported scope and role names, credential class, storage mechanism, expiry timestamp, team and repository names, and blast-radius characterization — all metadata, all within the PACMI allowlist.",
+  "prohibited_modes_not_used": "gh auth status was run in its DEFAULT mode; --show-token was NOT used. The Vercel CLI's --token option was NOT used. No --debug or verbose mode was used. The gh output masks the token itself (gho_ followed by asterisks) and even that masked form is not reproduced here."
+ },
+
+ "EXECUTOR_BINDING": {
+  "rule": "RC-9a describes THIS executor's credentials. It is not pre-authored provenance for a hypothetical future lane, which is what made the previous arming determination's LIMB_3 structurally undischargeable.",
+  "executor_locus": {
+   "host": "EstefaniaOG",
+   "platform": "MINGW64_NT-10.0-26200 (Windows 11), git-bash",
+   "repository_worktree": "C:/Users/Lorenzo/Documents/uellix-cv1-infra-control-plane-read-authority",
+   "repository": "lorenzozanello/uellix-antigravity",
+   "branch": "codex/cv1-infra-control-plane-read-authority-r1",
+   "head_at_measurement": "5836145b2c07e35c0815b09f9eee51cd0efc91b9",
+   "session": "Claude Code Desktop session 1d925e5a-2fd9-4010-bb42-0e0237c06bf7"
+  },
+  "tool_identity": {"gh": "2.93.0 (2026-05-27)", "vercel": "54.14.2 (Node.js 24.16.0)", "git": "2.54.0.windows.1"},
+  "intended_executor_declaration": "This lane is the INTENDED future read-executing lane, per its own directing mission. The credentials characterized below are the ones that would perform V-R1..V-R4, G-R1..G-R4 and X-R1 if arming succeeds and the package later passes independent certification.",
+  "STOP_EXECUTOR_BINDING_MISMATCH": "NOT TRIGGERED. The read executor is not necessarily another host or session; it is this one.",
+  "the_binding_that_travels_with_it": "If a DIFFERENT host or session ever executes the reads, this record does NOT describe its credentials and LIMB_3 must be re-discharged there. RC-9a is per-executor by construction."
+ },
+
+ "PLANE_G_GITHUB": {
+  "status": "SATISFIED",
+  "provenance": {
+   "credential_class": "GitHub OAuth token issued to the GitHub CLI (token identifier prefix gho_, an OAuth app token rather than a personal access token or a GitHub App installation token).",
+   "storage_mechanism": "Operating-system keyring, as reported by the CLI. The credential is NOT stored in the hosts.yml config file, which was separately confirmed to carry no token field.",
+   "config_locus": "C:/Users/Lorenzo/AppData/Roaming/GitHub CLI/hosts.yml (identity and protocol only)",
+   "host": "github.com",
+   "authenticated_identity": "lorenzozanello",
+   "active_account": true,
+   "git_operations_protocol": "https"
+  },
+  "scope_permission": {
+   "source": "PROVIDER-REPORTED. Obtained from PACMI-G1 (gh auth status, default mode), which surfaces the scope list GitHub itself returns for the credential.",
+   "scopes": ["gist", "read:org", "repo", "workflow"],
+   "not_inferred": "These are the provider's own reported scopes. They were NOT inferred from any prior successful operation of this lane, which NB-3 and the owner's inference prohibition both refuse."
+  },
+  "blast_radius": {
+   "characterization": "HIGH. Admin-capable on this repository.",
+   "derived_from_the_scopes_above": [
+    "repo — full control of repositories the principal can administer: read and WRITE code, manage commit statuses and deployments, and administer repository settings including BRANCH PROTECTION and REPOSITORY RULESETS.",
+    "workflow — add or update files under .github/workflows/**.",
+    "read:org — read organization membership and metadata.",
+    "gist — create and edit gists."
+   ],
+   "the_finding_this_surfaces": "RC-9's own rationale warned that reading branch protection generally requires an admin-level credential — the credential that can DELETE protection. That is now MEASURED, not assumed: the repo scope confers exactly that. Separately, the workflow scope means this credential CAN edit .github/workflows/**, which is the single act EAD-5 and the authority's EXPLICIT_NON_AUTHORIZATIONS forbid most firmly. See CAPABILITY_VERSUS_AUTHORIZATION_GAP.",
+   "what_bounds_it": "Nothing technical. The gap between what this credential CAN do and what the authority PERMITS is closed only by RC-1 (explicit GET-only verbs), RC-10 (no operation outside the enumeration) and the acting lane's discipline. That is precisely why RC-9a requires the blast radius to be visible to a certifier."
+  },
+  "evidence_method": "PACMI-G1: gh auth status, default mode, executed once at head 5836145b. Output filtered through a redaction pattern before display; no token material was observed or recorded."
+ },
+
+ "PLANE_V_VERCEL": {
+  "status": "SATISFIED",
+  "provenance": {
+   "credential_class": "Vercel CLI OAuth SESSION credential — an access token paired with a refresh token and an expiry, established through the CLI's normal authentication flow. Not a manually minted access token.",
+   "storage_locus": "C:/Users/Lorenzo/AppData/Roaming/xdg.data/com.vercel.cli/auth.json",
+   "field_shape_observed_by_key_name_only": ["token", "refreshToken", "userId", "expiresAt"],
+   "authenticated_identity": "lorenzozanello-5040"
+  },
+  "validity": {
+   "prior_state": "EXPIRED. The previous arming determination measured expiresAt = 2026-09-22T08:02:56Z against an evaluation at 2026-09-22T21:25:35Z.",
+   "reauthentication_method": "NONE REQUIRED INTERACTIVELY. The first PACMI-V1 call (vercel whoami) succeeded, and the stored expiry advanced, so the CLI silently exchanged its refresh token for a new access token. No browser or device approval was needed and no credential was requested from the human.",
+   "current_expiry_utc": "2026-09-23T06:02:15Z",
+   "verified_current_at_utc": "2026-09-22T22:02:27Z",
+   "currently_valid": true,
+   "remaining_life_at_verification": "approximately 8 hours",
+   "THE_CONSTRAINT_THIS_IMPOSES": "This credential has a FINITE and SHORT life. An arming determination resting on it is bound to a credential that expires at 2026-09-23T06:02:15Z. A read-executing lane running after that instant is running on a credential this record does not characterize, and MUST re-discharge RC-9a rather than cite this one. See ARMING_CONSTRAINTS."
+  },
+  "context_not_scope": {
+   "teams_visible": 1,
+   "active_team": "lorenzozanello-5040s-projects",
+   "DF-12_discipline_applied": "The Vercel CLI's -S/--scope option and switch [scope] command select an account or team CONTEXT; they are not a permission grant. The team name above is recorded as CONTEXT and is expressly NOT the answer to RC-9a's scope question. Recording it as scope would be the widen-the-definition failure the owner's ratification prohibits."
+  },
+  "scope_permission": {
+   "source": "PROVIDER-REPORTED. Obtained from PACMI-V3 (vercel teams members), which reports the role the authenticated principal holds in the active team. This is the nearest thing the Vercel surface exposes to a permission model for an OAuth CLI session.",
+   "role": "OWNER",
+   "principal_uid_reported": "Bd6qebGFYr7dULnBQpyHvobb",
+   "minimization_applied": "The active team has exactly ONE member, which is the authenticated principal itself, so no other principal's row existed to exclude. Had others been present, only the authenticated principal's row would have been read and recorded, per PACMI.MINIMIZATION.",
+   "not_inferred": "The role is the provider's own report, not an inference from any operation having succeeded."
+  },
+  "blast_radius": {
+   "characterization": "MAXIMUM WITHIN THE TEAM. OWNER is the highest Vercel team role.",
+   "derived_from_the_role_above": [
+    "Full administrative control of the team and every project within it.",
+    "Ability to read AND WRITE project settings, including the Git integration, the production branch, and any Ignored Build Step — the exact settings V-R1 and V-R3 only READ.",
+    "Ability to create, promote, redeploy and delete deployments, and to create, change or remove aliases and domains.",
+    "Ability to create, read (decrypted), change and delete environment variables.",
+    "Ability to create deploy hooks, which are bearer capabilities that trigger production deployments.",
+    "Ability to delete projects and the team itself."
+   ],
+   "the_finding_this_surfaces": "Every mutation the authority forbids on the Vercel plane is technically available to this credential. Nothing in the credential restricts it to reading. The read-only property of V-R1..V-R4 is a property of the OPERATIONS the authority enumerates, not of the credential that will perform them."
+  },
+  "evidence_method": "PACMI-V1 (vercel whoami), PACMI-V2 (vercel teams list), PACMI-V3 (vercel teams members), each executed once at head 5836145b. No --token option and no --debug mode was used."
+ },
+
+ "PLANE_X_GIT_REFS": {
+  "status": "SATISFIED BY NORMATIVE COMMAND CONTRACT, NOT BY EXECUTION",
+  "why_no_execution": "X-R1 is a governed DN read. Running it to discover its own credential posture would be executing a gated read before arming, which NC-7 refuses and this lane's mode forbids. PLANE-X's credential class must therefore follow from the COMMAND CONTRACT or be left unresolved.",
+  "the_measured_default_that_made_this_necessary": {
+   "finding": "This machine HAS a git credential helper configured: git config --get-all credential.helper returns 'manager' (Git Credential Manager).",
+   "consequence": "X-R1 as originally contracted — a bare 'git ls-remote origin' — WOULD present a credential via GCM. Its credential class would then be 'a GCM-held credential for github.com' whose scope is not introspectable without reading the credential (prohibited) or a further provider call. PLANE-X would have been UNRESOLVED.",
+   "why_this_was_measured_rather_than_assumed": "The absence of a helper would have made the credential-free claim trivially true. It is present, so the claim has to be earned by the command form."
+  },
+  "NORMATIVE_COMMAND_CONTRACT_ADDENDUM": {
+   "id": "XCC-1",
+   "rule": "X-R1 MUST be invoked with git credential helpers reset and terminal prompting disabled. The mandated form is: GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote <origin-url>",
+   "relationship_to_the_existing_X-R1_contract": "This NARROWS X-R1 and never widens it. Every existing X-R1 requirement is preserved unchanged: the invocation remains UNFILTERED with no refspec (DF-5), the total ref count is still recorded as the non-emptiness witness, the heads and tags limbs are still reported as separate verdicts, and refs are still recorded by full name with full 40-character SHAs.",
+   "authoritative_basis": {
+    "rule": "The guarantee is derived from the INSTALLED git 2.54.0.windows.1's OWN documentation on this machine, not from recall.",
+    "credential_helper_reset": {
+     "source": "C:/Program Files/Git/mingw64/share/doc/git-doc/gitcredentials.html",
+     "quoted": "helper is configured to the empty string, this resets the helper list to empty (so you may override a helper set by a lower-priority config file by configuring the empty-string helper, followed by whatever set of helpers you would like)."
+    },
+    "terminal_prompt_suppression": {
+     "source": "C:/Program Files/Git/mingw64/share/doc/git-doc/git.html",
+     "quoted": "GIT_TERMINAL_PROMPT If this Boolean environment variable is set to false, git will not prompt on the terminal (e.g., when asking for HTTP authentication)."
+    },
+    "corroborating_local_observation": "Under the override, git -c credential.helper= config --get-all credential.helper returns the ordered list ['manager', ''] — the empty string appearing LAST, at highest precedence, which is the position the documented reset semantics require in order to clear the helpers configured at lower priority."
+   },
+   "the_guarantee": "With the helper list reset to empty AND terminal prompting disabled, git has no mechanism by which to obtain or present a credential for an HTTPS remote. It cannot silently authenticate.",
+   "the_fail_closed_property": "If the repository were NOT publicly readable, the mandated form FAILS rather than quietly authenticating with an ambient credential. That is strictly safer than the original form: a failure is visible, a silent credentialed success is not. Note that this lane did NOT read the repository's visibility — that is G-R1's job and G-R1 is gated — so the contract is written to be correct under either visibility."
+  },
+  "provenance": {"credential_class": "NONE", "storage_mechanism": "NOT_APPLICABLE", "authenticated_identity": "NOT_APPLICABLE — the mandated form is anonymous by construction"},
+  "scope_permission": {"scope": "NOT_APPLICABLE", "basis": "No credential is presented, so there is no scope to report. This is not an unmeasured scope; it is the absence of a credential, guaranteed by the command contract."},
+  "blast_radius": {"characterization": "READ_PUBLIC_REF_METADATA_ONLY", "detail": "An anonymous ls-remote can list ref names and their object SHAs. It cannot write, cannot fetch object content, and cannot reach a non-public repository."},
+  "evidence_method": "Contract analysis against the installed git's own documentation, plus one purely local config-resolution observation. ZERO network calls. X-R1 itself remains UNEXECUTED."
+ },
+
+ "CAPABILITY_VERSUS_AUTHORIZATION_GAP": {
+  "id": "DF-13",
+  "severity": "MEDIUM — INFORMATIONAL BUT LOAD-BEARING FOR THE NEXT GATE",
+  "finding": "THE MEASURED CREDENTIALS CAN PERFORM EVERY ACT THE AUTHORITY MOST FIRMLY FORBIDS.",
+  "the_measurement": [
+   "GitHub repo scope confers administration of branch protection and rulesets — the credential that reads protection is the credential that can delete it.",
+   "GitHub workflow scope confers the ability to edit .github/workflows/**, which EAD-5 records as requiring an authority that does not exist and which EXPLICIT_NON_AUTHORIZATIONS prohibits outright.",
+   "Vercel OWNER confers write on the production branch setting, the Git integration, the Ignored Build Step, environment variables, deployments, aliases and deploy hooks — the whole surface M-6 and M-7 would mutate, and the entire read target of V-R1 through V-R4."
+  ],
+  "why_this_is_not_a_defect_to_fix_here": "Neither provider offers a read-only credential class that would still permit the nine reads. GitHub's branch-protection read requires admin; Vercel's CLI session is role-based and OWNER is what this principal holds. Narrowing the credential is not available as a control at this layer.",
+  "what_it_means_for_the_next_gate": "The separation between reading and mutating rests ENTIRELY on the authority's own controls — RC-1's explicit GET-only verbs, RC-10's refusal of unenumerated operations, and the evidence discipline each read carries. It does NOT rest on any technical incapacity. A certifier should weigh the read controls knowing that nothing outside them prevents a mutation.",
+  "why_it_is_recorded": "RC-9a's stated purpose is that the elevated privilege of a read be VISIBLE TO A CERTIFIER rather than a detail of how the read happened to be performed. This block is that visibility, measured rather than assumed."
+ },
+
+ "ARMING_CONSTRAINTS": {
+  "rule": "Constraints this record imposes on any arming determination that cites it.",
+  "constraints": [
+   "CREDENTIAL EXPIRY BOUND: the Vercel credential expires 2026-09-23T06:02:15Z. An arming determination citing this record is bound to that horizon. A read-executing lane operating after it MUST re-discharge RC-9a for PLANE-V; it may not cite this record for a credential that no longer exists.",
+   "EXECUTOR BOUND: this record characterizes the credentials of the executor locus named in EXECUTOR_BINDING and no other. Another host or session re-discharges RC-9a.",
+   "XCC-1 BOUND: PLANE-X's credential_class = NONE holds ONLY if X-R1 is actually invoked in the mandated credential-free form. An X-R1 executed as a bare ls-remote falsifies this record's PLANE-X entry at the moment it runs.",
+   "NO NODE DISCHARGED: nothing in this record discharges any DAG node. Every observation here is PACMI, which v1.0.3 declares disjoint from the nine governed reads in both directions."
+  ]
+ },
+
+ "RC9A_VERDICT": {
+  "PLANE-V": "SATISFIED (identity, class, expiry, context, role OWNER, blast radius)",
+  "PLANE-G": "SATISFIED (identity, class, storage, provider-reported scopes, blast radius)",
+  "PLANE-X": "SATISFIED (credential_class NONE, by normative command contract XCC-1, no execution)",
+  "OVERALL": "SATISFIED for all three planes of the intended read set.",
+  "therefore": "AC-1 LIMB_3 is DISCHARGED at the executor locus and within the constraints above."
+ },
+
+ "self_check": {
+  "SC-R9a-1": "Zero secret values. No token, refresh token, cookie, header, DSN, env value or deploy-hook URL appears; even the CLI's own masked token form is not reproduced.",
+  "SC-R9a-2": "No prohibited tool mode was used: no --show-token, no --token on a command line, no --debug.",
+  "SC-R9a-3": "Every scope and role is PROVIDER-REPORTED. None is inferred from a prior successful operation.",
+  "SC-R9a-4": "DF-12's trap is explicitly avoided: the Vercel team name is recorded as CONTEXT and the role as the permission answer.",
+  "SC-R9a-5": "PLANE-X is resolved by contract, quoting the installed git's own documentation, with X-R1 unexecuted.",
+  "SC-R9a-6": "The presence of a configured credential helper was MEASURED, so the credential-free claim is earned by the command form rather than true by default.",
+  "SC-R9a-7": "Minimization is satisfied and the reason is stated (the team has exactly one member).",
+  "SC-R9a-8": "The credential expiry horizon and the executor binding are recorded as CONSTRAINTS on any arming determination, not as footnotes.",
+  "SC-R9a-9": "DF-13 records that the credentials can perform what the authority forbids, because RC-9a exists to make that visible.",
+  "SC-R9a-10": "No governed DN read was executed and no DAG node is discharged."
+ },
+
+ "final_state": "RC9A_SATISFIED_ALL_THREE_PLANES__LIMB_3_DISCHARGED__BOUND_BY_EXPIRY_AND_EXECUTOR__NO_DN_READ_EXECUTED",
+ "next_gate": "A fresh DN-0 rebaseline at the head that includes this record, then an arming determination evaluating AC-1's three limbs."
+}

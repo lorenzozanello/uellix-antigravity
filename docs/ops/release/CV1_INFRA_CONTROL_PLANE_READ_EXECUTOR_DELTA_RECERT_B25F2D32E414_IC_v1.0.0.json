@@ -1,0 +1,129 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_B25F2D32E414_IC_v1.0.0",
+ "authority_class": "INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT",
+ "document_class": "CERTIFICATION_EVENT_RECORD__NO_READ__NO_MUTATION",
+ "append_only": true,
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01), lane CV1-INFRA-LINK-REPO-INVENTORY-WITNESS-RECERT-MATERIALIZATION-R1",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "materialization_contract": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7.json EVENT_CHAIN_SUCCESSOR.materialization_contract (derived path for the recertified head, package_id, authority_class prefix, exact candidate_head, verdict copied verbatim, integer blocking count).",
+ "CERTIFIED_CANDIDATE": {
+  "candidate_head": "b25f2d32e414af8cb9b54f53867125a771e43efd",
+  "candidate_tree": "0100ce65780356a77da7d1bd2b0d604f5701dddf",
+  "candidate_base": "dcbd0acce8f21248a796c939924610c77446f3b1",
+  "candidate_base_tree": "a7c5febb82ef6cb8f13492a3815232598184c8d5",
+  "candidate_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "candidate_pr": "#214",
+  "scope_reviewed": "ONLY the bounded delta dcbd0acc..b25f2d32 (17 files, 6 added / 11 modified; every docs file an addition): G-R5 (GET /user/repos, one read class), bounded pagination, in-memory projection/discard, the same-run repository identity witness, the OPAQUE_HIGH_ENTROPY adjudication at V-R2.S2 projects[*].link.repo, the TI-2 correction, the RC-9a repo-scope precondition, the EC-1 in-run re-scan, and the candidate-derived delta-recert event chain. Unrelated Infra architecture was not reopened.",
+  "candidate_verification_performed_by_this_lane": "Head and tree re-derived from git (rev-parse HEAD and HEAD^{tree}) and equal to refs/pull/214/head and the remote branch head, read anonymously (credential helpers disabled). CI 'Lint, typecheck, test, build' success; Vercel success."
+ },
+ "VERDICT": {
+  "verdict": "INFRA_LINK_REPO_INVENTORY_WITNESS_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+  "blocking_findings": 0,
+  "nonblocking_findings": 9,
+  "provenance": "CONDUCTED AND MATERIALIZED BY THE SAME REVIEW SESSION (lane CV1-INFRA-LINK-REPO-INVENTORY-WITNESS-RECERT-R1, then this materialization lane, same conversation). The reviewer did not author the delta. The verdict token and counts below are copied verbatim from the issued decision.",
+  "determinations": {
+   "DOCUMENTED_CAPABILITY_CERTIFIED": "YES",
+   "AUTH_PRINCIPAL_COMPATIBLE": "YES",
+   "REQUEST_SAFETY": "YES",
+   "PAGINATION_FAIL_CLOSED": "YES (NB-2, NB-3)",
+   "MEMORY_BOUND": "YES",
+   "SAME_RUN_WITNESS": "YES",
+   "SCANNER_EXCEPTION_NARROW": "YES (NB-1)",
+   "TI2_CORRECT": "YES",
+   "REGISTRY_25_9": "YES",
+   "EVENT_CHAIN_TERMINATES": "YES (NB-5)"
+  }
+ },
+ "EVIDENCE_SUMMARY": {
+  "provider_documentation": "Official GitHub docs re-read: 'Lists repositories that the authenticated user has explicit permission (:read, :write, or admin) to access'; per_page max 100 (default 30); page default 1; responses 200/304/401/403/422; id, name, full_name, owner required. Fine-grained PAT table lists GET /user/repos under Metadata: read. Classic scope 'repo' is the scope granting private-repository access. Pagination guide: end of results is the link header without rel=next.",
+  "gates": "ods:prestate PASS; typecheck exit 0; eslint on the delta exit 0; secrets:scan PASS; authority:seal:verify PASS; ods:scope PASS (17 files, 0 unauthorized; a deliberately incomplete allowlist FAILED as a negative control); ods:poststate PASS; test manifest v1.0.7 valid against UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 (ajv 8).",
+  "tests": "tests/infra-read 351/351.",
+  "registry": "Derived from the committed blobs: 24 -> 25 operations; EXECUTE_NOW governed-read classes exactly G-R1, G-R2, G-R3, G-R4, G-R5, V-R1, V-R2, V-R3, X-R1 (9); V-R4 F_IMMEDIATE_ONLY_BEFORE_MUTATION; no tenth class.",
+  "ti2": "The superseded TI-2 text in v1.0.7 is byte-identical to v1.0.0 READS.reads[0].target_identity.requirements[1]; v1.0.0 and the release-control amendments (CM-6) are unchanged by the delta.",
+  "independent_pressure": "98 synthetic cases by the reviewer, 97 green; the one red case is NB-1.",
+  "event_chain": "With a disposable PASS event at the derived path, this candidate arms (5/5 events). Missing event, FAIL verdict, blocking_findings 1, wrong candidate in the event, executing a different candidate, and substitution of either historical recert (81b56ed4, 4a3c2837, including the 4a3c2837 record re-edited to name b25f2d32) all STOP; a successor candidate derives a different path.",
+  "mutation": "Author battery W01-W32 + N02 + N30: 34/34 AS_EXPECTED; self-test PASS (the battery fails on a real survivor). Reviewer's 15 independent mutants X01-X15: 10 KILLED, 3 equivalent (X12 link.repo re-check, X13 G-R5 non-OK throw, X14 finalize coverage check), 2 SURVIVED as coverage gaps (NB-6)."
+ },
+ "NONBLOCKING_FINDINGS": {
+  "reported_count": 9,
+  "enumeration_status": "COMPLETE. All 9 are OPEN. This record's PASS dispositions none of them.",
+  "items": [
+   {
+    "id": "NB-1",
+    "priority": "HIGHEST",
+    "finding": "The in-run detector set (scripts/infra-read/evidence-scan.ts, unchanged by this delta) has NO private-key-block detector; that detector exists only in scripts/scan-secrets.ts. MEASURED: a V-R2.S2 link.repo made of a PEM private-key armor header line followed by an opaque token trips ONLY OPAQUE_HIGH_ENTROPY, is deferred, and with a synthetic witness returning that exact name is adjudicated EXPECTED_PROVIDER_IDENTIFIER with EC-1 at 0 unexplained. The only real barrier is GitHub's repository-name grammar (no spaces), which the code does not assert. v1.0.7 SCANNER_ADJUDICATION.other_detectors overstates by listing 'private keys' among the detectors that STOP.",
+    "recommended_disposition": "Bounded hardening: assert link.repo matches the GitHub repository-name grammar before deferral, and add a private-key-block detector to the in-run set; then one focused recert.",
+    "status": "OPEN — NOT FIXED"
+   },
+   {
+    "id": "NB-2",
+    "finding": "Pagination completes on an EMPTY page; the official docs document only the link header without rel=next as the end signal. Disclosed in v1.0.7; every deviation measured (clamped last page, repeated page, error) fails closed.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-3",
+    "finding": "The effective cap is 9,900 repositories (99 full pages + the empty page 100), not the 10,000 v1.0.7 states; 100 full pages STOP. Loop detection compares adjacent pages only (A,B,A undetected), bounded by the page cap and by STOP_WITNESS_MULTIPLE_MATCH.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-4",
+    "finding": "The standalone EC-1 CLI (evidence-adjudication.ts main) honours adjudication markers without a same-run witness (isAdjudicatedValue = () => true). Disclosed.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-5",
+    "finding": "Delta-chain contiguity is not code-enforced: the delta event binds its candidate, not its base, and the successor duty to pin this event as a fixed historical event is procedural. MEASURED contiguous today: 81b56ed4 and 4a3c2837 certified; 56294d14, 5375c697 and dcbd0acc are docs-only.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-6",
+    "finding": "Coverage gaps: X05 (RC-9a scope matched by substring, accepting public_repo) and X10 (EC-1 decoded-level exact leaf path dropped; a same value under another \"repo\" key is then explained at both levels) SURVIVED. Neither widens authority; X10 is unreachable in the current V-R2.S2 allowlist.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-7",
+    "finding": "Deferral exists only at V-R2.S2. If the flagged project is also read by V-R2.S3, V-R1 or V-R3, the run STOPs there. Fail-closed; liveness only.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-8",
+    "finding": "RC-9a parses the provider scope string as comma-separated unquoted names; not verifiable without an authenticated operation. A differently formatted string STOPs.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-9",
+    "finding": "The LRW-2 owner decision record was materialized in the same commit as the implementation; its verbatim owner text is not independently verifiable by the reviewer. The fresh human confirmation before execution covers it.",
+    "status": "OPEN"
+   }
+  ]
+ },
+ "REVIEWER_IDENTITY": {
+  "reviewer": "Claude Opus 5.5 (claude-opus-5-5) under Claude Code Desktop, detached worktree at b25f2d32.",
+  "execution_date": "2026-09-23",
+  "execution_instant": "NOT RECORDED. Only the date is stated; no instant is reconstructed."
+ },
+ "OPERATIONS_BY_THE_REVIEW": {
+  "GOVERNED_READS_EXECUTED": "ZERO",
+  "PACMI_AUTHENTICATED_OPS_EXECUTED": "ZERO",
+  "PROVIDER_MUTATIONS_EXECUTED": "ZERO",
+  "REAL_PROVIDER_VALUES_INSPECTED": "ZERO",
+  "SECRETS_EXPOSED": "ZERO",
+  "note": "Only public documentation and anonymous public-repository metadata (PR head, check runs) were read."
+ },
+ "WHAT_THIS_EVENT_DOES_AND_DOES_NOT_DO": {
+  "does": "Materializes the recertification of the v1.0.7 delta at the path dn0ConfigFor derives for b25f2d32, so the runtime LIMB_1 predicate can find it as the event bound to that executable candidate.",
+  "does_not": [
+   "Arm anything by itself. AC-1 is evaluated at runtime on every execution: runtime RC-9a, then DN-0 as the last pre-read act.",
+   "Replace the base recert (81b56ed4) or the diagnostic recert (4a3c2837); both stay bound to their own candidates and required.",
+   "Fix, waive or disposition NB-1 or any other finding.",
+   "Authorize execution now: execution is HELD for the NB-1 hardening.",
+   "Authorize any read beyond the effective read set, any mutation, V-R4, or M-8 / M-9.",
+   "Change the certified effective package: it is an ADDED certification-event file, the class allowedPostCertificationAdditions permits."
+  ]
+ },
+ "final_state": "INFRA_B25F2D32_RECERT_MATERIALIZED__EXECUTION_HELD_FOR_NB1_HARDENING",
+ "next_gate": "Bounded scanner/identifier hardening for NB-1, followed by one focused recert. Execution of the 9 EXECUTE_NOW read classes stays held until then; it would in any case require a fresh human confirmation, fresh RC-9a and fresh DN-0, from scratch."
+}

@@ -1,0 +1,42 @@
+{
+  "manifest_id": "CV1-INFRA-L7-DEPLOYMENT-REPO-WITNESS-EXTENSION",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.9.json",
+  "dependencies": [
+    "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.8 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.8.json)",
+    "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_00D6D3834989_IC_v1.0.0 (fixed history event, materialized at b402c5d0)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {"id": "SEN-L1", "purpose": "Every repository-name-shaped value, token prefix and PEM header in the tests is assembled at runtime; no committed file carries a credential-shaped literal."},
+    {"id": "SEN-L2", "purpose": "ZERO governed reads, ZERO PACMI calls, ZERO authenticated provider operations, ZERO real provider values, ZERO DB connections; the provider is the fake world."}
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {"id": "PL-1", "description": "Same project, same run, exact value, entropy only: the V-R2.L7 record is validated evidence carrying exactly ONE adjudication in its single permitted form, bound to the same team + project, carrying no provider value.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "PL-2", "description": "Exact valid positive control inside a cross-project scenario: A's own deployments are adjudicated in the same run while B's page carrying A's value STOPs; a longer witnessed name is adjudicated exactly.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "PL-3", "description": "EC-1: in-run (executor same-run binding AND the bundle's own V-R2.S2 binding) and standalone (bundle binding) re-scans explain the adjudicated L7 findings and nothing else.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "PL-4", "description": "The real dn0ConfigFor binds seven events with 00d6d383's delta recert fixed; the six materialized events satisfy CP-1 as configured.", "test_file": "tests/infra-read/entrypoint.test.ts"}
+  ],
+  "negative_controls": [
+    {"id": "NL-01", "description": "Case-changed, different same-shape name, trailing space, owner-prefixed, .git suffix, URL form, prefix (substring), superstring, NFKC-equivalent fullwidth form, and one differing deployment in a page: each STOPs.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-02", "description": "Cross-project substitution (B never adjudicated; A and B adjudicated with different repos) and the same projectId under another team/scope: STOP.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-03", "description": "Historical witness only (a previous executor adjudicated the project): the new run STOPs; the binding has no setter.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-04", "description": "No prior V-R2.S2 adjudication, S2 unresolved (pending; traversal complete but no verdict), zero G-R5 match, duplicate G-R5 match, witness name mismatch: STOP.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-05", "description": "Grammar-invalid value; PRIVATE_KEY + entropy; GITHUB_TOKEN_FAMILY, URL_USERINFO, ENV_ASSIGNMENT_SECRET + entropy; the witnessed value at deployments[*].name: STOP with the named detector in the certified diagnostic.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-06", "description": "Each layer of the L7 predicate (path, located detector, grammar, value detectors, exact equality, non-empty set) is independently load-bearing.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-07", "description": "Not global: an L7 adjudication on another op, a second entry, another scope, exact_equality false, a historical witness op, a corroboration claim or an extra key are refused by the envelope; V-R4.DEPLOYMENTS stays refused in this phase.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-08", "description": "EC-1: caller lookup alone, bundle alone (in-run), an adjudication borrowed by a record requested for another project, a forged scope, a missing marker, a grammar-invalid value, a mixed value (0 explained) and an ambiguous bundle source are all unexplained.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "NL-09", "description": "The 00d6d383 delta recert cannot certify a new candidate.", "test_file": "tests/infra-read/entrypoint.test.ts"}
+  ],
+  "mutation_controls": [
+    {"id": "ML-01", "description": "Same-project binding removed; bound to another project's adjudication; team/scope dropped (L01, L08, L09) must be KILLED.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "ML-02", "description": "Historical witness allowed; G-R5 provenance bypassed; unresolved S2 accepted (L02, L10, L11) must be KILLED.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "ML-03", "description": "Case folding; equality removed (any grammar-valid value); grammar removed; entropy + another detector accepted; value detector check removed; path restriction removed; exception globalized (L03-L07, L12, L13) must be KILLED.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "ML-04", "description": "Envelope and EC-1 scope binding removed; bundle binding or caller lookup dropped; EC-1 detector or grammar layer removed (L14-L19) must be KILLED.", "test_file": "tests/infra-read/l7-deployment-repo.test.ts"},
+    {"id": "ML-05", "description": "The fixed 00d6d383 event dropped, or accepted for the new candidate (L20, L21) must be KILLED.", "test_file": "tests/infra-read/entrypoint.test.ts"},
+    {"id": "ML-06", "description": "Every earlier production mutant (M/N/D/W/P, 100) re-killed on this tree; the battery still FAILS on a real survivor (self-test).", "test_file": "tests/infra-read/mutation-verdict.test.ts"}
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

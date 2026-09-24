@@ -1,0 +1,146 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION",
+ "version": "1.0.1",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION_v1.0.1",
+ "authority_class": "ARMING_DETERMINATION_RECORD__EVALUATES_AC-1__ARMS_THE_GRANT__AUTHORIZES_NO_READ_IN_THIS_LANE",
+ "document_class": "ARMING_DETERMINATION__NO_DN_READ_EXECUTED__NO_MUTATION__NO_M8__NO_M9",
+ "append_only": true,
+ "supersedes_the_verdict_of": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_ARMING_DETERMINATION_v1.0.0.json, whose determination was ARMED = false on LIMB_3",
+ "evaluates": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json ARMING_CONJUNCTION (AC-1)",
+ "mission_id": "CV1-INFRA-RC9-DF11-INTROSPECTION-AND-ARMING-R2",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+
+ "DETERMINATION": {
+  "ARMED": true,
+  "verdict": "ARMED__ALL_THREE_LIMBS_SATISFIED",
+  "the_predicate_evaluated": "ARMED = LIMB_1 AND LIMB_2 AND LIMB_3 = true AND true AND true = TRUE.",
+  "no_limb_was_weakened": "Each limb was evaluated against the condition AC-1 states, not against a relaxed version of it. LIMB_3, which failed in v1.0.0, was satisfied by removing the instrument gap that made it unsatisfiable (owner ratification DF11 plus the v1.0.3 PACMI class), not by narrowing what it asks for.",
+  "what_changed_since_the_v1.0.0_determination": "Three things, in order: the owner authorized a bounded credential-metadata introspection class, closing DF-11; that class was defined and bounded in the v1.0.3 amendment; and RC-9a was then discharged for all three planes from provider-reported metadata. LIMB_1 was already permanent. LIMB_2 was re-run fresh, because its prior evidence does not travel."
+ },
+
+ "ACTING_STATE_EVALUATED": {
+  "acting_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "acting_head": "49f66bb6f3439ee9ee13c4684e4565ac63f9875f",
+  "acting_tree": "44c3bdd3545e4b24221f1cf8f501f530b80eb278",
+  "self_pin_avoidance": "This record is committed as a SUCCESSOR of the acting head it names, so it pins an immutable predecessor and never its own materialization state."
+ },
+
+ "EFFECTIVE_PACKAGE_ARMED": {
+  "rule": "ARMED = true attaches to EXACTLY these files at exactly these blobs. It does not travel to a successor version of any of them. A consumer finding any blob to differ must re-evaluate AC-1 rather than carry the arming forward.",
+  "files": [
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json", "blob": "a5a6d196f24b792eee723391f782c161149ee7d8"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0.json", "blob": "1c24f1f54fd451f21b3721da175135abd8ffa2fe"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "db678bd6706e1b3838119ee44fbdbf710f4bba1d"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "a2566792aded0eceaea9c98381555622abc29a1f"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json", "blob": "5a56d1b65e42c1566105a3648d7c542282938e1b"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.2.json", "blob": "9cdca6d38d11ea112cd91b709efecd1842443975"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3.json", "blob": "6ec975d4c4e53577cbc05d1de849d62b7d54d65d"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.3.json", "blob": "8994bfe55d7641ac909e97fe52c0d869cec21ee6"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json", "blob": "67cc6573fc3c3e318a0e276363d10a82f5f1fbf8"},
+   {"path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_RC9A_EXECUTOR_RECORD_v1.0.0.json", "blob": "0c8d2c88e544a24289ae75df2a76a60a2f6cf3f8"},
+   {"path": "docs/ops/owner-ratifications/CV1_INFRA_DF11_CREDENTIAL_INTROSPECTION_OWNER_DECISION_v1.0.0.json", "blob": "140429e5b0e5ae61dc7e2118ba772c3c2e33d2e2"}
+  ],
+  "byte_integrity_note": "The six pre-existing files above were verified byte-identical between d3582d6f and the acting head; this lane added only new files."
+ },
+
+ "LIMB_1_CERTIFICATION": {
+  "status": "SATISFIED",
+  "evidence": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json (blob 67cc6573fc3c3e318a0e276363d10a82f5f1fbf8), verdict INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_PASS_WITH_NONBLOCKING_FINDINGS, 0 blocking / 10 nonblocking, materialized in the repository.",
+  "carried_caveat": "That record's findings enumeration is PARTIAL: five remediation targets identified, five TEXT_NOT_SUPPLIED and STILL OPEN. LIMB_1 requires a materialized PASS and that is satisfied. Arming does NOT assert that all ten findings are dispositioned, and no consumer may read it that way."
+ },
+
+ "LIMB_2_DN0_REBASELINE": {
+  "status": "SATISFIED",
+  "performed_at": "the FINAL acting head 49f66bb6, after every authority, owner-decision and RC-9a authoring commit was complete.",
+  "freshness": "Every value re-derived at this head. Nothing copied from the v1.0.0 determination's rebaseline at e1ed8831, which NB-2 refuses and which that record itself declared non-travelling.",
+  "measured": {
+   "acting_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+   "acting_head": "49f66bb6f3439ee9ee13c4684e4565ac63f9875f",
+   "acting_tree": "44c3bdd3545e4b24221f1cf8f501f530b80eb278",
+   "integration_head": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+   "integration_tree": "7228f833c57bfd37fe025546d939ecd46336159c",
+   "required_parent_binding": "6f747e86e0a3eb62d4db87fabe6b331cd4c4a7b2",
+   "parent_binding_is_ancestor": true,
+   "worktree_clean": true,
+   "nine_package_pins": "9 of 9 MATCH, each re-derived by git rev-parse HEAD:<path> at this head",
+   "fetch_note": "origin fetched with --prune immediately before measuring the integration head, because an unfetched remote-tracking ref is a cached value."
+  },
+  "recurrence_warning": "SATISFIED AT THIS HEAD AND NOWHERE ELSE. Committing this record creates a new head. DN-0 recurs at the head of every execution lane; the read-executing lane MUST re-run it at its own acting state and may not cite this block."
+ },
+
+ "LIMB_3_RC9A_EXECUTOR_PROVENANCE": {
+  "status": "SATISFIED",
+  "evidence": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_RC9A_EXECUTOR_RECORD_v1.0.0.json (blob 0c8d2c88e544a24289ae75df2a76a60a2f6cf3f8).",
+  "per_plane": {
+   "PLANE-G": "GitHub OAuth token (gho_) in the OS keyring, identity lorenzozanello, provider-reported scopes gist / read:org / repo / workflow, blast radius admin-capable.",
+   "PLANE-V": "Vercel OAuth CLI session, identity lorenzozanello-5040, role OWNER in the single active team, blast radius maximum within that team.",
+   "PLANE-X": "credential_class NONE, guaranteed by normative command contract XCC-1, X-R1 unexecuted."
+  },
+  "per_plane_bound_met": "AC-1's per_plane_bound requires RC-9a for EVERY plane in the intended read set. All three are characterized; none is partial. NB-4 is therefore not triggered.",
+  "how_the_instrument_gap_was_closed": "DF-11 recorded that RC-9a demanded a scope no enumerated operation could produce while RC-10 forbade unenumerated operations. The owner ratified DF11 = A_AUTHORIZE_MINIMAL_CREDENTIAL_METADATA_INTROSPECTION; v1.0.3 defined PACMI as a bounded class disjoint from the nine reads; RC-9a was then discharged from provider-reported metadata. The requirement was not narrowed to fit the available evidence."
+ },
+
+ "SUPERSEDED_CLAUSE": {
+  "rule": "One clause of v1.0.0 is superseded by this determination. v1.0.0's own bytes are UNCHANGED; this block is what a consumer reads instead.",
+  "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED",
+  "parent_value": false,
+  "superseding_value": true,
+  "scope_of_the_supersession": "TRUE for the exact effective package pinned in EFFECTIVE_PACKAGE_ARMED, at the executor locus recorded in the RC-9a record, and within the constraints in ARMING_CONSTRAINTS_CARRIED. It is not a global or permanent property of the artifact.",
+  "why_this_is_not_an_edit_of_v1.0.0": "v1.0.0 is append_only. v1.0.2's own precedent, and v1.0.1's before it, establish that a clause is superseded by exact-path citation in a successor, never by editing the base file. The base still reads false and is still historically correct as its materialization state."
+ },
+
+ "ARMING_CONSTRAINTS_CARRIED": {
+  "rule": "Arming is bounded. These constraints travel with it and a read-executing lane must satisfy each.",
+  "constraints": [
+   {"id": "AC-CON-1", "constraint": "CREDENTIAL EXPIRY HORIZON. The Vercel credential characterized by RC-9a expires 2026-09-23T06:02:15Z. A read-executing lane operating after that instant is using a credential this arming does not characterize and MUST re-discharge RC-9a for PLANE-V before its first Vercel read.", "failure_token": "STOP_RC9_UNRESOLVED"},
+   {"id": "AC-CON-2", "constraint": "EXECUTOR BINDING. Arming rests on the credentials of the executor locus named in the RC-9a record (host EstefaniaOG, this worktree and session). A different host or session re-discharges RC-9a.", "failure_token": "STOP_EXECUTOR_BINDING_MISMATCH"},
+   {"id": "AC-CON-3", "constraint": "XCC-1 MUST ACTUALLY BE USED. PLANE-X's credential_class = NONE holds only if X-R1 is invoked in the mandated credential-free form (GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote <origin-url>), unfiltered, with the total-ref-count witness. A bare ls-remote falsifies the PLANE-X provenance at the moment it runs.", "failure_token": "STOP_RC9_UNRESOLVED"},
+   {"id": "AC-CON-4", "constraint": "DN-0 RECURS. LIMB_2's evidence does not travel past this head. The read-executing lane re-runs DN-0 at its own acting state.", "failure_token": "STOP_STALE_DN0"},
+   {"id": "AC-CON-5", "constraint": "RC-9b STILL OWED. The authenticated permission object returned by G-R1 must be captured WITHIN the first G-R1 read and written into its evidence record. The RC-9a/RC-9b split disentangled their timing; it deleted neither obligation.", "failure_token": "STOP_CREDENTIAL_SCOPE_INSUFFICIENT"},
+   {"id": "AC-CON-6", "constraint": "PACKAGE IDENTITY. Arming attaches to the eleven blobs pinned above. Any change to any of them voids this determination and requires a fresh AC-1 evaluation.", "failure_token": "STOP_READ_AUTHORITY_BINDING_MISMATCH"}
+  ]
+ },
+
+ "WHAT_ARMING_DOES_NOT_AUTHORIZE": {
+  "rule": "Arming makes the nine reads PERMISSIBLE under a further gate. It authorizes nothing else, and it authorizes nothing in THIS lane.",
+  "no_reads_in_this_lane": "V-R1, V-R2, V-R3, V-R4, G-R1, G-R2, G-R3, G-R4 and X-R1 remain UNEXECUTED. This lane performed ZERO governed reads and will perform none. Control NC-8 refuses a governed read here even with ARMED = true.",
+  "the_further_gate": "Actual read execution requires ONE independent bounded certification of the closure and arming package: the v1.0.3 amendment, the DF11 owner decision, the RC-9a evidence, the fresh DN-0, and this determination. Only after that PASS does read execution open.",
+  "still_prohibited_unchanged": [
+   "M-8 and M-9, branch creation, and any git ref create, update or delete.",
+   "Any Vercel or GitHub settings mutation, any deployment, any alias or domain change.",
+   "Any edit under .github/workflows/**, notwithstanding that the measured GitHub credential carries the workflow scope.",
+   "Any read of a secret-bearing field, any decrypt parameter, any deploy-hook URL.",
+   "Any Supabase contact.",
+   "Any read serving DN-15 or DN-17 (RNA-1, RNA-2).",
+   "Any operation outside the nine reads and the PACMI class (RC-10)."
+  ],
+  "the_gap_a_certifier_must_weigh": "DF-13 records that the measured credentials can perform every act above. Nothing technical prevents them. The separation rests entirely on the authority's controls and on executor discipline, which is exactly what a certifier is being asked to accept."
+ },
+
+ "OPEN_ITEMS_UNCHANGED_BY_ARMING": [
+  "The five TEXT_NOT_SUPPLIED certification findings remain OPEN.",
+  "RELEASE_CHECK_PRODUCIBILITY_GAP remains OPEN (PR to release = 1/8, push to release = 0/8).",
+  "EAD-5 remains NONE EXISTS.",
+  "The HPO-G-08 / P1 lineage conflict remains UNRECONCILED.",
+  "UD-5, the promotion path, remains OPEN and load-bearing for the first release.",
+  "RBD-1 and RBD-2 are RATIFIED but M-8 and M-9 remain unexecuted and unauthorized."
+ ],
+
+ "self_check": {
+  "SC-A1": "ARMED = true is recorded only after each of the three limbs was evaluated against AC-1 as written, with none weakened.",
+  "SC-A2": "LIMB_2 was re-run FRESH at the final acting head; no value was reused from the prior determination.",
+  "SC-A3": "LIMB_3 was satisfied by closing the instrument gap, not by narrowing RC-9a's requirement.",
+  "SC-A4": "Arming is pinned to eleven exact blobs and is declared non-travelling.",
+  "SC-A5": "Six constraints travel with arming, each with a failure token, including the credential expiry horizon and the RC-9b obligation that arming does not discharge.",
+  "SC-A6": "v1.0.0's ARMED clause is superseded by exact-path citation, not edited; v1.0.0 remains byte-identical.",
+  "SC-A7": "Zero governed DN reads were executed in this lane and the record says so in terms.",
+  "SC-A8": "The next gate is named as ONE independent bounded certification before any read executes.",
+  "SC-A9": "Open items are enumerated as unchanged by arming, so arming is not read as progress on them.",
+  "SC-A10": "No secret value appears anywhere in this record."
+ },
+
+ "final_state": "ARMED_TRUE__ALL_THREE_LIMBS_SATISFIED__BOUND_TO_ELEVEN_BLOBS_AND_AN_EXPIRY_HORIZON__ZERO_GOVERNED_READS_EXECUTED",
+ "next_gate": "ONE independent bounded certification of the closure and arming package (v1.0.3 amendment and its manifest amendment, the DF11 owner decision, the RC-9a executor record, the fresh DN-0 recorded here, and this determination). On PASS, the read-executing lane may open at DN-0 — re-run fresh at its own head per AC-CON-4 — followed by DN-1, honouring AC-CON-1 through AC-CON-6. No hosted mutation is authorized at any point by this determination or by its certification."
+}

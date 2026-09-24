@@ -1,0 +1,144 @@
+{
+ "manifest_id": "CV1-INFRA-CONTROL-PLANE-READ-DF11-INTROSPECTION",
+ "node_or_batch": "node",
+ "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3.json",
+ "dependencies": [
+  "CV1_INFRA_DF11_CREDENTIAL_INTROSPECTION_OWNER_DECISION_v1.0.0 (docs/ops/owner-ratifications/CV1_INFRA_DF11_CREDENTIAL_INTROSPECTION_OWNER_DECISION_v1.0.0.json)",
+  "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json, blob 5a56d1b65e42c1566105a3648d7c542282938e1b)",
+  "CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0 (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json, blob 67cc6573fc3c3e318a0e276363d10a82f5f1fbf8)"
+ ],
+ "protected_surfaces": [],
+ "protected_authority": null,
+ "sentinels": [
+  {
+   "id": "SEN-C1",
+   "purpose": "NO SECRET IN THE WRITE SET. No token value, refresh token, cookie, Authorization header, DSN, environment value, deploy-hook URL or credential substring may appear in any artifact this lane commits. Metadata (identity, scope names, role, expiry, team or repository name, storage mechanism) is permitted."
+  },
+  {
+   "id": "SEN-C2",
+   "purpose": "PACMI STAYS DISJOINT FROM THE NINE READS. No PACMI result may be recorded as, or cited toward, evidence for any DAG node, and no governed DN read may be cited as discharging RC-9a. A tree in which either crossing appears has collapsed two classes the owner authorized separately."
+  },
+  {
+   "id": "SEN-C3",
+   "purpose": "SCOPE IS NOT CONTEXT. For PLANE-V, no value derived from the Vercel CLI's -S/--scope option or 'switch [scope]' command may be recorded as the answer to RC-9a's scope/permission question. Per DF-12 that is an account/team CONTEXT selector, not a permission grant."
+  },
+  {
+   "id": "SEN-C4",
+   "purpose": "ZERO GOVERNED READS. V-R1..V-R4, G-R1..G-R4 and X-R1 remain unexecuted in this lane, whatever the arming outcome."
+  }
+ ],
+ "known_conditions": [],
+ "positive_controls": [
+  {
+   "id": "PC-1",
+   "description": "AUTHORING ARM. The owner ratification record exists, records DF11 = A_AUTHORIZE_MINIMAL_CREDENTIAL_METADATA_INTROSPECTION with signed = true, and enumerates both the permitted-observation list and the never-observe list.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PC-2",
+   "description": "AUTHORING ARM. Every operation in AUTHORIZED_INTROSPECTION_OPERATION_SET carries provider, operation, verb/protocol, metadata expected, why required, and forbidden secret fields, and is attributable to installed CLI --help output rather than recall.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PC-3",
+   "description": "EXECUTION ARM. Each plane's RC-9a entry records provenance, credential class, authenticated identity where applicable, scope/permission, blast radius, and evidence method — or records the plane UNSATISFIED with what was and was not observable.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PC-4",
+   "description": "EXECUTION ARM. A fresh DN-0 is run at the FINAL acting head after all authoring commits, re-deriving the nine pins, the integration head and tree, the parent binding, the acting branch and HEAD, and clean state, with no value copied from a prior report.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PC-5",
+   "description": "AUTHORING ARM. v1.0.0, v1.0.1 and v1.0.2 are byte-identical before and after this lane's commits.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "PC-6",
+   "description": "AUTHORING ARM. Both new documents parse as JSON and this manifest amendment validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "negative_controls": [
+  {
+   "id": "NC-1",
+   "description": "A SECRET-REVEALING INTROSPECTION MODE IS REFUSED. Any use of gh auth status --show-token, vercel --token <TOKEN> on a command line, or an equivalent mode whose output echoes credential material, must be REFUSED with STOP_SECRET_BEARING_FIELD_RETURNED, even when the intent is only to confirm a credential exists.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NC-2",
+   "description": "VERCEL CONTEXT RECORDED AS PERMISSION IS REFUSED. Any RC-9a entry whose scope/permission field is populated from the CLI's --scope value, the active team name, or the authenticated identity must be REFUSED. Those are context and identity; DF-12 records why the vocabulary makes this the likely error.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NC-3",
+   "description": "SCOPE INFERRED FROM PAST SUCCESS IS REFUSED. Any scope asserted on the ground that an earlier push, pull-request call or deployment succeeded must be REFUSED. That is an inference from an outcome, not a measurement of a permission.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NC-4",
+   "description": "A PACMI RESULT CITED AS NODE EVIDENCE IS REFUSED. No PACMI observation may discharge or partially discharge DN-1 through DN-17, and no governed DN read may be cited as discharging RC-9a. The classes are disjoint in both directions.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NC-5",
+   "description": "ARMING WITH ANY PLANE UNRESOLVED IS REFUSED. If RC-9a is UNSATISFIED for any plane whose reads are in the intended set, LIMB_3 fails and ARMED must remain false. Partial-plane provenance does not discharge LIMB_3 (NB-4 of the v1.0.2 manifest amendment).",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NC-6",
+   "description": "OTHER PRINCIPALS' DATA PERSISTED IS REFUSED. Where an introspection operation returns a collection of principals, recording any row other than the authenticated principal's own must be REFUSED. RC-9a asks what THIS credential may do.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NC-7",
+   "description": "X-R1 EXECUTED TO DETERMINE ITS CREDENTIAL POSTURE IS REFUSED. PLANE-X's credential class must follow from the command contract. Running ls-remote to find out would be executing a governed DN read before arming and outside this lane's mode.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "NC-8",
+   "description": "A GOVERNED READ EXECUTED IN THIS LANE IS REFUSED, EVEN IF ARMED BECOMES TRUE. Actual read execution requires one further independent bounded certification of the v1.0.3, owner-decision, RC-9a, DN-0 and arming package.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "mutation_controls": [
+  {
+   "id": "MC-1",
+   "description": "Populate PLANE-V's RC-9a scope field with the active team name instead of a role. Sentinel SEN-C3 and control NC-2 must REDDEN. If they stay green, a context selector can pass as a permission and DF-12's trap is unguarded.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MC-2",
+   "description": "Record RC-9a for PLANE-G only, omitting PLANE-V, and set ARMED = true. Controls NC-5 and NB-4 must REDDEN. If arming succeeds, partial-plane provenance discharges LIMB_3 and four of the nine reads are armed with no idea what credential will run them.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MC-3",
+   "description": "Cite a PACMI identity observation as partial evidence for DN-1. Sentinel SEN-C2 and control NC-4 must REDDEN. If green, the introspection class silently becomes a back door into the governed read set.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MC-4",
+   "description": "Delete PACMI's SECRET_FIELD_DENY_RULES.tool_flags_explicitly_prohibited, leaving only the field-category deny list. NC-1 must still REDDEN on --show-token. If it goes green, the deny list was catching field names but not the tool modes that emit them.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MC-5",
+   "description": "Assert a GitHub scope on the ground that this lane's earlier git push and gh pr create succeeded. NC-3 must REDDEN. If green, the most available shortcut to a PASS is unguarded.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MC-6",
+   "description": "Reuse the LIMB_2 DN-0 evidence recorded at e1ed8831 instead of re-running DN-0 at the final acting head. PC-4 and NB-2 must REDDEN. If green, the recurrence rule is decorative and a stale rebaseline can arm the grant.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "exit_gates": [
+  "typecheck",
+  "secrets_scan",
+  "authority_seal_verify",
+  "ods_scope",
+  "ods_poststate"
+ ]
+}

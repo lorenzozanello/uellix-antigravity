@@ -1,0 +1,29 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "G-R2.B",
+ "read_id": "G-R2",
+ "plane": "PLANE-G",
+ "node_ids": [
+  "DN-4",
+  "DN-7",
+  "DN-8",
+  "DN-9",
+  "DN-10",
+  "DN-12"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "gh",
+  "method": "GET",
+  "endpoint": "/repos/lorenzozanello/uellix-antigravity/rulesets?per_page=100"
+ },
+ "request_utc": "2026-09-24T03:25:55.011Z",
+ "response_utc": "2026-09-24T03:25:56.090Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {},
+ "absent_fields": [],
+ "assertions": {},
+ "scanner_adjudications": []
+}

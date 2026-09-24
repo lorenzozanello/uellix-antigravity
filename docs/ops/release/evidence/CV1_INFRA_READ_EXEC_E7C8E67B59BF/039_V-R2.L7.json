@@ -1,0 +1,81 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_it9Rb1xC8VV1z8Xa8W6YvXqpMJPU&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:56.360Z",
+ "response_utc": "2026-09-24T03:26:58.107Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_2KsSEjJzLS4Henm9ndBxszzJg59P",
+    "name": "sapiensa-lab-web-platform",
+    "url": "sapiensa-lab-web-platform-o2docudcx.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "0e41686a9bbb865dbc578e160a77ddba5058de80",
+     "githubRepo": "SapiensaLAB-WebPlatform"
+    },
+    "target": "production",
+    "createdAt": 1782235914342
+   },
+   {
+    "uid": "dpl_4Frsx9aqJKqQth4QLUJk7T6QEXi6",
+    "name": "sapiensa-lab-web-platform",
+    "url": "sapiensa-lab-web-platform-79bjj9ruy.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "abece93adc5eee9f01f2d5575cf9f41d326e75c7",
+     "githubRepo": "SapiensaLAB-WebPlatform"
+    },
+    "target": "production",
+    "createdAt": 1782234087310
+   },
+   {
+    "uid": "dpl_EYoD9F447tHM6ao4nnVMbfq9hJzE",
+    "name": "sapiensa-lab-web-platform",
+    "url": "sapiensa-lab-web-platform-pgyqnktj7.vercel.app",
+    "source": "import",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "4566c7d45fc2b15b1119cb3cac285ac3e1a0ac75",
+     "githubRepo": "SapiensaLAB-WebPlatform"
+    },
+    "target": "production",
+    "createdAt": 1782234025526
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

@@ -1,0 +1,74 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:35.398Z",
+ "response_utc": "2026-09-24T03:27:37.798Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "thebalancecorp.org",
+    "created": "2026-04-13T15:48:34.863Z",
+    "deploymentId": "dpl_7Ddxaf9cif8G7ad2GXAkWKcnUaB3",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "uid": "6ed84da3f38ff37f74b955a8e20a31e31187bc7ab2aa156841e62f191b30804bcd9eab0b93836ee26805253d8c89e82cb849492f81d2c97a3b2c89a13ecdb5e3"
+   },
+   {
+    "alias": "www.thebalancecorp.org",
+    "created": "2026-04-13T15:48:34.552Z",
+    "deploymentId": "dpl_7Ddxaf9cif8G7ad2GXAkWKcnUaB3",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "uid": "765932d8253139baf9fd7f2a5ca6e0e44a1e1500c4aa7d9cf68795e2001b6e9ce4d5d691d80097faccb989f7476ee2471a0ecf5c43ed0b5503708f0a6953a7c8"
+   },
+   {
+    "alias": "lorenzo-zanello.vercel.app",
+    "created": "2026-04-13T15:44:15.203Z",
+    "deploymentId": "dpl_7Ddxaf9cif8G7ad2GXAkWKcnUaB3",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "uid": "bab948f4992a6f9581208d9c6b0d046a5cf4d632425144173a007c21127b0c925adc1dc847e665a6c04bd6719fe1d43fee6a6e54803a3ab99df13ae6ff4d493f"
+   },
+   {
+    "alias": "lorenzo-zanello-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-04-13T15:44:15.203Z",
+    "deploymentId": "dpl_7Ddxaf9cif8G7ad2GXAkWKcnUaB3",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "uid": "b8ba54e8edd8217bb0e8757a271dd4f8e57329b3b782bf23f4cc165fcfd2d9c56441986f6d1242d8cd6694fc973df5b7417c56fd9704425cb33697e5f72db1d4"
+   },
+   {
+    "alias": "lorenzo-zanello-git-main-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-04-13T15:44:00.977Z",
+    "deploymentId": "dpl_7Ddxaf9cif8G7ad2GXAkWKcnUaB3",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "uid": "13465cd266eacc8fe6ca50a68028d35719aeee617dd4a1ba14944dd637f821d164ae500cadd076660dc5cfefbf13e9af406126107f49e8a7fd72938c0b7989fc"
+   }
+  ],
+  "pagination": {
+   "count": 5,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

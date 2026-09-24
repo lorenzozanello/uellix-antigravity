@@ -1,0 +1,81 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_Ojnp6Rvtl1YwCku00toi1pJrFpu8&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:38.496Z",
+ "response_utc": "2026-09-24T03:26:40.346Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_GNyc1nQ7opULvxW4TiDFHCE7PTKc",
+    "name": "plataforma-curricular-ht",
+    "url": "plataforma-curricular-3lki4p4w1-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "03459dab3b9bdd6622510d4bbd952c2e3d70fb1f",
+     "githubRepo": "Plataforma-Curricular-HT"
+    },
+    "target": "production",
+    "createdAt": 1783001041142
+   },
+   {
+    "uid": "dpl_8bg8i1b3SW1MFpJMHMtvMmebjLDA",
+    "name": "plataforma-curricular-ht",
+    "url": "plataforma-curricular-9h7x7988a-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "b8e7740d638d8bce339d05fb43923bae1a0b403e",
+     "githubRepo": "Plataforma-Curricular-HT"
+    },
+    "target": "production",
+    "createdAt": 1783000471775
+   },
+   {
+    "uid": "dpl_ApEhPeRCLEDa7yAvgSwH81Gs2kox",
+    "name": "plataforma-curricular-ht",
+    "url": "plataforma-curricular-61mr157b1-lorenzozanello-5040s-projects.vercel.app",
+    "source": "import",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "1e870ff91236283059515abff0e38890fcba6ac3",
+     "githubRepo": "Plataforma-Curricular-HT"
+    },
+    "target": "production",
+    "createdAt": 1783000047117
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

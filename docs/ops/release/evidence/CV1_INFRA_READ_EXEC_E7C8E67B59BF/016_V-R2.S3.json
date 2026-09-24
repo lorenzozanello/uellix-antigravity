@@ -1,0 +1,38 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.S3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v9/projects/uellix-production-web?teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm"
+ },
+ "request_utc": "2026-09-24T03:26:03.319Z",
+ "response_utc": "2026-09-24T03:26:04.977Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+  "createdAt": 1781747744543,
+  "id": "prj_qESEh1e9EKzObuarflAtRAKIX6WU",
+  "name": "uellix-production-web",
+  "updatedAt": 1781752573885,
+  "link": {
+   "type": "github",
+   "repo": "uellix-production",
+   "repoId": 1272632439,
+   "org": "lorenzozanello",
+   "productionBranch": "main"
+  }
+ },
+ "absent_fields": [],
+ "assertions": {},
+ "scanner_adjudications": []
+}

@@ -1,0 +1,179 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_4mV4rmaaIIiXTiYmlrwASe9L8DCB&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:50.062Z",
+ "response_utc": "2026-09-24T03:27:51.658Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_9GkUGowNC9ZGiHPc17YnKuDR5u7U",
+    "name": "alumni-graph",
+    "url": "alumni-graph-6n9wsjegd-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "9094c426e4b11530c48c47e482f1464b05f3deb3",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1779461059605
+   },
+   {
+    "uid": "dpl_BbjSXahyoWc3fewo7qkZYSdKskPx",
+    "name": "alumni-graph",
+    "url": "alumni-graph-111cxa5yo-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "da6c1c112e694008093bfd0f9267d2fd6083f6ce",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1779386570636
+   },
+   {
+    "uid": "dpl_AhooYaGXn4wERDTuM2PPU5bf5UBD",
+    "name": "alumni-graph",
+    "url": "alumni-graph-jaic37nbc-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "2286b291d3ce1e6caf5b26b04d582c09b214ceb5",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1779383402149
+   },
+   {
+    "uid": "dpl_HxN51p1tu7Fu4QtUu2LUiD3Ppitr",
+    "name": "alumni-graph",
+    "url": "alumni-graph-lihvq9n19-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "d2693e24bfc5b985ce9bdab396a5d5303fb1cbfe",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1779382118237
+   },
+   {
+    "uid": "dpl_5Vv1tDPaqos3W8E9QYaMAYBVgHD1",
+    "name": "alumni-graph",
+    "url": "alumni-graph-6pas2m57u-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "76e2484c88011d1472bbf1f29e816a61f937f32e",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1779380494601
+   },
+   {
+    "uid": "dpl_GrCBHfxXjPaHWTLHHLMDc9CBdEdg",
+    "name": "alumni-graph",
+    "url": "alumni-graph-1ot4c1qbp-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "db7cf7e864295899877b851ef45a81d5bb5999ce",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1779304041726
+   },
+   {
+    "uid": "dpl_3wzyA19sustanhLgQPAZNarp8dBy",
+    "name": "alumni-graph",
+    "url": "alumni-graph-q671qf0zg-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "08b70c9b8037416782b31bbcf2e7e7da23175dc7",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1779299539353
+   },
+   {
+    "uid": "dpl_54U8AoCVUtVvH318dGEpgn23139T",
+    "name": "alumni-graph",
+    "url": "alumni-graph-9o0fl9j4o-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "09562d1ba9d3cbf5acf39a4db8fc7778fb25ac12",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1777485271531
+   },
+   {
+    "uid": "dpl_5fckxfSXCNxNUmhMAV4bYXQMwSYo",
+    "name": "alumni-graph",
+    "url": "alumni-graph-4sjk84fp9-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "cd0c1b242172d43c3dea26b5c9a7abba7fd125f8",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1777481865308
+   },
+   {
+    "uid": "dpl_EJZsuyzZR5iPS93z3uqiNhu52PuL",
+    "name": "alumni-graph",
+    "url": "alumni-graph-4ruhckrzv-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "d9cf99495daf41993dc1916ed717b944339aa546",
+     "githubRepo": "AlumniGraph"
+    },
+    "target": "production",
+    "createdAt": 1777403510914
+   }
+  ],
+  "pagination": {
+   "count": 10,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

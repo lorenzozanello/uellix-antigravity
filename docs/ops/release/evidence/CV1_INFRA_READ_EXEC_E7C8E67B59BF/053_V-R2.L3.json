@@ -1,0 +1,60 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_F9MCLAoYn7oQDeh3YEq5NpzZX59D&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:27.000Z",
+ "response_utc": "2026-09-24T03:27:29.508Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "sapiensa-lab-tbc.vercel.app",
+    "created": "2026-04-15T21:26:13.890Z",
+    "deploymentId": "dpl_Hi1CPv5sGb64yhu1ZCEDGbT5vN1q",
+    "projectId": "prj_F9MCLAoYn7oQDeh3YEq5NpzZX59D",
+    "uid": "eb2a634205f6e1a9a2cf87849b146e2f60f54294c4ce8a7cc8291250e13657cdd36b605cd069b48ec5be09bb925203b8aa6ae5b838946f7bf0b87d529f09bd0a"
+   },
+   {
+    "alias": "sapiensa-lab-tbc-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-04-15T14:21:48.034Z",
+    "deploymentId": "dpl_Hi1CPv5sGb64yhu1ZCEDGbT5vN1q",
+    "projectId": "prj_F9MCLAoYn7oQDeh3YEq5NpzZX59D",
+    "uid": "af9be626ac778897f005c3cb9a15a796441d136fed9fd41a463a653a60e49c952c206a0f317b73754d89ff8264d72cf303f70349333a23533825745bc76bec34"
+   },
+   {
+    "alias": "sapiensa-lab-tbc-git-main-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-04-15T14:21:43.444Z",
+    "deploymentId": "dpl_Hi1CPv5sGb64yhu1ZCEDGbT5vN1q",
+    "projectId": "prj_F9MCLAoYn7oQDeh3YEq5NpzZX59D",
+    "uid": "a133be800a522bec7175054b4cad0ea6c826005dedfc7f10aae5f24bd02dd69688e67d3dc5955b687582d4131cf2f8a11a2165ab1d7742cefd6a5aa16d21e962"
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

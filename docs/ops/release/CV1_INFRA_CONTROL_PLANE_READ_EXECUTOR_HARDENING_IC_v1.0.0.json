@@ -1,0 +1,70 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_v1.0.0",
+ "authority_class": "INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT",
+ "document_class": "CERTIFICATION_EVENT_RECORD__NO_READ__NO_MUTATION",
+ "append_only": true,
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01), lane CV1-INFRA-CONTROL-PLANE-READ-EXECUTOR-REMEDIATION-R4",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "CERTIFIED_CANDIDATE": {
+  "candidate_head": "d3e4a55bfca3d32511ced78c09fd2e1a7a133270",
+  "candidate_tree": "b925a84ae991bbf41d0bb50d1f38a28b26947651",
+  "candidate_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "candidate_pr": "#214",
+  "scope_reviewed": "The executor-hardening delta: v1.0.4 amendment and manifest amendment, the materialized arming-package IC, and scripts/infra-read/** with tests/infra-read/**.",
+  "candidate_verification_performed_by_this_lane": "Head and tree re-derived from git by this lane (git rev-parse d3e4a55b and d3e4a55b^{tree}) before being written here."
+ },
+ "VERDICT": {
+  "verdict": "INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_FAIL",
+  "blocking_findings": 1,
+  "nonblocking_findings": 12,
+  "provenance": "REPORTED_BY_DIRECTING_TEXT, MATERIALIZED_HERE. This lane did not conduct the review. The verdict token, the counts and the candidate are as the directing text states them; the candidate identity was re-derived independently. No verdict artifact of the reviewer was supplied, and none is reconstructed here."
+ },
+ "REVIEWER_IDENTITY": {
+  "reviewer": "NOT_SUPPLIED by the directing text.",
+  "execution_timestamp": "NOT_SUPPLIED.",
+  "why": "Inventing a reviewer or an execution instant would fabricate provenance for an event this lane did not witness."
+ },
+ "BLOCKING_FINDINGS": [
+  {
+   "id": "B-1",
+   "text_as_recorded": "run-governed-reads.ts hardcodes a verdict prefix different from the canonical verdict actually emitted by this IC.",
+   "text_source": "Directing text, section 2, 'Current defect'. Recorded verbatim.",
+   "locus_re_derived_by_this_lane": "scripts/infra-read/run-governed-reads.ts at d3e4a55b, line 87: the executor-hardening event was required to match /^INFRA_EXECUTOR_HARDENING_IC_PASS(?:_WITH_NONBLOCKING_FINDINGS)?$/, while the certifier's canonical verdict namespace is INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_*. A faithful materialization of a PASS from that certifier could therefore never satisfy LIMB_1: the gate was unreachable, not permissive.",
+   "consequence": "Execution could not have been armed through the intended path. The defect fails closed; it is blocking because the only way through it would have been to rename a certification verdict to fit the code.",
+   "disposition": "Remediated by v1.0.5 (CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.5.json, CERTIFICATION_PREDICATE)."
+  }
+ ],
+ "NONBLOCKING_FINDINGS": {
+  "reported_count": 12,
+  "enumeration_status": "PARTIAL BY CONSTRUCTION. The directing text did not supply the reviewer's twelve finding texts. It supplied remediation sections, several of which name the IC as the source of a measurement. They are listed here under content-addressed ids in this record's own namespace (EH-NB-*); those ids make no claim about the reviewer's numbering or about a one-to-one mapping onto the twelve.",
+  "attributed_to_the_ic_by_the_directing_text": [
+   {"id": "EH-NB-ENV-CASE", "substance": "On Windows, Gh_Token and Vercel_Token bypass a case-sensitive environment denylist and are observed by the child as GH_TOKEN / VERCEL_TOKEN.", "attribution": "Section 4: 'The IC measured on Windows'."},
+   {"id": "EH-NB-ENVELOPE-I08", "substance": "The I08 mutant (an unexpected raw key in the evidence record) died only incidentally, because fixtures happened to carry token-shaped strings; no envelope allowlist existed.", "attribution": "Section 7: 'The prior I08 mutant died only incidentally'."},
+   {"id": "EH-NB-XR1-I13-I15", "substance": "Mutants I13-I15 survived: X-R1's -c resets were validated only against the same registry array that builds them.", "attribution": "Section 8: 'The prior IC found I13-I15 survive'."},
+   {"id": "EH-NB-GENERATE-CURL", "substance": "Installed Vercel 54.14.2 emits a <TOKEN> placeholder in --generate=curl output, not the token; the v1.0.4 justification for refusing it overclaimed.", "attribution": "Section 11: 'according to the independent IC'."}
+  ],
+  "conveyed_as_remediation_without_explicit_attribution": [
+   {"id": "EH-NB-ENV-BLAST-RADIUS", "substance": "Inherited NODE_OPTIONS, GH_CONFIG_DIR, proxies, provider config-location and credential-related variables were not decided.", "source": "Section 5."},
+   {"id": "EH-NB-FREE-TEXT-DETECTORS", "substance": "Measured scanner gaps: vcp_ token forms, credential URL userinfo, NAME=<value> assignments, classic Vercel token-like forms.", "source": "Section 6 ('Close the measured scanner gaps')."},
+   {"id": "EH-NB-BATTERY-SUMMARY", "substance": "The mutation battery reported SURVIVED as AS_EXPECTED for a mutant expected to be killed, and its aggregate could not fail.", "source": "Section 9."},
+   {"id": "EH-NB-SEN-D2", "substance": "The claim that the write-set supplemental scan returned zero findings was false where fixture literals produce findings.", "source": "Section 10."},
+   {"id": "EH-NB-ENTROPY-FP", "substance": "The high-entropy detector flags ordinary 40+ character mixed-case identifiers such as ruleset/job names.", "source": "Section 12."},
+   {"id": "EH-NB-DN0-FETCH", "substance": "The DN-0 git fetch was not credential-controlled and its separation from X-R1 was undocumented.", "source": "Section 13."}
+  ],
+  "arithmetic": "10 items are identified above. The directing text reports 12. The text of at least 2 of the reviewer's findings was therefore NOT SUPPLIED to this lane, and it is not known whether each identified item is exactly one reviewer finding.",
+  "binding_instruction": "Any reviewer holding the full output must treat every finding not matched above as STILL OPEN. The v1.0.5 remediation of the identified items is not evidence that all 12 were dispositioned."
+ },
+ "WHAT_THIS_EVENT_DOES_AND_DOES_NOT_DO": {
+  "does": "Materializes the FAIL of the executor-hardening candidate as a repository artifact, so that candidate can never be mistaken for a certified one.",
+  "does_not": [
+   "Satisfy LIMB_1 for any candidate. Its blocking count is 1 and its terminal class is FAIL; the v1.0.5 predicate refuses it on both grounds (tests/infra-read/entrypoint.test.ts).",
+   "Authorize any read or arm anything.",
+   "Stand in for the recertification of the remediated candidate, which must be materialized separately at docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC_v1.0.0.json with package_id CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_RECERT_IC."
+  ]
+ },
+ "final_state": "EXECUTOR_HARDENING_IC_FAIL_MATERIALIZED__FINDINGS_PARTIAL__NOT_AN_ARMING_ACT",
+ "next_gate": "The v1.0.5 remediation delta and ONE short independent recertification of it."
+}

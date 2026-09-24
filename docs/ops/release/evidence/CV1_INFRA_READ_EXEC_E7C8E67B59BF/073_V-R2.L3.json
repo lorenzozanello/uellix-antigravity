@@ -1,0 +1,60 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_afJaFGY7kkL1NqE41zIO88HkFQCC&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:28:12.682Z",
+ "response_utc": "2026-09-24T03:28:16.318Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "proyecto-emprende.vercel.app",
+    "created": "2026-05-22T14:40:48.134Z",
+    "deploymentId": "dpl_BRr3tBzk2Fhvszi9eaj1pYP4y2SR",
+    "projectId": "prj_afJaFGY7kkL1NqE41zIO88HkFQCC",
+    "uid": "e5faa2dee28b5cda3083937bbd46e07659ba3145446a1171f7886aceb6353439694360019d7ee93a6408c6946c4c91cf0796b5b2112ba5ec9666f1d16553ab62"
+   },
+   {
+    "alias": "proyecto-emprende-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-05-22T14:27:57.335Z",
+    "deploymentId": "dpl_BRr3tBzk2Fhvszi9eaj1pYP4y2SR",
+    "projectId": "prj_afJaFGY7kkL1NqE41zIO88HkFQCC",
+    "uid": "40a29a045831a67b3f410d1daf7ecaf277ca667becd5c13615f9cd498f60f1aee4c6575b687cc140b9559436c0cb35814c22e7caaf4114108504492123ef12a5"
+   },
+   {
+    "alias": "proyecto-emprende-git-main-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-05-22T14:27:54.174Z",
+    "deploymentId": "dpl_BRr3tBzk2Fhvszi9eaj1pYP4y2SR",
+    "projectId": "prj_afJaFGY7kkL1NqE41zIO88HkFQCC",
+    "uid": "ed752538f7ffb997bbed06b5a18349a6abd8c05685ca040ac1d18f5849b788a4840bc3afd88183592c3cad3b13632c97c6fee51ba13ac1632b0eb5cdc0873a1e"
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

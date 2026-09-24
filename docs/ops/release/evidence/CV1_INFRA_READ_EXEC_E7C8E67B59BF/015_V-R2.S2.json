@@ -1,0 +1,264 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.S2",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v9/projects?teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:01.035Z",
+ "response_utc": "2026-09-24T03:26:03.196Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "projects": [
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1781922222980,
+    "id": "prj_3NplDjQAEU6nvFoRZEdnNOAT3ThJ",
+    "name": "uellix-antigravity",
+    "updatedAt": 1788268608885,
+    "link": {
+     "type": "github",
+     "repo": "uellix-antigravity",
+     "repoId": 1274891548,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1787264745133,
+    "id": "prj_FIJE1dhdtDUFPpPoo2UexlGrIOol",
+    "name": "sapiencialab-sl-lrs-preview",
+    "updatedAt": 1787266990602
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1783888538674,
+    "id": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "name": "aforiq",
+    "updatedAt": 1784676561915,
+    "link": {
+     "type": "github",
+     "repo": "aforiq",
+     "repoId": 1298570676,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1783000039718,
+    "id": "prj_Ojnp6Rvtl1YwCku00toi1pJrFpu8",
+    "name": "plataforma-curricular-ht",
+    "updatedAt": 1783001049242,
+    "link": {
+     "type": "github",
+     "repo": "Plataforma-Curricular-HT",
+     "repoId": 1287224106,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1782246978796,
+    "id": "prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT",
+    "name": "asesoria-programa-sapiensa-lab-junio-2026",
+    "updatedAt": 1782247002005,
+    "link": {
+     "type": "github",
+     "repo": "Asesoria-Programa-SapiensaLab-Junio-2026",
+     "repoId": 1273649296,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1782234023314,
+    "id": "prj_it9Rb1xC8VV1z8Xa8W6YvXqpMJPU",
+    "name": "sapiensa-lab-web-platform",
+    "updatedAt": 1782235928179,
+    "link": {
+     "type": "github",
+     "repo": "SapiensaLAB-WebPlatform",
+     "repoId": 1278303973,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1781747744543,
+    "id": "prj_qESEh1e9EKzObuarflAtRAKIX6WU",
+    "name": "uellix-production-web",
+    "updatedAt": 1781752573885,
+    "link": {
+     "type": "github",
+     "repo": "uellix-production",
+     "repoId": 1272632439,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1781291086081,
+    "id": "prj_jQtDCYjyIHtEZuWNkOZgppWGKXB8",
+    "name": "barcanna",
+    "updatedAt": 1781625598095,
+    "link": {
+     "type": "github",
+     "repo": "Barcanna",
+     "repoId": 1267677138,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1781496951249,
+    "id": "prj_5HDGXZgrjAHMW6tqp3znlBShuyW9",
+    "name": "muttu-junio-2026",
+    "updatedAt": 1781556354547,
+    "link": {
+     "type": "github",
+     "repo": "Muttu-Junio-2026",
+     "repoId": 1269753246,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1776264793586,
+    "id": "prj_F9MCLAoYn7oQDeh3YEq5NpzZX59D",
+    "name": "sapiensa-lab-tbc",
+    "updatedAt": 1779791015526,
+    "link": {
+     "type": "github",
+     "repo": "SapiensaLab-TBC",
+     "repoId": 1211564469,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1776095038241,
+    "id": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "name": "lorenzo-zanello",
+    "updatedAt": 1779782699105,
+    "link": {
+     "type": "github",
+     "repo": "thebalancecorp.org",
+     "repoId": 1209598087,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1776806383817,
+    "id": "prj_4mV4rmaaIIiXTiYmlrwASe9L8DCB",
+    "name": "alumni-graph",
+    "updatedAt": 1779675844430,
+    "link": {
+     "type": "github",
+     "repo": "AlumniGraph",
+     "repoId": 1217323124,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1775500659006,
+    "id": "prj_3hRxP2nvNsTlEViWuGPXwMHL6pED",
+    "name": "project-lrhok",
+    "updatedAt": 1779656870757
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1775501966855,
+    "id": "prj_OY0vbtCK4qvSVd6NrHqFNvtYonRK",
+    "name": "the-balance-corp",
+    "updatedAt": 1779475681690,
+    "link": {
+     "type": "github",
+     "repo": "thebalancecorp.org",
+     "repoId": 1209598087,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1779460832370,
+    "id": "prj_afJaFGY7kkL1NqE41zIO88HkFQCC",
+    "name": "proyecto-emprende",
+    "updatedAt": 1779460848282,
+    "link": {
+     "type": "github",
+     "repo": "Proyecto-Emprende",
+     "repoId": 1246764337,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1777665676852,
+    "id": "prj_o9TXoejOYoSmXeqA4WYs0NDMdau0",
+    "name": "uellix",
+    "updatedAt": 1779364973215,
+    "link": {
+     "type": "github",
+     "repo": "Uellix",
+     "repoId": 1226761419,
+     "org": "lorenzozanello",
+     "productionBranch": "main"
+    }
+   },
+   {
+    "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+    "createdAt": 1776088595890,
+    "id": "prj_NmptXPp2PGw162KJTX5wCZugYdWG",
+    "name": "project-vjm2n",
+    "updatedAt": 1778863147641
+   }
+  ],
+  "pagination": {
+   "count": 17,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": [
+  {
+   "normalized_schema_path": "projects[*].link.repo",
+   "project_id": "prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT",
+   "detector_id": "OPAQUE_HIGH_ENTROPY",
+   "classification": "EXPECTED_PROVIDER_IDENTIFIER",
+   "basis": "SAME_RUN_AUTHENTICATED_REPOSITORY_INVENTORY_ID_MATCH"
+  }
+ ]
+}

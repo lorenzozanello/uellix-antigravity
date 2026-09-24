@@ -1,0 +1,241 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.2",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2",
+ "authority_class": "READ_AUTHORITY_CLOSURE_AMENDMENT__NOT_A_NEW_GRANT__NOT_AN_ARMING_ACT",
+ "document_class": "APPEND_ONLY_READ_AUTHORITY_AMENDMENT__NO_READ_PERFORMED__NO_MUTATION__NO_M8__NO_M9__NO_BRANCH_CREATION",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "builds_on": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json",
+ "supersedes": null,
+ "mission_id": "CV1-INFRA-CONTROL-PLANE-READ-CLOSURE-ARMING-AW-R1",
+ "lane": "CV1-INFRA-CONTROL-PLANE-READ-CLOSURE-ARMING-AW-R1",
+ "role": "Close the effective control-plane read authority: correct the arming conjunction so no operative locus treats certification alone as sufficient, declare NODE_TO_READ_MAP normative and make the read-to-node edge set symmetric, reclassify G-R1 and G-R4 without removing them, and correct one stale self-check consumer.",
+ "mode": "CLOSURE_AMENDMENT_APPEND_ONLY",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+ "certification_event_consumed": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json",
+ "AS_OF_BRANCH": "codex/cv1-infra-control-plane-read-authority-r1",
+ "AS_OF_PRE_AMENDMENT_HEAD": "455b5426e11e5518606328dc0f1c3cd6bc7887ca",
+ "AS_OF_PRE_AMENDMENT_TREE": "21038c06382045952d5c1b8202dba59531778a62",
+ "as_of_measurement_note": "Every fact recorded here was derived in the git plane or by parsing already-tracked repository files. ZERO authenticated reads of the Vercel or GitHub control plane were performed, and no read authorized by v1.0.0 was executed.",
+
+ "AMENDMENT_SEMANTICS": {
+  "what_this_amendment_does": [
+   "Restates the arming condition as an explicit THREE-LIMB CONJUNCTION and supersedes every operative locus that treated certification alone as sufficient.",
+   "Declares NODE_TO_READ_MAP the NORMATIVE statement of which reads a node requires, and makes the read-to-node edge set symmetric by correcting two measured forward-only overclaims.",
+   "Reclassifies G-R1 and G-R4 so both remain authorized while neither over-claims a required-input relationship the map does not attribute to it.",
+   "Splits RC-9 into a pre-arming limb and an at-first-read limb, because as written its PLANE-G sub-limb is unsatisfiable before arming and made the conjunction impossible to close.",
+   "Corrects one stale self-check consumer (SC-14).",
+   "Adds a bidirectional edge-set control so future drift cannot survive merely because plane-level counts are unchanged."
+  ],
+  "what_this_amendment_does_NOT_do": [
+   "Does not set ARMED to true. That determination is made in the arming-determination record, against the conjunction defined here.",
+   "Does not add, remove, or change the SCOPE of any read. G-R1 and G-R4 remain fully authorized with their field allowlists, freshness classes, target identities, evidence records and failure tokens unchanged.",
+   "Does not perform any read on any plane.",
+   "Does not edit v1.0.0 or v1.0.1. Both remain byte-identical.",
+   "Does not close the five certification findings whose text was not supplied. See the certification event's unsupplied_remainder."
+  ]
+ },
+
+ "ARMING_CONJUNCTION": {
+  "id": "AC-1",
+  "rule": "THE GRANT IS ARMED IF AND ONLY IF ALL THREE LIMBS BELOW HOLD SIMULTANEOUSLY. This is a CONJUNCTION. No limb is sufficient alone, and no two limbs are sufficient together.",
+  "normative_status": "AC-1 is the OPERATIVE arming condition for the effective authority. Where any other clause, in v1.0.0 or in any successor, can be read as stating a weaker condition, AC-1 CONTROLS and the weaker reading is superseded.",
+  "limbs": [
+   {
+    "limb": "LIMB_1_CERTIFICATION",
+    "requirement": "An independent certification of the FULL EFFECTIVE authority returning PASS or PASS_WITH_NONBLOCKING_FINDINGS, performing its own node-by-node read-set derivation and its own minimality test, AND materialized as a repository-resident artifact rather than reported in conversation.",
+    "why_materialization_is_part_of_the_limb": "Two prior certifications of this lineage were measured REPORTED_NOT_MATERIALIZED. A certification that exists only in a transcript is indistinguishable, to every later consumer, from one that never happened.",
+    "evidence_path": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EFFECTIVE_AUTHORITY_IC_v1.0.0.json",
+    "failure_token": "STOP_ARMING_LIMB1_UNSATISFIED"
+   },
+   {
+    "limb": "LIMB_2_DN0_REBASELINE",
+    "requirement": "A FRESH DN-0 freshness and binding rebaseline performed at the ACTING authority state, per the parent DAG's NODE_0_STALE_STATE_HANDLING, re-deriving: all nine EFFECTIVE_PACKAGE_CONSUMED blob pins; the integration/commercial-v1 head and tree; the acting branch; the acting HEAD; and the required parent binding.",
+    "freshness_rule": "Values may NOT be reused from any prior report, including this amendment's own AS_OF fields. DN-0 is a re-measurement, and the parent DAG states it recurs at the head of every execution lane rather than discharging once.",
+    "no_hosted_read_required": "DN-0 is entirely git-plane. It needs no Vercel or GitHub API call, which is why it is satisfiable before arming while LIMB_3's PLANE-G sub-limb is not.",
+    "failure_token": "STOP_STALE_DN0"
+   },
+   {
+    "limb": "LIMB_3_RC9_EXECUTOR_PROVENANCE",
+    "requirement": "RC-9a (as split below) discharged: for EACH plane the reads will touch, the executor's credential provenance, its scope or permission, and what it could mutate if misused, recorded BEFORE the first read and containing no secret value.",
+    "per_plane_bound": "RC-9a is owed for EVERY plane in the read set the executor intends to exercise. A provenance record covering PLANE-G but not PLANE-V does not discharge LIMB_3 for a read set containing V-R1 through V-R4.",
+    "failure_token": "STOP_RC9_UNRESOLVED"
+   }
+  ],
+  "the_conjunction_stated_as_a_predicate": "ARMED = LIMB_1_CERTIFICATION AND LIMB_2_DN0_REBASELINE AND LIMB_3_RC9_EXECUTOR_PROVENANCE. Any evaluation that returns ARMED = true while any limb evaluates false is a defect, not a judgement call.",
+  "who_may_evaluate_it": "An arming-determination record may evaluate AC-1 and record the result. It may not weaken a limb in order to reach a positive result, and a limb that cannot be satisfied is recorded as unsatisfied rather than reinterpreted.",
+  "scope_of_an_arming_determination": "An arming determination binds the EXACT effective package it names by blob. It does not travel to a successor version of any of those files."
+ },
+
+ "SUPERSEDED_PARENT_CLAUSES": {
+  "rule": "Each correction cites its locus by exact path and quotes the superseded text before replacing it. v1.0.0's and v1.0.1's own bytes are UNCHANGED.",
+  "corrections": [
+   {
+    "id": "RC-2_NEXT_GATE_ARMING_SUFFICIENCY",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json next_gate",
+    "parent_text_verbatim": "Independent certification of this artifact and its companion manifest, against the effective DAG as amended by v1.0.1, with the reviewer performing its own node-by-node read-set derivation and its own minimality test. On PASS, the grant is ARMED and the read-execution lane may begin at DN-0 followed by DN-1, under its own mission and its own prestate. No hosted mutation is authorized at any point by this artifact or by its certification.",
+    "the_defect": "The clause 'On PASS, the grant is ARMED' states certification as SUFFICIENT. The same artifact's what_arming_requires lists THREE requirements. One clause writes a conjunction; the other writes a single sufficient condition, and next_gate is the clause a successor reads to learn what happens next.",
+    "corrected_text": "Independent certification of the full effective authority, with the reviewer performing its own node-by-node read-set derivation and its own minimality test, and MATERIALIZED as a repository artifact. On PASS, LIMB_1 of ARMING_CONJUNCTION (AC-1) is satisfied AND NO OTHER LIMB IS. The grant is ARMED only when AC-1's three limbs hold together: certification, a fresh DN-0 rebaseline at the acting state, and RC-9a executor credential provenance recorded before the first read. A read-execution lane may begin at DN-0 followed by DN-1 only after an arming determination records ARMED = true against AC-1. No hosted mutation is authorized at any point by this artifact, by its certification, or by its arming."
+   },
+   {
+    "id": "RC-3_GRANT_NOT_YET_ARMED_SUFFICIENCY",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.the_grant_is_not_yet_armed",
+    "parent_text_verbatim": "ARMED = FALSE at materialization. This artifact's next_gate is independent certification. Until that certification records a PASS, no read authorized here may be performed. A lane reading under an uncertified read authority has substituted its own judgement for the gate.",
+    "the_defect": "'Until that certification records a PASS, no read may be performed' is a correct NECESSARY condition stated in a form that reads as the ONLY condition. It is the second locus anchoring arming to certification alone.",
+    "corrected_text": "ARMED = FALSE at materialization. No read authorized here may be performed until an arming determination records ARMED = true against ARMING_CONJUNCTION (AC-1), which requires certification AND a fresh DN-0 rebaseline AND RC-9a executor provenance, together. A certification PASS alone does not arm. A lane reading under an unarmed read authority has substituted its own judgement for the gate, and so has a lane reading on a certification PASS while either other limb is unsatisfied."
+   },
+   {
+    "id": "RC-4_WHAT_ARMING_REQUIRES_MADE_EXPLICITLY_CONJUNCTIVE",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.what_arming_requires",
+    "parent_text_verbatim": "[\"An independent certification of this artifact returning PASS or PASS_WITH_NONBLOCKING_FINDINGS.\", \"A DN-0 freshness and binding rebaseline at the acting head, per the parent DAG's NODE_0_STALE_STATE_HANDLING, including re-derivation of this artifact's own nine pins.\", \"The read-executing lane recording its credential provenance and scope per RC-9 BEFORE the first read.\"]",
+    "the_defect": "The list is SUBSTANTIVELY CORRECT and is the clause the other loci contradict. Its only weakness is that a bare JSON array does not say whether it is a conjunction or a menu, which is what allowed two sibling clauses to drift to the weaker reading.",
+    "corrected_text": "Superseded by ARMING_CONJUNCTION (AC-1), which restates these same three requirements as LIMB_1, LIMB_2 and LIMB_3 and declares in terms that they are conjunctive. The substance is UNCHANGED and the parent's list is recorded here as having been RIGHT; only its logical form is made explicit. This correction adds no new arming requirement."
+   },
+   {
+    "id": "RC-5_SC14_STALE_OWNER_DECISIONS",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json self_check SC-14",
+    "parent_text_verbatim": "PASS — Three gaps are recorded as NOT closed (EAD-5, RNA-1, RNA-2) plus one non-gap recorded so it is not mistaken for one (RNA-3, the open owner decisions).",
+    "the_defect": "The trailing phrase 'the open owner decisions' describes RBD-1 and RBD-2 as open. The owner ratified both, and v1.0.1 already corrected RNA-3 itself. SC-14 is a stale CONSUMER of the clause v1.0.1 superseded, which is the same consumer-drift class v1.0.1's own reconciliation was written to catch.",
+    "corrected_text": "PASS — Three gaps are recorded as NOT closed (EAD-5, RNA-1, RNA-2) plus one non-gap recorded so it is not mistaken for one (RNA-3, the owner decisions RBD-1 and RBD-2, RATIFIED per the v1.0.1 amendment's correction and therefore neither a read gap nor an open question).",
+    "scope_bound": "This is a narrow phrase-level correction. No broader prose cleanup of v1.0.0's self_check block was performed, and none is implied."
+   },
+   {
+    "id": "RC-6_RC9_SPLIT_TO_REMOVE_A_CIRCULAR_ARMING_PRECONDITION",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json CROSS_CUTTING_READ_CONTROLS.controls[RC-9].control",
+    "parent_text_verbatim": "Before the first read of a lane, the acting lane records, for each plane: where the credential came from, what scope or permission it carries, and what it could mutate if misused. For PLANE-G it additionally records the authenticated permission object returned by G-R1.",
+    "the_defect_measured_by_this_lane": "RC-9 as written contains TWO obligations with incompatible timing, and making the whole of it an arming precondition is unsatisfiable by construction. The second sentence requires 'the authenticated permission object returned by G-R1' — but G-R1 is one of the nine gated reads, so it cannot execute until ARMED = true. If LIMB_3 requires all of RC-9, then arming requires a read that requires arming. The conjunction could never close, and no lane could ever legitimately read.",
+    "corrected_text": {
+     "RC-9a": {
+      "name": "PRE-ARMING EXECUTOR CREDENTIAL PROVENANCE AND SCOPE",
+      "control": "Before arming, and before the first read, the executor records for EACH plane its reads will touch: where the credential came from, what scope or permission it carries, and what it could mutate if misused. Recorded WITHOUT any secret value. This is LIMB_3 of AC-1.",
+      "satisfiable_before_arming": "YES. It describes the credential, not the target, and requires no call to any gated endpoint.",
+      "failure_token": "STOP_RC9_UNRESOLVED"
+     },
+     "RC-9b": {
+      "name": "AT-FIRST-READ PERMISSION OBJECT CAPTURE",
+      "control": "For PLANE-G, the authenticated permission object returned by G-R1 is captured WITHIN the first G-R1 read and written into that read's evidence record. This is an obligation OF the first read, not a precondition of arming.",
+      "satisfiable_before_arming": "NO, and it is not required to be. It is discharged by G-R1 itself once the grant is armed.",
+      "failure_token": "STOP_CREDENTIAL_SCOPE_INSUFFICIENT"
+     }
+    },
+    "what_is_NOT_weakened": "Nothing. Both obligations survive in full; only their timing is disentangled. RC-9a is strictly pre-arming and RC-9b is strictly at-first-read. A lane that skips either has not discharged RC-9.",
+    "why_this_correction_is_necessary_rather_than_convenient": "Without it the authority is permanently unarmable, which would not be a safe failure but a silent one: a successor would eventually resolve the impossibility by quietly dropping the limb. Naming the circularity and splitting it is the alternative to that."
+   }
+  ]
+ },
+
+ "MAP_NORMATIVITY_AND_EDGE_SYMMETRY": {
+  "NORMATIVE_DECLARATION": {
+   "id": "MN-1",
+   "rule": "NODE_TO_READ_MAP.map IS NORMATIVE for the question 'which reads does this node REQUIRE'. A read's own serves_nodes field is DERIVATIVE and must agree with it.",
+   "why_the_map_and_not_the_read": "The map is the structure a consumer partitions to compute coverage, planes and blockers; every count in the artifact is derived from it. A read's serves_nodes is prose attached to the read. When the two disagree, the one every other control is computed from must win, or the counts and the claims describe different graphs.",
+   "conflict_rule": "Where a read's serves_nodes and the map disagree, THE MAP CONTROLS and the read's claim is the defect. Resolution is by correcting the read's claim or by adding the read to the node's row after showing the node actually requires it — never by silently leaving both."
+  },
+  "MEASURED_ASYMMETRY_BEFORE_CORRECTION": {
+   "method": "Two edge sets built independently from the same file: FORWARD = {(read.id, node) for each node in read.serves_nodes}; REVERSE = {(read, row.node) for each read in row.reads}. Computed by this lane at head 455b5426, not cited.",
+   "forward_edge_count": 24,
+   "reverse_edge_count": 22,
+   "forward_only_edges": [["G-R1", "DN-12"], ["G-R4", "DN-4"]],
+   "reverse_only_edges": [],
+   "symmetric_difference": 2,
+   "why_every_prior_control_missed_it": "The plane partition and the coverage counts are computed from the MAP rows only. Neither forward-only edge changes any of them: DN-12's row already carries G-R2 and G-R3 (so PLANE-G still contains DN-12), and G-R4 appears in no row at all (so no node count moves). A recomputation that checks 9 / 18 / 12-6 / 6-7-2 / 42 validates GREEN with both asymmetries present. Counting is structurally blind to a plane-redundant edge; only an edge-set comparison sees it."
+  },
+  "CORRECTIONS": [
+   {
+    "id": "MN-2_G-R1",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json READS.reads[G-R1].serves_nodes",
+    "parent_value": ["DN-4", "DN-12"],
+    "corrected_value": ["DN-4"],
+    "basis": "The DN-12 row of NODE_TO_READ_MAP lists G-R3 and G-R2, not G-R1. DN-12's stated need is to learn WHICH branch is the default (G-R3) and then read that branch's protection (G-R2). G-R1 is not a required input of DN-12 under the normative map.",
+    "G-R1_CLASSIFICATION": "CROSS_CUTTING_READINESS_AND_RC9_MEASUREMENT, plus a required input of DN-4.",
+    "what_is_preserved": "G-R1 remains FULLY AUTHORIZED and unchanged in scope. It establishes repository identity (TI-13/TI-14/TI-15 redirect and rename detection), it is the read whose permissions field discharges RC-9b, and it calibrates RC-6's redaction obligation via the visibility field. Its value was never that DN-12 required it.",
+    "what_changes_operationally": "NOTHING about what may be read. Only the claim that DN-12 requires G-R1 is withdrawn."
+   },
+   {
+    "id": "MN-3_G-R4",
+    "locus": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json READS.reads[G-R4].serves_nodes",
+    "parent_value": ["DN-4"],
+    "corrected_value": [],
+    "basis": "NO row of NODE_TO_READ_MAP lists G-R4. DN-4's row lists G-R1, G-R2 and G-R3. The independent minimality test confirmed the substance: DN-4's PRODUCIBLE predicate is defined over the workflow corpus at a SHA, which is a tracked-file parse requiring no authority, plus G-R2 limb E's required-checks union. No required DAG fact is lost without G-R4.",
+    "G-R4_CLASSIFICATION": "CORROBORATIVE_AUTHORIZED_READ.",
+    "what_that_classification_means": "G-R4 is EXPLICITLY AUTHORIZED and is NOT a required node input. It is permitted precisely because it is the only available oracle for the workflow-corpus producibility parse that is not the parse itself. Checking a parse against its own output is circular; checking it against what the platform actually produced on a named SHA is not.",
+    "why_it_is_preserved_rather_than_struck": "v1.0.0's own SC-20 named G-R4 as the one read it would give up first, and the minimality test agreed it is node-nonminimal. Node-nonminimal is not the same as valueless. A falsification oracle earns its place by being able to REDDEN the primitive it checks, and this is the only read in the set that can redden the corpus parse. Striking it would leave DN-4's predicate with no non-circular check at all.",
+    "the_bound_that_keeps_it_honest": "G-R4 may NEVER be cited as establishing PRODUCIBLE(c, S(R)). It observes what WAS produced on one past SHA; PRODUCIBLE is a claim about a SHA under consideration. Its authorized use is falsification only, exactly as its own the_careful_scoping_of_this_read block already states.",
+    "consequence_for_counts": "G-R4 now serves zero nodes in both directions. This does NOT change the read count (still 9), the node partition (still 18 / 12 with reads / 6 without), or the plane partition (still V=6, G=7, X=2), because the map — which is what those are computed from — never listed G-R4."
+   }
+  ],
+  "EXPECTED_EDGE_SET_AFTER_CORRECTION": {
+   "forward_edge_count": 22,
+   "reverse_edge_count": 22,
+   "symmetric_difference": 0,
+   "assertion": "The two edge sets are EQUAL after correction. This is the property the new bidirectional control tests, and it is strictly stronger than any count."
+  },
+  "BIDIRECTIONAL_EDGE_SET_CONTROL": {
+   "id": "BEC-1",
+   "rule": "Build FORWARD from every read's serves_nodes and REVERSE from every map row's reads, as SETS OF PAIRS, and assert FORWARD == REVERSE exactly. Report both directed differences separately: forward-only edges are reads over-claiming a node; reverse-only edges are nodes depending on a read that does not know it.",
+   "why_set_equality_and_not_counts": "Because a plane-redundant edge moves no count. The measured asymmetry corrected here validated green under every count-based control in the artifact. A control that can only fail when a number moves cannot detect drift that does not move a number.",
+   "why_both_directions_are_reported_separately": "The two failures have different meanings and different remedies. A forward-only edge is an over-claim by a read and is fixed at the read. A reverse-only edge is an unserved dependency and is a stronger defect: a node requires a read that does not list it, which can mean the read's contract was never written against that node's needs.",
+   "reads_exempt_by_classification": "A read classified CORROBORATIVE_AUTHORIZED_READ is expected to have an EMPTY serves_nodes and to appear in no map row. BEC-1 treats that as the correct state for such a read, not as a missing edge. Any read NOT so classified that has an empty serves_nodes is a defect.",
+   "failure_token": "STOP_READ_NODE_EDGE_ASYMMETRY"
+  }
+ },
+
+ "READ_SET_INVARIANCE": {
+  "rule": "This amendment changes classifications and claims, not the read set.",
+  "read_count_before": 9,
+  "read_count_after": 9,
+  "read_ids": ["V-R1", "V-R2", "V-R3", "V-R4", "G-R1", "G-R2", "G-R3", "G-R4", "X-R1"],
+  "node_partition_unchanged": "18 nodes, 12 with at least one required read, 6 without.",
+  "plane_partition_unchanged": {"PLANE-V": 6, "PLANE-G": 7, "PLANE-X": 2},
+  "failure_token_registry_unchanged": 42,
+  "new_tokens_introduced_by_this_amendment": ["STOP_ARMING_LIMB1_UNSATISFIED", "STOP_READ_NODE_EDGE_ASYMMETRY", "STOP_CERTIFICATION_PIN_UNRESOLVED"],
+  "note_on_the_new_tokens": "These three govern the ARMING and CONSISTENCY layers this amendment adds; they are not read-execution failure modes and do not alter v1.0.0's 42-token registry, which remains the registry for the reads themselves. STOP_STALE_DN0 and STOP_RC9_UNRESOLVED are reused: the former from the parent DAG's DN-0 handling, the latter already present in v1.0.0's registry.",
+  "no_field_allowlist_changed": "No read's field_allowlist, prohibited fields, freshness class, target identity, evidence record or existing failure tokens are altered by this amendment."
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": {
+  "rule": "v1.0.0's and v1.0.1's prohibitions are carried forward in full and unrelaxed. An amendment that adds content but is read as narrower in its prohibitions would be a scope expansion by omission.",
+  "non_authorizations": [
+   "Every prohibition enumerated in v1.0.0 EXPLICIT_NON_AUTHORIZATIONS and in v1.0.1, unchanged: GET only; no Vercel or GitHub mutation; no deployment; no git ref creation, deletion or update; no execution of M-1 through M-9; no reading of any secret-bearing field; no Supabase contact; no read serving DN-15 or DN-17; no edit to .github/workflows/**; no local state written by a read; no reopening of OD-1 through OD-5.",
+   "No read of any plane is executed by this amendment, and arming — if later recorded — does NOT authorize this lane to read. Actual reads require the next independent certification of this closure and arming package.",
+   "This amendment does not set ARMED to true. It defines the condition under which that determination may be made.",
+   "Reclassifying G-R4 as CORROBORATIVE_AUTHORIZED_READ does not authorize it to be cited as establishing producibility, and reclassifying G-R1 does not narrow what G-R1 may read.",
+   "No modification to v1.0.0's or v1.0.1's bytes."
+  ]
+ },
+
+ "self_check": {
+  "SC-A1": "v1.0.0 and v1.0.1 bytes are unmodified; this amendment's write set is new files only.",
+  "SC-A2": "The arming condition is stated ONCE, normatively, as AC-1, and every operative locus that contradicted it is superseded by exact path with the parent text quoted verbatim first (RC-2 next_gate, RC-3 the_grant_is_not_yet_armed, RC-4 what_arming_requires).",
+  "SC-A3": "RC-4 records that the parent's what_arming_requires was SUBSTANTIVELY CORRECT and that only its logical form is made explicit. No new arming requirement is introduced.",
+  "SC-A4": "The RC-9 circularity is measured and named, not worked around: LIMB_3 binds RC-9a only, and RC-9b is retained in full as an at-first-read obligation.",
+  "SC-A5": "NODE_TO_READ_MAP is declared normative (MN-1) with an explicit conflict rule.",
+  "SC-A6": "The edge asymmetry is reported as measured SETS (forward 24 / reverse 22 / forward-only 2 / reverse-only 0), not as a count, and the reason every count-based control missed it is stated.",
+  "SC-A7": "Both corrected reads are PRESERVED with their scope intact; only their required-input claims change. G-R1 = CROSS_CUTTING_READINESS_AND_RC9_MEASUREMENT plus DN-4; G-R4 = CORROBORATIVE_AUTHORIZED_READ serving zero nodes.",
+  "SC-A8": "BEC-1 compares sets in BOTH directions and reports the two differences separately with distinct meanings, and carries an explicit exemption rule for CORROBORATIVE_AUTHORIZED_READ so the classification does not itself become a false positive.",
+  "SC-A9": "SC-14's correction is phrase-level and scoped; no broader prose cleanup was performed.",
+  "SC-A10": "The read set is invariant: 9 reads, 18/12/6 nodes, V=6/G=7/X=2 planes, 42 read-execution tokens. Three arming/consistency tokens are added and declared as a separate layer.",
+  "SC-A11": "No read was performed on any plane by this lane, and no hosted act of any kind occurred."
+ },
+
+ "required_independent_review": {
+  "required": true,
+  "reason": "This amendment defines the condition under which a control-plane read authority becomes exercisable. A defect in the conjunction, or in the map-normativity rule, reaches production infrastructure through whatever lane arms next.",
+  "verification_criteria_for_the_next_gate": [
+   "Independently rebuild both edge sets from the corrected state and confirm FORWARD == REVERSE with zero difference in each direction.",
+   "Confirm AC-1 is stated as a conjunction and that no locus anywhere in the effective package still reads certification as sufficient — including any locus this amendment did not name.",
+   "Confirm the RC-9 circularity analysis is correct: that RC-9's PLANE-G sentence genuinely depends on G-R1's output and that G-R1 is genuinely gated, so the split is necessary rather than a convenience.",
+   "Confirm every parent_text_verbatim quoted here matches the committed source character for character.",
+   "Confirm the read set is genuinely invariant: no allowlist, freshness class, target identity or failure token changed.",
+   "Confirm G-R4's preservation is argued on falsification value and not on node necessity, and that it cannot be cited as establishing producibility.",
+   "Confirm the certification event's findings enumeration is declared PARTIAL and that the five unsupplied findings are not treated as closed anywhere in this package."
+  ]
+ },
+
+ "final_state": "ARMING_CONJUNCTION_DEFINED__MAP_NORMATIVE__EDGE_SET_SYMMETRIC__G_R1_AND_G_R4_RECLASSIFIED_NOT_REMOVED__RC9_SPLIT__SC14_CORRECTED__READ_SET_UNCHANGED__ARMED_NOT_SET_BY_THIS_AMENDMENT",
+ "next_gate": "An arming determination evaluating AC-1's three limbs against measured evidence, recorded append-only. If all three hold, ARMED = true for the exact effective package it pins. If any does not, ARMED remains false and the determination names the unsatisfied limb."
+}

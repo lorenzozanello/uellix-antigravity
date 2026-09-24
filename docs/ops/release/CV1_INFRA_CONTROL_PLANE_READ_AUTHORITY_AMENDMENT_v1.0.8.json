@@ -1,0 +1,615 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.8",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.8",
+ "authority_class": "SCANNER_HARDENING_AMENDMENT__NO_NEW_READ__NOT_AN_ARMING_ACT",
+ "document_class": "APPEND_ONLY_AMENDMENT__NO_GOVERNED_READ__NO_PACMI_CALL__NO_MUTATION__NO_M8__NO_M9",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "builds_on": [
+  "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.7.json"
+ ],
+ "closes": "NB-1 of docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_B25F2D32E414_IC_v1.0.0.json (that event is historical and unchanged; NB-2..NB-9 remain OPEN as it records them)",
+ "mission_id": "CV1-INFRA-SECRET-SCANNER-IDENTIFIER-HARDENING-R1",
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.8.json",
+ "AS_OF_PRE_AMENDMENT_HEAD": "1d47137feb19b564792c3764c9ad34e8a8eda96f",
+ "AS_OF_PRE_AMENDMENT_TREE": "d41864ad60dac0cc023e3e5e61fb5392e2c413ef",
+ "as_of_measurement_note": "ZERO governed reads, ZERO authenticated provider operations, ZERO real provider values. The repository-name grammar was read from GitHub's public documentation (unauthenticated fetch, 2026-09-23).",
+ "NB1_AS_RECORDED": "The in-run detector set (scripts/infra-read/evidence-scan.ts) has no private-key-block detector; that detector exists only in scripts/scan-secrets.ts. A V-R2.S2 link.repo made of a PEM private-key armor header followed by an opaque token trips ONLY OPAQUE_HIGH_ENTROPY, is deferred, and with a synthetic witness returning that exact name is adjudicated EXPECTED_PROVIDER_IDENTIFIER. v1.0.7 SCANNER_ADJUDICATION.other_detectors overstates by listing 'private keys' among the detectors that STOP.",
+ "PRIVATE_KEY_RUNTIME_DETECTOR": {
+  "rule": "NORMATIVE. The in-run evidence scanner carries PRIVATE_KEY_BLOCK. It is the repository's ONE definition, exported from scripts/scan-secrets.ts (PRIVATE_KEY_BLOCK_PATTERN) and reused by object identity, never copied.",
+  "pattern_class": "Any PEM private-key header label: the previous RSA / EC / OPENSSH / PGP / bare forms plus ENCRYPTED, DSA and the 'PGP PRIVATE KEY BLOCK' armor. A strict superset of the previous repository pattern, so the repository gate (pnpm secrets:scan) is strengthened, not weakened; its tests and a full-tree scan stay green.",
+  "annotation": "The repository gate's line annotation allowance (secret-scan-ok) is NOT applied by the in-run scanner: provider-controlled text cannot exempt itself.",
+  "effect": "A private-key header anywhere in a projection STOPs (STOP_SECRET_BEARING_FIELD_RETURNED, the certified safe diagnostic naming PRIVATE_KEY_BLOCK), with or without entropy, and can never be deferred, adjudicated or explained. v1.0.7's 'private keys' STOP statement is now literally true at runtime; v1.0.7 is not edited."
+ },
+ "PROVIDER_GRAMMAR": {
+  "status": "ESTABLISHED_FROM_OFFICIAL_DOCUMENTATION",
+  "source": "https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository",
+  "source_text_as_rendered": "The repository name must not exceed 100 characters, and can only contain ASCII letters, digits, and the characters . , - , and _ .",
+  "source_text_note": "The page's rendered text with HTML tags stripped (the three characters are separate inline-code elements on the page, hence the spaces).",
+  "rule": "NORMATIVE. GITHUB_REPOSITORY_NAME_RE = ^[A-Za-z0-9._-]{1,100}$. It only NARROWS (nothing is normalized). A link.repo outside it is: not deferred (STOP at V-R2.S2 with the certified diagnostic); not a witness target (STOP_WITNESS_UNKNOWN); never explained by the evidence re-scan. Three independent layers.",
+  "why_defense_in_depth": "A PEM header contains spaces, so the grammar alone already excludes the NB-1 value; the detector closes the same defect independently, and the grammar also excludes any other non-name text an entropy run could ride in."
+ },
+ "SCANNER_EXCEPTION": {
+  "unchanged_invariant": "Only OPAQUE_HIGH_ENTROPY at exactly V-R2.S2 projects[*].link.repo may be deferred, pending a same-run witness.",
+  "narrowed": "Deferral additionally requires the documented repository-name grammar. A value that trips OPAQUE_HIGH_ENTROPY AND PRIVATE_KEY_BLOCK, or any other detector, STOPs.",
+  "evidence_rescan": "A value that trips any detector other than OPAQUE_HIGH_ENTROPY is not adjudicated AT ALL: not even its entropy finding is explained.",
+  "witness_scope": "Witness success adjudicates only the entropy finding."
+ },
+ "INVENTORY_WITNESS_PRESERVED": "Unchanged and re-tested: the G-R5 request carries only a page number (no Vercel repo / org / repoId); pagination fails closed; memory stays bounded; the witness is same-run and exact; TI-2 is the enforced tuple; 25 operations, 9 EXECUTE_NOW; V-R4 F_IMMEDIATE_ONLY_BEFORE_MUTATION.",
+ "EVENT_CHAIN": {
+  "successor_duty_discharged": "v1.0.7 EVENT_CHAIN_SUCCESSOR.successor_duty: b25f2d32's delta recert (docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_B25F2D32E414_IC_v1.0.0.json, materialized at 1d47137f) is now a FIXED historical event.",
+  "rule": "NORMATIVE. dn0ConfigFor binds SIX events: 455b5426, 3dc12909, 81b56ed4, 4a3c2837 and b25f2d32 (each fixed to the candidate it certified), and the delta recert of the executed candidate at its candidate-derived path.",
+  "historical_only": "The b25f2d32 event can never certify a later candidate (different candidate; different path), and it is not edited.",
+  "new_candidate": "This delta's head is a NEW candidate; its delta recert path is derived from its SHA and is NOT materialized here (no self-certification)."
+ },
+ "MUTATION_RESULTS": {
+  "method": "scripts/infra-read/mutation-battery.mjs on the final tree, four chunks (10-minute command cap): unmutated suite green first (378/378), each production mutant applied, tests/infra-read run, restored from an in-memory byte copy, SHA-verified.",
+  "aggregate": "MUTANTS=100 (M01-M18, N01-N30, D01-D10, W01-W32, P01-P10) AS_EXPECTED=100 UNEXPECTED=0 BATTERY=PASS; SELF_TEST=PASS (BATTERY=FAIL on a real survivor).",
+  "new_mutants": {
+   "P01": {
+    "mutation": "private-key detector removed from the runtime catalog",
+    "verdict": "KILLED",
+    "failing_tests": 13
+   },
+   "P02": {
+    "mutation": "runtime catalog uses a narrower COPY instead of the shared pattern (catalog only updated in tests)",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   "P03": {
+    "mutation": "shared pattern narrowed back to the previous label set (authority says STOP, runtime accepts ENCRYPTED/DSA/PGP BLOCK)",
+    "verdict": "KILLED",
+    "failing_tests": 3
+   },
+   "P04": {
+    "mutation": "repo-gate annotation allowance applied at runtime (provider text exempts itself)",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   "P05": {
+    "mutation": "grammar layer removed from deferral",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   "P06": {
+    "mutation": "grammar layer removed from the witness target",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   "P07": {
+    "mutation": "grammar layer removed from the evidence re-scan (private key/other finding explained after the witness)",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   "P08": {
+    "mutation": "detector layer removed from the evidence re-scan",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   "P09": {
+    "mutation": "the old b25f2d32 event accepted for the new candidate",
+    "verdict": "KILLED",
+    "failing_tests": 23
+   },
+   "P10": {
+    "mutation": "the fixed b25f2d32 history event dropped from the chain",
+    "verdict": "KILLED",
+    "failing_tests": 26
+   }
+  },
+  "honest_note": "P08 (detector layer removed from the evidence re-scan) first SURVIVED: every finding is also checked for OPAQUE_HIGH_ENTROPY individually, so pass/fail never moved. Its observable meaning was then pinned by a test (a value tripping entropy AND another detector is not adjudicated at all: 0 explained), and P08 is KILLED. W19 was re-anchored because the grammar layer now sits between the two detector layers.",
+  "all_rows": [
+   {
+    "id": "M01",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M02",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M03",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "M04",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "M05",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M06",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M07",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M08",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M09",
+    "verdict": "KILLED",
+    "failing_tests": 62
+   },
+   {
+    "id": "M10",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M11",
+    "verdict": "KILLED",
+    "failing_tests": 24
+   },
+   {
+    "id": "M12",
+    "verdict": "KILLED",
+    "failing_tests": 26
+   },
+   {
+    "id": "M13",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M14",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M15",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M16",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "M17",
+    "verdict": "KILLED",
+    "failing_tests": 13
+   },
+   {
+    "id": "M18",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "N01",
+    "verdict": "KILLED",
+    "failing_tests": 26
+   },
+   {
+    "id": "N02",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "N03",
+    "verdict": "KILLED",
+    "failing_tests": 5
+   },
+   {
+    "id": "N04",
+    "verdict": "KILLED",
+    "failing_tests": 6
+   },
+   {
+    "id": "N05",
+    "verdict": "KILLED",
+    "failing_tests": 6
+   },
+   {
+    "id": "N06",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "N07",
+    "verdict": "KILLED",
+    "failing_tests": 15
+   },
+   {
+    "id": "N08",
+    "verdict": "KILLED",
+    "failing_tests": 13
+   },
+   {
+    "id": "N09",
+    "verdict": "KILLED",
+    "failing_tests": 5
+   },
+   {
+    "id": "N10",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   {
+    "id": "N11",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   {
+    "id": "N12",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   {
+    "id": "N13",
+    "verdict": "KILLED",
+    "failing_tests": 5
+   },
+   {
+    "id": "N14",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "N15",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "N16",
+    "verdict": "KILLED",
+    "failing_tests": 129
+   },
+   {
+    "id": "N17",
+    "verdict": "KILLED",
+    "failing_tests": 8
+   },
+   {
+    "id": "N18",
+    "verdict": "KILLED",
+    "failing_tests": 7
+   },
+   {
+    "id": "N19",
+    "verdict": "KILLED",
+    "failing_tests": 7
+   },
+   {
+    "id": "N20",
+    "verdict": "KILLED",
+    "failing_tests": 7
+   },
+   {
+    "id": "N21",
+    "verdict": "KILLED",
+    "failing_tests": 23
+   },
+   {
+    "id": "N22",
+    "verdict": "KILLED",
+    "failing_tests": 22
+   },
+   {
+    "id": "N23",
+    "verdict": "KILLED",
+    "failing_tests": 25
+   },
+   {
+    "id": "N24",
+    "verdict": "KILLED",
+    "failing_tests": 3
+   },
+   {
+    "id": "N25",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "N26",
+    "verdict": "KILLED",
+    "failing_tests": 13
+   },
+   {
+    "id": "N27",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "N28",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "N29",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "D01",
+    "verdict": "KILLED",
+    "failing_tests": 15
+   },
+   {
+    "id": "D02",
+    "verdict": "KILLED",
+    "failing_tests": 18
+   },
+   {
+    "id": "D03",
+    "verdict": "KILLED",
+    "failing_tests": 18
+   },
+   {
+    "id": "D04",
+    "verdict": "KILLED",
+    "failing_tests": 15
+   },
+   {
+    "id": "D05",
+    "verdict": "KILLED",
+    "failing_tests": 18
+   },
+   {
+    "id": "D06",
+    "verdict": "KILLED",
+    "failing_tests": 15
+   },
+   {
+    "id": "D07",
+    "verdict": "KILLED",
+    "failing_tests": 48
+   },
+   {
+    "id": "D08",
+    "verdict": "KILLED",
+    "failing_tests": 12
+   },
+   {
+    "id": "D09",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "N30",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   {
+    "id": "D10",
+    "verdict": "KILLED",
+    "failing_tests": 32
+   },
+   {
+    "id": "W01",
+    "verdict": "KILLED",
+    "failing_tests": 30
+   },
+   {
+    "id": "W02",
+    "verdict": "KILLED",
+    "failing_tests": 30
+   },
+   {
+    "id": "W03",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W04",
+    "verdict": "KILLED",
+    "failing_tests": 15
+   },
+   {
+    "id": "W05",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "W06",
+    "verdict": "KILLED",
+    "failing_tests": 5
+   },
+   {
+    "id": "W07",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W08",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   {
+    "id": "W09",
+    "verdict": "KILLED",
+    "failing_tests": 3
+   },
+   {
+    "id": "W10",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "W11",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "W12",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W13",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W14",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "W15",
+    "verdict": "KILLED",
+    "failing_tests": 26
+   },
+   {
+    "id": "W16",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W17",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   {
+    "id": "W18",
+    "verdict": "KILLED",
+    "failing_tests": 23
+   },
+   {
+    "id": "W19",
+    "verdict": "KILLED",
+    "failing_tests": 3
+   },
+   {
+    "id": "W20",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W21",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W22",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W23",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W24",
+    "verdict": "KILLED",
+    "failing_tests": 2
+   },
+   {
+    "id": "W25",
+    "verdict": "KILLED",
+    "failing_tests": 6
+   },
+   {
+    "id": "W26",
+    "verdict": "KILLED",
+    "failing_tests": 5
+   },
+   {
+    "id": "W27",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W28",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W29",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W30",
+    "verdict": "KILLED",
+    "failing_tests": 6
+   },
+   {
+    "id": "W31",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "W32",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "P01",
+    "verdict": "KILLED",
+    "failing_tests": 13
+   },
+   {
+    "id": "P02",
+    "verdict": "KILLED",
+    "failing_tests": 4
+   },
+   {
+    "id": "P03",
+    "verdict": "KILLED",
+    "failing_tests": 3
+   },
+   {
+    "id": "P04",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "P05",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "P06",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "P07",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "P08",
+    "verdict": "KILLED",
+    "failing_tests": 1
+   },
+   {
+    "id": "P09",
+    "verdict": "KILLED",
+    "failing_tests": 23
+   },
+   {
+    "id": "P10",
+    "verdict": "KILLED",
+    "failing_tests": 26
+   }
+  ]
+ },
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "Every prohibition of v1.0.0 through v1.0.7, unrelaxed. No read is added.",
+  "No detector is weakened: the shared private-key pattern is a superset of the previous one, and OPAQUE_HIGH_ENTROPY is unchanged.",
+  "No governed read is authorized until this delta is independently recertified and a fresh human confirmation is given."
+ ],
+ "final_state": "INFRA_SECRET_SCANNER_HARDENED__PRIVATE_KEY_CANNOT_BE_DEFERRED__INVENTORY_WITNESS_PRESERVED__READY_FOR_FOCUSED_RECERT",
+ "next_gate": "ONE focused independent recertification of 1d47137f..this head; on PASS, materialize it at this head's derived delta-recert path, then a fresh human confirmation and all 9 EXECUTE_NOW read classes from scratch."
+}

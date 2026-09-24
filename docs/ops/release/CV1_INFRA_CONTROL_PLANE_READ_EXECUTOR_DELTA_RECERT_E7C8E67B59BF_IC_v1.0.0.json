@@ -1,0 +1,135 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_E7C8E67B59BF_IC_v1.0.0",
+ "authority_class": "INDEPENDENT_CERTIFICATION_EVENT_RECORD__NOT_AN_AUTHORITY__NOT_AN_ARMING_ACT",
+ "document_class": "CERTIFICATION_EVENT_RECORD__NO_READ__NO_MUTATION",
+ "append_only": true,
+ "materialization_date": "2026-09-23",
+ "materialized_by": "Claude Opus 5.5 under Claude Code Desktop (HPO-ODS-01), lane CV1-INFRA-CERT-MATERIALIZATION-AND-CONTROL-PLANE-EXECUTION-R2",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "materialization_contract": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.9.json EVENT_CHAIN and next_gate (the delta recert of the executed candidate, at the path deltaRecertEventPathFor derives from that candidate; package_id, authority_class prefix, exact candidate_head, verdict copied verbatim, integer blocking count), as enforced by scripts/infra-read/certification.ts assessCertificationEvent and scripts/infra-read/run-governed-reads.ts dn0ConfigFor at the candidate.",
+ "CERTIFIED_CANDIDATE": {
+  "candidate_head": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2",
+  "candidate_tree": "db2d83ff70fd5c58f04af0b88fc972a871d90e54",
+  "candidate_base": "b402c5d04cc04d8f7b5c20e9d91a68ffe90bec25",
+  "candidate_base_tree": "e44b0be42a3ec6268e5ec442da568c528daa838e",
+  "candidate_parent_is_base": true,
+  "candidate_branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "candidate_pr": "#214",
+  "scope_reviewed": "ONLY the bounded delta b402c5d0..e7c8e67b (one commit, 8 files: 3 added, 5 modified; both docs files are additions): the v1.0.9 same-run, same-team and same-project adjudication of V-R2.L7 deployments[*].meta.githubRepo against the link.repo value the same executor's G-R5 witness adjudicated for the same (teamId, projectId), its exact byte equality, its inheritance of the documented repository-name grammar and of the mixed-detector fail-closed rule, the EC-1 layers (executor lookup and same-bundle S2 binding), the seven-event chain with the 00d6d383 delta recert fixed as history, and amendment v1.0.9 with its test manifest. Unrelated Infra architecture was not reopened.",
+  "candidate_verification_performed_by_this_lane": "Re-derived by the materializing lane from git: HEAD = e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2, HEAD^{tree} = db2d83ff70fd5c58f04af0b88fc972a871d90e54, parent = b402c5d0 (tree e44b0be4), equal to origin/codex/cv1-infra-control-plane-read-authority-r1 after fetch; worktree clean. git diff --name-status b402c5d0 e7c8e67b = 8 files (A amendment v1.0.9, A manifest amendment v1.0.9, M evidence-adjudication.ts, M executor.ts, M mutation-battery.mjs, M run-governed-reads.ts, M tests/infra-read/entrypoint.test.ts, A tests/infra-read/l7-deployment-repo.test.ts). Blobs identical at base and candidate: ops.ts 7d9ba776, repo-witness.ts 5410a002, evidence-scan.ts d03b6166, guards.ts f8500057, protocol.ts 3dec7a2a, certification.ts 3889b0d2, and the 00d6d383 delta recert df4733ab. REGISTRY imported from the candidate's ops.ts: 25 operations (21 GOVERNED_READ, 4 PACMI); EXECUTE_NOW governed-read classes exactly G-R1, G-R2, G-R3, G-R4, G-R5, V-R1, V-R2, V-R3, X-R1; F_IMMEDIATE_ONLY_BEFORE_MUTATION exactly V-R4.DEPLOYMENTS. Anonymous public reads (no credential): PR #214 head = e7c8e67b (draft, open); check runs at e7c8e67b 'Lint, typecheck, test, build' completed/success and 'Vercel Preview Comments' completed/success; combined commit status success with context Vercel success."
+ },
+ "VERDICT": {
+  "verdict": "INFRA_L7_DEPLOYMENT_REPO_WITNESS_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+  "blocking_findings": 0,
+  "nonblocking_findings": 8,
+  "provenance": "The focused recertification was CONDUCTED in a separate independent review conversation (lane CV1-INFRA-L7-DEPLOYMENT-REPO-WITNESS-RECERT, reviewer Claude Opus 5.5, detached worktree at e7c8e67b); it is not the conversation that authored the delta. The verdict token, the zero blocking count, the eight nonblocking finding labels and the confirmed determinations are copied verbatim from the owner-relayed disposition that opened this materialization lane. The EVIDENCE_SUMMARY restates that review's reported measurements; this lane did not repeat them and marks only its own re-derivations (CERTIFIED_CANDIDATE.candidate_verification_performed_by_this_lane) as measured here. Independence is PROCEDURAL (separate conversation and lane, governed by the ODS workflow); it is not cryptographically provable and no such proof is claimed.",
+  "determinations": {
+   "SAME_RUN_BINDING": "CONFIRMED",
+   "SAME_TEAM_AND_SAME_PROJECT_BINDING": "CONFIRMED",
+   "EXACT_EQUALITY": "CONFIRMED",
+   "INHERITED_GRAMMAR": "CONFIRMED",
+   "NO_MIXED_DETECTOR_EXCEPTION": "CONFIRMED",
+   "NO_GLOBAL_L7_EXCEPTION": "CONFIRMED",
+   "OPS_TS_UNCHANGED": "CONFIRMED",
+   "REGISTRY": "25_TOTAL / 9_EXECUTE_NOW / V-R4_F_IMMEDIATE",
+   "EXACT_HEAD_CI_AND_VERCEL": "GREEN"
+  }
+ },
+ "EVIDENCE_SUMMARY": {
+  "delta_scope": "8 files (2 docs A, 1 test A, 5 M). ops.ts, repo-witness.ts, evidence-scan.ts, guards.ts, protocol.ts and certification.ts byte-identical to the base; amendment v1.0.9 contains no supersession. No sealed or historical artifact is modified.",
+  "registry": "Re-derived from REGISTRY: 25 operations / 21 GOVERNED_READ + 4 PACMI / 9 EXECUTE_NOW classes / V-R4.DEPLOYMENTS F_IMMEDIATE_ONLY_BEFORE_MUTATION.",
+  "tests": "tests/infra-read 432/432 (557/557 together with the scan-secrets and evidence-hardening suites), as reported by the review.",
+  "author_battery": "Author mutation battery 121/121 as expected plus self-test PASS, run in a pristine LF clone, as reported by the review.",
+  "end_to_end_probe": "Reviewer's own probe over the real runGovernedReadPhase 7/7: positive path through X-R1 with EC-1 in-run and standalone; a case-flipped githubRepo and a cross-project value each STOP.",
+  "reviewer_mutants": "28 independent mutants: 18 killed by the author's suites; X02 (pendingScope taken as the first team) and X15 (case-insensitive bundle lookup) killed only by the reviewer's probe; X08 (binding-conflict check removed) survives every suite; X23, X24 and X27 are EC-1 layers that mask each other; X09, X13, X14 and X26 equivalent.",
+  "gates": "typecheck, eslint, secrets:scan, authority:seal:verify, ods:scope (8 files), ods:poststate 6/6 PASS; ods:prestate BRANCH FAIL only because the review worktree was detached at the exact SHA.",
+  "operations": "Zero governed reads, zero PACMI, zero DB connections; remote read anonymously."
+ },
+ "PRIOR_FINDINGS_DISPOSITION": {
+  "source": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_00D6D3834989_IC_v1.0.0.json and docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_B25F2D32E414_IC_v1.0.0.json (historical, unchanged)",
+  "disposition": "Not dispositioned by this review. NB-1..NB-7 of the 00d6d383 record and NB-2..NB-9 of the b25f2d32 record remain OPEN as those records state."
+ },
+ "NONBLOCKING_FINDINGS": {
+  "reported_count": 8,
+  "enumeration_status": "COMPLETE. All 8 are OPEN. This record's PASS dispositions none of them, and none may be silently erased by a later record.",
+  "items": [
+   {
+    "id": "NB-1",
+    "label": "finalizeRepositoryWitness partial-state atomicity",
+    "finding": "finalizeRepositoryWitness is not atomic: when it throws STOP_WITNESS_UNKNOWN it can leave a partial same-project binding in the executor, so an L7 adjudication evaluated after a caught throw would be ADJUDICATED. The governed protocol does not catch that throw, so the state is unreachable in the certified run path.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-2",
+    "label": "standalone bundle lookup can bind an unadjudicated same-value project",
+    "finding": "The standalone EC-1 bundle lookup binds by VALUE: a project whose link.repo was not adjudicated but equals an adjudicated value can be bound. Affects only the standalone EC-1 CLI, not the in-run executor lookup.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-3",
+    "label": "missing author test for second-team case",
+    "finding": "No author test pins that the S2 team is the request's own pendingScope when more than one team is in scope: reviewer mutant X02 (first team taken instead) is killed only by the reviewer's probe.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-4",
+    "label": "unpinned duplicate-value normative case",
+    "finding": "The duplicate-value / conflicting-binding normative case is not pinned: reviewer mutant X08 (binding-conflict check removed) survives every suite.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-5",
+    "label": "standalone EC-1 exact-equality test gap",
+    "finding": "The standalone EC-1 path has no test pinning exact (case-sensitive) equality: reviewer mutant X15 (case-insensitive bundle lookup) is killed only by the reviewer's probe.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-6",
+    "label": "redundant EC-1 layer mutation masking",
+    "finding": "The EC-1 layers are mutually redundant, so single-layer mutants X23, X24 and X27 mask each other and survive; each layer's independent sufficiency is not shown by single-mutant evidence.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-7",
+    "label": "v1.0.9 section-label erratum",
+    "finding": "Amendment v1.0.9 carries a section-label erratum. The amendment is append-only and is not edited by this record; any correction belongs to a later append-only erratum.",
+    "status": "OPEN"
+   },
+   {
+    "id": "NB-8",
+    "label": "TypeScript private is compile-time, not runtime #private",
+    "finding": "The executor's same-run binding state is protected by the TypeScript 'private' modifier, which is erased at compile time; it is not an ECMAScript runtime #private field, so in-process code can reach it at runtime.",
+    "status": "OPEN"
+   }
+  ]
+ },
+ "REVIEWER_IDENTITY": {
+  "reviewer": "Claude Opus 5.5 (claude-opus-5-5) under Claude Code Desktop, detached worktree at e7c8e67b.",
+  "execution_date": "2026-09-23",
+  "execution_instant": "NOT RECORDED. Only the date is stated; no instant is reconstructed."
+ },
+ "OPERATIONS_BY_THE_REVIEW_AND_THIS_MATERIALIZATION": {
+  "GOVERNED_READS_EXECUTED": "ZERO",
+  "PACMI_AUTHENTICATED_OPS_EXECUTED": "ZERO",
+  "DB_CONNECTIONS": "ZERO",
+  "PROVIDER_MUTATIONS_EXECUTED": "ZERO",
+  "REAL_PROVIDER_VALUES_INSPECTED": "ZERO",
+  "SECRETS_EXPOSED": "ZERO",
+  "note": "Only anonymous public-repository metadata (PR head, check runs, commit status, remote refs) was read."
+ },
+ "WHAT_THIS_EVENT_DOES_AND_DOES_NOT_DO": {
+  "does": "Materializes the recertification of the v1.0.9 delta at the path dn0ConfigFor derives for e7c8e67b, so the runtime LIMB_1 predicate can find it as the seventh event, bound to that executable candidate.",
+  "does_not": [
+   "Arm anything by itself. AC-1 is evaluated at runtime on every execution: runtime RC-9a, then DN-0 as the last pre-read act.",
+   "Replace or edit any historical event (455b5426, 3dc12909, 81b56ed4, 4a3c2837, b25f2d32, 00d6d383); each stays bound to its own candidate and required.",
+   "Fix, waive or disposition any of the eight findings above, or any finding of an earlier record.",
+   "Authorize execution now: execution requires a fresh explicit human confirmation first.",
+   "Authorize any read beyond the effective read set, any mutation, V-R4, or M-8 / M-9.",
+   "Change the certified effective package: it is an ADDED certification-event file, the class allowedPostCertificationAdditions permits."
+  ]
+ },
+ "final_state": "INFRA_E7C8E67B_RECERT_MATERIALIZED__READY_FOR_FRESH_HUMAN_CONFIRMATION",
+ "next_gate": "STOP for a fresh explicit human confirmation. Only after it: fresh RC-9a, then fresh DN-0 as the last pre-read act, then all 9 EXECUTE_NOW read classes from scratch with --certified-candidate e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2."
+}

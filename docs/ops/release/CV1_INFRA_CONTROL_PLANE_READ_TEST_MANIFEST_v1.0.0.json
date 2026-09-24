@@ -1,0 +1,254 @@
+{
+ "manifest_id": "CV1-INFRA-CONTROL-PLANE-READ",
+ "node_or_batch": "node",
+ "authority_reference": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "dependencies": [
+  "CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0 (docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json, blob 0c36474b08076a844d32da8b194be79ab17915b1)",
+  "CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1 (docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json, blob c2f29de382ad2584788c85ba7cfa5bd0a7275204)",
+  "CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0 (docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json, blob e8baab563e130bdc70a4cc3e87155ab8f3638add)",
+  "CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1 (docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json, blob 59f3a24dc44b60b6da549125fde5547d282f33e8)",
+  "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0 (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json, blob f3236a1a26e2d868e14590c72f4a7752ffba801c)",
+  "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1 (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json, blob 65af13040b440987d3d08b1fafc295e270dc6f38)",
+  "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2 (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json, blob 4192849f46c988afddf9fce548ec2db9d8df4be3)",
+  "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0 (docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json, blob 17c257b3b0b06b37601851ddf8fbc6aa4abdc6ae)",
+  "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1 (docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json, blob 4d99df8bd43263c17dda96b76f0321b789e8cb04)"
+ ],
+ "protected_surfaces": [],
+ "protected_authority": null,
+ "sentinels": [
+  {
+   "id": "SEN-R1",
+   "purpose": "THE NINE BLOB PINS. The nine blob hashes recorded in the authority's EFFECTIVE_PACKAGE_CONSUMED must re-derive identically at the moment any consumer acts. A consumer finding any one to differ must raise STOP_READ_AUTHORITY_BINDING_MISMATCH and must NOT carry the read set forward to the differing package."
+  },
+  {
+   "id": "SEN-R2",
+   "purpose": "THE ARMED FLAG. WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED must read false in the authority as committed by this lane. A tree in which it reads true, without an independent certification verdict artifact in the same tree, is a tree in which a read authority armed itself."
+  },
+  {
+   "id": "SEN-R3",
+   "purpose": "THE ZERO-INBOUND-READ PROPERTY. This lane's write set is exactly two JSON documents under docs/ops/release/**. Any evidence of a request to api.vercel.com or api.github.com, or of a git ls-remote or git fetch, falsifies the authority's RP-5 and its SC-8 and makes the artifact a report of a read rather than an authority for one. The PUBLICATION acts named in RP-5 (pushing this branch, opening the draft pull request) are explicitly EXCLUDED from this sentinel: they carry information outward and bring none in, and a sentinel that redded on them would red on the mission's own required final step."
+  },
+  {
+   "id": "SEN-R4",
+   "purpose": "THE SECRET-FIELD CANARY. No string matching a credential shape may appear anywhere in either document: no deploy hook URL, no environment variable value, no token, no password, no raw secret-scanning secret. The documents enumerate these fields BY NAME as prohibitions; naming a field is not carrying its value, and the distinction is what this sentinel checks."
+  },
+  {
+   "id": "SEN-R5",
+   "purpose": "THE COMMA-BEARING CHECK NAME. The string 'Lint, typecheck, test, build' must be treated as ONE name wherever the eight required checks are compared. A harness, script or artifact that yields eleven names from the eight-entry array has split a name that must not be split."
+  }
+ ],
+ "known_conditions": [],
+ "positive_controls": [
+  {
+   "id": "P-R1",
+   "description": "AUTHORING ARM. THE NINE BLOB PINS RE-DERIVE. git rev-parse HEAD:<path> against the nine paths of EFFECTIVE_PACKAGE_CONSUMED reproduces all nine recorded blob hashes exactly. PASS is nine of nine; anything less is STOP_READ_AUTHORITY_BINDING_MISMATCH, not a partial pass.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R2",
+   "description": "AUTHORING ARM. BOTH DOCUMENTS PARSE AS JSON, and the manifest validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, including its additionalProperties=false constraint.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R3",
+   "description": "AUTHORING ARM. NODE COVERAGE IS EXHAUSTIVE AND PARTITIONED. NODE_TO_READ_MAP.map contains exactly 18 entries whose ids equal the 18 node ids of the parent's DAG_NODES.nodes, and the two lists in coverage_check partition them: 12 with at least one read, 6 with none, disjoint, union complete. Verified by set comparison against the parent, not by reading the coverage_check sentence.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R4",
+   "description": "AUTHORING ARM. EVERY READ CARRIES THE SEVEN CONTRACT FIELDS. Each of the nine reads carries an exact operation surface, a field allowlist, a secret-bearing prohibition list, a freshness declaration, a target identity block, an evidence record specification and at least one failure token. A read missing any one is an incomplete read, not a terse one.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R5",
+   "description": "AUTHORING ARM. EVERY FAILURE TOKEN NAMED IN A READ APPEARS IN THE REGISTRY, and the registry's declared count equals the length of its token array. Verified by set difference in both directions, not by reading the count.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R6",
+   "description": "AUTHORING ARM. EVERY PINNED OPERATION RESOLVES. Each operation marked PINNED cites a CORRECTED_MEASUREMENTS entry of CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json by id or index, and reading that entry confirms it records the cited operation. A citation that does not resolve converts a PINNED claim into a RECALLED one and must be relabelled.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R7",
+   "description": "AUTHORING ARM. GET IS THE ONLY PERMITTED METHOD. Every read's http_methods_permitted contains exactly GET, and each enumerates prohibited methods. No evidence_record anywhere requires persisting a raw response body.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R8",
+   "description": "EXECUTION ARM (applies only once ARMED = TRUE). A READ PRODUCES A COMPLETE EVIDENCE RECORD. For any read performed, the record carries every field its evidence_record block requires, including the absent_list and, for each absent field, the RC-12 absent-versus-null distinction. A record with a full projection and no explicit absent_list has asserted nothing about what was missing.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R9",
+   "description": "EXECUTION ARM. EVERY LISTING RECORDS A TERMINAL PAGINATION STATE before any count or absence claim is made from it. Applies to the Vercel scope, project, domain, alias, env and deployment listings, and to the GitHub ruleset and check-run listings.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "P-R10",
+   "description": "EXECUTION ARM. X-R1 RECORDS A NON-EMPTY TOTAL REF COUNT alongside any absence verdict, and reports refs/heads/release/* and refs/tags/release/* as two separate verdicts rather than one aggregated line.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "negative_controls": [
+  {
+   "id": "N-R1",
+   "description": "A PREVIOUS MEASUREMENT IS REFUSED AS SATISFACTION OF V-R1. An evidence record for V-R1 whose allowlisted projection is sourced from v1.0.1 CM-6, from productionBranch=main as a remembered value, from main being an ancestor of integration/commercial-v1, from www.uellix.com answering 200, or from the parent's own MEASURED_PRESTATE_THIS_LANE, must be REFUSED. This carries the parent manifest's N-1 into the read layer: the authority must make the forbidden substitutes unproducible, not merely deprecated.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R2",
+   "description": "A SINGLE-NAMESPACE PROTECTION VERDICT IS REFUSED. A G-R2 evidence record reporting PROTECTED or NOT PROTECTED from fewer than all three limbs (classic protection, ruleset inventory, effective rules for the ref) must be REFUSED with STOP_PROTECTION_NAMESPACE_INCOMPLETE. In particular a 404 from the classic endpoint alone, recorded as 'unprotected', must be refused. This is DF-3.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R3",
+   "description": "A PER-BRANCH READ IS REFUSED AS AN ANSWER TO THE RELEASE-PATTERN QUESTION. A DN-7 prestate whose 'no ruleset matches release/**' limb is evidenced by a 404 from a per-branch endpoint against a branch that does not exist must be REFUSED. Only limb D's ruleset-pattern inspection answers it, and the record must list the pattern forms evaluated. This is DF-4.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R4",
+   "description": "A PATTERN-SCOPED LS-REMOTE IS REFUSED AS THE BASIS OF AN ABSENCE CLAIM. An X-R1 record whose command carried a refspec pattern, or which lacks a non-zero total ref count, must be REFUSED with STOP_REF_LISTING_EMPTY_WITNESS_FAILED. An invocation carrying --heads must likewise be refused, because it drops the tags limb the prestate names. This is DF-5.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R5",
+   "description": "A SINGLE-SCOPE PROJECT ABSENCE IS REFUSED. A V-R2 record concluding uellix-production-web is absent, without an enumerated scope set and without a per-scope result for the by-name request, must be REFUSED with STOP_SCOPE_ENUMERATION_INCOMPLETE. A 404 is a fact about a scope. This is DF-7.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R6",
+   "description": "A COMMA-SPLIT REQUIRED-CHECK COMPARISON IS REFUSED. Any comparison of configured required checks against ADJUDICATIONS.D that yields more than eight names, or that treats 'Lint', 'typecheck', 'test' or 'build' as separate required checks, must be REFUSED. This is DF-1 and sentinel SEN-R5.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R7",
+   "description": "A NAME-KEY SWEEP IS REFUSED AS A JOB-NAME PARSE. A producibility evaluation whose corpus parse matched name keys at any nesting depth, rather than at job level, must be REFUSED. golden-journey.yml carries a step-level artifact name that such a parse would return. This is DF-2.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R8",
+   "description": "A PROJECT-NAME INFERENCE OF PRODUCTION IDENTITY IS REFUSED IN BOTH DIRECTIONS. A finding that uellix-production-web is a production surface BECAUSE of its name, or that uellix-antigravity is not one BECAUSE of its name, must be REFUSED with STOP_PRODUCTION_IDENTITY_INFERRED_FROM_NAME. Only the measured conjunction PIR-a..PIR-d establishes a production role.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R9",
+   "description": "A DEPLOY HOOK URL IN ANY ARTIFACT IS REFUSED. Any evidence record, commit, log or document containing a deploy hook URL must be REFUSED and the occurrence recorded as an incident. The deploy-hook limb is satisfied by id, name, ref, createdAt and count. This is SBP-V2 and DF-10.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R10",
+   "description": "decrypt=true IS REFUSED ABSOLUTELY. Any env-row read carrying decrypt=true, or any record containing an environment variable value, must be REFUSED with STOP_SECRET_BEARING_FIELD_RETURNED. No node's need justifies it, and CM-7's own precedent read with decrypt=false.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R11",
+   "description": "A PARTIAL MEASUREMENT REPORTED AS CLEAN IS REFUSED. A V-R2 record reporting 'no Commercial V1 role found' without the eight-limb matrix and without the PARTIAL verdict that L6 forces, or a V-R3 record reporting a COMPLETE capture without establishing the per-branch toggle, must be REFUSED. Partial absence is not absence. This is RC-14.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R12",
+   "description": "A READ PERFORMED WHILE UNARMED IS REFUSED. Any read performed before an independent certification verdict exists for this authority must be REFUSED with STOP_READ_AUTHORITY_UNARMED, and the resulting evidence is INADMISSIBLE rather than merely early.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R13",
+   "description": "A READ DISCHARGE CITED AS A MUTATION AUTHORIZATION IS REFUSED. Any lane citing a discharged DN-1, DN-2, DN-3, DN-4 or DN-12 measurement as authority to perform M-1 through M-9 must be REFUSED with STOP_READ_AUTHORITY_EXCEEDED. This artifact's class is READ_ONLY_CONTROL_PLANE_MEASUREMENT_AUTHORITY__NOT_AN_EXECUTION_AUTHORITY, and adjudication Q states there is no control-plane mutation performable on standing authority.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R14",
+   "description": "V-R2's L5 GRANT CITED AS COVERING PMV-2 IS REFUSED. A lane reading environment rows on uellix-antigravity to re-measure U-4 for DN-15, and citing V-R2 as its authority, must be REFUSED. V-R2's L5 limb targets projects OTHER than uellix-antigravity for DN-2's predicate. PMV-2 is RNA-1 and PR201 controls it.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R15",
+   "description": "A SECRET-SCANNING READ UNDER THIS AUTHORITY IS REFUSED. Any read of the repository's secret-scanning surface, and any claim about alert 1's rotation, severity, disclosure or closure sourced from a read performed under this artifact, must be REFUSED. This is RNA-2, and it holds notwithstanding that an admin-scoped GitHub credential in hand can reach those endpoints.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R16",
+   "description": "A READ THAT WRITES LOCAL STATE IS REFUSED. Any read path that creates a project-link directory, pulls an environment file, or otherwise writes into the worktree must be REFUSED with STOP_READ_WOULD_WRITE_LOCAL_STATE, and the node fails closed rather than the path being taken. This is RC-4, carrying DN-1's own cost_bound.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R17",
+   "description": "AN UNRESOLVED RECALLED FIELD NAME REPORTED AS AN ABSENT FEATURE IS REFUSED. A record concluding a capability does not exist because a recalled field name did not appear must be REFUSED with STOP_RECALLED_OPERATION_UNRESOLVED. This is RC-8, and it governs the entire GitHub limb.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "N-R18",
+   "description": "AN F-IMMEDIATE READ SATISFIED BY AN F-LANE MEASUREMENT IS REFUSED. A mutation prestate evidenced by a read taken earlier in the lane, with any intervening act, must be REFUSED. A prestate is by definition immediate, and the parent's O-4 calls a setting measured earlier an assumption wearing a measurement's clothes.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "mutation_controls": [
+  {
+   "id": "MUT-R1",
+   "description": "Remove G-R2's three-limb requirement and leave it reading only the classic branch-protection endpoint. Control N-R2 must REDDEN, naming the ruleset namespace that becomes invisible. If it stays green, the control was checking that a protection read exists, not that it is complete across namespaces.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R2",
+   "description": "Delete G-R2 limb D (the ruleset pattern inspection) and let DN-7's prestate rely on the per-branch limbs. Control N-R3 must REDDEN, naming the release/** ruleset that would apply on creation and the M-8 confirmation escalation that would never fire. If it stays green, DF-4 was recorded but not enforced.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R3",
+   "description": "Relax X-R1 to permit a pattern-scoped ls-remote and drop the total-ref-count witness. Control N-R4 must REDDEN, naming the three non-absence causes of an empty result. If it stays green, the absence claim rests on an output that a typo reproduces exactly.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R4",
+   "description": "Delete V-R2 step 1 (scope enumeration) and step 3 (the by-name request), leaving a single-scope inventory. Control N-R5 must REDDEN, naming uellix-production-web as unmeasured rather than absent. If it stays green, DN-2's absence claim is scope-relative and the manifest does not notice.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R5",
+   "description": "Replace the eight-entry ADJUDICATIONS.D comparison with a comma-split normalization. Control N-R6 must REDDEN, yielding eleven names and four unproducible checks. If it stays green, the harness counts names without comparing them.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R6",
+   "description": "Add link.deployHooks[].url to V-R1's field allowlist. Controls N-R9 and sentinel SEN-R4 must both REDDEN. If either stays green, the prohibition is prose and the allowlist is not the operative control, contradicting RC-5.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R7",
+   "description": "Change WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN.ARMED to true with no certification verdict in the tree. Sentinel SEN-R2 and control N-R12 must REDDEN. If they stay green, the authority can arm itself and the staged grant is decorative.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R8",
+   "description": "Delete RC-12 (the absent-versus-null distinction) and let V-R3 record commandForIgnoringBuildStep simply as ABSENT. Control P-R8 must REDDEN, and the DN-14 rollback must become unconstructible, because restoring an absent key and restoring a null value are different operations. If it stays green, the prestate is a snapshot.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R9",
+   "description": "Delete V-R3's the_declared_insufficiency block, leaving V-R3 reading as a sufficient DN-3 read. A certifier must still REDDEN on DF-9, and if DF-9 is deleted too, the manifest's known_conditions entry must REDDEN. If all three can be removed and every control stays green, the authority can claim to unblock DN-14 when CM-8 already measured that it does not.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R10",
+   "description": "Narrow the authority back to EAD-4's declared scope (Vercel plane, DN-1/DN-2/DN-3) by deleting G-R1..G-R4 and X-R1. P-R3's partition must REDDEN, showing 7 nodes newly without reads whose clauses are unsatisfiable, and DF-8 must become unsupported. If the manifest stays green on a Vercel-only authority, it has been validating the declared gap rather than the derived one.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R11",
+   "description": "Change every read's freshness to F-LANE, including the mutation prestates. Control N-R18 must REDDEN for V-R3, V-R4, G-R2, G-R3 and X-R1. If it stays green, the freshness classes are labels rather than constraints and O-4 is unenforced.",
+   "test_file": "UNKNOWN"
+  },
+  {
+   "id": "MUT-R12",
+   "description": "Add POST to one read's http_methods_permitted. P-R7 must REDDEN, and the read must be refused outright rather than downgraded. If it stays green, the read-only property of this authority rests on convention rather than on a checked constraint.",
+   "test_file": "UNKNOWN"
+  }
+ ],
+ "exit_gates": [
+  "typecheck",
+  "secrets_scan",
+  "authority_seal_verify",
+  "ods_scope",
+  "ods_poststate"
+ ]
+}

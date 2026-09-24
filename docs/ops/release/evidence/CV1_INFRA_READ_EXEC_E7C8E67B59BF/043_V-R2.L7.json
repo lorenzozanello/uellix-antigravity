@@ -1,0 +1,95 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_qESEh1e9EKzObuarflAtRAKIX6WU&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:04.997Z",
+ "response_utc": "2026-09-24T03:27:06.697Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_A4m8kAVHi55RT2UNJWmR9w2WAjKF",
+    "name": "uellix-production-web",
+    "url": "uellix-production-gtpmlp3f1-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "c225c08bcb7ee98e5eea7ad8e54e1c84a0d26a64",
+     "githubRepo": "uellix-production"
+    },
+    "target": "production",
+    "createdAt": 1781752573489
+   },
+   {
+    "uid": "dpl_7u3fWw6CGXV4haqumwfLhRz8X1MR",
+    "name": "uellix-production-web",
+    "url": "uellix-production-787f8a6js-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "CANCELED",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "360dc19406dfab7d311a951704becef15638c761",
+     "githubRepo": "uellix-production"
+    },
+    "target": "production",
+    "createdAt": 1781752471207
+   },
+   {
+    "uid": "dpl_TSTnsdrNUTLguwriozfgbNtYVS6c",
+    "name": "uellix-production-web",
+    "url": "uellix-production-247ufwvqc-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "c225c08bcb7ee98e5eea7ad8e54e1c84a0d26a64",
+     "githubRepo": "uellix-production"
+    },
+    "target": "production",
+    "createdAt": 1781749471252
+   },
+   {
+    "uid": "dpl_51qQrN3TAQL7oRKjdswnHXm86Jje",
+    "name": "uellix-production-web",
+    "url": "uellix-production-lth89lpyd-lorenzozanello-5040s-projects.vercel.app",
+    "source": "import",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "c225c08bcb7ee98e5eea7ad8e54e1c84a0d26a64",
+     "githubRepo": "uellix-production"
+    },
+    "target": "production",
+    "createdAt": 1781747746972
+   }
+  ],
+  "pagination": {
+   "count": 4,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

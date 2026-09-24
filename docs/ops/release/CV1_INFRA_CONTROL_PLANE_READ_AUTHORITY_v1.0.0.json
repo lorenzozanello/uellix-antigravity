@@ -1,0 +1,855 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY",
+ "version": "1.0.0",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0",
+ "authority_class": "READ_ONLY_CONTROL_PLANE_MEASUREMENT_AUTHORITY__NOT_AN_EXECUTION_AUTHORITY",
+ "document_class": "READ_AUTHORITY__NO_MUTATION__NO_DEPLOYMENT__NO_REF_CREATION__NO_PROTECTION_CHANGE__NO_SETTING_CHANGE__NO_READ_PERFORMED_BY_THIS_LANE",
+ "append_only": true,
+ "mission_id": "CV1-INFRA-CONTROL-PLANE-READ-AUTHORITY-R1",
+ "lane": "CV1-INFRA-CONTROL-PLANE-READ-AUTHORITY-R1",
+ "role": "Derive and author the MINIMUM read-only authority required to execute the measurement nodes of the effective CV1 infrastructure execution DAG, closing the read-authority gap EAD-4. Authoring only. No read of either control plane was performed by this lane.",
+ "mode": "AUTHORITY_AUTHORING_ONLY",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_v1.0.0.json",
+ "AS_OF_BRANCH": "codex/cv1-infra-control-plane-read-authority-r1",
+ "AS_OF_PARENT_HEAD": "2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61",
+ "AS_OF_PARENT_TREE": "65ea2a54a2115994095edc428ebe951f012a9b8a",
+ "AS_OF_BASE_BRANCH": "integration/commercial-v1",
+ "as_of_measurement_note": "Every fact this artifact records as MEASURED was derived in the git plane or from already-tracked repository files at the parent HEAD named above. ZERO authenticated reads of the Vercel control plane and ZERO authenticated reads of the GitHub settings plane were performed by this lane, which is the condition that makes it an authority for those reads rather than a report of them.",
+
+ "NAMING_DERIVATION": {
+  "convention": "Sibling artifacts in docs/ops/release/ are named CV1_INFRA_<DOMAIN>_AUTHORITY_v<semver>.json with a companion CV1_INFRA_<DOMAIN>_TEST_MANIFEST_v<semver>.json.",
+  "domain_chosen": "CONTROL_PLANE_READ. It names the surface governed (two authenticated control planes plus the git ref plane) and the only verb permitted.",
+  "why_not_named_after_a_node": "The authority spans nine reads serving eleven nodes. Naming it after DN-1 or after U-1 would imply a scope narrower than the one derived node-by-node in NODE_TO_READ_MAP.",
+  "version": "1.0.0. A new lineage, not an amendment: no existing artifact in the chain grants any control-plane read, so there is nothing to append to."
+ },
+
+ "PURPOSE": {
+  "what_this_artifact_is": "The authority that permits a defined, bounded set of READ-ONLY operations against the Vercel control plane, the GitHub settings plane and the git ref plane, so that the READ_ONLY_MEASUREMENT nodes of the effective CV1 infrastructure execution DAG become executable.",
+  "what_this_artifact_is_not": [
+   "NOT an execution authority for any node. Discharging DN-1 does not authorize DN-8.",
+   "NOT a grant of any mutation on either plane, in any direction, under any condition.",
+   "NOT a report of any measurement. Every value herein about the hosted world is a CITATION of a prior dated measurement, carried as a falsification target and never as a substitute.",
+   "NOT an answer to RBD-1 or RBD-2. It authorizes the reads that give the owner measured consequences; it selects nothing.",
+   "NOT a closure of EAD-5, and NOT an authorization to edit .github/workflows/**."
+  ],
+  "the_gap_it_exists_to_close": "EAD-4 of docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json: 'NONE EXISTS. No artifact in this chain permits an authenticated Vercel control-plane read.' Recorded there as BLOCKING AND UNRESOLVED, with the note that the DAG cannot start until it is addressed.",
+  "the_scope_correction_this_lane_measured": "EAD-4 names the Vercel plane and three nodes (DN-1, DN-2, DN-3). A node-by-node derivation, with the per-plane node sets computed FROM NODE_TO_READ_MAP rather than written as prose, finds: SEVEN nodes require authenticated GitHub SETTINGS reads (DN-4, DN-7, DN-8, DN-9, DN-10, DN-11, DN-12); TWO require a git REF-plane read (DN-5, DN-7); and the Vercel node set is itself SIX, not three (DN-1, DN-2, DN-3, DN-7, DN-11, DN-14). EAD-4 therefore under-enumerates both the PLANES and, within its own named plane, the NODE SET. The parent records the GitHub limb separately as UD-2 and UD-4 but does not carry it into EAD-4's enumeration. This artifact spans three planes. See DERIVED_FINDINGS DF-8 and self_check SC-23."
+ },
+
+ "WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN": {
+  "the_grant": "Permission to perform EXACTLY the nine reads enumerated in READS, on EXACTLY the target identities each declares, returning EXACTLY the fields in each field_allowlist, under EXACTLY the freshness class each declares.",
+  "ARMED": false,
+  "the_grant_is_not_yet_armed": "ARMED = FALSE at materialization. This artifact's next_gate is independent certification. Until that certification records a PASS, no read authorized here may be performed. A lane reading under an uncertified read authority has substituted its own judgement for the gate.",
+  "why_the_grant_is_staged_rather_than_immediate": "The directing mission is AUTHORITY AUTHORING ONLY with an explicit DO NOT execute the reads instruction, and its NEXT_GATE names independent certification BEFORE actual read execution. Authored-but-unarmed is the only posture consistent with both.",
+  "what_arming_requires": [
+   "An independent certification of this artifact returning PASS or PASS_WITH_NONBLOCKING_FINDINGS.",
+   "A DN-0 freshness and binding rebaseline at the acting head, per the parent DAG's NODE_0_STALE_STATE_HANDLING, including re-derivation of this artifact's own nine pins.",
+   "The read-executing lane recording its credential provenance and scope per RC-9 BEFORE the first read."
+  ],
+  "non_transferability": "The grant attaches to the reads, not to the reader. It does not transfer to another operation on the same endpoint, to the same operation on a different target, or to any operation that becomes convenient once a credential is in hand. RC-10 governs.",
+  "expiry": "The document does not expire; every read it authorizes expires per its freshness class. An armed grant plus a stale read is a stale read."
+ },
+
+ "EFFECTIVE_PACKAGE_CONSUMED": {
+  "rule": "Nine blob pins. A consumer finding any one to differ MUST raise STOP_READ_AUTHORITY_BINDING_MISMATCH and MUST NOT carry this read set forward to the differing package.",
+  "derivation_method": "git rev-parse HEAD:<path> for each path, at HEAD = 2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61. Derived by this lane, not copied from any prior artifact's pin list.",
+  "pins": [
+   {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_v1.0.0.json", "blob": "0c36474b08076a844d32da8b194be79ab17915b1", "role": "THE CONTROLLING PARENT. Defines the 18 nodes whose read requirements this artifact serves, and defines EAD-4."},
+   {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "c2f29de382ad2584788c85ba7cfa5bd0a7275204", "role": "Corrects NB-1..NB-5, adds EAD-5, and its READ_AUTHORITY_GAP_PRESERVED block confirms EAD-4 remained unresolved as of the parent HEAD. That confirmation is this lane's warrant."},
+   {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_v1.0.0.json", "blob": "e8baab563e130bdc70a4cc3e87155ab8f3638add", "role": "The parent's test contract. Its N-1 refuses four named substitutes for DN-1; V-R1 is written so the authorized read cannot produce any of them."},
+   {"path": "docs/ops/release/CV1_INFRA_EXECUTION_DAG_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "59f3a24dc44b60b6da549125fde5547d282f33e8", "role": "Companion manifest amendment to the v1.0.1 DAG amendment."},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json", "blob": "f3236a1a26e2d868e14590c72f4a7752ffba801c", "role": "GRANDPARENT. Source of ADJUDICATIONS.D (the eight required check names), ADJUDICATIONS.O (O-1..O-4), FUTURE_MUTATIONS M-1..M-7 and UNKNOWNS U-1..U-6."},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "65af13040b440987d3d08b1fafc295e270dc6f38", "role": "THE ONLY SOURCE OF PINNED ENDPOINT PRECEDENT IN THE CHAIN. Its CORRECTED_MEASUREMENTS CM-2..CM-9 record the exact Vercel operations a prior lane actually performed. Every operation marked PINNED in READS cites a CM of this file; every other is marked RECALLED_NOT_PINNED."},
+   {"path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json", "blob": "4192849f46c988afddf9fce548ec2db9d8df4be3", "role": "AIC-8, AIC-9 and the corrected confirmation ordering. Cited for package completeness; no read authorized here touches the deployment-identity plane it governs."},
+   {"path": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json", "blob": "17c257b3b0b06b37601851ddf8fbc6aa4abdc6ae", "role": "OD-1..OD-5, the OD-4 sequencing rider, FRESHNESS_CARRYOVER and U6_FAIL_CLOSED_BINDING."},
+   {"path": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1.json", "blob": "4d99df8bd43263c17dda96b76f0321b789e8cb04", "role": "OD-2 maturation and U6_FAIL_CLOSED_BINDING_STATUS, whose narrow reported wording DN-2 exists to re-measure under the broad definition."}
+  ]
+ },
+
+ "MEASURED_PRESTATE_THIS_LANE": {
+  "rule": "Facts this lane measured itself, in the git plane or from tracked repository files. None required an authenticated control-plane read. Each is a DATED OBSERVATION, subject to the same re-measurement discipline this artifact imposes on everyone else.",
+  "RP-1_worktree": "Branch codex/cv1-infra-control-plane-read-authority-r1, HEAD 2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61, tree 65ea2a54a2115994095edc428ebe951f012a9b8a, working tree CLEAN under git status --porcelain --untracked-files=all.",
+  "RP-2_remote_identity": "git remote -v reports origin fetch and push both https://github.com/lorenzozanello/uellix-antigravity.git. This is LOCAL CONFIGURATION, not a remote read. It establishes what this worktree believes origin to be; it does not establish that the remote exists, is reachable, or is the repository the Vercel project is linked to. That last question is exactly what V-R1's link.repo limb exists to answer.",
+  "RP-3_tool_presence": {
+   "measured": "gh version 2.93.0 (2026-05-27); vercel 54.14.2; curl 8.19.0; jq ABSENT.",
+   "method": "command -v followed by --version. No authentication, no network, no control-plane contact.",
+   "what_it_establishes": "That a CLI surface for each plane EXISTS on this machine. Nothing about whether it is authenticated, what scope its credential carries, or whether it is the surface this authority permits.",
+   "a_contradicted_session_claim_recorded_rather_than_suppressed": "A session-start hook asserted 'The Vercel CLI is not installed.' That assertion is MEASURED FALSE: vercel 54.14.2 is present. Recorded because the programme has repeatedly measured that a negative capability claim must be verified rather than accepted, and because a read-executing lane that believed the hook would have written off a whole surface without testing it.",
+   "jq_absence_consequence": "jq is ABSENT. No read procedure may assume a jq-based redaction filter exists. RC-6's redaction obligation binds the LANE, not a tool; a lane lacking a filter must project fields by another means rather than storing a raw response."
+  },
+  "RP-4_workflow_corpus": {
+   "measured": "9 files under .github/workflows/ at the parent HEAD. Job-level name values include the eight required-check names of ADJUDICATIONS.D plus one further job name, 'Validate P1A Architecture and Security' (p1a-validation.yml:10), which is NOT among the eight.",
+   "the_comma_finding": "ci.yml:11 carries the job-level name 'Lint, typecheck, test, build'. That is ONE job name containing three commas, and it is ONE of the eight entries of the ADJUDICATIONS.D array. See DERIVED_FINDINGS DF-1.",
+   "the_step_level_name_finding": "golden-journey.yml line 162 carries a step-level artifact name value, not a job name. A sweep matching every 'name:' key in the corpus over-counts job names. See DERIVED_FINDINGS DF-2.",
+   "status": "A dated observation at the parent HEAD, carried to justify two controls on the DN-4 read. It does NOT substitute for RIDER-DAG-4, which requires the producibility evaluation to be re-derived at the SHA under consideration."
+  },
+  "RP-5_no_control_plane_contact": {
+   "the_claim": "ZERO authenticated control-plane requests were issued by this lane: zero to api.vercel.com and zero to api.github.com. ZERO remote git READS were performed: no git ls-remote and no git fetch. No value in this artifact about the hosted world was obtained by this lane.",
+   "why_the_absent_ls_remote_is_deliberate": "X-R1 is a read this artifact AUTHORIZES. Performing it here would execute the read the directing mission forbids executing, and would turn the artifact into a report of a measurement it exists to permit.",
+   "the_exception_stated_rather_than_left_to_falsify_the_claim": "PUBLICATION contacts origin. Pushing this branch and opening the draft pull request are git-plane WRITES of this lane's own commit plus a pull-request creation, both required by the directing mission. They read no ref state into this artifact, feed no field of it, and are performed AFTER materialization. They are named here so a certifier does not find a push in the reflog and read it as falsifying the claim above, and so the claim is not written more broadly than it is true.",
+   "the_distinction_that_matters": "The load-bearing property is not that this lane never touched the network. It is that NO VALUE IN THIS ARTIFACT WAS OBTAINED FROM EITHER CONTROL PLANE OR FROM A REMOTE REF. A push carries information outward and brings none in, so it cannot contaminate the derivation. A git ls-remote would bring information in, which is exactly why it was not performed."
+  }
+ },
+
+ "READ_SET_DERIVATION_METHOD": {
+  "rule": "The read set was derived NODE BY NODE from the effective DAG, not from EAD-4's enumeration and not from the directing mission's summary. Each node's re_measurement_required, prestate_to_capture and verification fields were read and converted into the reads they presuppose.",
+  "why_not_from_the_declared_gap": "EAD-4 declares the gap over one plane and three nodes. The programme has measured that a declared read gap can under-enumerate its own planes. Deriving from the gap would have reproduced its scope; deriving from the nodes tests it.",
+  "the_per_plane_node_sets_are_computed_not_written": "Each set below is the set of nodes whose reads array in NODE_TO_READ_MAP contains a read of that plane's prefix. They are stated so a certifier can recompute them by partitioning the map, never by trusting a sentence. This lane first wrote the GitHub set as FIVE nodes from prose recall and found it to be SEVEN when it partitioned the map; the omitted two were DN-8 and DN-9. The error is recorded rather than quietly fixed, because it is the SAME under-enumeration failure DF-8 attributes to EAD-4, reproduced inside the correction of it, and a certifier should know the count came from a partition and not from the prose that got it wrong.",
+  "what_the_node_by_node_pass_found": [
+   "EAD-4's three nodes (DN-1, DN-2, DN-3) do require Vercel reads, as declared — but the Vercel node set is SIX, not three: DN-7 (its release-reference limb), DN-11 and DN-14 also require Vercel reads. EAD-4 under-enumerates even the plane it names.",
+   "SEVEN nodes require authenticated GitHub settings reads: DN-4, DN-7, DN-8, DN-9, DN-10, DN-11 and DN-12. The parent records this need as UD-2 and UD-4 but does not fold it into EAD-4.",
+   "TWO nodes require a git ref-plane read against origin: DN-7 (prestate) and DN-5 (the measured consequences the owner decision needs).",
+   "DN-11 requires reads on BOTH authenticated planes plus a re-read of DN-1's and DN-2's results, because its verification asserts a cross-plane postcondition (that the default branch did not become coupled to the production branch).",
+   "TWO nodes require reads this artifact deliberately does NOT authorize, because a different authority controls them: DN-15 (PMV-2 / U-4) and DN-17. See GAPS_NOT_CLOSED."
+  ],
+  "minimality_test_applied": "For each candidate read, this lane asked whether removing it leaves some node's re_measurement_required, prestate_to_capture or verification clause unsatisfiable. A read that survives its own removal is not minimum and was dropped. Three candidates were dropped on this test: a repository visibility read (DN-16 is a NO_OP and performs no act, so nothing needs it), a Vercel deployment-protection read beyond what V-R4 already carries, and a GitHub Actions workflow-runs read (DN-4's predicate is over the workflow CORPUS at a SHA, which is a tracked-file parse, not a control-plane read)."
+ },
+
+ "NODE_TO_READ_MAP": {
+  "rule": "All eighteen nodes of the effective DAG are listed. A node with no read is listed with the reason, so a certifier can see the enumeration is exhaustive rather than selective.",
+  "map": [
+   {"node": "DN-0", "name": "FRESHNESS_AND_BINDING_REBASELINE", "reads": [], "reason": "Git-local and repository-file facts only: blob pins, integration head and tree, acting branch and HEAD. Already executable under existing authority. No control-plane read."},
+   {"node": "DN-1", "name": "U1_PRODUCTION_BRANCH_REMEASUREMENT", "reads": ["V-R1"], "reason": "MIN-1 requires link.repo, link.type and link.productionBranch in the SAME response, plus the deploy-hook limb and the automatic-deployment limb."},
+   {"node": "DN-2", "name": "U6_BROAD_COMMERCIAL_V1_ROLE_REMEASUREMENT", "reads": ["V-R2"], "reason": "Eight enumerated limbs over every project in every scope the credential can see, plus uellix-production-web by name whether or not an inventory returns it."},
+   {"node": "DN-3", "name": "U5_VERCEL_GIT_INTEGRATION_PRESTATE_CAPTURE", "reads": ["V-R3"], "reason": "The WHOLE Git integration block plus any Ignored Build Step, because the rollback is a verbatim restore of what was captured."},
+   {"node": "DN-4", "name": "O3_READINESS_AND_CHECK_PRODUCIBILITY_MEASUREMENT", "reads": ["G-R1", "G-R2", "G-R3"], "reason": "Requires the required-check configuration of each protected ref (G-R1 via G-R2's two namespaces) and which branch is the default (G-R3), intersected with a tracked-file parse of the workflow corpus that needs no authority."},
+   {"node": "DN-5", "name": "RBD-1_OWNER_SELECTION_OF_THE_SOURCE_REF", "reads": ["X-R1"], "reason": "The owner selects from candidates whose measured consequences include each candidate ref's current head on origin. Those heads are a ref-plane read; GP-2/GP-3/GP-5 of the parent are dated observations the parent itself forbids reusing as the creation SHA."},
+   {"node": "DN-6", "name": "RBD-2_OWNER_EXTENSION_OF_O1_SCOPE", "reads": [], "reason": "A policy decision over an option set already enumerated with measured consequences in the parent. No new read is required to pose it. The consequences it cites are refreshed by G-R2 and by DN-4, which are already authorized."},
+   {"node": "DN-7", "name": "M-8_CREATE_THE_RELEASE_BRANCH", "reads": ["X-R1", "G-R2", "V-R3"], "reason": "Four prestate limbs across three planes: ref absence on origin (X-R1), source-ref head (X-R1), whether any ruleset already matches release/** (G-R2, pattern limb), and whether any Vercel Git integration setting already references a release branch (V-R3)."},
+   {"node": "DN-8", "name": "M-3_PROTECT_MAIN", "reads": ["G-R2"], "reason": "The protection AND ruleset state of main. The parent measured ABSENT (404) at its authoring; that is a dated observation and, per DF-3, a 404 on one namespace is not absence of protection."},
+   {"node": "DN-9", "name": "M-1_PROTECT_INTEGRATION", "reads": ["G-R2"], "reason": "As DN-8, for integration/commercial-v1."},
+   {"node": "DN-10", "name": "M-9_PROTECT_THE_RELEASE_BRANCH", "reads": ["G-R2"], "reason": "As DN-8, for release/commercial-v1, which cannot exist before DN-7. Per DF-4 the pre-creation question is a RULESET PATTERN read, not a per-branch read, and the two are not interchangeable."},
+   {"node": "DN-11", "name": "M-7_PRODUCTION_BOUNDARY", "reads": ["V-R1", "V-R2", "V-R4", "G-R2", "G-R3"], "reason": "Its re_measurement_required names four things and its verification adds two cross-plane postconditions: that the default branch was not thereby coupled to the production branch (G-R3), and that no deploy hook was created or activated (V-R1 deploy-hook limb). V-R4 carries the live production deployment identity and the alias binding its verification names."},
+   {"node": "DN-12", "name": "M-2_PROTECT_THE_DEFAULT_BRANCH", "reads": ["G-R3", "G-R2"], "reason": "Which branch IS the default must be read from repository settings rather than assumed (G-R3), and then that branch's protection endpoints read (G-R2). DF-6 governs the ordering: G-R3 must precede G-R2 here, because the target of G-R2 is the output of G-R3."},
+   {"node": "DN-13", "name": "M-4_DEFAULT_BRANCH_CHANGE", "reads": [], "reason": "Class NOT_TRIGGERED under the current owner set. No act, therefore no prestate, therefore no read."},
+   {"node": "DN-14", "name": "M-6_IGNORED_BUILD_STEP", "reads": ["V-R3", "V-R1"], "reason": "DN-3's prestate re-captured immediately before the act (V-R3). V-R1 is additionally required because the v1.0.1 amendment's NB-2 added the edge DN-1 to DN-14: M-6's REQUIRED-not-ELEVATED confirmation posture is safe only if integration/commercial-v1 is freshly known not to be the production branch."},
+   {"node": "DN-15", "name": "PR201_STAGING_BINDING_SEQUENCE", "reads": [], "reason": "NOT AUTHORIZED HERE. Its PMV-2 prerequisite (re-measuring U-4, the branch-scoped Preview environment rows) is a Vercel read, but EAD-1 records that PR201 CONTROLS and the consumer STOPS. Carried as RNA-1 in GAPS_NOT_CLOSED rather than granted."},
+   {"node": "DN-16", "name": "M-5_REPOSITORY_VISIBILITY", "reads": [], "reason": "Class NO_OP under OD-2. No act, therefore no prestate, therefore no read. A repository visibility read was CONSIDERED and DROPPED on the minimality test: nothing in this DAG requires it, and a lane wanting to assert 'the repository is public' is making a claim this DAG does not need."},
+   {"node": "DN-17", "name": "SECRET_SCANNING_ALERT_1_ADJUDICATION", "reads": [], "reason": "NOT AUTHORIZED HERE. Gated on nothing in this DAG and governed by PR #206 under EAD-2. Carried as RNA-2. The prohibition on reading a secret-scanning alert's raw secret value is nonetheless stated in SECRET_BEARING_FIELD_PROHIBITIONS, because a credential in hand plus a nearby endpoint is exactly the condition under which scope creep happens."}
+  ],
+  "coverage_check": {
+   "method": "The two counts below are derived by enumerating the map array and partitioning it on whether the reads array is empty, NOT by prose arithmetic. The two node lists are given in full so a certifier can re-partition them without recomputing a sum.",
+   "total_nodes": 18,
+   "nodes_with_at_least_one_read": ["DN-1", "DN-2", "DN-3", "DN-4", "DN-5", "DN-7", "DN-8", "DN-9", "DN-10", "DN-11", "DN-12", "DN-14"],
+   "count_with_reads": 12,
+   "nodes_with_no_read": ["DN-0", "DN-6", "DN-13", "DN-15", "DN-16", "DN-17"],
+   "count_without_reads": 6,
+   "reasons_for_the_six": "DN-0 no control-plane fact; DN-6 no new read required to pose the decision; DN-13 class NOT_TRIGGERED; DN-16 class NO_OP; DN-15 and DN-17 controlled by external authorities (RNA-1, RNA-2).",
+   "partition_assertion": "12 + 6 = 18, and the two lists are disjoint and their union is the map's node set.",
+   "why_stated_this_way": "The programme has measured a hand-counted arithmetic label drifting from the array it summarizes. An enumerated partition is checkable; a sentence carrying a number is not."
+  }
+ },
+
+ "PLANES": {
+  "rule": "Three planes, distinguished because their credentials, their failure modes and their mutation risks are different. A control derived for one plane does not transfer to another.",
+  "planes": [
+   {"id": "PLANE-V", "name": "VERCEL CONTROL PLANE", "surface": "api.vercel.com REST over HTTPS, and/or the vercel CLI measured present at 54.14.2.", "credential_class": "A Vercel access token, personal or team-scoped.", "primary_hazard": "The same credential that reads a project setting can change it. The only separation is the HTTP verb and the endpoint chosen, both of which are the acting lane's own discipline. RC-1 and RC-10 exist because there is no platform-enforced read-only mode to lean on.", "second_hazard": "Some CLI paths write local state into the worktree (a .vercel directory). DN-1's own cost_bound field declares that a path requiring local state is a DIFFERENT act with a different prestate and that the node fails closed rather than performing it. RC-4 carries this."},
+   {"id": "PLANE-G", "name": "GITHUB SETTINGS PLANE", "surface": "api.github.com REST over HTTPS, and/or gh api measured present at 2.93.0.", "credential_class": "A GitHub token with repository administration read scope. Reading branch protection and rulesets requires admin-level access on most configurations, which is a materially more privileged credential than a code-read token.", "primary_hazard": "The credential required to READ protection is the credential that can DELETE protection. There is no lower-privilege read path for this data, which is why RC-9 requires the scope to be recorded and why G-R2's prohibited_operations list is explicit rather than implied.", "second_hazard": "Protection lives in TWO namespaces (classic branch protection and repository rulesets) plus a possible organization-level ruleset. A read of one namespace answering 404 proves nothing about the others. DF-3 governs."},
+   {"id": "PLANE-X", "name": "GIT REF PLANE", "surface": "git ls-remote against origin. Non-mutating by construction: it has no write mode.", "credential_class": "Whatever credential the repository requires for a remote listing; for a public repository this may be none.", "primary_hazard": "NOT mutation. The hazard is a FALSE ABSENCE: a pattern-scoped listing that returns nothing is indistinguishable from a pattern typo or a scoping error. DF-5 and RC-3 govern."}
+  ]
+ },
+
+ "FRESHNESS_CLASSES": {
+  "rule": "Every read declares exactly one class. The classes exist because the parent's O-4 and its INV-6 forbid inheriting a hosted observation, and because the ratification's FRESHNESS_CARRYOVER declines to carry U-1..U-6 forward as standing facts.",
+  "classes": [
+   {"id": "F-IMMEDIATE", "definition": "The read must be re-taken inside the same governed act as the operation that depends on it, immediately before that operation, with NO intervening act of any kind on either plane. A confirmation prompt is not an intervening act; any mutation, any other lane's act, and any human-scale delay that the acting lane cannot bound IS.", "applies_when": "The read is the prestate of a mutation, or is a precondition whose falsification would change whether the mutation is safe.", "what_it_forbids": "Taking the read at the head of a session and citing it at the end of the session."},
+   {"id": "F-LANE", "definition": "The read is valid for the duration of ONE measurement lane that performs no mutation on either plane, solely for the purpose of producing a measurement record. It expires at the lane boundary.", "applies_when": "The read produces evidence for an owner decision or a readiness finding, and no mutation is performed in the same lane.", "what_it_forbids": "Carrying the value into a later execution lane. A later lane re-reads under F-IMMEDIATE."},
+   {"id": "F-NEVER_STANDING", "definition": "A cross-cutting rule, not a third class: NO read authorized by this artifact ever becomes a standing fact, a setting-of-record, or an input another artifact may cite without re-measuring. A recorded measurement is admissible only as (a) evidence of the instant it names, or (b) a FALSIFICATION TARGET for a fresh measurement.", "basis": "U1_EXACT_DEFINITION_AND_STATUS.DO_NOT_INFER_FROM_PREVIOUS_MEASUREMENTS.the_inversion_that_is_permitted: corroborating a prior measurement with a fresh one is sound; substituting the prior for the fresh is not."}
+  ]
+ },
+
+ "PRODUCTION_IDENTITY_RULE": {
+  "id": "PIR-1",
+  "statement": "PRODUCTION IDENTITY MUST BE MEASURED AND MUST NEVER BE INFERRED FROM A PROJECT NAME, IN EITHER DIRECTION.",
+  "the_two_directions": [
+   "A project whose name contains 'production' (uellix-production-web) MUST NOT be treated as a production surface on that basis. A name is a label a human typed once.",
+   "A project whose name does NOT contain 'production' (uellix-antigravity) MUST NOT be treated as non-production on that basis. The chain has already measured that uellix-antigravity IS the project serving www.uellix.com, which is the exact case where the name-based heuristic gives the wrong answer."
+  ],
+  "what_DOES_constitute_measured_production_identity": {
+   "rule": "A project holds a Commercial V1 PRODUCTION role only on a CONJUNCTION of measured facts, each from an allowlisted field of an authorized read. Any single limb alone is insufficient.",
+   "limbs": [
+    "PIR-a: the project's Git link resolves to lorenzozanello/uellix-antigravity (V-R1 / V-R2 link.repo), OR the project holds some other measured Commercial V1 binding per DN-2's eight limbs.",
+    "PIR-b: the project has at least one deployment with target=production (V-R4 / V-R2 deployments limb), with the pagination cursor checked per RC-2.",
+    "PIR-c: a custom domain or alias resolves to that project or to one of its deployments (V-R4 alias limb / V-R2 domains limb).",
+    "PIR-d: the project's productionBranch and automatic-deployment posture determine whether a future push reaches PIR-b, which is what DN-1 measures and what distinguishes 'has served production' from 'will serve production'."
+   ],
+   "the_distinction_that_must_not_collapse": "PIR-b and PIR-c are statements about what HAS happened and what is CURRENTLY bound. PIR-d is a statement about what WILL happen on the next push. DN-1's MIN-1_scope_bound already refuses a deployment-derived answer as a substitute for the setting; PIR-1 restates it as an identity rule so the same substitution cannot re-enter through DN-2 or DN-11."
+  },
+  "the_asymmetry_for_DN-2": "DN-2's predicate is ANY Commercial V1 ROLE, which is strictly broader than a production role. A project can hold a Commercial V1 role while satisfying none of PIR-b, PIR-c or PIR-d: by holding Commercial V1 environment rows, by being bound to a Commercial V1 backing service, or by being dormant with a configuration that would make it a Commercial V1 surface the moment a domain were attached. PIR-1 therefore constrains how a POSITIVE production finding is established; it does NOT narrow DN-2's predicate, and a lane that evaluates only PIR-a..PIR-d has performed a PARTIAL DN-2.",
+  "failure_token": "STOP_PRODUCTION_IDENTITY_INFERRED_FROM_NAME"
+ },
+
+ "SECRET_BEARING_FIELD_PROHIBITIONS": {
+  "rule": "ABSOLUTE AND NON-WAIVABLE. These fields must not be requested, must not be read, must not be logged, must not be written into any evidence record, any commit, any transcript, any scratch file or any tool output. A response that returns one anyway must be projected to the field allowlist BEFORE anything is persisted, and the occurrence recorded as an incident under RC-6.",
+  "why_stated_as_a_list_rather_than_as_a_principle": "A principle ('do not read secrets') is evaluated by the acting lane at the moment it is most inconvenient. An enumerated list is checkable by a certifier and by a harness. Silence in the list is NOT permission; RC-5 makes the allowlist, not this list, the operative control.",
+  "PLANE_V_prohibited": [
+   {"id": "SBP-V1", "field_or_operation": "Any environment variable VALUE, and any use of the decrypt=true query parameter on any env endpoint.", "why": "The value IS the credential. CM-7's own precedent read key, target, gitBranch, type and timestamps only, explicitly via decrypt=false, and explicitly never values. That precedent is carried here as a hard prohibition rather than as a habit.", "note": "Enumerating rows by NAME and TARGET proves the ABSENCE of a binding by name; it never proves a PRESENT row is innocuous, because the target lives in the value. That limitation is a MEASUREMENT limit to be recorded, never a reason to decrypt."},
+   {"id": "SBP-V2", "field_or_operation": "The URL of any deploy hook (the url field of any deploy-hook object).", "why": "A deploy hook URL is a bearer capability: possession of the string is sufficient to trigger a deployment, with no further authentication. Writing one into a docs artifact would create a DURABLE, COMMITTED, PUBLICLY VISIBLE production-mutation capability inside the very repository whose visibility OD-2 ratifies as PUBLIC. The deploy-hook limb of DN-1 is satisfied by the hook's existence, id, name and target ref; it never requires the URL.", "allowlisted_substitute": "deploy hook id, name, ref, createdAt, and the COUNT with the pagination cursor state."},
+   {"id": "SBP-V3", "field_or_operation": "Any protection-bypass secret, automation bypass token, or password-protection password on a project (including any field of a passwordProtection object beyond its presence or absence, and any protection-bypass token object beyond its count).", "why": "These are credentials that defeat the very Deployment Protection posture CM-9 measured. Reading one is acquiring the bypass."},
+   {"id": "SBP-V4", "field_or_operation": "Any Vercel access token, integration token, OAuth credential, or the response of any endpoint whose purpose is to issue or list tokens.", "why": "Out of every node's need and squarely in the class of acquiring credentials rather than measuring configuration."},
+   {"id": "SBP-V5", "field_or_operation": "Any git credential material behind the Git integration, including any credential id resolved to its secret, and any webhook signing secret.", "why": "A credential id is an opaque handle and is allowlisted where a node needs it; the credential itself never is."},
+   {"id": "SBP-V6", "field_or_operation": "Deployment build logs, runtime logs, and function logs on any deployment.", "why": "No node requires them, and they are the least predictable container of incidental secret material on the platform. Excluded by the allowlist and named here so 'just to see why' does not become a path."}
+  ],
+  "PLANE_G_prohibited": [
+   {"id": "SBP-G1", "field_or_operation": "Any GitHub Actions secret, Dependabot secret, Codespaces secret, or environment secret, in any form, and any Actions VARIABLE value.", "why": "No node of this DAG requires them. The eight required-check names are job names in tracked workflow files, not secrets."},
+   {"id": "SBP-G2", "field_or_operation": "The raw exposed credential of any secret-scanning alert (the secret field of an alert object), and any alert LOCATION payload that embeds it.", "why": "DN-17 is not authorized here at all, but the alert endpoints sit on the same host as G-R1..G-R3 and the same token may reach them. Reading an alert's raw secret would re-expose, into a new artifact, exactly the credential PR #206's lane exists to adjudicate. Stated so proximity does not become permission."},
+   {"id": "SBP-G3", "field_or_operation": "Any webhook configuration secret (the config.secret of a repository or organization webhook), any deploy key (public or private), and any GitHub App installation token.", "why": "Out of every node's need; each is a credential rather than a configuration fact."},
+   {"id": "SBP-G4", "field_or_operation": "The GitHub token used to perform the reads, in any evidence record, any log, any error message and any commit.", "why": "A token echoed into a redacted-by-hand error string is the commonest way a credential reaches a public repository. RC-6 requires redaction BEFORE persistence, not after review."}
+  ],
+  "PLANE_X_prohibited": [
+   {"id": "SBP-X1", "field_or_operation": "Any credential embedded in a remote URL, and any remote URL variant carrying a token (a https://<token>@github.com/... form).", "why": "X-R1 targets origin as configured. If the configured remote were ever to carry an embedded credential, the evidence record must name the remote by its canonical credential-free form and record that a credential-bearing form was observed, without reproducing it."},
+   {"id": "SBP-X2", "field_or_operation": "Any object content. X-R1 lists refs and SHAs only; it does not fetch, and it does not read blobs or commit bodies from the remote.", "why": "A ref listing is the minimum that answers the prestate question. Fetching is a larger act with a different failure surface and is not required by any limb."}
+  ]
+ },
+
+ "READS": {
+  "rule": "NINE reads. Each declares, per the directing mission's contract: exact endpoint or tool surface, field allowlist, secret-bearing fields prohibited, freshness, target identity, evidence record and failure token. A read not listed here is not authorized, and a field not allowlisted is not authorized even on a listed read.",
+  "pinning_convention": {
+   "PINNED": "The operation is cited to a CORRECTED_MEASUREMENTS entry of CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json, which records a prior lane actually performing it. A PINNED operation is evidenced to have existed at that measurement's date. It is NOT evidenced to be current: DN-1's MIN-1 states that an endpoint versioned away is an infrastructure failure of the measurement, not evidence about the setting. RC-7 carries that as a general rule.",
+   "RECALLED_NOT_PINNED": "No artifact in the chain records this operation being performed. The endpoint path and field names are RECALLED and are therefore UNVERIFIED. A RECALLED operation MUST be resolved against the provider's live API surface at read time before it is relied upon, and a field that does not appear under its recalled name MUST NOT be reported as an absent FEATURE. RC-8 governs.",
+   "why_this_distinction_is_load_bearing": "The Vercel plane has one lane of endpoint precedent behind it; the GitHub settings plane has NONE, because UD-2 records that no lane in this chain has ever performed an authenticated GitHub settings read. Presenting both with equal confidence would manufacture evidence for the weaker half."
+  },
+  "reads": [
+
+   {
+    "id": "V-R1",
+    "name": "PROJECT_GIT_INTEGRATION_AND_PRODUCTION_BRANCH",
+    "plane": "PLANE-V",
+    "serves_nodes": ["DN-1", "DN-11", "DN-14"],
+    "purpose": "Establish, as of the instant of measurement, the value of the Production Branch setting for the project, whether automatic production deployment from Git is enabled for it, and whether any deploy hook exists. This is DN-1's MIN-1 in full, including the deploy-hook limb the parent carries explicitly because a re-measurement written against U-1's definition alone would silently drop it.",
+    "exact_operation": {
+     "primary": "GET https://api.vercel.com/v9/projects/{idOrName}",
+     "pinning": "PINNED",
+     "pinned_to": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json CORRECTED_MEASUREMENTS.corrections[5] (CM-6), which records this operation returning link.type, link.repo and link.productionBranch, and corrections[7] (CM-8), which records the same project record yielding commandForIgnoringBuildStep, gitForkProtection, autoAssignCustomDomains, gitLFS, autoExposeSystemEnvs and a zero deploy-hook count.",
+     "scope_qualifier": "If the project is team-scoped, the request MUST carry the team scope qualifier (teamId or slug). A request omitting it may return 404 or may resolve a DIFFERENT project of the same name in personal scope. See RC-11; a 404 here is STOP_SCOPE_AMBIGUOUS, never 'the project does not exist'.",
+     "cli_alternative": "A vercel CLI invocation is PERMITTED as a corroborating second surface only, and ONLY if it can be shown not to write local state into the worktree. CM-4 measured that a CLI surface returned an empty result where the API returned data, so a CLI answer is never the sole basis for a finding. RC-4 governs the local-state prohibition.",
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE", "HEAD_used_as_a_probe_substitute_for_GET"]
+    },
+    "field_allowlist": [
+     "id", "name", "accountId", "createdAt", "updatedAt",
+     "link.type", "link.repo", "link.org", "link.repoId", "link.productionBranch",
+     "link.deployHooks[].id", "link.deployHooks[].name", "link.deployHooks[].ref", "link.deployHooks[].createdAt",
+     "link.gitCredentialId (as an OPAQUE HANDLE ONLY; never resolved to the credential, per SBP-V5)",
+     "commandForIgnoringBuildStep",
+     "gitForkProtection", "gitLFS", "autoExposeSystemEnvs", "autoAssignCustomDomains", "autoJobCancelation",
+     "ssoProtection.deploymentType",
+     "passwordProtection (PRESENCE OR ABSENCE ONLY, never its contents, per SBP-V3)",
+     "trustedIps (PRESENCE OR ABSENCE ONLY)"
+    ],
+    "the_automatic_deployment_limb": {
+     "status": "SEMANTICALLY REQUIRED, LOCUS NOT PINNED.",
+     "required_semantic_content": "Whether a push to the measured production branch creates a production deployment automatically, as of the instant of measurement.",
+     "what_is_pinned": "NOTHING names the field that carries this. CM-6 pins productionBranch and the zero deploy-hook count; CM-8 pins five further project-record fields and then states explicitly that PER-BRANCH AUTOMATIC-DEPLOYMENT TOGGLES WERE NOT EXPOSED BY THE ENDPOINTS THAT LANE READ.",
+     "the_rule": "The acting lane MUST establish the semantic content from allowlisted fields of the response actually returned. It MUST NOT assert the answer from link.productionBranch alone, because a production branch is the branch that WOULD deploy, not proof that deployment is enabled. If no allowlisted field carries the semantic content, the read is INCOMPLETE and DN-1 DOES NOT DISCHARGE.",
+     "failure_token": "STOP_AUTODEPLOY_POSTURE_UNEXPOSED",
+     "what_the_incomplete_result_does_NOT_license": "It does not license proceeding on the assumption that automatic deployment is enabled, nor on the assumption that it is disabled. DN-1's own third fail-closed branch already states that a disabled toggle relaxes no control. An UNEXPOSED toggle relaxes even less.",
+     "why_this_is_written_as_a_gap_rather_than_as_a_field_name": "Naming a plausible field here would convert a recalled string into an authority-blessed one, and a subsequent lane finding that field absent would conclude the FEATURE was absent. RC-8 exists for exactly this, and the honest posture is to state the semantic requirement and let the read fail closed if the platform does not expose it."
+    },
+    "secret_bearing_fields_prohibited": ["SBP-V1", "SBP-V2", "SBP-V3", "SBP-V4", "SBP-V5", "SBP-V6"],
+    "freshness": {
+     "class_for_DN-1_as_a_measurement_record": "F-LANE",
+     "class_for_DN-11_and_DN-14": "F-IMMEDIATE",
+     "why_two_classes": "DN-1 executed as a standalone measurement lane produces a record and mutates nothing. The SAME read re-executed as the precondition of M-7 or M-6 is a prestate, and a prestate taken at the head of a session and cited at the end of it is not a prestate. INV-1 (as corrected by NB-2) names the exact eight-node set that may not begin before DN-1 completes with a FRESH measurement; 'fresh' is operationalized here as F-IMMEDIATE."
+    },
+    "target_identity": {
+     "rule": "The target MUST be pinned by BOTH an immutable identifier and a corroborating name, and the response MUST be checked to confirm it describes the intended repository.",
+     "requirements": [
+      "TI-1: the project is addressed by name uellix-antigravity AND the returned id is recorded. A subsequent read in the same lane SHOULD address it by the recorded id, because a name is mutable and an id is not.",
+      "TI-2: the returned link.repo MUST equal lorenzozanello/uellix-antigravity. If it does not, the measured setting does not govern this repository and the entire production-boundary analysis would be about a different codebase. This is DN-1's MIN-1_the_three_fields_that_must_come_back_together, carried as a hard assertion.",
+      "TI-3: link.repo, link.type and link.productionBranch MUST come back in the SAME response. Three values assembled from three responses do not establish that they describe one project at one instant.",
+      "TI-4: the account or team scope resolved MUST be recorded alongside the project id, per RC-11."
+     ],
+     "production_identity": "PIR-1 applies. The project is NOT treated as the production surface because it is the project this repository talks about; it is treated as such only on the measured conjunction PIR-a..PIR-d."
+    },
+    "evidence_record": {
+     "required_fields": [
+      "read_id = V-R1; node_ids served; plane = PLANE-V.",
+      "operation_as_issued: method, host, path including API version, and query parameter NAMES with their values, with any credential redacted. The API VERSION SEGMENT is recorded literally, because RC-7 turns on it.",
+      "request_timestamp_utc and response_timestamp_utc, both to the second.",
+      "http_status.",
+      "target_identity: project id, project name, resolved scope, and the returned link.repo.",
+      "the_allowlisted_projection: every allowlisted field that was RETURNED, with its value.",
+      "the_absent_list: every allowlisted field that was NOT returned, listed by name. An empty absent_list is an assertion and must be written explicitly rather than inferred from the projection being full.",
+      "for_each_absent_field: whether it was ABSENT FROM THE RESPONSE or PRESENT WITH A NULL OR EMPTY VALUE. RC-12 makes this distinction mandatory and STOP_FIELD_ABSENCE_AMBIGUOUS the consequence of failing to make it.",
+      "deploy_hook_count and the pagination cursor state of the hook listing, per RC-2.",
+      "the_automatic_deployment_limb: ESTABLISHED (with the field that established it) or UNEXPOSED.",
+      "tool_and_version, actor, and the authority arming record (this artifact's id, its certification verdict id).",
+      "falsification_statement: the prior measurement this read either corroborates or falsifies, named explicitly. For DN-1 that is CM-6 / productionBranch=main. Recorded as a TARGET, never as support."
+     ],
+     "prohibited_in_the_record": "The raw response body. Only the allowlisted projection is persisted. A digest MAY be recorded over the redacted projection; a digest over the raw body is prohibited because producing it requires holding the raw body."
+    },
+    "failure_tokens": ["STOP_U1_UNMEASURABLE", "STOP_VERCEL_ENDPOINT_VERSION_DRIFT", "STOP_PROJECT_IDENTITY_MISMATCH", "STOP_SCOPE_AMBIGUOUS", "STOP_AUTODEPLOY_POSTURE_UNEXPOSED", "STOP_FIELD_ABSENCE_AMBIGUOUS", "STOP_SECRET_BEARING_FIELD_RETURNED", "STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED"],
+    "forbidden_substitutes_carried_verbatim_in_substance": "DN-1's MIN-3 list is carried unchanged and this read is designed so it cannot produce any of them: citing v1.0.1 CM-6, CM-2 or CM-3; citing that main is currently an ancestor of integration/commercial-v1; citing that www.uellix.com answers 200 from main's head; inferring the setting from the repository default branch; or any answer sourced from the parent's MEASURED_PRESTATE_THIS_LANE. A read whose evidence record cites any of these in its allowlisted projection has not performed the read."
+   },
+
+   {
+    "id": "V-R2",
+    "name": "ACCOUNT_SCOPE_AND_PROJECT_INVENTORY_WITH_BROAD_ROLE_LIMBS",
+    "plane": "PLANE-V",
+    "serves_nodes": ["DN-2", "DN-11"],
+    "purpose": "Evaluate DN-2's predicate: for EACH project other than uellix-antigravity, and for uellix-production-web BY NAME whether or not an inventory returns it, does the project hold ANY Commercial V1 role, across all eight enumerated limbs.",
+    "exact_operation": {
+     "step_1_scope_enumeration": {"operation": "GET https://api.vercel.com/v2/teams", "pinning": "RECALLED_NOT_PINNED", "why_it_is_step_one": "A project inventory taken in ONE scope proves nothing about another scope. DN-2's predicate is over every project the account can see, so the SET OF SCOPES must be enumerated before the set of projects. A lane that lists projects in personal scope and reports 'uellix-production-web not found' has measured one scope and declared the account known. See DF-7.", "failure_token": "STOP_SCOPE_ENUMERATION_INCOMPLETE"},
+     "step_2_inventory_per_scope": {"operation": "GET https://api.vercel.com/v9/projects (per scope, paginated)", "pinning": "RECALLED_NOT_PINNED", "note": "RC-2 applies with full force: the pagination cursor MUST be followed to exhaustion and its terminal state recorded before any count or any absence claim. CM-3 records this programme getting a wrong figure twice from a default page size."},
+     "step_3_named_target": {"operation": "GET https://api.vercel.com/v9/projects/uellix-production-web (per scope)", "pinning": "PINNED (same endpoint shape as V-R1, per CM-6)", "why_separate_from_the_inventory": "DN-2's target_named_exactly requires the project be named EXPLICITLY and not by inference from an inventory. An inventory that omits it, for pagination, scoping or permission reasons, must not be read as its absence. A direct 404 in EVERY enumerated scope is the only admissible evidence of absence, and even that is a statement about what this credential can see."},
+     "step_4_role_limbs_per_project": {
+      "rule": "For each project found, the eight limbs of DN-2's enumeration_that_must_be_covered_not_only_custom_domains are evaluated. Each limb is recorded as EVALUATED or NOT EVALUATED. A finding that evaluated fewer than all eight is a PARTIAL measurement and does not discharge DN-2.",
+      "limbs": [
+       {"limb": "L1 custom domains attached, production or otherwise", "operation": "GET https://api.vercel.com/v9/projects/{id}/domains (paginated)", "pinning": "RECALLED_NOT_PINNED"},
+       {"limb": "L2 system and vercel.app domains serving a Commercial V1 surface", "operation": "Same domains listing; the distinction is in the returned domain rather than in the endpoint.", "pinning": "RECALLED_NOT_PINNED"},
+       {"limb": "L3 aliases assigned OR configured but not currently attached", "operation": "GET https://api.vercel.com/v4/aliases?projectId={id} (paginated)", "pinning": "PINNED to CM-4 and CM-5, which record this endpoint returning aliases with their bound deployment ids and pagination, and a single alias object read by name.", "note": "CM-4's lesson is binding here: an empty result from the CLI alias surface was read as an absence in the world and was an absence in the tool."},
+       {"limb": "L4 Git integration to this repository, and to which branch", "operation": "The link block of the step-2 or step-3 project record.", "pinning": "PINNED (CM-6)"},
+       {"limb": "L5 environment variables whose NAME or TARGET indicates a Commercial V1 binding", "operation": "GET https://api.vercel.com/v10/projects/{id}/env?decrypt=false", "pinning": "PINNED to CM-7, which records this exact operation reading key, target, gitBranch, type and timestamps only, never values.", "hard_bound": "decrypt=false is MANDATORY and decrypt=true is prohibited absolutely under SBP-V1. The measurement limit is stated with the result: enumerating rows proves the ABSENCE of a binding by name; it NEVER proves a PRESENT row is innocuous, because the target lives in the value."},
+       {"limb": "L6 binding to a Commercial V1 Supabase project or other backing service", "operation": "Inferred from L5's row NAMES and TARGETS only. NO Supabase contact of any kind is authorized by this artifact, in any environment.", "pinning": "N/A", "consequence": "L6 is EVALUABLE ONLY PARTIALLY by construction. A row named for a backing service establishes a candidate binding; the absence of such a row does not establish the absence of a binding, because a binding can be carried in a value this authority forbids reading. L6 is therefore recorded as PARTIAL in every case, and the STOP stays armed for it per DN-2's third fail-closed branch."},
+       {"limb": "L7 deployments, ready or otherwise, built from this repository", "operation": "GET https://api.vercel.com/v6/deployments?projectId={id} (paginated)", "pinning": "PINNED to CM-3, which records GET /v6/deployments with a target filter, a limit, a returned count and an explicit pagination.next check."},
+       {"limb": "L8 dormant or paused state, which does not retire a role", "operation": "Fields of the step-2 or step-3 project record indicating lifecycle state.", "pinning": "RECALLED_NOT_PINNED", "note": "If no allowlisted field carries lifecycle state, L8 is NOT EVALUATED rather than evaluated-as-active."}
+      ]
+     },
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE"]
+    },
+    "field_allowlist": [
+     "team/scope: id, slug, name.",
+     "project: id, name, accountId, createdAt, updatedAt, link.type, link.repo, link.org, link.repoId, link.productionBranch, lifecycle/paused state fields where exposed.",
+     "domain: name, apexName, projectId, verified, createdAt, redirect target NAME.",
+     "alias: uid, alias, deploymentId, projectId, created, updated.",
+     "env row: id, key, target, gitBranch, type, createdAt, updatedAt, and the CUSTOM ENVIRONMENT ID where present. NEVER value. NEVER decrypt=true.",
+     "deployment: uid, name, url, target, readyState, source, createdAt, meta.githubCommitSha, meta.githubCommitRef, meta.githubRepo.",
+     "pagination: the cursor or next field and its terminal state, for EVERY listing."
+    ],
+    "secret_bearing_fields_prohibited": ["SBP-V1", "SBP-V2", "SBP-V3", "SBP-V4", "SBP-V5", "SBP-V6"],
+    "freshness": {"class": "F-LANE for DN-2 as a measurement record; F-IMMEDIATE when re-executed as a precondition of DN-11", "why": "DN-2's the_binding_is_not_retired_by_a_clean_result states the U-6 binding continues to govern EVERY future re-measurement and that DN-2 recurs before each production-boundary act rather than discharging once. F-NEVER_STANDING makes that operative."},
+    "target_identity": {
+     "rule": "The measurement is over a SCOPE SET, not over a project. Its identity is the set of scopes enumerated, each by id and slug, plus the assertion that the enumeration was exhaustive per RC-2.",
+     "requirements": [
+      "TI-5: every scope the credential can see is enumerated and recorded, including personal scope.",
+      "TI-6: uellix-production-web is addressed BY NAME in every enumerated scope, and each result (found, with id / 404) is recorded per scope.",
+      "TI-7: every project found is recorded by id AND name; a finding about a project is bound to its id.",
+      "TI-8: the credential's own scope limit is recorded. A project invisible to this credential is UNKNOWN, not absent. See DF-7."
+     ],
+     "production_identity": "PIR-1 applies in both directions and is the reason step 3 exists as a named read rather than as a filter over step 2."
+    },
+    "evidence_record": {
+     "required_fields": [
+      "read_id = V-R2; node_ids; plane; and for EACH sub-operation: method, host, path with API version, query parameter names and values, request and response timestamps, status.",
+      "the_scope_set: every scope id and slug enumerated, with the terminal pagination state of the scope listing.",
+      "per_scope_project_inventory: every project id and name, with the terminal pagination state.",
+      "the_named_target_result: for uellix-production-web, per scope, FOUND (with id) or NOT FOUND (with the status code).",
+      "the_limb_matrix: an explicit 8-column record per project, each cell EVALUATED (with the operation and the finding) or NOT EVALUATED (with the reason). The matrix is REQUIRED even when every cell is clean, because DN-2's verification asserts the finding states which limbs were evaluated and which were not.",
+      "the_partiality_verdict: COMPLETE only if all eight limbs are EVALUATED for all projects in all scopes. Otherwise PARTIAL, with the unevaluated set named. L6 forces PARTIAL by construction; the record must say so rather than reporting a clean sweep.",
+      "the_role_verdict per project: NO ROLE FOUND AMONG EVALUATED LIMBS, or ROLE FOUND (naming the limb), never 'no role'.",
+      "falsification_statement: names the narrow prior finding U6_RESOLVED_NO_SECOND_ACTIVE_PROJECT as the target, and states whether this read corroborates or falsifies it UNDER THE BROAD PREDICATE."
+     ]
+    },
+    "failure_tokens": ["STOP_U6_UNMEASURABLE", "STOP_U6_PARTIAL", "STOP_SCOPE_ENUMERATION_INCOMPLETE", "STOP_PAGINATION_INCOMPLETE", "STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED", "STOP_PRODUCTION_IDENTITY_INFERRED_FROM_NAME", "STOP_SECRET_BEARING_FIELD_RETURNED"],
+    "the_finding_that_arms_the_stop": "ANY limb establishing a Commercial V1 role for any second project raises STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED per the ratification's U6_FAIL_CLOSED_BINDING, and DN-11, DN-10 and DN-7 are ALL blocked. This read does not adjudicate the consequence; it raises the token and stops."
+   },
+
+   {
+    "id": "V-R3",
+    "name": "GIT_INTEGRATION_PRESTATE_AND_IGNORED_BUILD_STEP",
+    "plane": "PLANE-V",
+    "serves_nodes": ["DN-3", "DN-7", "DN-14"],
+    "purpose": "Capture, IN FULL, the project's Git integration settings and any configured Ignored Build Step, as M-6's mandatory blocking prestate; and, for DN-7, establish whether any Vercel Git integration setting already references a release branch by name or pattern.",
+    "exact_operation": {
+     "primary": "GET https://api.vercel.com/v9/projects/{idOrName}, reading the Git integration block in full rather than a selected field.",
+     "pinning": "PINNED to CM-8, which records this project record yielding commandForIgnoringBuildStep (ABSENT), gitForkProtection=true, autoAssignCustomDomains=true, gitLFS=false, autoExposeSystemEnvs=true and zero deploy hooks.",
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE"]
+    },
+    "field_allowlist": "The full Git integration block of the project record, plus every field of V-R1's allowlist. A named subset is DELIBERATELY NOT GIVEN here: DN-3's re_measurement_required says the WHOLE block, because the rollback is a verbatim restore of what was captured, and an allowlist that named a subset would authorize capturing less than the inverse requires. The allowlist is therefore 'the whole Git integration block MINUS the prohibitions below', which is the only formulation under which a partial capture is detectable as partial.",
+    "the_declared_insufficiency": {
+     "status": "MEASURED, NOT SPECULATIVE. THIS READ IS ALREADY KNOWN TO BE INSUFFICIENT FOR DN-3 AS WRITTEN.",
+     "the_measurement": "CM-8 resolves U-5 as PARTIALLY RESOLVED and states, in its consequence_for_M-6 field, that M-6's mandatory prestate capture is RETAINED because PER-BRANCH AUTOMATIC-DEPLOYMENT TOGGLES WERE NOT EXPOSED BY THE ENDPOINTS THAT LANE READ, and that a partial prestate is not a prestate.",
+     "what_this_authority_can_and_cannot_do": "It can authorize the read. It CANNOT make the platform expose a field. Authorizing V-R3 therefore does NOT make DN-3 dischargeable; it makes DN-3 ATTEMPTABLE, and the attempt is expected to return PARTIAL unless the acting lane finds a surface CM-8's lane did not.",
+     "the_rule": "If the per-branch automatic-deployment posture is not established from allowlisted fields, the capture is PARTIAL, DN-3 does NOT discharge, and DN-14 (M-6) MUST NOT be executed, per DN-3's own fail_closed: a mutation whose prestate was not captured has no rollback.",
+     "failure_token": "STOP_U5_PRESTATE_PARTIAL",
+     "why_this_is_stated_rather_than_hoped": "An authority that grants a read and lets the consumer discover the insufficiency at execution time has moved a known blocker downstream. Recording it here means the next gate sees, before any credential is issued, that closing EAD-4 does not by itself unblock DN-14.",
+     "what_would_close_it": "Either a Vercel surface that exposes per-branch automatic-deployment toggles read-only, discovered and pinned by the acting lane; or an owner-side reading of the project's Git settings in the dashboard, which is the second admissible path U-1's resolved_by field already names and which this artifact does not and cannot constrain."
+    },
+    "the_release_branch_reference_limb_for_DN-7": {
+     "question": "Does any Vercel Git integration setting already reference a release branch by NAME or by PATTERN?",
+     "why_it_matters": "M-8's prestate names it because a Vercel setting referencing the branch would make the new ref a deployment trigger ON CREATION, changing M-8's consequence from inert to load-bearing and ESCALATING its confirmation from REQUIRED to ELEVATED.",
+     "what_must_be_examined": "productionBranch, commandForIgnoringBuildStep (whose script may branch on a ref name), every deploy hook's ref, and any branch-scoped configuration surfaced by the project record or by V-R2's L5 env rows scoped by gitBranch.",
+     "the_pattern_caveat": "A reference may be by exact name (release/commercial-v1) or by pattern (release/**, release/*). A search for the exact name alone would miss a pattern. Both forms must be searched, and the search terms used must be recorded in the evidence record so a certifier can see what was looked for.",
+     "failure_token": "STOP_RELEASE_REFERENCE_PRESENT (which is not an error: it is a finding that escalates M-8's confirmation and changes what DN-10 has to do)"
+    },
+    "secret_bearing_fields_prohibited": ["SBP-V1", "SBP-V2", "SBP-V3", "SBP-V4", "SBP-V5", "SBP-V6"],
+    "freshness": {"class": "F-IMMEDIATE", "why": "DN-14's re_measurement_required states the full Git integration prestate is re-captured IMMEDIATELY BEFORE the act. For DN-7's release-reference limb it is likewise F-IMMEDIATE, because the limb determines the confirmation level of the mutation that follows it. There is no F-LANE variant of this read: a prestate is by definition immediate."},
+    "target_identity": {"rule": "As V-R1's TI-1 through TI-4. Additionally TI-9: the captured prestate must be recorded in a form from which the EXACT INVERSE is constructible, and the record must state, in terms, what the restore operation would be. A prestate from which the inverse cannot be written is a snapshot, not a prestate.", "production_identity": "PIR-1 applies."},
+    "evidence_record": {
+     "required_fields": [
+      "All of V-R1's evidence fields.",
+      "the_full_block_projection: every field of the Git integration block returned, with its value.",
+      "the_inverse_statement: an explicit statement of the restore operation that would return the project to the captured state, written at capture time and not deferred.",
+      "the_per_branch_toggle_verdict: ESTABLISHED (with the field) or UNEXPOSED. If UNEXPOSED, the record carries STOP_U5_PRESTATE_PARTIAL and states that DN-14 is blocked.",
+      "the_release_reference_search: the search terms used (exact name AND each pattern form), the fields searched, and the result per field.",
+      "the_capture_completeness_verdict: COMPLETE or PARTIAL, stated explicitly. DN-3's verification asserts the capture is complete enough to constitute an exact inverse, and that a partial capture is not a prestate."
+     ]
+    },
+    "failure_tokens": ["STOP_U5_PRESTATE_PARTIAL", "STOP_VERCEL_ENDPOINT_VERSION_DRIFT", "STOP_PROJECT_IDENTITY_MISMATCH", "STOP_SCOPE_AMBIGUOUS", "STOP_FIELD_ABSENCE_AMBIGUOUS", "STOP_RELEASE_REFERENCE_PRESENT", "STOP_SECRET_BEARING_FIELD_RETURNED"]
+   },
+
+   {
+    "id": "V-R4",
+    "name": "PRODUCTION_DEPLOYMENT_IDENTITY_AND_ALIAS_BINDING",
+    "plane": "PLANE-V",
+    "serves_nodes": ["DN-11"],
+    "purpose": "Establish the CURRENT production deployment, the SHA it serves, and the binding of the production custom domain to it, so that DN-11's verification clause ('www.uellix.com continues to serve the intended deployment throughout') is a measurable postcondition rather than an assertion.",
+    "exact_operation": {
+     "step_1_production_deployments": {"operation": "GET https://api.vercel.com/v6/deployments?projectId={id}&target=production&limit={n}", "pinning": "PINNED to CM-3, which records GET /v6/deployments?target=production&limit=20 returning count 19 with pagination.next null, and records the generalization that no count may be frozen from a default page size."},
+     "step_2_alias_binding": {"operation": "GET https://api.vercel.com/v4/aliases?projectId={id} (paginated), and GET https://api.vercel.com/v4/aliases/{aliasOrId} for the specific production domain.", "pinning": "PINNED to CM-4 and CM-5, which record both forms, the returned bound deployment ids, and a single alias object with its created and updated timestamps."},
+     "why_the_alias_limb_is_included": "DN-11's verification names www.uellix.com by name. The mission's phrase 'live deployment identity/SHA' compresses two distinct facts: WHICH deployment is the latest production deployment, and WHICH deployment the production domain actually points at. CM-5 measured that the alias is a PERSISTENT OBJECT THAT IS REPOINTED rather than recreated, which is precisely the mechanism under which those two facts can diverge. A read of only step 1 would report a deployment the domain may not be serving.",
+     "anonymous_http_is_not_a_substitute": "Curling www.uellix.com and receiving 200 establishes that something is served. It does not establish WHICH deployment, and DN-1's MIN-3 already refuses that exact citation as a substitute. An anonymous HTTP check is permitted as corroboration and is never the identity measurement.",
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE"]
+    },
+    "field_allowlist": [
+     "deployment: uid, name, url, target, readyState, source, createdAt, ready, meta.githubCommitSha, meta.githubCommitRef, meta.githubRepo, meta.githubCommitAuthorName, creator.username.",
+     "alias: uid, alias, deploymentId, projectId, created, updated.",
+     "pagination cursor and terminal state for both listings."
+    ],
+    "the_source_field_note": "CM-2 measured that source='redeploy' distinguishes a MANUAL redeploy from source='git', an automatic push-deployment, and that the parent had wrongly inferred 'automatic' from the GitHub Deployment creator being vercel[bot]. The source field is therefore allowlisted and load-bearing: it is the field that distinguishes mechanism from actor.",
+    "secret_bearing_fields_prohibited": ["SBP-V1", "SBP-V2", "SBP-V3", "SBP-V4", "SBP-V5", "SBP-V6 (deployment LOGS are prohibited; deployment METADATA above is allowlisted)"],
+    "freshness": {"class": "F-IMMEDIATE", "why": "DN-11's verification is a THROUGHOUT clause: it asserts the domain continues to serve the intended deployment across the act. That requires a pre-act reading and a post-act reading bracketing the mutation, both immediate. A single reading taken earlier in the lane cannot establish a throughout."},
+    "target_identity": {
+     "rule": "Identity is the triple (project id, deployment uid, alias uid), plus the SHA.",
+     "requirements": [
+      "TI-10: the production deployment is identified by its uid (dpl_...), never by position in a listing. CM-3 records this lane's predecessor misreading a CLI listing and naming an older deployment as current.",
+      "TI-11: the SHA served is taken from the deployment's own metadata, and the branch it came from is recorded alongside it, so that 'the SHA production serves' and 'the branch production deploys from' are never conflated.",
+      "TI-12: the alias is identified by its uid AND its alias string, and its bound deploymentId is recorded. If the bound deploymentId differs from the latest production deployment uid, that is a FINDING, not a discrepancy to reconcile."
+     ],
+     "production_identity": "PIR-1: this read supplies PIR-b and PIR-c. It does NOT supply PIR-d, which is V-R1's. A lane citing V-R4 alone has measured what HAS happened, not what WILL happen on the next push."
+    },
+    "evidence_record": {
+     "required_fields": [
+      "read_id = V-R4; node_ids; plane; per-operation method, path with API version, query parameters, timestamps, status.",
+      "the_deployment_listing: total count, the terminal pagination state, and the full allowlisted projection of the CURRENT production deployment.",
+      "the_alias_listing: terminal pagination state, and for the production domain, its uid, its bound deploymentId, and its created and updated timestamps.",
+      "the_divergence_check: an explicit statement of whether the alias's bound deploymentId EQUALS the latest production deployment uid, stated as an assertion either way.",
+      "the_mechanism_field: the source value of the current production deployment, with the note that source names the mechanism and creator names the actor.",
+      "pre_act_and_post_act: for DN-11, TWO records bracketing the mutation, each complete, each timestamped."
+     ]
+    },
+    "failure_tokens": ["STOP_PRODUCTION_DEPLOYMENT_IDENTITY_UNRESOLVED", "STOP_PAGINATION_INCOMPLETE", "STOP_ALIAS_BINDING_DIVERGENT", "STOP_VERCEL_ENDPOINT_VERSION_DRIFT", "STOP_SECRET_BEARING_FIELD_RETURNED"]
+   },
+
+   {
+    "id": "G-R1",
+    "name": "REPOSITORY_IDENTITY_AND_SETTINGS_BASELINE",
+    "plane": "PLANE-G",
+    "serves_nodes": ["DN-4", "DN-12"],
+    "purpose": "Establish the repository's immutable identity and the settings-level facts the other GitHub reads must be bound to, so that a protection finding is bound to a repository rather than to a path string.",
+    "exact_operation": {
+     "primary": "GET https://api.github.com/repos/lorenzozanello/uellix-antigravity",
+     "pinning": "RECALLED_NOT_PINNED. NO artifact in this chain records ANY authenticated GitHub settings read. UD-2 states this in terms. The entire GitHub limb of this authority therefore rests on recalled endpoint shapes and MUST be resolved against the live API surface at read time per RC-8.",
+     "cli_alternative": "gh api --method GET repos/lorenzozanello/uellix-antigravity. The --method GET form is REQUIRED rather than optional: gh api defaults to GET but accepts a body, and an invocation carrying a body is silently promoted to POST. RC-1 makes the explicit verb mandatory on every gh api call.",
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE"]
+    },
+    "field_allowlist": ["id", "node_id", "full_name", "owner.login", "default_branch", "private", "visibility", "archived", "disabled", "fork", "created_at", "updated_at", "permissions (the authenticated credential's own permission object, required by RC-9)"],
+    "the_visibility_field_note": "visibility and private are allowlisted here, NOT because any node requires them (DN-16 is a NO_OP and was dropped on the minimality test), but because RC-6's redaction discipline is CONDITIONED on them: a public repository means every byte committed as evidence is world-readable immediately, which is what makes SBP-V2 and SBP-G4 severe rather than theoretical. The field is read to calibrate the redaction obligation, and reading it is NOT a measurement of OD-2 and must not be cited as one.",
+    "secret_bearing_fields_prohibited": ["SBP-G1", "SBP-G2", "SBP-G3", "SBP-G4"],
+    "freshness": {"class": "F-LANE for a readiness measurement; F-IMMEDIATE when its default_branch output is the TARGET of a mutation (DN-12). See G-R3, which is the default-branch read proper."},
+    "target_identity": {
+     "rule": "The repository MUST be pinned by its immutable id and node_id, not by owner/repo alone.",
+     "requirements": [
+      "TI-13: the returned full_name MUST equal lorenzozanello/uellix-antigravity. A repository can be renamed or transferred, and GitHub REDIRECTS the old path to the new one, so a request to the expected path can succeed against a repository that is no longer the expected repository.",
+      "TI-14: the returned id is recorded and every subsequent GitHub read in the same lane is asserted to be against that id.",
+      "TI-15: the local remote URL measured in RP-2 is compared against the returned full_name. They agreeing is a corroboration; them disagreeing is STOP_REPOSITORY_IDENTITY_MISMATCH and not a thing to reconcile."
+     ]
+    },
+    "evidence_record": {"required_fields": ["read_id = G-R1; node_ids; plane; method, host, path, timestamps, status.", "the allowlisted projection and the absent list, with the RC-12 absent-versus-null distinction.", "the redirect check: whether the response indicates the request was redirected from the requested path, recorded explicitly.", "the credential's permission object, per RC-9.", "the identity assertions TI-13, TI-14, TI-15, each stated as PASS or FAIL rather than implied by the absence of an error."]},
+    "failure_tokens": ["STOP_REPOSITORY_IDENTITY_MISMATCH", "STOP_GITHUB_ENDPOINT_DRIFT", "STOP_CREDENTIAL_SCOPE_INSUFFICIENT", "STOP_SECRET_BEARING_FIELD_RETURNED"]
+   },
+
+   {
+    "id": "G-R2",
+    "name": "REF_PROTECTION_STATE_ACROSS_BOTH_NAMESPACES",
+    "plane": "PLANE-G",
+    "serves_nodes": ["DN-4", "DN-7", "DN-8", "DN-9", "DN-10", "DN-11", "DN-12"],
+    "purpose": "Establish, for a named ref, the COMPLETE protection posture in force on it, and separately establish whether any repository ruleset MATCHES A PATTERN covering a ref that does not yet exist. These are two different questions and this read carries both.",
+    "the_two_namespaces_finding": {
+     "statement": "O-1 requires 'branch protection OR a repository ruleset'. These are TWO SEPARATE NAMESPACES on GitHub with separate endpoints, separate data shapes and separate precedence. A read of one returning 404 establishes nothing about the other.",
+     "why_this_is_load_bearing_here": "The parent records main's protection as 'Measured ABSENT (404) at the parent's authoring'. A 404 from the classic branch-protection endpoint is consistent with a repository ruleset fully protecting the branch. A lane re-measuring DN-8 with a single endpoint and getting 404 would report 'unprotected', configure classic protection, and have measured neither the prestate nor the result.",
+     "the_rule": "EVERY per-ref protection measurement MUST read BOTH namespaces AND the effective-rules view, and MUST report the UNION. A finding of 'unprotected' requires all three to agree.",
+     "failure_token": "STOP_PROTECTION_NAMESPACE_INCOMPLETE"
+    },
+    "exact_operation": {
+     "limb_A_classic_branch_protection": {"operation": "GET https://api.github.com/repos/{owner}/{repo}/branches/{branch}/protection", "pinning": "RECALLED_NOT_PINNED", "note": "A 404 here means NO CLASSIC PROTECTION, and nothing more. It MUST be recorded with that exact scope."},
+     "limb_B_repository_rulesets": {"operation": "GET https://api.github.com/repos/{owner}/{repo}/rulesets (paginated), then GET .../rulesets/{id} for each, to obtain its conditions and rules.", "pinning": "RECALLED_NOT_PINNED", "note": "The LIST form typically omits the rules and conditions. Reading only the list and concluding what a ruleset enforces is a shape error, not a scoping error. Each ruleset MUST be fetched individually."},
+     "limb_C_effective_rules_for_a_ref": {"operation": "GET https://api.github.com/repos/{owner}/{repo}/rules/branches/{branch}", "pinning": "RECALLED_NOT_PINNED", "purpose": "Returns the rules ACTUALLY APPLYING to that branch, including rules inherited from organization-level rulesets that limb B may not enumerate. This is the closest thing to a single authoritative answer and is therefore REQUIRED, not optional.", "the_org_caveat": "If the repository sits under an organization, an org-level ruleset may be invisible to limb B and may not be fully attributable in limb C. If the effective view shows a rule limb B cannot account for, the source is UNKNOWN and is recorded as such. STOP_RULESET_SOURCE_UNATTRIBUTABLE."},
+     "limb_D_pattern_match_for_a_nonexistent_ref": {"operation": "Limb B's ruleset inventory, with each ruleset's conditions.ref_name include and exclude PATTERNS inspected locally.", "pinning": "RECALLED_NOT_PINNED", "why_it_is_a_separate_limb": "DN-7's prestate asks whether any protection or ruleset ALREADY MATCHES release/**. release/commercial-v1 DOES NOT EXIST at that moment, so limbs A and C cannot be evaluated against it: a per-branch endpoint for a nonexistent branch returns 404 and that 404 is about the BRANCH, not about the RULES. The question is answerable ONLY by inspecting ruleset PATTERNS. See DF-4.", "required_pattern_forms_to_evaluate": ["the exact name release/commercial-v1", "release/*", "release/**", "any fnmatch or glob form whose expansion includes release/commercial-v1", "the ~ALL and ~DEFAULT_BRANCH special refs, which match without naming a pattern at all"], "failure_token": "STOP_RELEASE_PATTERN_RULESET_PRESENT (a FINDING that escalates M-8's confirmation from REQUIRED to ELEVATED and changes what DN-10 must do, not an error)"},
+     "limb_E_required_status_checks_union": {"operation": "The required status check configuration from BOTH limb A (its required_status_checks object) AND limb B/C (any required_status_checks rule in an applicable ruleset).", "pinning": "RECALLED_NOT_PINNED", "why_a_union": "Required checks can be configured in either namespace. Reporting O-2 from one namespace would under-report. DN-4's predicate is over 'the required-check configuration of each protected ref', which is the UNION, not either half.", "the_exact_string_rule": "Each required check is compared to the eight names of ADJUDICATIONS.D by EXACT STRING EQUALITY over the WHOLE name. DF-1 governs: one of the eight names contains commas and MUST NOT be split on them."},
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE"],
+     "an_explicitly_prohibited_convenience": "The DELETE and PUT forms of the branch-protection endpoint share the path with the GET form. A lane whose tooling templates a method is one character from deleting the protection it came to measure. RC-1 requires the verb be stated explicitly on every invocation, and this is the read that motivates it."
+    },
+    "field_allowlist": [
+     "classic protection: required_status_checks.strict, required_status_checks.contexts, required_status_checks.checks[].context, required_status_checks.checks[].app_id, required_pull_request_reviews (structure, counts and boolean flags), enforce_admins.enabled, required_linear_history.enabled, allow_force_pushes.enabled, allow_deletions.enabled, block_creations.enabled, required_conversation_resolution.enabled, lock_branch.enabled, restrictions (the PRESENCE and the LOGIN/SLUG lists only).",
+     "ruleset: id, name, target, source, source_type, enforcement, conditions.ref_name.include, conditions.ref_name.exclude, conditions.repository_name, rules[].type, rules[].parameters (structure and values), bypass_actors[].actor_type and actor_id.",
+     "effective rules for a ref: rules[].type, rules[].parameters, rules[].ruleset_id, rules[].ruleset_source_type.",
+     "pagination cursor / Link header state for every listing."
+    ],
+    "secret_bearing_fields_prohibited": ["SBP-G1", "SBP-G2", "SBP-G3", "SBP-G4"],
+    "freshness": {
+     "class_for_DN-4_as_readiness": "F-LANE",
+     "class_for_DN-7_DN-8_DN-9_DN-10_DN-11_DN-12": "F-IMMEDIATE",
+     "the_O-4_binding": "ADJUDICATIONS.O-4 requires protection be re-measured AT THE MOMENT OF EACH RELEASE DECLARATION, not once at setup, and states that a setting measured months earlier is an assumption wearing a measurement's clothes. F-NEVER_STANDING makes that operative for every consumer of this read."
+    },
+    "target_identity": {
+     "rule": "Identity is the pair (repository id from G-R1, ref name exactly as spelled), and for limb D the pair (repository id, pattern evaluated).",
+     "requirements": [
+      "TI-16: the repository id from G-R1 is asserted, not re-derived from the path.",
+      "TI-17: the ref is named EXACTLY: main, integration/commercial-v1, release/commercial-v1, or the branch G-R3 measured as the default. No variant is authorized, and a ref spelled differently is a different target.",
+      "TI-18: for DN-12, the target ref is the OUTPUT of G-R3 and must be recorded as such, with G-R3's timestamp, so a certifier can see the target was measured and not assumed. DF-6 governs the ordering.",
+      "TI-19: for limb D, the ref does NOT exist and the record must say so, so the 404s from limbs A and C are not later misread as evidence of no protection."
+     ]
+    },
+    "evidence_record": {
+     "required_fields": [
+      "read_id = G-R2; node_ids; plane; and PER LIMB: method, host, path, timestamps, status.",
+      "the_namespace_matrix: for the ref, an explicit row per limb (A, B, C) with its result, including the scoped meaning of any 404 ('no classic protection', not 'no protection').",
+      "the_union_verdict: PROTECTED or NOT PROTECTED, with the statement that all three limbs were read and agree. A verdict from fewer than three limbs is STOP_PROTECTION_NAMESPACE_INCOMPLETE.",
+      "the_ruleset_inventory: every ruleset id and name, its enforcement, its source_type, and the terminal pagination state.",
+      "for_limb_D: the list of pattern forms evaluated, verbatim, and the match result for each. The list of forms evaluated is REQUIRED even when all are clean, because a clean result from an unstated search is unverifiable.",
+      "the_required_checks_union: the set of required check context strings from both namespaces, each compared to the eight ADJUDICATIONS.D names by whole-string equality, with the comparison method stated (DF-1).",
+      "the_unattributable_rules: any rule visible in limb C that limb B cannot account for, listed by ruleset_id.",
+      "for_an_F-IMMEDIATE_use: the assertion that no act intervened between this read and the operation depending on it."
+     ]
+    },
+    "failure_tokens": ["STOP_PROTECTION_NAMESPACE_INCOMPLETE", "STOP_RULESET_ENUMERATION_INCOMPLETE", "STOP_RULESET_SOURCE_UNATTRIBUTABLE", "STOP_RELEASE_PATTERN_RULESET_PRESENT", "STOP_PROTECTION_STATE_UNREADABLE", "STOP_CREDENTIAL_SCOPE_INSUFFICIENT", "STOP_GITHUB_ENDPOINT_DRIFT", "STOP_PAGINATION_INCOMPLETE", "STOP_REPOSITORY_IDENTITY_MISMATCH"]
+   },
+
+   {
+    "id": "G-R3",
+    "name": "CURRENT_DEFAULT_BRANCH",
+    "plane": "PLANE-G",
+    "serves_nodes": ["DN-4", "DN-11", "DN-12"],
+    "purpose": "Establish WHICH branch is currently the repository default, by role rather than by name, because O-1 requires protection on THE DEFAULT BRANCH identified by role and DN-12 cannot know its own target without it.",
+    "exact_operation": {
+     "primary": "GET https://api.github.com/repos/lorenzozanello/uellix-antigravity, reading default_branch. This is the same HTTP operation as G-R1 and MAY be satisfied by the same response within its freshness window; it is carried as a SEPARATE READ because its freshness class, its failure token and its consumers differ.",
+     "pinning": "RECALLED_NOT_PINNED",
+     "why_it_is_not_merely_a_field_of_G-R1": "G-R1's default_branch under F-LANE is a baseline fact. G-R3's default_branch under F-IMMEDIATE is the TARGET OF A MUTATION. Collapsing them would let a lane satisfy DN-12's target identification with a value read at the head of the session, which is exactly what DN-12's re_measurement_required refuses when it says the default must be re-read from repository settings rather than assumed to be feature/sprint-0-foundation.",
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE"]
+    },
+    "field_allowlist": ["default_branch", "id", "node_id", "full_name"],
+    "secret_bearing_fields_prohibited": ["SBP-G1", "SBP-G2", "SBP-G3", "SBP-G4"],
+    "freshness": {"class": "F-IMMEDIATE for DN-12 and DN-11; F-LANE for DN-4's default-branch limb of the producibility matrix", "why_DN-11_needs_it": "DN-11's verification carries a postcondition from the DEP-1 falsification sweep: assert that the repository default branch was NOT thereby coupled to the production branch. CM-6 measured the two as DECOUPLED (default = feature/sprint-0-foundation, production = main) and warned a change to EITHER could couple them. M-7 changes one limb, so the decoupling is a POSTCONDITION to assert, and asserting it requires reading the other limb at that instant on the other plane."},
+    "target_identity": {"rule": "As G-R1's TI-13 and TI-14. Additionally TI-20: the measured default branch name is recorded and is thereafter the ONLY admissible target for DN-12. A later read returning a different name means the default changed mid-lane, which is STOP and re-capture per DN-12's own fail_closed, not a value to pick between."},
+    "evidence_record": {"required_fields": ["read_id = G-R3; node_ids; plane; method, path, timestamps, status.", "the measured default_branch value, verbatim.", "the falsification statement: names feature/sprint-0-foundation as the prior measured value (CM-6) and states CORROBORATED or FALSIFIED. Never cites it as the answer.", "the coupling assertion for DN-11: the default branch name AND the production branch name from V-R1, both timestamped, with an explicit statement that they are or are not the same ref.", "for DN-12: the assertion that no act intervened between this read and the protection mutation."]},
+    "failure_tokens": ["STOP_DEFAULT_BRANCH_UNRESOLVED", "STOP_DEFAULT_BRANCH_CHANGED_MID_LANE", "STOP_DEFAULT_AND_PRODUCTION_BRANCH_COUPLED", "STOP_REPOSITORY_IDENTITY_MISMATCH", "STOP_GITHUB_ENDPOINT_DRIFT"],
+    "the_producibility_consequence": "The parent's rider evaluation records the default-branch push limb as UNKNOWN, with the note that if the default is feature/sprint-0-foundation the answer is 0 of 8 and if a prior act changed it to main the answer is 1 of 8, and that it MUST BE MEASURED AT DN-4 and is not inferable. G-R3 is the read that resolves that cell. Resolving it does NOT license reusing the parent's two candidate answers; the producibility evaluation is re-derived at the SHA under consideration per RIDER-DAG-4."
+   },
+
+   {
+    "id": "G-R4",
+    "name": "CHECK_RUN_CONTEXT_OBSERVATION_ON_A_NAMED_SHA",
+    "plane": "PLANE-G",
+    "serves_nodes": ["DN-4"],
+    "purpose": "Corroborate, for a named SHA, which check contexts were ACTUALLY produced on it, as a falsification target for the workflow-corpus parse that establishes PRODUCIBLE(c, S(R)).",
+    "the_careful_scoping_of_this_read": {
+     "what_it_is_for": "RIDER_PRE_1's predicate PRODUCIBLE(c, S(R)) is defined over the WORKFLOW CORPUS at a SHA, which is a tracked-file parse requiring NO authority. This read does not establish producibility and is NOT required to. It exists to falsify a parse: if the parse says a check is producible and the platform shows it was never produced on a SHA where it should have been, the parse is wrong.",
+     "why_it_is_authorized_at_all": "A validation exercising only the expected-pass path proves nothing. The corpus parse is the primitive; this read is the negative control on it.",
+     "why_it_is_NOT_a_substitute_for_the_parse": "An observed check run is evidence about ONE SHA in the past. PRODUCIBLE is a claim about a SHA under consideration. Substituting the observation for the parse would repeat, on the GitHub plane, exactly the substitution DN-1's MIN-1_scope_bound refuses on the Vercel plane: a deployment-derived answer for a setting-derived question.",
+     "minimality_note": "This read SURVIVED the minimality test only in this falsification role. If a certifier judges the role insufficient to justify an additional authenticated surface, G-R4 may be struck without affecting any node's dischargeability, and DN-4 remains satisfiable by the corpus parse plus G-R2's limb E. It is marked accordingly as the one read this authority would give up first."
+    },
+    "exact_operation": {
+     "primary": "GET https://api.github.com/repos/{owner}/{repo}/commits/{sha}/check-runs (paginated), and/or GET .../commits/{sha}/status.",
+     "pinning": "RECALLED_NOT_PINNED",
+     "http_methods_permitted": ["GET"],
+     "http_methods_prohibited": ["POST", "PATCH", "PUT", "DELETE"]
+    },
+    "field_allowlist": ["check_run: id, name, status, conclusion, started_at, completed_at, head_sha, app.slug.", "combined status: state, statuses[].context, statuses[].state, sha, total_count.", "pagination cursor / Link header state."],
+    "the_output_field_prohibition": "check_run.output.text, check_run.output.summary and any log or annotation payload are NOT allowlisted. Job output is an unpredictable container of incidental secret material and no limb of DN-4 needs it. The NAME and the CONCLUSION are the whole measurement.",
+    "secret_bearing_fields_prohibited": ["SBP-G1", "SBP-G2", "SBP-G3", "SBP-G4"],
+    "freshness": {"class": "F-LANE", "why": "It is corroboration for a readiness finding and is never a mutation's prestate. No mutation depends on it."},
+    "target_identity": {"rule": "Identity is the pair (repository id from G-R1, the full 40-character SHA). An abbreviated SHA is NOT authorized as a target: abbreviations are ambiguous and the platform may resolve one to a commit the lane did not mean.", "requirements": ["TI-21: the SHA is recorded in full and its provenance stated (which ref's head it was, when, and from which plane that was read).", "TI-22: the returned head_sha is asserted equal to the requested SHA."]},
+    "evidence_record": {"required_fields": ["read_id = G-R4; node_id = DN-4; plane; method, path, timestamps, status.", "the full SHA and its provenance.", "the observed context NAME set, verbatim, with the terminal pagination state.", "the comparison to the eight ADJUDICATIONS.D names by whole-string equality, with DF-1's no-comma-splitting rule stated as applied.", "the falsification verdict: CORPUS PARSE CORROBORATED, or CORPUS PARSE FALSIFIED (naming the divergent context), stated explicitly either way."]},
+    "failure_tokens": ["STOP_CHECK_CONTEXT_OBSERVATION_UNREADABLE", "STOP_PAGINATION_INCOMPLETE", "STOP_SHA_IDENTITY_MISMATCH", "STOP_CORPUS_PARSE_FALSIFIED", "STOP_GITHUB_ENDPOINT_DRIFT"]
+   },
+
+   {
+    "id": "X-R1",
+    "name": "REMOTE_REF_INVENTORY_BY_NON_MUTATING_GIT_READ",
+    "plane": "PLANE-X",
+    "serves_nodes": ["DN-5", "DN-7"],
+    "purpose": "Establish the absence or presence of refs/heads/release/* and refs/tags/release/* on origin, and the head SHA of each candidate source ref, by a git read that has no write mode.",
+    "exact_operation": {
+     "primary": "git ls-remote origin",
+     "pinning": "PINNED IN KIND to the parent's GP-1, which records refs/heads/release/* and refs/tags/release/* measured ABSENT on 2026-09-22 by git ls-remote, and records that observation as DATED and requiring re-derivation.",
+     "the_unfiltered_form_is_mandatory": "The command MUST be issued WITHOUT a refspec pattern, and the filtering MUST be performed locally on the returned list. See DF-5. A pattern-scoped ls-remote returning nothing is indistinguishable from a pattern typo, a shell-glob expansion the lane did not intend, or a remote misconfiguration, and all three present as the same empty output that the absence claim needs.",
+     "the_nonemptiness_witness": "The TOTAL ref count returned MUST be recorded. A total of zero means the read failed, not that the remote has no refs. A nonzero total is the witness that makes a filtered-empty result meaningful.",
+     "the_tags_limb_is_mandatory": "M-8's prestate names refs/heads/release/* AND refs/tags/release/*. An invocation carrying --heads would silently drop the tags limb. The unfiltered form carries both, which is a second reason to require it.",
+     "mutating_git_operations_prohibited": ["git push in any form", "git fetch", "git remote add / set-url / remove", "git update-ref", "git tag", "git branch with any remote effect", "any --prune", "gh api against the git refs endpoints as a substitute, which would move this read onto PLANE-G and its credential"],
+     "why_ls_remote_is_safe_by_construction": "git ls-remote has no write mode. Unlike every Vercel and GitHub endpoint in this authority, its read-only property is structural rather than a matter of the verb chosen. That is why PLANE-X's primary hazard is a false absence rather than an accidental mutation."
+    },
+    "field_allowlist": ["the ref NAME and its object SHA, for every ref returned", "the total ref count", "the resolved remote URL in its canonical credential-free form"],
+    "secret_bearing_fields_prohibited": ["SBP-X1", "SBP-X2"],
+    "freshness": {
+     "class_for_DN-5": "F-LANE",
+     "class_for_DN-7": "F-IMMEDIATE",
+     "why_DN-7_is_immediate": "M-8's exact_source_ref.why_a_SHA_recorded_here_may_not_be_used states that the candidate heads MOVE, that the parent's GP-2, GP-3 and GP-5 are dated observations, and that an M-8 creating the branch at a SHA copied from the artifact has created it at a SHA that may no longer be any ref's head, which is a silent divergence between the branch's name and its lineage. The re-derivation must therefore be immediately before the create, in the same act.",
+     "the_correspondence_assertion": "M-8 requires recording the ref NAME the owner selected, the head SHA re-derived from origin immediately before the create, AND the assertion that the two correspond at that instant. The third item is a separate assertion and is not implied by recording the first two."
+    },
+    "target_identity": {
+     "rule": "Identity is the remote's canonical URL plus the full ref names.",
+     "requirements": [
+      "TI-23: the remote is resolved and recorded as https://github.com/lorenzozanello/uellix-antigravity.git. If the configured remote differs from RP-2's measurement, that is STOP, not a thing to accommodate.",
+      "TI-24: refs are recorded by FULL ref name (refs/heads/... , refs/tags/...), never by short name. release/commercial-v1 as a short name is ambiguous between a head and a tag, and the prestate asks about both.",
+      "TI-25: SHAs are recorded in full, 40 characters.",
+      "TI-26: for DN-7, the ref name is asserted to be EXACTLY release/commercial-v1. M-8's no_variant_is_authorized clause names release/commercial-v1.0.0, releases/commercial-v1 and release/cv1 as different acts requiring their own owner selection. The absence check and the creation target must use the same exact string, and the record must show it."
+     ]
+    },
+    "evidence_record": {
+     "required_fields": [
+      "read_id = X-R1; node_ids; plane = PLANE-X.",
+      "the command as issued, verbatim, including the absence of any refspec.",
+      "timestamp_utc, and the exit status.",
+      "the TOTAL ref count returned (the non-emptiness witness).",
+      "the local filter applied, stated verbatim, and the refs it matched.",
+      "the absence verdict, stated per limb: refs/heads/release/* and refs/tags/release/* separately, each ABSENT or PRESENT, never aggregated into one line.",
+      "for each candidate source ref: its full ref name and its full head SHA.",
+      "for DN-7: the correspondence assertion between the owner-selected ref name and its re-derived head SHA, at that instant.",
+      "the falsification statement: names GP-1's 2026-09-22 absence as the target and states CORROBORATED or FALSIFIED."
+     ]
+    },
+    "failure_tokens": ["STOP_GIT_REF_READ_FAILED", "STOP_REF_LISTING_EMPTY_WITNESS_FAILED", "STOP_RELEASE_REF_ALREADY_PRESENT", "STOP_REMOTE_IDENTITY_MISMATCH", "STOP_SOURCE_REF_HEAD_MOVED"]
+   }
+  ]
+ },
+
+ "CROSS_CUTTING_READ_CONTROLS": {
+  "rule": "These bind EVERY read. A read's own block may tighten them and may never relax them.",
+  "controls": [
+   {"id": "RC-1", "name": "EXPLICIT VERB", "control": "Every HTTP operation states its method explicitly, and every gh api invocation carries --method GET explicitly. No operation relies on a tool's default verb.", "why": "gh api defaults to GET but is silently promoted to POST when a body is present, and the branch-protection GET, PUT and DELETE forms share one path. The separation between reading protection and destroying it is one word on the command line."},
+   {"id": "RC-2", "name": "PAGINATION EXHAUSTION BEFORE ANY COUNT OR ABSENCE CLAIM", "control": "Every listing follows its cursor or Link header to exhaustion, and records the TERMINAL state. No count, no first row and no absence claim may be made from a page.", "why": "CM-3 records this programme producing a wrong figure twice from a default page size, and generalizes: any successor citing a platform listing MUST check the pagination cursor before treating a count or a first row as complete.", "failure_token": "STOP_PAGINATION_INCOMPLETE"},
+   {"id": "RC-3", "name": "AN EMPTY TOOL RESULT IS NOT AN ABSENCE IN THE WORLD", "control": "An empty or negative result from ONE surface is recorded as a fact about that surface. A claim of absence requires either a second surface agreeing, or an explicit statement that the claim is scoped to the surface read.", "why": "CM-4 records an empty CLI alias table being read as an absence of aliases, when the API returned them. The parent's own lesson: the emptiness was an artefact of the CLI surface, not a fact about the aliases; re-measurement discipline is needed across TOOLS, not only across TIME."},
+   {"id": "RC-4", "name": "NO LOCAL STATE WRITTEN BY A READ", "control": "No authorized read may write state into the worktree, including any link or pull step that creates a project-link directory or an environment file. If the only available path to a field requires writing local state, the read FAILS CLOSED and the node does not discharge.", "why": "DN-1's cost_bound states this in terms: a path requiring local state is a DIFFERENT act with a different prestate, and the node fails closed rather than performing it. It also protects the scope gate: an unexpected untracked directory collapses to a single git status line unless --untracked-files=all is passed.", "failure_token": "STOP_READ_WOULD_WRITE_LOCAL_STATE"},
+   {"id": "RC-5", "name": "THE ALLOWLIST IS THE GRANT", "control": "A field not named in a read's field_allowlist is not authorized, whether or not it appears in SECRET_BEARING_FIELD_PROHIBITIONS. Silence in the prohibition list is not permission; the allowlist is positive and the prohibition list is an emphasis on its most dangerous exclusions.", "why": "A prohibition list can never be exhaustive of a provider's evolving response shape. An allowlist can be exhaustive of a node's need."},
+   {"id": "RC-6", "name": "REDACT BEFORE PERSIST", "control": "A response is projected to the allowlist BEFORE anything is written to disk, to a transcript, to a log or to a commit. Raw bodies are never persisted. If a prohibited field is returned anyway, the occurrence is recorded as an incident naming the field, and the value is never reproduced.", "conditioned_by": "G-R1's visibility read: the repository is measured PUBLIC under OD-2, so anything committed is world-readable immediately and irrevocably. jq is ABSENT on this machine (RP-3), so the obligation cannot be delegated to a filter that is not installed.", "failure_token": "STOP_SECRET_BEARING_FIELD_RETURNED"},
+   {"id": "RC-7", "name": "ENDPOINT VERSION DRIFT IS AN INFRASTRUCTURE FAILURE, NOT EVIDENCE", "control": "Each read records the API version segment it issued. If a PINNED operation returns 404 or 410, or omits an allowlisted field it is pinned to have returned, the result is an INFRASTRUCTURE FAILURE OF THE MEASUREMENT and the node does not discharge. It is never evidence about the setting.", "why": "DN-1's MIN-1 states it directly: the citation establishes that a read-only path existed and what it was, but does NOT establish that the same endpoint version is still current, so DN-1 must re-verify the OPERATION as well as the VALUE.", "failure_tokens": ["STOP_VERCEL_ENDPOINT_VERSION_DRIFT", "STOP_GITHUB_ENDPOINT_DRIFT"]},
+   {"id": "RC-8", "name": "A RECALLED OPERATION IS RESOLVED BEFORE IT IS RELIED UPON", "control": "An operation marked RECALLED_NOT_PINNED must be resolved against the provider's live API surface at read time, and the resolved form recorded. A field that does not appear under its recalled name MUST NOT be reported as an absent FEATURE; it is an UNRESOLVED FIELD NAME until the live surface says otherwise.", "why": "The whole GitHub limb is RECALLED, because UD-2 records that no lane in this chain has ever performed an authenticated GitHub settings read. Treating a recalled field name's absence as a feature's absence would manufacture a negative finding out of a memory.", "failure_token": "STOP_RECALLED_OPERATION_UNRESOLVED"},
+   {"id": "RC-9", "name": "CREDENTIAL PROVENANCE AND SCOPE RECORDED BEFORE THE FIRST READ", "control": "Before the first read of a lane, the acting lane records, for each plane: where the credential came from, what scope or permission it carries, and what it could mutate if misused. For PLANE-G it additionally records the authenticated permission object returned by G-R1.", "why": "Reading branch protection generally requires an admin-level credential, which is the credential that can DELETE protection. The elevated privilege is a property of the READ that must be visible to a certifier, not a detail of how the read happened to be performed.", "failure_token": "STOP_CREDENTIAL_SCOPE_INSUFFICIENT"},
+   {"id": "RC-10", "name": "NO SCOPE CREEP FROM A CREDENTIAL IN HAND", "control": "Holding a credential that CAN perform an operation is not authorization to perform it. Any operation not enumerated in READS is refused, recorded, and escalated as an authority question rather than performed and disclosed afterwards.", "why": "Both planes' credentials are far broader than this grant. The grant attaches to the reads, not to the reader.", "failure_token": "STOP_READ_AUTHORITY_EXCEEDED"},
+   {"id": "RC-11", "name": "SCOPE AMBIGUITY IS NOT ABSENCE", "control": "On PLANE-V, a 404 from a scope-qualified or scope-unqualified request is recorded as a fact about THAT SCOPE. A project is ABSENT only when every enumerated scope returns 404 and the scope enumeration itself is recorded exhaustive. On PLANE-G, a 404 may equally mean 'not visible to this credential'.", "why": "DN-2's predicate is an absence claim, and an absence claim from one scope is the commonest way to under-measure an account.", "failure_tokens": ["STOP_SCOPE_AMBIGUOUS", "STOP_SCOPE_ENUMERATION_INCOMPLETE"]},
+   {"id": "RC-12", "name": "ABSENT FROM THE RESPONSE IS DISTINGUISHED FROM PRESENT AND NULL", "control": "For every allowlisted field not carrying a value, the record states whether the KEY was absent from the response or PRESENT with a null or empty value. Where the two cannot be distinguished, the field is UNRESOLVED, not absent.", "why": "CM-8 concludes 'commandForIgnoringBuildStep is ABSENT (no Ignored Build Step is configured)'. That inference is sound only if the provider omits the key when unset rather than returning it null, and the distinction is unrecorded. DN-14's rollback depends on which is true, because restoring 'absent' and restoring 'null' are different operations.", "failure_token": "STOP_FIELD_ABSENCE_AMBIGUOUS"},
+   {"id": "RC-13", "name": "NO READ IS A NODE'S DISCHARGE", "control": "Performing a read authorized here satisfies a node's MEASUREMENT obligation only. It never satisfies the node's verification clause, never satisfies its confirmation requirement, and never authorizes the mutation the node names. DN-1 discharged does not authorize DN-8.", "why": "This artifact's authority_class is READ_ONLY_CONTROL_PLANE_MEASUREMENT_AUTHORITY__NOT_AN_EXECUTION_AUTHORITY, and the parent's adjudication Q states there is no control-plane mutation a successor may perform on standing authority.", "failure_token": "STOP_READ_AUTHORITY_EXCEEDED"},
+   {"id": "RC-14", "name": "A PARTIAL MEASUREMENT IS RECORDED AS PARTIAL AND LEAVES ITS STOP ARMED", "control": "Where a read evaluates fewer than all the limbs its node enumerates, the finding is PARTIAL, the unevaluated limbs remain UNKNOWN, and any STOP attached to them remains armed. A PARTIAL finding is never reported as a clean result.", "why": "DN-2's third fail-closed branch states it exactly: partial absence is not absence. V-R2's L6 forces a PARTIAL by construction, and V-R3 is known in advance to be likely PARTIAL per CM-8."}
+  ]
+ },
+
+ "DERIVED_FINDINGS": {
+  "rule": "Findings this lane derived while converting nodes into reads. Each changes what a read must do. None is a restatement of a source clause.",
+  "findings": [
+   {"id": "DF-1", "severity": "HIGH", "finding": "ONE OF THE EIGHT REQUIRED CHECK NAMES CONTAINS COMMAS.", "measured": "ADJUDICATIONS.D.required_checks is an array of EIGHT strings whose first entry is 'Lint, typecheck, test, build'. That exact string is the job-level name at .github/workflows/ci.yml:11, measured at the parent HEAD.", "the_hazard": "A lane, script or harness that flattens or comma-splits the required-check list sees ELEVEN names where there are EIGHT, and then finds four of them ('Lint', 'typecheck', 'test', 'build') unproducible by any workflow. It would report a rider violation that does not exist, or, configuring from the same split list, would require four check contexts nothing can ever produce, creating exactly the permanently unsatisfiable gate RIDER_PRE_1 exists to prevent.", "the_control": "G-R2 limb E and G-R4 both require comparison by WHOLE-STRING EQUALITY over the entire name, with the comparison method stated in the evidence record. Splitting any required-check name on any delimiter is prohibited.", "why_it_survived_this_far": "The list reads as prose. Eight entries where one entry looks like four is invisible to a human scan and to any check that only counts."},
+   {"id": "DF-2", "severity": "MEDIUM", "finding": "A NAME-KEY SWEEP OVER THE WORKFLOW CORPUS OVER-COUNTS JOB NAMES.", "measured": "golden-journey.yml line 162 carries a step-level artifact name value. The eight required checks are JOB-level names. A sweep matching every name key in the corpus returns both.", "the_hazard": "The PRODUCIBLE predicate is defined over 'a job whose name value equals c exactly'. A parse matching name keys at any nesting depth can match a step-level or artifact-level name and report a check producible that no job produces.", "the_control": "The corpus parse underlying DN-4 must match name at JOB level specifically, and the evidence record must state the nesting level matched. This is a control on the tracked-file parse, which needs no authority; it is recorded here because G-R4 is the read that would falsify it."},
+   {"id": "DF-3", "severity": "HIGH", "finding": "A 404 FROM THE CLASSIC BRANCH-PROTECTION ENDPOINT IS NOT ABSENCE OF PROTECTION.", "derivation": "O-1 requires 'branch protection OR a repository ruleset'. These are two namespaces with separate endpoints. The parent records main's protection as measured ABSENT (404) at its authoring. If that 404 came from the classic endpoint alone, it is consistent with a ruleset protecting main completely.", "the_hazard": "DN-8, DN-9, DN-10 and DN-12 each re-measure protection. A lane reading one namespace, getting 404, and reporting 'unprotected' would (a) mis-state the prestate, (b) configure classic protection redundantly or conflictingly with an existing ruleset, and (c) report O-1 satisfied on evidence that never examined half of what O-1 names.", "the_control": "G-R2's three-limb requirement and its STOP_PROTECTION_NAMESPACE_INCOMPLETE. A verdict of NOT PROTECTED requires all three limbs read and agreeing.", "relation_to_prior_art": "This is the same shape as the programme's measured lesson that an enumeration proves absence only over what it enumerated, applied to a namespace split rather than to a row set."},
+   {"id": "DF-4", "severity": "HIGH", "finding": "THE PRE-CREATION PROTECTION QUESTION FOR THE RELEASE BRANCH CANNOT BE ANSWERED BY A PER-BRANCH READ.", "derivation": "M-8's prestate asks whether any branch protection or ruleset ALREADY MATCHES the pattern release/** on this repository, because such a ruleset would apply to the ref THE INSTANT IT IS CREATED and would change what M-9 has to do. At that moment release/commercial-v1 does not exist, so every per-branch endpoint returns 404 ABOUT THE BRANCH.", "the_hazard": "A lane asking 'is release/commercial-v1 protected?' via a per-branch endpoint receives 404, records 'not protected', creates the branch under M-8's REQUIRED (not ELEVATED) confirmation, and discovers a ruleset was matching it all along. M-8's own escalation clause, which raises its confirmation to ELEVATED exactly when this limb is dirty, would never have fired.", "the_control": "G-R2 limb D is a RULESET PATTERN inspection, structurally different from limbs A and C, with an enumerated list of pattern forms that must each be evaluated and recorded, including the special refs that match without naming a pattern. TI-19 additionally requires the record to state that the ref does not exist, so the 404s are not later misread."},
+   {"id": "DF-5", "severity": "MEDIUM", "finding": "A PATTERN-SCOPED LS-REMOTE CANNOT DISTINGUISH ABSENCE FROM A TYPO.", "derivation": "M-8's prestate requires the COMPLETE ABSENCE of refs/heads/release/* and refs/tags/release/*. The natural command carries the pattern as a refspec. Empty output then has at least four causes: the refs are genuinely absent; the pattern was misspelled; the shell expanded or consumed the glob; or the remote resolved to something unexpected. All four look identical.", "the_hazard": "The absence claim is a PRESTATE for a mutation. A false absence permits M-8 to create a ref over a ref that already exists, or to proceed believing a clean prestate it never measured.", "the_control": "X-R1 mandates the UNFILTERED form with local filtering, mandates recording the TOTAL ref count as a non-emptiness witness, and mandates the two limbs be reported separately rather than aggregated. A zero total is a failed read, not an empty remote.", "the_second_limb_it_also_protects": "An invocation carrying --heads silently drops the refs/tags/release/* limb the prestate names. The unfiltered form carries both."},
+   {"id": "DF-6", "severity": "MEDIUM", "finding": "DN-12'S READ ORDER IS LOAD-BEARING AND WAS CARRIED ONLY IMPLICITLY.", "derivation": "DN-12's target is 'the repository default branch', identified by ROLE. Its re_measurement_required names both WHICH branch is the default and that branch's protection endpoints. The second read's TARGET is the first read's OUTPUT.", "the_hazard": "A lane performing the protection read against an assumed target (feature/sprint-0-foundation, which the parent names as the thing not to assume) and the default-branch read afterwards as a confirmation would have protected a branch chosen from memory and then confirmed the memory. The two reads would both pass.", "the_control": "G-R3 MUST precede G-R2 for DN-12, TI-18 requires G-R2's evidence record to carry G-R3's output and timestamp as its target's provenance, and TI-20 makes the measured name the only admissible target. A later G-R3 returning a different name is STOP_DEFAULT_BRANCH_CHANGED_MID_LANE, not a value to choose between."},
+   {"id": "DF-7", "severity": "HIGH", "finding": "DN-2'S ABSENCE CLAIM IS SCOPE-RELATIVE AND THE SCOPE SET WAS NEVER ENUMERATED.", "derivation": "DN-2's predicate ranges over 'every other project in the account'. On Vercel, projects live in a personal scope and in zero or more team scopes, each addressed by a separate qualifier. A project listing without an enumerated scope set is a listing of one scope.", "the_hazard": "The reported narrow finding U6_RESOLVED_NO_SECOND_ACTIVE_PROJECT rests on uellix-antigravity being the sole active project serving current Commercial V1 custom domains. If that was measured in one scope, a second scope holding uellix-production-web would be invisible, and the broad re-measurement DN-2 exists to perform would reproduce the same blind spot under a broader vocabulary. A sweep by vocabulary catches what it was told to look for; it does not widen the surface it swept.", "the_control": "V-R2 step 1 makes SCOPE ENUMERATION the first operation, step 3 addresses uellix-production-web BY NAME in every enumerated scope, RC-11 forbids reading any 404 as absence, and TI-8 requires the credential's own visibility limit be recorded so an invisible project is UNKNOWN rather than absent."},
+   {"id": "DF-8", "severity": "HIGH", "finding": "EAD-4 UNDER-ENUMERATES ITS OWN PLANES AND ITS OWN NODES.", "derivation": "EAD-4 names 'DN-1 and DN-2, and DN-3' and describes the missing authority as one permitting 'an authenticated Vercel control-plane read'. Partitioning NODE_TO_READ_MAP by plane gives: GitHub settings SEVEN nodes (DN-4, DN-7, DN-8, DN-9, DN-10, DN-11, DN-12); git ref plane TWO (DN-5, DN-7); and Vercel SIX (DN-1, DN-2, DN-3, DN-7, DN-11, DN-14) rather than the three EAD-4 names. The under-enumeration is therefore of BOTH KINDS: a whole plane omitted, and the named plane's own node set understated.", "a_recurrence_of_this_failure_inside_this_artifact": "This lane's own first draft wrote the GitHub set as FIVE nodes, omitting DN-8 and DN-9, because it was written from prose recall rather than by partitioning the map. It was caught by computing the partition. Recorded because it demonstrates the failure is not a lapse peculiar to the parent: an enumeration written as a sentence drifts from the structure it summarizes, in the same document that identifies the drift. SC-23 makes the partition the operative statement and the prose derivative of it.", "why_this_is_not_a_contradiction_of_the_parent": "The parent DOES record the GitHub need, as UD-2 ('an authenticated GitHub repository-settings read, which this lane did not perform') and UD-4. The finding is that the need is recorded in the UNKNOWNS register and not folded into the EXTERNAL_AUTHORITY_DEPENDENCIES entry that a successor reads to learn what authority is missing. EAD-4's own field says it is 'the first thing the next gate should see' — and what it shows is one plane of three.", "the_hazard_it_creates": "A lane commissioned to close EAD-4 as written would have obtained a Vercel read authority, declared the gap closed, and discovered at DN-8 that protection is unreadable. The DAG would have stalled at its fourth node with an authority that had just been certified as sufficient.", "the_control": "This artifact spans three planes. PURPOSE.the_scope_correction_this_lane_measured states the correction, NODE_TO_READ_MAP proves it node by node, and the coverage_check makes the enumeration auditable.", "what_this_finding_does_NOT_do": "It does not amend EAD-4, does not edit the parent, and does not claim the parent erred. It records that the gap's declared scope is narrower than the gap, and closes the wider one."},
+   {"id": "DF-9", "severity": "MEDIUM", "finding": "CLOSING EAD-4 DOES NOT UNBLOCK DN-3 OR DN-14, AND THAT IS ALREADY MEASURED.", "derivation": "CM-8 resolves U-5 as PARTIALLY RESOLVED and states that per-branch automatic-deployment toggles were NOT EXPOSED by the endpoints that lane read, and that M-6's mandatory prestate capture is retained because a partial prestate is not a prestate.", "the_hazard": "A next gate reading 'EAD-4 closed' would reasonably conclude DN-1, DN-2 and DN-3 are now executable and that DN-14 follows. DN-3 is now ATTEMPTABLE; on the evidence available it is expected to return PARTIAL, and a PARTIAL DN-3 blocks DN-14 by DN-3's own fail_closed.", "the_control": "V-R3's the_declared_insufficiency block states this before any credential is issued, names STOP_U5_PRESTATE_PARTIAL, and names the two things that would actually close it: a read-only surface exposing per-branch toggles, or the owner-side dashboard reading that U-1's resolved_by field already names as the second admissible path.", "the_honest_statement": "An authority cannot make a platform expose a field. This one authorizes the attempt and refuses to let the attempt's likely failure be discovered downstream."},
+   {"id": "DF-10", "severity": "MEDIUM", "finding": "A DEPLOY HOOK URL IS A COMMITTABLE PRODUCTION-MUTATION CAPABILITY, AND THE DEPLOY-HOOK LIMB IS MANDATORY.", "derivation": "DN-1's deploy-hook limb is mandatory because a deploy hook is an independent path to a production deployment that does not pass through any branch push and is therefore invisible to the productionBranch setting entirely. The limb requires knowing whether hooks EXIST. The natural read returns the hook objects, and a hook object carries a URL that is a bearer capability.", "the_hazard": "The evidence record for DN-1 is a committed artifact in a repository OD-2 ratifies as PUBLIC. A deploy-hook URL written into it is a world-readable, durable trigger for a production deployment, published by the very lane whose purpose is to measure the production boundary.", "the_control": "SBP-V2 prohibits the URL absolutely and names the allowlisted substitute: id, name, ref, createdAt and the COUNT with its pagination state. Those satisfy the limb completely; the limb asks whether a hook exists and what it targets, never how to fire it.", "the_second_order_point": "DN-11's verification additionally requires asserting that no deploy hook was created or activated by the act. That assertion is made over the allowlisted projection, comparing counts, ids and refs across the pre-act and post-act records. It never requires a URL either."}
+  ]
+ },
+
+ "GAP_CLOSED": {
+  "id": "EAD-4",
+  "status_before": "BLOCKING AND UNRESOLVED. 'NONE EXISTS. No artifact in this chain permits an authenticated Vercel control-plane read.'",
+  "status_after": "CLOSED CONDITIONALLY AND MORE WIDELY THAN DECLARED. This artifact authorizes the Vercel reads EAD-4 names (V-R1, V-R2, V-R3), the GitHub settings reads the same graph requires but EAD-4 does not enumerate (G-R1..G-R4, per DF-8), the production-deployment identity read DN-11's verification requires (V-R4), and the git ref-plane read DN-5 and DN-7 require (X-R1).",
+  "the_three_conditions_on_the_closure": [
+   "ARMED = FALSE until independent certification. An uncertified read authority closes nothing.",
+   "The closure is of the AUTHORITY gap, not of the CAPABILITY gap. DF-9 records that DN-3 is expected to return PARTIAL on the pinned surface, and that a partial prestate blocks DN-14 regardless of authority.",
+   "U-1's resolved_by field names TWO admissible paths: an owner-side reading of the project's Git settings, or an authority permitting an authenticated settings read. This artifact is the second. It does not foreclose the first, and for the per-branch toggle limb the first may be the only one that works."
+  ]
+ },
+
+ "GAPS_NOT_CLOSED": {
+  "rule": "Named so the next gate does not read this artifact as making the whole DAG executable.",
+  "gaps": [
+   {"id": "EAD-5", "status": "UNCHANGED, BLOCKING, NOT DESIGNED.", "what": "RELEASE_CHECK_PRODUCIBILITY_GAP. Closing it requires editing .github/workflows/**, which this artifact is forbidden to do identically to its parent.", "relation_to_this_artifact": "NONE of the nine reads touches it. G-R2 and G-R4 MEASURE producibility; neither creates it. A lane finding 0 of 8 producible on the release branch has measured EAD-5, not closed it."},
+   {"id": "RNA-1", "node": "DN-15", "status": "NOT AUTHORIZED HERE, DELIBERATELY.", "what": "PMV-2, the mandatory pre-execution re-measurement of U-4 (whether the branch-scoped Preview environment correction has already been applied). It is a Vercel control-plane read, on the same endpoint shape as V-R2's L5 limb, against uellix-antigravity.", "why_not_granted": "EAD-1 records that PR201 CONTROLS and the consumer STOPS. DN-15 is an EXTERNAL_AUTHORITY node whose reads belong to PR201's lane and its manifest. Granting a read into another authority's node would be widening that authority by the side door.", "the_distinction_that_matters": "V-R2's L5 limb reads env rows on projects OTHER than uellix-antigravity, to evaluate DN-2's broad predicate. PMV-2 reads env rows ON uellix-antigravity, to evaluate U-4. Same endpoint shape, different target, different node, different authority. A lane must not treat V-R2's grant as covering PMV-2.", "what_the_next_gate_should_see": "DN-15 remains unexecutable after this artifact is certified, for a reason unrelated to EAD-4."},
+   {"id": "RNA-2", "node": "DN-17", "status": "NOT AUTHORIZED HERE, DELIBERATELY.", "what": "Any read of the repository's secret-scanning surface.", "why_not_granted": "EAD-2 records DN-17 as gated on nothing in this DAG and governed by PR #206. This artifact claims nothing about rotation, severity, disclosure or closure, and authorizes no read that could be cited toward any of them.", "the_proximity_hazard_recorded": "SBP-G2 prohibits reading an alert's raw secret. It is stated even though the node is out of scope, because G-R1..G-R4 put an admin-scoped GitHub credential in the acting lane's hands and the alert endpoints are on the same host. RC-10 governs: a credential that can is not an authority that may."},
+   {"id": "RNA-3", "node": "DN-5, DN-6", "status": "NOT A READ GAP. RECORDED SO IT IS NOT MISTAKEN FOR ONE.", "what": "RBD-1 and RBD-2 remain OPEN OWNER DECISIONS. X-R1 supplies the measured consequences DN-5 needs; it does not supply a selection.", "why_recorded": "Once the reads are armed and executed, the DAG's measurement nodes can discharge and it may appear ready to proceed. It will not be: DN-7 is blocked on RBD-1 and DN-10 on RBD-2, and neither is a measurement."}
+  ]
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": {
+  "rule": "Enumerated so no successor can read this artifact as conferring any of them. Silence elsewhere is not a grant; RC-5 and RC-10 make the enumerated READS the whole of the grant.",
+  "non_authorizations": [
+   "Any HTTP method other than GET against any endpoint on either plane, under any circumstance, including a method a tool selects by default.",
+   "Any mutation of any Vercel project setting, Git integration, automatic-deployment toggle, Ignored Build Step, environment variable, alias, domain or deployment.",
+   "Creating, promoting, redeploying or cancelling any deployment, in any environment.",
+   "Any mutation of any GitHub branch protection rule, repository ruleset, required-check configuration, default branch, or repository visibility.",
+   "Creating, deleting, updating or force-updating any git ref on any remote, including refs/heads/release/commercial-v1.",
+   "Executing M-1 through M-9, or any node of class HOSTED_MUTATION, on the strength of a read discharged under this artifact. RC-13 governs.",
+   "Reading any environment variable VALUE, or issuing decrypt=true on any endpoint.",
+   "Reading or recording any deploy hook URL, protection bypass token, password-protection password, Actions secret, Dependabot secret, webhook secret, deploy key, or the raw secret of any secret-scanning alert.",
+   "Reading deployment build, runtime or function logs, or check-run output, annotations or logs.",
+   "Any read against the Supabase control plane or any Supabase database, in any environment.",
+   "Performing PMV-2, the U-4 re-measurement, or any read serving DN-15. RNA-1 governs.",
+   "Performing any read serving DN-17, or making any claim about secret-scanning alert 1. RNA-2 governs.",
+   "Editing any file under .github/workflows/**, or implementing O-3 / E, or closing EAD-5.",
+   "Writing any local state into a worktree as part of a read, including any project-link directory or pulled environment file. RC-4 governs.",
+   "Selecting RBD-1 or RBD-2 on the owner's behalf, or treating a measured consequence as a selection.",
+   "Reopening, re-weighing, softening or extending any of OD-1 through OD-5.",
+   "Modifying, amending or reinterpreting any file of the frozen effective package or of the owner ratification chain.",
+   "Citing a read performed under this artifact as a STANDING FACT, a setting-of-record, or an input another artifact may reuse without re-measuring. F-NEVER_STANDING governs.",
+   "Citing this artifact as evidence about any hosted value. It performed no read and contains no measurement of either control plane.",
+   "Citing this artifact as evidence that the GitHub line is protected, that the production boundary is safe, or that any node has discharged.",
+   "Performing ANY read authorized here while ARMED = FALSE.",
+   "Allocating, inventing or implying any ODS or W2 identifier or lineage version, or allocating OD-6 or any further number in the PR #204 owner-decision namespace."
+  ]
+ },
+
+ "UNKNOWNS_THIS_LANE": {
+  "rule": "Facts this derivation would have used and could not establish without performing a read it is forbidden to perform. None is filled with an assumption.",
+  "unknowns": [
+   {"id": "UR-1", "unknown": "Whether the pinned Vercel endpoints (v9 projects, v10 env, v6 deployments, v4 aliases) are still current.", "why_unmeasured": "Establishing it requires issuing the request, which is the read this lane is forbidden to execute.", "consequence": "RC-7 makes drift an infrastructure failure of the measurement rather than a finding, and every PINNED operation carries STOP_..._ENDPOINT_DRIFT."},
+   {"id": "UR-2", "unknown": "The exact GitHub endpoint shapes, field names and pagination semantics for branch protection, rulesets, effective rules and check runs.", "why_unmeasured": "UD-2: no lane in this chain has ever performed an authenticated GitHub settings read, so there is no pinned precedent, and this lane may not create one.", "consequence": "The whole GitHub limb is RECALLED_NOT_PINNED. RC-8 requires resolution against the live surface at read time and forbids reading an unresolved field name's absence as a feature's absence. A certifier should treat the GitHub limb's field allowlists as SEMANTIC REQUIREMENTS whose spellings must be re-derived, not as verified field lists."},
+   {"id": "UR-3", "unknown": "Whether a read-only Vercel surface exists that exposes per-branch automatic-deployment toggles.", "why_unmeasured": "Same as UR-1. CM-8 measured that the endpoints ITS lane read did not expose them; that is not the same as no surface existing.", "consequence": "DF-9 and V-R3's declared insufficiency. DN-3 is attemptable and expected PARTIAL; DN-14 stays blocked until the limb is established or the owner reads the dashboard."},
+   {"id": "UR-4", "unknown": "The scope and privilege of the credentials a read-executing lane will actually hold on each plane, and whether they are sufficient for the ruleset and protection endpoints.", "why_unmeasured": "No credential was held or requested by this lane.", "consequence": "RC-9 requires provenance and scope to be recorded before the first read, and STOP_CREDENTIAL_SCOPE_INSUFFICIENT is a first-class failure token rather than an execution detail."},
+   {"id": "UR-5", "unknown": "Whether lorenzozanello/uellix-antigravity sits under an organization carrying organization-level rulesets.", "why_unmeasured": "It is a GitHub settings fact requiring the read this lane may not perform. The owner prefix reads as a user account, which is an inference from a string and is exactly what TI-13 and PIR-1 refuse in their own domains.", "consequence": "G-R2 limb C carries the org caveat and STOP_RULESET_SOURCE_UNATTRIBUTABLE. A rule visible in the effective view that the repository ruleset inventory cannot account for is UNKNOWN in origin, not absent."},
+   {"id": "UR-6", "unknown": "Whether any of the nine reads is rate-limited, throttled, or audit-logged in a way that would make repeated F-IMMEDIATE re-measurement impractical.", "why_unmeasured": "Same as UR-1.", "consequence": "Recorded because F-IMMEDIATE requires re-reading before each dependent act, and a read that cannot practically be repeated turns a freshness rule into an aspiration. A read-executing lane finding this to be so must escalate rather than relax the freshness class."}
+  ]
+ },
+
+ "FAILURE_TOKEN_REGISTRY": {
+  "rule": "Every token any read can raise, in one place, so a harness can enumerate them and a certifier can check none is raised only in prose. A token is a STOP: the node does not discharge, and no downstream node begins.",
+  "tokens": [
+   "STOP_READ_AUTHORITY_BINDING_MISMATCH — a pin of EFFECTIVE_PACKAGE_CONSUMED does not re-derive.",
+   "STOP_READ_AUTHORITY_UNARMED — a read was attempted while ARMED = FALSE.",
+   "STOP_READ_AUTHORITY_EXCEEDED — an operation or field outside the grant was performed or requested.",
+   "STOP_SECRET_BEARING_FIELD_RETURNED — a prohibited field was returned; the occurrence is an incident.",
+   "STOP_READ_WOULD_WRITE_LOCAL_STATE — the only available path writes worktree state.",
+   "STOP_CREDENTIAL_SCOPE_INSUFFICIENT — the credential cannot perform an authorized read.",
+   "STOP_PAGINATION_INCOMPLETE — a count or absence claim was reached without a terminal cursor.",
+   "STOP_FIELD_ABSENCE_AMBIGUOUS — absent-key and present-null could not be distinguished.",
+   "STOP_RECALLED_OPERATION_UNRESOLVED — a RECALLED operation was relied on without resolution.",
+   "STOP_U1_UNMEASURABLE — DN-1's setting cannot be read read-only.",
+   "STOP_VERCEL_ENDPOINT_VERSION_DRIFT — a pinned Vercel operation is gone or changed shape.",
+   "STOP_PROJECT_IDENTITY_MISMATCH — link.repo is not lorenzozanello/uellix-antigravity.",
+   "STOP_SCOPE_AMBIGUOUS — a 404 could be scope, not absence.",
+   "STOP_SCOPE_ENUMERATION_INCOMPLETE — the Vercel scope set was not enumerated exhaustively.",
+   "STOP_AUTODEPLOY_POSTURE_UNEXPOSED — DN-1's automatic-deployment limb has no allowlisted locus.",
+   "STOP_U6_UNMEASURABLE — DN-2 cannot be performed read-only.",
+   "STOP_U6_PARTIAL — fewer than all eight limbs evaluated; the STOP stays armed for the rest.",
+   "STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED — a second project holds a Commercial V1 role.",
+   "STOP_PRODUCTION_IDENTITY_INFERRED_FROM_NAME — PIR-1 violated in either direction.",
+   "STOP_U5_PRESTATE_PARTIAL — the Git integration capture is not an exact inverse; DN-14 blocked.",
+   "STOP_RELEASE_REFERENCE_PRESENT — a Vercel setting already references a release branch.",
+   "STOP_PRODUCTION_DEPLOYMENT_IDENTITY_UNRESOLVED — the current production deployment is not identified by uid.",
+   "STOP_ALIAS_BINDING_DIVERGENT — the production alias points somewhere other than the latest production deployment.",
+   "STOP_REPOSITORY_IDENTITY_MISMATCH — full_name is not the expected repository, or the request was redirected.",
+   "STOP_GITHUB_ENDPOINT_DRIFT — a recalled GitHub operation does not resolve.",
+   "STOP_PROTECTION_NAMESPACE_INCOMPLETE — fewer than all three protection limbs were read.",
+   "STOP_RULESET_ENUMERATION_INCOMPLETE — rulesets were listed but not individually fetched, or pagination was not exhausted.",
+   "STOP_RULESET_SOURCE_UNATTRIBUTABLE — an effective rule cannot be attributed to an enumerated ruleset.",
+   "STOP_RELEASE_PATTERN_RULESET_PRESENT — a ruleset pattern already covers release/commercial-v1; M-8 escalates to ELEVATED.",
+   "STOP_PROTECTION_STATE_UNREADABLE — protection cannot be read under the credential held.",
+   "STOP_DEFAULT_BRANCH_UNRESOLVED — the default branch could not be measured.",
+   "STOP_DEFAULT_BRANCH_CHANGED_MID_LANE — two reads in one lane disagree.",
+   "STOP_DEFAULT_AND_PRODUCTION_BRANCH_COUPLED — DN-11's decoupling postcondition fails.",
+   "STOP_CHECK_CONTEXT_OBSERVATION_UNREADABLE — G-R4 cannot be performed.",
+   "STOP_SHA_IDENTITY_MISMATCH — the returned head_sha is not the requested SHA.",
+   "STOP_CORPUS_PARSE_FALSIFIED — an observed context contradicts the producibility parse.",
+   "STOP_GIT_REF_READ_FAILED — ls-remote failed.",
+   "STOP_REF_LISTING_EMPTY_WITNESS_FAILED — the total ref count is zero; the read failed rather than the remote being empty.",
+   "STOP_RELEASE_REF_ALREADY_PRESENT — a release ref exists on origin; M-8's prestate is dirty.",
+   "STOP_REMOTE_IDENTITY_MISMATCH — origin is not the expected remote.",
+   "STOP_SOURCE_REF_HEAD_MOVED — the source ref head changed between measurement and use.",
+   "STOP_RIDER_VIOLATION — inherited from the parent; a required check is not producible on the evaluated SHA."
+  ],
+  "count": 42
+ },
+
+ "NEW_ODS_REQUIRED": {
+  "verdict": "NO",
+  "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+  "method": "This lane's two write-set paths were classified by EXECUTING the repository's own scope gate (pnpm ods:scope) against the frozen base, rather than by reading DEFAULT_PROTECTED_PATTERNS and reasoning about it.",
+  "result": "Both paths are ORDINARY. The gate reported SCOPE_BASE=2d25b65cd68b61fbd005d9b4fc6f614cdaf79c61, CHANGED_FILE_COUNT=2, PROTECTED_AUTHORITY=NONE, PROTECTED_AUTHORIZED_PATH_COUNT=0, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0, UNAUTHORIZED_PATHS=0, ODS_SCOPE=PASS, under a single ordinary --allow of docs/ops/release/**.",
+  "corroborating_read_of_the_pattern_list": "DEFAULT_PROTECTED_PATTERNS carries seven entries: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. docs/ops/release/** matches none. This reading CORROBORATES the executed classification and does not replace it.",
+  "an_independent_git_rederivation_that_agrees": "Before the gate could run (node_modules was absent in this fresh worktree, so tsx was unresolvable), the same facts were re-derived with git alone: git status --porcelain --untracked-files=all returned exactly two untracked paths, both under docs/ops/release/**, and a literal prefix scan of both against the seven protected patterns returned zero hits. The --untracked-files=all form was used deliberately, because a new untracked directory collapses to a single git status line without it. The two methods agree.",
+  "PROTECTED_AUTHORITY": null,
+  "consistency_with_precedent": "Identical to the classification the four immediately preceding authorities in this directory measured, for the same reason: both write-set paths are under docs/ops/release/**.",
+  "a_confidence_label_that_was_corrected_rather_than_left_understated": "This block first recorded the weaker confidence DERIVED FROM THE PATTERN LIST, NOT YET MACHINE-EXECUTED IN THIS LANE, because the gate could not run at authoring time. Dependencies were then installed and the gate WAS executed, so the label is corrected upward to match what was actually measured. Recorded because an authority that understates its own evidence is as inaccurate as one that overstates it, and a certifier comparing this lane to its parent should see the same confidence for the same reason.",
+  "reversal_condition": "If a future measurement finds this lane's write set requires ANY protected path, this verdict is void and the lane must stop and escalate rather than widen an allowlist."
+ },
+
+ "MACHINE_GATES_EXECUTED_THIS_LANE": {
+  "rule": "Gate output as returned by the repository's own scripts, recorded verbatim in substance. These are deterministic facts (class D of the programme's executor routing) and carry no LLM judgement.",
+  "known_condition_encountered": "node_modules was ABSENT in this fresh worktree, so every pnpm gate failed on an unresolvable tsx before dependencies were installed. Dependencies were then installed with pnpm install --frozen-lockfile (exit 0) and the gates were re-run. Recorded because the programme has previously measured that a fresh worktree does not inherit node_modules and that its deterministic facts must either be re-derived with git or unblocked by an install.",
+  "gates": [
+   {"gate": "authority_seal_verify", "result": "AUTHORITY_SEAL_VERIFY=PASS", "detail": "ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS."},
+   {"gate": "ods_scope", "result": "ODS_SCOPE=PASS", "detail": "As recorded in NEW_ODS_REQUIRED.result."},
+   {"gate": "typecheck", "result": "PASS", "detail": "tsc --noEmit returned no diagnostics. A docs-only write set cannot break it; the gate is run because a green claimed without running it is a claim, not a gate."},
+   {"gate": "secrets_scan", "result": "PASS", "detail": "scripts/scan-secrets.ts reported CURRENT_TREE: no credential material found, with both new documents present in the tree.", "why_this_one_is_substantively_interesting_here": "This artifact ENUMERATES secret-bearing fields by name across SBP-V1..SBP-V6, SBP-G1..SBP-G4 and SBP-X1..SBP-X2. A clean scan with those enumerations in the tree is live evidence for sentinel SEN-R4's distinction: naming a prohibited field is not carrying its value. Had the derivation quoted a real deploy hook URL or token as an illustration, this gate is the one that would have caught it."},
+   {"gate": "ods_poststate", "result": "ODS_POSTSTATE=PASS", "detail": "Five steps, each PASS at exit 0: typecheck, secrets-scan, authority-seal-verify, ods-scope, clean-state. The embedded prestate reported PRESTATE_CLEAN=PASS and ODS_PRESTATE=PASS on branch codex/cv1-infra-control-plane-read-authority-r1."}
+  ],
+  "why_no_head_or_tree_is_pinned_in_this_block": {
+   "the_omission_is_deliberate": "The HEAD and TREE at which these gates ran are NOT recorded here.",
+   "the_reason": "This block was added to the artifact AFTER the gates ran, and adding it changes the tree and, on amendment, the commit. Any HEAD or TREE written here would therefore name the commit that this very edit supersedes: a document pinning its own pre-edit state under a gate-passed claim. The programme has measured that exact failure, where an artifact pinned the blob of its own pre-commit draft under a MANDATORY AND VERIFIED heading while every external pin was correct.",
+   "what_a_consumer_does_instead": "Re-run the gates at the head under review. The gate output above is a record that they passed on this lane's write set, not a certificate bound to a commit id. AS_OF_PARENT_HEAD and AS_OF_PARENT_TREE pin the PARENT, which does not move, and the nine blob pins of EFFECTIVE_PACKAGE_CONSUMED pin external files, which likewise do not move under this lane's own edits. Those are the pins a certifier verifies.",
+   "the_general_rule_this_instantiates": "An artifact may pin anything outside itself. It may not pin its own materialization state, because the act of recording the pin changes the state being pinned."
+  },
+  "what_these_gates_do_NOT_establish": "Nothing about the correctness of the read set. They establish that the write set is in scope, that the sealed corpus is intact, that the tree carries no credential material and that the repository still typechecks. Whether the nine reads are minimum, sufficient and correctly bounded is a semantic question no gate here evaluates, and is what required_independent_review exists for."
+ },
+
+ "self_check": {
+  "SC-1": "PASS — Three planes are enumerated and each read is assigned to exactly one.",
+  "SC-2": "PASS — Nine reads. Each carries all seven fields the directing mission's contract requires: exact endpoint or tool surface, field allowlist, secret-bearing fields prohibited, freshness, target identity, evidence record and failure token.",
+  "SC-3": "PASS — All 18 nodes appear in NODE_TO_READ_MAP, partitioned into 12 carrying at least one read and 6 carrying none, each of the 6 with a stated reason. Both partitions are enumerated by node id in coverage_check rather than asserted as a sum, and 12 + 6 = 18 is stated there as an assertion a certifier can re-partition.",
+  "SC-4": "PASS — No Vercel environment variable value is readable under any read; decrypt=true is prohibited absolutely (SBP-V1) and the one env-reading limb (V-R2 L5) mandates decrypt=false, pinned to CM-7's precedent.",
+  "SC-5": "PASS — No GitHub secret is readable under any read. SBP-G1..SBP-G4 enumerate the prohibitions, including the raw secret of a secret-scanning alert, which is prohibited even though DN-17 is out of scope.",
+  "SC-6": "PASS — No mutation is authorized. Every read lists GET as the only permitted method and enumerates the prohibited ones. RC-1 requires the verb be explicit. EXPLICIT_NON_AUTHORIZATIONS restates the prohibition across both planes and the git plane.",
+  "SC-7": "PASS — PIR-1 states production identity must be measured and never inferred from a project name, in BOTH directions, and defines the conjunction PIR-a..PIR-d that does constitute it. V-R2 step 3 addresses uellix-production-web by name rather than by inventory inference, which is the operative consequence.",
+  "SC-8": "PASS — This lane performed ZERO authenticated reads on either control plane and ZERO remote git reads (no ls-remote, no fetch), so no value in this artifact about the hosted world was obtained by it. The write set corroborates it: two JSON files under docs/ops/release/**. RP-5 states the claim at exactly this scope and names the publication acts (push, draft pull request) as the one category of origin contact this lane performs, on the ground that they carry information outward and bring none in. The claim is deliberately not written as 'never touched the network', because that would have been made false by the mission's own required final step.",
+  "SC-9": "PASS — The grant is recorded ARMED = FALSE, conditioned on independent certification, consistent with the directing mission's DO NOT execute instruction and its NEXT_GATE ordering.",
+  "SC-10": "PASS — Every PINNED operation cites a CORRECTED_MEASUREMENTS entry of the v1.0.1 release-control amendment by index or id. Every operation without such a citation is marked RECALLED_NOT_PINNED, and the whole GitHub limb is so marked, because UD-2 records no GitHub settings read has ever occurred in this chain.",
+  "SC-11": "PASS — Ten derived findings (DF-1..DF-10). Each names a hazard a read must avoid and the control that avoids it. None is a restatement of a source clause; each was produced by converting a node's own clauses into an operation and observing what the operation could get wrong.",
+  "SC-12": "PASS — DF-8 records that EAD-4 under-enumerates its own planes and nodes, states that the parent DID record the GitHub need as UD-2 and UD-4, and declines to characterize the parent as in error. The correction is additive.",
+  "SC-13": "PASS — DF-9 and V-R3's declared insufficiency state, before any credential is issued, that closing EAD-4 does not unblock DN-3 or DN-14, and name what would.",
+  "SC-14": "PASS — Three gaps are recorded as NOT closed (EAD-5, RNA-1, RNA-2) plus one non-gap recorded so it is not mistaken for one (RNA-3, the open owner decisions).",
+  "SC-15": "PASS — Freshness is a declared class per read, not a duration. F-NEVER_STANDING makes the parent's O-4 and the ratification's FRESHNESS_CARRYOVER operative: no read here ever becomes a standing fact.",
+  "SC-16": "PASS — DN-1's MIN-3 forbidden-substitute list is carried in substance in V-R1, and V-R1 is designed so its evidence record cannot satisfy DN-1 by citing any of the four.",
+  "SC-17": "PASS — The failure token registry enumerates 42 tokens, and the count is stated. Each token appears in at least one read's failure_tokens list or in a cross-cutting control.",
+  "SC-18": "PASS — NEW_ODS_REQUIRED is MECHANICALLY_MEASURED_NOT_ASSERTED: pnpm ods:scope was executed against the frozen base and returned ODS_SCOPE=PASS with zero protected-path violations, corroborated by an independent git re-derivation taken before dependencies were installed. The block records that its own confidence label was first written weaker and then corrected upward when the gate became runnable, rather than being left understated.",
+  "SC-19": "PASS — A session-start hook's claim that the Vercel CLI is not installed is recorded as MEASURED FALSE rather than silently ignored (RP-3), because a read-executing lane believing it would have written off a surface without testing it.",
+  "SC-20": "PARTIAL — The minimality claim is argued, not proven. READ_SET_DERIVATION_METHOD states the test applied and names three candidates dropped by it, and G-R4 is marked as the one read that could be struck without affecting any node's dischargeability. A certifier should independently attempt to strike each remaining read and confirm a node clause becomes unsatisfiable. This lane could not perform that as a machine check.",
+  "SC-21": "PARTIAL — The GitHub limb's field allowlists are SEMANTIC REQUIREMENTS with RECALLED spellings, not verified field lists (UR-2). They cannot be verified without performing the read this lane is forbidden to perform. RC-8 carries the consequence; a certifier should not read them as measured.",
+  "SC-22": "PASS — No ODS or W2 identifier is allocated, requested or implied, and no number in the PR #204 owner-decision namespace is allocated.",
+  "SC-23": "PASS — THE PER-PLANE NODE SETS ARE A COMPUTED PARTITION, NOT A SENTENCE. Partitioning NODE_TO_READ_MAP.map by read prefix yields: PLANE-V = {DN-1, DN-2, DN-3, DN-7, DN-11, DN-14}, six nodes; PLANE-G = {DN-4, DN-7, DN-8, DN-9, DN-10, DN-11, DN-12}, seven nodes; PLANE-X = {DN-5, DN-7}, two nodes. The sets overlap (DN-7 appears in all three, DN-11 in two), so their sizes do not sum to 12 and no total is asserted from them. Every prose statement of these sets in PURPOSE, READ_SET_DERIVATION_METHOD and DF-8 is derivative of this partition. A certifier recomputes the partition and checks the prose against it, never the reverse. This control exists because the first draft's prose said FIVE for PLANE-G and was wrong by two."
+ },
+
+ "required_independent_review": {
+  "verdict_required": "One of: CONTROL_PLANE_READ_AUTHORITY_IC_PASS, CONTROL_PLANE_READ_AUTHORITY_IC_PASS_WITH_NONBLOCKING_FINDINGS, or CONTROL_PLANE_READ_AUTHORITY_IC_FAIL.",
+  "why_it_is_required_before_arming": "This artifact's grant is the first in the chain that lets a lane touch either hosted control plane. A defect in a field allowlist, in a freshness class or in a prohibition is a defect that reaches production infrastructure. WHAT_THIS_ARTIFACT_GRANTS_AND_WHEN records ARMED = FALSE for that reason.",
+  "the_reviewer_must_independently": [
+   "Re-derive all nine blob pins of EFFECTIVE_PACKAGE_CONSUMED from the head under review, and treat any mismatch as STOP_READ_AUTHORITY_BINDING_MISMATCH rather than as an editorial slip.",
+   "Perform its OWN node-by-node pass over all 18 nodes of the effective DAG and independently compute the read set, then compare it to READS. A reviewer that only checks the map for internal consistency has checked the map, not the derivation. DF-8 exists because the declared gap and the derived gap differed.",
+   "Attempt the MINIMALITY test independently: strike each read in turn and identify the node clause that becomes unsatisfiable. SC-20 records this as unproven here.",
+   "Check every PINNED claim against the cited CORRECTED_MEASUREMENTS entry by reading it, not by trusting the citation.",
+   "Check that no field allowlist admits a value the SECRET_BEARING_FIELD_PROHIBITIONS forbid, and that RC-5's positive-allowlist framing is not undercut anywhere.",
+   "Verify that no read's permitted methods include anything but GET, and that no evidence_record requires persisting a raw response.",
+   "Independently evaluate DF-1 by reading ADJUDICATIONS.D.required_checks and counting its array entries, and by reading .github/workflows/ci.yml at the head under review.",
+   "Independently evaluate DF-3 and DF-4 against the GitHub protection and ruleset model, and judge whether the three-limb requirement and the pattern limb are sufficient, or whether a fourth limb exists that this derivation missed.",
+   "Judge whether RNA-1's boundary is correctly drawn: whether V-R2's L5 grant could be read as covering PMV-2, and whether the target-based distinction holds.",
+   "Confirm that this artifact performed no read, by examining its write set and by checking that no value in it about the hosted world is presented as measured by this lane."
+  ],
+  "what_a_reviewer_should_NOT_treat_as_defects": [
+   "The GitHub limb being RECALLED_NOT_PINNED. That is UR-2, an honest consequence of UD-2, and pinning it would require performing the forbidden read.",
+   "V-R3 being expected to return PARTIAL. That is DF-9, surfaced deliberately rather than discovered downstream.",
+   "The absence of a repository-visibility read for DN-16. It was dropped on the minimality test and the reason is recorded."
+  ]
+ },
+
+ "final_state": "CONTROL_PLANE_READ_AUTHORITY_AUTHORED__ARMED_FALSE__NO_READ_PERFORMED__EAD4_CLOSED_CONDITIONALLY_AND_WIDER_THAN_DECLARED__EAD5_RNA1_RNA2_OPEN__RBD1_RBD2_STILL_OWNER_DECISIONS",
+ "next_gate": "Independent certification of this artifact and its companion manifest, against the effective DAG as amended by v1.0.1, with the reviewer performing its own node-by-node read-set derivation and its own minimality test. On PASS, the grant is ARMED and the read-execution lane may begin at DN-0 followed by DN-1, under its own mission and its own prestate. No hosted mutation is authorized at any point by this artifact or by its certification."
+}

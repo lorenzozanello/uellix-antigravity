@@ -1,0 +1,63 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L1",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v9/projects/prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY/domains?teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:33.399Z",
+ "response_utc": "2026-09-24T03:27:35.297Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "domains": [
+   {
+    "name": "thebalancecorp.org",
+    "apexName": "thebalancecorp.org",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "redirect": "www.thebalancecorp.org",
+    "createdAt": 1776095314792,
+    "verified": true
+   },
+   {
+    "name": "www.thebalancecorp.org",
+    "apexName": "thebalancecorp.org",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "redirect": null,
+    "createdAt": 1776095314476,
+    "verified": true
+   },
+   {
+    "name": "lorenzo-zanello.vercel.app",
+    "apexName": "vercel.app",
+    "projectId": "prj_DlMZ5PsKdjyDhyRdfOLYLrcFMijY",
+    "redirect": null,
+    "createdAt": 1776095038233,
+    "verified": true
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

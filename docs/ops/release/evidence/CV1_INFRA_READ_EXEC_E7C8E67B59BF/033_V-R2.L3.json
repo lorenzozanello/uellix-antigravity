@@ -1,0 +1,60 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:42.370Z",
+ "response_utc": "2026-09-24T03:26:45.683Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "asesoria-programa-sapiensa-lab-juni.vercel.app",
+    "created": "2026-06-23T20:36:41.803Z",
+    "deploymentId": "dpl_4Hyv6YRZ5wZn6Lu1xu2X5xXzwdKd",
+    "projectId": "prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT",
+    "uid": "00dac1d64244a21222149967429abc0a978ae60e4d8818d91718d03ebba4897a7c20b2a2fc730b19888cdc5bd6f16e671fe2f28b399f19676df069470bd74a17"
+   },
+   {
+    "alias": "asesoria-programa-sapiensa-lab-ju-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-06-18T16:32:12.710Z",
+    "deploymentId": "dpl_4Hyv6YRZ5wZn6Lu1xu2X5xXzwdKd",
+    "projectId": "prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT",
+    "uid": "40f8091aaa7c11ef74f443bf4e2651e22d1cae804b177aff2bb4fe54e07805a48cb22d4917c97ee275c0291a05882595ac342b33ae2978875c2339680b9937ce"
+   },
+   {
+    "alias": "asesoria-programa-sapi-git-ce3b83-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-06-18T16:32:09.182Z",
+    "deploymentId": "dpl_4Hyv6YRZ5wZn6Lu1xu2X5xXzwdKd",
+    "projectId": "prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT",
+    "uid": "8b7c639870b20ede1847e9a46a91b2c7c208765f6375ba0fca6f1e275c2a46dd8e3033a031d847c78d8dc534a6254fa2aabaabe401f7f6887fa9d02546a708da"
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

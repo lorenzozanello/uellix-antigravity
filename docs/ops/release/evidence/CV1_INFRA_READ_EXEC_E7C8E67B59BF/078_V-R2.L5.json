@@ -1,0 +1,135 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L5",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v10/projects/prj_o9TXoejOYoSmXeqA4WYs0NDMdau0/env?decrypt=false&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm"
+ },
+ "request_utc": "2026-09-24T03:28:24.521Z",
+ "response_utc": "2026-09-24T03:28:27.245Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "envs": [
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "JkiytsVUP2mjVDsZ",
+    "key": "SUPABASE_URL",
+    "createdAt": 1777688775033,
+    "updatedAt": 1777688775033
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "fxBjDC2qnjCgMFWW",
+    "key": "NODE_ENV",
+    "createdAt": 1777688775033,
+    "updatedAt": 1777688775033
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "l3W8ogjwI77X15GX",
+    "key": "SUPABASE_SERVICE_ROLE_KEY",
+    "createdAt": 1777688733703,
+    "updatedAt": 1777688733703
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "DMLoJ9koPyxUOegY",
+    "key": "GEMINI_API_KEY",
+    "createdAt": 1777688695804,
+    "updatedAt": 1777688695804
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "37UqEKxtHbQLKx9w",
+    "key": "STRICT_AI_PERSISTENCE",
+    "createdAt": 1777686917727,
+    "updatedAt": 1777686917727
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "Acgy227602XrpcAI",
+    "key": "VITE_USE_MOCK_AI",
+    "createdAt": 1777685951838,
+    "updatedAt": 1777685951838
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "glSLcz5S7I5xvTIr",
+    "key": "VITE_SUPABASE_URL",
+    "createdAt": 1777684780461,
+    "updatedAt": 1777684780461
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "XVFfjHtElVMzB3GR",
+    "key": "VITE_SUPABASE_ANON_KEY",
+    "createdAt": 1777684780461,
+    "updatedAt": 1777684780461
+   }
+  ]
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "ABSENT_KEY"
+  },
+  {
+   "path": "pagination.count",
+   "kind": "ABSENT_KEY"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

@@ -1,0 +1,176 @@
+{
+ "package_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT",
+ "version": "1.0.3",
+ "artifact_id": "CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.3",
+ "authority_class": "READ_AUTHORITY_AMENDMENT__DEFINES_A_NON_DN_INTROSPECTION_CLASS__NOT_AN_ARMING_ACT",
+ "document_class": "APPEND_ONLY_AMENDMENT__NO_DN_READ__NO_MUTATION__NO_M8__NO_M9__NO_SECRET_OBSERVATION",
+ "append_only": true,
+ "amends": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_v1.0.0.json",
+ "builds_on": ["docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.1.json", "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_AUTHORITY_AMENDMENT_v1.0.2.json"],
+ "owner_decision_consumed": "docs/ops/owner-ratifications/CV1_INFRA_DF11_CREDENTIAL_INTROSPECTION_OWNER_DECISION_v1.0.0.json",
+ "mission_id": "CV1-INFRA-RC9-DF11-INTROSPECTION-AND-ARMING-R2",
+ "mode": "AMENDMENT_AUTHORING_THEN_INTROSPECTION_ONLY",
+ "materialization_date": "2026-09-22",
+ "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_manifest_amendment": "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_TEST_MANIFEST_AMENDMENT_v1.0.3.json",
+ "AS_OF_PRE_AMENDMENT_HEAD": "d3582d6f4f12c7751435dc0d98c80780078065f3",
+ "AS_OF_PRE_AMENDMENT_TREE": "06045203679c1b87a9ebbdde4050edf098344963",
+
+ "PURPOSE": {
+  "closes": "DF-11. RC-9a required a credential scope that no enumerated operation could produce, while RC-10 forbade reaching outside the enumeration to get it.",
+  "how": "By defining, under the owner's DF11 ratification, a NEW OPERATION CLASS that is disjoint from the nine governed DN reads and bound solely to AC-1 LIMB_3 / RC-9a.",
+  "what_it_does_not_do": [
+   "Does not add, remove or alter any of the nine DN reads.",
+   "Does not arm the grant. AC-1 still governs and all three limbs must hold.",
+   "Does not authorize observing any secret-bearing field, under any framing.",
+   "Does not edit v1.0.0, v1.0.1 or v1.0.2."
+  ]
+ },
+
+ "PRE_ARMING_CREDENTIAL_METADATA_INTROSPECTION": {
+  "id": "PACMI",
+  "status": "AUTHORIZED by owner ratification DF11 = A_AUTHORIZE_MINIMAL_CREDENTIAL_METADATA_INTROSPECTION.",
+  "DISJOINTNESS_FROM_THE_NINE_READS": {
+   "rule": "PACMI operations are NOT members of READS and are NOT governed DN reads. Performing one discharges NO node, produces NO node evidence, and may NEVER be cited toward DN-1 through DN-17.",
+   "why_this_must_be_stated": "Both classes call the same providers. Without an explicit disjointness rule a successor could read a PACMI result as partial DN evidence, or conversely treat the DN gate as already crossed because a provider call succeeded.",
+   "the_direction_that_also_matters": "The converse is equally prohibited: a governed DN read, once armed, does not satisfy RC-9a. RC-9a is discharged by PACMI before the first DN read, not by the first DN read.",
+   "relationship_to_RC-10": "RC-10 refuses operations not enumerated in READS. PACMI is now enumerated HERE, by owner authority, as a separate and narrower class. RC-10 continues to refuse everything enumerated in neither."
+  },
+  "BINDING": "Bound solely to AC-1 LIMB_3 / RC-9a. A PACMI operation performed for any other purpose is outside the grant and is refused under RC-10.",
+  "TIMING": "PRE-ARMING. PACMI is performed BEFORE arming and before any DN read. It is the instrument that makes LIMB_3 evaluable; it is not itself a limb.",
+  "METADATA_ALLOWLIST": [
+   "credential type or class (for example: OAuth session, personal access token, keyring-held CLI credential)",
+   "authenticated identity (login, username, user id as reported)",
+   "provider-reported scopes, permissions, or role, WHERE THE PROVIDER EXPOSES THEM",
+   "active team, account, or repository context",
+   "expiry timestamp and validity status",
+   "blast-radius characterization derivable from the permissions above",
+   "the credential's storage locus as a PATH or mechanism name (for example: OS keyring, a named config file), never its contents"
+  ],
+  "SECRET_FIELD_DENY_RULES": {
+   "rule": "ABSOLUTE AND NON-WAIVABLE. These must not be requested, observed, printed, persisted, or written into any evidence record, commit, transcript or scratch file.",
+   "denied": [
+    "token value, in any form or encoding",
+    "refresh token",
+    "cookie or session cookie",
+    "any credential secret or password",
+    "deploy-hook URL (a bearer capability, per DF-10)",
+    "environment variable value, and any use of a decrypt parameter",
+    "Authorization header contents",
+    "database connection string or DSN"
+   ],
+   "tool_flags_explicitly_prohibited": [
+    "gh auth status --show-token, and any equivalent secret-revealing mode",
+    "vercel --token <TOKEN> used to pass a token on a command line",
+    "any --debug or verbose mode whose output is known to echo credential material"
+   ],
+   "failure_token": "STOP_SECRET_BEARING_FIELD_RETURNED"
+  },
+  "FAIL_CLOSED": {
+   "rule": "If a provider does not expose a verifiable scope, permission or role model for the credential in question, the correct outcome is RC-9a = UNSATISFIED for that plane and ARMED = false.",
+   "the_prohibited_alternative": "Widening the definition of scope so that some other observable substitutes for it. A team CONTEXT is not a permission. An identity is not a permission. A successful past operation is not a permission.",
+   "failure_token": "STOP_RC9_UNRESOLVED"
+  },
+  "INFERENCE_PROHIBITION": "Scope may NOT be inferred from the success of any prior or concurrent operation. Manifest control NB-3 already refuses this; it is restated here because the introspection class is exactly where the shortcut becomes tempting.",
+  "MINIMIZATION": {
+   "rule": "PACMI observes the EXECUTOR's own credential metadata. Where an operation necessarily returns a collection containing other principals (for example a team member listing), only the authenticated principal's own row is read and recorded; other principals' rows are not enumerated, characterized, or persisted.",
+   "why": "RC-9a asks what THIS credential may do. Colleagues' identities and roles are neither needed for that nor the executor's to publish into a repository the owner has ratified as public."
+  }
+ },
+
+ "A_SEMANTIC_TRAP_MEASURED_IN_THE_VERCEL_SURFACE": {
+  "id": "DF-12",
+  "severity": "MEDIUM",
+  "finding": "ON VERCEL, THE WORD 'SCOPE' MEANS ACCOUNT OR TEAM CONTEXT, NOT A PERMISSION GRANT.",
+  "measured": "The installed Vercel CLI 54.14.2 exposes a global option -S/--scope described as 'Set a custom scope' and a top-level command 'switch [scope]' described as 'Switches between different scopes'. Both select WHICH account or team the command acts against. Neither describes, narrows, or reports what the credential is permitted to do.",
+  "the_trap": "RC-9a asks for 'what scope or permission it carries'. A lane that records the Vercel CLI's --scope value as the answer has recorded a CONTEXT SELECTOR and labelled it a PERMISSION. The two words coincide; the concepts do not. On GitHub, by contrast, 'scope' does mean an OAuth permission grant, so the same word means different things on the two planes of the same read set.",
+  "the_control": "For PLANE-V, the permission question must be answered by the ROLE the authenticated principal holds in the active team, which is the nearest thing Vercel exposes to a permission model, or recorded as UNAVAILABLE. The CLI's --scope value may be recorded as CONTEXT and must never be recorded as SCOPE-IN-THE-RC-9a-SENSE.",
+  "why_it_is_recorded_as_a_finding": "This is precisely the 'widen the definition of scope to get PASS' failure the owner's ratification prohibits, and the provider's own vocabulary sets the trap."
+ },
+
+ "AUTHORIZED_INTROSPECTION_OPERATION_SET": {
+  "derivation_rule": "Every operation below was derived from the INSTALLED CLI's own --help output before any network call was made. None is recalled from memory and none is invented. Where the installed help was insufficient to establish an operation, the plane is stopped rather than guessed.",
+  "operations": [
+   {
+    "id": "PACMI-G1",
+    "plane": "PLANE-G",
+    "provider": "GitHub",
+    "operation": "gh auth status",
+    "verb_protocol": "CLI wrapper over an authenticated HTTPS GET; the CLI validates the stored credential and surfaces the provider's scope metadata.",
+    "metadata_expected": "active account login, host, credential storage mechanism, and the provider-reported token scopes.",
+    "why_required": "The provider-reported OAuth scope list is the only verifiable statement of what the GitHub credential may do. It is what RC-9a's 'scope or permission' means on this plane.",
+    "secret_fields_forbidden": "The --show-token flag is PROHIBITED. Default output does not print the token; the prohibited mode must not be used even to confirm a value.",
+    "help_derived_note": "The installed gh 2.93.0 help documents --show-token as 'Display the auth token' and a --json fields mode with field 'hosts'. The prohibition targets the former by name."
+   },
+   {
+    "id": "PACMI-V1",
+    "plane": "PLANE-V",
+    "provider": "Vercel",
+    "operation": "vercel whoami",
+    "verb_protocol": "CLI wrapper over an authenticated HTTPS GET.",
+    "metadata_expected": "the authenticated username.",
+    "why_required": "Establishes authenticated identity and, by succeeding or failing, whether the credential is currently valid. Identity alone is NOT scope.",
+    "secret_fields_forbidden": "The --token option must not be used to pass a credential on the command line."
+   },
+   {
+    "id": "PACMI-V2",
+    "plane": "PLANE-V",
+    "provider": "Vercel",
+    "operation": "vercel teams list",
+    "verb_protocol": "CLI wrapper over an authenticated HTTPS GET.",
+    "metadata_expected": "the teams the authenticated principal belongs to, and which is active.",
+    "why_required": "Establishes the active team CONTEXT and the breadth of contexts the credential can address, which bounds blast radius. Per DF-12 this is CONTEXT, not permission.",
+    "secret_fields_forbidden": "As PACMI-V1."
+   },
+   {
+    "id": "PACMI-V3",
+    "plane": "PLANE-V",
+    "provider": "Vercel",
+    "operation": "vercel teams members",
+    "verb_protocol": "CLI wrapper over an authenticated HTTPS GET.",
+    "metadata_expected": "the ROLE held by the authenticated principal in the currently scoped team.",
+    "why_required": "The team role is the nearest thing the Vercel surface exposes to a permission model for an OAuth CLI session, and is therefore the candidate answer to RC-9a's permission question on this plane.",
+    "minimization_bound": "Only the authenticated principal's own row is read and recorded. Other members' identities and roles are not enumerated or persisted, per PACMI.MINIMIZATION.",
+    "secret_fields_forbidden": "As PACMI-V1.",
+    "if_insufficient": "If this operation does not yield a role attributable to the authenticated principal, PLANE-V's permission question is UNANSWERED and RC-9a for PLANE-V is UNSATISFIED. It must not be backfilled with identity or context."
+   },
+   {
+    "id": "PACMI-X1",
+    "plane": "PLANE-X",
+    "provider": "git",
+    "operation": "NONE. Contract analysis only, with no network call.",
+    "verb_protocol": "N/A",
+    "metadata_expected": "Whether the X-R1 command form can be normatively bound to credential-free operation.",
+    "why_required": "X-R1's credential posture is a property of the COMMAND CONTRACT, not something to be discovered by running it. Running it would be executing a governed DN read, which is prohibited in this lane and before arming.",
+    "secret_fields_forbidden": "N/A. No credential is read.",
+    "the_bound": "PLANE-X may record credential_class = NONE only if that follows from the command contract, never from an observed execution."
+   }
+  ],
+  "stop_rule": "If installed CLI or client metadata is insufficient to establish the correct operation for a plane, that plane STOPS and is recorded UNRESOLVED rather than attempted by guesswork. STOP_INTROSPECTION_OPERATION_UNRESOLVED."
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "Every prohibition of v1.0.0, v1.0.1 and v1.0.2 is carried forward unrelaxed.",
+  "No governed DN read (V-R1..V-R4, G-R1..G-R4, X-R1) is authorized, performed, or partially performed by PACMI.",
+  "No PACMI result may be cited toward discharging any DAG node.",
+  "No secret-bearing field may be observed, in any mode, including diagnostic or verbose modes.",
+  "No M-8, M-9, branch creation, ref update, or Vercel/GitHub settings mutation.",
+  "This amendment does not set ARMED. AC-1 governs and its three limbs must hold together.",
+  "No modification to v1.0.0, v1.0.1 or v1.0.2 bytes."
+ ],
+
+ "self_check": {
+  "SC-E1": "PACMI is defined as a class DISJOINT from the nine reads, in both directions, with the reason stated.",
+  "SC-E2": "The metadata allowlist is positive and enumerated; the secret deny list is enumerated and names prohibited tool flags specifically, not only field categories.",
+  "SC-E3": "The fail-closed rule names the prohibited alternative (widening 'scope') rather than only the required outcome.",
+  "SC-E4": "Every authorized operation was derived from installed CLI --help output before any network call; a stop rule covers insufficiency.",
+  "SC-E5": "DF-12 records a measured semantic trap in the provider's own vocabulary: Vercel's 'scope' is a context selector, GitHub's is a permission grant, and the read set spans both.",
+  "SC-E6": "A minimization rule bounds a collection-returning operation to the executor's own row.",
+  "SC-E7": "PLANE-X is handled by contract analysis with no execution, because executing X-R1 would be executing a governed read.",
+  "SC-E8": "This amendment sets no ARMED value and edits no prior artifact."
+ },
+
+ "final_state": "DF11_CLOSED__PACMI_DEFINED_AND_BOUNDED__DF12_RECORDED__NO_DN_READ_AUTHORIZED__ARMED_NOT_SET_HERE",
+ "next_gate": "Execute the authorized PACMI operation set, record RC-9a per plane, re-run DN-0 at the resulting head, and evaluate AC-1."
+}
