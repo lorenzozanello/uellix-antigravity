@@ -592,7 +592,9 @@ describe('single vocabulary source — schema self-consistency', () => {
   })
 })
 
-describe('git layer (disposable fixture repos)', () => {
+// Real git processes on disposable repos: on Windows a multi-commit/merge
+// fixture can exceed vitest's 5 s default, so the budget is explicit.
+describe('git layer (disposable fixture repos)', { timeout: 60_000 }, () => {
   const repos: string[] = []
   afterEach(() => { while (repos.length) cleanupTempGitRepo(repos.pop()!) })
 
