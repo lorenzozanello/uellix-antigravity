@@ -1,0 +1,32 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "G-R4.STATUS",
+ "read_id": "G-R4",
+ "plane": "PLANE-G",
+ "node_ids": [],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "gh",
+  "method": "GET",
+  "endpoint": "/repos/lorenzozanello/uellix-antigravity/commits/537487ac7b102d51f553fcb8f5cfe19614e113d8/status"
+ },
+ "request_utc": "2026-09-24T03:25:57.689Z",
+ "response_utc": "2026-09-24T03:25:58.896Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "state": "success",
+  "statuses": [
+   {
+    "state": "success",
+    "context": "Vercel"
+   }
+  ],
+  "sha": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "total_count": 1
+ },
+ "absent_fields": [],
+ "assertions": {},
+ "scanner_adjudications": []
+}

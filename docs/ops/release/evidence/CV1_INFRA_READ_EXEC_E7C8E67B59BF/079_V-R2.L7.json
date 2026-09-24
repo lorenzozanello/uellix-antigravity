@@ -1,0 +1,319 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_o9TXoejOYoSmXeqA4WYs0NDMdau0&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:28:27.337Z",
+ "response_utc": "2026-09-24T03:28:29.150Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_39WyCZjnQRb9JZGwfnRwpBYFnYmb",
+    "name": "uellix",
+    "url": "uellix-dz3say2es-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "d5e3a333304e08ef3fcba61faa0983c71adc820f",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1779210527653
+   },
+   {
+    "uid": "dpl_6DMsrh8pbhYTzoJZQrWPC9fiTZtz",
+    "name": "uellix",
+    "url": "uellix-l5kfgjktr-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "e9a465a6429545716b55a868fe316f4dd870db40",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1779210300825
+   },
+   {
+    "uid": "dpl_3oMTCy3GEe4Spyh4KRaPy7uQtGDn",
+    "name": "uellix",
+    "url": "uellix-j32c2wf0t-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "000b136969ed67dc8232a2e087c11f7e66b8a66d",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1779204210572
+   },
+   {
+    "uid": "dpl_FFP3LAuWSzHYhMsm8vx5nZLNMYa9",
+    "name": "uellix",
+    "url": "uellix-8olwlh6cu-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "0f486938460ad038cce3f5b998fa4d6229f3799a",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1779202353984
+   },
+   {
+    "uid": "dpl_FJUdabxruw2DowQYbGBocU5f2BFF",
+    "name": "uellix",
+    "url": "uellix-r4y7ylk0g-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "0f486938460ad038cce3f5b998fa4d6229f3799a",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1778016669517
+   },
+   {
+    "uid": "dpl_EnHZf59UqaaVojNVJ8vm8mRXxz51",
+    "name": "uellix",
+    "url": "uellix-j13b3y50d-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "dc040b6c4b2af6f88d716b6ffc89f3bbb476da58",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1778015736148
+   },
+   {
+    "uid": "dpl_5zhdBoXkfVvnFztA5cLNrCsrqWBS",
+    "name": "uellix",
+    "url": "uellix-l3gm6pa5g-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "3e050b2caa1699b7225fe1328b66657aa935e2b3",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777995169907
+   },
+   {
+    "uid": "dpl_2XL2WoAp4MNQ5zir3CJjzrDh7nD4",
+    "name": "uellix",
+    "url": "uellix-j5iruaoyx-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "3cdd081c559c6d2640981571a4834917a70cb007",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777935025753
+   },
+   {
+    "uid": "dpl_EUMczsyZx1SSfCH7pxdcEf8miwJa",
+    "name": "uellix",
+    "url": "uellix-b0tjzxzz0-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "19e6b6747d8f2c8521c78d737a65dd77ee897df0",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777922935520
+   },
+   {
+    "uid": "dpl_AiA2865mhuKcH2RhDpz5BDPhqJYn",
+    "name": "uellix",
+    "url": "uellix-glg7nuor6-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "25754d12141d7cb32963126afc47b271042611bf",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777922220703
+   },
+   {
+    "uid": "dpl_J5ymEpS6dAUVxNWPRwBYTU1ivVXj",
+    "name": "uellix",
+    "url": "uellix-8rwxelo04-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "1daea620b9daa0f4bb7458ba2a6d91be70844c62",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777690983134
+   },
+   {
+    "uid": "dpl_CHEC95ViVD3TjYbQLoiKqtsAhezU",
+    "name": "uellix",
+    "url": "uellix-8tni1tiau-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "9eb457f6151d5f125a8f4098e90c72b7091914f2",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777690827429
+   },
+   {
+    "uid": "dpl_DunvfvatUbZMsKjeDdx3zRgpGHX1",
+    "name": "uellix",
+    "url": "uellix-8voa1xigb-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "905b44165aa2cb97b90cad362f98cf095babf5e1",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777689708710
+   },
+   {
+    "uid": "dpl_4LeaKVGi8RNEqNPJbJKbhWwYCCfy",
+    "name": "uellix",
+    "url": "uellix-2elqdo2yc-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "8bb813d4067bd01b217f668c592d58f57c1d865b",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777688790621
+   },
+   {
+    "uid": "dpl_63fWdYyAVVw62brDto9nAJPAi7AJ",
+    "name": "uellix",
+    "url": "uellix-mmfwcqif3-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "8bb813d4067bd01b217f668c592d58f57c1d865b",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777688367822
+   },
+   {
+    "uid": "dpl_FcwkdKYg9Ph1TxvLceSXAwVxYVwv",
+    "name": "uellix",
+    "url": "uellix-5icancjhv-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "be9660dd261cc62581970d43921c3e34207a46e3",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777687876219
+   },
+   {
+    "uid": "dpl_F8PshtmJENsb6iwyj9mfBYaeNrH1",
+    "name": "uellix",
+    "url": "uellix-1ngb5ucv1-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "2df05754b3606eb0532d4a1f7db7c0f2388b977a",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777687518322
+   },
+   {
+    "uid": "dpl_GsJZUrhbAxzpNhn6PZgAMt36WTmQ",
+    "name": "uellix",
+    "url": "uellix-n03arikf1-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "d2357c58742e22bbfe619e1d4a82cb2b3bec62d0",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777686932554
+   },
+   {
+    "uid": "dpl_9YomHQLpHHi8SgrkZWU75JzNecr7",
+    "name": "uellix",
+    "url": "uellix-dnuenqghl-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "d2357c58742e22bbfe619e1d4a82cb2b3bec62d0",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777686827980
+   },
+   {
+    "uid": "dpl_9FMC3kzC8TKyD7NUC5cCDvx4Q46H",
+    "name": "uellix",
+    "url": "uellix-3ziszatdz-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "d7dd7eed2ac26c3cec31684465685b24f29cc818",
+     "githubRepo": "Uellix"
+    },
+    "target": "production",
+    "createdAt": 1777686303231
+   }
+  ],
+  "pagination": {
+   "count": 20,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

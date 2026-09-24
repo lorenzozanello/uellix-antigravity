@@ -1,0 +1,256 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L5",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v10/projects/prj_4mV4rmaaIIiXTiYmlrwASe9L8DCB/env?decrypt=false&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm"
+ },
+ "request_utc": "2026-09-24T03:27:48.279Z",
+ "response_utc": "2026-09-24T03:27:49.963Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "envs": [
+   {
+    "type": "sensitive",
+    "target": [
+     "production",
+     "preview"
+    ],
+    "customEnvironmentIds": [],
+    "id": "wHdI1Zp9Mq7oHvGx",
+    "key": "GEMINI_MODEL",
+    "createdAt": 1777312214785,
+    "updatedAt": 1777341393693
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "V9gzNUNNDoMDUhu7",
+    "key": "SUPABASE_URL",
+    "createdAt": 1777310907169,
+    "updatedAt": 1777310907169
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "RQGbO351vIMyLUKo",
+    "key": "SUPABASE_ANON_KEY",
+    "createdAt": 1777310907169,
+    "updatedAt": 1777310907169
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "DmQJis2C4WrIAzgQ",
+    "key": "VITE_SUPABASE_URL",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "sdwRqwNeYqYeswSW",
+    "key": "VITE_SUPABASE_ANON_KEY",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "AFwK1qkbcWYCzdj7",
+    "key": "VITE_USE_REAL_ALUMNI_DIRECTORY",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "MdbFJLJSEiCduuSD",
+    "key": "VITE_USE_REAL_OVERVIEW_DATA",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "fJJ7g3dmIelAXFsT",
+    "key": "VITE_USE_REAL_COMPANIES_DATA",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "rdwfR5Z2yCaxSYV3",
+    "key": "VITE_USE_REAL_GRAPH_DATA",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "ABs2tfeqNoOfeJ6C",
+    "key": "VITE_USE_REAL_SIGNALS_DATA",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "9fDuG4lX3GCsCdTW",
+    "key": "VITE_ENABLE_PENDING_REVIEW",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "FrizQOCTzMeWOv1b",
+    "key": "VITE_ENABLE_APPROVE_APPLY",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "kFZw9Mwx7Zqtx46R",
+    "key": "VITE_USE_REAL_USER_MANAGEMENT",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "IoxBdqlFi3EQLvHh",
+    "key": "VITE_ENABLE_PROFILE_ACTIVE_TOGGLE",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "sensitive",
+    "target": [
+     "preview",
+     "production"
+    ],
+    "customEnvironmentIds": [],
+    "id": "Ah6EvTDINexKvbqL",
+    "key": "VITE_ENABLE_REAL_TRAJECTORY_SEARCH",
+    "createdAt": 1777308904059,
+    "updatedAt": 1777308904059
+   },
+   {
+    "type": "encrypted",
+    "key": "GEMINI_API_KEY",
+    "target": [
+     "production",
+     "preview",
+     "development"
+    ],
+    "createdAt": 1776806383751,
+    "updatedAt": 1776806383751,
+    "id": "5xTpofR41y1PtzNC"
+   },
+   {
+    "type": "encrypted",
+    "key": "SERPER_API_KEY",
+    "target": [
+     "production",
+     "preview",
+     "development"
+    ],
+    "createdAt": 1776806383751,
+    "updatedAt": 1776806383751,
+    "id": "vAsCfbCmTRmkaeZg"
+   },
+   {
+    "type": "encrypted",
+    "key": "VITE_BASE_PATH",
+    "target": [
+     "production",
+     "preview",
+     "development"
+    ],
+    "createdAt": 1776806383751,
+    "updatedAt": 1776978757890,
+    "id": "fn0mTK0pc7KpMhi9",
+    "customEnvironmentIds": []
+   }
+  ]
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "ABSENT_KEY"
+  },
+  {
+   "path": "pagination.count",
+   "kind": "ABSENT_KEY"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

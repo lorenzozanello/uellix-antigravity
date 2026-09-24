@@ -1,0 +1,68 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:47.590Z",
+ "response_utc": "2026-09-24T03:26:50.212Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_4Hyv6YRZ5wZn6Lu1xu2X5xXzwdKd",
+    "name": "asesoria-programa-sapiensa-lab-junio-2026",
+    "url": "asesoria-programa-sapiensa-lab-junio-2026-18jlkkaxc.vercel.app",
+    "source": "import",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "260f359b12d44ca70ea13e731e378dc31a65c8b6",
+     "githubRepo": "Asesoria-Programa-SapiensaLab-Junio-2026"
+    },
+    "target": "production",
+    "createdAt": 1782246981783
+   }
+  ],
+  "pagination": {
+   "count": 1,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": [
+  {
+   "normalized_schema_path": "deployments[*].meta.githubRepo",
+   "team_id": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+   "project_id": "prj_BabceBAEohG1vyYQtJ6Jmc5MHfIT",
+   "detector_id": "OPAQUE_HIGH_ENTROPY",
+   "classification": "EXPECTED_PROVIDER_IDENTIFIER",
+   "basis": "SAME_RUN_SAME_PROJECT_EXACT_EQUALITY_TO_WITNESSED_LINK_REPO",
+   "source_op_id": "V-R2.S2",
+   "source_normalized_schema_path": "projects[*].link.repo",
+   "source_basis": "SAME_RUN_AUTHENTICATED_REPOSITORY_INVENTORY_ID_MATCH",
+   "same_run_witness_op_id": "G-R5",
+   "exact_equality": true,
+   "owner_corroboration": "UNAVAILABLE_IN_CERTIFIED_L7_PROJECTION"
+  }
+ ]
+}

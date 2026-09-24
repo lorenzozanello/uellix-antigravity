@@ -1,0 +1,277 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_jQtDCYjyIHtEZuWNkOZgppWGKXB8&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:14.193Z",
+ "response_utc": "2026-09-24T03:27:16.289Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_FSkw7YedjtTmTmqv8Rr4BpPHH5ia",
+    "name": "barcanna",
+    "url": "barcanna-jm2o2tico-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "2eed5acf8cd2c5e3f796917d712bdecc96e4d60d",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781625583288
+   },
+   {
+    "uid": "dpl_8z7hrWGaHggh5hsaBH643iaXFCRJ",
+    "name": "barcanna",
+    "url": "barcanna-lp084pm4l-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "95df4b891c329062e4bdc1c4965243ac6f557021",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781625341984
+   },
+   {
+    "uid": "dpl_3eZxVuVr2ymx29SsmRUYRTcoR3ke",
+    "name": "barcanna",
+    "url": "barcanna-4sa7tawhg-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "963b79c22482d84d70201f2d7f0a3fbb5ae53290",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781625335529
+   },
+   {
+    "uid": "dpl_Bgtu9FqiCbkya4FocWZDMabNo3VX",
+    "name": "barcanna",
+    "url": "barcanna-horpqaw79-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "1da83ccc1c2eed161dd33017a93768aba2e13896",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781624607760
+   },
+   {
+    "uid": "dpl_HKdUcQCTgwvPFS9yMFHDMdpdwdb4",
+    "name": "barcanna",
+    "url": "barcanna-1xjb3lzxl-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "ce16cbb1877af075daae4255dbadb511949a1cce",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781624568307
+   },
+   {
+    "uid": "dpl_4NicBSvdeMVnh3aXVYebYRvcNJfd",
+    "name": "barcanna",
+    "url": "barcanna-6ydkai2xs-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "afcc3ba6ff207ca0f0a0420cab2f80170e7bba30",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781624555496
+   },
+   {
+    "uid": "dpl_DYDMTeNy4Az4yUeB1gbeUTJDruPK",
+    "name": "barcanna",
+    "url": "barcanna-qwf88d5oi-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "e3b02d32cb9c945e46e9ca5adf32d14089411c41",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781624538162
+   },
+   {
+    "uid": "dpl_4MUWDVr3f1iA7EJfYSpaWXv53GYd",
+    "name": "barcanna",
+    "url": "barcanna-wecnj85ej-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "665ab94eef70740b9744cd2a5a5e45d5292655a7",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781624422979
+   },
+   {
+    "uid": "dpl_AMgPCMyWceYce932ge2dsgEQsBJq",
+    "name": "barcanna",
+    "url": "barcanna-97vu7bcd9-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "c0947049189fb4bea883cbc0fef4ca5d7d8533bd",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781624275627
+   },
+   {
+    "uid": "dpl_E2nj43K7Vj61L5Mf12ty9YfAfeid",
+    "name": "barcanna",
+    "url": "barcanna-jp34467fo-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "fa7395cb2d41b4179746f64343f6acd054375834",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781624200114
+   },
+   {
+    "uid": "dpl_FYJYBwzkHfvB6HjPkonQkLGdiYJe",
+    "name": "barcanna",
+    "url": "barcanna-brbpab1lc-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "219562ce9185cc1557cab8dc38876cbb827fe59c",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781623997287
+   },
+   {
+    "uid": "dpl_6r2yuQJrgauB9LJ5gQwLtjRRQsyN",
+    "name": "barcanna",
+    "url": "barcanna-5bz8475g9-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "044cfcc4b7f0800f080be3bcad4e122110b70359",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781622852246
+   },
+   {
+    "uid": "dpl_JEDC7aBNxTx35W48RPT6WK9YxUP8",
+    "name": "barcanna",
+    "url": "barcanna-6thr2lsry-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "e2b789d18b7b6f2b69904b0a56056b0fe9e80cef",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781622819780
+   },
+   {
+    "uid": "dpl_Bgku7oYY2oqZjd1KktnWa8c8d9Ho",
+    "name": "barcanna",
+    "url": "barcanna-3ku254wv0-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "31bd444170f4a73fb6fb127394a7cd9ace11575c",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781622227717
+   },
+   {
+    "uid": "dpl_9FtuNqUYWGgJepDq9KR9qbYP33Tr",
+    "name": "barcanna",
+    "url": "barcanna-5nnn3t7zw-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a33279b07b5307e8dc00a6696346f0978be2b633",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781292968179
+   },
+   {
+    "uid": "dpl_CDZfyrQ6jYDTuGhiEh3EZbmfrYY9",
+    "name": "barcanna",
+    "url": "barcanna-ceqfi7tp5-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "f5ed78e4f19e00b911d4bdb009ca1db2c3f4f5f1",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781292245792
+   },
+   {
+    "uid": "dpl_9vJNtgri8vkFG8xbeTsDRNfowmAf",
+    "name": "barcanna",
+    "url": "barcanna-3qt604gzl-lorenzozanello-5040s-projects.vercel.app",
+    "source": "import",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "63e1fdd5f53d313a10c462c18bfdeaf8f673b887",
+     "githubRepo": "Barcanna"
+    },
+    "target": "production",
+    "createdAt": 1781291088768
+   }
+  ],
+  "pagination": {
+   "count": 17,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

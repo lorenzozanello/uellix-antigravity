@@ -1,0 +1,60 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_o9TXoejOYoSmXeqA4WYs0NDMdau0&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:28:21.817Z",
+ "response_utc": "2026-09-24T03:28:24.427Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "uellix.vercel.app",
+    "created": "2026-05-01T20:01:24.774Z",
+    "deploymentId": "dpl_39WyCZjnQRb9JZGwfnRwpBYFnYmb",
+    "projectId": "prj_o9TXoejOYoSmXeqA4WYs0NDMdau0",
+    "uid": "2229ab04011d283d4c503c274f5ef991e3737c6cb27b34051520fe27919ae9f8bf5a6ea0ece713c6123b810f317cc08c8cc5c8948c0205feb06274c8b2c81dcd"
+   },
+   {
+    "alias": "uellix-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-05-01T20:01:24.774Z",
+    "deploymentId": "dpl_39WyCZjnQRb9JZGwfnRwpBYFnYmb",
+    "projectId": "prj_o9TXoejOYoSmXeqA4WYs0NDMdau0",
+    "uid": "5276a9af90cebbb454cd96937dc2303133b49d912e0aafa1380cb3a45b7672cc04f8e0772deacc376319853314c85e4e0ddab80f4d0097baa87a92030e6e75f1"
+   },
+   {
+    "alias": "uellix-git-main-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-05-01T20:01:19.756Z",
+    "deploymentId": "dpl_39WyCZjnQRb9JZGwfnRwpBYFnYmb",
+    "projectId": "prj_o9TXoejOYoSmXeqA4WYs0NDMdau0",
+    "uid": "2a9ce3bfc49546af2af4261756992e4c1c88cebd1fdc771f10587634dc7ca3da7f158da6c477ace208c66228f31a2762803ae6952ccae03b4c367868372ec9ae"
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

@@ -1,0 +1,35 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "G-R2.WITNESS",
+ "read_id": "G-R2",
+ "plane": "PLANE-G",
+ "node_ids": [
+  "DN-4",
+  "DN-8",
+  "DN-9",
+  "DN-12"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "gh",
+  "method": "GET",
+  "endpoint": "/repos/lorenzozanello/uellix-antigravity/branches/feature%2Fsprint-0-foundation"
+ },
+ "request_utc": "2026-09-24T03:25:50.234Z",
+ "response_utc": "2026-09-24T03:25:51.227Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "name": "feature/sprint-0-foundation",
+  "commit": {
+   "sha": "0b1fd12685024593b5ba2dfc8015caac10ed4dc5"
+  },
+  "protected": false
+ },
+ "absent_fields": [],
+ "assertions": {
+  "branch_resolves": true
+ },
+ "scanner_adjudications": []
+}

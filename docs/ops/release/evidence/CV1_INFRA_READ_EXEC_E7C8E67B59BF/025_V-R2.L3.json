@@ -1,0 +1,137 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_QVf42zfDvCjgZEJr5JZWLDldMIS5&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:24.123Z",
+ "response_utc": "2026-09-24T03:26:26.514Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "aforiq-git-feat-communicat-1f8793-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-21T21:14:04.186Z",
+    "deploymentId": "dpl_C4YA54Vz2XUT51FAzfS9jEqDqcqc",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "96bdc3f131375981e532d68f43aa1984d51ec986edf40ecb5293f4556f5a75f2606929a24da82b05ffe89c4b3257a4d2e2f9761e1d27331b0418cd946d0050ac"
+   },
+   {
+    "alias": "aforiq-git-chore-deploy-ph-eb9367-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-21T16:50:23.228Z",
+    "deploymentId": "dpl_9bZJwTyfYDiYZwCLyE9ttcZxXJd7",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "8e1f7a1009b8f42e398fc02d24196e081ce9ffa9c4f03284b80e71bbb2f79aa5f004dbd6a0c15bed54c618b7a86547c3a124c89f0cf200fae5a127c804e2be69"
+   },
+   {
+    "alias": "aforiq-git-feat-tickets-on-6a7c07-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-21T15:31:41.490Z",
+    "deploymentId": "dpl_Bp2TBFhB72YxjvJNgitkuMGzLdzh",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "b8cb836c282de57baab383056e02e432d5e5ece4c81efd21e101c2e85c6f88204c7a6f83c39df21e0c4f8eda362919a8a9f11a2bd115e435b646ce63a596588e"
+   },
+   {
+    "alias": "aforiq-git-feat-landing-redesign-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-18T11:51:51.885Z",
+    "deploymentId": "dpl_EACRiNuXJSgpgo9fTqjn8UF2DVLj",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "a669b3b2ec75042e23471db3c72915687f560d0d7feca6fcf6d6655400a06a503dbc1d16cc2f64b2be59ed35b0041d431654df36f52f887c59cc01ecf8c23511"
+   },
+   {
+    "alias": "aforiq-git-chore-deploy-ph-8f7466-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-17T14:52:16.155Z",
+    "deploymentId": "dpl_CjJbEsrw77hieE8JiS1amVV3VUnf",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "7307db1d7b9c86c28b604de7d83fcd3eafce5121e82e6b969be1c739689f39aa4725cb013c62655f44a4e7695e3afde9e6bfe0598db19c88214df327107681fd"
+   },
+   {
+    "alias": "aforiq-git-feat-inventory-210f38-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-16T23:52:15.645Z",
+    "deploymentId": "dpl_J8dYUJuBWUc7p2V8Lv1mgjfZm2gL",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "de6dfa46a4ab7e6436bf1ade5117b86651514d7499f54831184c9875d00615d8216e15ac482e316b6200b2dfa0e17b22370171d9d0c44439eb4497df6db2ae67"
+   },
+   {
+    "alias": "aforiq-git-chore-deploy-ph-49b6ec-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-14T11:37:26.078Z",
+    "deploymentId": "dpl_E2ik8CvHmNv2eWHExUCw9HANeaBM",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "6687a1f4c256b46311ad8fe1bdfa349aecb381588263e30c1ca123f2f00e4e61cebfe4831f9f9d1a07b1675a18e7a3a6a0497802e363ba2489c5d8afd57390a7"
+   },
+   {
+    "alias": "aforiq-git-feat-organizati-301f9c-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-14T10:48:44.701Z",
+    "deploymentId": "dpl_89VB7ThDZcF6BuQru3WFyEG3Vfhk",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "496a8d21d9ea9d695ff9de70d5a0ea81bb309b6a96ca008118fb4ee7f93ae173e408519f904eecc74c097a9e9a06aaa169552df5f68aaafc5c2dbd977e46fc14"
+   },
+   {
+    "alias": "aforiq-git-chore-apply-ini-b07508-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-13T19:00:59.167Z",
+    "deploymentId": "dpl_5UGZB2URAqzTUhtzEfJAJsRZBN9m",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "67f84998a0ef4c04bb094e5bf036c0ca654617021df64b2682f7d7c3f4da195d1d85a3295b8942afb899cb64e44c572bf260adf7f8d8ffc4ab133fa2f0ec3a9c"
+   },
+   {
+    "alias": "aforiq-git-chore-allow-aut-a97f45-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-13T14:30:25.077Z",
+    "deploymentId": "dpl_DNj9ujq8CjKsb7ofMifZU5k7eMee",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "e07726faec5bc316fdfe196411c876e33ff10916a7cce9dba5d53bcbf021a28e2259ffccf844b5f522b9f037326e4eb19cbbc02b89ca868be5a0a4ede9414da7"
+   },
+   {
+    "alias": "aforiq-git-chore-allow-saf-81ed69-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-12T20:56:09.085Z",
+    "deploymentId": "dpl_2YxB9XecKZn9rwaHjb1tmbWpv3pN",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "f7bc4219ae6f1869d4f6186ba24c21b0f8f031eaa4e04833a37ba7daebe8e2b72a776d5057cbf2c8f2157365983738ab34b36344f6d89334001b7f824e24ef80"
+   },
+   {
+    "alias": "aforiq.vercel.app",
+    "created": "2026-07-12T20:36:46.010Z",
+    "deploymentId": "dpl_8XkJucBesQakC3BmHzLenHYb1eaa",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "5c68c1d4b8ba810f0586675d4ec7ce318f143f9ece00c3308a7e6895e3018eddf0c7b0b329e953badc2d6ba0fb9e7e6a06603e2c749196698012f5e22a555986"
+   },
+   {
+    "alias": "aforiq-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-12T20:36:46.010Z",
+    "deploymentId": "dpl_8XkJucBesQakC3BmHzLenHYb1eaa",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "91d511178c9b239d5c3a285d6853ab16b76950d3d7378aec84b32ff5207c96c96a5173fc2e398f4583e3e1479e0c0ffd0d789b93ccd3fc548a48b94d6d1184af"
+   },
+   {
+    "alias": "aforiq-git-main-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-07-12T20:35:50.453Z",
+    "deploymentId": "dpl_8XkJucBesQakC3BmHzLenHYb1eaa",
+    "projectId": "prj_QVf42zfDvCjgZEJr5JZWLDldMIS5",
+    "uid": "03a319ed1b374c0f645b7a985894535eeef42ed8b0ee5e29ce465de6abf28ab3260a73f860c6c7a60bec364302d80cb181ad04f0bc3fe1a004f2b6a302925e6f"
+   }
+  ],
+  "pagination": {
+   "count": 14,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

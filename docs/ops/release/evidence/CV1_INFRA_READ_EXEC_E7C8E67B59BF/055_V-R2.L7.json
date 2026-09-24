@@ -1,0 +1,179 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_F9MCLAoYn7oQDeh3YEq5NpzZX59D&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:27:31.417Z",
+ "response_utc": "2026-09-24T03:27:33.278Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_FLoMCvFezMjB4B7f4qjyNCXkZQaD",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-5cbu56fkt-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "00ecb6baaf17f04519ac4ec433d4bfffdfb83b65",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776288366749
+   },
+   {
+    "uid": "dpl_Hi1CPv5sGb64yhu1ZCEDGbT5vN1q",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-7baav2z6e-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "6aea19c621f70505894b11a9160705c7e6dd398c",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776288342146
+   },
+   {
+    "uid": "dpl_DLTZsdvwED1DPMju1f1GAPTz4K3v",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-7ik3e87lp-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "713d15eaf148cfeea9d15a43cd5e403c2e671dda",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776288262266
+   },
+   {
+    "uid": "dpl_GThd9LV2TsdT5HK45Dq7xasPXPiC",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-3v8so9prl-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "00ecb6baaf17f04519ac4ec433d4bfffdfb83b65",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776288170786
+   },
+   {
+    "uid": "dpl_XmvjM7fzpLiSxSKfiqmqHC3HKTY3",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-cuymqraad-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "b27abcac9c53a458313509a8c7600230c414d373",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776288131431
+   },
+   {
+    "uid": "dpl_FJQCEMVETYcFDZLXeqmv7wfutwb8",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-lvejk7s0s-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "00ecb6baaf17f04519ac4ec433d4bfffdfb83b65",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776287994667
+   },
+   {
+    "uid": "dpl_9Z2ErZ6guWc9eBva2nzvqbn15EUT",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-h7b9367ud-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "00ecb6baaf17f04519ac4ec433d4bfffdfb83b65",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776287538805
+   },
+   {
+    "uid": "dpl_FV85Z4feKoYY4VJfTLGeAe4zw7mk",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-jdsmy04vi-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "f67e9534156061baefa2c84f5d7ce610b47e417c",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776267632954
+   },
+   {
+    "uid": "dpl_3swKHX2TreYR4rb7ACDvZEbBmexZ",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-ej3fnudbi-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "f67e9534156061baefa2c84f5d7ce610b47e417c",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776267571547
+   },
+   {
+    "uid": "dpl_5eEa5qz2Wi9TvMvEsfyYgcnUEfNC",
+    "name": "sapiensa-lab-tbc",
+    "url": "sapiensa-lab-qyrogy3t8-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "ERROR",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "f67e9534156061baefa2c84f5d7ce610b47e417c",
+     "githubRepo": "SapiensaLab-TBC"
+    },
+    "target": "production",
+    "createdAt": 1776266290077
+   }
+  ],
+  "pagination": {
+   "count": 10,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

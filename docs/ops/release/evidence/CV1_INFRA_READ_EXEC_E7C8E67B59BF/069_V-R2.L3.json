@@ -1,0 +1,60 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_OY0vbtCK4qvSVd6NrHqFNvtYonRK&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:28:02.747Z",
+ "response_utc": "2026-09-24T03:28:06.115Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "the-balance-corp-git-main-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-04-21T20:57:01.554Z",
+    "deploymentId": "dpl_GEAG1pJKFWB8AnwfLH7YvWSd3z5H",
+    "projectId": "prj_OY0vbtCK4qvSVd6NrHqFNvtYonRK",
+    "uid": "b343842975f042d6a9835fe511da080b56ad407fa948b59ba722c10c3b0ebe2fd34be98b9b70b07cb12372505d5c48173e6cd4bb14ecd7cf50397e5f87f3ce2a"
+   },
+   {
+    "alias": "the-balance-corp-lorenzozanello-5040s-projects.vercel.app",
+    "created": "2026-04-06T18:59:43.599Z",
+    "deploymentId": "dpl_GEAG1pJKFWB8AnwfLH7YvWSd3z5H",
+    "projectId": "prj_OY0vbtCK4qvSVd6NrHqFNvtYonRK",
+    "uid": "4b99b6bd32e67b5b5fefc3dc8c4d1f0d93490316de5771618259fa8cbe26f329a577cd2c5917f4bc6bd60fec3ab0ffeff3dba888b46545ebf9a62841f083cc96"
+   },
+   {
+    "alias": "the-balance-corp.vercel.app",
+    "created": "2026-04-06T18:59:43.598Z",
+    "deploymentId": "dpl_GEAG1pJKFWB8AnwfLH7YvWSd3z5H",
+    "projectId": "prj_OY0vbtCK4qvSVd6NrHqFNvtYonRK",
+    "uid": "6d8133e8fbe54217a24466e38f28012b0cc4d4b56d04a5c268216942dd555f8924aaf533c50d50c5cc04adcfe90f4632987eb566584f6eaaf80e3b518da2f118"
+   }
+  ],
+  "pagination": {
+   "count": 3,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

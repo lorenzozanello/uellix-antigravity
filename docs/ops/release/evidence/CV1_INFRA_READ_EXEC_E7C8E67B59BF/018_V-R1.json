@@ -1,0 +1,66 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R1",
+ "read_id": "V-R1",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-1",
+  "DN-11",
+  "DN-14"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v9/projects/uellix-antigravity?teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm"
+ },
+ "request_utc": "2026-09-24T03:26:09.516Z",
+ "response_utc": "2026-09-24T03:26:11.655Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "accountId": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+  "autoExposeSystemEnvs": true,
+  "autoAssignCustomDomains": true,
+  "createdAt": 1781922222980,
+  "gitForkProtection": true,
+  "gitLFS": false,
+  "id": "prj_3NplDjQAEU6nvFoRZEdnNOAT3ThJ",
+  "name": "uellix-antigravity",
+  "ssoProtection": {
+   "deploymentType": "all_except_custom_domains"
+  },
+  "updatedAt": 1788268608885,
+  "gitProviderOptions": {
+   "createDeployments": "enabled"
+  },
+  "link": {
+   "type": "github",
+   "repo": "uellix-antigravity",
+   "repoId": 1274891548,
+   "org": "lorenzozanello",
+   "gitCredentialId": "cred_cd448f024c9f8f329000fe290003e7ae5228a073",
+   "productionBranch": "main"
+  },
+  "__presence": {
+   "passwordProtection": false,
+   "trustedIps": false
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "commandForIgnoringBuildStep",
+   "kind": "ABSENT_KEY"
+  },
+  {
+   "path": "autoJobCancelation",
+   "kind": "ABSENT_KEY"
+  }
+ ],
+ "assertions": {
+  "TI2_link_repo_matches": true,
+  "name_matches": true
+ },
+ "scanner_adjudications": []
+}

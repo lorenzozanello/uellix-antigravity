@@ -1,0 +1,319 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_QVf42zfDvCjgZEJr5JZWLDldMIS5&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:28.260Z",
+ "response_utc": "2026-09-24T03:26:29.953Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_8XkJucBesQakC3BmHzLenHYb1eaa",
+    "name": "aforiq",
+    "url": "aforiq-oy1jm0y2v-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "0294f2e8a0fbc703a8dc1d0fd9034bf07523c0f7",
+     "githubRepo": "aforiq"
+    },
+    "target": "production",
+    "createdAt": 1784676506306
+   },
+   {
+    "uid": "dpl_C4YA54Vz2XUT51FAzfS9jEqDqcqc",
+    "name": "aforiq",
+    "url": "aforiq-5fdlyzsdc-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/communications-email",
+     "githubCommitSha": "e8c52110c399c76841f10629685de026e177fa0b",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784676052643
+   },
+   {
+    "uid": "dpl_31Q9iDLdrgnubjdA6TJMGeUcLf65",
+    "name": "aforiq",
+    "url": "aforiq-a34ll6944-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/communications-email",
+     "githubCommitSha": "348e1d78c2ddd2254159d82bbff794e5134e092f",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784668443836
+   },
+   {
+    "uid": "dpl_A6UXiZTWgsJ7AKpEY83int2NGLjr",
+    "name": "aforiq",
+    "url": "aforiq-7wg1a57b3-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "6d9851058f064bc34628ab573115739a0a7ed862",
+     "githubRepo": "aforiq"
+    },
+    "target": "production",
+    "createdAt": 1784663948559
+   },
+   {
+    "uid": "dpl_6B4XddFeEsNvb7hZ4G4mNxaJpWws",
+    "name": "aforiq",
+    "url": "aforiq-j40pvw4hx-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a39a708a026d398ff24d3a9923302faa24679ad6",
+     "githubRepo": "aforiq"
+    },
+    "target": "production",
+    "createdAt": 1784650909161
+   },
+   {
+    "uid": "dpl_Bp2TBFhB72YxjvJNgitkuMGzLdzh",
+    "name": "aforiq",
+    "url": "aforiq-kf6uub6mj-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/tickets-online-access",
+     "githubCommitSha": "29e03b4601884ce51426af5fc893d7407829d249",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784650284212
+   },
+   {
+    "uid": "dpl_ETq1K5pjpn6JtCaHUVRmJ8TE9yzb",
+    "name": "aforiq",
+    "url": "aforiq-5qaxse7mb-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/tickets-online-access",
+     "githubCommitSha": "46583918d4deb82d3caf83024dc92de05d5b67bc",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784649852555
+   },
+   {
+    "uid": "dpl_Gpzo9F42Y46uAcdjCSum7DjKKR6B",
+    "name": "aforiq",
+    "url": "aforiq-hghl16dw5-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/tickets-online-access",
+     "githubCommitSha": "9e566322374ee7fc06f6cf43309e36f691995b90",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784648830641
+   },
+   {
+    "uid": "dpl_CpxqwfJumZPy5deYgcvTXfuQ7Fgb",
+    "name": "aforiq",
+    "url": "aforiq-1g1n5bgzp-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/tickets-online-access",
+     "githubCommitSha": "433d558f6569e1eafd6610ad3b79713b49bb9c9e",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784647901136
+   },
+   {
+    "uid": "dpl_EACRiNuXJSgpgo9fTqjn8UF2DVLj",
+    "name": "aforiq",
+    "url": "aforiq-k5rxnt6mq-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/landing-redesign",
+     "githubCommitSha": "a8c19e3ff80e6f3b8138ebb026f66ef39205818a",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784375511486
+   },
+   {
+    "uid": "dpl_J8dYUJuBWUc7p2V8Lv1mgjfZm2gL",
+    "name": "aforiq",
+    "url": "aforiq-2e979tn28-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/inventory-free-checkout",
+     "githubCommitSha": "dd2113f37093174e9dbe89f9aaf15834c32e4746",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784245935149
+   },
+   {
+    "uid": "dpl_BcNevaqtyr9DDsYp7xBqKzRjCZi8",
+    "name": "aforiq",
+    "url": "aforiq-pr0uggt3p-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "ececb06333ea595534dfa3c3c9016c7111bf1bfc",
+     "githubRepo": "aforiq"
+    },
+    "target": "production",
+    "createdAt": 1784029429396
+   },
+   {
+    "uid": "dpl_E2ik8CvHmNv2eWHExUCw9HANeaBM",
+    "name": "aforiq",
+    "url": "aforiq-yrpfxb98u-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "chore/deploy-phase-1-staging-schema",
+     "githubCommitSha": "d22e06b8ca915d7508399ae69ccf23a29ca7eab9",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784029045608
+   },
+   {
+    "uid": "dpl_HmjCL8yufaUF5Lwn2XBqVGYTqLD4",
+    "name": "aforiq",
+    "url": "aforiq-5vo2542o3-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/organization-brand-event-publishing",
+     "githubCommitSha": "2460b148fea25a4b906f69b0d0a886ac4b1f58b1",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784026694721
+   },
+   {
+    "uid": "dpl_GGVWtJYmfPZ3hLQytSDVGrfzc6MZ",
+    "name": "aforiq",
+    "url": "aforiq-arq7x673y-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "feat/organization-brand-event-publishing",
+     "githubCommitSha": "37fe510918fbbbcd4530dd34fd79a056f21b92dd",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1784026124235
+   },
+   {
+    "uid": "dpl_9xcjvVyri15EKVbiW9qDXx34j2xs",
+    "name": "aforiq",
+    "url": "aforiq-dvfp58oud-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "743b46295a03eb677fd86048ef8685e25fc1a5bd",
+     "githubRepo": "aforiq"
+    },
+    "target": "production",
+    "createdAt": 1783967493665
+   },
+   {
+    "uid": "dpl_EsKNLgscSmt3i7vfemYx7iNy6vhk",
+    "name": "aforiq",
+    "url": "aforiq-abk6d8wf5-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "chore/allow-autonomous-supabase-dry-run",
+     "githubCommitSha": "2f29affcb63172a0c9b410d2aaf34ca95a9ded63",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1783953024654
+   },
+   {
+    "uid": "dpl_C4SGP2RzLskqF9NfMqXfKZKKUXke",
+    "name": "aforiq",
+    "url": "aforiq-el2jejdgz-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "1ae95bcc5d08e81b2b4a4faad114eddffda2fe1b",
+     "githubRepo": "aforiq"
+    },
+    "target": "production",
+    "createdAt": 1783950718819
+   },
+   {
+    "uid": "dpl_2YxB9XecKZn9rwaHjb1tmbWpv3pN",
+    "name": "aforiq",
+    "url": "aforiq-ccpr742pi-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "chore/allow-safe-supabase-inspection",
+     "githubCommitSha": "3ec55bea923f7a1e8995d73876e9fc28f67c8820",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1783950373506
+   },
+   {
+    "uid": "dpl_BXeN8QYLkRDkuk8mnv6xBeyjRu4a",
+    "name": "aforiq",
+    "url": "aforiq-5t5uqvi2d-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "chore/allow-safe-supabase-inspection",
+     "githubCommitSha": "e9a311b65171b59ac66f8481cbddab5c6d2f460e",
+     "githubRepo": "aforiq"
+    },
+    "target": null,
+    "createdAt": 1783889768728
+   }
+  ],
+  "pagination": {
+   "count": 20,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

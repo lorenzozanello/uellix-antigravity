@@ -1,0 +1,310 @@
+{
+ "protocol": "RC9A -> DN0(last) -> NO_COMMIT -> READS -> EVIDENCE_COMMIT_AFTER",
+ "rc9a": {
+  "measured_utc": "2026-09-24T03:25:35.100Z",
+  "planes": {
+   "PLANE-G": {
+    "satisfied": true,
+    "projection": {
+     "hosts": {
+      "github.com": [
+       {
+        "state": "success",
+        "active": true,
+        "host": "github.com",
+        "login": "lorenzozanello",
+        "tokenSource": "keyring",
+        "scopes": "gist, read:org, repo, workflow",
+        "gitProtocol": "https"
+       }
+      ]
+     }
+    }
+   },
+   "PLANE-V": {
+    "satisfied": true,
+    "identity": "lorenzozanello-5040",
+    "role": "OWNER"
+   },
+   "PLANE-X": {
+    "satisfied": true,
+    "credential_class": "NONE",
+    "basis": "XCC-1 runtime isolation preflight"
+   }
+  },
+  "all_planes_satisfied": true,
+  "records": [
+   {
+    "record_kind": "PACMI_EVIDENCE",
+    "op_id": "PACMI-G1",
+    "read_id": "PACMI-G1",
+    "plane": "PLANE-G",
+    "node_ids": [],
+    "freshness": "EXECUTE_NOW",
+    "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+    "operation": {
+     "tool": "gh",
+     "method": "CLI_METADATA",
+     "fixed_args": [
+      "auth",
+      "status",
+      "--json",
+      "hosts"
+     ]
+    },
+    "request_utc": "2026-09-24T03:25:26.974Z",
+    "response_utc": "2026-09-24T03:25:28.028Z",
+    "http_status": null,
+    "outcome": "OK",
+    "projection": {
+     "hosts": {
+      "github.com": [
+       {
+        "state": "success",
+        "active": true,
+        "host": "github.com",
+        "login": "lorenzozanello",
+        "tokenSource": "keyring",
+        "scopes": "gist, read:org, repo, workflow",
+        "gitProtocol": "https"
+       }
+      ]
+     }
+    },
+    "absent_fields": [],
+    "assertions": {},
+    "scanner_adjudications": []
+   },
+   {
+    "record_kind": "PACMI_EVIDENCE",
+    "op_id": "PACMI-V1",
+    "read_id": "PACMI-V1",
+    "plane": "PLANE-V",
+    "node_ids": [],
+    "freshness": "EXECUTE_NOW",
+    "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+    "operation": {
+     "tool": "vercel",
+     "method": "CLI_METADATA",
+     "fixed_args": [
+      "whoami",
+      "--format",
+      "json"
+     ]
+    },
+    "request_utc": "2026-09-24T03:25:28.029Z",
+    "response_utc": "2026-09-24T03:25:31.216Z",
+    "http_status": null,
+    "outcome": "OK",
+    "projection": {
+     "username": "lorenzozanello-5040"
+    },
+    "absent_fields": [
+     {
+      "path": "uid",
+      "kind": "ABSENT_KEY"
+     },
+     {
+      "path": "id",
+      "kind": "ABSENT_KEY"
+     }
+    ],
+    "assertions": {
+     "identity_established": true
+    },
+    "scanner_adjudications": []
+   },
+   {
+    "record_kind": "PACMI_EVIDENCE",
+    "op_id": "PACMI-V2",
+    "read_id": "PACMI-V2",
+    "plane": "PLANE-V",
+    "node_ids": [],
+    "freshness": "EXECUTE_NOW",
+    "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+    "operation": {
+     "tool": "vercel",
+     "method": "CLI_METADATA",
+     "fixed_args": [
+      "teams",
+      "list",
+      "--format",
+      "json"
+     ]
+    },
+    "request_utc": "2026-09-24T03:25:31.217Z",
+    "response_utc": "2026-09-24T03:25:33.147Z",
+    "http_status": null,
+    "outcome": "OK",
+    "projection": {
+     "teams": [
+      {
+       "id": "team_9iwkq5gk08CXfRkRGOVF3Qhm",
+       "slug": "lorenzozanello-5040s-projects",
+       "name": "lorenzozanello-5040's projects",
+       "current": true
+      }
+     ]
+    },
+    "absent_fields": [],
+    "assertions": {},
+    "scanner_adjudications": []
+   },
+   {
+    "record_kind": "PACMI_EVIDENCE",
+    "op_id": "PACMI-V3",
+    "read_id": "PACMI-V3",
+    "plane": "PLANE-V",
+    "node_ids": [],
+    "freshness": "EXECUTE_NOW",
+    "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+    "operation": {
+     "tool": "vercel",
+     "method": "CLI_METADATA",
+     "fixed_args": [
+      "teams",
+      "members",
+      "--format",
+      "json"
+     ]
+    },
+    "request_utc": "2026-09-24T03:25:33.147Z",
+    "response_utc": "2026-09-24T03:25:35.064Z",
+    "http_status": null,
+    "outcome": "OK",
+    "projection": {
+     "members": [
+      {
+       "role": "OWNER",
+       "uid": "Bd6qebGFYr7dULnBQpyHvobb",
+       "username": "lorenzozanello-5040"
+      }
+     ]
+    },
+    "absent_fields": [],
+    "assertions": {},
+    "scanner_adjudications": []
+   }
+  ],
+  "refresh_side_effect_disclosure": "PACMI-V1 (vercel whoami) may exchange a refresh token for a new access token when the CLI OAuth session is near or past expiry. That is normal credential lifecycle performed by the provider-native client, not a control-plane setting mutation. No refresh-token material is observed, and the credential state recorded here is the state at this instant, not any historical expiry."
+ },
+ "dn0": {
+  "measured_utc": "2026-09-24T03:25:40.587Z",
+  "branch": "codex/cv1-infra-control-plane-read-authority-r1",
+  "head": "3190d3eebee71cf684f55ab6b1722c9cd7da7300",
+  "tree": "aa85f9961801d6a8a5938dfe1c8ad627ba6f8bf9",
+  "integration_head": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "integration_tree": "7228f833c57bfd37fe025546d939ecd46336159c",
+  "parent_binding_ancestor": true,
+  "certified_candidate": "e7c8e67b59bf4bbd831b0488b2f47eec7cad91b2",
+  "post_certification_additions": [
+   "docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_E7C8E67B59BF_IC_v1.0.0.json"
+  ],
+  "pins_matched": 9,
+  "certification_events_verified": 7
+ },
+ "ac1": {
+  "limb1": true,
+  "limb2": true,
+  "limb3": true,
+  "armed_at_runtime": true
+ },
+ "records": [
+  "G-R1",
+  "G-R3",
+  "G-R2.WITNESS",
+  "G-R2.A",
+  "G-R2.C",
+  "G-R2.WITNESS",
+  "G-R2.A",
+  "G-R2.C",
+  "G-R2.WITNESS",
+  "G-R2.A",
+  "G-R2.C",
+  "G-R2.B",
+  "G-R4.RUNS",
+  "G-R4.STATUS",
+  "V-R2.S1",
+  "V-R2.S2",
+  "V-R2.S3",
+  "G-R5",
+  "V-R1",
+  "V-R3",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "V-R2.L1",
+  "V-R2.L3",
+  "V-R2.L5",
+  "V-R2.L7",
+  "X-R1"
+ ],
+ "limb_d": {
+  "target_ref": "refs/heads/release/commercial-v1",
+  "pattern_forms_evaluated": [],
+  "rulesets": [],
+  "any_match": false,
+  "org_level_caveat": "Limb D evaluates the REPOSITORY ruleset inventory. An organization-level ruleset not returned by that inventory is not evaluated here; a clean limb D is clean only over the rulesets it saw."
+ },
+ "unresolved": [],
+ "not_executed_by_design": [
+  "V-R4 (F_IMMEDIATE_ONLY_BEFORE_MUTATION: bracket M-7, never in the read-only phase)"
+ ]
+}

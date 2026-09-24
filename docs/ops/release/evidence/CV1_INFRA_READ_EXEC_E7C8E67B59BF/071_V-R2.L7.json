@@ -1,0 +1,235 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L7",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v6/deployments?projectId=prj_OY0vbtCK4qvSVd6NrHqFNvtYonRK&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:28:08.983Z",
+ "response_utc": "2026-09-24T03:28:10.858Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "deployments": [
+   {
+    "uid": "dpl_GEAG1pJKFWB8AnwfLH7YvWSd3z5H",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-oosg414m0-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "b06d9489c468009bd0529166dcaeba56bdb04147",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779475667416
+   },
+   {
+    "uid": "dpl_6DB4L8YNuhi6P5vNmSSiKCMDUjnU",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-1voykywom-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "6457f6fc036c69ba8b150a72620e446b67741b77",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779475650671
+   },
+   {
+    "uid": "dpl_GKLyqLw2v6Arft3i9FqaWjCYEQNs",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-418rg362b-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "8f060be946f7dc657e24fe179fa0042d33db9aa9",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779475137499
+   },
+   {
+    "uid": "dpl_Hp8CbYi2D1g4ZNERBGoxPeekJp7B",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-l7kkj5j1q-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "8f060be946f7dc657e24fe179fa0042d33db9aa9",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779465707811
+   },
+   {
+    "uid": "dpl_5Z2HoN2CUSwAXjPmHmHG81yk2uzu",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-ba4zm73ao-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "e0ab92d9f19d06c4b529f49a640ebfe005c155ae",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779463973953
+   },
+   {
+    "uid": "dpl_9VrS8hnjbCwWsXsv3T6BigC7rujQ",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-bmtigo63u-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "1d36c70276326221546d964147af694608b450c2",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1779461739053
+   },
+   {
+    "uid": "dpl_GQttw3rK4gsGhKEBk2VCQ7poeNQk",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-i1rqf97zr-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "acb31fd99cd347328172a529436dfcf776ba78d5",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776975559056
+   },
+   {
+    "uid": "dpl_84TGGznFUVv2UwJagDUGjiy2yztY",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-a42l4rfyx-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "4c6022b077775ace4f0abb933be8c74f27d203b0",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776972918710
+   },
+   {
+    "uid": "dpl_G8gwcMa5z5xuaYyh9A1yCxfKZFJL",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-5fvubalc9-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "b72b044b30c8f4201bb7964ec9966e75ba789944",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776960287671
+   },
+   {
+    "uid": "dpl_3FqrNY7zgpQgcamab4Mka3GvnrCg",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-ed9fpprw1-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a160b5aba30ec2ab45683af2e7f741059f3508ae",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776959751628
+   },
+   {
+    "uid": "dpl_2RBLQW8mYhyT7D9TXPY7WfS6ueFL",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-agvkssz3q-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a160b5aba30ec2ab45683af2e7f741059f3508ae",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776959302704
+   },
+   {
+    "uid": "dpl_Hsh1ik3Y6vknWm3dbZfh7pccwpAN",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-g18skvrnk-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "851d43ec39d9e9f4456f5b305028a502fbbde763",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776810212425
+   },
+   {
+    "uid": "dpl_FuAKZvDRCVmNCQX8Qzg6xJujVsrz",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-hrubmw5wo-lorenzozanello-5040s-projects.vercel.app",
+    "source": "redeploy",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "116e5d351aec178de5f6ee73c9a58e074ece4237",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776810027404
+   },
+   {
+    "uid": "dpl_BVw4hYi7MFkqPFPY4D6fhdTcvuWw",
+    "name": "the-balance-corp",
+    "url": "the-balance-corp-c7m4dfhk9-lorenzozanello-5040s-projects.vercel.app",
+    "source": "git",
+    "readyState": "READY",
+    "meta": {
+     "githubCommitRef": "main",
+     "githubCommitSha": "a90d960bd2c01a50b4f513d6c4165ed9394f501a",
+     "githubRepo": "thebalancecorp.org"
+    },
+    "target": "production",
+    "createdAt": 1776809806164
+   }
+  ],
+  "pagination": {
+   "count": 14,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

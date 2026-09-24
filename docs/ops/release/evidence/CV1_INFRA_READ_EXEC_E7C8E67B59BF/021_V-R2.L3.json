@@ -1,0 +1,46 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L3",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v4/aliases?projectId=prj_FIJE1dhdtDUFPpPoo2UexlGrIOol&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm&limit=100"
+ },
+ "request_utc": "2026-09-24T03:26:15.423Z",
+ "response_utc": "2026-09-24T03:26:17.844Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "aliases": [
+   {
+    "alias": "sapiencialab-sl-lrs-g5b3b-preview.vercel.app",
+    "created": "2026-08-20T23:15:08.954Z",
+    "deploymentId": "dpl_9rGfkCe9GDdfUgx8aknvxLQ4Bc4r",
+    "projectId": "prj_FIJE1dhdtDUFPpPoo2UexlGrIOol",
+    "uid": "2d76568f77cac07a59217af45857806bdd8a8f87b514491f93de6a824b198c09f48177758e581039e844e864c1a3a9e69e5dda25e8ddb34b023f8f0f9f9b15cb"
+   }
+  ],
+  "pagination": {
+   "count": 1,
+   "next": null
+  }
+ },
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "PRESENT_NULL"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}

@@ -1,0 +1,35 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "G-R2.WITNESS",
+ "read_id": "G-R2",
+ "plane": "PLANE-G",
+ "node_ids": [
+  "DN-4",
+  "DN-8",
+  "DN-9",
+  "DN-12"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "gh",
+  "method": "GET",
+  "endpoint": "/repos/lorenzozanello/uellix-antigravity/branches/main"
+ },
+ "request_utc": "2026-09-24T03:25:43.005Z",
+ "response_utc": "2026-09-24T03:25:44.024Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {
+  "name": "main",
+  "commit": {
+   "sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4"
+  },
+  "protected": false
+ },
+ "absent_fields": [],
+ "assertions": {
+  "branch_resolves": true
+ },
+ "scanner_adjudications": []
+}

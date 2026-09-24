@@ -1,0 +1,36 @@
+{
+ "record_kind": "GOVERNED_READ_EVIDENCE",
+ "op_id": "V-R2.L5",
+ "read_id": "V-R2",
+ "plane": "PLANE-V",
+ "node_ids": [
+  "DN-2",
+  "DN-11"
+ ],
+ "freshness": "EXECUTE_NOW",
+ "prestate_validity": "EVIDENCE_ONLY__NOT_A_STANDING_PRESTATE",
+ "operation": {
+  "tool": "vercel",
+  "method": "GET",
+  "endpoint": "/v10/projects/prj_afJaFGY7kkL1NqE41zIO88HkFQCC/env?decrypt=false&teamId=team_9iwkq5gk08CXfRkRGOVF3Qhm"
+ },
+ "request_utc": "2026-09-24T03:28:16.412Z",
+ "response_utc": "2026-09-24T03:28:17.992Z",
+ "http_status": 200,
+ "outcome": "OK",
+ "projection": {},
+ "absent_fields": [
+  {
+   "path": "pagination.next",
+   "kind": "ABSENT_KEY"
+  },
+  {
+   "path": "pagination.count",
+   "kind": "ABSENT_KEY"
+  }
+ ],
+ "assertions": {
+  "pagination_terminal": true
+ },
+ "scanner_adjudications": []
+}
