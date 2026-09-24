@@ -47,11 +47,11 @@ pnpm ods:prestate -- --branch <b> --head <sha> --tree <sha> --clean
 pnpm authority:seal:verify
 pnpm ods:scope -- --base <sha> --allow <pattern> [--allow ...]
 pnpm ods:poststate -- --base <sha> --allow <pattern> [--test <path>] [--clean]
-pnpm ops:closure-state -- validate [--verify-git]   # CV1 closure state
+pnpm ops:closure-state -- validate --previous-ref <base> --verify-git   # CV1 closure state
 ```
 
-Program closure status lives in `docs/ops/ods/CV1_CLOSURE_STATE.json`
-(operational derived state, NOT authority; it points at evidence).
+`docs/ops/ods/CV1_CLOSURE_STATE.json` is a mutable derived projection, NOT authority: it
+points at evidence and may never erase earlier evidence/findings/invalidators/history.
 
 ## 5. Fail-closed rules
 
@@ -105,26 +105,27 @@ RISKS / OPEN FINDINGS
 NEXT AUTHORIZED ACTION
 ```
 
-Long-run details (§11–§14): `docs/ops/ods/ODS_LONG_RUN_OPERATING_STANDARD_v1.0.0.md`;
+Long-run details (§11–§14): `docs/ops/ods/ODS_LONG_RUN_OPERATING_STANDARD_v1.1.0.md`;
 skill `.claude/skills/uellix-long-run`.
 
 ## 11. Long-run policy
 
-When a step does not require human input, continue automatically. A
-progress/status update is NOT a stopping condition: never stop merely to
-summarize, offer to continue, report pending CI/tests, or ask permission
-for an already-authorized next step. Poll bounded operations (CI, builds,
-test runs) to a terminal state. Stop ONLY on: a real HPO/owner decision;
-an authority contradiction; scope expansion; a protected/destructive/
-provider boundary requiring confirmation; branch/HEAD/prestate drift; a
-genuine gate failure not fixable within scope; no authorized work remaining.
+When a step needs no human input, continue automatically. A progress/status
+update is NOT a stop: never stop merely to summarize, offer to continue,
+report pending CI/tests, or re-ask for an already-authorized step. Poll
+bounded operations to a terminal state. Stop at least on: an owner/HPO
+decision; authority contradiction; scope expansion; a protected/destructive/
+provider boundary needing confirmation; branch/HEAD/prestate drift; a gate
+failure not fixable in scope; no authorized work left. This list ADDS to,
+never overrides, every other fail-closed rule: §5 (UNKNOWN/ambiguity),
+secret exposure, authority failure, `uellix-mission-loop` stops, MAX_CYCLES.
 
 ## 12. Subagents
 
 - Default: ONE writer (the parent) + read-only investigators only when the work is genuinely parallel.
 - The parent verifies every material subagent claim against the repository before relying on it.
 - Subagents never make owner decisions, expand authority, or certify their own writes.
-- Multiple writing subagents require explicit disjoint worktrees/write-sets and a declared integration order; otherwise prohibited.
+- Multiple writers only when the MISSION explicitly authorizes it (the parent cannot self-authorize by declaring it), with disjoint worktrees, disjoint write sets and a declared integration order.
 - No subagent for trivial grep or sequential work.
 
 ## 13. Certification inheritance
@@ -138,9 +139,11 @@ challenges it; or contradictory evidence appears. There is no global
 
 ## 14. RUN_STATE
 
-Long missions keep `%TEMP%\uellix-runs\<LANE>\RUN_STATE.json` (outside git):
-operational memory only — never authority, certification, or product
-evidence. On resume, re-measure branch/HEAD/tree first; repository facts
-beat RUN_STATE, and an unexplained HEAD change is drift (STOP). Shape and
-update rules: `docs/ops/ods/ODS_RUN_STATE_SCHEMA_v1.0.0.json`,
-`pnpm ops:closure-state -- run-state --file <path>`.
+`<ROOT>\<LANE>\RUN_STATE.json`, ROOT from `pnpm ops:closure-state -- run-state-root`:
+`%TEMP%\uellix-runs` only if verified outside every git repo/worktree, else
+`%LOCALAPPDATA%\uellix-runs`; none verified => STOP. Operational memory only —
+never authority, certification or evidence. Resume re-measures first and
+binds lane, role, branch, base, candidate and last_verified_head (HEAD alone
+is insufficient); any mismatch is drift (STOP). Schema
+`docs/ops/ods/ODS_RUN_STATE_SCHEMA_v1.1.0.json`; check: `pnpm ops:closure-state --
+run-state --file <f> --repo . --lane <L> --role <R> --branch <B> --base <SHA>`.

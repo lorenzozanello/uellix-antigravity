@@ -55,6 +55,17 @@ jobs:
       - name: Verify ODS authority
         run: pnpm authority:seal:verify
 
+      # CV1 closure-state projection (docs/ops/ods/CV1_CLOSURE_STATE.json).
+      # The previous projection is read from the merge-base with the base
+      # branch: unchanged => hermetic validation at its as_of; changed =>
+      # transition rules against that previous (or genesis rules when the
+      # base has none), current time, and --verify-git. Needs the full
+      # history requested by the checkout step above.
+      - name: Validate CV1 closure state
+        run: pnpm ops:closure-state -- ci --base "${CLOSURE_STATE_BASE:-HEAD~1}"
+        env:
+          CLOSURE_STATE_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
+
       - name: Lint
         run: pnpm lint
 
