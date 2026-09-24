@@ -1,0 +1,96 @@
+{
+  "event_class": "D1_PREHC1_PACKAGE_INDEPENDENT_CERTIFICATION",
+  "candidate_commit": "d0c56661e1bfec3b4c5490f05bc9ab1127a51f91",
+  "candidate_tree": "2c7d3edf228ca6cf7ee5152c0e858852ce984ed3",
+  "verdict": "D1_FINAL_CANDIDATE_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+  "verdict_class": "PASS_WITH_NONBLOCKING_FINDINGS",
+  "blocking_findings": 0,
+  "package_closure_digest": "a769e92984cd4b6054458a1ecbfb17052d3f7b0c50b9ecea94ae7df1b58189c4",
+  "certifier_is_not_the_author": true,
+  "contract": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.6.json#CERTIFICATION_EVENT_CONTRACT",
+  "append_only": true,
+  "PROVENANCE": {
+    "classification": "PROCESS_GOVERNED",
+    "certifier": "The independent recertification lane LANE CV1-D1-FINAL-CANDIDATE-INDEPENDENT-RECERT-R1 (Claude Code Desktop session local_a2da8e0a-7457-4baa-99e8-ae0c88a6bc81, worktree uellix-cv1-d1-final-recert). It ran READ ONLY, wrote no event, and named as its NEXT_GATE: write exactly one independent certification event for this candidate, in a separate lane.",
+    "materializer": "LANE CV1-D1-CERT-MATERIALIZATION-TO-N11-R1, a separate session designated by the owner as independent certification materializer. It is not the author of the candidate and it is not the certifier; it transcribes the certifier's verdict and findings and adds nothing to them.",
+    "author_of_candidate": "LANE FINAL-CANDIDATE-SCHEDULE-AND-TERMINATION-CLOSURE-R1 (a third, distinct session).",
+    "reviewer_identity": null,
+    "reviewer_identity_hole_reason": "Sessions are identified; no human reviewer identity is supplied by any artifact. Not inferred, not attributed.",
+    "not_machine_enforced": "certifier_is_not_the_author is self-declared by this body; git cannot tell who wrote the file. Independence is governed by lane separation and review of the commit that adds this event (see FIBDB053_D1_AUDITOR_CERT_EVENT_TERMINATION_EXECUTION_RECORD_v1.0.0.json CERTIFIER_PROVENANCE_CLASS). No signing infrastructure exists and none is claimed."
+  },
+  "CERTIFICATION_DATE_UTC": "2026-09-24",
+  "CERTIFIER_MEASURED_AT_UTC": "2026-09-24T02:07:25Z",
+  "CERTIFIER_MEASURED_AT_UTC_source": "Quoted from the certifier's report (TIME_REMAINING_TO_N08 measurement). No other instant is invented.",
+  "PACKAGE_CLOSURE_DIGEST_DERIVATION": {
+    "files": 93,
+    "by_repository_deriver": "scripts/custody/d1-package-closure.ts derivePackageClosure at the candidate (clean worktree) = a769e92984cd4b6054458a1ecbfb17052d3f7b0c50b9ecea94ae7df1b58189c4",
+    "by_git_objects": "sha256 over sorted 'path:blob' lines with blob taken from git ls-tree d0c56661e1bfec3b4c5490f05bc9ab1127a51f91 for the same 93 paths = a769e92984cd4b6054458a1ecbfb17052d3f7b0c50b9ecea94ae7df1b58189c4",
+    "certifier_reported_prefix": "a769e929"
+  },
+  "EFFECTIVE_SCHEDULE_CERTIFIED": {
+    "N08": "2026-09-25T14:00:00Z",
+    "N31": "2026-09-25T18:00:00Z",
+    "N09": "2026-09-26T14:00:00.000Z",
+    "SCHEDULE_BEFORE_CERTIFICATION": "YES",
+    "rule": "No schedule mutation between this event and N11. Any schedule change after this event makes HEAD a new candidate (PMR-9 NOT_READY)."
+  },
+  "CERTIFIER_RESULT_FIELDS_VERBATIM": {
+    "source": "Final assistant message of session local_a2da8e0a-7457-4baa-99e8-ae0c88a6bc81, retrieved by list_events on 2026-09-24.",
+    "SCHEDULE_BEFORE_CERTIFICATION": "YES. The schedule is inside the candidate and does not change between the candidate and candidate + event",
+    "TERMINATION_SELF_INCLUDED": "YES. The nested run includes the termination test itself; two mutants that exclude it or drop the JSON check both turn red",
+    "POST_EVENT_FULL_SUITE": "595/595 green on candidate + my event, and 595/595 green on the GitHub merge of that commit",
+    "GITHUB_MERGE_REF": "CORRECT. Details in section 3",
+    "ROLE_SURFACE_CLOSED_WORLD": "Holds for the certified content. The guard itself is lexical and misses some spellings (finding NB-1)",
+    "PRE_HC1_STATE": "N01 PASS; N02–N09 SATISFIED; N10 = NOT_READY, and PMR-9 is the only unsatisfied item",
+    "CI_STATUS": "SUCCESS: CI \"Lint, typecheck, test, build\", Vercel and Vercel Preview Comments. Live PR head re-checked at 02:07Z = `d0c56661`",
+    "TIME_REMAINING_TO_N08": "about 35 h 52 min (measured at 2026-09-24T02:07:25Z). No STOP_SCHEDULE_TOO_CLOSE"
+  },
+  "EXECUTION_BLOCKERS": 0,
+  "NONBLOCKING_FINDINGS_CLASS": "NONBLOCKING_HYGIENE",
+  "NONBLOCKING_FINDINGS_COUNT": 6,
+  "NONBLOCKING_FINDINGS": [
+    {
+      "id": "NB-1",
+      "headline_verbatim": "the role guard works by keywords, not by meaning.",
+      "body_verbatim": "Statements that reach roles through the following spellings are *not* flagged: `U&\"pg_rol\\0065s\"`; `pg_user_mappings` (the `pg_user\\b` pattern misses it); `SELECT user`, `pg_db_role_setting`, `pg_shdepend`; `has_schema_privilege('postgres',…)`, `pg_hba_file_rules`, `pg_init_privs`, `pg_stat_get_backend_userid`. So the execution record's claim \"in any spelling\" goes too far. The N13 statements are also outside the guard's scope. The certified content does conform: 0 findings, all 7 pins recomputed and matching, and the read session only sends P1 statements by id.",
+      "status": "OPEN"
+    },
+    {
+      "id": "NB-2",
+      "headline_verbatim": "four mutation survivors, i.e. checks no test exercises:",
+      "body_verbatim": "MS3: the owner-signed N31 comparison; MR2: a pin computed over whitespace-normalised SQL; MR3: the check that the key and the id match; MS4: a redundant condition that cannot change the N10 result.",
+      "status": "OPEN"
+    },
+    {
+      "id": "NB-3",
+      "headline_verbatim": "PRE-HC1 does not look at the clock.",
+      "body_verbatim": "A certified candidate whose N08 is already in the past still gives READY. The UTC margin check exists only as a manual step.",
+      "status": "OPEN",
+      "consequence_carried": "Every PRE-HC1 run after this event is paired with a separate mechanical UTC-versus-N08 check before HC-1 and again before N11."
+    },
+    {
+      "id": "NB-4",
+      "headline_verbatim": "the mint-harness test never deletes its temp folders.",
+      "body_verbatim": "There are about 3,590 `d1-mint-harness-*` folders in `%TEMP%`, about 420 of them from this lane's runs. Their content is fake only.",
+      "status": "OPEN"
+    },
+    {
+      "id": "NB-5",
+      "headline_verbatim": "(carried over, unchanged) — `classifyToolRun` trusts a final `DEFINITELY_NOT_COMMITTED` line even when it comes after `COMMIT_REQUESTED`.",
+      "body_verbatim": null,
+      "status": "OPEN"
+    },
+    {
+      "id": "NB-6",
+      "headline_verbatim": "(design notes, not defects):",
+      "body_verbatim": "The event's body can be edited after the fact and PASS still holds. A sibling commit with an identical tree plus its own event gives READY. `SIGNED: \"YES\"` is self-declared by the author. I checked the values against this mandate.",
+      "status": "OPEN"
+    }
+  ],
+  "VERBATIM_NOTE": "Headlines and bodies are the certifier's words. Bulleted sub-lists in the source were joined with '; ' or ' ' and markdown bold markers around the ids were dropped; no word was added, removed or reordered.",
+  "AUTHORIZED_POST_CERTIFICATION_DELTA": "Exactly ONE added file: this event. Any other change after it is a new candidate.",
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": 0,
+  "next_gate": "Fresh PRE-HC1 on candidate + this event, paired with a mechanical UTC check against N08 (NB-3) -> fresh owner HC-1 -> N11 immediately. No schedule mutation between this event and N11."
+}
