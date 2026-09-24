@@ -113,6 +113,7 @@
     "ops:test-diff": "tsx scripts/ods-test-diff.ts",
     "ops:controller": "tsx scripts/ods-controller.ts",
     "audit:batch": "tsx scripts/audit-batch.ts",
+    "ops:closure-state": "tsx scripts/ops/closure-state.ts",
     "golden:list": "playwright test --list",
     "golden:contract": "playwright test --project=contract",
     "golden:browser": "playwright test --project=browser"

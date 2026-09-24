@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "docs/ops/ods/ODS_RUN_STATE_SCHEMA_v1.1.0.json",
+  "title": "ODS RUN_STATE schema v1.1.0",
+  "description": "Successor of ODS_RUN_STATE_SCHEMA_v1.0.0.json (kept unchanged as history). Shape of <RUN_ROOT>/<LANE>/RUN_STATE.json, the operational memory of one long-run mission (ODS_LONG_RUN_OPERATING_STANDARD_v1.1.0.md section 4). RUN_ROOT is %TEMP%\\uellix-runs only when that directory is verified to be outside every git repository/worktree, otherwise %LOCALAPPDATA%\\uellix-runs if verified; no verified location => STOP (`pnpm ops:closure-state -- run-state-root`). RUN_STATE is NOT authority, NOT certification, NOT product evidence, never committed, never holds secrets. Resume binds lane, role, branch, base, candidate and last_verified_head (`pnpm ops:closure-state -- run-state --file <f> --repo <dir> --lane <L> --role <R> --branch <B> --base <SHA> [--candidate <SHA>]`); HEAD alone is never sufficient.",
+  "x-not-authority": true,
+  "x-supersedes": "docs/ops/ods/ODS_RUN_STATE_SCHEMA_v1.0.0.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_state_version",
+    "lane",
+    "role",
+    "base",
+    "candidate",
+    "branch",
+    "worktree",
+    "done_when",
+    "completed",
+    "active",
+    "remaining",
+    "findings",
+    "unconfirmed",
+    "needs_from_owner",
+    "own_commits",
+    "last_verified_head",
+    "updated_at"
+  ],
+  "properties": {
+    "run_state_version": { "const": "1.1.0" },
+    "lane": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9-]*$" },
+    "role": { "type": "string", "minLength": 1 },
+    "base": { "$ref": "#/$defs/sha" },
+    "candidate": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
+    "branch": { "type": "string", "minLength": 1 },
+    "worktree": { "type": "string", "minLength": 1 },
+    "done_when": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "completed": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "active": { "type": ["string", "null"] },
+    "remaining": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/item" } },
+    "unconfirmed": { "type": "array", "items": { "$ref": "#/$defs/unconfirmed_fact" } },
+    "needs_from_owner": { "type": "array", "items": { "$ref": "#/$defs/item" } },
+    "own_commits": { "type": "array", "items": { "$ref": "#/$defs/sha" } },
+    "last_verified_head": { "$ref": "#/$defs/sha" },
+    "updated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$" }
+  },
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "summary", "resolved"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "resolved": { "type": "boolean" }
+      }
+    },
+    "unconfirmed_fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact", "searched", "status", "why_unconfirmed", "impact", "next_evidence_required"],
+      "properties": {
+        "fact": { "type": "string", "minLength": 1 },
+        "searched": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["UNCONFIRMED", "NOT_FOUND", "CONTRADICTED"] },
+        "why_unconfirmed": { "type": "string", "minLength": 1 },
+        "impact": { "type": "string", "minLength": 1 },
+        "next_evidence_required": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

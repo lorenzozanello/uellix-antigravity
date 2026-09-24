@@ -2632,8 +2632,12 @@ describe('HPO-ODS-W2-29 — Customer Lifecycle L1 organization commercial accept
     // would pass unnoticed. Naming v1.0.39 inside an ABSENCE assertion is a
     // PROHIBITION, never an allocation: an assertion that a file does not exist
     // cannot be a claim on it.
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json')),
+    ).toBe(true)
+    expect(
+      existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json')),
     ).toBe(false)
   })
 })
@@ -3532,7 +3536,9 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json'))).toBe(true)
     // The next unallocated position is pinned ABSENT, so the control keeps a
     // live negative and does not degrade into a row of positives.
-    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(false)
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'))).toBe(false)
     // NO CONTROLLER MUTATION IS REQUIRED FOR THE GRANT TO RESOLVE. The two
     // registries are independent (v1.0.32 DECOUPLING_PRESERVED): the Controller
     // gates the next LINEAGE allocation and can never prevent a grant from
@@ -4682,7 +4688,8 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
   // the next UNALLOCATED position any longer; pinning any of them here would
   // assert an absence that is now false. The constant names the next
   // unallocated position, whatever that currently is.
-  const NEXT_UNALLOCATED = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json`
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json`
   const W2_32_ADDENDUM = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json`
   const W2_33_ADDENDUM = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json`
   const W2_34_ADDENDUM = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json`
@@ -4767,7 +4774,8 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     // other assertion in this control is a past-tense claim about the FROZEN
     // v1.0.34 artefact — that it succeeds v1.0.33 and that it is the unique
     // carrier of version 1.0.34 — and none of them moves.
-    expect(nums[nums.length - 1]).toBe(38)
+    // ADVANCED 38 -> 39 by the CV1 DevOS path-class grant materialization (v1.0.39).
+    expect(nums[nums.length - 1]).toBe(39)
 
     // EXACTLY ONE authoritative allocation of the version, measured at the
     // KEY POSITION. A file merely MENTIONING "1.0.34" in prose is not an
@@ -5026,6 +5034,8 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     expect(existsSync(path.join(REPO_ROOT, W2_35_ADDENDUM))).toBe(true)
     // THE NEXT UNALLOCATED POSITION IS NOW v1.0.39 AND IT IS NOT ALLOCATED
     // HERE. Naming it in an ABSENCE assertion is a prohibition, never a claim.
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED))).toBe(false)
     // ...and no addendum in the corpus carries it at the version KEY either,
     // which is the predicate a stray renamed copy would fail. ADVANCED on BOTH
@@ -5040,7 +5050,8 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     // grant id.
     const strays = addendumFiles.filter((f) => {
       const parsed = JSON.parse(readFileSync(path.join(REPO_ROOT, ODS_DIR, f), 'utf8'))
-      return parsed.version === '1.0.39' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
+      // Version disjunct ADVANCED 1.0.39 -> 1.0.40 (v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization)); the GRANT_ID disjunct stays W2-36 because v1.0.39 allocated no grant id.
+      return parsed.version === '1.0.40' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
     })
     expect(strays).toEqual([])
     // NON-VACUITY of that empty result: the SAME predicate applied to the pair
@@ -5554,8 +5565,12 @@ describe('HPO-ODS-W2-31 — CE-3 definer ownership grant REGISTRATION', () => {
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json')),
     ).toBe(true)
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json')),
+    ).toBe(true)
+    expect(
+      existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json')),
     ).toBe(false)
     // NON-VACUITY: the addendum this act CONSUMES does exist, so the negative
     // above is a measured absence and not a wrong directory.
@@ -5621,7 +5636,8 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
   // ADVANCED AGAIN, from v1.0.38 to v1.0.39: v1.0.36, v1.0.37 AND v1.0.38 have
   // since been allocated, each by its own separate governed act, so none of
   // them is the next UNALLOCATED position any longer.
-  const NEXT_UNALLOCATED_35 = ODS_DIR_35 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED_35 = ODS_DIR_35 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'
   const W2_33_PATH_35 = ODS_DIR_35 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json'
   const W2_34_PATH_35 = ODS_DIR_35 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json'
   const W2_35_PATH_35 = ODS_DIR_35 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json'
@@ -5734,7 +5750,8 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
     // lineage allocation, and AGAIN 37 -> 38 by the FIBDB-053 Stage-A lineage
     // allocation. The past-tense claims in this control — that v1.0.35
     // succeeds v1.0.34 and that its predecessor exists — do not move.
-    expect(nums[nums.length - 1]).toBe(38)
+    // ADVANCED 38 -> 39 by the CV1 DevOS path-class grant materialization (v1.0.39).
+    expect(nums[nums.length - 1]).toBe(39)
     // NO DUPLICATE ORDINAL. length and Set size are compared because an
     // order-blind or duplicate-blind check would miss a reintroduced ordinal.
     expect(new Set(nums).size).toBe(nums.length)
@@ -6098,13 +6115,16 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
     expect(existsSync(path.join(REPO_ROOT, W2_35_PATH_35))).toBe(true)
     // THE NEXT UNALLOCATED POSITION DOES NOT EXIST. Naming it in an ABSENCE
     // assertion is a prohibition, never a claim on it.
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_35))).toBe(false)
     // ...and no addendum carries it at the version KEY, nor W2-36 at the
     // GRANT_ID key, which is the predicate a stray renamed copy would fail.
     // ADVANCED on BOTH disjuncts together, 1.0.38/W2-35 -> 1.0.39/W2-36.
     const strays35 = addenda35.filter((f) => {
       const parsed = JSON.parse(readFileSync(path.join(REPO_ROOT, ODS_DIR_35, f), 'utf8'))
-      return parsed.version === '1.0.39' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
+      // Version disjunct ADVANCED 1.0.39 -> 1.0.40 (v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization)); the GRANT_ID disjunct stays W2-36 because v1.0.39 allocated no grant id.
+      return parsed.version === '1.0.40' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
     })
     expect(strays35).toEqual([])
     // AND THE REGISTRY-AXIS SENTINEL HAS SINCE ADVANCED THRICE MORE. THIS
@@ -6192,7 +6212,8 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
   // allocation, which allocated v1.0.38 in its own separate governed act (the
   // PG-06 lineage allocation having already allocated v1.0.37, and the
   // current-schema runtime ACL allocation having already allocated v1.0.36).
-  const NEXT_UNALLOCATED_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'
   const W2_35_ADDENDUM_PATH_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json'
   const W2_33_ADDENDUM_PATH_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json'
   const W2_34_ADDENDUM_PATH_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json'
@@ -6670,7 +6691,7 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     expect(resolveProtectedGrant('HPO-ODS-W2-32', CE3_REG).grant).toBeDefined()
   })
 
-  it('THIS ACT ALLOCATED NOTHING (W2-32-REG-N9): no v1.0.39, no W2-36, and the v1.0.35 allocation artefact is not rewritten', () => {
+  it('THIS ACT ALLOCATED NOTHING (W2-32-REG-N9): no v1.0.40, no W2-36, and the v1.0.35 allocation artefact is not rewritten', () => {
     // REGISTRATION IS NOT ALLOCATION. This act appended a row; it created no
     // addendum and reserved no id. The registry-axis sentinel advanced to
     // W2-33 precisely because W2-32 stopped being the next unregistered id —
@@ -6686,6 +6707,8 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     ).toBeDefined()
     expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-36')
     expect(resolveProtectedGrant('HPO-ODS-W2-36', CE3_REG).grant).toBeUndefined()
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_REG))).toBe(false)
     // v1.0.36 HAS since been allocated, by a later and entirely separate act.
     // That is asserted POSITIVELY rather than left unstated, so that this
@@ -6832,7 +6855,8 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
   // ADVANCED AGAIN, from v1.0.38 to v1.0.39: v1.0.37 and v1.0.38 have since
   // been allocated, each by its own separate governed act (the PG-06 lineage
   // allocation and the FIBDB-053 Stage-A lineage allocation).
-  const NEXT_UNALLOCATED_36 = ODS_DIR_36 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED_36 = ODS_DIR_36 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'
   const W2_34_PATH_36 = ODS_DIR_36 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json'
   const W2_35_PATH_36 = ODS_DIR_36 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json'
   const ACL_IMPL_BRANCH = 'codex/current-schema-runtime-acl-implementation-r1'
@@ -6957,7 +6981,8 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     // PG-06 lineage allocation, and AGAIN from 37 to 38 by the FIBDB-053
     // Stage-A lineage allocation. The past-tense claims in this control — that
     // v1.0.36 succeeds v1.0.35 and that its predecessor exists — do not move.
-    expect(nums[nums.length - 1]).toBe(38)
+    // ADVANCED 38 -> 39 by the CV1 DevOS path-class grant materialization (v1.0.39).
+    expect(nums[nums.length - 1]).toBe(39)
     // NO DUPLICATE ORDINAL. length and Set size are compared because an
     // order-blind or duplicate-blind check would miss a reintroduced ordinal.
     expect(new Set(nums).size).toBe(nums.length)
@@ -7343,6 +7368,8 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     expect(existsSync(path.join(REPO_ROOT, W2_35_PATH_36))).toBe(true)
     // THE NEXT UNALLOCATED POSITION DOES NOT EXIST. Naming it in an ABSENCE
     // assertion is a prohibition, never a claim on it.
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_36))).toBe(false)
     // ...and no addendum carries it at the version KEY, nor W2-36 at the
     // GRANT_ID key, which is the predicate a stray renamed copy would fail.
@@ -7351,7 +7378,8 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     // artefact.
     const strays36 = addenda36.filter((f) => {
       const parsed = JSON.parse(readFileSync(path.join(REPO_ROOT, ODS_DIR_36, f), 'utf8'))
-      return parsed.version === '1.0.39' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
+      // Version disjunct ADVANCED 1.0.39 -> 1.0.40 (v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization)); the GRANT_ID disjunct stays W2-36 because v1.0.39 allocated no grant id.
+      return parsed.version === '1.0.40' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
     })
     expect(strays36).toEqual([])
     // NON-VACUITY of that empty result: the SAME predicate applied to the pair
@@ -7443,7 +7471,8 @@ describe('HPO-ODS-W2-33 — current-schema runtime ACL grant REGISTRATION', () =
   // each by its own separate governed act (the PG-06 lineage allocation and
   // the FIBDB-053 Stage-A lineage allocation), so neither is any longer the
   // next unallocated lineage position after v1.0.36.
-  const NEXT_UNALLOCATED_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'
   const W2_35_ADDENDUM_PATH_REG_33 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json'
   const W2_34_ADDENDUM_PATH_REG_33 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json'
   const ACL_REG = 'codex/current-schema-runtime-acl-implementation-r1'
@@ -7784,7 +7813,7 @@ describe('HPO-ODS-W2-33 — current-schema runtime ACL grant REGISTRATION', () =
     expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant).toBeDefined()
   })
 
-  it('THIS ACT ALLOCATED NOTHING (W2-33-REG-N9): no v1.0.39, no W2-36, and the v1.0.36 allocation artefact is not rewritten', () => {
+  it('THIS ACT ALLOCATED NOTHING (W2-33-REG-N9): no v1.0.40, no W2-36, and the v1.0.36 allocation artefact is not rewritten', () => {
     // W2-34 HAS SINCE BEEN REGISTERED TOO, by its own SEPARATE later governed
     // act, on a different branch. This act's own claim is unaffected: IT did
     // not register W2-34, and it still does not resolve on THIS (ACL) branch.
@@ -7797,6 +7826,8 @@ describe('HPO-ODS-W2-33 — current-schema runtime ACL grant REGISTRATION', () =
     expect(resolveProtectedGrant('HPO-ODS-W2-35', ACL_REG).grant).toBeUndefined()
     expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-36')
     expect(resolveProtectedGrant('HPO-ODS-W2-36', ACL_REG).grant).toBeUndefined()
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_REG))).toBe(false)
     // v1.0.37 HAS since been allocated, by a later and entirely separate act
     // (the PG-06 lineage allocation). Asserted POSITIVELY rather than left
@@ -7885,7 +7916,8 @@ describe('ODS v1.0.37 / HPO-ODS-W2-34 — PG-06 lineage ALLOCATION (declared, NO
   const W2_34_PATH = ODS_DIR_37 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json'
   const W2_33_PATH_37 = ODS_DIR_37 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json'
   const W2_35_PATH_37 = ODS_DIR_37 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json'
-  const NEXT_UNALLOCATED_37 = ODS_DIR_37 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED_37 = ODS_DIR_37 + '/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'
   const PG06_IMPL_BRANCH = 'codex/customer-lifecycle-l1-trigger-privilege-remediation-r1'
   const MIGRATION_0072 = 'db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql'
   const JOURNAL_085 = 'db/prepared/journal/085_0072_customer_lifecycle_l1_organization_commercial_acceptance.sql'
@@ -8000,7 +8032,8 @@ describe('ODS v1.0.37 / HPO-ODS-W2-34 — PG-06 lineage ALLOCATION (declared, NO
       .sort((x, y) => x - y)
     expect(nums.length).toBeGreaterThan(0)
     nums.forEach((n, i) => expect(n).toBe(i + 1))
-    expect(nums[nums.length - 1]).toBe(38)
+    // ADVANCED 38 -> 39 by the CV1 DevOS path-class grant materialization (v1.0.39).
+    expect(nums[nums.length - 1]).toBe(39)
     // NO DUPLICATE ORDINAL. length and Set size are compared because an
     // order-blind or duplicate-blind check would miss a reintroduced ordinal.
     expect(new Set(nums).size).toBe(nums.length)
@@ -8229,6 +8262,8 @@ describe('ODS v1.0.37 / HPO-ODS-W2-34 — PG-06 lineage ALLOCATION (declared, NO
     expect(existsSync(path.join(REPO_ROOT, W2_35_PATH_37))).toBe(true)
     // THE NEXT UNALLOCATED POSITION DOES NOT EXIST. Naming it in an ABSENCE
     // assertion is a prohibition, never a claim on it.
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_37))).toBe(false)
     // ...and no addendum carries it at the version KEY, nor W2-36 at the
     // GRANT_ID key, which is the predicate a stray renamed copy would fail.
@@ -8236,7 +8271,8 @@ describe('ODS v1.0.37 / HPO-ODS-W2-34 — PG-06 lineage ALLOCATION (declared, NO
     // survivor satisfied by this very artefact.
     const strays37 = addenda37.filter((f) => {
       const parsed = JSON.parse(readFileSync(path.join(REPO_ROOT, ODS_DIR_37, f), 'utf8'))
-      return parsed.version === '1.0.39' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
+      // Version disjunct ADVANCED 1.0.39 -> 1.0.40 (v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization)); the GRANT_ID disjunct stays W2-36 because v1.0.39 allocated no grant id.
+      return parsed.version === '1.0.40' || parsed.GRANT_ID === 'HPO-ODS-W2-36'
     })
     expect(strays37).toEqual([])
     // NON-VACUITY of that empty result: the SAME predicate applied to the pair
@@ -8312,7 +8348,8 @@ describe('HPO-ODS-W2-34 — PG-06 lineage grant REGISTRATION', () => {
   const W2_35_ADDENDUM_PATH_REG_34 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json'
   // The NEXT unallocated lineage position, now after v1.0.38, still absent.
   // Registration does not touch the lineage axis, so this stays pinned here.
-  const NEXT_UNALLOCATED_REG_34 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED_REG_34 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'
   const PG06_REG = 'codex/customer-lifecycle-l1-trigger-privilege-remediation-r1'
   const MIGRATION_0072_REG = 'db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql'
   const JOURNAL_085_REG = 'db/prepared/journal/085_0072_customer_lifecycle_l1_organization_commercial_acceptance.sql'
@@ -8625,7 +8662,7 @@ describe('HPO-ODS-W2-34 — PG-06 lineage grant REGISTRATION', () => {
     expect(resolveProtectedGrant('HPO-ODS-W2-34', PG06_REG).grant).toBeDefined()
   })
 
-  it('THIS ACT ALLOCATED NOTHING (W2-34-REG-N9): no v1.0.39, no W2-36, and the v1.0.37 allocation artefact is not rewritten', () => {
+  it('THIS ACT ALLOCATED NOTHING (W2-34-REG-N9): no v1.0.40, no W2-36, and the v1.0.37 allocation artefact is not rewritten', () => {
     // W2-35 HAS SINCE BEEN REGISTERED TOO, by its own SEPARATE later governed
     // act, on a different branch. This act's own claim is unaffected: IT did
     // not register W2-35, and it still does not resolve on THIS (PG06) branch.
@@ -8634,6 +8671,8 @@ describe('HPO-ODS-W2-34 — PG-06 lineage grant REGISTRATION', () => {
     expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-36')
     expect(resolveProtectedGrant('HPO-ODS-W2-36', PG06_REG).grant).toBeUndefined()
     expect(existsSync(path.join(REPO_ROOT, W2_35_ADDENDUM_PATH_REG_34))).toBe(true)
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_REG_34))).toBe(false)
     // NON-VACUITY: the addendum this act CONSUMES does exist.
     expect(existsSync(path.join(REPO_ROOT, W2_34_ADDENDUM_PATH))).toBe(true)
@@ -8681,7 +8720,8 @@ describe('HPO-ODS-W2-35 — FIBDB-053 Stage-A lineage grant REGISTRATION', () =>
   const W2_34_ADDENDUM_PATH_REG_35 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json'
   // The NEXT unallocated lineage position after v1.0.38, still absent.
   // Registration does not touch the lineage axis, so this stays pinned here.
-  const NEXT_UNALLOCATED_REG_35 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'
+  // ADVANCED AGAIN, from v1.0.39 to v1.0.40: v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+  const NEXT_UNALLOCATED_REG_35 = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json'
   const FIBDB053_REG = 'codex/fibdb053-stage-a-implementation-r1'
   const STELLA_0017B_SQL_REG = 'db/prepared/stella_0017b_governed_risk_parameters.sql'
   const STELLA_0017B_ROLLBACK_REG = 'db/prepared/stella_0017b_rollback.sql'
@@ -9062,9 +9102,11 @@ describe('HPO-ODS-W2-35 — FIBDB-053 Stage-A lineage grant REGISTRATION', () =>
     expect(resolveProtectedGrant('HPO-ODS-W2-35', FIBDB053_REG).grant).toBeDefined()
   })
 
-  it('THIS ACT ALLOCATED NOTHING (W2-35-REG-N9): no v1.0.39, no W2-36, and the v1.0.38 allocation artefact is not rewritten', () => {
+  it('THIS ACT ALLOCATED NOTHING (W2-35-REG-N9): no v1.0.40, no W2-36, and the v1.0.38 allocation artefact is not rewritten', () => {
     expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-36')
     expect(resolveProtectedGrant('HPO-ODS-W2-36', FIBDB053_REG).grant).toBeUndefined()
+    // v1.0.39 has since been allocated by its OWN separate act (the CV1 DevOS path-class grant materialization), so it advances from absence to presence; the next unallocated position, v1.0.40, stays pinned ABSENT.
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json'))).toBe(true)
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_REG_35))).toBe(false)
     // NON-VACUITY: the addendum this act CONSUMES does exist.
     expect(existsSync(path.join(REPO_ROOT, W2_35_ADDENDUM_PATH))).toBe(true)
