@@ -23,7 +23,7 @@ import { main as n14Main } from '@/scripts/custody/d1-auditor-n14-consumer'
 import { main as n22Main, parseNode } from '@/scripts/custody/d1-auditor-n22-consumer'
 import { parseLauncherArgs } from '@/scripts/custody/d1-deliver-n13'
 import { deriveClosure } from '@/scripts/custody/build-production-entrypoints'
-import { roleEnumerationFindings } from '@/scripts/custody/d1-pre-hc1-post-mint'
+import { AUTHORIZED_ROLE_OBSERVATIONS, roleEnumerationFindings } from '@/scripts/custody/d1-pre-hc1-post-mint'
 
 const VAR = 'UELLIX_AUDITOR_DATABASE_URL'
 const PW = 'Q'.repeat(43)
@@ -136,9 +136,26 @@ describe('statement provenance', () => {
     ['ROLE_ATTRIBUTES by regular expression', 'ROLE_ATTRIBUTES', (q: string) => q.replace("rolname = 'uellix_auditor'", "rolname ~ '^uellix_'")],
     ['REACH extended by starts_with', 'REACH', (q: string) => `${q} OR starts_with(r.rolname, 'uellix_')`],
     ['a new statement over pg_authid', 'OWNERSHIP', () => 'SELECT rolname FROM pg_catalog.pg_authid'],
+    // NB-B (X10-equivalents): spellings a lexical guard on "pg_catalog.pg_roles" did not see.
+    ['an unqualified pg_roles', 'SENTINEL', () => 'SELECT rolname FROM pg_roles'],
+    ['a quoted pg_catalog.pg_roles', 'SENTINEL', () => 'SELECT r."rolname" FROM "pg_catalog"."pg_roles" r'],
+    ['information_schema.applicable_roles', 'SERVER_VERSION', () => 'SELECT role_name FROM information_schema.applicable_roles'],
+    ['information_schema.enabled_roles', 'READ_ONLY', () => 'SELECT role_name FROM information_schema.enabled_roles'],
+    ['owners resolved through pg_get_userbyid', 'TABLE_PRIVILEGES', (q: string) => `${q.replace(/^SELECT /, 'SELECT (SELECT array_agg(pg_catalog.pg_get_userbyid(relowner)) FROM pg_catalog.pg_class) AS owners, ')}`],
+    ['an authorized observation widened (OWNERSHIP OR true)', 'OWNERSHIP', (q: string) => q.replace("relowner = 'uellix_auditor'::regrole", "relowner = 'uellix_auditor'::regrole OR true")],
+    ['an authorized observation re-keyed (DATDBA over every database)', 'DATDBA', (q: string) => q.replace(' WHERE datname = current_database()', '')],
   ] as const)('NB-4 CONTROL %s -> a finding', (_name, id, mutate) => {
     const mutated = { ...P1_STATEMENTS, [id]: { ...P1_STATEMENTS[id], sql: mutate(P1_STATEMENTS[id].sql) } }
     expect(roleEnumerationFindings(mutated).some((f) => f.startsWith(`${id}:`))).toBe(true)
+  })
+  it('NB-B: a NEW statement that touches the role surface is a finding, whatever it is called', () => {
+    const extra = { ...P1_STATEMENTS, EXTRA: { id: 'EXTRA', sql: 'SELECT grantee FROM information_schema.role_table_grants' } }
+    expect(roleEnumerationFindings(extra as never)).toContain('EXTRA: touches the role surface and is not an authorized role observation')
+  })
+  it('NB-B: the role surface is touched by exactly the pinned observations, and every pin matches', () => {
+    expect(Object.keys(AUTHORIZED_ROLE_OBSERVATIONS).sort()).toEqual(['DATDBA', 'DEFAULT_ACL', 'IDENTITY', 'MEMBERSHIPS', 'OWNERSHIP', 'REACH', 'ROLE_ATTRIBUTES'])
+    for (const id of Object.keys(AUTHORIZED_ROLE_OBSERVATIONS)) expect(P1_STATEMENTS[id as P1Id], id).toBeDefined()
+    expect(roleEnumerationFindings(P1_STATEMENTS)).toEqual([])
   })
   it('CONTROL AC-3 / M20: FUNCTION_EXECUTE is deferred, and no statement uses to_regprocedure', () => {
     expect(P1_STATEMENTS.FUNCTION_EXECUTE).toMatchObject({ disposition: 'DEFERRED_TO_PRECHECK_R2', ruling: 'AC-3' })

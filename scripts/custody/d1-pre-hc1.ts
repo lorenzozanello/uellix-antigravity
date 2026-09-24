@@ -38,6 +38,7 @@ import { hardPredecessorsOf } from './d1-dag-validate'
 import { evaluatePostMintConjuncts, gatherPostMintInputs } from './d1-pre-hc1-post-mint'
 import { evaluateN06InRepo, type NodeState as N06NodeState } from './d1-n06-closure'
 import { computeValidUntilUtc } from './d1-n09-valid-until'
+import { deriveEffectiveSchedule } from './d1-effective-schedule'
 
 export type Gate = 'PASS' | 'STOP'
 export type NodeState = 'SATISFIED' | 'NOT_SATISFIED'
@@ -362,14 +363,21 @@ export function deriveUpstreamStates(root: string): {
   const registry = readJson<{ OCCURRENCES: Array<{ VERDICT: string; NODE_STATES_RULED?: Record<string, string> }> }>(root, PATHS.registry)
   const n05 = registry.OCCURRENCES.some((o) => /_PASS/.test(o.VERDICT) && o.NODE_STATES_RULED?.N05 === 'SATISFIED')
   if (!n05) reasons.push('No PASS occurrence in the registry rules N05 SATISFIED.')
-  const rec = readJson<{ N08: { value: string }; N06_EVALUATION: { predecessor_states: Record<string, N06NodeState> } }>(root, PATHS.n06Record)
-  const n06 = evaluateN06InRepo(root, rec.N08.value, rec.N06_EVALUATION.predecessor_states)
+  // The N06 predecessor states stay where N06 was closed; the schedule is the
+  // EFFECTIVE one (the append-only supersession chain), never a fixed record.
+  const rec = readJson<{ N06_EVALUATION: { predecessor_states: Record<string, N06NodeState> } }>(root, PATHS.n06Record)
+  const schedule = deriveEffectiveSchedule(root)
+  for (const e of schedule.errors) reasons.push(`The effective schedule does not re-derive: ${e}`)
+  const n06 = evaluateN06InRepo(root, schedule.N08, rec.N06_EVALUATION.predecessor_states)
   if (n06.status !== 'SATISFIED') reasons.push(`N06 does not re-derive: ${n06.reasons.join(' ')}`)
-  const inv = readJson<{ entries: Array<{ expiry_exact_utc: string | null }> }>(root, PATHS.inventory)
-  const n09 = inv.entries[0]!.expiry_exact_utc === computeValidUntilUtc(rec.N08.value)
-  if (!n09) reasons.push('The inventory expiry is not the N09 derivation from N08.')
+  const inv = readJson<{ entries: Array<{ expiry_exact_utc: string | null; planned_removal_date: string | null }> }>(root, PATHS.inventory)
+  const removalIsOwners = inv.entries[0]!.planned_removal_date === schedule.N31
+  if (!removalIsOwners) reasons.push('The inventory planned removal is not the effective N31.')
+  const n09 = schedule.N08 !== null && schedule.errors.length === 0 && inv.entries[0]!.expiry_exact_utc === computeValidUntilUtc(schedule.N08)
+  if (!n09) reasons.push('The inventory expiry is not the N09 derivation from the effective N08.')
+  const n06ok = n06.status === 'SATISFIED' && schedule.errors.length === 0 && removalIsOwners
   return {
-    states: { N05: n05 ? 'SATISFIED' : 'NOT_SATISFIED', N06: n06.status, N09: n09 ? 'SATISFIED' : 'NOT_SATISFIED' },
+    states: { N05: n05 ? 'SATISFIED' : 'NOT_SATISFIED', N06: n06ok ? 'SATISFIED' : 'NOT_SATISFIED', N09: n09 ? 'SATISFIED' : 'NOT_SATISFIED' },
     reasons,
   }
 }

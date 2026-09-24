@@ -33,13 +33,15 @@ import {
 } from '@/db/custody/mint-route-b-contract'
 import { COMMIT_FAILURES, HARNESS_TARGET_HOST, runMintToolContractHarness, type Scenario } from '@/scripts/custody/d1-mint-tool-contract-harness'
 import { COMMIT_FAILURE_MATRIX } from '@/scripts/custody/d1-post-mint'
+import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
 import { renderFakeOnlyMintTool, type ToolVariant } from './support/fake-only-mint-tool'
 
 // Each harness run spawns the tool, a depositor and holds COMMIT 1.5s. Time only — no assertion changes.
 vi.setConfig({ testTimeout: 60_000 })
 
 const REPO = process.cwd()
-const N09 = '2026-09-25T14:00:00.000Z'
+// The harness VALID UNTIL is the effective schedule's machine-derived N09, never a historical literal.
+const N09 = deriveEffectiveSchedule(REPO).N09!
 
 function harness(variant: ToolVariant, scenario: Scenario = 'SUCCESS') {
   const dir = mkdtempSync(join(tmpdir(), 'd1-mint-harness-'))

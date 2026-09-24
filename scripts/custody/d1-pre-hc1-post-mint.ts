@@ -22,6 +22,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { compensationGate } from './d1-post-mint'
 import { checkInventorySurfaces, deriveDeliveries, type Delivery } from './d1-delivery-matrix'
 import { PRODUCTION_ENTRY_POINTS, deriveClosure } from './build-production-entrypoints'
@@ -297,24 +298,55 @@ export function readChain(root: string, sources: readonly string[] = GRAPH_SOURC
 }
 
 /** Measure the implementation by CALLING it on canned rows — never by reading prose. */
-/** The role catalogs a statement could enumerate roles from. */
-const ROLE_CATALOG = /\bpg_catalog\.(?:pg_roles|pg_authid|pg_auth_members|pg_user|pg_shadow|pg_group)\b/i
+/** A role catalog, in any spelling: qualified or not, quoted or not. */
+const ROLE_CATALOG = /pg_roles|pg_authid|pg_auth_members|pg_user\b|pg_shadow|pg_group/i
 /** Pattern matching of any kind, or any mention of the uellix_cap_ family. */
 const ROLE_PATTERN = /\b(?:I?LIKE|SIMILAR\s+TO|regexp_\w+|starts_with)\b|~|uellix_cap/i
 /** One disjunct of a keyed predicate: `[alias.]rolname = '<literal>'` or `[alias.]rolname = ANY (ARRAY[<literals>])`. */
 const KEYED_DISJUNCT = /^\s*\(?\s*(?:\w+\.)?rolname\s*=\s*(?:'[a-z_]+'|ANY\s*\(\s*ARRAY\s*\[\s*'[a-z_]+'(?:\s*,\s*'[a-z_]+')*\s*\]\s*\))\s*\)?\s*$/i
+/**
+ * NB-B: every token through which a statement can see role identities, role
+ * grants or role ownership — role catalogs in any spelling, information_schema
+ * (applicable_roles, enabled_roles, role_*_grants, ...), role columns, regrole
+ * casts, role functions, ACLs and owner columns.
+ */
+const ROLE_SURFACE = /pg_roles|pg_authid|pg_auth_members|pg_user\b|pg_shadow|pg_group|pg_stat_activity|information_schema|rolname|regrole|pg_has_role|userbyid|acl|owner|datdba|session_user|current_user|current_role/i
 
 /**
- * NB-4 (AC-2 no-enumeration, over the WHOLE observation surface, not REACH
- * only). A statement is a finding when it pattern-matches anything or names
- * the uellix_cap_ family, or when it reads a role catalog and its WHERE is not
- * a disjunction of keyed rolname lookups — a missing WHERE, or any unkeyed
- * disjunct, returns rows for roles nobody named.
+ * NB-B (AC-2 no-enumeration as an ALLOWLIST, not a growing blacklist). The ONLY
+ * statements of the observation surface that may touch the role surface, each
+ * pinned by the sha256 of its exact SQL: the keyed observations AC-2 was ruled
+ * on (identity, the auditor's own attributes and edges, the named-role reach,
+ * ownership, datdba, default ACLs granted TO the auditor). Any other statement
+ * that touches the role surface, and any byte change to one of these, is a
+ * finding — so broadening into enumeration needs a new, reviewed pin.
+ */
+export const AUTHORIZED_ROLE_OBSERVATIONS: Readonly<Record<string, string>> = {
+  IDENTITY: '6b3c1d8919a9e67f20ed1c646127493a58f63552aac33a4aa412e4ee9026383c',
+  ROLE_ATTRIBUTES: 'bd0422e74c3f3f77bfab686fb2ede63c72eec485838c5999b80a64addbd983f5',
+  MEMBERSHIPS: 'bd566bdb6f02314cc120e26bcdf37b73147bc487d67723f0255419199a2f5cd8',
+  REACH: 'cd3cf52317693631dd242dd550469635f9891896e1ab25c4de548ff3407069f0',
+  OWNERSHIP: '102acb2311629fd395037712aadb68315335029c349c316e1af9d8ed8a7c4959',
+  DATDBA: '8c679a7614abfe4f6e2d3a2d7b2f0f50ef4e7c0dc9cc5419e1c79eda30072b46',
+  DEFAULT_ACL: '333ed5029691c35a0b8bb47ba452d164e5e0acd111230651060e60b51a7e58ad',
+}
+
+/**
+ * NB-4 / NB-B: AC-2 no-enumeration over the WHOLE observation surface. A
+ * statement is a finding when it pattern-matches anything or names the
+ * uellix_cap_ family; when it touches the role surface and is not an
+ * authorized, byte-pinned role observation; or when it reads a role catalog
+ * and its WHERE is not a disjunction of keyed rolname lookups.
  */
 export function roleEnumerationFindings(statements: Readonly<Record<string, { readonly id: string; readonly sql: string }>>): string[] {
   const out: string[] = []
-  for (const s of Object.values(statements)) {
+  for (const [key, s] of Object.entries(statements)) {
     if (ROLE_PATTERN.test(s.sql)) out.push(`${s.id}: pattern match or uellix_cap_ reference`)
+    if (ROLE_SURFACE.test(s.sql)) {
+      const pin = AUTHORIZED_ROLE_OBSERVATIONS[key]
+      if (pin === undefined || s.id !== key) out.push(`${s.id}: touches the role surface and is not an authorized role observation`)
+      else if (createHash('sha256').update(s.sql).digest('hex') !== pin) out.push(`${s.id}: an authorized role observation whose SQL differs from its pin`)
+    }
     if (!ROLE_CATALOG.test(s.sql)) continue
     const where = /\bWHERE\b([\s\S]*)$/i.exec(s.sql)?.[1]
     if (where === undefined) out.push(`${s.id}: reads a role catalog with no WHERE`)

@@ -1,0 +1,67 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "D1_SCHEDULE_SUPERSESSION__APPEND_ONLY__OWNER_N08_N31__MACHINE_N09__NO_CREDENTIAL__NO_CONNECTION",
+  "append_only": true,
+  "supersedes": "docs/ops/release/FIBDB053_D1_AUDITOR_N06_CLOSURE_EXECUTION_RECORD_v1.0.0.json",
+  "supersedes_note": "Supersedes ONLY the schedule (N08, N31, N09, W_R_E_RELATION) of the N06 closure record, which is append-only and is not edited. Its N06 evaluation, predecessor states and every other field stay in force. Read by scripts/custody/d1-effective-schedule.ts deriveEffectiveSchedule(), which re-checks every link.",
+  "mission_id": "CV1-D1-FINAL-CANDIDATE-SCHEDULE-AND-TERMINATION-CLOSURE-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not the custodian, not a certifier.",
+  "OWNER_INPUTS_SIGNED": {
+    "N08_PLANNED_FINAL_WITNESS": "2026-09-25T14:00:00Z",
+    "N31_PLANNED_REMOVAL_INSTANT": "2026-09-25T18:00:00Z",
+    "SIGNED": "YES",
+    "received_in": "lane mandate CV1-D1-FINAL-CANDIDATE-SCHEDULE-AND-TERMINATION-CLOSURE-R1 ('FRESH OWNER SCHEDULE INPUTS ... These are explicit fresh owner values.'), 2026-09-23",
+    "rule": "Exact UTC instants, bound verbatim. Not rounded, localized or reinterpreted."
+  },
+  "N08": {
+    "value": "2026-09-25T14:00:00Z",
+    "provenance": "HUMAN_SUPPLIED_EXECUTION_DATUM",
+    "status": "SATISFIED — for planned-witness scheduling only.",
+    "NOT_A_WITNESS_RECORD": "This datum schedules the FINAL WITNESS. It does not state, imply or evidence that the witness has occurred."
+  },
+  "N31": {
+    "value": "2026-09-25T18:00:00Z",
+    "provenance": "HUMAN_SUPPLIED_EXECUTION_DATUM",
+    "exit_condition_check": "Supplied by the owner; exact UTC; not earlier than N08; not later than N09.",
+    "status": "SATISFIED"
+  },
+  "N09": {
+    "derivation": "computeValidUntilUtc(N08) in scripts/custody/d1-n09-valid-until.ts, executed (not hand-computed): strict UTC input with an explicit Z, +86400000 ms, UTC output.",
+    "input": "2026-09-25T14:00:00Z",
+    "expiry_exact_utc": "2026-09-26T14:00:00.000Z",
+    "interval_ms": 86400000,
+    "provenance": "MACHINE_DERIVED_FROM_N08",
+    "historical_n09_reused": false,
+    "status": "SATISFIED — one exact UTC instant."
+  },
+  "W_R_E_RELATION": {
+    "W": "2026-09-25T14:00:00Z",
+    "R": "2026-09-25T18:00:00Z",
+    "E": "2026-09-26T14:00:00.000Z",
+    "W_le_R_le_E": true,
+    "checker": "checkPlannedRemoval (validates, never rewrites)",
+    "problems": [],
+    "operational_rule": "Remove the credential as soon as the governed work completes, and never later than the earlier of R and E."
+  },
+  "ORDERING": {
+    "rule": "SCHEDULE_BEFORE_CERTIFICATION. This schedule is inside the certified package (docs/ops/release/FIBDB053_D1_* is in the package closure). The candidate that is independently certified already carries the schedule that will be executed. No schedule write is required, or permitted, between the certification event and N11.",
+    "a_later_schedule_change": "Makes HEAD differ from the certified candidate by more than the event: N10 NOT_READY until a NEW candidate carrying the new schedule is certified (termination regression, case C 'a schedule change after certification').",
+    "supersedes_the_ordering_in": [
+      "docs/ops/release/FIBDB053_D1_AUDITOR_IC_BLOCKERS_REMEDIATION_EXECUTION_RECORD_v1.0.0.json next_gate",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CERT_EVENT_TERMINATION_EXECUTION_RECORD_v1.0.0.json next_gate"
+    ],
+    "why": "Both earlier next_gate texts put 'fresh schedule -> owner N08/N31 -> mechanical N09' AFTER the certification PASS. That sequence cannot terminate: the schedule write would invalidate the event it follows. Those records are append-only and are not edited; this record supersedes their ordering."
+  },
+  "SCHEDULE_SAFETY": {
+    "evaluated_at_utc": "2026-09-23T23:22:46Z",
+    "planned_final_witness_is_in_the_future": true,
+    "it_authorizes_nothing": "A future N08 instant defines the schedule and the validity window. It does not authorize any credential-sensitive act, and wall-clock time is never a reason to mint."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": 0
+}
