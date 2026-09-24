@@ -1,0 +1,84 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.39",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39",
+  "authority_class": "ODS_PROCESS_TOOLING_PATH_GRANT_MATERIALIZATION",
+  "append_only": true,
+  "hpo_mission_id": "CV1-DEVOS-OPUS55-AND-CLOSURE-STATE-R1",
+  "bounded_successor_lane_id": "CV1-DEVOS-CLOSURE-STATE-GOVERNANCE-REMEDIATION-R2",
+  "lane_id": "CV1-DEVOS-CLOSURE-STATE-GOVERNANCE-REMEDIATION-R2",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Code (Opus 5.5) as writer of the R2 lane; this artifact records an owner decision, it does not make one",
+  "succeeds": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38",
+  "supersedes": null,
+  "GRANT_ID": null,
+  "GRANT_ID_note": "Not a protected-surface grant. Neither path class is in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, so nothing is registered in PROTECTED_GRANTS and no HPO-ODS-W2-* id is allocated.",
+  "purpose": "Materialize, append-only, the owner/HPO decision that authorizes two changed-path classes that docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json authorized_implementation_surfaces does not list, for ONE mission and its ONE bounded successor only, and record the two process policies the same decision signed. This addendum is the repository anchor the independent recertification of PR #222 (9038aac8) found missing (finding A: AUTHORITY_GAP).",
+  "OWNER_DECISION": {
+    "decided_by": "Owner/HPO, in the R2 mission brief (chat); materialized here so it is repository-verifiable",
+    "signed": "YES",
+    "HPO_MISSION_ID": "CV1-DEVOS-OPUS55-AND-CLOSURE-STATE-R1",
+    "AUTHORIZED_CHANGED_PATH_CLASSES_FOR_THIS_MISSION_AND_ITS_BOUNDED_R2_SUCCESSOR": [
+      "scripts/ops/**",
+      ".claude/skills/uellix-long-run/**"
+    ],
+    "narrowness": "This authorization is narrow. It does NOT grant those classes as globally writable surfaces for unrelated future missions.",
+    "materialization_instruction": "Materialize this grant inside the repository as the minimum ODS maintenance addendum before relying on it for certification."
+  },
+  "GRANT_BINDING": {
+    "missions": [
+      "CV1-DEVOS-OPUS55-AND-CLOSURE-STATE-R1",
+      "CV1-DEVOS-CLOSURE-STATE-GOVERNANCE-REMEDIATION-R2"
+    ],
+    "branch": "codex/cv1-devos-opus55-closure-state-r1",
+    "pr": 222,
+    "r1_candidate_already_using_the_classes": "9038aac8391cd5a2b88d83ef533a8df107897109",
+    "r1_paths_under_the_classes": [
+      "scripts/ops/closure-state.ts",
+      ".claude/skills/uellix-long-run/SKILL.md"
+    ],
+    "any_other_mission": "NOT_AUTHORIZED by this addendum; a later mission writing either class needs its own owner decision"
+  },
+  "DURABLE_SOURCE_POLICY": {
+    "signed": "YES",
+    "HUMAN_DECISION_REPOSITORY_REQUIREMENT": "REQUIRED_FOR_DURABLE_GOVERNED_STATE",
+    "INDEPENDENT_CERTIFICATION_REPOSITORY_REQUIREMENT": "REQUIRED_FOR_DURABLE_GOVERNED_STATE",
+    "rule": "A human decision or independent certification that exists only in chat, memory, scratchpad, RUN_STATE, or free-text `source` may be represented only as contextual or UNCONFIRMED information. It MUST NOT by itself support CERTIFIED, MATERIALIZED, ARMED, execution_allowed = true, CLOSED, or resolution of a blocking finding.",
+    "durable_reference": "The supporting fact must be materialized in the repository and referenced mechanically by ref, path, field and expected value, and the observed value must match."
+  },
+  "DEPENDENCY_POLICY": {
+    "signed": "YES",
+    "DEPENDENCY_REQUIREMENT": "EXPLICIT_REQUIRED_STATE_PER_EDGE",
+    "rule": "Every dependency edge that constrains lifecycle or execution must declare its required lifecycle state or equivalent governed predicate. There is NO implicit global default of CERTIFIED or CLOSED. Missing required-state semantics => STOP.",
+    "armed_and_execution": "For ARMED or execution_allowed = true, every dependency must satisfy its explicitly declared required state/predicate, and every blocking finding relevant to execution must be resolved by evidence."
+  },
+  "PROJECTION_REVISION_DIRECTION": "The same brief (section 14) directs revision 2 of docs/ops/ods/CV1_CLOSURE_STATE.json. That file is a mutable derived projection, not authority and not append-only; its history constraints (monotonic invalidators, findings, evidence, certifications, lifecycle history) are enforced by scripts/ops/closure-state.ts, not by this addendum.",
+  "authorized_changed_paths_this_mission": [
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json",
+    "tests/ods/ods-scope.test.ts",
+    "CLAUDE.md",
+    "docs/ops/ods/CV1_CLOSURE_STATE.json",
+    "docs/ops/ods/CV1_CLOSURE_STATE_SCHEMA_v1.1.0.json",
+    "docs/ops/ods/ODS_RUN_STATE_SCHEMA_v1.1.0.json",
+    "docs/ops/ods/ODS_LONG_RUN_OPERATING_STANDARD_v1.1.0.md",
+    "scripts/ops/**",
+    ".claude/skills/uellix-long-run/**",
+    "tests/ods/closure-state.test.ts",
+    ".github/workflows/ci.yml"
+  ],
+  "authorized_changed_paths_note": "tests/ods/ods-scope.test.ts changes ONLY its present-tense addendum-density maximum (38 -> 39), which that file itself says advances whenever a lineage position is allocated. .github/workflows/ci.yml is ADDITIVE_ONLY (gate integration step) under ODS_V1_AUTHORITY_v1.0.0.json authorized_implementation_surfaces and is required by brief section 13. The three v1.0.0 files this lane created at 9038aac8 (schema, RUN_STATE schema, long-run standard) are kept unchanged as history; their v1.1.0 successors are new files.",
+  "CONTROLLER_ENUMERATION": "This addendum is NOT appended to scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION. That is a separate controller-successor act, as it was for v1.0.38, and tests/ods/ods-scope.test.ts already pins that the Controller does not yet name v1.0.39.",
+  "NOT_CHANGED": [
+    "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**",
+    "db/**, lib/**, app/**, components/**",
+    "the 9-artifact authority seal corpus",
+    "scripts/ods-scope.ts PROTECTED_GRANTS and DEFAULT_PROTECTED_PATTERNS",
+    "any provider, runtime, Supabase or Vercel state"
+  ],
+  "risks_and_open_findings": [
+    "AG-1 class: like v1.0.1..v1.0.38, this addendum is immutable only by convention until a controller-successor act enumerates it.",
+    "The decision was issued in chat; this artifact is its repository materialization, written by the lane that relies on it. The independent recert should check it against the owner brief."
+  ],
+  "final_state": "ODS_V1_0_39_MATERIALIZED_OWNER_PATH_CLASS_GRANT_SCRIPTS_OPS_AND_UELLIX_LONG_RUN_SKILL_FOR_CV1_DEVOS_R1_AND_R2_ONLY__DURABLE_SOURCE_AND_DEPENDENCY_POLICIES_RECORDED",
+  "next_gate": "Short independent recertification of PR #222 at its R2 head."
+}
