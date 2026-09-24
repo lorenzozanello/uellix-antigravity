@@ -1,0 +1,219 @@
+{
+  "manifest_id": "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.4",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json with docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json -- the certification adjudication and revocation remediation authored by mission CV1-RECOVERY-CERT-CONTRACT-REVOCATION-REMEDIATION-R2. Governs the delta of v1.0.4 only; the v1.0.3 manifest and test remain as history of the superseded occurrence contract.",
+  "dependencies": [
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3 -- blob c20cc4f123bce9659e09a6e3fb0878a7de2752b0. NOT edited (immutable).",
+    "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.3 -- blob 9647d0f400c6f6dc4144e48f08391d3a8affd43d. NOT edited.",
+    "tests/release/staging-recovery-integration-successor.test.ts -- blob 0418070e665c778b6d3147b199c7e3514401fd18. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2 -- blob 40c5cbba0f9e485cb022ffa0a733e1905e0aa88c. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1 -- blob 4eea1f1e160771eebb77855c3d7f9d5bb8703086. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2 -- added by the same act (blob pinned in v1.0.4 SECTION_E3.currency declared layers).",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4 -- this manifest's controlling authority, added by the same act."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "SENT-NO-ADJUDICATION-FILE",
+      "purpose": "No path under docs/ops/release/rca/ or the retired occurrence root exists in the introducing tree; fixture adjudications live only in private temporary git repositories."
+    },
+    {
+      "id": "SENT-NO-PR220-MERGE",
+      "purpose": "The introducing tree (a9ddc4d2 plus this write set) contains no scripts/recovery path, i.e. PR #220 is not merged by this act (tested on the fixed introducing view, so a later governed merge does not turn it RED)."
+    },
+    {
+      "id": "SENT-EVENT-A-POLICY-PENDING",
+      "purpose": "EVENT_A_POLICY is PENDING in v1.0.3 and v1.0.4; structural check, not string absence."
+    },
+    {
+      "id": "SENT-NO-SECRET-VALUE",
+      "purpose": "No password, token, DSN or connection string in the write set; verified by the secrets_scan exit gate, not by the companion test."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "PC-RV-1",
+      "description": "Owner v1.0.2 verbatim and structured forms agree (PACKAGE_DIGEST, SIGNED, FAIL/BLOCKED/INSUFFICIENT_EVIDENCE, PENDING); positive and non-positive classes partition the closed vocabulary; the owner blob pinned in v1.0.4 is the actual blob.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "PC-RV-2",
+      "description": "Closure V2: KS-A recomputes exactly from git at ab7fb64b and keeps its v1.0.3 digest; KS-B recomputes exactly from git at 8cf94dca with 39 COVERED, 9 TOOLCHAIN (including .gitattributes), 7 IMPORTED, 1 RUNTIME_INPUT (db/baseline/stella_g2_post_restore.sql), 4 GOVERNING; no documentation and no unrelated application module in the closure.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "PC-RV-3",
+      "description": "A record of EVERY verdict class validates as a record; the path is content-addressed and at most 170 characters.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "PC-RV-4",
+      "description": "On real git fixtures: a single PASS is USABLE and reports scope and basis; a FAIL on a different package_digest does not revoke; a side-branch add merged normally is clean history.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "PC-RV-5",
+      "description": "The consumer registry equals the loci discovered by rule 1 in v1.0.3 and by rule 2 in v1.0.0..v1.0.2; EA-F1, HX-2, HX-5A, M-2, M-3 are CONSUMERS and HX-1, PS-2 are PACKAGE_CONSUMERS.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "PC-RV-6",
+      "description": "Every one of the 28 topics is anchored to an existing section of a file of its allocated domain; the C10 mapping is semantically consistent.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "PC-RV-7",
+      "description": "The correct predecessor is VALID; a finding is closed only through the predecessor that carries it.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "PC-RV-8",
+      "description": "v1.0.3, its manifest and test are byte-identical; the write set is exactly five added paths; declared layers equal the added governing-family members with their blobs; Event A untouched; no operation added.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-RV-1",
+      "description": "PASS -> later FAIL on the same package_digest => STOP_CERTIFICATION_REVOKED (real git fixture).",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-2",
+      "description": "PASS on SHA A -> FAIL (or BLOCKED, INSUFFICIENT_EVIDENCE) on sibling SHA B with the same package_digest => STOP_CERTIFICATION_REVOKED.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-3",
+      "description": "PASS, contradictory FAIL, later PASS on the same digest => STOP_CONTRADICTORY_CERTIFICATION; FAIL then PASS => the same; only non-positive => STOP_NOT_CERTIFIED.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-4",
+      "description": "Merge-based add/add path replacement => STOP_ADJUDICATION_HISTORY_VIOLATED, although git log with default simplification sees one add.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-5",
+      "description": "Deleted predecessor (truncation) and chain restart after deletion => STOP_ADJUDICATION_HISTORY_VIOLATED.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-6",
+      "description": "Wrong predecessor digest => STOP_CHAIN_PREDECESSOR_MISMATCH at write and STOP_CHAIN_INTEGRITY_VIOLATED at read.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-7",
+      "description": "Modify, delete, delete-and-re-add, rename and evil merge are write-once history violations on real git DAGs.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-8",
+      "description": "Covered or runtime input change at the head => not usable (STOP_NOT_CERTIFIED for a new digest); an edited declared layer or an undeclared new amendment => STOP_NOT_CURRENT; KS-B runtime corpus or lockfile change at a merged head => not usable; KS-B absent => STOP_SUBJECT_NOT_PRESENT.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-9",
+      "description": "A file under the retired occurrence root => STOP_RETIRED_OCCURRENCE_ROOT_USED.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-10",
+      "description": "Record validation: class inconsistency, FAIL presented as PASS, literal outside the closed vocabulary or with REVIEW/NOT/WITHDRAWN, wrong SHA, same tree/wrong commit, wrong tree, digest, pin, missing RUNTIME_INPUT, wrong kind, authority claim, wrong contract, scope without basis or FULL with basis.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-11",
+      "description": "Provenance: Unicode homoglyph, lower-case, whitespace, zero-width, full-width and non-hyphen variants are MALFORMED; separator variants are one identity; PROCESS_GOVERNED required; reproduction claim stops.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-12",
+      "description": "Closure derivation fails on a dangling reference, an unresolvable import, a missing toolchain root or setup file; a runtime literal in a comment is not an input.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-13",
+      "description": "Precedence: reallocating ANY of the 28 topics to either other domain is RED (56 cases); an anchor on another chain or a missing section is RED; each C10 rule is independently load-bearing; every swapped pair of differently-mapped C10 items is RED.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-14",
+      "description": "Closed predecessor semantics: extra key, missing key, wrong path, wrong digest, null over an existing chain, non-tip, fork, two roots, orphan, missing predecessor.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-15",
+      "description": "A new CURRENT-reliant locus, or a new bare certified locus, is discovered by registry rules 1 and 2 (the discovery can fail).",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-16",
+      "description": "Store integrity (review B1): a FAIL with a mistyped or foreign subject_kind under the CENSUS directory, a non-JSON entry, a stray file and a gitlink entry make the store INVALID for every kind; duplicate or insertion-order keys (non-canonical bytes) make it INVALID.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-17",
+      "description": "Non-positive literals (review B2): realistic FAIL / BLOCKED / INSUFFICIENT_EVIDENCE literals outside the vocabulary are recordable; a positive-parsing literal on a non-positive record STOPS.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-18",
+      "description": "History hardening (review B3): a shallow clone is STOP_ADJUDICATION_HISTORY_UNVERIFIABLE; a replace-graft or an info/grafts file hiding a delete is defeated; a local log.showRoot=false cannot hide a root add; a present path with zero adds is a violation.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-19",
+      "description": "Canonical-store freshness (review B4): a FAIL merged into the canonical ref after a consumer branched makes the stale head STOP_ADJUDICATION_STORE_STALE, and REVOKED once merged.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-21",
+      "description": "Canonical ancestry (review NEW-1): a FAIL added and then deleted on the canonical ref leaves a tip an older head still contains; ancestry makes that head STOP_ADJUDICATION_STORE_STALE, and merging the canonical ref exposes the delete (STOP_ADJUDICATION_HISTORY_VIOLATED).",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-22",
+      "description": "Exact bytes (review NEW-2): whitespace around canonical bytes makes the store INVALID; freshness compares real blob ids.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-23",
+      "description": "Non-positive literal ending in a positive class (review NEW-3), e.g. CENSUS_PRIMITIVES_RECERT_PASS as INSUFFICIENT_EVIDENCE, STOPS.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "NC-RV-20",
+      "description": "Conjuncts the review found unpinned: families and members (target and derived), examined tree, meaning, authority_class, contract path, PASS with nonblocking findings, duplicate nonblocking ids, duplicate closures, empty report reference, identity_facts_basis, currency against the latest positive, changed or deleted recorded family member.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MUT-RV-1",
+      "description": "Kill matrix: disabling ANY single validation check (W1..W11, R1, R2) lets at least one negative case through; zero survivors; a NOOP check survives (self-test).",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "MUT-RV-2",
+      "description": "Artifact-driven: adding FAIL to positive_classes turns a REVOKED closure CERTIFIED.",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.test.ts"
+    },
+    {
+      "id": "MUT-RV-3",
+      "description": "Independent textual mutation battery over the interpreter: 67 semantic mutants (history incl. full-history, --cc, merge entries, add counts, modify/delete, replace objects, grafts, log.showRoot, zero adds, shallow clone; revocation incl. contradiction, non-positive, digest vs candidate binding, cross-digest, latest-wins; consumer incl. retired root, store integrity, history gate, read validation of every kind, freshness, currency, latest positive, family members, declared blobs; store entries; chain; closure; provenance; verdict incl. non-positive literals; record conjuncts; precedence; registry rules 1 and 2), canonical ancestry, non-positive literal suffix and exact fixture byte reads, all KILLED; the HARMLESS comment mutant SURVIVES; original byte-identical; no residue. Three EQUIVALENT mutants are documented and not counted: the canonical containment loop (implied by ancestry plus write-once history) and each replace-object defence alone (mutated together as H7).",
+      "test_file": "tests/release/staging-recovery-cert-adjudication.mutation-battery.mjs"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
