@@ -16,7 +16,7 @@
 // tests/recovery/principal-reachability.pg.test.ts.
 
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, copyFileSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync, writeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -363,6 +363,135 @@ describe.skipIf(!ENABLED)('offline recovery mechanism — real disposable Postgr
       expect(substratePsql(docker, source, SOURCE_DATABASE, 'CREATE ROLE recovery_capture_nobypass LOGIN; GRANT pg_read_all_data TO recovery_capture_nobypass;\n').status).toBe(0)
       const nb = await captureLogicalBackup(docker, { ...captureReq(), principal: { roleName: 'recovery_capture_nobypass', provenance: 'LOCAL_DISPOSABLE_FIXTURE_ROLE' } })
       expect(nb.ok ? [] : nb.principalRefusals).toEqual(['PRINCIPAL_NO_BYPASSRLS_WITH_RLS_IN_SCOPE'])
+    })
+  })
+
+  describe('B-STREAM-1 real: a MULTI-CHUNK artifact (MiB-scale), intact and under TOCTOU', () => {
+    let runId = ''
+    let dir = ''
+    const created: Substrate[] = []
+    let source: Substrate
+    let packet: BackupPacket
+    let census: SourceCensusRecord
+    let artifactPath = ''
+    const BULK_ROWS = 200_000
+    const BULK_SQL = `CREATE TABLE public.fixture_bulk (id bigint PRIMARY KEY, payload text NOT NULL);
+ALTER TABLE public.fixture_bulk OWNER TO fixture_app_owner;
+INSERT INTO public.fixture_bulk SELECT i, md5(i::text) || md5((i * 7919)::text) FROM generate_series(1, ${BULK_ROWS}) i;
+`
+    const patch = (file: string, offset: number) => {
+      const fd = openSync(file, 'r+')
+      writeSync(fd, Buffer.from('TAMPERED'), 0, 8, offset)
+      closeSync(fd)
+    }
+    const copy = (name: string) => {
+      const p = path.join(dir, name)
+      copyFileSync(artifactPath, p)
+      return p
+    }
+    const req = (s: Substrate, p: string) => ({
+      target: s.identity,
+      substrate: s,
+      packet,
+      sourceCensus: census,
+      artifactPath: p,
+      repoRoot: REPO,
+      rolesCorpusPath: PATHS.fixtureRolesPath,
+      postRestoreCorpusPath: PATHS.postRestoreCorpusPath,
+    })
+    /** Real docker, with the file tampered just before the TOC pass or the restore pass starts. */
+    const tamperOn = (pass: 'TOC' | 'RESTORE', file: string, offset: number): DockerCli => ({
+      ...docker,
+      streamFromFile: (args, f, hooks) => {
+        const isRestore = args.includes('-d')
+        if ((pass === 'TOC' && !isRestore) || (pass === 'RESTORE' && isRestore)) patch(file, offset)
+        return docker.streamFromFile(args, f, hooks)
+      },
+    })
+
+    beforeAll(async () => {
+      runId = newRunId()
+      dir = mkdtempSync(path.join(tmpdir(), 'uellix-recovery-multichunk-'))
+      source = createSubstrate(docker, { runId, role: 'source-fixture' })
+      created.push(source)
+      loadSyntheticSource(docker, source, PATHS.fixtureRolesPath, PATHS.fixtureSourcePath)
+      expect(substratePsql(docker, source, SOURCE_DATABASE, BULK_SQL).status).toBe(0)
+      const cap = await captureLogicalBackup(docker, {
+        source: source.identity,
+        database: SOURCE_DATABASE,
+        principal: FIXTURE_REHEARSAL.principal,
+        scope: FIXTURE_REHEARSAL.scope,
+        eventClass: null,
+        declaredClassification: 'SYNTHETIC_FIXTURE',
+        artifactDir: dir,
+        repoRoot: REPO,
+      })
+      if (!cap.ok) throw new Error(`capture failed: ${cap.code}`)
+      packet = cap.packet
+      census = cap.sourceCensus
+      artifactPath = cap.artifactPath
+    }, 600_000)
+
+    afterAll(() => {
+      const proofs = created.reverse().map((s) => destroySubstrate(docker, s))
+      rmSync(dir, { recursive: true, force: true })
+      expect(proofs.every((p) => p.verdict === 'DESTROYED_AND_VERIFIED_ABSENT')).toBe(true)
+      expect(labelled(runId)).toEqual({ containers: '', volumes: '' })
+    }, 300_000)
+
+    it('guard: the artifact spans MANY 64 KiB read chunks (MiB-scale)', () => {
+      expect(statSync(artifactPath).size).toBeGreaterThan(4 * 1024 * 1024)
+    })
+
+    it('TOCTOU before TOC: bytes changed after validation, before the TOC pass -> STOP at TOC; then the INTACT multi-chunk artifact restores and verifies on the same (still pristine) substrate', async () => {
+      const s = createSubstrate(docker, { runId, role: 'restore-substrate' })
+      created.push(s)
+      const p = copy('before-toc.dump')
+      const out = await restoreIntoSubstrate(tamperOn('TOC', p, 3 * 1024 * 1024), req(s, p))
+      expect(out).toMatchObject({ ok: false, refusal: 'RESTORE_STREAM_DIGEST_MISMATCH' })
+      expect(out.steps.map((x) => x.step)).toEqual(['TOC'])
+      const intact = await restoreIntoSubstrate(docker, req(s, artifactPath))
+      expect(intact.refusal).toBeNull()
+      expect(intact.steps.every((x) => x.status === 'SUCCESS')).toBe(true)
+      expect(intact.steps.find((x) => x.step === 'TOC')!.input_sha256).toBe(packet['backup identifier'].content_digest.slice(7))
+      const run = runPostRestoreInvariants(docker, { substrate: s, database: intact.restore_database!, packet, sourceCensus: census, restore: intact, capabilityProbes: FIXTURE_REHEARSAL.capabilityProbes })
+      expect(run.ok).toBe(true)
+      if (!run.ok) return
+      expect(run.results.filter((r) => r.verdict !== 'PASS').map((r) => r.id)).toEqual(['PRI-7'])
+      expect(run.results.find((r) => r.id === 'PRI-5')!.observed).toContain(`public.fixture_bulk:rows=${BULK_ROWS}`)
+    })
+
+    it('TOCTOU after TOC, before restore: bytes changed between the passes -> STOP at PG_RESTORE, no post-restore step', async () => {
+      const s = createSubstrate(docker, { runId, role: 'restore-substrate' })
+      created.push(s)
+      const p = copy('after-toc.dump')
+      const out = await restoreIntoSubstrate(tamperOn('RESTORE', p, statSync(p).size - 4096), req(s, p))
+      expect(out).toMatchObject({ ok: false, refusal: 'RESTORE_STREAM_DIGEST_MISMATCH' })
+      expect(out.steps.at(-1)?.step).toBe('PG_RESTORE')
+    })
+
+    it('TOCTOU during restore: bytes changed AHEAD of the read position mid-pass -> STOP', async () => {
+      const s = createSubstrate(docker, { runId, role: 'restore-substrate' })
+      created.push(s)
+      const p = copy('during.dump')
+      const size = statSync(p).size
+      let fired = false
+      const midStream: DockerCli = {
+        ...docker,
+        streamFromFile: (args, f, hooks) =>
+          docker.streamFromFile(args, f, {
+            ...hooks,
+            afterChunk: (hashed) => {
+              if (args.includes('-d') && !fired && hashed >= 1024 * 1024) {
+                fired = true
+                patch(p, size - 4096)
+              }
+            },
+          }),
+      }
+      const out = await restoreIntoSubstrate(midStream, req(s, p))
+      expect(fired).toBe(true)
+      expect(out).toMatchObject({ ok: false, refusal: 'RESTORE_STREAM_DIGEST_MISMATCH' })
     })
   })
 

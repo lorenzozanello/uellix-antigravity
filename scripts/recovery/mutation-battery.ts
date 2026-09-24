@@ -112,13 +112,40 @@ export const MUTANTS: Mutant[] = [
   { id: 'NB2-M3', edits: [e('capture.ts', "pg_has_role(me.oid, r.oid, 'MEMBER')", "pg_has_role(me.oid, r.oid, 'SET')")], tests: [PG_PRINCIPAL], pg: true, expect: 'KILLED', killClass: 'BYPASS', guarantee: 'an ADMIN-only grant (SET FALSE) is still reachable: the principal can grant itself SET' },
 
   // --- NB-3: behavioral survivors of the recert ------------------------------
-  { id: 'NB3-M1', edits: [e('restore-runner.ts', "if (restored.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore do not match the packet digest')", '')], tests: [`${T}restore-runner.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'the bytes pg_restore consumed must be the packet digest' },
-  { id: 'NB3-M2', edits: [e('restore-runner.ts', "if (toc.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore --list do not match the packet digest')", '')], tests: [`${T}restore-runner.test.ts`], expect: 'KILLED', killClass: 'TOKEN_PRECISION', guarantee: 'the bytes the TOC check read must be the packet digest (the pg_restore stream check would still stop later)' },
+  { id: 'NB3-M1', edits: [e('restore-runner.ts', "if (restored.readError || restored.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'the artifact read during the restore pass does not match the packet digest')", '')], tests: [`${T}restore-runner.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'the bytes pg_restore consumed must be the packet digest' },
+  { id: 'NB3-M2', edits: [e('restore-runner.ts', "if (toc.readError || toc.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'the artifact read during the TOC pass does not match the packet digest')", '')], tests: [`${T}restore-runner.test.ts`], expect: 'KILLED', killClass: 'TOKEN_PRECISION', guarantee: 'the bytes the TOC check read must be the packet digest (the pg_restore stream check would still stop later)' },
   { id: 'NB3-M3', edits: [e('restore-runner.ts', "if (structure && !structure.ok) return done('RESTORE_ARTIFACT_STRUCTURE_REFUSED', structure.code)", '')], tests: [`${T}restore-runner.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'the runner USES the TOC structure check' },
   { id: 'NB3-M4', edits: [e('capture.ts', "    ...req.scope.extensions.flatMap((e) => ['-e', e]),\n  ]", "    ...req.scope.extensions.flatMap((e) => ['-e', e]),\n    ...(((r: CaptureRequest) => r.eventClass)(req) ? ['--no-comments'] : []),\n  ]")], tests: [`${T}event-class-neutrality.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'event_class cannot alter capture, even through a helper' },
   { id: 'NB3-M5', edits: [e('restore-runner.ts', '  if (req.postRestoreCorpusPath === null) {', '  const { value: cls } = req.packet[NO_MUTATION_CONFIRMATION].the_change_it_precedes.event_class\n  if (req.postRestoreCorpusPath === null || cls !== null) {')], tests: [`${T}event-class-neutrality.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'event_class cannot alter restore, even through destructuring' },
   { id: 'NB3-M6', edits: [e('restore-proof.ts', '  if (evidenceViolations.length > 0 || forbiddenHits > 0) {', '  if (false) {')], tests: [`${T}restore-proof.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'the evidence gate fails the run' },
   { id: 'NB3-M7', edits: [e('evidence-privacy.ts', 'fact: /^[A-Za-z0-9_$.:=,|*@+-]{1,512}$/,', String.raw`fact: /^[\s\S]{1,512}$/,`)], tests: [`${T}evidence-privacy.test.ts`, `${T}restore-proof.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'invariant facts cannot carry row-shaped text' },
+
+  // --- B-STREAM-1: whole-artifact digest, single finalization -----------------
+  {
+    id: 'STR-M1',
+    edits: [e('process.ts', '      if (!fileDone) input.resume()\n    }\n\n    input.on', '      if (!fileDone) {\n        finalize()\n        fileDone = true\n        input.destroy()\n      }\n    }\n\n    input.on')],
+    tests: [`${T}streaming.test.ts`],
+    expect: 'KILLED',
+    killClass: 'BYPASS',
+    guarantee: 'an early-exiting consumer never turns the digest into a digest of a prefix',
+  },
+  {
+    id: 'STR-M2',
+    edits: [
+      e('process.ts', '      if (digest !== null) return\n      const buf', '      const buf'),
+      e('process.ts', "    child.on('close', (code) => {\n      childStatus = code ?? 1\n      childDone = true\n      consumerGone()", "    child.on('close', (code) => {\n      finalize()\n      childStatus = code ?? 1\n      childDone = true\n      consumerGone()"),
+    ],
+    tests: [`${T}streaming.test.ts`],
+    expect: 'KILLED',
+    killClass: 'BYPASS',
+    guarantee: 'no hash update after finalization (the ERR_CRYPTO_HASH_FINALIZED class)',
+  },
+  { id: 'STR-M3', edits: [e('process.ts', '        status: readError && status === 0 ? 1 : status,', '        status,')], tests: [`${T}streaming.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'a read error is a failure, whatever the consumer exits with' },
+  { id: 'STR-M4', edits: [e('process.ts', '      resolve({ status: writeError && status === 0 ? 1 : status, stderr', '      resolve({ status, stderr')], tests: [`${T}streaming.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'a write error is a failure, whatever the producer exits with' },
+
+  // --- B-PRIV-1: column-level write grants --------------------------------------
+  { id: 'COL-M1', edits: [e('capture.ts', "   OR (relkind <> 'S' AND has_any_column_privilege(oid, 'INSERT,UPDATE,REFERENCES'))\n", '')], tests: [PG_PRINCIPAL], pg: true, expect: 'KILLED', killClass: 'BYPASS', guarantee: 'a column-level INSERT/UPDATE/REFERENCES grant on the principal is refused' },
+  { id: 'COL-M2', edits: [e('capture.ts', "       OR (relkind <> 'S' AND has_any_column_privilege(x.oid, rel.oid, 'INSERT,UPDATE,REFERENCES'))\n", '')], tests: [PG_PRINCIPAL], pg: true, expect: 'KILLED', killClass: 'BYPASS', guarantee: 'a column-level write grant on a REACHABLE role is refused' },
 
   // --- NB-6: skipped e2e residue ----------------------------------------------
   { id: 'NB6-M1', edits: [{ file: 'tests/postgres/recovery-offline.pg.test.ts', anchor: "  let statusBefore = ''\n", replacement: "  mkdtempSync(path.join(tmpdir(), 'uellix-recovery-battery-'))\n  let statusBefore = ''\n" }], tests: [`${T}skipped-e2e-residue.test.ts`], expect: 'KILLED', killClass: 'BYPASS', guarantee: 'a skipped e2e allocates nothing at collection time' },

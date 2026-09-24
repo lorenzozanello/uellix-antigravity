@@ -224,7 +224,17 @@ function isReachableRole(v: unknown): v is ReachableRole {
 
 /**
  * Run AS the principal. Relation and role predicates use OIDs, never names (no
- * absent-object errors). `reachable` is every role other than the principal
+ * absent-object errors).
+ *
+ * COLUMN GRANTS. has_table_privilege sees only TABLE-level grants: measured by
+ * the recert of 2b254ab8, GRANT UPDATE (note) ON a table let a principal write
+ * while every table predicate stayed false. Of the privileges the frozen
+ * predicate lists (INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER),
+ * PostgreSQL grants exactly INSERT, UPDATE and REFERENCES per column, so
+ * has_any_column_privilege is checked for exactly those three, for the
+ * principal AND for every reachable role. Nothing outside the frozen list
+ * (sequence USAGE, MAINTAIN, CREATE ON DATABASE) is decided here — those are
+ * open authority questions, reported, not silently chosen. `reachable` is every role other than the principal
  * that pg_has_role(..., 'MEMBER') says it belongs to through any chain.
  */
 export const PRINCIPAL_SQL = String.raw`
@@ -249,6 +259,7 @@ SELECT json_build_object(
   'relation_count', (SELECT count(*) FROM rel),
   'write_privileged_relations', (SELECT count(*) FROM rel WHERE
       (relkind <> 'S' AND has_table_privilege(oid, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+   OR (relkind <> 'S' AND has_any_column_privilege(oid, 'INSERT,UPDATE,REFERENCES'))
    OR (relkind = 'S' AND has_sequence_privilege(oid, 'UPDATE'))),
   'unselectable_relations', (SELECT count(*) FROM rel WHERE
       (relkind <> 'S' AND NOT has_table_privilege(oid, 'SELECT'))
@@ -260,6 +271,7 @@ SELECT json_build_object(
       'name', x.rolname, 'rolsuper', x.rolsuper, 'rolcreaterole', x.rolcreaterole, 'rolcreatedb', x.rolcreatedb,
       'write_privileged_relations', (SELECT count(*) FROM rel WHERE
           (relkind <> 'S' AND has_table_privilege(x.oid, rel.oid, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+       OR (relkind <> 'S' AND has_any_column_privilege(x.oid, rel.oid, 'INSERT,UPDATE,REFERENCES'))
        OR (relkind = 'S' AND has_sequence_privilege(x.oid, rel.oid, 'UPDATE'))),
       'schema_create', (SELECT count(*) FROM ns WHERE has_schema_privilege(x.oid, ns.oid, 'CREATE'))
     ) ORDER BY x.rolname), '[]'::json) FROM reachable x)

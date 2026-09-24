@@ -148,6 +148,12 @@ export interface RehearsalRecord {
   record_class: 'OFFLINE_REHEARSAL_RECORD'
   run_id: string
   capture_refusal: string | null
+  /**
+   * Unambiguous status of the restore the RESTORE_PROOF (if any) describes. The
+   * frozen five RESTORE_PROOF contents have no status field and are not
+   * enlarged; a proof of a REFUSED attempt is marked here, never by omission.
+   */
+  restore_outcome: 'RESTORED' | 'RESTORE_REFUSED' | 'NOT_ATTEMPTED'
   restore_refusal: string | null
   restore_steps: RestoreStep[]
   accepted_unknowns: string[]
@@ -161,6 +167,7 @@ export const REHEARSAL_RECORD_SHAPE: Shape = S.obj({
   record_class: S.enm('OFFLINE_REHEARSAL_RECORD'),
   run_id: S.str('resource_name'),
   capture_refusal: S.opt(S.str('code')),
+  restore_outcome: S.enm('RESTORED', 'RESTORE_REFUSED', 'NOT_ATTEMPTED'),
   restore_refusal: S.opt(S.str('code')),
   restore_steps: S.arr(RESTORE_STEP_SHAPE),
   accepted_unknowns: S.arr(S.str('fact')),
@@ -258,6 +265,7 @@ export function finalizeRehearsal(f: FinalizeInput): { bundle: EvidenceBundle; e
     record_class: 'OFFLINE_REHEARSAL_RECORD',
     run_id: f.runId,
     capture_refusal: f.captureRefusal,
+    restore_outcome: f.restore === null ? 'NOT_ATTEMPTED' : f.restore.ok ? 'RESTORED' : 'RESTORE_REFUSED',
     restore_refusal: f.restore?.refusal ?? null,
     restore_steps: f.restore?.steps ?? [],
     accepted_unknowns: [...f.acceptedUnknowns],

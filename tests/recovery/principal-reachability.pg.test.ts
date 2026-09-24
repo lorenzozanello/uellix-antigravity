@@ -37,6 +37,11 @@ CREATE ROLE p_nest LOGIN BYPASSRLS; GRANT pg_read_all_data TO p_nest; GRANT mid 
 CREATE ROLE w_adm NOLOGIN; GRANT DELETE ON public.fixture_audit TO w_adm;
 CREATE ROLE p_adm LOGIN BYPASSRLS; GRANT pg_read_all_data TO p_adm; GRANT w_adm TO p_adm WITH ADMIN TRUE, INHERIT FALSE, SET FALSE;
 CREATE ROLE p_wall LOGIN BYPASSRLS; GRANT pg_read_all_data TO p_wall; GRANT pg_write_all_data TO p_wall WITH INHERIT FALSE, SET TRUE;
+CREATE ROLE p_col LOGIN BYPASSRLS; GRANT pg_read_all_data TO p_col; GRANT UPDATE (note) ON public.fixture_audit TO p_col;
+CREATE ROLE p_colins LOGIN BYPASSRLS; GRANT pg_read_all_data TO p_colins; GRANT INSERT (note) ON public.fixture_audit TO p_colins;
+CREATE ROLE p_colref LOGIN BYPASSRLS; GRANT pg_read_all_data TO p_colref; GRANT REFERENCES (id) ON public.fixture_org TO p_colref;
+CREATE ROLE w_col NOLOGIN; GRANT UPDATE (label) ON public.fixture_org TO w_col;
+CREATE ROLE p_setcol LOGIN BYPASSRLS; GRANT pg_read_all_data TO p_setcol; GRANT w_col TO p_setcol WITH INHERIT FALSE, SET TRUE;
 `
 
 describe.skipIf(!ENABLED)('NB-2: capture principal closed under SET ROLE reachability — real PostgreSQL', { timeout: 600_000 }, () => {
@@ -85,6 +90,11 @@ describe.skipIf(!ENABLED)('NB-2: capture principal closed under SET ROLE reachab
     expect(as('p_adm', 'BEGIN; SET ROLE w_adm; ROLLBACK;').status).not.toBe(0)
     expect(as('p_adm', 'BEGIN; GRANT w_adm TO p_adm WITH SET TRUE; SET ROLE w_adm; DELETE FROM public.fixture_audit WHERE false; ROLLBACK;').status).toBe(0)
     expect(as('p_wall', 'BEGIN; SET ROLE pg_write_all_data; DELETE FROM public.fixture_audit WHERE false; ROLLBACK;').status).toBe(0)
+    // B-PRIV-1: a COLUMN grant writes although every table-level predicate is false.
+    expect(as('p_col', 'BEGIN; UPDATE public.fixture_audit SET note = note; ROLLBACK;').status).toBe(0)
+    expect(as('p_col', 'BEGIN; DELETE FROM public.fixture_audit WHERE false; ROLLBACK;').status).not.toBe(0)
+    // After SET ROLE the reader grants are gone, so write a constant (no column read needed).
+    expect(as('p_setcol', "BEGIN; SET ROLE w_col; UPDATE public.fixture_org SET label = 'x'; ROLLBACK;").status).toBe(0)
   })
 
   it.each<[string, string[], 'exact' | 'contains']>([
@@ -94,6 +104,10 @@ describe.skipIf(!ENABLED)('NB-2: capture principal closed under SET ROLE reachab
     ['p_nest', ['PRINCIPAL_REACHES_WRITE_PRIVILEGE'], 'exact'],
     ['p_adm', ['PRINCIPAL_REACHES_WRITE_PRIVILEGE'], 'exact'],
     ['p_wall', ['PRINCIPAL_WRITE_ALL_DATA_MEMBER', 'PRINCIPAL_REACHES_UNSAFE_PREDEFINED_ROLE'], 'contains'],
+    ['p_col', ['PRINCIPAL_WRITE_PRIVILEGE_IN_SCOPE'], 'exact'],
+    ['p_colins', ['PRINCIPAL_WRITE_PRIVILEGE_IN_SCOPE'], 'exact'],
+    ['p_colref', ['PRINCIPAL_WRITE_PRIVILEGE_IN_SCOPE'], 'exact'],
+    ['p_setcol', ['PRINCIPAL_REACHES_WRITE_PRIVILEGE'], 'exact'],
   ])('capture as %s is REFUSED with %j and writes no artifact', async (role, codes, mode) => {
     const out = await captureLogicalBackup(docker, req(role))
     expect(out.ok).toBe(false)

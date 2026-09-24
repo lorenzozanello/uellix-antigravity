@@ -76,6 +76,17 @@ describe('finalizeRehearsal evidence gate', () => {
     expect(out.bundle.rehearsal_record.verdict_reasons).toContain('EVIDENCE_GRAMMAR_VIOLATION')
   })
 
+  it('restore_outcome is unambiguous: RESTORED, RESTORE_REFUSED or NOT_ATTEMPTED (the frozen RESTORE_PROOF is not enlarged)', () => {
+    expect(finalizeRehearsal(input()).bundle.rehearsal_record.restore_outcome).toBe('RESTORED')
+    const refused = input()
+    refused.restore = { ...refused.restore!, ok: false, refusal: 'RESTORE_STREAM_DIGEST_MISMATCH' }
+    const out = finalizeRehearsal(refused)
+    expect(out.bundle.rehearsal_record.restore_outcome).toBe('RESTORE_REFUSED')
+    expect(out.bundle.rehearsal_record.verdict).toBe('OFFLINE_REHEARSAL_FAIL')
+    expect(Object.keys(out.bundle.restore_proof!)).toHaveLength(5)
+    expect(finalizeRehearsal(input({ restore: null, restoreProof: null })).bundle.rehearsal_record.restore_outcome).toBe('NOT_ATTEMPTED')
+  })
+
   it('a packet without its census record, or with an unbound one, FAILS the run', () => {
     expect(finalizeRehearsal(input({ sourceCensus: null })).bundle.rehearsal_record.verdict_reasons).toContain('EVIDENCE_GRAMMAR_VIOLATION')
     const other = sampleCensus()

@@ -15,7 +15,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
 
-import type { DockerCli, ProcessResult, StreamInResult, StreamOutResult } from '../../scripts/recovery/process'
+import type { DockerCli, ProcessResult, StreamHooks, StreamInResult, StreamOutResult } from '../../scripts/recovery/process'
 
 interface FakeVolume {
   name: string
@@ -99,17 +99,18 @@ export class FakeDocker implements DockerCli {
     this.calls.push(args)
     if (!this.opts.dumpBytes) throw new Error('FakeDocker.streamToFile: no dumpBytes configured')
     writeFileSync(filePath, this.opts.dumpBytes, { flag: 'wx' })
-    return { status: 0, stderr: '', sha256: createHash('sha256').update(this.opts.dumpBytes).digest('hex'), bytes: this.opts.dumpBytes.length }
+    return { status: 0, stderr: '', sha256: createHash('sha256').update(this.opts.dumpBytes).digest('hex'), bytes: this.opts.dumpBytes.length, writeError: false }
   }
 
   /** Reads the file AT STREAM TIME and hashes exactly what it read — a behavioral oracle for streaming integrity. */
-  async streamFromFile(args: string[], filePath: string): Promise<StreamInResult> {
+  async streamFromFile(args: string[], filePath: string, hooks: StreamHooks = {}): Promise<StreamInResult> {
     this.calls.push(args)
     this.streamCalls.push(args)
     this.opts.onStream?.(args, filePath, this.streamCalls.length - 1)
     const bytes = readFileSync(filePath)
+    hooks.afterChunk?.(bytes.length)
     const r = this.opts.streamResult?.(args) ?? { status: 0, stdout: '' }
-    return { status: r.status, stdout: r.stdout, stderr: r.stderr ?? '', sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length }
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr ?? '', sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length, deliveredBytes: bytes.length, consumerClosedEarly: false, readError: false }
   }
 
   run(args: string[], input?: string): ProcessResult {

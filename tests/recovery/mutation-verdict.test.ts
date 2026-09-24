@@ -74,7 +74,7 @@ describe('battery definition', () => {
   it('covers the manifest controls OR-M1..OR-M14 and every remediation class the recert named', () => {
     const ids = new Set(MUTANTS.map((m) => m.id.replace(/b$/, '')))
     for (let i = 1; i <= 14; i++) expect(ids.has(`OR-M${i}`), `OR-M${i}`).toBe(true)
-    for (const id of ['B1-M1', 'B1-M2', 'B1-M3', 'NB1-M1', 'NB1-M2', 'NB2-M1', 'NB2-M2', 'NB2-M3', 'NB3-M1', 'NB3-M2', 'NB3-M3', 'NB3-M4', 'NB3-M5', 'NB3-M6', 'NB3-M7', 'NB6-M1']) {
+    for (const id of ['B1-M1', 'B1-M2', 'B1-M3', 'NB1-M1', 'NB1-M2', 'NB2-M1', 'NB2-M2', 'NB2-M3', 'NB3-M1', 'NB3-M2', 'NB3-M3', 'NB3-M4', 'NB3-M5', 'NB3-M6', 'NB3-M7', 'NB6-M1', 'STR-M1', 'STR-M2', 'STR-M3', 'STR-M4', 'COL-M1', 'COL-M2']) {
       expect(ids.has(id), id).toBe(true)
     }
   })

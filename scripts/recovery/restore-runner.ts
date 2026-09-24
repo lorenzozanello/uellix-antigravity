@@ -12,9 +12,10 @@
 //               REPORTS (image id, network mode) is kept as the observation.
 //   binding     the source census record is the one the packet digests.
 //   integrity   location + recomputed digest (artifact-integrity.ts).
-//   structure   `pg_restore --list` of the streamed bytes: custom format,
-//               non-empty, TABLE entries == bound census relations, header
-//               versions on the pin; the streamed digest must match as well.
+//   structure   `pg_restore --list` fed the artifact: custom format, non-empty,
+//               TABLE entries == bound census relations, header versions on the
+//               pin. The digest of that pass covers the WHOLE file read to EOF
+//               (pg_restore --list itself stops after the TOC) and must match.
 //   tools       pg_restore version and substrate server version on the pin.
 //   pristine    the cluster's roles are EXACTLY the pinned image baseline
 //               (PRI-3: roles are cluster-scoped; a pre-existing application
@@ -27,7 +28,9 @@
 //               keeps its own public (earlier versions DROPPED it; the recert
 //               of ec573e9b found that act named nowhere in the authority).
 //   restore     pg_restore --exit-on-error, fed the artifact; the sha256 of
-//               the bytes it actually received must equal the packet digest.
+//               the file read to EOF during THIS pass — whose prefix is
+//               exactly what pg_restore received — must equal the packet
+//               digest, so a change between or during passes is caught.
 //   post        the post-restore corpus (db/baseline/stella_g2_post_restore.sql
 //               for the RR-CAP-7 entries), digest recorded, or SKIPPED —
 //               never silently absent.
@@ -185,7 +188,10 @@ export async function restoreIntoSubstrate(docker: DockerCli, req: RestoreReques
   const cid = substrate.identity.containerId
   const toc = await docker.streamFromFile(['exec', '-i', cid, 'pg_restore', '--list'], req.artifactPath)
   record('TOC', toc.status, toc.stderr, toc.sha256)
-  if (toc.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore --list do not match the packet digest')
+  // The digest covers the WHOLE file as read in this pass (process.ts), not the
+  // prefix pg_restore --list chose to consume; a pass that could not reach EOF
+  // is not a digest of the artifact at all.
+  if (toc.readError || toc.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'the artifact read during the TOC pass does not match the packet digest')
   if (toc.status !== 0) return done('RESTORE_ARTIFACT_STRUCTURE_REFUSED', 'ARTIFACT_TOC_UNREADABLE')
   const parsedToc = parseArchiveToc(toc.stdout)
   const structure = checkArchiveStructure(parsedToc, req.sourceCensus.census)
@@ -246,7 +252,7 @@ export async function restoreIntoSubstrate(docker: DockerCli, req: RestoreReques
   const restored = await runPgRestore(docker, substrate, restoreDb, req.artifactPath, listArgs)
   streamed = restored.sha256
   record('PG_RESTORE', restored.status, restored.stderr, restored.sha256)
-  if (restored.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'bytes streamed to pg_restore do not match the packet digest')
+  if (restored.readError || restored.sha256 !== digest) return done('RESTORE_STREAM_DIGEST_MISMATCH', 'the artifact read during the restore pass does not match the packet digest')
   if (restored.status !== 0) return done('RESTORE_STEP_FAILED', 'PG_RESTORE')
 
   // Post-restore corpus.
