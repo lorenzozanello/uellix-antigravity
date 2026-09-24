@@ -1,0 +1,377 @@
+{
+  "package_id": "CV1-STAGING-QUIESCE-READONLY-CENSUS",
+  "version": "1.0.1",
+  "artifact_id": "STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1",
+  "authority_class": "READ_ONLY_OBSERVATION_AUTHORITY_CANDIDATE",
+  "document_class": "ERRATA_AMENDMENT",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-QUIESCE-MGQ1-MGQ2-CENSUS-AUTHORITY-ERRATA-R2",
+  "lane": "CV1-STAGING-QUIESCE-MGQ1-MGQ2-CENSUS-AUTHORITY-ERRATA-R2",
+  "role": "AUTHOR / ADJUDICATOR",
+  "mode": "APPEND_ONLY_AUTHORITY_ERRATA_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 (Claude Code Desktop), HPO-ODS-01 primary development executor",
+  "repository": "lorenzozanello/uellix",
+
+  "BASE_AUTHORITY": {
+    "artifact": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+    "blob_sha": "2fb950f2b88fd174b06d98a99ab218d13ea0e0f7",
+    "byte_unchanged": "MANDATORY AND VERIFIED. This errata does not edit v1.0.0. It supersedes named clauses by appending, exactly as the Quiesce amendment v1.0.1 did to its own parent.",
+    "companion_manifest_amendment": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.1.json",
+    "base_manifest": {
+      "artifact": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+      "blob_sha": "28393efb19695f2a9bcc0807a7c70d941bc723f2",
+      "byte_unchanged": true
+    }
+  },
+
+  "CERTIFICATION_CONSUMED": {
+    "verdict": "CENSUS_AUTHORITY_IC_FAIL",
+    "subject": "STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json and its companion manifest (PR #209 head 0b69ea10382660a934737325afc3a1291447482a).",
+    "disposition": "The failure is narrow and mechanical: one count defect (B-C1) and ten narrower-but-real corrections (NBF-1..NBF-11, NBF-5 not issued). None reopens SECTION_G's central conclusion that C3_AVAILABLE is unreachable under this authority; several corrections (NBF-8 in particular) make C3_NOT_AVAILABLE the even more clearly expected outcome. This errata closes every directive in the brief that reached this lane and defers nothing it could close.",
+    "self_criticism_recorded_once": "B-C1 is the certifier's cleanest catch: a hand-counted arithmetic string ('Fifteen observations: five plus nine plus two') that does not equal 5+9+2=16, propagated unchecked into eight downstream loci because each one trusted the label rather than re-deriving it. The corrected count_check is a structural array whose length a script can check, precisely so this class of defect cannot recur silently."
+  },
+
+  "SECTION_B1_OBSERVATION_COUNT_CORRECTION": {
+    "closes": "B-C1.",
+    "the_defect": "SECTION_E_AUTHORIZED_READ_SET of v1.0.0 lists OBS-V0 through OBS-V4 (five Vercel entries), OBS-S1 through OBS-S9 (nine Supabase entries) and OBS-L1/OBS-L2 (two local entries) -- 5 + 9 + 2 = SIXTEEN -- while count_check, SECTION_H's per-observation and package-level evidence-contract fields, HCC-1's act/prestate_shown/verification, self_check.checks[7] and next_gate all assert FIFTEEN. The arithmetic was never re-derived from the actual array lengths; it was carried as a label.",
+    "the_certifier_established_about_OBS_V4": {
+      "no_consuming_decision_rule": "No rule in SECTION_G reads OBS-V4's result. v1.0.0 says so itself at OBS-V4.HARD_LIMITS[3]: 'This observation may be SKIPPED entirely. Its result is not an input to any rule in SECTION_G.'",
+      "no_named_target": "OBS-V4's method is 'a deployment's public health surface' with no deployment identified -- it has no target until OBS-V3 has already run, and even then no rule consumes what it would return.",
+      "no_bounded_quantity": "It records only 'the HTTP status code and whether the response was served by the platform's access-protection layer', neither of which is compared against a threshold or fed into a formula anywhere in this pair.",
+      "explicitly_optional": "v1.0.0 states it is 'OPTIONAL AND STRICTLY BOUNDED' and 'may be SKIPPED entirely'."
+    },
+    "the_correction": {
+      "rule": "SUPERSEDE OBS-V4 IN FULL: NOT_AUTHORIZED, REMOVED_FROM_EFFECTIVE_READ_SET. It is not narrowed, retimed or re-scoped -- it is withdrawn, because an observation with no consuming rule, no bound and an explicit skip clause is exactly the kind of item that should never have been counted as part of the authorized ceiling, and CF-2's own finding (the liveness half of P-10's evidence contract cannot be performed read-only in any useful form) removes its last reason to exist.",
+      "U1_5_disposition": "U1-5 (whether a live deployment can be asked non-destructively which database identity it holds) reverts to NOT CLOSED BY ANY OBSERVATION IN THIS PAIR. This is not a new gap: v1.0.0 already answered U1-5 negatively in substance ('IT CANNOT, WITHOUT CAUSING A WRITE') and OBS-V4 was a liveness-only consolation prize that fed no rule. Removing it removes a null operation, not evidence.",
+      "no_reduction_of_MGQ1_coverage": "MG-Q1's own closure definition (PMV-1) never required a liveness probe. U1-1 through U1-4 are closed exactly as before by OBS-V0 through OBS-V3, unaffected by this correction."
+    },
+    "EFFECTIVE_READ_SET_v1_0_1": {
+      "rule": "Proved by ENUMERATION, not by a hand-written arithmetic string. The array below IS the effective read set; its length IS the count, and a certifier or a script can check len(effective_observation_ids) without parsing prose.",
+      "vercel_plane_effective": ["OBS-V0", "OBS-V1", "OBS-V2", "OBS-V3"],
+      "supabase_control_plane_effective": ["OBS-S1", "OBS-S2", "OBS-S3", "OBS-S4", "OBS-S5", "OBS-S6", "OBS-S7", "OBS-S8", "OBS-S9"],
+      "local_plane_effective": ["OBS-L1", "OBS-L2"],
+      "superseded_not_effective": ["OBS-V4"],
+      "effective_observation_ids": ["OBS-V0", "OBS-V1", "OBS-V2", "OBS-V3", "OBS-S1", "OBS-S2", "OBS-S3", "OBS-S4", "OBS-S5", "OBS-S6", "OBS-S7", "OBS-S8", "OBS-S9", "OBS-L1", "OBS-L2"],
+      "count": 15,
+      "count_is_len_of_effective_observation_ids": "MECHANICALLY TRUE: len(effective_observation_ids) == 15 by direct count of the array above, re-derivable by any JSON parser without arithmetic on a prose string."
+    }
+  },
+
+  "SECTION_B2_API_KEYS_LEGACY_CORRECTION": {
+    "closes": "NBF-1, NBF-9.",
+    "the_false_claim": "v1.0.0 SECTION_F_EXPLICIT_NON_AUTHORIZATIONS.credentials_and_secrets and SECTION_J.SECRET_BEARING_READS_FORBIDDEN_DESPITE_BEING_GETS both assert that 'GET /v1/projects/{ref}/api-keys/legacy' returns an api_key property, i.e. secret material.",
+    "re_measured_2026_09_22": {
+      "source": "https://api.supabase.com/api/v1-json, re-fetched independently of v1.0.0's fetch; sha256 5b11a7fd32ed31bac59170c02e14f1619d0f0218a78b7fab3be41d3f2d69b600, IDENTICAL to the pin in SECTION_J -- no drift.",
+      "GET_api_keys_legacy_response_schema": "{ \"type\": \"object\", \"properties\": { \"enabled\": { \"type\": \"boolean\" } }, \"required\": [\"enabled\"] }. Summary: 'Check whether JWT based legacy (anon, service_role) API keys are enabled.' NO api_key field, NO secret material of any kind.",
+      "the_claim_that_remains_true": "GET /v1/projects/{ref}/api-keys (the NON-legacy endpoint) is unaffected by this correction and remains correctly classified as secret-bearing: its response items carry api_key (nullable string, revealed with ?reveal=true), id, type, prefix, hash and secret_jwt_template. The false claim was specific to the /legacy suffix; the base endpoint's classification stands."
+    },
+    "adjudication_of_whether_it_belongs_in_the_read_set": {
+      "posture": "SAFE_BUT_NOT_NECESSARY_FOR_CURRENT_C3_PROCEDURE. GET /v1/projects/{ref}/api-keys/legacy is NOT added to SECTION_E's authorized read set.",
+      "why_not_added_despite_being_safe": "No unknown in SECTION_B or SECTION_C and no rule in SECTION_G concerns whether legacy JWT-based keys are enabled or disabled. It answers a question this census does not ask. Adding a safe-but-unconsumed read would be the same defect OBS-V4 just was, on a different endpoint, and this errata does not reintroduce it under a new name.",
+      "if_a_future_lane_wants_it": "It would need its own consuming rule in a future SECTION_G amendment before being added; safety alone is not sufficient authorization under this chain's own AUTHORIZED_OPERATIONS-class discipline."
+    },
+    "the_capability_this_lane_missed_and_now_records": {
+      "id": "NBF-9",
+      "finding": "PUT /v1/projects/{ref}/api-keys/legacy exists -- 'Disable or re-enable JWT based legacy (anon, service_role) API keys' -- and is a MUTATION capability this pair had not named.",
+      "disposition": "Recorded as CAPABILITY EVIDENCE ONLY under SECTION_J's existing NBF-B discipline, and added to SECTION_F's forbidden list. It is not authorized, was never contemplated as authorized, and this errata closes the gap of it being unnamed rather than the gap of it being permitted."
+    }
+  },
+
+  "SECTION_B3_CF1_CORRECTION": {
+    "closes": "NBF-2, NBF-3.",
+    "the_path_defect": "v1.0.0 SECTION_L.CF-1.the_clause cites 'ratifications[OD-3]'. The owner-ratification record's ratifications field is a JSON ARRAY, not an object keyed by id: docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json blob 876fc76cedc3e83f44b7c76221f0bc812d35ee5d has ratifications = [OD-3, OD-5, OD-6] in that order. The correct path is ratifications[0].",
+    "the_truncation_defect": "v1.0.0 quoted only the first sentence of ratifications[0].repository_binding. The complete field, re-read at the corrected path and reproduced in full below, continues past that sentence with a second sentence this errata's predecessor omitted.",
+    "repository_binding_quoted_in_full": "The live-runtime complication this decision answers arises because PR #201 (commit 2947161e, merged at e3f6f075) bound a runtime to the staging target. Whether that runtime was in fact writing during any particular window remains UNKNOWN and measurable only at execution time, exactly as the companion authority records.",
+    "why_the_omission_mattered": "The owner record ALREADY hedges its own premise in its second sentence -- 'remains UNKNOWN and measurable only at execution time'. v1.0.0's CF-1 quoted only the unhedged first sentence and then built a 'both cannot be right' binary framing against it, which overstated the contradiction: the owner record does not claim the runtime was WRITING, only that one was BOUND, and it explicitly defers the writing question to measurement -- which is exactly what this census performs.",
+    "consumed_audit_evidence_incorporated": {
+      "source": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json (PR #201), blob 6549cd9c2f5a3f2097a489bd0f392cf9fa78c817, CONSUMED_AUDIT_EVIDENCE.findings, class EXTERNAL_OBSERVATION_NOT_RE_DERIVED for AF-1 through AF-6 and DERIVED_VERDICT for AF-7.",
+      "AF-1": "The deployed integration SHA 96a87611db0567e3399f9294113f96eab127771a had an AUTOMATIC deployment that EXISTS and is READY as infrastructure state. This is the measured basis for 'a runtime is bound' -- an ordinary Vercel auto-deployment for a push to integration/commercial-v1, entirely independent of PR #201's own AUTH-1/AUTH-2 grant, which PR #201 never exercised.",
+      "AF-2": "Runtime health = FAIL, failure SUPABASE_AUTH_PROJECT_MISMATCH, raised by lib/supabase/project-coherence.ts before any Supabase client is constructed. The failure is total for every code path that touches Supabase.",
+      "AF-3": "UELLIX_APP_ENV is absent for the integration/commercial-v1 scope, so the runtime's environment is INFERRED, not DECLARED, failing ENV-10's contract regardless of what the inference happens to land on.",
+      "AF-4": "UELLIX_RUNTIME_DATABASE_URL is absent for that scope, so provenDatabaseIdentity cannot even reach its database comparison; the Auth mismatch is the FIRST failure observed, not the only one present.",
+      "what_this_establishes": "The specific READY deployment AF-1 through AF-4 describe exists but is measured, by the SAME audit the owner record's premise rests on, to be pointed at the WRONG Supabase project and to lack the runtime database credential entirely. It is bound to SOME Supabase project; it is NOT measured to be bound to bvyzblhqymxruxdguaee."
+    },
+    "the_measured_distinction_replacing_the_binary_framing": [
+      "A READY runtime MAY exist. AF-1 measures one did, for SHA 96a87611, as an ordinary automatic deployment -- not as an act PR #201 performed.",
+      "PR #201's OWN binding authority (AUTH-1, AUTH-2) remains NOT_EXECUTED. This is unchanged and is not in tension with AF-1: an automatic Preview deployment for a push and a deliberate branch-scoped environment-variable grant are different mechanisms, and PR #201's final_state governs only the second.",
+      "GOVERNED STAGING binding is NOT thereby established. The one READY deployment this chain has audit evidence for (SHA 96a87611) is measured to carry a Supabase Auth project MISMATCH and to lack UELLIX_RUNTIME_DATABASE_URL -- it is evidence AGAINST that specific deployment reaching bvyzblhqymxruxdguaee, not evidence for it.",
+      "CURRENT WRITER REACH remains a census question. Whether SOME OTHER project, scope or deployment -- W-14's 'any OTHER' class -- holds a working binding to governed staging is exactly what OBS-V0 through OBS-V3 exist to measure, and AF-1 through AF-4 do not answer it because they describe one specific SHA on integration/commercial-v1, not the exhaustive project/deployment enumeration MG-Q1 requires."
+    ],
+    "freshness_caveat_on_the_incorporated_evidence": "AF-1 through AF-7 are themselves EXTERNAL_OBSERVATION_NOT_RE_DERIVED by PR #201's own classification -- hosted Vercel state read on 2026-09-20, two days before this errata. They are incorporated here as CONTEXT for the corrected framing, not as a substitute for OBS-V0 through OBS-V3, which the execution lane re-derives fresh under its own freshness gate. A census that relied on AF-1 as current would be relying on a two-day-old external report exactly where the freshness discipline of SECTION_H forbids it.",
+    "the_corrected_clause_quoted_in_full": {
+      "id": "CF-1",
+      "severity": "MATERIAL FOR OD-Q5.",
+      "finding": "The owner-ratification record's stated premise for OD-3 asserts a bound runtime, and in the same field defers the writing question to measurement; this errata corrects the prior over-reading of that premise as an unhedged, contradicted claim.",
+      "the_clause": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json, blob 876fc76cedc3e83f44b7c76221f0bc812d35ee5d, ratifications[0].repository_binding, quoted in full above.",
+      "the_corrected_reading": "The four-part distinction above. No part of it is a contradiction of the owner record; each part narrows what 'bound a runtime' can and cannot be taken to mean given the audit evidence PR #201 itself carries.",
+      "what_this_lane_does_NOT_do": "It does not decide whether governed staging is in fact reachable. That is precisely MG-Q1, and only OBS-V0 through OBS-V3 -- run under their own freshness gate -- can settle it. It does not edit the owner record and does not treat AF-1 through AF-7 as current measurement.",
+      "disposition": "SURFACED TO THE OWNER, CORRECTED IN FRAMING. The re-adjudication brief must state the four-part distinction, not the binary one, and must carry the census result that settles the fourth part."
+    }
+  },
+
+  "SECTION_B4_OBS_S2_SERVICES_PARAMETER": {
+    "closes": "NBF-4.",
+    "the_defect": "GET /v1/projects/{ref}/health carries a REQUIRED query parameter, services, which v1.0.0's OBS-S2 never names. Without it the request is malformed and the observation is not executable as written.",
+    "measured_parameter_contract": {
+      "source": "Re-derived from the same pinned specification, sha256 5b11a7fd32ed31bac59170c02e14f1619d0f0218a78b7fab3be41d3f2d69b600, GET /v1/projects/{ref}/health.parameters.",
+      "services": "required=true, in=query, a comma-separated list or array of enum values: auth, db, db_postgres_user, pooler, realtime, rest, storage, pg_bouncer.",
+      "timeout_ms": "optional, integer 0-10000, example 2000."
+    },
+    "the_minimum_set_derived_not_assumed": {
+      "rule": "Derived strictly from which services SECTION_G's rules actually consume, per the brief's instruction not to request unrelated services.",
+      "G-N3_needs": "auth -- 'OBS-S2 reports the Auth service present and healthy'.",
+      "G-N4_needs": "rest -- 'OBS-S2 reports the Data API service healthy'; Data API is PostgREST, whose service-health enum value is rest.",
+      "G-N5_needs": "storage -- 'OBS-S2 reports Storage healthy'.",
+      "not_requested_and_why": "db, db_postgres_user, pooler, pg_bouncer are not read by any G-N or G-U rule and are not requested. realtime is likewise not consumed by any G-N rule (OBS-S6's config/realtime GET, not /health, is what U2-1 uses for Realtime, and it is CONFIGURATION only per its own explicit_limit) -- so realtime is also not requested from /health.",
+      "the_corrected_parameter_value": "services=auth,rest,storage."
+    },
+    "healthy_vs_status": {
+      "measured": "The V1ServiceHealthResponse_Output schema marks the healthy boolean field 'deprecated: true, description: Deprecated. Use status instead', and defines status as an enum COMING_UP | ACTIVE_HEALTHY | UNHEALTHY. Both fields are in the schema's required list, so healthy is still returned, but the vendor names status as its replacement.",
+      "the_correction": "OBS-S2 records status as the primary field for every G-N rule's condition ('reports ... healthy' is re-read as 'reports status == ACTIVE_HEALTHY'), and records healthy alongside it as a cross-check, never as the sole basis for a G-N trigger going forward.",
+      "no_change_to_the_rules_semantics": "This is a field-preference correction, not a logic change: a service that is ACTIVE_HEALTHY is healthy under either field in every case this chain has measured, and the correction exists so a future API version that removes the deprecated field does not silently break G-N3/G-N4/G-N5."
+    }
+  },
+
+  "SECTION_B5_OD_C3_OAUTH2_OPTION": {
+    "closes": "NBF-6.",
+    "the_gap": "OD-C3 in v1.0.0 asks only whether the PAT's SSL-06 treatment is sufficient. It does not name the alternative credential class the same Management API documentation offers.",
+    "measured_provider_evidence": {
+      "source": "https://supabase.com/docs/reference/api/introduction, the same page SECTION_D already cites for the PAT privilege statement.",
+      "fetched": "2026-09-22, read-only, unauthenticated, re-verified against the live page in this errata lane.",
+      "quoted_in_full": "OAuth2 allows your application to generate tokens on behalf of a Supabase user, providing secure and limited access to their account without requiring their credentials. Use this if you're building a third-party app that needs to create or manage Supabase projects on behalf of your users. Tokens generated via OAuth2 are short-lived and tied to specific scopes to ensure your app can only perform actions that are explicitly approved by the user. See Build a Supabase Integration to set up OAuth2 for your application."
+    },
+    "the_added_option": {
+      "id": "OD-C3-OPTION-D",
+      "option": "Replace the PAT with an OAuth2 token scoped, if the scope model permits it, to only the ten Supabase GET endpoints this census authorizes.",
+      "measured_material_precondition": "OAuth2 access requires registering the caller as a 'Supabase Integration' (an OAuth app) before any token can be issued -- a setup act with its own review surface, not a drop-in substitution for a PAT already in hand.",
+      "what_is_NOT_measured_and_is_NOT_assumed": "Whether the available OAuth2 scopes are granular enough to cover exactly OBS-S1 through OBS-S9 and exclude the mutating endpoints of SECTION_F -- and in particular whether they can be bound to the single governed project ref rather than the whole organization -- is UNMEASURED by this lane. Scope-sufficiency is NOT assumed favourably; it is recorded as an open question for whoever adjudicates OD-C3.",
+      "not_chosen": "This errata does not select Option D, does not set up a Supabase Integration, and does not request an OAuth2 token. It is added to the option space exactly as OD-C1's three options are presented: named, with measured consequences, decision withheld."
+    },
+    "why_this_does_not_resolve_OF_C1": "OF-C1's finding -- that this authority as written runs on an operator-class PAT -- is UNCHANGED. Naming a possible narrower alternative is not adopting it, and SECTION_D's credential analysis continues to describe the PAT path exactly as before."
+  },
+
+  "SECTION_B6_TEAM_LEVEL_ENV_SCOPE": {
+    "closes": "NBF-7.",
+    "the_gap": "PR #201's own PMV-2 states in terms that it 'did NOT verify' whether the branch-override rule holds against a TEAM-level shared variable as opposed to a PROJECT-level row, and that if PMV-2 finds a team-level shared variable 'the override mechanism is UNPROVEN for this case.' v1.0.0's U1-2 and OBS-V2 do not account for this distinction at all: TARGET SCOPE is named as one of the four permitted fields but is never defined precisely enough to say whether it captures team-level-vs-project-level.",
+    "the_correction": {
+      "TARGET_SCOPE_definition_extended": "TARGET SCOPE, as recorded by OBS-V2, is defined to include whether a row is a PROJECT-level row (targeting one or more of Production/Preview/Development on the enumerated project) or a TEAM-level SHARED variable attached to that project, wherever the tool surface used (vercel env list, or the equivalent API read) exposes that distinction. This is a SCOPE fact, not a value, and sits squarely inside the field PMV-1 already permits -- no fifth field is added.",
+      "fail_closed_when_undeterminable": "Where the tool surface does NOT expose a team-vs-project indicator for a given row within the four permitted fields, that row's scope classification is recorded as UNKNOWN with reason TEAM_LEVEL_SCOPE_UNDETERMINED. It is NOT assumed to be project-level, and it is NOT assumed to be team-level.",
+      "consequence_for_SECTION_G": "A PRESENT row whose team-vs-project classification is UNKNOWN is treated identically to any other PRESENT row under G-N2 (if a READY deployment applies) or G-U2 (if none does) -- the existing rules already fail closed on an unmeasured target per U1-3's structural limit, and this correction does not weaken or bypass that. It adds precision to what TARGET SCOPE means; it does not add a new decision path."
+    },
+    "new_measurement_gap_recorded": {
+      "id": "MG-C6",
+      "gap": "Whether vercel env list (or its API equivalent) surfaces a team-level shared variable identically to a project-level row, or requires a separate team-scoped read to be seen at all by OBS-V2's per-project enumeration method, is UNMEASURED by this lane.",
+      "consequence": "If a team-level shared row exists but is NOT surfaced by a per-project env-list call, OBS-V2 could under-enumerate U1-2 without any observation reporting a failure -- a silent gap rather than a G-U3 OBSERVATION_INCOMPLETE.",
+      "closure": "The execution lane's first act under OBS-V2 must check, from the actual tool output it is using, whether a team/shared-scope listing surface exists and is distinct from the per-project surface; if so, both are read. This is recorded as a method requirement on OBS-V2, not resolved here."
+    }
+  },
+
+  "SECTION_B7_GN3_TOKEN_REFRESH_CORRECTION": {
+    "closes": "NBF-8.",
+    "the_defect": "v1.0.0's G-N3 condition is a CONJUNCTION: 'OBS-S2 reports the Auth service present and healthy, AND OBS-S3 reports any sign-in path enabled'. Its own ground text already states the true reach correctly -- 'a stale browser tab performing a TOKEN REFRESH' -- but the condition does not test for token-refresh reach at all. Sign-in flags (disable_signup, external_*_enabled, external_anonymous_users_enabled) govern whether a NEW client can authenticate. They do NOT govern whether an ALREADY-ISSUED session can refresh its token, because GoTrue's refresh-token grant is a property of the token, not of the signup/signin configuration.",
+    "why_this_is_a_false_negative_risk": "Under the conjunctive form, a project with Auth healthy but every sign-in path disabled (disable_signup=true, no external providers, anonymous disabled) would NOT trigger G-N3, even though any session issued before those flags were set -- or any session issued through a channel the flags do not gate -- can still reach GoTrue via token refresh and write auth.sessions / auth.refresh_tokens. A Tier-1-only census could therefore reach a run where G-N3 stays silent while a real client-write surface remains open, which is precisely the false 'empty-by-construction' signal the brief instructs this correction to prevent.",
+    "the_correction": {
+      "id": "G-N3",
+      "condition_v1_0_1": "OBS-S2 reports the Auth service present with status ACTIVE_HEALTHY (healthy=true as a cross-check per SECTION_B4's field preference).",
+      "ground_v1_0_1": "A reachable, healthy GoTrue is a client surface for token refresh REGARDLESS of sign-up/sign-in configuration: the parent's own W-4 measurement states in terms that 'a previously issued session' or 'a stale browser tab performing a token refresh' reaches GoTrue directly and writes auth.sessions and auth.refresh_tokens, and nothing in disable_signup or the external-provider flags disables the refresh-token grant for a session issued before, or through a channel outside, those flags. Sign-in-path exposure (OBS-S3) governs whether NEW clients can authenticate; it does not govern whether EXISTING sessions can write, so it is dropped from the trigger condition and is no longer a required conjunct.",
+      "OBS_S3_retained_as_diagnostic": "OBS-S3 remains authorized and still closes U2-1 for W-4's hosted_exposure_at_the_governed_ref sub-key -- its disable_signup and external-provider fields remain useful DIAGNOSTIC context for the re-adjudication brief (whether NEW clients could ALSO reach it) -- but its result no longer gates G-N3's firing.",
+      "consequence": "G-N3 now fires whenever Auth is reachable and healthy, independent of sign-in configuration. This makes C3_NOT_AVAILABLE the practically-certain Tier-1 outcome for any live, healthy Supabase project, which this errata records as the HONEST consequence of the measured token-refresh reach rather than as an overreach: the parent authority already established that no act in this chain can make GoTrue non-writing, and a trigger that failed to fire whenever Auth was merely configured cautiously would have understated that finding."
+    },
+    "OF_C3_corrected": {
+      "the_prior_framing": "v1.0.0's OF-C3 described G-N3 as 'deliberately broader than the amendment's illustrative phrase' by dropping the live-session count while KEEPING the sign-in-flag conjunct.",
+      "the_corrected_framing": "G-N3 is now broader still: it drops the sign-in-flag conjunct as well, because that conjunct tested new-client reach, not the token-refresh reach that is the actual W-4 hazard. The open question for a certifier is no longer 'is dropping the live-session count faithful to the amendment's phrase' alone, but whether ANY exposure test short of a Tier 2 session census can ever be faithful to 'before any client of any kind exists' -- and this errata's position, stated plainly, is that it cannot, which is exactly why A-4 (Tier 2) remains the only route to C3_AVAILABLE and G-N3 alone cannot manufacture a false negative on that question any more."
+    }
+  },
+
+  "SECTION_B8_MECHANICAL_AND_PROVENANCE_CORRECTIONS": {
+    "closes": "NBF-10, NBF-11.",
+    "NBF-10_path_naming": {
+      "the_defect": "v1.0.0 SECTION_A_EXACT_DEFINITIONS_AS_READ.MG-Q1.amendment_status cites 'the amendment's SECTION_B11 UNCHANGED_AND_STILL_CONTROLLING', a section name that does not exist in the amendment.",
+      "the_measured_path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json, blob 1abcefc499172874433052db8a75f03ca35f3eba, has a top-level key SECTION_B11_PRESERVED_UNCHANGED, whose preserved array holds the MG-Q1/MG-Q2/MG-Q3 entry at index 11: item = 'MG-Q1, MG-Q2 and MG-Q3.', checked = 'All three remain open. MG-Q1 and MG-Q2 are now ELEVATED: they gate sub-option C-3, the only branch that preserves the owner's intent at full scope.'",
+      "the_correction": "The citation is corrected to: 'The amendment's SECTION_B11_PRESERVED_UNCHANGED.preserved[11] records, verbatim: item \"MG-Q1, MG-Q2 and MG-Q3.\", checked \"All three remain open. MG-Q1 and MG-Q2 are now ELEVATED: they gate sub-option C-3, the only branch that preserves the owner's intent at full scope.\"' The quoted TEXT was already accurate in v1.0.0; only the section-name citation was wrong, and this correction fixes the citation without altering the quotation."
+    },
+    "NBF-11_roles_sql_provenance": {
+      "the_gap": "v1.0.0 cites db/baseline/stella_g2_roles.sql twice (U2-4's idle_in_transaction_session_timeout bound, and SECTION_D's ROUTE_R1 discussion of supabase_read_only_user's default_transaction_read_only setting) without stating the LOCAL-ONLY provenance caveat it applies consistently to db/baseline/stella_g2_schema.sql elsewhere.",
+      "measured_provenance": "db/baseline/README.md line 15 documents the roles file as produced by docker exec supabase_db_uellix-stella-g2-local-rehearsal pg_dumpall --roles-only, against the SAME local container named throughout db/baseline/README.md and already cited by this chain for the schema dump's LOCAL-ONLY status.",
+      "the_correction": "Both citations are corrected to state explicitly: 'LOCAL CONTAINER PROVENANCE -- same caveat db/baseline/README.md records for stella_g2_schema.sql. This is a role default of the local rehearsal stack, dumped by pg_dumpall --roles-only against supabase_db_uellix-stella-g2-local-rehearsal, and is NOT proven to be the hosted role configuration on bvyzblhqymxruxdguaee.' Neither citation's SUBSTANTIVE use changes: U2-4 already correctly stated the bound applies to 'ONE role's IDLE-in-transaction sessions and nothing else' and 'is not a census result and does not substitute for one'; SECTION_D's ROUTE_R1 discussion already correctly treated supabase_read_only_user's read-only-ness as advisory regardless of provenance. The correction closes a labelling gap, not a substantive one."
+    }
+  },
+
+  "SECTION_B9_SUPERSEDED_CLAUSES": {
+    "sweep_method": "Every locus in v1.0.0 containing the string 'fifteen', every locus naming OBS-V4 as authorized or consulted, and every locus separately identified by a certifier directive (NBF-1 through NBF-11) was located by path and is listed below. This is an exhaustive list of what changes; nothing outside it is touched.",
+    "superseded_in_full": [
+      {
+        "clause": "SECTION_E_AUTHORIZED_READ_SET.vercel_plane[4] (the OBS-V4 entry).",
+        "superseded": "Its authorization status. It remains legible as historical text in v1.0.0 but is NOT_AUTHORIZED and REMOVED_FROM_EFFECTIVE_READ_SET under SECTION_B1.",
+        "ground": "B-C1, as fully argued in SECTION_B1."
+      },
+      {
+        "clause": "SECTION_E_AUTHORIZED_READ_SET.count_check.",
+        "superseded": "The entire prose string 'Fifteen observations are authorized: OBS-V0 through OBS-V4 (five)...'.",
+        "replaced_by": "SECTION_B1.EFFECTIVE_READ_SET_v1_0_1, the enumerated, mechanically countable array."
+      },
+      {
+        "clause": "SECTION_G_C3_AVAILABILITY_DECISION_PROCEDURE.C3_NOT_AVAILABLE.triggers_any_one_of_which_suffices[2] (G-N3), in its entirety -- condition and ground.",
+        "superseded": "The conjunctive condition requiring a sign-in flag, and the ground text framing it as a deliberate broadening beyond the amendment's illustrative phrase.",
+        "replaced_by": "SECTION_B7's corrected condition and ground."
+      },
+      {
+        "clause": "SECTION_L_FINDINGS_FOR_THE_READJUDICATION_BRIEF.CF-1, in its entirety.",
+        "superseded": "The wrong array-index path, the truncated quotation, and the binary 'both cannot be right' framing.",
+        "replaced_by": "SECTION_B3.the_corrected_clause_quoted_in_full."
+      },
+      {
+        "clause": "SECTION_L_FINDINGS_FOR_THE_READJUDICATION_BRIEF.CF-2.the_narrow_correction_this_lane_applies_to_ITSELF_only.",
+        "superseded": "Its description of OBS-V4 as a live, authorized, narrowly-bounded correction.",
+        "replaced_by": "OBS-V4 is withdrawn in full under SECTION_B1; CF-2's substantive finding (the runtime-identity endpoint cannot serve a read-only census) is UNCHANGED and is now illustrated by the fact that this lane's own attempt at a bounded version of it (OBS-V4) added no decision value and was itself withdrawn."
+      }
+    ],
+    "superseded_in_part": [
+      {
+        "clause": "SECTION_H_EVIDENCE_CONTRACT.per_observation_required_fields[0].rule.",
+        "superseded": "'One of the fifteen ids in SECTION_E.'",
+        "replaced_by": "'One of the fifteen ids in SECTION_B1.EFFECTIVE_READ_SET_v1_0_1.effective_observation_ids.'",
+        "preserved": "The rest of the rule, unchanged: 'An observation with no id is not authorized and may not be recorded.'"
+      },
+      {
+        "clause": "SECTION_H_EVIDENCE_CONTRACT.package_level_required_fields[3].",
+        "superseded": "'The complete list of the fifteen authorized observations...'",
+        "preserved": "Everything else; the count referent is now SECTION_B1's effective set, the number FIFTEEN itself is unchanged."
+      },
+      {
+        "clause": "SECTION_I_HUMAN_CONFIRMATION.confirmations[0] (HCC-1) .act, .prestate_shown and .verification.",
+        "superseded": "Each 'fifteen authorized observations' / 'fifteen observation ids' / 'all fifteen observations' phrase.",
+        "preserved": "The confirmation shape and every non-numeric clause; HCC-1 still confirms opening the census and executing the (now correctly enumerated) fifteen observations."
+      },
+      {
+        "clause": "self_check.checks[7].",
+        "superseded": "'Fifteen are enumerated' as a bare count claim.",
+        "replaced_by": "'Fifteen are enumerated, matching SECTION_B1.EFFECTIVE_READ_SET_v1_0_1 by direct array length, not by prose arithmetic.'"
+      },
+      {
+        "clause": "next_gate.",
+        "superseded": "'...executes at most the fifteen observations of SECTION_E.'",
+        "replaced_by": "'...executes at most the fifteen observations of SECTION_B1.EFFECTIVE_READ_SET_v1_0_1.' Nothing else in next_gate changes."
+      },
+      {
+        "clause": "SECTION_B_MGQ1_DECOMPOSITION.unknowns[4] (U1-5) .closed_by and .MEASURED_AND_ANSWERED_NEGATIVELY_BY_THIS_LANE.the_unauthenticated_probe_is_safe_but_uninformative.",
+        "superseded": "The claim that OBS-V4 closes U1-5 for liveness, and the description of OBS-V4 as 'permitted'.",
+        "replaced_by": "closed_by: NONE UNDER THIS PAIR. U1-5 stays negatively answered in substance (a live database identity cannot be asked read-only) with no liveness consolation observation; see SECTION_B1."
+      },
+      {
+        "clause": "SECTION_B_MGQ1_DECOMPOSITION.unknowns[1] (U1-2).",
+        "superseded": "Nothing removed; extended.",
+        "added": "SECTION_B6's TARGET_SCOPE definition extension and MG-C6."
+      },
+      {
+        "clause": "SECTION_F_EXPLICIT_NON_AUTHORIZATIONS.credentials_and_secrets[1].",
+        "superseded": "'GET /v1/projects/{ref}/api-keys and GET /v1/projects/{ref}/api-keys/legacy. Measured to return an api_key property...'",
+        "replaced_by": "'GET /v1/projects/{ref}/api-keys. Measured to return an api_key property, i.e. secret material, and therefore forbidden despite being a GET -- the method is not the test. GET /v1/projects/{ref}/api-keys/legacy is measured to return only { enabled: boolean } -- no secret material -- and is SAFE_BUT_NOT_NECESSARY_FOR_CURRENT_C3_PROCEDURE; it is not added to SECTION_E and remains unauthorized by omission rather than by secrecy. PUT /v1/projects/{ref}/api-keys/legacy is a mutation and is forbidden regardless.'"
+      },
+      {
+        "clause": "SECTION_J_MEASURED_PROVIDER_AND_TOOL_SURFACE.supabase_management_api.SECRET_BEARING_READS_FORBIDDEN_DESPITE_BEING_GETS[0].",
+        "superseded": "'GET /v1/projects/{ref}/api-keys and the legacy variant -- response items carry an api_key property.'",
+        "replaced_by": "'GET /v1/projects/{ref}/api-keys -- response items carry an api_key property. The legacy variant, GET /v1/projects/{ref}/api-keys/legacy, does NOT: its schema is { enabled: boolean } only. It is excluded from the read set for want of a consuming rule (SECTION_B2), not for secrecy.' PUT /v1/projects/{ref}/api-keys/legacy is added to CAPABILITY_EVIDENCE_ONLY_NOT_AUTHORIZED_ACTS."
+      },
+      {
+        "clause": "SECTION_E_AUTHORIZED_READ_SET.supabase_control_plane[1] (OBS-S2).",
+        "superseded": "The method's silence on the required services query parameter.",
+        "replaced_by": "SECTION_B4's parameter contract: services=auth,rest,storage, status preferred over deprecated healthy."
+      },
+      {
+        "clause": "SECTION_M_OWNER_AND_CERTIFIER_DECISIONS_OPENED.decisions[0] (OD-C3).",
+        "superseded": "Nothing removed; extended.",
+        "added": "SECTION_B5's OD-C3-OPTION-D (OAuth2), not chosen."
+      },
+      {
+        "clause": "SECTION_C_MGQ2_DECOMPOSITION.unknowns[3] (U2-4) .one_bound_that_IS_measured_in_the_tree.",
+        "superseded": "The bare citation of db/baseline/stella_g2_roles.sql without a provenance caveat.",
+        "replaced_by": "SECTION_B8.NBF-11's LOCAL CONTAINER PROVENANCE sentence, prefixed to the existing citation. The substantive claim (60s idle-in-transaction bound for uellix_app, one role only) is unchanged."
+      },
+      {
+        "clause": "SECTION_D_CREDENTIAL_AND_CAPABILITY_ANALYSIS.TIER_2_DATABASE_PLANE.ROUTE_R1.why_it_is_NOT_authorized_here[1].",
+        "superseded": "The bare citation of db/baseline/stella_g2_roles.sql line 161 without a provenance caveat.",
+        "replaced_by": "Same LOCAL CONTAINER PROVENANCE prefix from SECTION_B8.NBF-11. The substantive argument (the GUC is USERSET-class and vendor-documented as escapable) is unaffected -- it does not depend on the role default's provenance at all, since the escape hatch is a session-level override available regardless of what the role's stored default is."
+      },
+      {
+        "clause": "SECTION_A_EXACT_DEFINITIONS_AS_READ.MG-Q1.amendment_status.",
+        "superseded": "The citation \"the amendment's SECTION_B11 UNCHANGED_AND_STILL_CONTROLLING\".",
+        "replaced_by": "SECTION_B8.NBF-10's corrected citation, SECTION_B11_PRESERVED_UNCHANGED.preserved[11]. The quoted text is unchanged and was already accurate."
+      },
+      {
+        "clause": "OPEN_FINDINGS[2] (OF-C3).",
+        "superseded": "Its description of what makes G-N3 broader than the amendment's phrase.",
+        "replaced_by": "SECTION_B7.OF_C3_corrected."
+      }
+    ],
+    "completeness_statement": "Every directive named in the errata lane brief that reached this lane -- B-C1 and NBF-1 through NBF-11 except NBF-5, which the brief does not itemize -- is addressed above by exactly one SECTION_B clause and, where it changes base text, exactly one entry in this supersession list. No directive is left partially addressed."
+  },
+
+  "SECTION_B10_PRESERVED_UNCHANGED": {
+    "rule": "Stated explicitly, per the brief's own PRESERVE instruction, so a certifier can check what did NOT move rather than infer it from the absence of a supersession entry.",
+    "preserved": [
+      {"item": "The TIER_1 / TIER_2 split of SECTION_D, and DEP-C1 in its entirety.", "checked": "Untouched. Nothing in this errata closes Tier 2 or authorizes a database connection."},
+      {"item": "ROUTE_R1's rejection (POST /database/query/read-only is measured available and deliberately not authorized).", "checked": "Untouched in substance. Only its roles.sql citation gains a provenance label, per SECTION_B8."},
+      {"item": "C3_AVAILABLE's unreachability under this authority (A-4 requires Tier 2, which is not conferred).", "checked": "STRENGTHENED, not weakened. SECTION_B7's G-N3 correction makes C3_NOT_AVAILABLE the more clearly expected Tier-1 outcome for a live project; it does not open any new path to C3_AVAILABLE."},
+      {"item": "The production veto, ctaxtgujyyprgynmnvtq, and PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER.", "checked": "Untouched and restated as binding."},
+      {"item": "No SQL execution of any kind (POST /database/query and /database/query/read-only both remain forbidden).", "checked": "Untouched, and PUT /api-keys/legacy is added to the forbidden list rather than any SQL surface being opened."},
+      {"item": "No DB credential smuggling: the forbidden-substitution list (runtime/migrator/postgres/supabase_admin/authenticator/uellix_owner/uellix_migrator and any role reached by SET ROLE from them).", "checked": "Untouched."},
+      {"item": "No census execution by this errata or its predecessor. Zero hosted mutations, zero live control-plane reads, performed by either lane.", "checked": "Re-asserted below in PS-E2/PS-E3."},
+      {"item": "OD-3 is not adjudicated. KEEP/CHANGE is not chosen. C-1/C-2/C-3 is not chosen. The all-writer scope is not narrowed.", "checked": "Untouched; this errata narrows nothing about scope and widens G-N3 rather than any posture choice."},
+      {"item": "Findings CF-1 and CF-2 remain surfaced to the owner/certifier and unrepaired IN THEIR PARENT artifacts.", "checked": "CF-1's FRAMING is corrected here, in this errata, which is the census authority's own artifact -- not a repair of the owner-ratification record or the Quiesce amendment, neither of which this pair edits."}
+    ]
+  },
+
+  "SECTION_B11_PRECEDENCE": {
+    "rule": "Where this errata and v1.0.0 conflict, THIS ERRATA CONTROLS. Where this errata is silent, v1.0.0 controls unamended.",
+    "no_reinterpretation_of_the_grandparents": "This errata does not edit, reinterpret or narrow the Quiesce authority, its amendment, the Recovery authority, its amendment, the owner-ratification record, PR #201 or the D1 observation authority. It quotes them verbatim, at corrected paths where SECTION_B3 and SECTION_B8 name a path defect, and measures against them exactly as v1.0.0 did.",
+    "byte_integrity": "v1.0.0's authority blob 2fb950f2 and manifest blob 28393efb are unchanged by this lane, as are all seven blobs pinned in v1.0.0's CONTROLLING_AUTHORITY."
+  },
+
+  "PRESTATE": {
+    "PS-E1": {
+      "assertion": "The worktree is clean at the branch's current HEAD 0b69ea10382660a934737325afc3a1291447482a on branch codex/cv1-staging-quiesce-mgq1-mgq2-readonly-census-authority-r1, matching the CURRENT_HEAD the errata lane brief names.",
+      "class": "MEASURED",
+      "method": "git rev-parse --abbrev-ref HEAD; git rev-parse HEAD; git rev-parse HEAD^{tree}; git status --porcelain --untracked-files=all (empty)."
+    },
+    "PS-E2": {
+      "assertion": "NO HOSTED MUTATION was performed by this errata lane. No Vercel act, no Supabase act, no database connection, no deployment, no environment-variable act, no scale change, no write lock, no credential generation.",
+      "class": "MEASURED"
+    },
+    "PS-E3": {
+      "assertion": "NO LIVE CONTROL-PLANE READ against the governed project was performed. The Management API specification was RE-FETCHED (public, unauthenticated, identical sha256 to v1.0.0's pin -- no drift) to verify NBF-1 and NBF-4; the Supabase OAuth2 documentation page (already pinned by v1.0.0 for a different quotation) was re-consulted for NBF-6; the owner-ratification record, PR #201's authority and db/baseline/README.md were re-read from the repository tree for NBF-2/3/11. None of these touches bvyzblhqymxruxdguaee or any Vercel project.",
+      "class": "MEASURED"
+    }
+  },
+
+  "self_check": {
+    "checks": [
+      "B-C1's corrected count is proved by an enumerable array (SECTION_B1.EFFECTIVE_READ_SET_v1_0_1.effective_observation_ids), not by a prose arithmetic string, and its length is independently re-derivable.",
+      "OBS-V4 is superseded as NOT_AUTHORIZED / REMOVED_FROM_EFFECTIVE_READ_SET, not merely re-labelled; every downstream 'fifteen' locus is re-pointed at the corrected enumeration.",
+      "NBF-1's false claim about GET /api-keys/legacy is corrected against a freshly re-fetched specification whose sha256 matches v1.0.0's pin exactly -- no drift, no stale correction.",
+      "The corrected posture for GET /api-keys/legacy (SAFE_BUT_NOT_NECESSARY) does NOT add it to SECTION_E, honouring the brief's explicit instruction not to expand the read set merely because a read is safe.",
+      "PUT /api-keys/legacy (NBF-9) is recorded as capability evidence and forbidden, never authorized.",
+      "CF-1's clause path is corrected to ratifications[0], its quotation is completed to include the owner record's own UNKNOWN hedge, and the binary framing is replaced by a four-part measured distinction incorporating AF-1 through AF-4.",
+      "The AF-1..AF-4 evidence incorporated into CF-1 is explicitly flagged as two-day-old external observation, not treated as current measurement, and not substituted for OBS-V0 through OBS-V3.",
+      "OBS-S2 now names its required services parameter, derived strictly from what G-N3/G-N4/G-N5 consume (auth, rest, storage) and no unrelated service.",
+      "status is preferred over the vendor-deprecated healthy field for every G-N rule reading OBS-S2, with healthy retained only as a cross-check.",
+      "OD-C3 gains a named, unchosen OAuth2 option with its material precondition and its unmeasured scope-sufficiency both stated; OF-C1's finding about the PAT is left standing, not weakened by the mere existence of an alternative.",
+      "The team-level-vs-project-level env scope gap is closed by extending TARGET SCOPE's own definition (no fifth field) and by a fail-closed UNKNOWN path where the tool surface cannot answer it, recorded as MG-C6.",
+      "G-N3 is corrected to test Auth reachability alone, on the ground -- already present in v1.0.0's own text -- that token refresh reaches GoTrue independent of sign-in configuration; OBS-S3 is retained as diagnostic, not as a gate.",
+      "The correction to G-N3 is checked against SECTION_G's overall conclusion: it makes C3_NOT_AVAILABLE more clearly the expected outcome and does not open, weaken or shortcut the path to C3_AVAILABLE, which still requires Tier 2 under DEP-C1.",
+      "SECTION_B11_PRESERVED_UNCHANGED.preserved[11] is the verified, correct citation path for the MG-Q1/MG-Q2/MG-Q3 preservation clause, checked by direct index lookup rather than by search.",
+      "Both roles.sql citations (U2-4 and ROUTE_R1) now carry the LOCAL CONTAINER PROVENANCE caveat this chain applies elsewhere, without altering either citation's substantive use.",
+      "No parent artifact outside this pair is edited. No grandparent authority is reinterpreted. OD-3 is not adjudicated; KEEP/CHANGE and C-1/C-2/C-3 are not chosen; the all-writer scope is not narrowed.",
+      "No hosted mutation and no live control-plane read against the governed project was performed by this errata lane; every external read is either a re-fetch of an already-pinned public specification with an identical hash, or a re-read of repository-tracked text.",
+      "Every directive item in the errata brief (B-C1, NBF-1 through NBF-11 excluding the unissued NBF-5) is closed by exactly one named SECTION_B clause."
+    ],
+    "self_check_is_not_certification": "These checks are the author's own and are not independent verification. A self-check reporting PASS on its own corrections would be the self-falsifying construct this chain has already been faulted for once."
+  },
+
+  "required_independent_review": "This errata and its companion manifest amendment require INDEPENDENT adversarial re-certification, BOUNDED TO v1.0.1 ONLY, before any census-execution lane opens. The certifier should specifically re-check: that the effective observation count is genuinely 15 by direct enumeration rather than trusting this errata's own arithmetic; that OBS-V4's removal introduces no silent gap against MG-Q1's closure definition; that CF-1's corrected quotation is complete and the array index is genuinely 0; that G-N3's broadened condition does not, on some path this errata has not considered, create a NEW false negative in the other direction; and that the team-level-scope and services-parameter corrections are sufficient rather than merely gestured at. The writing lane does not certify its own output.",
+
+  "final_state": "ERRATA_AUTHORED_AWAITING_BOUNDED_RECERTIFICATION",
+
+  "next_gate": "BOUNDED INDEPENDENT RECERTIFICATION of STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0 AS CORRECTED BY STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1, together with the companion manifest and its errata amendment, scoped to the corrections in this errata rather than re-litigating what the prior certification already passed. On PASS, a READ-ONLY CENSUS EXECUTION lane opens with its own prestate, its own freshness gate and human confirmation HCC-1, and executes at most the fifteen observations of SECTION_B1.EFFECTIVE_READ_SET_v1_0_1. Its output is a C3 classification under SECTION_G (as corrected by SECTION_B7) and an evidence package under SECTION_H. Only then is the OWNER RE-ADJUDICATION BRIEF for Recovery OD-3 (OD-Q5) written, and it must carry CF-1 in its corrected form. Until recertification returns PASS: no observation is authorized, no control-plane read is authorized, no Vercel act, no Supabase act and no database connection is authorized, MG-Q1 and MG-Q2 remain OPEN, DEP-C1 remains unresolved, the capability gap declared by the Quiesce amendment stands in full, IG-1 remains NOT_CLOSED_AND_NOT_CURRENTLY_CLOSABLE, and S8 remains unsatisfiable under the QUIESCE posture."
+}

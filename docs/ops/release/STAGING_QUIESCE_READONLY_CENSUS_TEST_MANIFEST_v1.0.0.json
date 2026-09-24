@@ -1,0 +1,303 @@
+{
+  "manifest_id": "CV1-STAGING-QUIESCE-READONLY-CENSUS",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+    "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "db/hosted/target-identity.ts",
+    "db/baseline/stella_g2_roles.sql",
+    "db/baseline/README.md",
+    "supabase/config.toml",
+    "app/api/health/runtime-identity/route.ts",
+    "docs/audits/functional/2026-07-uellix-golden-path/01_TEST_PROTOCOL.md"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SENT-NO-SECRET-VALUE-CENSUS",
+      "purpose": "Proves that no password, access token, PAT, DSN, connection string, anon or publishable key, service-role key, JWT secret, external-provider client secret or environment-variable VALUE appears anywhere in this pair, and that none may appear in the evidence package the authority defines. The check is a secret scan over the write set. Its purpose is SSL-08 conformance, which forbids a secret VALUE in any evidence packet, gate record or stage declaration at any stage."
+    },
+    {
+      "id": "SENT-NO-VALUE-DERIVATIVE",
+      "purpose": "Proves that the authority nowhere permits a value DERIVATIVE to be recorded in place of a value: no hash, no prefix, no suffix, no length and no equality test against a candidate. The property this proves is that OBS-V2's four-field limit cannot be widened by something that is technically not the value. A low-entropy value drawn from a small known set is reconstructable from its hash, so a derivative is a value."
+    },
+    {
+      "id": "SENT-PRODUCTION-REF-IS-VETO-ONLY",
+      "purpose": "Proves that every occurrence of the production project ref ctaxtgujyyprgynmnvtq in this pair sits in a VETO, PROHIBITION or FINDING context, and never in a target, source, observation-subject, request-path or authorized-operation context. It makes the production boundary machine-checkable rather than a matter of reading tone, and it is load-bearing here because the census reads a project LIST that necessarily returns the production project."
+    },
+    {
+      "id": "SENT-NO-INVENTED-IDENTIFIER",
+      "purpose": "Proves that this pair allocates no ODS ordinal, no HPO-ODS grant id, no migration ordinal and no Controller entry. Every identifier it introduces is local to this package: OBS-V0 through OBS-V4, OBS-S1 through OBS-S9, OBS-L1, OBS-L2, U1-1 through U1-5, U2-1 through U2-7, G-N1 through G-N7, G-U1 through G-U5, DEP-C1, CF-1, CF-2, OD-C1 through OD-C3, MG-C1 through MG-C5, CG-C1 through CG-C3, OF-C1 through OF-C7, HCC-1, HCC-2, PRE-1 through PRE-5, NBF-A through NBF-D, and the control ids of this manifest."
+    },
+    {
+      "id": "SENT-NO-XID-FRONTIER",
+      "purpose": "Proves that no transaction-id frontier, no scalar of that class, and no pairwise equality of such a scalar appears anywhere in this pair, in any observation, decision rule or evidence field. The primitive was PROHIBITED, not merely rejected, by the amendment after a proven false negative, and this sentinel exists so a revival is caught by a check rather than by a reader's memory."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-C1",
+      "description": "Both artifacts of the pair parse as valid JSON, and this manifest validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json with ZERO violations, checked by an explicit validator run over the schema rather than inferred from any repository gate. No gate in this repository validates a TEST_MANIFEST against its schema -- it is only a protected path -- so a claim of schema conformance that rests on a gate PASS is vacuous and is not accepted here. The check must include the schema's additionalProperties false constraint at the top level and the required-key set manifest_id, node_or_batch, exit_gates, positive_controls, negative_controls.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C2",
+      "description": "MG-Q1, MG-Q2 and C-3 as quoted in SECTION_A_EXACT_DEFINITIONS_AS_READ are BYTE-EQUAL to their sources under a stated normalization, checked by a PROGRAMMATIC string comparison against docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json blob 633d4d68 at SECTION_K measurement_gaps[0] and [1], and against docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json blob 1abcefc4 at SECTION_B8_OWNER_READJUDICATION.options[1].enumerated_sub_options_with_consequences[2]. The comparison must be key-set equality plus per-key equality, not a re-reading. The only permitted normalization is U+2014 and U+2013 to a double hyphen and curly quotes to straight quotes, because this artifact is ASCII-only; the normalization must be stated and applied to both sides.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C3",
+      "description": "PMV-1 as quoted is byte-equal under the same normalization to docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json blob 6549cd9c at ENVIRONMENT_SCOPE_CORRECTION.required_pre_mutation_verification.checks[PMV-1], and the four names UELLIX_APP_ENV, NEXT_PUBLIC_SUPABASE_URL, UELLIX_RUNTIME_DATABASE_URL and DATABASE_URL are re-derived from ENVIRONMENT_SCOPE_CORRECTION.variables plus PMV-1's own text rather than recalled.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C4",
+      "description": "The MG-Q2 supersession is located and read at its exact path, SECTION_B9_SUPERSEDED_CLAUSES.superseded_in_part[5] of blob 1abcefc4, and the artifact's claim that ONLY mitigation_in_the_meantime is superseded while MG-Q2 itself is preserved matches the superseded and preserved fields of that entry. A certifier must confirm that the census does NOT rely on the dead sub-key anywhere.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C5",
+      "description": "The Supabase Management API enumeration in SECTION_J is reproducible: fetching https://api.supabase.com/api/v1-json read-only yields a document whose sha256 is re-derived, and parsing it yields the stated 115 paths and 77 GET-bearing paths. Where the live document has since changed, the certifier records the NEW sha256 and re-derives the five MEASURED_ABSENCES against the new document rather than accepting the old figures. A drift in the specification is a finding about freshness, not a defect in method.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C6",
+      "description": "Each of the five MEASURED_ABSENCES is independently re-derivable from the parsed specification: (a) no path, by any method, names an extension; (b) max_prepared_transactions is absent from the 38-property response schema of GET /v1/projects/{ref}/config/database/postgres; (c) no path returns connected sessions, scheduled jobs or queued asynchronous work; (d) no path enables read-only mode, while GET readonly and POST readonly/temporary-disable both exist; (e) no path disables the Auth or Storage service. Each must be checked over the WHOLE path set, because an absence claim derived from a documentation page rather than from the complete set is exactly what directive NBF-A forbids.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C7",
+      "description": "Every one of the fifteen authorized observations in SECTION_E is traceable to at least one unknown in SECTION_B or SECTION_C, and every unknown that the authority marks as closable is closed by at least one observation. The mapping is bijective in the closable direction and no observation is orphaned. An observation that closes nothing is scope creep and must be found by this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C8",
+      "description": "The SECTION_G decision procedure is TOTAL and DETERMINISTIC: for every combination of Tier 1 observation outcomes, including every failure and skip outcome, exactly one of C3_AVAILABLE, C3_NOT_AVAILABLE and C3_UNKNOWN is reachable, and the rule that produces it is named. The certifier should construct at least the boundary cases: all-negative Tier 1 with Tier 2 unavailable (expect C3_UNKNOWN via G-U1); a present DSN row with no READY deployment (expect C3_UNKNOWN via G-U2); a present DSN row with a READY deployment (expect C3_NOT_AVAILABLE via G-N2); and a branch-scoped PR #201 row (expect C3_NOT_AVAILABLE via G-N1).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C9",
+      "description": "The authority's own statement that C3_AVAILABLE is UNREACHABLE under it is CONSISTENT with its rules: condition A-4 requires Tier 2 results, SECTION_D confers no Tier 2 capability, and no other rule can satisfy A-4. If a certifier finds any path to C3_AVAILABLE that does not pass through A-4, the disclosure is wrong and the artifact is defective.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C10",
+      "description": "Every claim in SECTION_D about tool surfaces is re-derivable offline: the Vercel CLI version, the Supabase CLI version, the absence of a --project flag on vercel env list, the existence of vercel link --project and --team, the enumerated Supabase CLI read subcommands, and the absence of CLI subcommands for the auth, postgrest, storage, realtime, health and readonly surfaces. Each is checked by --help against the same versions, with no network call and no provider contact.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C11",
+      "description": "Finding CF-1 is independently re-measured: git show --name-only 2947161e lists exactly the two FIBDB053 runtime-binding documents; git diff --name-only over merge e3f6f075 lists exactly the same two; both are ancestors of the lane HEAD; and the merged authority's final_state is the literal string FIBDB053_RUNTIME_STAGING_BINDING_AUTHORITY_AUTHORED__NOT_EXECUTED. The quoted owner-record clause is compared against blob 876fc76c at ratifications[OD-3].repository_binding.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C12",
+      "description": "Finding CF-2 is independently re-measured: app/api/health/runtime-identity/route.ts at blob 998acbd283f2a5934f0960354ea2aca1b2b56c83 calls getVerifiedAuthIdentityResult() before any identity observation and returns 401 or 503 when no identity is present, so the surface is session-gated and the P-10 evidence clause that names it cannot be satisfied read-only.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C13",
+      "description": "The seven pinned blob SHAs of the controlling artifacts are re-derived with git hash-object at the lane tree and match, and the four Quiesce-package blobs match the pins recorded by the amendment itself at BASE_AUTHORITY and SECTION_B12_PRECEDENCE.byte_integrity. This proves the lane read the artifacts it cites and changed none of them.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C14",
+      "description": "Each of the four consumed recertification directives NBF-A through NBF-D names a concrete, checkable discharge in the artifact, and each discharge is verified rather than asserted: NBF-A by PC-C5 and PC-C6, NBF-B by the capability-evidence block appearing also in SECTION_F, NBF-C by the BACKGROUND classification of the documented default alongside a hosted UNKNOWN, and NBF-D by NC-C7.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C15",
+      "description": "The lane's prestate is re-derivable: branch codex/cv1-staging-quiesce-mgq1-mgq2-readonly-census-authority-r1, HEAD c6eabf20764ddc69b780ab763fbb870468e6b569 equal to the declared PARENT, tree c44e363b765f3c50e3d7c61841a6de4676c2122c, and a clean working tree under git status --porcelain --untracked-files=all. The scope of the change is exactly two NEW files under docs/ops/release/ and zero modified files.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-C16",
+      "description": "The git remote of the lane worktree is measured and compared against the repository field this artifact carries. OF-C7 must state the direction of the mismatch correctly: the remote is github.com/lorenzozanello/uellix-antigravity, the audit note agrees with the remote, and the authority headers across this chain carry the shorter lorenzozanello/uellix. A certifier finding the direction stated backwards anywhere, or finding the mismatch still used as a ground for distrusting the audit note, has found a defect.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-C1",
+      "description": "NO hosted mutation occurred in the authoring lane. No Vercel deployment, environment-variable act, alias act, project setting change or link; no Supabase configuration mutation, pause, restart, realtime shutdown or readonly toggle; no database connection of any kind; no backup, restore or DDL; no role or ACL change; no credential generation. Verified by the absence of any such act in the lane transcript and by the artifact's own PS-C2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C2",
+      "description": "NO live control-plane READ occurred in the authoring lane. No Vercel API call, no Supabase Management API call against any project ref, and no CLI invocation that contacts either provider account surface. The only external fetches were a public unauthenticated OpenAPI specification and public vendor documentation. A certifier finding ANY property of bvyzblhqymxruxdguaee asserted as MEASURED by this lane has found a defect, because this lane measured none.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C3",
+      "description": "NO secret value of any class appears in either artifact: no password, DSN, connection string, PAT, access token, anon or publishable key, service-role key, JWT secret, external-provider client secret or environment-variable value, and no hash, prefix, suffix or length of any of them. Project refs, project ids, team slugs and deployment ids are public identifiers, not secret values. SENT-NO-SECRET-VALUE-CENSUS and SENT-NO-VALUE-DERIVATIVE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C4",
+      "description": "The authority authorizes NO act that creates an authenticated session against the governed project. No sign-in, no signUp, no password reset, no magic link, no OAuth code exchange and no token refresh is permitted, and OBS-V4 is explicitly unauthenticated. This is the control that prevents the census from becoming the write it is measuring: a GoTrue authentication writes auth.sessions and auth.refresh_tokens, which is writer class W-4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C5",
+      "description": "The authority authorizes NO database connection, by any driver, from any host, with any credential -- and in particular does not permit a DSN reconstructed from anything read during the MG-Q1 half to be used for the MG-Q2 half. This is the specific cross-contamination the lane is most exposed to, because MG-Q1's read set is environment rows and Tier 2's blocker is a DSN. A certifier should look for it deliberately rather than trust its absence.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C6",
+      "description": "The authority authorizes NO POST, PATCH, PUT or DELETE against either provider. Every one of the fifteen observations is a read. In particular POST /v1/projects/{ref}/database/query/read-only is measured available and is explicitly NOT authorized, and its non-authorization survives in SECTION_F as well as in SECTION_D. A certifier finding it authorized anywhere, or implied to be available by convenience, has found a defect.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C7",
+      "description": "NO transaction-id frontier, no scalar of that class, and no pairwise equality of such a scalar appears in any observation, decision rule, evidence field or discussion as a PASS contract. The primitive was PROHIBITED after a proven false negative and this control exists to catch a revival. Directive NBF-D. SENT-NO-XID-FRONTIER.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C8",
+      "description": "The authority makes NO claim of the form 'nothing wrote during the window'. Its output is an instantaneous statement about EXPOSURE, and every clause that could be read as an interval claim is absent or explicitly disclaimed. This is the distinction whose collapse made the removed primitive fail open.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C9",
+      "description": "NO UNKNOWN is treated as a negative anywhere. Every unmeasured property is a writer, C3_UNKNOWN is stated NOT to mean 'probably fine', and the classification rules never derive a negative from an absent observation. A certifier should specifically test whether any SECTION_G rule can reach C3_AVAILABLE or a favourable reading through an observation that did not return.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C10",
+      "description": "The production ref ctaxtgujyyprgynmnvtq is NEVER a target, source, observation subject, request-path substitution or authorized-operation subject in either artifact, and the evidence contract forbids it in every result field. The project-list case is handled explicitly: production rows are discarded at capture. SENT-PRODUCTION-REF-IS-VETO-ONLY and SSL-09.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C11",
+      "description": "NO Supabase project is selected by provider-side display name anywhere, and the artifact restates the measured reason: the provider-vetoed PRODUCTION ref carries the display name uellix-staging. The census reads a project LIST, so this is the lane in which a name-based selection would actually go wrong.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C12",
+      "description": "The authority does NOT adjudicate Recovery OD-3, does NOT select KEEP QUIESCE or CHANGE RECOVERY POSTURE, does NOT select among C-1, C-2 and C-3, and its output contract explicitly forbids carrying a recommendation on OD-Q5. A classification of C3_AVAILABLE would not be a selection of C-3 and the artifact says so.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C13",
+      "description": "The authority does NOT narrow the all-writer scope adjudicated at SECTION_B of the Quiesce authority and preserved by its amendment, and does not use the Tier 2 blockage as a reason to narrow it. Narrowing is available only to the owner as sub-option C-2, and a census that quietly measured only the runtime writers would be that narrowing performed by instrument choice.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C14",
+      "description": "NO parent artifact is edited. Findings CF-1 and CF-2 are recorded and expressly left unrepaired, and neither is presented as if the parent had been corrected. Two new files, zero modified files.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C15",
+      "description": "The authority does NOT consume PR #201. It does not exercise AUTH-1 or AUTH-2, does not satisfy PMV-1 or PMV-3 for any future execution of PR #201, does not become PR #201's rollback record, and does not confer permission to proceed. Observing whether a binding exists is not the same act as creating one, and the artifact states the distinction rather than leaving it to be inferred.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C16",
+      "description": "The authority does NOT claim to close MG-Q2 in full, does NOT claim to close MG-Q3, does NOT claim IG-1 closed, and does NOT claim the amendment's capability gap narrowed. A certifier finding any such claim, including by implication in a summary field, has found a silent authority expansion.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C17",
+      "description": "The authority does NOT treat the six nonblocking recertification findings as fully consumed. Exactly four are restated and discharged; the two it does not hold are declared as MG-C4 and flagged for a certifier who holds the report. A claim of full consumption would be the failure mode this chain has already measured: declaring zero residuals after closing only the named items.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C18",
+      "description": "The authority does NOT treat public vendor documentation, the OpenAPI specification, or any local tool surface as a measurement of the governed project. Every such item is classified by evidence class at the point of use, and the absence of a capability from a published specification is classified as strong evidence rather than as a measurement, leaving MG-Q4 open.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C19",
+      "description": "NO ODS ordinal, HPO-ODS grant id, migration ordinal or Controller entry is allocated by either artifact. SENT-NO-INVENTED-IDENTIFIER.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-C20",
+      "description": "The stale in-tree Vercel project id is NOT treated as a fact. prj_3NplDjQAEU6nvFoRZEdnNOAT3ThJ appears only as a CANDIDATE TO VERIFY, with its blob SHA and its 2026-07-16 date, on two independently sufficient grounds: dead freshness and non-authority status. No observation, rule or conclusion depends on it being correct, and OBS-V0 exists precisely so that it is re-measured rather than assumed. A certifier must also confirm the negative form of this control: the repository-name mismatch between the audit note and the authority headers is NOT used as a ground against the note, because the measured git remote matches the NOTE and not the headers. That withdrawn ground is re-entered as OF-C7 and a claim that still leans on it is a defect.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MC-C1",
+      "description": "Deleting DEP-C1 must be CAUGHT. Without it, SECTION_C's Tier 2 unknowns read as merely unmeasured rather than as UNMEASURABLE UNDER THIS AUTHORITY, and a census executor facing a blocked extension read would have no stated bar against reaching for POST database/query/read-only, or for the runtime DSN, to finish the job. DEP-C1 is the clause that converts a gap into a stop.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C2",
+      "description": "Deleting A-4 from the C3_AVAILABLE conjunction must be CAUGHT. Without it a Tier-1-only census with all-negative results would satisfy the remaining conditions and return C3_AVAILABLE, asserting that no client of any kind exists while pg_cron, pg_net, prepared transactions and live sessions were never looked at. This is the single most dangerous possible mutation of this artifact, because its output would be a false green on the exact predicate the owner is being asked to rely on.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C3",
+      "description": "Deleting U1-3's THE_STRUCTURAL_LIMIT must be CAUGHT. Without it, a PRESENT environment row with an unread value reads as an ordinary observation rather than as an unresolvable one, and rule G-U2 loses its ground. The likely downstream error is that a census records 'row present, target not governed staging' on no evidence at all.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C4",
+      "description": "Deleting the MANDATORY_PROJECTION clauses of OBS-S3 and OBS-S4 must be CAUGHT. Both endpoints return secret material -- external-provider secrets and jwt_secret -- and without a capture-time projection the natural implementation writes the whole response to a file and then redacts, which is an SSL-08 incident that a later scan discovers rather than prevents.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C5",
+      "description": "Deleting OBS-V4's HARD_LIMITS must be CAUGHT. Without them the obvious way to learn a deployment's database identity is to sign in, and signing in writes auth.sessions -- making the census perform the write class it exists to look for, inside the window whose emptiness is the question.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C6",
+      "description": "Deleting the SSL-06 treatment of the control-plane credential must be CAUGHT. Without it the artifact reads as if the census ran on a least-privilege capability, when in fact it runs on a token the vendor documents as carrying the same privileges as the user account and which reaches the vetoed production project. The honest disclosure is what makes the bound reviewable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C7",
+      "description": "Deleting THE_TREE_VALIDITY_CAVEAT_APPLIES from U1-4, or the required commit-SHA field of OBS-V3, must be CAUGHT. Without either, a deployment built from an unknown commit is silently assigned the writer profile of tree 2c606a43, and two constant-gated unauthenticated POST handlers are treated as non-writers on a build where the constants may be true.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C8",
+      "description": "Deleting the count_check on the authorized read set must be CAUGHT. It is the only mechanical bar against a sixteenth observation being added later without an amendment, and an exhaustive list whose exhaustiveness is not checked is a list.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C9",
+      "description": "Deleting the explicit unreachability disclosure from C3_AVAILABLE.MEASURED_CONSEQUENCE_STATED_PLAINLY must be CAUGHT. Without it the artifact presents a three-valued procedure of which one value is silently impossible, and the owner would read a C3_UNKNOWN result as a near miss rather than as the only clean outcome the authority can produce.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C10",
+      "description": "Deleting CF-1 must be CAUGHT. It is the only place in the chain where the owner record's stated premise for OD-3 is measured against the repository, and an OD-Q5 brief written without it would ask the owner to re-decide on the same premise that measurement contests.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C11",
+      "description": "Deleting the PROVENANCE_OF_THE_FINDINGS block, or the MG-C4 gap it produces, must be CAUGHT. Without it the artifact implies it consumed six recertification findings when it holds four, which is the checklist-for-a-sweep substitution this programme has already measured once.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-C12",
+      "description": "Deleting OF-C3's justification for G-N3's breadth must be CAUGHT. Without it the rule silently departs from the amendment's illustrative phrasing, and a certifier would have no way to see that the departure was deliberate and argued rather than careless.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

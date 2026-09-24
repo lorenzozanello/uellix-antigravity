@@ -1,0 +1,1058 @@
+{
+  "package_id": "CV1-STAGING-QUIESCE-READONLY-CENSUS",
+  "version": "1.0.0",
+  "artifact_id": "STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0",
+  "authority_class": "READ_ONLY_OBSERVATION_AUTHORITY_CANDIDATE",
+  "document_class": "AUTHORITY",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-QUIESCE-MGQ1-MGQ2-READONLY-CENSUS-AUTHORITY-R1",
+  "lane": "CV1-STAGING-QUIESCE-MGQ1-MGQ2-READONLY-CENSUS-AUTHORITY-R1",
+  "role": "AUTHOR / ADJUDICATOR",
+  "mode": "AUTHORITY_AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Opus 5 (Claude Code Desktop), HPO-ODS-01 primary development executor",
+  "repository": "lorenzozanello/uellix",
+
+  "companion_manifest": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/cv1-staging-quiesce-mgq1-mgq2-readonly-census-authority-r1",
+  "AS_OF_PARENT_BRANCH": "codex/cv1-staging-quiesce-mechanism-authority-r1",
+  "AS_OF_PARENT_SHA": "c6eabf20764ddc69b780ab763fbb870468e6b569",
+  "AS_OF_BASE": "c6eabf20764ddc69b780ab763fbb870468e6b569",
+  "AS_OF_TREE": "c44e363b765f3c50e3d7c61841a6de4676c2122c",
+  "AS_OF_INTEGRATION_REF": "537487ac (integration/commercial-v1 at lane open; NOT the base of this branch)",
+  "AS_OF_WALL_CLOCK_UTC": "2026-09-22T01:22:45Z",
+
+  "STACKING_DECLARATION": {
+    "why_not_integration_based": "Neither the Recovery package nor the Quiesce package has merged into integration/commercial-v1. This lane is deliberately stacked on codex/cv1-staging-quiesce-mechanism-authority-r1 at c6eabf20 so that the Quiesce authority, its v1.0.1 amendment and the three Recovery artifacts are present as context WITHOUT being duplicated into a fresh integration-based PR. Duplicating them would create a second, divergent copy of two packages that are themselves awaiting certification and re-adjudication.",
+    "pr_target": "codex/cv1-staging-quiesce-mechanism-authority-r1",
+    "pr_state": "DRAFT",
+    "retarget_rule": "This PR is retargeted ONLY after its base merges, and retargeting is a mechanical rebase, never a re-authoring.",
+    "no_parent_file_is_edited": "This lane creates exactly two new files and edits none. The four files of the Quiesce package and the three of the Recovery package are byte-unchanged, and their blob SHAs are pinned in CONTROLLING_AUTHORITY."
+  },
+
+  "PURPOSE": {
+    "one_line": "Confer the narrowest READ-ONLY observation authority capable of closing measurement gaps MG-Q1 and MG-Q2 as their parent artifacts define them, and define the decision procedure by which those results classify sub-option C-3 as AVAILABLE, NOT AVAILABLE or UNKNOWN, so that the owner re-adjudication of Recovery OD-3 rests on measurement rather than on supposition.",
+    "why_this_lane_exists": "The independent capability-gap recertification of PR #208 returned CAPABILITY_GAP_RECERT_PASS_WITH_NONBLOCKING_FINDINGS and concluded that KEEP QUIESCE is not currently executable, that owner re-adjudication is required, and that MG-Q1 and MG-Q2 must be closed read-only BEFORE the owner is asked to change posture, because they determine whether C-3 EMPTY_WINDOW_BY_CONSTRUCTION is actually available. The amendment v1.0.1 makes the same recommendation in terms at SECTION_B8_OWNER_READJUDICATION.recommendation.primary: 'Close MG-Q1 and MG-Q2 under a narrow read-only census authority BEFORE answering.' This artifact IS that authority.",
+    "what_this_artifact_is_not": [
+      "It is not an execution grant. Nothing here may be executed until it is independently certified and a future census-execution lane opens with its own prestate, freshness gate and human confirmation.",
+      "It does not adjudicate Recovery OD-3. It does not choose KEEP QUIESCE or CHANGE RECOVERY POSTURE, and it does not choose among C-1, C-2 and C-3.",
+      "It does not authorize any quiesce act, any prevention mechanism, any backup, any restore, any DDL, any Stage-A application, or any production operation.",
+      "It does not edit, supersede or reinterpret the Recovery authority, its amendment, the owner-ratification record, the Quiesce authority, its amendment, or PR #201.",
+      "It does not narrow the all-writer scope adjudicated at SECTION_B of the Quiesce authority and expressly preserved by its amendment. A census measures the writer set; it does not resize it.",
+      "It does not allocate any ODS ordinal, HPO-ODS grant id, migration ordinal or Controller entry.",
+      "It performed NO live observation of its own. Every hosted property named below is a QUESTION this authority would permit an execution lane to ask, never an answer this lane recorded."
+    ]
+  },
+
+  "CONTROLLING_AUTHORITY": [
+    {
+      "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+      "blob_sha": "633d4d68173e590d7980d9317cf47c8757d7e8fb",
+      "relation": "IMMEDIATE PARENT. Defines MG-Q1 and MG-Q2 verbatim at SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS.measurement_gaps[0] and [1], and the sixteen-class writer inventory W-1..W-16 that the census measures against."
+    },
+    {
+      "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "blob_sha": "1abcefc499172874433052db8a75f03ca35f3eba",
+      "relation": "IMMEDIATE PARENT AMENDMENT AND CONTROLLING ON CONFLICT. Defines C-3 verbatim at SECTION_B8_OWNER_READJUDICATION.options[CHANGE RECOVERY POSTURE].enumerated_sub_options_with_consequences[2]; declares the CAPABILITY GAP; elevates MG-Q1 and MG-Q2; and states the precedence rule 'Where this amendment and v1.0.0 conflict, THIS AMENDMENT CONTROLS. Where this amendment is silent, v1.0.0 controls unamended.'"
+    },
+    {
+      "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+      "blob_sha": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f",
+      "relation": "PARENT COMPANION MANIFEST. Byte-unchanged by this lane."
+    },
+    {
+      "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+      "blob_sha": "805b30c3c993b5a34bf0e140236c4edb683d4fa8",
+      "relation": "PARENT COMPANION MANIFEST AMENDMENT. Byte-unchanged by this lane."
+    },
+    {
+      "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+      "blob_sha": "154c3d1d396784ae7189b8088669b0ef8231de67",
+      "relation": "GRANDPARENT. Defines OD-3's posture space, S8, HC-2, and the CONJUNCTIVE AND EXHAUSTIVE AUTHORIZED_OPERATIONS block AO-1..AO-9. AO-2 is the only management-plane read it authorizes and its scope is narrower than this census."
+    },
+    {
+      "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "blob_sha": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc",
+      "relation": "GRANDPARENT AMENDMENT. Preserves QUIESCE (OD-3), IG-1 and the requirement for a separate quiesce authority."
+    },
+    {
+      "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+      "blob_sha": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+      "relation": "OWNER INTENT. Ratifies OD-3 = QUIESCE. Its reopening_rule and its ratification_is_not_implementation clause both bind this lane: a census may not reopen OD-3, and measuring a posture is not authorizing its mechanism. One clause of it is measured FALSE at this tree; see SECTION_L finding CF-1, which is recorded for the owner and is NOT resolved here."
+    },
+    {
+      "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+      "blob_sha": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817",
+      "relation": "ADJACENT. PR #201. Its PMV-1 IS the closure definition MG-Q1 names, its ENVIRONMENT_SCOPE_CORRECTION names the four variables, and DEP-1 makes its execution the event that forecloses C-3."
+    },
+    {
+      "path": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+      "blob_sha": "f69e2e8141495e8715aba1a503cfa07f30e8dc08",
+      "relation": "ADJACENT AND BLOCKING FOR TIER 2. It is the ONLY artifact in this chain that describes an authorized read-only DATABASE capability against bvyzblhqymxruxdguaee (role uellix_auditor via UELLIX_AUDITOR_DATABASE_URL). Its final_state is the literal string FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_AUTHORED__NOT_EXECUTED and its next_gate states that no hosted connection, no query and no credential resolution is authorized until its own certification returns PASS. This census therefore has NO available database capability. See SECTION_D."
+    },
+    {
+      "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+      "blob_sha": "f17e238d8829cd1e624ae10a851e89344fc13037",
+      "relation": "SECURITY STOP LINES. SSL-06 'No privileged credential may be held without an inventory recording who and what holds it' (gate SEC5); SSL-08 'No secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever' (gate SEC5); SSL-09 'The production-target veto in the hosted tooling may not be disabled, bypassed or worked around to satisfy any gate' (gate P2). All three are engaged by this census and are honoured in SECTION_D and SECTION_H."
+    }
+  ],
+
+  "CERTIFICATION_CONSUMED": {
+    "verdict": "CAPABILITY_GAP_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+    "subject": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json and its companion manifest amendment, certified independently on 2026-09-21.",
+    "blocking_findings": 0,
+    "nonblocking_findings_reported": 6,
+    "PROVENANCE_OF_THE_FINDINGS": {
+      "classification": "THE RECERTIFICATION REPORT IS NOT AN ARTIFACT IN THIS TREE. A repository-wide search over docs/**/*.json and docs/**/*.md at AS_OF_TREE returns no recertification artifact for this package. The six findings reached this lane as DIRECTING TEXT in the lane brief, not as a citable repository artifact.",
+      "consequence": "FOUR of the six are restated below in the form in which they reached this lane and are consumed in terms. The remaining TWO are NOT restated, NOT paraphrased and NOT invented, because this lane does not hold them. Their absence is recorded as measurement gap MG-C4 rather than silently treated as consumed.",
+      "fail_closed": "A certifier of THIS artifact who holds the full recertification report must check the two unconsumed findings against SECTION_E and SECTION_G. If either bears on the read set or the decision procedure, this artifact is incomplete and needs an amendment."
+    },
+    "consumed_in_terms": [
+      {
+        "id": "NBF-A",
+        "directive": "Do not rely on the old incomplete Management API enumeration.",
+        "how_consumed": "SECTION_J replaces it outright. The complete Supabase Management API OpenAPI specification was fetched read-only from its public URL, pinned by sha256, and enumerated programmatically: 115 paths, 77 of which carry a GET. Every endpoint this authority names is quoted from that enumeration, and every claim of ABSENCE below is a claim about that complete 115-path set rather than about a documentation page that was read."
+      },
+      {
+        "id": "NBF-B",
+        "directive": "Include documented Realtime shutdown and pause surfaces only as evidence about capability, not as authorized acts.",
+        "how_consumed": "SECTION_J records POST /v1/projects/{ref}/config/realtime/shutdown, POST /v1/projects/{ref}/pause, POST /v1/projects/{ref}/restart and POST /v1/projects/{ref}/readonly/temporary-disable as MEASURED CAPABILITY EVIDENCE ONLY. Every one of them is named again in SECTION_F as an EXPLICIT NON-AUTHORIZATION. No POST of any kind is authorized by this artifact."
+      },
+      {
+        "id": "NBF-C",
+        "directive": "Record the documented default max_prepared_transactions=0 as background, while keeping the hosted value UNKNOWN until measured.",
+        "how_consumed": "SECTION_C unknown U2-3 records the documented default as BACKGROUND, classified as vendor documentation about the engine's default and expressly NOT as a measurement of bvyzblhqymxruxdguaee. The hosted value stays UNKNOWN and fails closed. SECTION_J additionally measures that the parameter is ABSENT from the 38-property response schema of GET /v1/projects/{ref}/config/database/postgres, so the Management API cannot close it and the gap is a TIER 2 dependency, not an oversight."
+      },
+      {
+        "id": "NBF-D",
+        "directive": "Do not revive XID-frontier witness semantics.",
+        "how_consumed": "No observation in SECTION_E reads, derives, compares or records any transaction-id frontier, any scalar quantity of that class, or any pairwise equality of such a quantity. SECTION_F prohibits it by name. The census answers WHAT EXISTS AND WHAT IS EXPOSED at a single instant; it makes no claim of the form 'nothing wrote between two instants', which is the claim the removed primitive falsely supported. Negative control NC-C7 of the companion manifest exists to catch a reintroduction."
+      }
+    ]
+  },
+
+  "TARGET": {
+    "governed_staging_project_ref": "bvyzblhqymxruxdguaee",
+    "production_project_ref_VETOED": "ctaxtgujyyprgynmnvtq",
+    "production_veto_is_absolute": "The production ref appears in this artifact ONLY as a veto. It is never a target, a source, a subject of any authorized observation, or a value substituted into any request path. An observation whose resolved request URL contains it is a REFUSAL, not a result.",
+    "PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER": {
+      "rule": "RESTATED FROM BOTH PARENTS AND BINDING HERE. Every selection of a Supabase project in any act derived from this authority is BY REF, never by provider-side display name.",
+      "measured_reason": "The Recovery authority measured live that the provider-vetoed PRODUCTION ref carries the provider-side display name 'uellix-staging'. Selecting by name selects the vetoed project. This census reads MANY projects in a list and is therefore exactly the lane in which a name-based selection would go wrong."
+    },
+    "vercel_identity_rule": "Every Vercel observation is bound to an exact project id and, where a deployment is named, to an exact deployment id plus an exact Git SHA, per PR #201's frozen target identity form. No alias, domain or hostname is named, created, assumed or required, and no observation is recorded against a project named only by its display name.",
+    "no_credential_or_value_is_recorded": "No DSN, password, token, anon key, publishable key, service-role key, JWT secret, OAuth client secret or environment-variable VALUE appears anywhere in this artifact, and none may appear in the evidence package it defines. Project refs, project ids and deployment ids are public identifiers in the URLs the platforms serve and are recorded as identifiers only."
+  },
+
+  "PRESTATE": {
+    "PS-C1": {
+      "assertion": "The worktree is clean at tree c44e363b765f3c50e3d7c61841a6de4676c2122c on branch codex/cv1-staging-quiesce-mgq1-mgq2-readonly-census-authority-r1, HEAD c6eabf20764ddc69b780ab763fbb870468e6b569, which is the declared PARENT of this lane.",
+      "class": "MEASURED",
+      "method": "git rev-parse --abbrev-ref HEAD; git rev-parse HEAD; git rev-parse HEAD^{tree}; git status --porcelain --untracked-files=all (empty)"
+    },
+    "PS-C2": {
+      "assertion": "NO HOSTED MUTATION was performed by this lane. No Vercel act, no Supabase act, no database connection, no deployment, no environment-variable act, no scale change, no write lock, no credential generation, no backup, no restore, no DDL.",
+      "class": "MEASURED"
+    },
+    "PS-C3": {
+      "assertion": "NO LIVE CONTROL-PLANE READ was performed by this lane either. No Vercel API call, no Supabase Management API call against any project ref, no CLI command that contacts either provider's account surface. Every hosted property below is therefore a QUESTION, classified UNKNOWN, and fails closed.",
+      "class": "MEASURED",
+      "what_WAS_read_externally": "PUBLIC VENDOR DOCUMENTATION AND A PUBLIC UNAUTHENTICATED SPECIFICATION ONLY, fetched read-only and pinned. See SECTION_J. A public OpenAPI specification describes what the API OFFERS; it says nothing about the governed project's state, and no claim in this artifact treats it as if it did.",
+      "local_tool_introspection": "Three local, offline introspections were performed and are recorded as LOCAL TOOL FACTS, not hosted reads: the presence and version of the Vercel CLI, the presence and version of the Supabase CLI, and their --help command surfaces. None of them contacts a provider."
+    },
+    "PS-C4": {
+      "assertion": "The four artifacts of the Quiesce package and the three of the Recovery package are byte-unchanged at this tree; their blob SHAs are re-derived in CONTROLLING_AUTHORITY and match the values their own artifacts pin.",
+      "class": "MEASURED",
+      "method": "git hash-object over each path, compared against the pins recorded in STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json BASE_AUTHORITY and SECTION_B12_PRECEDENCE.byte_integrity."
+    }
+  },
+
+  "SECTION_A_EXACT_DEFINITIONS_AS_READ": {
+    "rule": "The three definitions below are QUOTED, not paraphrased and not recalled. Each names its file, its blob sha and its exact location inside that file, so a certifier can re-derive the quotation by path rather than by search.",
+    "MG-Q1": {
+      "source_path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+      "source_blob_sha": "633d4d68173e590d7980d9317cf47c8757d7e8fb",
+      "location": "SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS.measurement_gaps[0]",
+      "quoted_in_full": {
+        "id": "MG-Q1",
+        "gap": "The Vercel environment-variable row inventory for the project serving this repository has never been enumerated with scopes.",
+        "consequence": "W-14 is UNKNOWN. It is not known whether some deployment is ALREADY write-capable against governed staging.",
+        "closure": "PR #201's own PMV-1 defines exactly this read and states the enumeration IS the rollback record. It is read-only. It has not been performed because PR #201 has not executed.",
+        "severity": "HIGHEST in this lane. Every disposition in PQ-5 for W-14 is a guess until this is closed.",
+        "authority_needed": "A read-only management-plane observation. Not conferred by this artifact; this lane performed no live reads at all."
+      },
+      "amendment_status": "PRESERVED AND ELEVATED. The amendment's SECTION_B11 UNCHANGED_AND_STILL_CONTROLLING records, verbatim: 'MG-Q1, MG-Q2 and MG-Q3.' / 'All three remain open. MG-Q1 and MG-Q2 are now ELEVATED: they gate sub-option C-3, the only branch that preserves the owner's intent at full scope.' No clause of MG-Q1 is superseded by SECTION_B9.",
+      "the_closure_definition_it_incorporates_by_reference": {
+        "source_path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+        "source_blob_sha": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817",
+        "location": "ENVIRONMENT_SCOPE_CORRECTION.required_pre_mutation_verification.checks[PMV-1]",
+        "quoted_in_full": {
+          "id": "PMV-1",
+          "check": "Enumerate the existing rows for all four names (the three authorized plus DATABASE_URL) with their scopes. Record NAME, TARGET SCOPE, GIT BRANCH SCOPE and PRESENCE only.",
+          "purpose": "This enumeration IS the rollback record. Without it there is no defined pre-execution state to restore."
+        },
+        "the_four_names_quoted": "ENVIRONMENT_SCOPE_CORRECTION.variables is the array of UELLIX_APP_ENV, NEXT_PUBLIC_SUPABASE_URL and UELLIX_RUNTIME_DATABASE_URL, and PMV-1 adds DATABASE_URL, giving the four names UELLIX_APP_ENV, NEXT_PUBLIC_SUPABASE_URL, UELLIX_RUNTIME_DATABASE_URL and DATABASE_URL.",
+        "the_recorded_fields_are_a_CEILING_not_a_floor": "PMV-1 says 'Record NAME, TARGET SCOPE, GIT BRANCH SCOPE and PRESENCE only.' The word ONLY is a limit on what may be recorded. This census does not widen it, and SECTION_B3 works out what that limit does and does not prove."
+      }
+    },
+    "MG-Q2": {
+      "source_path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+      "source_blob_sha": "633d4d68173e590d7980d9317cf47c8757d7e8fb",
+      "location": "SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS.measurement_gaps[1]",
+      "quoted_in_full": {
+        "id": "MG-Q2",
+        "gap": "The hosted extension inventory and provider-service exposure of bvyzblhqymxruxdguaee are unmeasured.",
+        "consequence": "W-4 exposure, W-5, W-6, W-7, W-10 and W-11 are UNKNOWN.",
+        "why_the_repository_does_not_answer_it": "The only extension evidence in the tree is db/baseline/stella_g2_schema.sql, which its own README states was dumped from the LOCAL container supabase_db_uellix-stella-g2-local-rehearsal. Five source attestations assert pg_cron is absent 'in this project'. ATTESTED IS NOT PROVEN; neither settles the hosted catalog.",
+        "closure": "A read-only hosted observation under its own authority.",
+        "mitigation_in_the_meantime": "M-11's witness is indifferent to this gap. The gap raises the void rate; it does not compromise the proof."
+      },
+      "amendment_status": {
+        "superseded_sub_key": "mitigation_in_the_meantime ONLY.",
+        "the_supersession_located_exactly": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json, blob 1abcefc499172874433052db8a75f03ca35f3eba, SECTION_B9_SUPERSEDED_CLAUSES.superseded_in_part[5]. Its three fields read: clause = 'SECTION_K measurement_gaps[1] mitigation_in_the_meantime.'; superseded = the sentence beginning with the quoted phrase M-11's witness is indifferent to this gap, followed by the judgement that it is false and that in any case M-11 is gone; preserved = 'MG-Q2 itself.'",
+        "transliteration_note": "The amendment's superseded field contains a U+2014 em dash. This artifact is ASCII-only by construction, so the quotation above paraphrases the punctuation rather than reproducing a byte-exact string. A certifier verifying the quotation compares against superseded_in_part[5] of the pinned blob, not against this rendering.",
+        "consequence_for_this_census": "The sub-key above is quoted for completeness and is DEAD. It is not consumed, not relied on and not treated as a mitigation. Every other clause of MG-Q2 is live and is the definition this census closes against. The material effect of the supersession is that MG-Q2 no longer has ANY mitigation: it must be measured, which is why this authority exists."
+      },
+      "the_writer_classes_it_names": {
+        "rule": "MG-Q2's consequence clause names six writer classes. Their definitions are quoted from SECTION_A_WRITER_INVENTORY of the same blob, because an observation set derived from the gap's one-line summary rather than from the classes it actually leaves UNKNOWN would measure the wrong things.",
+        "W-4": "Supabase Auth (GoTrue), writing the auth schema. KNOWN_WRITER, AND STRUCTURALLY OUTSIDE EVERY VERCEL CONTROL. Its hosted_exposure_at_the_governed_ref is the sub-key MG-Q2 leaves UNKNOWN, quoted: 'UNKNOWN. This lane performed no live reads. Whether the Auth surface is presently enabled and internet-reachable on bvyzblhqymxruxdguaee is not measured here and FAILS CLOSED.'",
+        "W-5": "The Supabase Data API (PostgREST) writing the public schema directly. UNKNOWN -- FAIL-CLOSED. The tree evidence is supabase/config.toml, which is the configuration of the LOCAL stack.",
+        "W-6": "Supabase Storage, writing the storage schema. UNKNOWN -- FAIL-CLOSED. Same LOCAL-ONLY caveat.",
+        "W-7": "Supabase Realtime. UNKNOWN -- FAIL-CLOSED. 'Realtime is predominantly a WAL reader, but it maintains its own schema state. Not asserted to be a writer; not asserted not to be. Fails closed.'",
+        "W-10": "pg_cron scheduled jobs inside the database. UNKNOWN AT THE HOSTED REF -- FAIL-CLOSED. Source ATTESTS absence in five places; ATTESTED ABSENT, NOT PROVEN ABSENT.",
+        "W-11": "pg_net asynchronous HTTP, whose background worker writes response rows. UNKNOWN AT THE HOSTED REF -- FAIL-CLOSED. INSTALLED in the local baseline dump."
+      }
+    },
+    "C-3": {
+      "source_path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "source_blob_sha": "1abcefc499172874433052db8a75f03ca35f3eba",
+      "location": "SECTION_B8_OWNER_READJUDICATION.options[1].enumerated_sub_options_with_consequences[2]",
+      "quoted_in_full": {
+        "sub_id": "C-3",
+        "option": "Change the recovery model so the predicate is not needed -- for example, make the window empty by construction by completing the backup and the DDL before any client of any kind exists against the governed project.",
+        "consequence": "This is the only sub-option that satisfies the SPIRIT of QUIESCE at full scope without new authority, and it is viable ONLY while PR #201 remains unexecuted. It requires MG-Q1 and MG-Q2 to be closed first, because 'no client exists' is currently UNKNOWN, not measured. If the census finds an exposed Auth surface with live sessions, C-3 collapses back into the gap.",
+        "unblocks": "Potentially everything, contingent on a census this lane is not authorized to perform.",
+        "ordering_dependency": "Hard. See the preserved DEP-1."
+      },
+      "its_enclosing_option_quoted": "C-3 is a sub-option of 'CHANGE RECOVERY POSTURE', whose statement is: 'The owner reopens OD-3 and selects a different posture, or a different recovery model that does not need this predicate.' Classifying C-3 as AVAILABLE therefore does NOT select it, and does not reopen OD-3. Only the owner may do either.",
+      "the_dependency_it_points_at": {
+        "id": "DEP-1",
+        "source": "STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json SECTION_F_PR201_RELATIONSHIP.the_dependency_stated_explicitly, as STRENGTHENED by the amendment's SECTION_B9.",
+        "amendment_strengthening_quoted": "'DEP-1 ITSELF, which is not merely preserved but STRENGTHENED: with detection withdrawn, ordering is now the ONLY genuine prevention available, so executing PR #201 first forecloses the last viable branch C-3.'",
+        "consequence_for_the_decision_procedure": "PR #201's execution state is not context for this census. It is a DECISION INPUT, and it is the only input that can move C-3 to NOT AVAILABLE on its own. It is therefore observation OBS-V1 and it is taken FIRST."
+      },
+      "the_three_load_bearing_phrases": {
+        "phrase_1": "'before any client of any kind exists against the governed project'. ANY KIND is the operative words. The predicate is not 'no bound Next.js runtime'; it is the absence of every client class. That is why the census spans both planes and why a Vercel-only result can never establish C-3.",
+        "phrase_2": "'viable ONLY while PR #201 remains unexecuted'. This is a necessary condition with a hard direction: once falsified it cannot be re-satisfied by this branch, because the amendment's own strengthening of DEP-1 says executing PR #201 forecloses C-3.",
+        "phrase_3": "'If the census finds an exposed Auth surface with live sessions, C-3 collapses back into the gap.' This is a SUFFICIENT condition for NOT AVAILABLE. It is not the only one, and SECTION_G does not treat it as if it were: it is one disjunct among several, because a conjunction of exposure AND live sessions is a narrower trigger than the 'any client of any kind' predicate the same clause states."
+      }
+    }
+  },
+
+  "SECTION_B_MGQ1_DECOMPOSITION": {
+    "the_exact_unknown": "Whether any Vercel environment-variable row, in any scope, on any project reachable by the account that serves this repository, ALREADY makes some deployment write-capable against bvyzblhqymxruxdguaee -- and if so, which deployments, in which scope, from which commit.",
+    "plane": "VERCEL CONTROL PLANE, read-only. No Supabase act is part of MG-Q1.",
+    "why_the_repository_cannot_answer_it": "An environment-variable row is provider-side state. Nothing in the tree records it, and the tree cannot record it: PR #201's PMV-1 exists precisely because the enumeration has never been taken.",
+    "unknowns": [
+      {
+        "id": "U1-1",
+        "unknown": "WHICH Vercel project or projects serve this repository, by exact project id.",
+        "why_it_is_prior_to_everything_else": "MG-Q1's own text says 'the project serving this repository', in the singular and without an identifier. An enumeration taken against the wrong project, or against one project when two exist, closes nothing.",
+        "what_the_tree_holds": {
+          "candidate": "prj_3NplDjQAEU6nvFoRZEdnNOAT3ThJ, in the scope lorenzozanello-5040s-projects.",
+          "source_path": "docs/audits/functional/2026-07-uellix-golden-path/01_TEST_PROTOCOL.md",
+          "source_blob_sha": "977b3d4d16db64fbc8a8646cedc807cebe0f9798",
+          "source_line": "Line 10 of the environment table, dated 2026-07-16 in its own heading.",
+          "classification": "A CANDIDATE TO VERIFY, NEVER A FACT TO ASSUME. Two independent grounds: it is a functional-audit note dated 2026-07-16 in its own heading, more than two months before AS_OF_TREE, so its freshness is dead under any observation-freshness rule in this programme; and it is not an authority, so nothing in the chain binds it.",
+          "a_ground_this_lane_CONSIDERED_AND_WITHDREW": "The audit note names the repository as uellix-antigravity at github.com/lorenzozanello/uellix-antigravity, which differs from the repository field every authority in this chain carries (lorenzozanello/uellix). That looked like a third ground for doubt and it is NOT one: the measured git remote of this worktree is https://github.com/lorenzozanello/uellix-antigravity.git, so the AUDIT NOTE matches the remote and it is the authority headers that carry the shorter form. The discrepancy is recorded as OF-C7 against this chain's own headers, not as a defect in the audit note. The two grounds above are independently sufficient, so the classification is unchanged.",
+          "measured_absence": "No .vercel directory exists in this worktree, and .gitignore line 43 excludes it, so no link record identifies the project locally. A repository-wide search for a Vercel project id, team id or VERCEL_PROJECT_ID at AS_OF_TREE returns exactly one hit, the audit note above."
+        },
+        "closed_by": ["OBS-V0", "OBS-V1"]
+      },
+      {
+        "id": "U1-2",
+        "unknown": "The existing environment-variable rows for the four PMV-1 names, WITH THEIR SCOPES, on every project identified under U1-1.",
+        "the_four_names": ["UELLIX_APP_ENV", "NEXT_PUBLIC_SUPABASE_URL", "UELLIX_RUNTIME_DATABASE_URL", "DATABASE_URL"],
+        "fields_recorded": "NAME, TARGET SCOPE, GIT BRANCH SCOPE, PRESENCE. Exactly the four PMV-1 permits, and no fifth.",
+        "what_is_already_known_from_the_tree": "PR #201's ENVIRONMENT_SCOPE_CORRECTION states that an existing SHARED Production+Preview row for NEXT_PUBLIC_SUPABASE_URL is present and must not be opened. That is an authority's assertion about provider state, not a measurement taken by this chain, and the census re-derives it rather than inheriting it.",
+        "closed_by": ["OBS-V2"]
+      },
+      {
+        "id": "U1-3",
+        "unknown": "Whether any PRESENT row actually TARGETS bvyzblhqymxruxdguaee.",
+        "THE_STRUCTURAL_LIMIT": {
+          "statement": "THIS UNKNOWN IS NOT CLOSABLE BY MG-Q1'S OWN CLOSURE DEFINITION, AND SAYING SO IS THE MOST IMPORTANT THING THIS SECTION DOES.",
+          "why": "PMV-1 records NAME, TARGET SCOPE, GIT BRANCH SCOPE and PRESENCE only. A row's TARGET -- which database or which Supabase project its value points at -- lives in the VALUE. Reading the value is forbidden by the lane brief, by SSL-08, and by this authority's SECTION_F. So PMV-1 can prove that NO binding exists, and it cannot prove that an existing binding points somewhere harmless.",
+          "the_asymmetry_stated_plainly": "ABSENCE of a row is dispositive and negative: no row, no Vercel-side binding, no reach from that plane. PRESENCE of a row is NOT dispositive: it establishes a binding whose target is unmeasured, and an unmeasured target FAILS CLOSED to 'may reach the governed project'.",
+          "why_this_is_not_a_defect_of_the_census": "It is a property of the closure definition MG-Q1 chose, and of the secret-hygiene rules that definition was written under. A census that read values to resolve it would be trading an SSL-08 violation for a measurement, which is not a trade this chain makes.",
+          "routes_that_would_close_it_and_are_NOT_authorized_here": [
+            "Decrypting or pulling any environment-variable value, by vercel env pull, by the dashboard, or by any API read of a decrypted value. Forbidden in SECTION_F.",
+            "Observing a deployed runtime's own identity surface. Measured at AS_OF_TREE to be unavailable without a write: see U1-5.",
+            "Inferring the target from the publicly served client bundle of a deployment. NOT authorized here, NOT measured, and recorded as an option for a successor adjudication rather than taken unilaterally. See OD-C2."
+          ]
+        },
+        "closed_by": ["NOT CLOSABLE UNDER THIS AUTHORITY. Drives C3_UNKNOWN by SECTION_G rule G-U2 whenever a row is PRESENT."]
+      },
+      {
+        "id": "U1-4",
+        "unknown": "Which deployments exist on each identified project, in which state, against which target, from which Git branch and which commit SHA -- and specifically whether any is READY and serving.",
+        "why_it_is_required_and_not_scope_creep": "MG-Q1's consequence clause is 'It is not known whether some deployment is ALREADY write-capable against governed staging.' The unit of write-capability is a DEPLOYMENT, not a row: a row with no deployment serves no traffic, and a Preview-wide row with many READY deployments is W-14's worst case, stated in the same clause: 'A Preview-wide runtime DSN row would make EVERY preview deployment of EVERY branch a writer.' An enumeration of rows alone cannot distinguish those two worlds.",
+        "the_distinction_the_brief_requires": {
+          "EXISTING_RUNTIME": "Any deployment present at census time. Identified by exact deployment id, target, state, git branch and commit SHA.",
+          "FUTURE_PR201_RUNTIME": "The branch-scoped Preview runtime that PR #201's AUTH-1 and AUTH-2 would create on integration/commercial-v1. It is W-1, classified NON_EXISTENT_AT_THIS_TREE by the parent. It is not a deployment to be found; its ABSENCE is what OBS-V1 tests.",
+          "how_they_are_told_apart": "By the conjunction PR #201's own PMV-3 defines -- a branch-scoped Preview row on integration/commercial-v1 for one of the three authorized names -- and by the git branch and commit SHA attached to each deployment. A deployment on integration/commercial-v1 carrying a branch-scoped binding is the PR #201 runtime; anything else is pre-existing and belongs to W-14."
+        },
+        "THE_TREE_VALIDITY_CAVEAT_APPLIES": "The parent's caveat is binding and is not weakened here: the writer inventory is valid for a runtime ONLY IF that runtime was built from tree 2c606a43. That is why the commit SHA of every enumerated deployment is a REQUIRED field. A deployment whose SHA is not 2c606a43 has an UNDERIVED writer inventory, and every W-class reverts to UNKNOWN for it. The census records the SHA; it does not re-derive the inventory for other SHAs, and it does not pretend the caveat is satisfied when it is not.",
+        "closed_by": ["OBS-V3"]
+      },
+      {
+        "id": "U1-5",
+        "unknown": "Whether a live deployment can be asked, non-destructively, which database identity it holds.",
+        "MEASURED_AND_ANSWERED_NEGATIVELY_BY_THIS_LANE": {
+          "finding": "IT CANNOT, WITHOUT CAUSING A WRITE TO THE GOVERNED TARGET.",
+          "measured": "app/api/health/runtime-identity/route.ts, blob 998acbd283f2a5934f0960354ea2aca1b2b56c83, calls getVerifiedAuthIdentityResult() first and returns 401 Unauthorized when there is no identity, BEFORE it ever observes the runtime identity report. The identity surface is therefore session-gated.",
+          "why_that_makes_it_unusable_for_a_census": "Obtaining a verified session means authenticating against GoTrue. GoTrue authentication WRITES auth.sessions and auth.refresh_tokens -- that is W-4, the class the parent calls 'THE FINDING THAT DECIDES SECTION_C'. A census that signed in to check whether anything writes would itself be the write it was looking for, and would contaminate precisely the window C-3 depends on being empty.",
+          "the_unauthenticated_probe_is_safe_but_uninformative": "Without a session cookie the route returns 401 and, on the measured behaviour of the identity helper, makes no GoTrue request at all, so it causes no write. It also discloses nothing about the database identity. It is therefore permitted as a LIVENESS signal only, under OBS-V4, and is expressly barred from carrying any identity conclusion.",
+          "consequence_for_the_parent": "This measurement bears on the parent's P-10 evidence contract, which states that the evidence includes 'no deployment's runtime-identity endpoint reports the governed staging ref'. As measured, that check cannot be performed read-only. This is recorded as finding CF-2 for the certifier of the QUIESCE package and is NOT amended here, because this lane may not edit its parent."
+        },
+        "closed_by": ["OBS-V4, for liveness only."]
+      }
+    ],
+    "SECTION_B3_WHAT_CLOSING_MGQ1_DOES_AND_DOES_NOT_ESTABLISH": {
+      "it_establishes": [
+        "The exact set of Vercel projects reachable by the serving account, by id.",
+        "For each, the PRESENCE or ABSENCE of each of the four PMV-1 names, with target scope and git branch scope.",
+        "The exact deployment inventory with ids, states, targets, branches and commit SHAs.",
+        "Whether PR #201's AUTH-1 has been exercised, which is DEP-1's antecedent and C-3's necessary condition.",
+        "A rollback record in PMV-1's own terms, should PR #201 later execute. This is a by-product, not an authorization to execute it."
+      ],
+      "it_does_NOT_establish": [
+        "That any present row points somewhere other than bvyzblhqymxruxdguaee. See U1-3.",
+        "That a deployment built from an unknown commit has the writer profile of tree 2c606a43. See THE_TREE_VALIDITY_CAVEAT.",
+        "Anything at all about W-4, W-5, W-6, W-7, W-10, W-11, W-15 or W-16, none of which traverses the Vercel plane. The parent measured this and it is not relitigated: 'Any mechanism scoped to the Vercel plane is structurally incapable of establishing the predicate.' The same structural fact limits an OBSERVATION scoped to that plane.",
+        "That nothing wrote. The census is a snapshot of EXPOSURE, not a statement about an interval."
+      ]
+    }
+  },
+
+  "SECTION_C_MGQ2_DECOMPOSITION": {
+    "the_exact_unknown": "Two conjoined unknowns, in MG-Q2's own words: (a) the HOSTED EXTENSION INVENTORY of bvyzblhqymxruxdguaee, and (b) its PROVIDER-SERVICE EXPOSURE. The gap's consequence clause binds them to six writer classes: W-4 exposure, W-5, W-6, W-7, W-10 and W-11.",
+    "plane": "SUPABASE CONTROL PLANE for (b); POSTGRESQL CATALOG for (a). That split is the whole difficulty of this section and it is worked out in SECTION_D.",
+    "unknowns": [
+      {
+        "id": "U2-1",
+        "unknown": "PROVIDER-SERVICE EXPOSURE: whether Auth (W-4), the Data API / PostgREST (W-5), Storage (W-6) and Realtime (W-7) are enabled, healthy and reachable on the governed ref.",
+        "tier": "TIER 1 -- CLOSABLE BY READ-ONLY CONTROL-PLANE GET, WITH NO DATABASE CREDENTIAL.",
+        "measured_route": "GET /v1/projects/{ref}/health, GET /v1/projects/{ref}/config/auth, GET /v1/projects/{ref}/postgrest, GET /v1/projects/{ref}/config/storage, GET /v1/projects/{ref}/storage/buckets, GET /v1/projects/{ref}/config/realtime. All six are present in the pinned 115-path specification of SECTION_J and all six are GET.",
+        "what_each_answers": {
+          "W-4": "GET /v1/projects/{ref}/config/auth carries 238 properties including disable_signup, external_email_enabled, external_anonymous_users_enabled and a per-provider enabled flag for every external provider. Together with the auth service entry of GET /health these answer 'is the Auth surface presently enabled and internet-reachable', which is the exact sub-key the parent left UNKNOWN.",
+          "W-5": "GET /v1/projects/{ref}/postgrest carries db_schema, the list of schemas PostgREST exposes. An empty db_schema is the strongest available negative for W-5; a db_schema containing public is the parent's stated worst case, 'every RLS-permitted INSERT/UPDATE/DELETE is reachable over HTTPS with the publishable anon key'.",
+          "W-6": "GET /v1/projects/{ref}/config/storage plus GET /v1/projects/{ref}/storage/buckets, which returns id, name, owner, created_at, updated_at and public per bucket.",
+          "W-7": "GET /v1/projects/{ref}/config/realtime carries suspend, private_only, max_concurrent_users and connection-pool settings. It reports CONFIGURATION, not the count of connected clients, and SECTION_G does not treat it as if it did."
+        },
+        "SECRET_HAZARD_MEASURED": "TWO of these responses carry secret material and the census must not record it. GET /v1/projects/{ref}/postgrest returns a jwt_secret property. GET /v1/projects/{ref}/config/auth returns an external provider secret property for every configured external provider. SECTION_H requires field-level projection at the point of capture, not redaction after the fact, and SENT-NO-SECRET-VALUE-CENSUS exists to prove it.",
+        "closed_by": ["OBS-S2", "OBS-S3", "OBS-S4", "OBS-S5", "OBS-S6"]
+      },
+      {
+        "id": "U2-2",
+        "unknown": "HOSTED EXTENSION INVENTORY: whether pg_cron (W-10) and pg_net (W-11) are installed on bvyzblhqymxruxdguaee, and what else is.",
+        "tier": "TIER 2 -- NOT CLOSABLE BY ANY READ-ONLY CONTROL-PLANE GET.",
+        "MEASURED_ABSENCE_OF_A_ROUTE": "The complete pinned specification of SECTION_J contains 115 paths. NONE of them, by any method, names an extension. The nearest surface, GET /v1/projects/{ref}/database/context, returns an object whose only property is databases, whose items carry name and schemas -- schemas, not extensions. This is an enumeration over the whole specification, not a failure to find a documentation page, which is the distinction NBF-A requires.",
+        "the_only_routes_that_would_close_it": "A read of the PostgreSQL catalog: pg_extension, or pg_available_extensions for the installable set. Both require executing SQL against the governed database. See SECTION_D.",
+        "why_the_tree_still_does_not_answer_it": "Re-verified at AS_OF_TREE and unchanged from the parent's measurement: db/baseline/stella_g2_schema.sql is a dump of the LOCAL container per db/baseline/README.md, and the five attestations in db/prepared/hosted are attestations. ATTESTED IS NOT PROVEN.",
+        "closed_by": ["NOT CLOSABLE UNDER THIS AUTHORITY. Dependency recorded as DEP-C1."]
+      },
+      {
+        "id": "U2-3",
+        "unknown": "PREPARED TRANSACTIONS: whether max_prepared_transactions is non-zero on the governed project, which decides whether in-flight class IF-2 is empty or is the hardest class in the analysis.",
+        "tier": "TIER 2 -- NOT CLOSABLE BY ANY READ-ONLY CONTROL-PLANE GET.",
+        "MEASURED_ABSENCE_OF_A_ROUTE": "GET /v1/projects/{ref}/config/database/postgres returns a response schema of exactly 38 properties, enumerated in SECTION_J. max_prepared_transactions is NOT among them. The endpoint exposes max_connections, max_locks_per_transaction, max_worker_processes and 35 others, so its silence on this one parameter is a measured absence from a complete property list, not an unread page.",
+        "BACKGROUND_NOT_MEASUREMENT": "PostgreSQL documents a DEFAULT of max_prepared_transactions = 0, i.e. two-phase commit disabled unless deliberately enabled, and the parameter requires a server restart to change. This is recorded as BACKGROUND about the engine per directive NBF-C. IT IS NOT A MEASUREMENT OF bvyzblhqymxruxdguaee. The hosted value remains UNKNOWN and FAILS CLOSED, which means IF-2 is treated as non-empty until measured.",
+        "why_it_belongs_in_this_census_at_all": "The lane brief admits observations needed to know whether max_prepared_transactions permits prepared tx WHERE RELEVANT. It is relevant to C-3 because a prepared transaction is a client-originated durable write that survives every termination and is committable later from any session, so a window cannot be empty by construction while an uncommitted prepared transaction is outstanding. It is therefore included as a TIER 2 question and as a dependency, not smuggled in as a Tier 1 read it cannot be.",
+        "closed_by": ["NOT CLOSABLE UNDER THIS AUTHORITY. Dependency recorded as DEP-C1. Tracked upstream as MG-Q5."]
+      },
+      {
+        "id": "U2-4",
+        "unknown": "SERVICE-LEVEL AND IN-DATABASE WRITERS IN FACT: whether any pg_cron job is scheduled, whether pg_net has queued or in-flight requests, and whether any non-system session is currently connected.",
+        "tier": "TIER 2 -- NOT CLOSABLE BY ANY READ-ONLY CONTROL-PLANE GET.",
+        "why_it_is_distinct_from_U2-1": "U2-1 measures whether a service is ENABLED. This measures whether it has WORK OUTSTANDING or CLIENTS ATTACHED. C-3's predicate is 'before any client of any kind exists', which is a statement about clients, not about configuration. An enabled-but-idle service and an enabled-and-busy service give the same answer to every Tier 1 GET.",
+        "the_only_routes_that_would_close_it": "pg_stat_activity for connected sessions, cron.job for scheduled jobs, the pg_net queue relations for outstanding requests. All require SQL against the governed database.",
+        "one_bound_that_IS_measured_in_the_tree": "db/baseline/stella_g2_roles.sql, blob 1867395de452084012e555ad39885669bc3b76ba, line 176 sets idle_in_transaction_session_timeout to 60s for uellix_app. It bounds ONE role's IDLE-in-transaction sessions and nothing else. It is not a census result and does not substitute for one.",
+        "closed_by": ["NOT CLOSABLE UNDER THIS AUTHORITY. Dependency recorded as DEP-C1."]
+      },
+      {
+        "id": "U2-5",
+        "unknown": "PROJECT POSTURE: the project's lifecycle status, its readonly-mode state, and its network restrictions.",
+        "tier": "TIER 1.",
+        "why_required": "Three reasons, each tied to a named class. (a) A project whose status is not ACTIVE_HEALTHY changes what every other observation means, and the status enumeration has fifteen values including PAUSING, RESTORING and RESIZING. (b) GET /v1/projects/{ref}/readonly reports enabled, override_enabled and override_active_until; the amendment measured that the provider may IMPOSE read-only and that an operator may only temporarily DISABLE it, so whether the project is currently in that imposed state is a fact about the target, and a temporary override that is ACTIVE is a fact about a window. (c) GET /v1/projects/{ref}/network-restrictions reports the CIDR posture the parent's P-7 reasoned about without measuring.",
+        "explicitly_not_an_act": "Reading the readonly status is a GET. It is not entering read-only mode, which the amendment measured the provider does not offer, and it is not the temporary-disable POST, which SECTION_F forbids.",
+        "closed_by": ["OBS-S1", "OBS-S7", "OBS-S8"]
+      },
+      {
+        "id": "U2-6",
+        "unknown": "OUT-OF-PLANE CLIENT SURFACES: whether preview branches exist on the governed project.",
+        "tier": "TIER 1.",
+        "why_required": "A Supabase preview branch is a separate database whose creation can CLONE LIVE DATA out of place, and the branch surface is a provider-side client of the project. Its presence is directly relevant to 'any client of any kind'. GET /v1/projects/{ref}/branches is a read; every branch POST, PATCH and DELETE is forbidden in SECTION_F, including create --with-data.",
+        "closed_by": ["OBS-S9"]
+      },
+      {
+        "id": "U2-7",
+        "unknown": "ENGINE BUILD: the exact hosted PostgreSQL engine build and release channel.",
+        "tier": "TIER 1, AND INCIDENTAL.",
+        "status": "This is MG-Q3, not MG-Q2, and it is NOT an objective of this lane. It is recorded because GET /v1/projects/{ref} -- which OBS-S1 must take anyway for U2-5's project status -- returns database.version, database.postgres_engine and database.release_channel in the same response. Discarding fields already present in an authorized response would be theatre, and recording them is not a new read.",
+        "no_scope_expansion": "No observation is added for MG-Q3, no decision in SECTION_G consumes it, and this authority does not claim to close it. A successor lane that wants MG-Q3 closed may cite the census evidence; it must still satisfy its own freshness rule."
+      }
+    ]
+  },
+
+  "SECTION_D_CREDENTIAL_AND_CAPABILITY_ANALYSIS": {
+    "rule": "This section exists because the lane brief requires that where a credential would be needed and no authorized capability exists, the lane STOPS and RECORDS THE DEPENDENCY rather than smuggling one in. It does exactly that, and it names the smuggling routes it declines so that a certifier can check they were seen and refused rather than missed.",
+    "TIER_1_CONTROL_PLANE": {
+      "what_it_needs": "An authenticated control-plane session on each provider. NO database credential of any kind.",
+      "vercel": {
+        "tool_measured_present": "Vercel CLI 54.14.2 on Node.js 24.16.0, resolved on PATH. This is a LOCAL TOOL FACT measured offline by --version.",
+        "correction_of_a_false_environment_claim": "A session-startup notice in the authoring environment asserted that the Vercel CLI is not installed. That assertion is MEASURED FALSE at AS_OF_TREE. It is recorded because an execution lane that accepted it would conclude MG-Q1 is unclosable for want of a tool that is in fact present.",
+        "authentication_state": "UNKNOWN. This lane performed no live read, so whether the CLI holds a valid session is not measured and the execution lane establishes it as its first act.",
+        "link_state_measured": "NO .vercel directory exists in this worktree. vercel env list requires a linked project and exposes no --project flag, so a link is a PRECONDITION of OBS-V2.",
+        "the_link_is_a_LOCAL_act_and_is_bounded": "vercel link --project <ID> --team <TEAM> writes .vercel/project.json, which .gitignore line 43 excludes from the tree. It is a local file write, not a hosted mutation. It is authorized ONLY in the explicit-project form. The bare interactive form and the --yes form without --project are FORBIDDEN in SECTION_F, because the same command family can set up a NEW project and creating a Vercel project is a hosted mutation this authority does not confer.",
+        "token_handling": "The --token flag is FORBIDDEN. It places a credential in argv, where it is visible to every process on the host and to any command echo in an evidence record, which is an SSL-08 hazard created by the transport rather than by the data."
+      },
+      "supabase": {
+        "tool_measured_present": "Supabase CLI 2.109.1, declared as a devDependency in package.json and resolvable offline. LOCAL TOOL FACT.",
+        "authentication_state": "UNKNOWN. Not measured by this lane.",
+        "coverage_measured": "The CLI covers part of the read set and not all of it. Its subcommand surface includes projects list, postgres-config get, network-restrictions get, branches list, ssl-enforcement get and services. It exposes NO subcommand for the Auth config, the PostgREST config, the Storage config, the Realtime config, the project health surface or the readonly status. Those six reads therefore require a direct HTTPS GET against api.supabase.com.",
+        "THE_PAT_IS_AN_OPERATOR_CLASS_CREDENTIAL_AND_SSL_06_IS_ENGAGED": {
+          "measured_vendor_statement": "The Management API introduction states verbatim of personal access tokens: 'PATs carry the same privileges as your user account, so be sure to keep it secret.'",
+          "consequence": "A PAT is not least-privilege. It reaches every project the account can reach, INCLUDING the vetoed production ref ctaxtgujyyprgynmnvtq, and it can drive every mutating POST this authority forbids. Holding it is therefore holding a privileged credential, and SSL-06 applies in terms: 'No privileged credential may be held without an inventory recording who and what holds it.'",
+          "what_this_authority_requires_rather_than_waiving": [
+            "The credential in use is recorded in the SSL-06 privileged-credential inventory BEFORE the census runs, naming who holds it and what holds it. A census that discovers it is holding an operator credential mid-run STOPS, exactly as the D1 authority's identical tripwire prescribes.",
+            "The credential is never materialized into a file, an argument, a log line, a command echo, an evidence field or a commit. It reaches the process through the environment or the provider's own credential store and is never printed.",
+            "Every request path is constructed from the literal governed ref bvyzblhqymxruxdguaee. The production ref is never substituted, never templated and never iterated over. A request whose resolved URL contains it is a refusal under SSL-09.",
+            "A project LIST read, which necessarily returns the production project among others, records the governed project's row only. The production row is discarded at the point of capture and never enters the evidence package."
+          ],
+          "the_honest_statement": "This is not a least-privilege capability and this authority does not dress it as one. It is an operator-class credential used for a read-only subset, bounded by an exhaustive endpoint list, a ref pin and a secret-hygiene contract. A certifier who judges that bound insufficient should say so; that is a legitimate finding and OF-C1 nominates it."
+        }
+      }
+    },
+    "TIER_2_DATABASE_PLANE": {
+      "what_it_would_need": "The ability to execute SQL against bvyzblhqymxruxdguaee.",
+      "why_it_is_needed_at_all": "U2-2 hosted extensions, U2-3 max_prepared_transactions and U2-4 live sessions, cron jobs and queued pg_net work are ALL absent from the complete 115-path control-plane specification. There is no GET that answers them.",
+      "ROUTE_R1": {
+        "route": "POST /v1/projects/{ref}/database/query/read-only, documented in the pinned specification as 'Run a sql query as supabase_read_only_user'.",
+        "what_it_would_give": "Every Tier 2 answer, with NO database DSN and no new database credential -- the control-plane token alone.",
+        "why_it_is_NOT_authorized_here": [
+          "IT IS A POST THAT EXECUTES CALLER-SUPPLIED SQL. Its read-only-ness is a property of the role it runs as and of the SQL the caller sends, not of the HTTP method. Every other observation in SECTION_E is a GET whose read-only-ness is structural. Mixing the two classes under one authorization would let a certifier reading the list of authorized acts believe the whole census is structurally incapable of writing, which would be false.",
+          "THE ROLE'S READ-ONLY-NESS IS ADVISORY, AS THIS CHAIN ALREADY MEASURED. supabase_read_only_user is read-only by the default_transaction_read_only GUC -- db/baseline/stella_g2_roles.sql line 161 sets exactly that for that role -- and the amendment measured, from the vendor's own page, that the GUC is USERSET class and is escaped by the one documented line 'set session characteristics as transaction read write'. A boundary the payload can step over is not a boundary; it is a convention. That is the same defect that killed P-1, P-2, P-3 and P-9, and it does not become sound because the caller intends to behave.",
+          "NO AUTHORITY IN THIS CHAIN NAMES supabase_read_only_user AS AN AUTHORIZED OBSERVER. The only database observer role this chain names is uellix_auditor, under the D1 authority. Adopting a different role by author's choice is a capability decision, not a census detail."
+        ],
+        "disposition": "MEASURED, AVAILABLE, AND DELIBERATELY NOT AUTHORIZED. It is recorded in full because it is the CHEAPEST route to closing Tier 2 -- it needs no DSN, no new secret and no Supabase configuration act -- and because a successor adjudication should start from it rather than rediscover it. Escalated as OD-C1. A certifier may reasonably conclude that the bound above is too conservative; that is a legitimate finding and it is nominated as such."
+      },
+      "ROUTE_R2": {
+        "route": "A direct read-only PostgreSQL session as uellix_auditor, under docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json, blob f69e2e8141495e8715aba1a503cfa07f30e8dc08.",
+        "what_that_authority_already_contains": "A READ_ONLY_CAPABILITY_CONTRACT naming UELLIX_AUDITOR_DATABASE_URL and the role uellix_auditor, a required resolver, a READ_ONLY_TRANSACTION_CONTRACT, an AUTHORIZED_SQL_SURFACE, a SECRET_CUSTODY_CONTRACT and a TARGET_IDENTITY_CONTRACT pinned to the same governed ref. It is the right shape for exactly this problem.",
+        "why_it_is_NOT_available": "Its final_state is the literal string FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_AUTHORED__NOT_EXECUTED, and its next_gate states that no hosted connection, no query, no credential resolution and no evidence materialization is authorized until its certification returns PASS and a future execution lane opens with its own freshness gate and human confirmation. NOTHING in that chain has happened.",
+        "and_its_SQL_surface_is_scoped_to_a_different_question": "That authority's authorized SQL surface was written for a runtime-identity and capability probe, not for an extension catalog, a settings read or a session census. Even once certified, using it for this census would require checking the surface covers these queries, or amending it. That check is not performed here and is not assumed.",
+        "disposition": "BLOCKED. Recorded as dependency DEP-C1."
+      },
+      "ROUTES_EXPLICITLY_REFUSED_AS_SMUGGLING": [
+        "POST /v1/projects/{ref}/database/query, the unrestricted SQL endpoint. It executes as a privileged role and is a write surface by construction. Forbidden.",
+        "Borrowing UELLIX_RUNTIME_DATABASE_URL, UELLIX_MIGRATOR_DATABASE_URL, DATABASE_URL, or any credential for postgres, supabase_admin, service_role, authenticator, uellix_owner or uellix_migrator -- the D1 authority's forbidden list, carried here in full and for the same stated reason: the runtime credential is forbidden PRECISELY BECAUSE IT WOULD WORK.",
+        "Any role reached by SET ROLE from any of the above.",
+        "Any production credential, for any reason, including 'the staging one did not resolve'.",
+        "Opening a psql or driver session using a DSN reconstructed from any environment-variable value read during MG-Q1. This is the specific cross-contamination this lane is most exposed to, because MG-Q1's read set is env rows and Tier 2's blocker is a DSN. It is forbidden without exception, and negative control NC-C5 exists to prove it did not happen."
+      ]
+    },
+    "DEP-C1": {
+      "id": "DEP-C1",
+      "statement": "MG-Q2 CANNOT BE FULLY CLOSED BY THIS AUTHORITY. Its provider-service exposure limb is closable read-only at Tier 1; its hosted extension inventory limb is not, and neither are the prepared-transaction, live-session, cron and pg_net questions that C-3's 'any client of any kind' predicate requires.",
+      "the_dependency": "Closing Tier 2 requires EITHER an adjudication of route R1, OR certification and execution-lane opening of the D1 observation authority together with a check that its AUTHORIZED_SQL_SURFACE covers these queries.",
+      "fail_closed_consequence": "Until one of those happens, every Tier 2 unknown stays UNKNOWN, is treated as a writer, and SECTION_G can never return C3_AVAILABLE.",
+      "why_this_is_recorded_rather_than_engineered_around": "The brief directs it, and the alternative is the failure mode this chain has already been faulted for once: reaching for the credential that would work."
+    }
+  },
+
+  "SECTION_E_AUTHORIZED_READ_SET": {
+    "rule": "CONJUNCTIVE AND EXHAUSTIVE. An observation not named here is NOT authorized by implication, by necessity, or by convenience. Every entry is a READ. No entry is a POST, a PATCH, a PUT or a DELETE. No entry opens a database connection.",
+    "binding_preconditions": [
+      "PRE-1. The census-execution lane opens with its own prestate and re-derives branch, HEAD, tree and cleanliness. It does not inherit PS-C1.",
+      "PRE-2. This authority and its companion manifest have returned PASS from independent certification. Until then NOTHING below is executable.",
+      "PRE-3. Human confirmation HCC-1 has been given. See SECTION_I.",
+      "PRE-4. The SSL-06 inventory entry for the control-plane credential in use exists and is current.",
+      "PRE-5. The production veto is asserted BEFORE the first request: the literal ref bvyzblhqymxruxdguaee is the only Supabase ref any request path may contain, and target identity is established by db/hosted/target-identity.ts verifyStagingTarget semantics, blob 4b3e704b3ad93e21b6e6e048bac894458b927d19, never by provider-side display name."
+    ],
+    "vercel_plane": [
+      {
+        "id": "OBS-V0",
+        "observation": "Enumerate every Vercel project the serving account can reach, recording exact project id, scope or team slug and creation time.",
+        "method": "vercel project list, or vercel api GET of the equivalent projects endpoint.",
+        "closes": "U1-1.",
+        "mutating": false,
+        "records": "project id, scope, name, created. Name is recorded as a LABEL and is never used to select.",
+        "why_all_projects_and_not_one": "MG-Q1's 'the project serving this repository' is singular and unverified. W-14 is defined as 'Any OTHER Vercel deployment, project or environment scope already holding credentials for the governed staging database'. Enumerating one project cannot answer a question whose subject is ANY project."
+      },
+      {
+        "id": "OBS-V1",
+        "observation": "For the branch integration/commercial-v1, determine whether a BRANCH-SCOPED Preview environment-variable row exists for any of UELLIX_APP_ENV, NEXT_PUBLIC_SUPABASE_URL or UELLIX_RUNTIME_DATABASE_URL.",
+        "method": "The same enumeration as OBS-V2, filtered. This is PR #201's own PMV-3 check, performed as a READ and consumed here as a measurement of PR #201's execution state.",
+        "closes": "The DEP-1 antecedent, and C-3's necessary condition 'viable ONLY while PR #201 remains unexecuted'.",
+        "mutating": false,
+        "taken_first": "This observation is taken FIRST among the substantive reads, because a positive result moves C-3 to NOT AVAILABLE on its own and the owner should not wait on the rest of a census whose answer is already determined.",
+        "it_does_not_consume_PR201": "Observing that PMV-3's condition holds or fails is not performing PMV-3 as part of PR #201's execution, does not satisfy PR #201's pre-mutation verification for any future run of it, and confers no permission to proceed to AUTH-1. PR #201's acts remain PR #201's, under PR #201's own confirmation."
+      },
+      {
+        "id": "OBS-V2",
+        "observation": "For every project enumerated by OBS-V0, enumerate the existing environment-variable rows for the four PMV-1 names, recording NAME, TARGET SCOPE, GIT BRANCH SCOPE and PRESENCE, and nothing else.",
+        "method": "vercel env list per project, per environment, after a bounded explicit-project link; or vercel api GET of the equivalent env endpoint filtered to names and scopes.",
+        "closes": "U1-2.",
+        "mutating": false,
+        "the_fields_are_a_closed_set": "NAME, TARGET SCOPE, GIT BRANCH SCOPE, PRESENCE. No value, no decrypted value, no value length, no value prefix, no value hash, no created-by identity and no fifth field.",
+        "why_not_even_a_hash": "A hash of a low-entropy value is a value. A DSN or a project URL drawn from a small known set is exactly such a value, and this census would be publishing an oracle for it."
+      },
+      {
+        "id": "OBS-V3",
+        "observation": "For every project enumerated by OBS-V0, enumerate deployments recording exact deployment id, state, target, git branch, commit SHA and creation time.",
+        "method": "vercel list, or vercel api GET of the equivalent deployments endpoint, per project id.",
+        "closes": "U1-4.",
+        "mutating": false,
+        "required_fields": "The commit SHA is REQUIRED, not optional, because THE_TREE_VALIDITY_CAVEAT makes every writer disposition conditional on it.",
+        "bounded": "Enumeration is bounded to deployments in a non-deleted state. No deployment is inspected beyond these fields, none is promoted, aliased, redeployed, cancelled or deleted, and no build log is fetched."
+      },
+      {
+        "id": "OBS-V4",
+        "observation": "OPTIONAL AND STRICTLY BOUNDED. An UNAUTHENTICATED HTTPS GET to a deployment's public health surface, recording only the HTTP status code and whether the response was served by the platform's access-protection layer rather than by the application.",
+        "method": "A plain unauthenticated GET. No cookie, no bearer token, no session, no credential of any kind is attached.",
+        "closes": "U1-5, for LIVENESS only.",
+        "mutating": false,
+        "HARD_LIMITS": [
+          "NO SESSION IS EVER CREATED. Signing in to reach a session-gated surface WRITES auth.sessions through GoTrue, which is W-4, and would make the census the write it is looking for. This is prohibited absolutely, and NC-C4 exists to prove it did not happen.",
+          "NO IDENTITY CONCLUSION MAY BE DRAWN. The runtime-identity surface returns 401 before observing anything, as measured at blob 998acbd283f2a5934f0960354ea2aca1b2b56c83. A 401 says the surface is session-gated. It says NOTHING about which database the deployment holds.",
+          "A 401, a 403, a platform SSO redirect and a 200 are each recorded as the raw status they are, never interpreted into a writer disposition.",
+          "This observation may be SKIPPED entirely. Its result is not an input to any rule in SECTION_G."
+        ]
+      }
+    ],
+    "supabase_control_plane": [
+      {
+        "id": "OBS-S1",
+        "observation": "GET /v1/projects/{ref} for ref = bvyzblhqymxruxdguaee. Record id, ref, organization_id, organization_slug, region, created_at, status, and the database sub-object's host, version, postgres_engine and release_channel.",
+        "closes": "U2-5 project status; incidentally furnishes U2-7 engine build.",
+        "mutating": false
+      },
+      {
+        "id": "OBS-S2",
+        "observation": "GET /v1/projects/{ref}/health. Record, per service, name, healthy, status and error. Do not record the info sub-object except where it is required to identify the service and contains no secret.",
+        "closes": "U2-1, the SERVICE-RUNNING limb for W-4, W-5, W-6 and W-7 together.",
+        "mutating": false
+      },
+      {
+        "id": "OBS-S3",
+        "observation": "GET /v1/projects/{ref}/config/auth. Record ONLY the projection defined in SECTION_H: disable_signup, external_email_enabled, external_anonymous_users_enabled, site_url, and the boolean enabled flag of each external provider.",
+        "closes": "U2-1 for W-4.",
+        "mutating": false,
+        "MANDATORY_PROJECTION": "The response carries 238 properties, among them an external provider secret for every provider and other secret-bearing fields. The projection is applied AT CAPTURE. The full response is never written to disk, never logged and never passed to a secret scanner as a file, because the correct handling of a secret is not to write it and then check."
+      },
+      {
+        "id": "OBS-S4",
+        "observation": "GET /v1/projects/{ref}/postgrest. Record ONLY db_schema, max_rows and db_extra_search_path.",
+        "closes": "U2-1 for W-5.",
+        "mutating": false,
+        "MANDATORY_PROJECTION": "The response carries jwt_secret. It is never recorded, never logged and never written. Same capture-time rule as OBS-S3."
+      },
+      {
+        "id": "OBS-S5",
+        "observation": "GET /v1/projects/{ref}/config/storage and GET /v1/projects/{ref}/storage/buckets. Record the storage feature and capability flags, and per bucket the id, name, public flag and timestamps. Do not enumerate, list, read, download or count OBJECTS in any bucket.",
+        "closes": "U2-1 for W-6.",
+        "mutating": false,
+        "why_objects_are_excluded": "Object names are customer data. The census asks whether a write surface exists, not what has been written through it."
+      },
+      {
+        "id": "OBS-S6",
+        "observation": "GET /v1/projects/{ref}/config/realtime. Record suspend, private_only, presence_enabled and the max limits.",
+        "closes": "U2-1 for W-7, as CONFIGURATION only.",
+        "mutating": false,
+        "explicit_limit": "This endpoint reports configuration, not connected clients. It cannot establish that no Realtime client is attached, and SECTION_G does not let it."
+      },
+      {
+        "id": "OBS-S7",
+        "observation": "GET /v1/projects/{ref}/readonly. Record enabled, override_enabled and override_active_until.",
+        "closes": "U2-5, readonly posture.",
+        "mutating": false,
+        "not_an_act": "A GET of a status. Not an enable, which the provider does not offer; not the temporary-disable POST, which SECTION_F forbids."
+      },
+      {
+        "id": "OBS-S8",
+        "observation": "GET /v1/projects/{ref}/network-restrictions. Record entitlement, status, the CIDR configuration and updated_at and applied_at.",
+        "closes": "U2-5, network posture, and supplies the measurement the parent's P-7 reasoned about without having.",
+        "mutating": false
+      },
+      {
+        "id": "OBS-S9",
+        "observation": "GET /v1/projects/{ref}/branches. Record branch id, name, git branch, status and timestamps.",
+        "closes": "U2-6.",
+        "mutating": false,
+        "hazard_named": "The same CLI and the same API can CREATE a branch with live data cloned out of place. No create, merge, push, reset, restore or delete of any branch is authorized. See SECTION_F."
+      }
+    ],
+    "local_plane": [
+      {
+        "id": "OBS-L1",
+        "observation": "Re-derive, offline, the tree-side facts the census results are interpreted against: the writer inventory's tree SHA, the two gating source constants and their blob SHAs, the local-only provenance of supabase/config.toml and db/baseline/stella_g2_schema.sql, and the idle_in_transaction_session_timeout bound in db/baseline/stella_g2_roles.sql.",
+        "method": "git and file reads. No network.",
+        "mutating": false,
+        "why": "A census result is meaningless without the inventory it is compared against, and the parent's own caveat makes that inventory tree-dependent."
+      },
+      {
+        "id": "OBS-L2",
+        "observation": "Record the tool identities actually used: Vercel CLI version, Supabase CLI version, and for any direct HTTPS request the exact endpoint path with the ref substituted.",
+        "mutating": false,
+        "why": "An observation whose tool is unnamed cannot be re-run by a verifier."
+      }
+    ],
+    "count_check": "Fifteen observations are authorized: OBS-V0 through OBS-V4 (five), OBS-S1 through OBS-S9 (nine), OBS-L1 and OBS-L2 (two). Every one is non-mutating. No database connection appears in any of them."
+  },
+
+  "SECTION_F_EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Each item is forbidden ABSOLUTELY by this authority, whether or not a tool makes it easy, whether or not it would produce a better census, and whether or not another authority in the chain contemplates it. Where another authority does authorize an act, that authority governs it and this one does not extend it.",
+    "environment_and_configuration": [
+      "Creating, editing, updating, renaming, deleting, disabling or narrowing ANY environment variable row, in any scope, on any project. This includes a row this census discovers to be wrong.",
+      "Reading, decrypting, pulling or otherwise materializing the VALUE of any environment variable, by vercel env pull, by any API read of a decrypted value, by the dashboard, or by any other route. Includes NEXT_PUBLIC_SUPABASE_URL, whose value would be informative and whose value is still forbidden.",
+      "Changing ANY Vercel project setting, including production branch, deployment protection, SSO, aliases, domains and access groups.",
+      "Creating a Vercel project, or invoking any link form that can set one up. Only vercel link with an explicit --project is permitted, and only as the local precondition of OBS-V2.",
+      "Any Supabase configuration mutation of any kind: auth config, PostgREST config, storage config, realtime config, postgres config, network restrictions, SSL enforcement, custom hostnames, vanity subdomains, disk config, or any other."
+    ],
+    "service_and_project_state": [
+      "POST /v1/projects/{ref}/pause, and any other project pause.",
+      "POST /v1/projects/{ref}/restart.",
+      "POST /v1/projects/{ref}/config/realtime/shutdown.",
+      "POST /v1/projects/{ref}/readonly/temporary-disable, and any attempt to place the project INTO read-only mode by any route.",
+      "Disabling, suspending, throttling or otherwise interfering with Auth, the Data API, Storage, Realtime or any other provider service.",
+      "Terminating, cancelling or signalling any database session, backend or connection.",
+      "Any scale change, any write lock, any disk or compute resize, any upgrade."
+    ],
+    "database": [
+      "Opening a database connection of any kind, by any driver, from any host, with any credential.",
+      "POST /v1/projects/{ref}/database/query, the unrestricted SQL endpoint.",
+      "POST /v1/projects/{ref}/database/query/read-only. Measured available, deliberately not authorized, escalated as OD-C1.",
+      "Any DDL, any DML, any GRANT, any REVOKE, any role change, any ACL change, any ownership change, any search_path or GUC change.",
+      "Any write to bvyzblhqymxruxdguaee by any mechanism, deliberate or incidental. Including a write caused by authenticating: no sign-in, no token refresh, no session creation, no password reset, no magic link, no OAuth exchange."
+    ],
+    "backup_restore_and_branches": [
+      "Any backup: logical or physical, by CLI, by API or by dashboard. AO-3 belongs to the Recovery authority and is untouched here.",
+      "Any restore, in place or out of place: POST /v1/projects/{ref}/database/backups/restore, restore-pitr, restore-point, POST /v1/projects/{ref}/restore, or any dashboard equivalent.",
+      "Any Supabase branch act: create, create --with-data, merge, push, reset, restore or delete. The read GET /v1/projects/{ref}/branches is authorized; nothing else on that surface is.",
+      "Any DDL, any Stage-A application in whole or in part, and any act that advances the migration corpus."
+    ],
+    "deployment": [
+      "Any deployment, redeployment, promotion, rollback, alias change or cancellation.",
+      "Exercising PR #201's AUTH-1 or AUTH-2, or any part of them. Observing whether they have been exercised is OBS-V1 and is not the same act.",
+      "Any production operation of any kind, against ctaxtgujyyprgynmnvtq or against any production Vercel surface."
+    ],
+    "credentials_and_secrets": [
+      "Generating, rotating, revoking, creating or deleting any credential, key, token, PAT or secret.",
+      "GET /v1/projects/{ref}/api-keys and GET /v1/projects/{ref}/api-keys/legacy. Measured to return an api_key property, i.e. secret material, and therefore forbidden despite being GETs -- the method is not the test.",
+      "GET /v1/projects/{ref}/secrets. Measured to return a value property per secret. Forbidden for the same reason.",
+      "Recording any secret VALUE in any evidence field, log, commit, filename or console echo. SSL-08.",
+      "Placing any token on a command line, including vercel --token.",
+      "Substituting a production credential, an operator credential or the runtime credential for an absent or insufficient one, for any reason."
+    ],
+    "epistemic": [
+      "Reading, deriving, comparing or recording ANY transaction-id frontier, or any scalar of that class, or any pairwise equality of such a scalar. The primitive is PROHIBITED by the amendment and revival is prohibited here. NBF-D.",
+      "Asserting, on the strength of this census, that NOTHING WROTE during any interval. The census is an instantaneous observation of exposure; the interval claim is the one the removed primitive falsely supported.",
+      "Treating an UNKNOWN as a negative. Every unmeasured property is a writer.",
+      "Treating public vendor documentation, an OpenAPI specification or a local tool surface as a measurement of the governed project.",
+      "Selecting any Supabase project by provider-side display name.",
+      "Narrowing the all-writer scope, reopening OD-3, selecting KEEP or CHANGE, or selecting among C-1, C-2 and C-3.",
+      "Editing, amending or reinterpreting any parent artifact, including to correct the two defects this lane records as CF-1 and CF-2."
+    ]
+  },
+
+  "SECTION_G_C3_AVAILABILITY_DECISION_PROCEDURE": {
+    "rule": "DETERMINISTIC AND EXHAUSTIVE. The procedure is evaluated in order. The first rule whose condition holds decides, and the classification is recorded with the exact observation ids that triggered it. No judgement is exercised at the point of classification; every judgement is in this text, where a certifier can attack it.",
+    "what_the_classification_IS": "A statement about whether the world currently permits the C-3 branch. It is an INPUT to the owner's re-adjudication of OD-3 under OD-Q5. It is not a selection of C-3, not a rejection of KEEP QUIESCE, and not an adjudication of anything.",
+    "what_the_classification_IS_NOT": "It is not permanent. It is indexed to its timestamp and is VOID the moment any act changes an observed property -- most pointedly, it is void the moment PR #201 executes, per DEP-1 as strengthened.",
+    "C3_NOT_AVAILABLE": {
+      "meaning": "The C-3 branch is foreclosed on measured evidence. The owner's real choice at OD-Q5 is then between KEEP QUIESCE with Stage-A blocked and CHANGE via C-1 or C-2.",
+      "triggers_any_one_of_which_suffices": [
+        {
+          "id": "G-N1",
+          "condition": "OBS-V1 finds a branch-scoped Preview row for ANY of the three PR #201 variables on integration/commercial-v1.",
+          "ground": "C-3 is 'viable ONLY while PR #201 remains unexecuted'. This is the measured signature of its execution, and DEP-1 as strengthened states that executing PR #201 forecloses C-3."
+        },
+        {
+          "id": "G-N2",
+          "condition": "OBS-V2 finds a PRESENT row for UELLIX_RUNTIME_DATABASE_URL or DATABASE_URL in any scope on any project, AND OBS-V3 finds at least one deployment in a READY state within a scope that row applies to.",
+          "ground": "A binding plus a live deployment is a client. W-14's own consequence clause states that a Preview-wide runtime DSN row makes every preview deployment of every branch a writer. Note the conjunction: a row with no READY deployment is G-U2, not this rule."
+        },
+        {
+          "id": "G-N3",
+          "condition": "OBS-S2 reports the Auth service present and healthy, AND OBS-S3 reports any sign-in path enabled -- external_email_enabled true, or any external provider enabled flag true, or external_anonymous_users_enabled true.",
+          "ground": "An enabled, healthy, internet-reachable GoTrue is a client surface for any holder of the publishable key, including a stale browser tab performing a token refresh. The parent measured that no act available to this chain can make it non-writing. C-3's predicate is 'before any client of any kind exists', and this is such a client. This rule is DELIBERATELY BROADER than the amendment's illustrative phrase 'an exposed Auth surface with live sessions', because live-session counts are a Tier 2 observation this authority does not confer, and treating a sufficient condition as if it were the only one would let an unmeasurable conjunct rescue C-3."
+        },
+        {
+          "id": "G-N4",
+          "condition": "OBS-S4 reports a non-empty db_schema AND OBS-S2 reports the Data API service healthy.",
+          "ground": "W-5's stated worst case, reachable over HTTPS with the publishable key entirely outside the Vercel plane."
+        },
+        {
+          "id": "G-N5",
+          "condition": "OBS-S2 reports Storage healthy AND OBS-S5 reports at least one bucket.",
+          "ground": "W-6. A reachable storage surface with a bucket is a client surface that writes the storage schema."
+        },
+        {
+          "id": "G-N6",
+          "condition": "OBS-S9 reports at least one existing Supabase preview branch on the governed project.",
+          "ground": "A branch is a provider-side client relationship with the project, and the branch surface can clone live data. 'Any client of any kind' covers it."
+        },
+        {
+          "id": "G-N7",
+          "condition": "OBS-S1 reports a project status other than ACTIVE_HEALTHY, OR OBS-S7 reports readonly enabled or an ACTIVE temporary-disable override.",
+          "ground": "FAIL-CLOSED ON A DISTURBED TARGET. A project that is PAUSING, RESTORING, RESIZING, UPGRADING or under an imposed readonly state is not a project about which an empty-window-by-construction claim can be made, and an active read-only override is a fifteen-minute window someone else opened. This is classified NOT AVAILABLE rather than UNKNOWN because the condition is MEASURED, and because proceeding on a disturbed target is the error this rule exists to prevent."
+        }
+      ]
+    },
+    "C3_AVAILABLE": {
+      "meaning": "No client of any kind exists against the governed project at the observation instant, and the empty-window-by-construction model is therefore open to the owner.",
+      "required_conjunction_every_one_of_which_must_hold": [
+        "A-1. No G-N trigger fired.",
+        "A-2. TIER 1 COMPLETE AND NEGATIVE. OBS-V0, OBS-V1, OBS-V2, OBS-V3 and OBS-S1 through OBS-S9 all executed, all returned, and all returned the negative. No observation is missing, errored, rate-limited, partially returned or skipped.",
+        "A-3. NO PRESENT ROW AT ALL for UELLIX_RUNTIME_DATABASE_URL or DATABASE_URL on any project. Absence, not a benign-looking presence: U1-3's structural limit means presence can never be cleared read-only.",
+        "A-4. TIER 2 COMPLETE AND NEGATIVE: hosted extension inventory measured and containing neither pg_cron nor pg_net; max_prepared_transactions measured and zero, or all prepared transactions measured absent; pg_stat_activity measured to contain no non-system session; no pg_cron job scheduled; no outstanding pg_net work.",
+        "A-5. THE_TREE_VALIDITY_CAVEAT satisfied for every READY deployment found, i.e. each was built from a commit whose writer inventory has been derived.",
+        "A-6. The whole census is FRESH under SECTION_H's freshness rule at the moment the classification is consumed."
+      ],
+      "MEASURED_CONSEQUENCE_STATED_PLAINLY": {
+        "statement": "A-4 IS NOT SATISFIABLE UNDER THIS AUTHORITY. Tier 2 is not conferred, per DEP-C1. THEREFORE THIS CENSUS, AS AUTHORIZED, CAN NEVER RETURN C3_AVAILABLE.",
+        "why_this_is_disclosed_at_the_top_rather_than_discovered_at_the_end": "An authority whose best case is unreachable and which does not say so would be sold to the owner as something it is not. The certifier and the owner are told before it runs.",
+        "why_the_census_is_still_worth_running": "Because C3_NOT_AVAILABLE is reachable on Tier 1 alone, by any of seven independent triggers, at zero mutation cost. If any fires, the owner's decision space collapses immediately and no Tier 2 work is ever needed. The cheap half of the census is the half most likely to be decisive.",
+        "what_would_make_C3_AVAILABLE_reachable": "Resolution of DEP-C1: either OD-C1 authorizes route R1, or the D1 authority is certified and its SQL surface is checked or extended to cover the Tier 2 queries. Both are named, neither is taken here."
+      }
+    },
+    "C3_UNKNOWN": {
+      "meaning": "Neither foreclosed nor established. The default, and the expected outcome of a Tier-1-only census in which nothing adverse is found.",
+      "rules": [
+        {"id": "G-U1", "condition": "No G-N trigger fired and A-4 is unsatisfied because Tier 2 was not authorized.", "recorded_reason": "TIER_2_NOT_AUTHORIZED__DEP-C1"},
+        {"id": "G-U2", "condition": "A row is PRESENT for a DSN-bearing name but no READY deployment applies to its scope.", "recorded_reason": "BINDING_PRESENT_TARGET_UNMEASURABLE__U1-3"},
+        {"id": "G-U3", "condition": "Any authorized Tier 1 observation failed, errored, was rate-limited, returned partially, or was refused by the provider.", "recorded_reason": "OBSERVATION_INCOMPLETE, naming the observation id and the failure."},
+        {"id": "G-U4", "condition": "A READY deployment exists whose commit SHA is not one for which a writer inventory has been derived.", "recorded_reason": "TREE_VALIDITY_CAVEAT_UNSATISFIED, naming the deployment id and SHA."},
+        {"id": "G-U5", "condition": "Any other unresolved condition.", "recorded_reason": "Stated explicitly. An unstated reason is not an allowed output."}
+      ],
+      "UNKNOWN_IS_NOT_A_SOFT_NO": "C3_UNKNOWN does not mean 'probably fine'. Every Tier 2 unknown is a writer by the parent's classification rule, so C3_UNKNOWN entails that the empty-window claim is UNPROVEN and may not be relied on. An owner brief that presents UNKNOWN as leaning available has misreported it."
+    },
+    "output_contract": {
+      "required_fields": ["classification", "triggering_rule_ids", "observation_ids_relied_on", "observation_timestamp_utc", "unknown_reasons", "freshness_statement"],
+      "one_classification_only": "Exactly one of the three values. A census that cannot produce one records C3_UNKNOWN with G-U5 and its reason; it does not produce a narrative in place of a classification.",
+      "no_recommendation": "The output carries NO recommendation on OD-Q5, no preference among C-1, C-2 and C-3, and no view on KEEP versus CHANGE. Supplying one would be the author answering the question the owner reserved."
+    }
+  },
+
+  "SECTION_H_EVIDENCE_CONTRACT": {
+    "principle": "Every claim must be checkable by a party who did not run the census and does not trust the runner. Carried from the Recovery authority's independent_verifiability_contract and applied to an observation set rather than to a restore.",
+    "per_observation_required_fields": [
+      {"field": "observation_id", "rule": "One of the fifteen ids in SECTION_E. An observation with no id is not authorized and may not be recorded."},
+      {"field": "timestamp_utc", "rule": "ISO-8601 UTC, recorded per observation at the moment the response returned, not once per run."},
+      {"field": "source", "rule": "The exact API endpoint path with the ref substituted, or the exact CLI command, or the exact local command. A source of the form 'the dashboard' is not admissible."},
+      {"field": "tool_identity", "rule": "The tool and version that issued it, per OBS-L2."},
+      {"field": "target", "rule": "The exact Supabase project ref, or the exact Vercel project id, or the exact deployment id. Never a display name, never a branch name alone."},
+      {"field": "result", "rule": "The projected fields, verbatim as returned, within the projection SECTION_E defines for that observation. Raw where the projection permits raw; never a verdict in place of a value."},
+      {"field": "verdict", "rule": "The census lane's reading of that result, recorded SEPARATELY from the result so a verifier can disagree with the reading while keeping the data."},
+      {"field": "unknown_reason", "rule": "MANDATORY whenever the result is UNKNOWN. An omitted observation reads as a passed observation, which is the failure mode the Recovery authority names in terms. An observation that could not be run is emitted as UNKNOWN with its reason, never omitted."},
+      {"field": "freshness", "rule": "The age of the observation at the moment the evidence package is consumed, and a statement of whether it is within the freshness bound."},
+      {"field": "c3_classification_contribution", "rule": "Which SECTION_G rule this observation feeds, by rule id, or NONE."}
+    ],
+    "package_level_required_fields": [
+      "The final C3 classification, with its triggering rule ids, per SECTION_G's output contract.",
+      "The prestate of the census-execution lane: branch, HEAD, tree, cleanliness.",
+      "The blob SHAs of this authority and its companion manifest, so the evidence names the authority it ran under.",
+      "The complete list of the fifteen authorized observations with, for each, EXECUTED, SKIPPED or FAILED. A census that ran eleven of fifteen and says so is evidence; one that reports only what it ran is not.",
+      "An explicit NO-MUTATION declaration enumerating the classes of act not performed.",
+      "An explicit NO-SECRET declaration."
+    ],
+    "freshness": {
+      "rule": "An observation is FRESH only if no act that could change the observed property has occurred between the observation and its consumption, and its age is stated in the package. Carried from the observation-freshness rule the release authority defines and the Recovery authority consumes.",
+      "the_void_events": "The classification is VOID, not merely stale, if any of these occurs after the observation: PR #201 executes in whole or in part; any environment variable is created, edited or deleted on any enumerated project; any deployment is created or promoted; any Supabase configuration changes; the project status changes; a Supabase branch is created.",
+      "re_observation_before_reliance": "If the owner's re-adjudication relies on a C3 classification, the deciding observations are re-taken immediately before reliance. A census is cheap; a stale census that licensed an empty-window claim is not."
+    },
+    "secret_hygiene": {
+      "SSL-08_restated_and_binding": "No secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever.",
+      "capture_time_projection_is_mandatory": "For OBS-S3 and OBS-S4 the projection is applied AT CAPTURE. The unprojected response is never written to disk, never logged, never echoed and never handed to a scanner as a file. Writing a secret and then scanning for it is not hygiene; it is an incident with a report attached.",
+      "what_is_NOT_a_secret_and_may_be_recorded": "Supabase project refs, Vercel project ids, Vercel team slugs, deployment ids, Git branch names, commit SHAs, environment-variable NAMES, target scopes, git branch scopes, and presence booleans. Each is a public identifier or a compile-time constant of this repository.",
+      "what_is_a_secret_and_may_never_be_recorded": "Any environment-variable value, any DSN or fragment of one, any password, any PAT, any anon or publishable key, any service-role key, any JWT secret, any external-provider client secret, and any hash, prefix, suffix or length of any of them."
+    },
+    "production_boundary_in_the_evidence": {
+      "rule": "The production ref ctaxtgujyyprgynmnvtq may appear in the evidence package ONLY in a veto or finding context. It may never appear as a target field, a source URL, an observation subject or a result row.",
+      "the_project_list_case": "OBS-V0 and any Supabase project listing will return production rows. They are discarded at the point of capture. The evidence records the governed project's row and records THAT a filter was applied, without reproducing what was filtered out."
+    }
+  },
+
+  "SECTION_I_HUMAN_CONFIRMATION": {
+    "shape_required_by_the_operating_model": "PRESTATE, then the exact act shown to the human, then explicit confirmation, then one act, then verification, then a rollback or reversal plan.",
+    "honest_application": "THIS AUTHORITY CONTAINS NO MUTATION, so there is no act to roll back. Rather than invent one to satisfy the template, the shape is applied to the two things that genuinely carry consequence: opening a live control-plane read session against the governed account, and consuming a classification that will shape an owner decision.",
+    "confirmations": [
+      {
+        "id": "HCC-1",
+        "act": "Open the read-only census: authenticate to the Vercel and Supabase control planes and execute the fifteen authorized observations.",
+        "prestate_shown": "The census-execution lane's own prestate; the certification PASS of this pair; the SSL-06 inventory entry for the credential in use; and the fifteen observation ids with the explicit statement that none of them mutates anything and none opens a database connection.",
+        "mutation": "NONE.",
+        "verification": "The evidence package, with all fifteen observations marked EXECUTED, SKIPPED or FAILED.",
+        "reversal": "Not applicable. A read leaves no state to reverse. The only residue is a local .vercel/project.json, which is gitignored and may be deleted."
+      },
+      {
+        "id": "HCC-2",
+        "act": "Accept the C3 classification as an INPUT to the OD-Q5 re-adjudication.",
+        "prestate_shown": "The classification, its triggering rules, its unknown reasons, and -- stated in the prompt, not buried -- that C3_AVAILABLE is unreachable under this authority because Tier 2 was not conferred, so a C3_UNKNOWN result is the expected outcome of a clean census and is not a soft yes.",
+        "mutation": "NONE.",
+        "verification": "The classification is recorded in the re-adjudication brief exactly as issued, without softening.",
+        "reversal": "Not applicable; it is a measurement, not a state."
+      }
+    ],
+    "no_bundling": "HCC-1 and HCC-2 are distinct and are confirmed separately. Confirming the census does NOT confirm the reading of its result. Neither confirms any act of PR #201, of the Recovery authority, of the D1 authority, or any answer to OD-Q5.",
+    "silence_is_not_consent": "An absent, ambiguous, or off-question answer is not confirmation. The lane waits or stops."
+  },
+
+  "SECTION_J_MEASURED_PROVIDER_AND_TOOL_SURFACE": {
+    "evidence_class": "PUBLIC VENDOR SPECIFICATION AND LOCAL OFFLINE TOOL INTROSPECTION. NOT a measurement of the governed project. Everything here describes what the platforms OFFER and what tools EXIST; nothing here describes bvyzblhqymxruxdguaee.",
+    "supabase_management_api": {
+      "source": "https://api.supabase.com/api/v1-json, the Management API OpenAPI specification linked from https://supabase.com/docs/reference/api/introduction.",
+      "fetched": "2026-09-22T01:22Z, read-only, unauthenticated.",
+      "sha256_of_the_document_as_fetched": "5b11a7fd32ed31bac59170c02e14f1619d0f0218a78b7fab3be41d3f2d69b600",
+      "size_bytes": 350316,
+      "openapi_version": "3.0.0",
+      "enumeration": "115 paths total; 77 carry a GET. The enumeration was performed programmatically over the parsed document, not by reading a documentation sidebar. This DISCHARGES directive NBF-A and replaces the prior incomplete enumeration.",
+      "read_endpoints_this_authority_uses": [
+        "GET /v1/projects/{ref}",
+        "GET /v1/projects/{ref}/health",
+        "GET /v1/projects/{ref}/config/auth",
+        "GET /v1/projects/{ref}/postgrest",
+        "GET /v1/projects/{ref}/config/storage",
+        "GET /v1/projects/{ref}/storage/buckets",
+        "GET /v1/projects/{ref}/config/realtime",
+        "GET /v1/projects/{ref}/readonly",
+        "GET /v1/projects/{ref}/network-restrictions",
+        "GET /v1/projects/{ref}/branches"
+      ],
+      "MEASURED_ABSENCES_over_the_complete_115_path_set": [
+        "NO endpoint, by any HTTP method, enumerates installed PostgreSQL EXTENSIONS. The nearest, GET /v1/projects/{ref}/database/context, returns a databases array carrying name and schemas -- not extensions. This is what makes U2-2 a Tier 2 problem.",
+        "max_prepared_transactions is ABSENT from the 38-property response schema of GET /v1/projects/{ref}/config/database/postgres, which does expose max_connections, max_locks_per_transaction, max_worker_processes, max_wal_senders, statement_timeout, session_replication_role and 32 others. This is what makes U2-3 a Tier 2 problem.",
+        "NO endpoint returns connected sessions, scheduled jobs or queued asynchronous work. This is what makes U2-4 a Tier 2 problem.",
+        "There remains NO endpoint to ENABLE read-only mode. GET /v1/projects/{ref}/readonly reads status; POST /v1/projects/{ref}/readonly/temporary-disable disables it for fifteen minutes. The amendment's measurement is confirmed against the complete specification rather than against one documentation page.",
+        "NO endpoint disables the Auth service or the Storage service. Confirmed against the complete specification. This corroborates the amendment's P-12 while keeping its classification: absence from a published specification is strong evidence and is still not a measurement of what the provider can do internally. MG-Q4 stays open."
+      ],
+      "CAPABILITY_EVIDENCE_ONLY_NOT_AUTHORIZED_ACTS": {
+        "directive": "NBF-B. Recorded so the record is complete; every one is forbidden in SECTION_F.",
+        "endpoints": [
+          "POST /v1/projects/{ref}/config/realtime/shutdown -- 'Shutdowns realtime connections for a project'.",
+          "POST /v1/projects/{ref}/pause -- 'Pauses the given project'.",
+          "POST /v1/projects/{ref}/restart -- 'Restarts the given project'.",
+          "POST /v1/projects/{ref}/readonly/temporary-disable -- 'Disables project readonly mode for the next 15 minutes'.",
+          "POST /v1/projects/{ref}/database/query -- 'Run sql query'.",
+          "POST /v1/projects/{ref}/database/query/read-only -- 'Run a sql query as supabase_read_only_user'.",
+          "POST /v1/projects/{ref}/database/backups/restore, restore-pitr and restore-point; POST /v1/projects/{ref}/restore.",
+          "POST /v1/projects/{ref}/branches and the branch merge, push, reset, restore and delete surfaces."
+        ],
+        "what_this_evidence_is_for": "It informs a FUTURE capability adjudication about what the provider offers. It confers nothing. Its presence in this artifact is not a step toward its use."
+      },
+      "SECRET_BEARING_READS_FORBIDDEN_DESPITE_BEING_GETS": [
+        "GET /v1/projects/{ref}/api-keys and the legacy variant -- response items carry an api_key property.",
+        "GET /v1/projects/{ref}/secrets -- response items carry a value property.",
+        "GET /v1/projects/{ref}/postgrest -- carries jwt_secret; the endpoint is authorized ONLY under OBS-S4's mandatory capture-time projection.",
+        "GET /v1/projects/{ref}/config/auth -- carries an external provider secret per provider; authorized ONLY under OBS-S3's mandatory capture-time projection."
+      ],
+      "operational_note": "The standard rate limit is 120 requests per minute per user per project. The authorized read set is ten Supabase endpoints against one project. Rate limiting is not a constraint on this census, and a 429 is an OBSERVATION_INCOMPLETE under G-U3, never a reason to retry past the limit."
+    },
+    "vercel_tooling": {
+      "cli_version_measured": "Vercel CLI 54.14.2 (Node.js 24.16.0), present on PATH. LOCAL OFFLINE FACT.",
+      "surfaces_measured_by_help_only": [
+        "vercel env list [environment] [git-branch] -- lists rows for a LINKED project. No --project flag exists, so a link is a precondition.",
+        "vercel env pull -- writes decrypted values to a file. FORBIDDEN in SECTION_F.",
+        "vercel project list -- 'Show all projects in the selected scope'.",
+        "vercel project inspect [name] -- project information.",
+        "vercel link --project <NAME_OR_ID> --team <TEAM_ID_OR_SLUG> -- 'required for non-interactive existing-project links'. The explicit-project form links an EXISTING project; project creation is the separate vercel project add. Only the explicit form is permitted.",
+        "vercel api [endpoint] -- beta; authenticated HTTP requests, default method GET, with vercel api list enumerating endpoints.",
+        "vercel --token <TOKEN> -- exists and is FORBIDDEN, because it places a credential in argv."
+      ]
+    },
+    "supabase_tooling": {
+      "cli_version_measured": "Supabase CLI 2.109.1, a devDependency of this repository. LOCAL OFFLINE FACT.",
+      "read_subcommands_measured_by_help_only": ["projects list", "postgres-config get", "network-restrictions get", "branches list", "ssl-enforcement get", "services"],
+      "coverage_gap_measured": "The CLI exposes no subcommand for the Auth config, the PostgREST config, the Storage config, the Realtime config, the project health surface or the readonly status. Those six reads require a direct GET.",
+      "hazards_named": "The same CLI exposes backups restore --timestamp for in-place PITR and branches create --with-data, which clones live data out of place. Both are forbidden in SECTION_F. Naming them here is a warning about the tool the census uses, not a description of anything the census does.",
+      "authentication_state": "UNKNOWN. Not measured by this lane."
+    }
+  },
+
+  "SECTION_K_RELATIONSHIP_TO_ADJACENT_AUTHORITIES": {
+    "recovery_authority": {
+      "AO-2_is_narrower_than_this_census": "AO-2 authorizes 'Read project metadata and LIST physical backups for the authorized ref only'. Two of the ten Supabase reads here are arguably within it; the other eight are not, and no backup listing is performed at all. Because AUTHORIZED_OPERATIONS is declared CONJUNCTIVE AND EXHAUSTIVE -- 'An operation not named here is not authorized by implication, by necessity, or by convenience' -- the census cannot be carried on AO-2 and needs this artifact. That is why this artifact exists rather than a note in an execution lane.",
+      "no_recovery_operation_is_consumed": "AO-1 through AO-9 are untouched. No backup is taken, no disposable container is started, no restore is performed, nothing is destroyed.",
+      "S8_is_not_satisfied_by_this_census": "A census measures exposure. It does not establish the no-intervening-mutation predicate, and S8 remains unsatisfiable under QUIESCE exactly as the amendment left it."
+    },
+    "owner_ratification_record": {
+      "reopening_rule_is_obeyed": "The record states 'Do NOT reopen or re-adjudicate OD-3'. This artifact does not. It measures the world the owner will re-adjudicate in, at the recertification's own recommendation, and it leaves the decision to the owner.",
+      "ratification_is_not_implementation_is_obeyed": "The record states that ratifying a posture does not authorize its mechanism. Symmetrically, this artifact authorizes an OBSERVATION and not a mechanism: nothing here makes anything non-writing."
+    },
+    "pr201": {
+      "nothing_is_consumed_or_enlarged": "AUTH-1 through AUTH-4, the BOUNDED_RETRY_RULE, the ENVIRONMENT_SCOPE_CORRECTION and the frozen target identity form are unchanged and unread as permissions.",
+      "PMV-1_is_performed_as_a_CENSUS_READ_not_as_PR201s_pre_mutation_verification": "OBS-V2 takes the same reading PMV-1 defines. It does NOT satisfy PMV-1 for any future execution of PR #201, does not become PR #201's rollback record, and confers no permission to proceed to AUTH-1. If PR #201 later executes it takes its own PMV-1 under its own freshness.",
+      "DEP-1_is_preserved_and_is_the_reason_OBS-V1_is_first": "As strengthened by the amendment: executing PR #201 forecloses C-3. The census measures the antecedent; it does not resolve the scheduling conflict, which remains the owner's under OD-Q4."
+    },
+    "d1_observation_authority": {
+      "relationship": "BLOCKING FOR TIER 2 and not otherwise consumed. Its capability contract, forbidden-substitution list and SSL-06 tripwire are CARRIED here by restatement for the control-plane credential, because the reasoning transfers even though the credential class differs.",
+      "not_extended": "This artifact does not certify it, does not open its execution lane, does not resolve its credential, and does not extend its AUTHORIZED_SQL_SURFACE."
+    }
+  },
+
+  "SECTION_L_FINDINGS_FOR_THE_READJUDICATION_BRIEF": {
+    "rule": "Two defects in parent artifacts were measured by this lane. NEITHER is repaired here, because this lane may not edit its parents and an author who quietly corrected the record he depends on would be doing the thing the chain forbids. Both are recorded so the owner's re-adjudication brief and the certifier of this pair both see them.",
+    "CF-1": {
+      "id": "CF-1",
+      "severity": "MATERIAL FOR OD-Q5.",
+      "finding": "The owner-ratification record's stated factual premise for OD-3 is MEASURED FALSE at this tree.",
+      "the_clause": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json, blob 876fc76cedc3e83f44b7c76221f0bc812d35ee5d, ratifications[OD-3].repository_binding: 'The live-runtime complication this decision answers arises because PR #201 (commit 2947161e, merged at e3f6f075) bound a runtime to the staging target.'",
+      "what_was_measured": "Commit 2947161eed150cb85458857e3ead487fc7592c72 is titled 'docs(release): author the FIBDB-053 runtime staging binding execution authority' and changes exactly two files: docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json and its companion manifest. Merge e3f6f0758b96cd925208f26e156168eb800470a8 brings exactly those two files. Both are ancestors of HEAD. The merged content is an AUTHORITY DOCUMENT whose own final_state is the literal string FIBDB053_RUNTIME_STAGING_BINDING_AUTHORITY_AUTHORED__NOT_EXECUTED.",
+      "the_discrepancy": "MERGING AN AUTHORITY IS NOT EXERCISING IT. At the repository level, PR #201 bound no runtime; it authored the permission to bind one and that permission is declared unexercised. The owner record describes a bound runtime; the Quiesce authority measures an unbound one. Both cannot be right.",
+      "why_it_matters_and_is_not_pedantry": "If a runtime IS bound, C-3 is already dead and the census is a formality. If none is, C-3's necessary condition holds and the census is decisive. The two readings point at opposite ends of the owner's decision space, and the owner ratified OD-3 with the first one written into the record.",
+      "what_this_lane_does_NOT_do": "It does not decide which is correct. Whether a Vercel-side binding exists in FACT is precisely MG-Q1, and only OBS-V1 and OBS-V2 can settle it. It does not edit the owner record, does not amend the Quiesce authority, and does not treat either statement as superseded by the other.",
+      "disposition": "SURFACED TO THE OWNER. The re-adjudication brief must state that OD-3's recorded premise is contested by measurement, and must carry the census result that settles it."
+    },
+    "CF-2": {
+      "id": "CF-2",
+      "severity": "NON-BLOCKING FOR THIS AUTHORITY; MATERIAL FOR THE QUIESCE PACKAGE.",
+      "finding": "P-10's evidence contract in the amendment specifies a check that cannot be performed read-only.",
+      "the_clause": "STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json, blob 1abcefc499172874433052db8a75f03ca35f3eba, SECTION_B3 candidate P-10, evidence_contract: '... and no deployment's runtime-identity endpoint reports the governed staging ref.'",
+      "what_was_measured": "app/api/health/runtime-identity/route.ts, blob 998acbd283f2a5934f0960354ea2aca1b2b56c83, calls getVerifiedAuthIdentityResult() first and returns 401 without a verified identity, before observing anything. Obtaining that identity requires authenticating against GoTrue, which WRITES auth.sessions -- writer class W-4.",
+      "the_consequence": "The named check is not a read-only observation. Performing it would cause the very class of write the posture exists to prevent, and would contaminate the window whose emptiness is the question.",
+      "the_narrow_correction_this_lane_applies_to_ITSELF_only": "OBS-V4 permits an UNAUTHENTICATED probe for LIVENESS only, prohibits session creation absolutely, and forbids any identity conclusion from it. The other half of P-10's evidence contract -- the branch-scoped binding enumeration -- is sound and is OBS-V1.",
+      "what_this_lane_does_NOT_do": "It does not amend P-10, does not restate its evidence contract as corrected, and does not claim the amendment is defective beyond this one clause. P-10's substance, that abstention is genuine prevention covering W-1 through W-3, is untouched.",
+      "disposition": "RECORDED FOR THE CERTIFIER OF THE QUIESCE PACKAGE."
+    }
+  },
+
+  "SECTION_M_OWNER_AND_CERTIFIER_DECISIONS_OPENED": {
+    "rule": "Each states the question, the options, the measured consequences, and why it is not an engineering decision to be taken by the author.",
+    "decisions": [
+      {
+        "id": "OD-C1",
+        "question": "May the census use POST /v1/projects/{ref}/database/query/read-only, which runs as supabase_read_only_user and needs no database DSN, to close the Tier 2 half of MG-Q2?",
+        "options": [
+          {"id": "A", "option": "NO -- keep Tier 2 blocked, as this artifact leaves it.", "consequence": "C3_AVAILABLE stays unreachable. The census can only foreclose C-3, never establish it. Zero new capability, zero new risk."},
+          {"id": "B", "option": "YES, under a bounded SQL surface.", "consequence": "MG-Q2 closes completely, MG-Q5 closes, C-3 becomes decidable in both directions. It requires accepting that a POST executing caller-supplied SQL sits inside a census otherwise composed of structural GETs, and that supabase_read_only_user's read-only-ness is the advisory GUC this chain has already measured to be escapable by the payload."},
+          {"id": "C", "option": "NO here -- close Tier 2 through the D1 authority instead.", "consequence": "Requires certifying the D1 authority, opening its execution lane, resolving its credential, and checking or extending its AUTHORIZED_SQL_SURFACE to cover an extension catalog, a settings read and a session census. Strictly more work than B and strictly better governed."}
+        ],
+        "why_not_an_engineering_decision": "It is a capability question about which credential class may reach the governed database, on a chain that has already been faulted once for reaching for the credential that would work. The author who needs the answer is not the right party to grant it.",
+        "recommendation_withheld": "None is offered. The three consequences are stated and the choice is not the author's."
+      },
+      {
+        "id": "OD-C2",
+        "question": "May the target of a PRESENT environment-variable row be resolved WITHOUT decrypting it -- for example from a deployment's publicly served client bundle, given that NEXT_PUBLIC_SUPABASE_URL is by construction public?",
+        "status": "OPENED AND NOT TAKEN. This lane neither authorizes it nor measures whether it would work.",
+        "why_it_is_recorded": "U1-3's structural limit is the single largest hole in what MG-Q1's own closure definition can establish, and this is the only route to closing it that does not read a secret. It should be adjudicated deliberately rather than improvised by a census executor who hits the wall.",
+        "why_not_taken_here": "It needs its own measurement of whether the bundle is reachable without a session and whether reading it is a read of the governed project or of a third surface, and the lane brief limits this artifact to observations required by MG-Q1 and MG-Q2 as defined."
+      },
+      {
+        "id": "OD-C3",
+        "question": "Is the SSL-06 treatment of the Supabase personal access token sufficient -- inventory entry, no materialization, ref pin, exhaustive endpoint list, capture-time projection -- given that the vendor states a PAT carries the same privileges as the user account and therefore reaches the vetoed production project?",
+        "status": "FOR THE CERTIFIER. Nominated in OF-C1.",
+        "why_it_is_asked_rather_than_assumed": "This authority uses an operator-class credential for a read-only subset and says so. A certifier who holds the bound insufficient should fail this artifact on it, and the artifact should not make that hard to see."
+      }
+    ],
+    "decisions_NOT_claimed_as_owner_decisions": [
+      "Whether the census is worth running. The recertification recommended it in terms.",
+      "Whether C3_AVAILABLE is reachable under this authority. It is not, and that is a measured consequence of DEP-C1, not a preference.",
+      "Whether an UNKNOWN may be read as a negative. It may not; that is the parent's classification rule."
+    ]
+  },
+
+  "SECTION_N_MEASUREMENT_AND_CAPABILITY_GAPS_OF_THIS_LANE": {
+    "measurement_gaps": [
+      {"id": "MG-C1", "gap": "Whether either control-plane CLI currently holds a valid authenticated session.", "consequence": "The census may fail at its first act.", "closure": "The execution lane's own first observation.", "class": "OPERATIONAL"},
+      {"id": "MG-C2", "gap": "Which Vercel project or projects actually serve this repository.", "consequence": "OBS-V0 is a precondition of every other Vercel observation, and the only in-tree candidate is a stale audit note.", "closure": "OBS-V0.", "class": "CLOSED BY THIS AUTHORITY'S OWN READ SET"},
+      {"id": "MG-C3", "gap": "Whether a Vercel API read exists that returns env rows with scopes WITHOUT a project link, which would remove the link precondition entirely.", "consequence": "The census may need a local link it would rather not take.", "closure": "vercel api list, offline against the beta surface, or the public Vercel API reference. NOT performed by this lane.", "class": "OPEN, MINOR"},
+      {"id": "MG-C4", "gap": "TWO of the six nonblocking recertification findings are not held by this lane and are therefore not consumed.", "consequence": "SECTION_E or SECTION_G may be incomplete against them.", "closure": "A certifier holding the full report checks both against this artifact.", "class": "OPEN, AND RECORDED RATHER THAN PAPERED OVER"},
+      {"id": "MG-C5", "gap": "Whether the D1 authority's AUTHORIZED_SQL_SURFACE covers the Tier 2 queries, should route R2 ever open.", "consequence": "Certifying D1 might still not unblock Tier 2.", "closure": "A read of that surface against the Tier 2 query list. NOT performed here.", "class": "OPEN"}
+    ],
+    "capability_gaps": [
+      {"id": "CG-C1", "gap": "NO authorized database observation capability exists in this chain. DEP-C1.", "status": "OPEN AND NOT CLOSED BY THIS ARTIFACT.", "consequence": "MG-Q2 is half-closable; C3_AVAILABLE is unreachable.", "what_would_close_it": "OD-C1 option B or option C."},
+      {"id": "CG-C2", "gap": "MG-Q1's own closure definition cannot establish that a PRESENT row is harmless. U1-3.", "status": "OPEN. Structural, not a defect of the census.", "what_would_close_it": "OD-C2, or an authority that permits reading a non-secret value, which this one does not."},
+      {"id": "CG-C3", "gap": "CG-Q1 of the parent -- no mechanism PREVENTS W-4, W-14 or W-16 -- is untouched by this census.", "status": "OPEN AND UNCHANGED. A census measures; it prevents nothing.", "note": "Recorded so that no reader mistakes a closed measurement gap for a closed capability gap. The capability gap declared by the amendment stands in full."}
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-C1",
+      "finding": "This authority confers reads carried by an OPERATOR-CLASS control-plane credential -- a Supabase PAT that, per the vendor's own words, carries the same privileges as the user account and reaches the vetoed production project.",
+      "disposition": "Recorded prominently rather than buried, and bounded by SSL-06 inventory, a ref pin, an exhaustive endpoint list, a no-materialization rule and capture-time projection. A certifier who holds that insufficient has a legitimate ground to fail this pair. This is the most appropriate target for adversarial review.",
+      "blocking": false,
+      "severity_note": "THE LOAD-BEARING JUDGEMENT OF THIS LANE."
+    },
+    {
+      "id": "OF-C2",
+      "finding": "SECTION_G can never return C3_AVAILABLE under this authority, because Tier 2 is not conferred.",
+      "disposition": "Disclosed in SECTION_G itself rather than discovered at the end, and the justification for running anyway -- that seven independent Tier 1 triggers can foreclose C-3 at zero mutation cost -- is stated. A certifier who holds that a census which cannot return its best case should not run is testing a real question.",
+      "blocking": false
+    },
+    {
+      "id": "OF-C3",
+      "finding": "G-N3 is deliberately BROADER than the amendment's illustrative phrase 'an exposed Auth surface with live sessions': it fires on exposure alone, without a live-session count.",
+      "disposition": "DELIBERATE AND ARGUED. The live-session conjunct is a Tier 2 observation this authority does not confer, so treating the amendment's sufficient condition as a necessary one would let an unmeasurable conjunct rescue C-3. The same clause states the predicate as 'any client of any kind'. A certifier who reads the narrower trigger as controlling should say so; it would change the classification in a real case.",
+      "blocking": false
+    },
+    {
+      "id": "OF-C4",
+      "finding": "Two of the six nonblocking recertification findings are not held by this lane. MG-C4.",
+      "disposition": "Recorded as a gap rather than papered over with a claim of full consumption. The four that were supplied are consumed in terms and each names how.",
+      "blocking": false
+    },
+    {
+      "id": "OF-C5",
+      "finding": "This artifact uses the subject-form name matching its parent package, rather than the node-prefix form used by the FIBDB053 siblings.",
+      "disposition": "Deliberate, for continuity with the Quiesce package it is stacked on. Flagged because the parent's OF-Q1 flagged the same choice.",
+      "blocking": false
+    },
+    {
+      "id": "OF-C6",
+      "finding": "CF-1 contests the factual premise recorded in the owner-ratification record for OD-3, and CF-1 is not repaired by this lane.",
+      "disposition": "Drives next_gate. The re-adjudication brief cannot be written honestly without carrying it, and it cannot be resolved without the census.",
+      "blocking": true
+    },
+    {
+      "id": "OF-C7",
+      "finding": "The repository field of every authority in this chain, including this one, reads lorenzozanello/uellix, while the MEASURED git remote of this worktree is https://github.com/lorenzozanello/uellix-antigravity.git.",
+      "disposition": "Recorded rather than silently corrected. This artifact keeps the inherited short form so the package reads consistently with the four Quiesce and three Recovery artifacts it is stacked on; changing it in one file of a seven-file lineage would create a discrepancy where there is currently a shared convention. The finding is raised so a certifier decides whether the whole chain should be normalized, which is not this lane's to do. It matters mildly beyond bookkeeping: the census identifies Vercel projects by their GitHub connection, so a reader who takes the header literally would look for the wrong repository.",
+      "blocking": false,
+      "how_it_was_found": "This lane initially used the repository-name mismatch as a ground for distrusting the in-tree Vercel project-id candidate. Measuring the remote showed the mismatch runs the other way. The ground was withdrawn from U1-1 and re-entered here, which is the honest disposition and is recorded as such rather than quietly dropped."
+    }
+  ],
+
+  "self_check": {
+    "checks": [
+      "MG-Q1, MG-Q2 and C-3 are QUOTED from their artifacts with path, blob sha and in-file location, not paraphrased from memory.",
+      "The one superseded sub-key of MG-Q2 is identified, quoted, and marked dead rather than silently consumed.",
+      "No hosted mutation was performed: no Vercel act, no Supabase act, no database connection, no deployment, no environment-variable act, no scale change, no write lock, no credential generation.",
+      "No live control-plane read was performed. The only external reads were a public unauthenticated OpenAPI specification and public vendor documentation, both pinned, and both classified as evidence about the platform rather than about the governed project.",
+      "No credential, DSN, token, key or environment-variable VALUE appears anywhere in this artifact.",
+      "The production ref ctaxtgujyyprgynmnvtq appears only in veto, prohibition and finding contexts, never as a target, source or subject of an authorized observation.",
+      "The governed staging ref is named as bvyzblhqymxruxdguaee and never selected by provider-side display name.",
+      "Every authorized observation is a READ. Fifteen are enumerated, all non-mutating, none opening a database connection, and the count is checked.",
+      "The Management API enumeration is complete over the fetched specification -- 115 paths, sha256-pinned -- and every claim of absence is a claim about that complete set. NBF-A.",
+      "Every documented service-level mutation surface found is recorded as capability evidence AND forbidden by name in SECTION_F. NBF-B.",
+      "The documented max_prepared_transactions default is recorded as BACKGROUND and the hosted value is kept UNKNOWN and fail-closed. NBF-C.",
+      "No transaction-id frontier, scalar of that class, or pairwise equality of one appears in any observation, any decision rule or any evidence field, and its revival is forbidden by name. NBF-D.",
+      "The two unconsumed recertification findings are declared as MG-C4 rather than implied to have been consumed.",
+      "Where a credential would be required and no authorized capability exists, the lane STOPS and records the dependency: DEP-C1, with both candidate routes named, assessed and declined, and the smuggling routes enumerated and refused.",
+      "The three C-3 classifications are defined with exhaustive, ordered, deterministic rules, and every rule names the observation ids that trigger it.",
+      "The unreachability of C3_AVAILABLE under this authority is disclosed in the decision procedure itself, not buried in a gap list.",
+      "OD-3 is not adjudicated. KEEP and CHANGE are not chosen. C-1, C-2 and C-3 are not chosen. The all-writer scope is not narrowed.",
+      "No parent artifact is edited. Two parent defects are recorded as CF-1 and CF-2 and expressly left unrepaired.",
+      "No ODS ordinal, HPO-ODS grant id, migration ordinal or Controller entry is allocated.",
+      "The lane's own most contestable judgement -- using an operator-class control-plane credential for a read-only subset -- is recorded as OF-C1 rather than presented as settled."
+    ],
+    "self_check_is_not_certification": "These checks are the author's own and are not independent verification. A self-check reporting PASS on its own adjudication would be the self-falsifying construct this chain has already been faulted for once."
+  },
+
+  "required_independent_review": "This artifact and its companion manifest require INDEPENDENT adversarial certification as ONE package before any census-execution lane opens. The certifier should specifically test: OF-C1, whether an operator-class PAT may carry a read-only census at all under SSL-06; OF-C3, whether G-N3's broadening beyond the amendment's illustrative phrase is faithful to C-3's 'any client of any kind' predicate or is an author's enlargement; the SECTION_J absences, by re-fetching the specification and re-deriving the sha256 rather than trusting this enumeration; CF-1, by re-measuring commit 2947161e and merge e3f6f075 independently; and the completeness of SECTION_E against MG-Q1 and MG-Q2 as SECTION_A quotes them, in particular whether any observation is authorized that neither gap requires. A certifier holding the full recertification report must additionally check the two findings recorded as MG-C4. The writing lane does not certify its own output.",
+
+  "final_state": "AUTHORED_AWAITING_INDEPENDENT_CERTIFICATION",
+
+  "next_gate": "INDEPENDENT_ADVERSARIAL_CERTIFICATION of STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0 plus STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0 as one package. On PASS, a READ-ONLY CENSUS EXECUTION lane opens with its own prestate, its own freshness gate and human confirmation HCC-1, and executes at most the fifteen observations of SECTION_E. Its output is a C3 classification under SECTION_G and an evidence package under SECTION_H. Only then is the OWNER RE-ADJUDICATION BRIEF for Recovery OD-3 (OD-Q5) written, and it must carry CF-1. Until certification returns PASS: no observation is authorized, no control-plane read is authorized, no Vercel act, no Supabase act and no database connection is authorized, MG-Q1 and MG-Q2 remain OPEN, DEP-C1 remains unresolved, the capability gap declared by the amendment stands in full, IG-1 remains NOT_CLOSED_AND_NOT_CURRENTLY_CLOSABLE, and S8 remains unsatisfiable under the QUIESCE posture."
+}

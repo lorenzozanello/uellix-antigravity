@@ -1,0 +1,760 @@
+{
+  "package_id": "CV1-STAGING-QUIESCE-MECHANISM",
+  "version": "1.0.0",
+  "artifact_id": "STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTION_AUTHORITY_CANDIDATE",
+  "document_class": "AUTHORITY",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-QUIESCE-MECHANISM-AUTHORITY-R1",
+  "lane": "CV1-STAGING-QUIESCE-MECHANISM-AUTHORITY-R1",
+  "role": "AUTHOR / ADJUDICATOR",
+  "mode": "AUTHORITY_WRITING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Opus 5 (Claude Code Desktop), HPO-ODS-01 primary development executor",
+  "repository": "lorenzozanello/uellix",
+
+  "companion_manifest": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/cv1-staging-quiesce-mechanism-authority-r1",
+  "AS_OF_PARENT_BRANCH": "codex/cv1-staging-recovery-authority-r1",
+  "AS_OF_PARENT_SHA": "4df9e6d37de19a15560993f1d67331bfa498008b",
+  "AS_OF_BASE": "4df9e6d37de19a15560993f1d67331bfa498008b",
+  "AS_OF_TREE": "2c606a43825623005d3ded38581da8431ac04f26",
+  "AS_OF_INTEGRATION_REF": "537487ac (integration/commercial-v1 at lane open; NOT the base of this branch)",
+
+  "STACKING_DECLARATION": {
+    "why_not_integration_based": "The effective Recovery package has not merged into integration/commercial-v1. This lane is deliberately stacked on codex/cv1-staging-recovery-authority-r1 at 4df9e6d3 so that the three Recovery artifacts are present as context WITHOUT being duplicated into a fresh integration-based PR. Duplicating them would create a second, divergent copy of a package that is itself awaiting certification.",
+    "pr_target": "codex/cv1-staging-recovery-authority-r1",
+    "pr_state": "DRAFT",
+    "retarget_rule": "This PR is retargeted to integration/commercial-v1 ONLY after the Recovery package merges there, and retargeting is a mechanical rebase, never a re-authoring."
+  },
+
+  "PURPOSE": {
+    "one_line": "Derive the narrowest executable authority capable of establishing the owner-ratified QUIESCE posture for the governed staging pre-DDL recovery window, or STOP with an explicit capability gap if no current mechanism can prove it.",
+    "what_this_artifact_is_not": [
+      "It is not an execution grant. Nothing here may be executed until it is independently certified and a future execution lane opens with its own prestate, freshness gate and human confirmations.",
+      "It does not authorize a backup, a restore, any DDL, any Stage-A application, or any production operation.",
+      "It does not edit, supersede or reinterpret the Recovery authority, its amendment, the owner-ratification record, or PR #201.",
+      "It does not allocate any ODS ordinal, HPO-ODS grant id, migration ordinal or Controller entry."
+    ]
+  },
+
+  "CONTROLLING_AUTHORITY": [
+    {
+      "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+      "blob_sha": "154c3d1d396784ae7189b8088669b0ef8231de67",
+      "relation": "PARENT. Defines the event-based freshness rule, the LIVE_RUNTIME_COMPLICATION, OD-3, HC-2, S8 and the nine-operation exhaustive AUTHORIZED_OPERATIONS block that contains no quiesce."
+    },
+    {
+      "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "blob_sha": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc",
+      "relation": "PARENT AMENDMENT. SECTION_A9 expressly preserves QUIESCE (OD-3), IG-1 and the requirement for a separate quiesce authority."
+    },
+    {
+      "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+      "blob_sha": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+      "relation": "OWNER INTENT. Ratifies OD-3 = QUIESCE, records IG-1 and IG-2, and states that ratifying a posture does not authorize its mechanism."
+    },
+    {
+      "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+      "blob_sha": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817",
+      "relation": "ADJACENT. PR #201. Its final_state is measured below and is load-bearing for this entire adjudication."
+    }
+  ],
+
+  "TARGET": {
+    "governed_staging_project_ref": "bvyzblhqymxruxdguaee",
+    "production_project_ref_VETOED": "ctaxtgujyyprgynmnvtq",
+    "production_veto_is_absolute": "The production ref appears in this artifact ONLY as a veto. It is never a target, a source, a restore destination, or a subject of any authorized operation.",
+    "PROVIDER_NAME_IS_NEVER_AN_IDENTIFIER": {
+      "rule": "RESTATED FROM THE PARENT AND BINDING HERE. Every selection of a Supabase project in any act derived from this authority is BY REF, never by provider-side display name.",
+      "measured_reason": "The parent authority measured live that the provider-vetoed PRODUCTION ref carries the provider-side display name 'uellix-staging'. Selecting by name selects the vetoed project."
+    },
+    "no_credential_or_value_is_recorded": "No DSN, password, token, anon key, service-role key or environment-variable VALUE appears anywhere in this artifact. Project refs are public in every URL the project serves and are recorded as identifiers only."
+  },
+
+  "PRESTATE": {
+    "PS-Q1": {
+      "assertion": "The worktree is clean at tree 2c606a43825623005d3ded38581da8431ac04f26 on branch codex/cv1-staging-quiesce-mechanism-authority-r1, HEAD 4df9e6d37de19a15560993f1d67331bfa498008b.",
+      "class": "MEASURED",
+      "method": "git rev-parse --abbrev-ref HEAD; git rev-parse HEAD; git rev-parse HEAD^{tree}; git status --porcelain --untracked-files=all (empty)"
+    },
+    "PS-Q2": {
+      "assertion": "IG-1 is open. No quiesce operation exists in any authority in this chain.",
+      "class": "MEASURED",
+      "method": "Semantic walk of every string leaf of the parent authority for /quiesc/i returned exactly 5 hits, none of which is a permission; the owner record's own measurement of AUTHORIZED_OPERATIONS AO-1..AO-9 at blob 154c3d1d is reproduced and not disturbed."
+    },
+    "PS-Q3": {
+      "assertion": "NO HOSTED MUTATION was performed by this lane. No database connection was opened. No Vercel act, no Supabase act, no deployment, no environment-variable act, no scale change, no write lock, no credential generation.",
+      "class": "MEASURED",
+      "method": "The lane's entire evidence base is repository-derived. Unlike the parent lane (its OF-2), this lane performed ZERO live management-plane reads. Every hosted property below is therefore classified UNKNOWN rather than measured, and fails closed."
+    }
+  },
+
+  "SECTION_A_WRITER_INVENTORY": {
+    "scope_of_the_inventory": "Every mechanism capable of writing to the governed staging PostgreSQL target during the recovery/DDL window.",
+    "classification_rule": "KNOWN_WRITER, NON_WRITER or UNKNOWN. UNKNOWN IS FAIL-CLOSED: it is treated as a writer for every purpose in this artifact, and no disposition may be inferred from absence of evidence.",
+    "THE_TREE_VALIDITY_CAVEAT": {
+      "rule": "This inventory is derived from repository source at tree 2c606a43. It is valid for a runtime ONLY IF that runtime was built from this exact tree.",
+      "why_it_is_load_bearing": "Two route handlers below are non-writers ONLY because of a source constant whose value is a property of this tree. A deployment built from a different commit may carry the opposite value. A writer inventory that does not name the commit it describes is not an inventory of any particular runtime.",
+      "consequence": "Any execution lane consuming this inventory MUST first prove that the runtime it is reasoning about was built from a commit whose writer inventory has been derived. Otherwise every W-class below reverts to UNKNOWN."
+    },
+    "writers": [
+      {
+        "id": "W-1",
+        "writer": "The PR #201 branch-scoped Preview runtime bound to governed staging.",
+        "classification": "NON_EXISTENT_AT_THIS_TREE; prospective KNOWN_WRITER.",
+        "measured": "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json final_state is the literal string 'FIBDB053_RUNTIME_STAGING_BINDING_AUTHORITY_AUTHORED__NOT_EXECUTED', and its next_gate states that no Vercel mutation, no deployment and no hosted observation is authorized until independent certification returns PASS.",
+        "class": "REPOSITORY_DERIVED_FACT about the authority's own declared state. Whether a binding exists on the Vercel project in fact is a separate question, answered by W-14.",
+        "consequence": "The writer the owner ratified QUIESCE against is, by the chain's own declaration, not yet created. This is the single most consequential measurement in this lane and it drives SECTION_D."
+      },
+      {
+        "id": "W-2",
+        "writer": "Next.js Server Actions.",
+        "classification": "KNOWN_WRITER, contained inside W-1's runtime.",
+        "measured": "72 files carry a leading 'use server' directive under app/, lib/ and components/. They include the full evidence, proxy, SROI-run, report, portfolio, organization, billing and admin write surfaces.",
+        "note": "Server Actions have no separate network identity. They are reachable only through the runtime that serves them, so they have no disposition independent of W-1. They are enumerated so that a certifier can see the write surface is large, not to suggest they can be quiesced one by one."
+      },
+      {
+        "id": "W-3",
+        "writer": "Next.js route handlers.",
+        "classification": "MIXED. Enumerated individually below.",
+        "measured_total": "12 route handlers under app/.",
+        "breakdown": {
+          "writers_requiring_a_session": [
+            "app/api/fx-rates/fetch/route.ts POST — upserts an fx_rates row; refuses 401 without an organization context.",
+            "app/api/proxies/[id]/suggest/route.ts POST."
+          ],
+          "writers_via_the_provider_auth_service": [
+            "app/auth/callback/route.ts GET — supabase.auth.exchangeCodeForSession.",
+            "app/auth/signout/route.ts POST."
+          ],
+          "non_writers_by_source_constant_AT_THIS_TREE": [
+            {
+              "path": "app/api/marketing/lead/route.ts",
+              "blob_sha": "8428a14aa627c9b8fab2854d17fceef4f0772575",
+              "measured": "const LEAD_CAPTURE_POLICY_AVAILABLE = false, and the handler returns 503 before reaching db.insert(marketingLeads).",
+              "warning": "This is an UNAUTHENTICATED POST endpoint whose only barrier is a source constant. It is a non-writer at this tree and a writer at any tree where that constant is true."
+            },
+            {
+              "path": "app/api/webhooks/stripe/route.ts",
+              "blob_sha": "69bdc7fd48f495fe2d788731226ad333f4c77702",
+              "measured": "const WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false, and a signature-verified event still receives 503.",
+              "warning": "Same class as above: unauthenticated by design (signature-verified, not session-verified), gated only by a source constant. See also PQ-6 on retry semantics."
+            }
+          ],
+          "non_writers": [
+            "app/api/health/auth/route.ts GET",
+            "app/api/health/runtime-identity/route.ts GET",
+            "app/api/health/stella-preconditions/route.ts GET",
+            "app/api/proxies/search/route.ts GET",
+            "app/(public)/verify/[hash]/pdf/route.ts GET",
+            "app/app/projects/[projectId]/report/[reportId]/pdf/route.ts GET"
+          ]
+        }
+      },
+      {
+        "id": "W-4",
+        "writer": "Supabase Auth (GoTrue), writing the auth schema.",
+        "classification": "KNOWN_WRITER, AND STRUCTURALLY OUTSIDE EVERY VERCEL CONTROL.",
+        "measured": "Four distinct public, unauthenticated repository surfaces invoke GoTrue: supabase.auth.signInWithPassword and supabase.auth.signUp in app/(public)/login/actions.ts, supabase.auth.resetPasswordForEmail in app/(public)/forgot-password/actions.ts, supabase.auth.updateUser in app/(public)/reset-password/actions.ts, and supabase.auth.exchangeCodeForSession in app/auth/callback/route.ts.",
+        "why_it_is_outside_the_vercel_plane": "GoTrue is a provider-operated service reachable directly at the project's own Auth endpoint with the project's publishable anon key. The repository surfaces above are CLIENTS of it, not gatekeepers to it. A caller that never touches the Vercel deployment — a stale browser tab performing a token refresh, a previously issued session, a scripted client, an indexer — reaches GoTrue directly and causes writes to auth.sessions, auth.refresh_tokens and related relations.",
+        "consequence": "THIS IS THE FINDING THAT DECIDES SECTION_C. Removing the deployment, withdrawing traffic, deleting an alias, serving a maintenance page, or deleting an environment variable does not and cannot make W-4 non-writing. Any mechanism scoped to the Vercel plane is structurally incapable of establishing the predicate.",
+        "hosted_exposure_at_the_governed_ref": "UNKNOWN. This lane performed no live reads. Whether the Auth surface is presently enabled and internet-reachable on bvyzblhqymxruxdguaee is not measured here and FAILS CLOSED."
+      },
+      {
+        "id": "W-5",
+        "writer": "The Supabase Data API (PostgREST) writing the public schema directly.",
+        "classification": "UNKNOWN — FAIL-CLOSED.",
+        "measured": "supabase/config.toml at this tree sets [api] enabled = true with schemas = [\"public\", \"graphql_public\"]. That file is the configuration of THIS WORKTREE'S LOCAL STACK (project_id uellix-stella-g2-local-rehearsal, loopback ports 56321/56322 pinned in db/safety/local-stack.ts). It is evidence about the local container and states nothing measured about the hosted project.",
+        "why_it_matters": "If the Data API is exposed on the hosted project with the public schema, every RLS-permitted INSERT/UPDATE/DELETE is reachable over HTTPS with the publishable anon key, entirely outside the Vercel runtime, exactly as W-4 is.",
+        "disposition": "Treated as a writer."
+      },
+      {
+        "id": "W-6",
+        "writer": "Supabase Storage, writing the storage schema.",
+        "classification": "UNKNOWN — FAIL-CLOSED.",
+        "measured": "supabase/config.toml declares [storage] enabled = true and a bucket [storage.buckets.uellix-evidence] with the S3 protocol enabled. Same LOCAL-ONLY caveat as W-5.",
+        "disposition": "Treated as a writer."
+      },
+      {
+        "id": "W-7",
+        "writer": "Supabase Realtime.",
+        "classification": "UNKNOWN — FAIL-CLOSED.",
+        "measured": "supabase/config.toml declares [realtime] enabled = true. Same LOCAL-ONLY caveat.",
+        "note": "Realtime is predominantly a WAL reader, but it maintains its own schema state. Not asserted to be a writer; not asserted not to be. Fails closed."
+      },
+      {
+        "id": "W-8",
+        "writer": "Vercel Cron.",
+        "classification": "NON_WRITER AT THIS TREE.",
+        "measured": "Neither vercel.json nor vercel.ts exists at tree 2c606a43. Vercel cron jobs are declarable only in project configuration of that form, so no cron job is declared by this repository.",
+        "residual": "A cron declared by a deployment built from a DIFFERENT commit is not excluded by this measurement. Bound by THE_TREE_VALIDITY_CAVEAT."
+      },
+      {
+        "id": "W-9",
+        "writer": "Queue, workflow or background-job workers.",
+        "classification": "NON_WRITER AT THIS TREE.",
+        "measured": "No dependency or devDependency in package.json matches /queue|bull|inngest|trigger|temporal|cron|agenda|workflow/i. The result set is empty."
+      },
+      {
+        "id": "W-10",
+        "writer": "pg_cron scheduled jobs inside the database.",
+        "classification": "UNKNOWN AT THE HOSTED REF — FAIL-CLOSED. Source ATTESTS absence.",
+        "measured_attestation": "Five separate source locations in db/prepared/hosted/** assert 'There is no pg_cron in this project', including a runtime RAISE EXCEPTION in stella_0016. These are ATTESTATIONS in prepared SQL, not measurements of the hosted catalog.",
+        "measured_dump": "db/baseline/stella_g2_schema.sql (blob d0cc70e51b7e303067bb612c1f12471e9be4cf92) contains exactly five CREATE EXTENSION statements — pg_net, pg_stat_statements, pgcrypto, supabase_vault, uuid-ossp — and pg_cron is NOT among them.",
+        "why_that_dump_does_not_settle_it": "db/baseline/README.md states in terms that this dump was produced by pg_dump against the container supabase_db_uellix-stella-g2-local-rehearsal and that it 'No es un backup' and contains no rows. It is a schema dump of the LOCAL rehearsal stack. It is not a dump of bvyzblhqymxruxdguaee and carries no information about that project's installed extensions.",
+        "disposition": "ATTESTED ABSENT, NOT PROVEN ABSENT. Treated as a writer. The hosted extension inventory is a named measurement gap (MG-Q2)."
+      },
+      {
+        "id": "W-11",
+        "writer": "pg_net asynchronous HTTP, whose background worker writes response rows.",
+        "classification": "UNKNOWN AT THE HOSTED REF — FAIL-CLOSED. INSTALLED in the local baseline dump.",
+        "measured": "db/baseline/stella_g2_schema.sql line 80: CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions, commented 'Async HTTP'. Same LOCAL-ONLY provenance caveat as W-10.",
+        "disposition": "Treated as a writer."
+      },
+      {
+        "id": "W-12",
+        "writer": "Operator-invoked hosted maintenance and provisioning scripts.",
+        "classification": "KNOWN_WRITER, human-triggered, credential-gated.",
+        "measured": "db/hosted/ contains, among 39 modules, hosted-migrator.ts, operator-runner.ts, hosted-provisioning-runner.ts, baseline-apply-authorization.ts, remediation-operator.ts and prechain-remediation.ts. These are the Stage-A application machinery and are capable of both DDL and DML against a hosted target.",
+        "disposition": "Not quiescible by any mechanism. Controlled by AUTHORITY and by abstention, and provable only by the negative witness of SECTION_E."
+      },
+      {
+        "id": "W-13",
+        "writer": "CI jobs.",
+        "classification": "NON_WRITER against hosted staging.",
+        "measured": "Of nine workflows under .github/workflows/, only three reference DATABASE_URL or Supabase at all. p1a-validation.yml derives DATABASE_URL from 'pnpm supabase status' — the local CLI stack — and actively FAILS the build if any entry point reads process.env.DATABASE_URL directly (grep -REn over scripts/, drizzle.config.ts, drizzle.local.config.ts). db/safety/local-stack.ts pins every local entry point to 127.0.0.1 so that 'no value loaded from .env, a shell export or a CI secret can redirect a local operation at a remote database'.",
+        "strength": "This is the strongest disposition in the inventory: it is an enforced repository gate, not an attestation."
+      },
+      {
+        "id": "W-14",
+        "writer": "Any OTHER Vercel deployment, project or environment scope already holding credentials for the governed staging database.",
+        "classification": "UNKNOWN — FAIL-CLOSED. THE LARGEST UNMEASURED WRITER CLASS.",
+        "measured": "PR #201's ENVIRONMENT_SCOPE_CORRECTION establishes that an existing SHARED Production+Preview row for NEXT_PUBLIC_SUPABASE_URL is present and must not be opened. Its required pre-mutation verification PMV-1 mandates enumerating the existing rows for all four names WITH THEIR SCOPES, and states that this enumeration IS the rollback record. That PMV has not been performed, because PR #201 is not executed.",
+        "consequence": "It is therefore NOT KNOWN whether a Preview-wide or Production-scoped binding already makes some deployment write-capable against bvyzblhqymxruxdguaee. A Preview-wide runtime DSN row would make EVERY preview deployment of EVERY branch a writer.",
+        "disposition": "Treated as a writer. This is measurement gap MG-Q1 and it is the first thing any execution lane must close."
+      },
+      {
+        "id": "W-15",
+        "writer": "A direct psql or driver session opened by a human operator.",
+        "classification": "KNOWN_WRITER, authority-gated, not mechanically preventable by anything this chain controls.",
+        "note": "Bound by SECTION_E's PQ-7: a session already open at the start of the window can write inside it, and rotating a credential does not terminate an established session."
+      },
+      {
+        "id": "W-16",
+        "writer": "The Supabase dashboard SQL editor and table editor.",
+        "classification": "KNOWN_WRITER, reachable by any project member, entirely outside the Vercel plane and outside the repository.",
+        "note": "Enumerated explicitly because it is the writer most often omitted from a runtime-centric inventory, and because no mechanism in SECTION_C touches it."
+      }
+    ],
+    "inventory_summary": {
+      "known_writers": ["W-2", "W-3 (partial)", "W-4", "W-12", "W-15", "W-16"],
+      "non_writers_at_this_tree": ["W-3 (six GET handlers, two constant-gated POSTs)", "W-8", "W-9", "W-13"],
+      "non_existent_at_this_tree": ["W-1"],
+      "unknown_fail_closed": ["W-5", "W-6", "W-7", "W-10", "W-11", "W-14"],
+      "count_check": "Sixteen writer classes are enumerated, W-1 through W-16, with no gaps and no duplicates."
+    }
+  },
+
+  "SECTION_B_QUIESCE_SCOPE_ADJUDICATION": {
+    "question": "Does Recovery OD-3 require (1) only the PR #201-bound web runtime to become non-writing, or (2) every writer capable of reaching the staging database to be quiesced?",
+    "verdict": "OPTION 2. The predicate is a property of the DATABASE, not of one client.",
+    "grounds": [
+      {
+        "id": "SB-1",
+        "ground": "The parent authority states the PURPOSE of the posture, and the purpose is database-scoped.",
+        "quoted_source": "STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json ADJUDICATIONS.I_maximum_permitted_age.THE_LIVE_RUNTIME_COMPLICATION.consequence",
+        "quoted": "The execution lane MUST establish the no-intervening-mutation predicate POSITIVELY rather than assume it.",
+        "reading": "The predicate is 'no intervening mutation OF THE TARGET'. A mutation by GoTrue, by the dashboard SQL editor, or by a second preview deployment is lost on restore in exactly the same way and to exactly the same extent as a mutation by the bound runtime. A posture that leaves those writers untouched does not establish the predicate; it establishes a weaker, differently-named proposition."
+      },
+      {
+        "id": "SB-2",
+        "ground": "The owner's own ratification text is scoped to STAGING WRITES, not to the runtime's writes.",
+        "quoted_source": "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json ratifications[OD-3].statement",
+        "quoted": "For the governed pre-DDL recovery window, staging writes must be quiesced so that the no-intervening-mutation predicate can be established positively.",
+        "reading": "The object of 'quiesced' is 'staging writes'. The runtime is not named in the operative sentence."
+      },
+      {
+        "id": "SB-3",
+        "ground": "The narrower reading is available only by treating an ILLUSTRATION as a LIMIT.",
+        "measured": "The phrase 'the bound runtime' appears in OWNER_DECISIONS.decisions[OD-3].decision, in a sentence that is offering the owner a choice between two postures. The surrounding block, THE_LIVE_RUNTIME_COMPLICATION, introduces the bound runtime as the reason the complication EXISTS — 'PR #201 authored the runtime staging binding, and a bound runtime issues application writes'. It is the worked example that motivated the question, not an enumeration of the writers the answer covers.",
+        "reading": "Reading the example as the limit would mean the authority silently exempted every writer it had not happened to think of. That is the opposite of how its own fail_closed clause reads."
+      },
+      {
+        "id": "SB-4",
+        "ground": "The fail-closed clause forbids the narrow reading directly.",
+        "quoted_source": "THE_LIVE_RUNTIME_COMPLICATION.fail_closed",
+        "quoted": "If neither posture is established, S8 is NOT satisfied. An unproven no-mutation claim is not a confirmation.",
+        "reading": "A claim that the database did not mutate, supported only by evidence about one of sixteen writer classes, is an unproven no-mutation claim."
+      }
+    ],
+    "explicitly_rejected_reasoning": "Option 1 is cheaper, is closer to the literal words of one sentence, and would let this lane hand back a tidy mechanism. The lane brief forbids narrowing owner intent because option 1 is easier, and this adjudication does not do so. Option 1 is rejected on SB-1 and SB-4, which are properties of the predicate, not of the cost.",
+    "consequence_the_owner_bears": "Option 2 is materially more expensive than option 1 and may be unreachable by prevention alone. That consequence is carried forward honestly into SECTION_C and surfaced as owner decision OD-Q1 rather than absorbed silently.",
+    "this_is_not_a_third_posture": "The parent offered exactly two postures, QUIESCE and ACCEPT, and the owner selected QUIESCE. This section decides the SCOPE of the selected posture. It does not create a third."
+  },
+
+  "SECTION_C_CANDIDATE_MECHANISMS": {
+    "method": "Each mechanism is assessed against the SECTION_A inventory under the SECTION_B scope. A mechanism is REJECTED if it cannot prove the property it claims, even where it genuinely reduces risk.",
+    "mechanisms": [
+      {
+        "id": "M-1",
+        "mechanism": "ORDERING / ABSTENTION — place the entire recovery window BEFORE PR #201's AUTH-1 and AUTH-2 execute, so that no bound runtime exists during it.",
+        "prevents": "W-1 entirely, and with it W-2 and the whole of W-3, because Server Actions and route handlers have no network identity apart from the runtime that serves them.",
+        "does_not_prevent": "W-4, W-5, W-6, W-7, W-10, W-11, W-12, W-14, W-15, W-16.",
+        "mutation_required": "NONE. Abstention is not an act.",
+        "evidence_available": "Read-only control-plane enumeration: no branch-scoped Preview binding exists for the three PR #201 variables on integration/commercial-v1, and no deployment's runtime-identity endpoint reports the governed staging ref. PR #201's own PMV-3 already defines the first of these checks.",
+        "rollback": "Not applicable — nothing is changed, so nothing is restored. The posture ends when PR #201 is permitted to execute.",
+        "blast_radius": "ZERO on the hosted plane. The cost is purely schedule: PR #201's D-1 measurement is deferred until the window closes.",
+        "interaction_with_PR201": "ORDERING DEPENDENCY, stated explicitly in SECTION_F. M-1 consumes none of PR #201's authority and does not reinterpret it; it only constrains WHEN that authority may be exercised.",
+        "requires_another_deployment": "NO.",
+        "touches_production": "NO.",
+        "requires_db_or_ddl_authority": "NO.",
+        "verdict": "ACCEPTED as the narrowest available reduction. NOT SUFFICIENT ALONE, because it addresses three of sixteen writer classes."
+      },
+      {
+        "id": "M-2",
+        "mechanism": "Application-level maintenance / read-only mode inside the Next.js runtime.",
+        "prevents": "W-2 and W-3, if correctly implemented and correctly deployed.",
+        "does_not_prevent": "W-4 through W-7, W-10 through W-12, W-14 through W-16. Critically, it does not prevent W-4, because GoTrue is reached directly and never traverses the application.",
+        "mutation_required": "A repository code change AND a deployment.",
+        "evidence_available": "Weak. A 503 from an application endpoint proves that endpoint refused; it proves nothing about any path that does not pass through it.",
+        "rollback": "A second code change and a second deployment.",
+        "blast_radius": "Introduces new code onto the exact surface whose behaviour is being certified.",
+        "interaction_with_PR201": "HOSTILE. PR #201 grants EXACTLY ONE deployment under a bounded retry whose conditions are conjunctive. Spending it on a maintenance-mode build would consume the scarce act that exists to measure D-1, and PR #201 explicitly does not authorize any repository code change.",
+        "verdict": "REJECTED. It cannot prove the property (W-4), and it would consume PR #201's single deployment to achieve a partial result."
+      },
+      {
+        "id": "M-3",
+        "mechanism": "Traffic withdrawal — deleting the deployment, removing an alias, or repointing a domain.",
+        "prevents": "W-1 through W-3 at best.",
+        "does_not_prevent": "Everything outside the Vercel plane, which is where the decisive writer W-4 lives.",
+        "mutation_required": "A Vercel mutation.",
+        "evidence_available": "A 404 proves an address does not serve. It proves nothing about the database.",
+        "interaction_with_PR201": "FORBIDDEN. PR #201's not_authorized list contains 'ANY alias or custom domain creation, assignment, change or removal' verbatim. Deleting the deployment would also destroy the exact deployment id that PR #201 freezes as the target's identity.",
+        "verdict": "REJECTED. Forbidden by an adjacent authority, evidentially empty, and structurally incapable of reaching W-4."
+      },
+      {
+        "id": "M-4",
+        "mechanism": "Scaling the runtime to zero.",
+        "prevents": "Nominally W-1.",
+        "does_not_prevent": "Everything else.",
+        "measured_objection": "Vercel Functions are invoked per request under Fluid Compute. There is no exposed 'scale to zero' control that constitutes a provable write barrier, and an absence of instances is not an absence of write capability — the next request creates one.",
+        "verdict": "REJECTED. The control does not exist in the form the mechanism assumes, and would not be provable if it did."
+      },
+      {
+        "id": "M-5",
+        "mechanism": "Removing or corrupting the runtime's environment binding so the coherence check refuses at startup.",
+        "prevents": "W-1, by causing lib/supabase/project-coherence.ts assertSupabaseProjectCoherence to refuse at runtime start.",
+        "does_not_prevent": "W-4 onward.",
+        "interaction_with_PR201": "FORBIDDEN. PR #201's ENVIRONMENT_SCOPE_CORRECTION.operations_forbidden contains 'deleting, disabling or narrowing any existing row' verbatim.",
+        "verdict": "REJECTED. Forbidden by an adjacent authority and partial in any case."
+      },
+      {
+        "id": "M-6",
+        "mechanism": "Supabase database network restrictions — narrowing the allowed CIDR set.",
+        "prevents": "Direct PostgreSQL connections from outside the platform: W-1's driver connections, W-12 and W-15.",
+        "does_not_prevent": "W-4, W-5, W-6, W-7. GoTrue, PostgREST, Storage and Realtime run INSIDE the platform network and do not traverse the database's external network restrictions. Also does not prevent W-16, which reaches the database through the platform.",
+        "mutation_required": "A Supabase configuration mutation.",
+        "self_interference": "The backup itself is a direct external connection. Narrowing the CIDR set to zero would block the pg_dump the quiesce exists to protect; narrowing it to the operator's egress address reintroduces W-15 as the sole permitted writer.",
+        "interaction_with_PR201": "PR #201's not_authorized list contains 'ANY Supabase configuration mutation of any kind' verbatim. The Recovery authority does not authorize one either.",
+        "verdict": "REJECTED as a proof mechanism. Genuinely reduces W-1/W-12/W-15 risk, cannot reach W-4, requires an unheld authority, and interferes with the backup."
+      },
+      {
+        "id": "M-7",
+        "mechanism": "Database role or ACL change — ALTER ROLE ... NOLOGIN, REVOKE on the application role, or ALTER DATABASE ... SET default_transaction_read_only = on.",
+        "prevents": "Nominally the roles it names.",
+        "does_not_prevent": "Sessions ALREADY OPEN at the moment of the change. NOLOGIN prevents new authentication; it does not terminate an established session. default_transaction_read_only is a default, overridable per-transaction by any role that can SET it, and does not apply to already-started transactions.",
+        "fatal_objection_1": "Reaching W-4 through W-7 would require revoking the roles GoTrue, PostgREST and Storage authenticate as, which disables the platform services themselves rather than quiescing them — and is a mutation of provider-managed roles.",
+        "fatal_objection_2": "It is a privileged database mutation. This lane's mode forbids any database connection, the Recovery authority does not authorize DML or DDL, and inserting such a permission here would be exactly the silent authority expansion the owner record already refused to commit once.",
+        "verdict": "REJECTED. Requires database authority this chain does not hold, is not total against open sessions, and cannot reach the provider services without breaking them."
+      },
+      {
+        "id": "M-8",
+        "mechanism": "Pausing the Supabase project.",
+        "prevents": "Arguably everything.",
+        "fatal_objection": "SELF-DEFEATING. A paused project cannot serve the pg_dump that the quiesce exists to protect. The mechanism destroys the act it is meant to make safe.",
+        "verdict": "REJECTED."
+      },
+      {
+        "id": "M-9",
+        "mechanism": "Disabling the Data API or Auth signups through project settings.",
+        "prevents": "Some of W-4 and W-5.",
+        "objections": "A Supabase configuration mutation outside every held authority; disabling signups does not stop token refresh, password reset or session writes, which are the bulk of W-4's traffic; and no atomic 'disable Auth' control is asserted to exist, because this lane performed no live reads.",
+        "verdict": "REJECTED as unproven and unauthorized."
+      },
+      {
+        "id": "M-10",
+        "mechanism": "A dedicated maintenance deployment serving a static page.",
+        "prevents": "Nothing that M-2 does not, and requires a second deployment PR #201 does not grant.",
+        "verdict": "REJECTED. Strictly dominated by M-2, which is itself rejected."
+      },
+      {
+        "id": "M-11",
+        "mechanism": "DATABASE-SIDE NEGATIVE WITNESS — do not attempt to prevent every writer; instead prove, from inside the database, that NO write transaction occurred across the window, and VOID the window if one did.",
+        "prevents": "NOTHING. This is deliberately not a prevention mechanism.",
+        "proves": "The predicate itself, totally and writer-agnostically. PostgreSQL assigns a transaction id only to a transaction that actually writes; read-only transactions never consume one. A pair of read-only observations of the database's transaction-id frontier, taken at the two boundaries of the window, therefore answers 'did ANYTHING write in this interval' without needing to know, enumerate, or control WHO would have written.",
+        "why_this_reaches_what_no_prevention_mechanism_reaches": "W-4, W-14 and W-16 are unreachable by any control this chain holds. They are NOT unreachable by observation. A write by GoTrue advances the frontier exactly as a write by the bound runtime does. The witness does not care which of the sixteen classes acted.",
+        "mutation_required": "NONE. Both observations are read-only and neither consumes a transaction id.",
+        "evidence_available": "Two machine-comparable scalar observations plus their timestamps, recorded in the evidence packet. Equality is the PASS condition; inequality is a VOID verdict.",
+        "rollback": "Not applicable. Nothing is changed.",
+        "blast_radius": "ZERO on the hosted plane. Two read-only queries on a connection the backup step already opens.",
+        "known_conservatism": "Autovacuum and anti-wraparound freezing consume transaction ids without any user DML. The witness can therefore report movement when no business data changed. This is a FALSE POSITIVE, never a false negative: it can declare a clean window void, and it can NEVER declare a dirty window clean. The direction of error is the fail-closed one and the mechanism is accepted with it, not despite it. See OD-Q2.",
+        "interaction_with_PR201": "NONE. It touches no Vercel surface.",
+        "requires_another_deployment": "NO.",
+        "touches_production": "NO.",
+        "requires_db_or_ddl_authority": "It requires a READ on a connection that AO-3 already opens. It requires no DDL, no DML and no privileged role. It is nonetheless NOT among AO-1..AO-9, and is therefore the narrow permission this artifact exists to derive.",
+        "verdict": "ACCEPTED as the PROOF. Paired with M-1 as the reduction."
+      }
+    ]
+  },
+
+  "SECTION_D_PREFERRED_MECHANISM": {
+    "adjudication": "M-1 (ORDERING / ABSTENTION) as the RISK REDUCTION, plus M-11 (DATABASE-SIDE NEGATIVE WITNESS) as the PROOF. Neither alone is sufficient; together they establish the predicate that OD-3 requires, under the SECTION_B scope, with ZERO hosted mutation.",
+    "the_reframe_that_makes_this_possible": {
+      "the_trap": "The lane brief asks for a mechanism that makes the write-capable surfaces non-writing. Taken literally, that is unachievable: SECTION_A measures at least three writer classes (W-4, W-14, W-16) that no authority in this chain can reach, and six more that are UNKNOWN and fail closed. Pursued literally, this lane STOPS with an unbounded capability gap.",
+      "the_distinction": "What OD-3 actually requires is not that the writers be disabled. It is that the NO-INTERVENING-MUTATION PREDICATE be established POSITIVELY. Disabling writers is one way to argue for that predicate — and a weak one, because it still requires proving the disablement was total and held.",
+      "the_consequence": "Prevention can never be proven total against an inventory containing UNKNOWNs. Observation of the database's own write frontier IS total by construction, because it is indifferent to which writer acted. The bounded problem 'detect whether anything wrote' replaces the unbounded problem 'prove every writer is disabled'.",
+      "why_this_is_not_a_weakening": "Under M-11 no write in the window is ever accepted as lost. If the witness moves, the window is VOID, the recovery point is discarded and no restore is performed against it. The owner's refusal of ACCEPT is honoured strictly: ACCEPT tolerates lost writes, DETECT-AND-VOID tolerates none. It lands strictly inside QUIESCE's guarantee, and is therefore not the third posture the owner record forbids."
+    },
+    "why_not_a_bare_capability_gap": "The lane brief instructs a STOP with a minimum implementation if no current mechanism can prove quiescence. No PREVENTION mechanism can. M-11 is an OBSERVATION mechanism that can, it requires no new capability, no new code and no hosted mutation, and it is available to the execution lane on the connection AO-3 already opens. Declaring a capability gap while a zero-cost total proof is available would be a failure to look, not a fail-closed.",
+    "what_remains_genuinely_gapped": "M-11 proves the predicate. It does NOT reduce the PROBABILITY that the predicate fails. A window that is voided repeatedly because W-4 keeps writing is a real operational failure mode that M-1 only partially mitigates. Closing that is a prevention problem and it remains open — see SECTION_K and OD-Q3."
+  },
+
+  "SECTION_E_PROOF_OF_QUIESCENCE_CONTRACT": {
+    "status": "This contract is DERIVED here and is NOT EXECUTABLE until independently certified. It also closes IG-2, which recorded that no artifact in the chain specified a quiesce-attestation shape.",
+    "machine_verifiable_requirement": "Every PQ below resolves to a recorded value, a comparison, or an explicit UNKNOWN. No PQ is satisfied by prose.",
+    "contract": [
+      {
+        "id": "PQ-1",
+        "requirement": "THE WINDOW BEGINS at the instant the logical backup's snapshot is established — not at the instant the operator decides to start.",
+        "why": "The recovery point IS the snapshot. Anything written before the snapshot is inside the backup and is not lost. Anchoring the window to an operator's clock would either shorten it fictitiously or lengthen it needlessly.",
+        "recorded": "W0 = the negative witness observed in the SAME transaction that establishes the dump snapshot, plus its wall-clock timestamp."
+      },
+      {
+        "id": "PQ-2",
+        "requirement": "THE WINDOW ENDS at the instant immediately before the first DDL statement of the recovery/Stage-A work is issued.",
+        "recorded": "W1 = the negative witness observed immediately before that statement, plus its wall-clock timestamp.",
+        "note": "The window is [snapshot, pre-DDL]. Writes AFTER the DDL begins are governed by the DDL's own authority, not by this contract."
+      },
+      {
+        "id": "PQ-3",
+        "requirement": "THE PASS CONDITION is W1 == W0 on the transaction-id frontier. Any inequality is a VOID verdict.",
+        "on_void": "The recovery point is DISCARDED. No restore is performed against it. The window may be re-attempted from a fresh backup under a fresh confirmation. A VOID window is never converted into an ACCEPT by rationalising the observed movement — that conversion would silently deliver the posture the owner refused.",
+        "fail_closed": "If either witness is missing, unreadable, or of unknown provenance, the verdict is VOID, not UNKNOWN."
+      },
+      {
+        "id": "PQ-4",
+        "requirement": "THE WITNESS IS READ-ONLY AND MUST NOT ITSELF CONSUME A TRANSACTION ID.",
+        "constraint": "The observation must be taken by a function that reports the frontier without allocating one. A call that allocates an id on each observation would make W1 != W0 unconditionally and render the contract vacuous.",
+        "verification": "The execution lane must demonstrate, on the disposable PostgreSQL harness at the SAME engine build as staging, that two consecutive observations across a genuinely idle interval return EQUAL values. A witness that never reports equality proves nothing.",
+        "engine_build_note": "The exact hosted engine build is a named dependency of this verification. A witness validated on a different major version is not validated for staging."
+      },
+      {
+        "id": "PQ-5",
+        "requirement": "WRITER DISPOSITION TABLE. Every writer class W-1..W-16 carries an explicit disposition at W0: PREVENTED, ABSENT, OUT_OF_REACH_BUT_WITNESSED, or UNKNOWN.",
+        "why_it_is_still_required_when_the_witness_is_total": "The witness proves the outcome; the table proves the lane understood the exposure it was accepting. A void window with no table is an incident with no diagnosis. It is also what makes MG-Q1 and MG-Q2 visible rather than buried.",
+        "UNKNOWN_rule": "UNKNOWN is permitted in this table ONLY for classes the witness covers. It is NEVER permitted as a disposition for the witness itself."
+      },
+      {
+        "id": "PQ-6",
+        "requirement": "DELAYED AND RETRIED WORK MUST BE DECLARED, because it can write AFTER the window using state from BEFORE it.",
+        "measured_instance": "app/api/webhooks/stripe/route.ts returns 503 for every refusal reason, and its own source states this is deliberate because Stripe abandons delivery after a 2xx. An event delivered during the window is therefore RETRIED after it. At this tree the handler is a non-writer by source constant, so no write results; at a tree where that constant is true, a post-window write carrying pre-window state does result.",
+        "contract": "The lane must state, for each retrying external producer, whether a delivery suppressed during the window can write after it. Silence is not a declaration."
+      },
+      {
+        "id": "PQ-7",
+        "requirement": "DATABASE SESSIONS ALREADY OPEN AT W0 DO MATTER, and must be enumerated.",
+        "grounds": "A session established before the window can write inside it. Two measured properties of this stack make the naive assumptions wrong: rotating or changing a credential does NOT terminate an established session, and a NOLOGIN or read-only default does not reach a session or transaction already started.",
+        "contract": "At W0 the lane records the count of non-idle sessions not belonging to the backup itself. A non-zero count is not automatically a VOID — the witness decides that — but it MUST be recorded, because it is the leading indicator of a window that is about to void.",
+        "feasibility": "pg_stat_activity is visible to a non-superuser for its own sessions and, on this provider's image, more broadly. The exact visibility is a property of the role the execution lane connects as and must be stated, not assumed."
+      },
+      {
+        "id": "PQ-8",
+        "requirement": "IN-FLIGHT REQUESTS ARE NOT ADDRESSED BY ANY BARRIER, AND THIS MUST NOT BE PAPERED OVER.",
+        "statement": "A request that passed an application barrier microseconds before that barrier engaged completes normally. No maintenance page, no env removal and no deployment deletion changes this. Under M-11 it does not need to: such a write advances the frontier and voids the window, which is the correct outcome.",
+        "explicit": "A MAINTENANCE PAGE IS NOT PROOF. It is not accepted as evidence for any PQ in this contract, alone or in combination."
+      },
+      {
+        "id": "PQ-9",
+        "requirement": "THE RESUMPTION BOUNDARY IS AN EXPLICIT ACT, NOT AN EXPIRY.",
+        "statement": "Writes resume only when a separately confirmed reversal act occurs — under M-1, that is the moment PR #201 is permitted to execute. A window does not end because time passed."
+      },
+      {
+        "id": "PQ-10",
+        "requirement": "THE ATTESTATION IS A SINGLE ARTIFACT containing: W0, W1, both timestamps, the PQ-3 verdict, the PQ-5 disposition table, the PQ-6 declaration, the PQ-7 session count, the target ref bvyzblhqymxruxdguaee, and the identity of the exact commit whose writer inventory was used.",
+        "prohibition": "The attestation carries NO credential, NO DSN, NO token and NO environment-variable value. It carries refs and identifiers only."
+      }
+    ],
+    "what_this_contract_deliberately_does_not_claim": [
+      "It does not claim any writer was prevented. Under M-11 only W-1..W-3 are prevented, and only by abstention.",
+      "It does not claim the hosted provider-service surfaces were disabled. They were not, and W-4's exposure is UNKNOWN at this ref.",
+      "It does not claim the witness is sensitive only to business writes. It is not; see M-11.known_conservatism."
+    ]
+  },
+
+  "SECTION_F_PR201_RELATIONSHIP": {
+    "what_PR201_authorizes": "AUTH-1, branch-scoped Preview bindings for exactly three variables; AUTH-2, EXACTLY ONE deployment under a five-condition conjunctive bounded retry; AUTH-3 and AUTH-4, read-only observation.",
+    "not_consumed_enlarged_or_reinterpreted": "This artifact consumes none of AUTH-1..AUTH-4, adds nothing to them, and changes no word of them. It does not touch the BOUNDED_RETRY_RULE, the ENVIRONMENT_SCOPE_CORRECTION, or the frozen target identity form.",
+    "ordering_answer": {
+      "does_quiesce_happen_before_AUTH_1": "YES, AND THIS IS A HARD DEPENDENCY OF M-1. The recovery window must CLOSE before AUTH-1 is exercised. M-1's entire reduction is that W-1 does not exist during the window; exercising AUTH-1 and AUTH-2 creates it.",
+      "does_quiesce_require_the_governed_deployment": "NO.",
+      "does_quiesce_require_a_separate_deployment": "NO.",
+      "does_quiesce_require_a_separate_control_plane_act": "NO. It requires no Vercel act and no Supabase configuration act of any kind. It requires exactly two read-only database observations on a connection the Recovery authority's AO-3 already opens."
+    },
+    "the_dependency_stated_explicitly": {
+      "id": "DEP-1",
+      "statement": "If PR #201 executes BEFORE the recovery window closes, M-1 is no longer available, W-1 becomes a live writer, and the reduction half of SECTION_D's preferred mechanism is lost. M-11 still proves the predicate, but the window's probability of voiding rises with every request the bound runtime serves.",
+      "fail_closed": "An execution lane that finds PR #201 already executed does NOT proceed on the assumption that the runtime was idle. It records W-1 as a live writer in PQ-5 and relies on the witness alone, or it STOPS for a fresh adjudication.",
+      "who_decides_the_order": "This is a genuine scheduling conflict between two authored-not-executed lanes. It is surfaced as OD-Q4 rather than resolved by this artifact, because deferring D-1's measurement is a cost the owner bears."
+    }
+  },
+
+  "SECTION_G_RECOVERY_RELATIONSHIP": {
+    "what_this_would_authorize_if_certified_and_ratified": [
+      "AQ-1: the ABSTENTION posture of M-1 — a commitment not to exercise PR #201's AUTH-1/AUTH-2 during the window. An abstention, not an act.",
+      "AQ-2: exactly TWO read-only observations of the database's transaction-id frontier, W0 and W1, on the connection AO-3 already opens. No DDL, no DML, no privileged role, no additional connection.",
+      "AQ-3: the read-only observation of open-session state required by PQ-7.",
+      "AQ-4: materialization of the PQ-10 attestation artifact, carrying refs and identifiers only.",
+      "AQ-5: the reversal of AQ-1 — permitting PR #201 to proceed — as a separately confirmed act under PQ-9."
+    ],
+    "what_this_expressly_does_NOT_authorize": [
+      "The backup itself. AO-3 is the Recovery authority's, and is untouched here.",
+      "Any restore, in place or out of place, by any mechanism including PITR and including branch cloning.",
+      "Any DDL.",
+      "Any Stage-A application, in whole or in part.",
+      "Any production operation of any kind against ctaxtgujyyprgynmnvtq.",
+      "Any Vercel mutation, including the acts PR #201 itself authorizes.",
+      "Any Supabase configuration mutation of any kind.",
+      "Any environment-variable creation, edit or deletion.",
+      "Any scale change, write lock, role change, ACL change or credential generation.",
+      "Any ODS ordinal, HPO-ODS grant id, migration ordinal or Controller entry."
+    ],
+    "how_it_enables_HC_2_and_S8": "HC-2 requires selection of the posture; the owner has selected QUIESCE. S8 requires the no-intervening-mutation predicate to be established positively. AQ-2 establishes it. The enabling is exact: this artifact supplies the predicate and nothing else."
+  },
+
+  "SECTION_H_HUMAN_CONFIRMATION": {
+    "shape_required_by_the_lane_brief": "PRESTATE -> exact act shown to human -> explicit confirmation -> one mutation -> verification -> rollback/reversal plan.",
+    "honest_application": "THE PREFERRED MECHANISM CONTAINS NO HOSTED MUTATION. Rather than invent one so the template has something to wrap, the shape is applied to the two acts that genuinely carry consequence: the abstention commitment and the reversal. Each is confirmed separately.",
+    "confirmations": [
+      {
+        "id": "HCQ-1",
+        "act": "Enter the abstention posture: commit that PR #201's AUTH-1 and AUTH-2 will not be exercised until the window closes.",
+        "prestate_shown": "The read-only enumeration proving no branch-scoped Preview binding exists for the three PR #201 variables on integration/commercial-v1, and the MG-Q1 census result.",
+        "mutation": "NONE.",
+        "verification": "The same enumeration, re-read at W0 and recorded in PQ-5.",
+        "reversal": "HCQ-3."
+      },
+      {
+        "id": "HCQ-2",
+        "act": "Accept the PQ-3 verdict rule: a VOID window discards the recovery point and is never converted into an ACCEPT.",
+        "prestate_shown": "M-11.known_conservatism, stated in full, so the owner confirms knowing that a clean window can void on autovacuum alone.",
+        "mutation": "NONE.",
+        "verification": "The verdict recorded in the PQ-10 attestation.",
+        "reversal": "Not applicable — this is a rule, not a state."
+      },
+      {
+        "id": "HCQ-3",
+        "act": "Leave the abstention posture: permit PR #201 to proceed.",
+        "prestate_shown": "The completed PQ-10 attestation with its verdict.",
+        "mutation": "NONE by this authority. PR #201's own acts then proceed under PR #201's own confirmation, which this artifact does not supply or substitute for.",
+        "verification": "N/A.",
+        "reversal": "N/A."
+      }
+    ],
+    "no_bundling": "HCQ-1, HCQ-2 and HCQ-3 are materially distinct and are confirmed separately. In particular, confirming the abstention does NOT confirm the reversal, and neither confirms any act of PR #201 or of the Recovery authority."
+  },
+
+  "SECTION_I_TARGET_IDENTITY": {
+    "selection_rule": "BY REF ONLY. bvyzblhqymxruxdguaee.",
+    "production_veto": "ctaxtgujyyprgynmnvtq is VETOED ABSOLUTELY and appears in this artifact only in veto and finding contexts.",
+    "vercel_identity_rule": "Where a deployment is referenced, it is referenced by exact deployment id plus exact Git SHA, per PR #201's frozen target identity form. No alias, domain or hostname is named, created, assumed or required.",
+    "no_credentials_printed": "CONFIRMED. See the companion manifest's SENT-NO-SECRET-VALUE."
+  },
+
+  "SECTION_J_OWNER_DECISIONS": {
+    "separation_rule": "An owner decision is a question whose answer is a cost the owner bears, not a fact an engineer can measure. Nothing below is an engineering inconvenience dressed as a decision.",
+    "decisions": [
+      {
+        "id": "OD-Q1",
+        "question": "Does the ratified QUIESCE posture cover only the PR #201-bound runtime, or every writer capable of reaching governed staging?",
+        "options": [
+          "A: the bound runtime only.",
+          "B: every writer capable of reaching the database."
+        ],
+        "measured_consequences": "Under A, the predicate is asserted while at least three measured writer classes (W-4 GoTrue, W-14 other Vercel bindings, W-16 the dashboard) and six UNKNOWN classes remain free to write, so a restore can silently lose writes the owner believed were protected. Under B, the predicate is real, but SECTION_C measures that no PREVENTION mechanism can deliver it and the proof must be M-11's witness, which can void a window on autovacuum alone.",
+        "recommendation": "B. SECTION_B adjudicates B on the authority's own text, and A would deliver a posture named QUIESCE that does not do what the owner bought the staging outage for.",
+        "what_remains_blocked_until_answered": "The PQ-5 disposition table's scope, and therefore the whole proof contract.",
+        "why_not_engineering": "A is cheaper and faster. Choosing between a cheaper posture and a stronger one is the owner's call, not the author's."
+      },
+      {
+        "id": "OD-Q2",
+        "question": "Does the owner accept a CONSERVATIVE witness that can declare a window VOID even when no business data changed?",
+        "options": [
+          "A: accept — a void window is re-attempted from a fresh backup.",
+          "B: reject — require a witness that distinguishes user DML from autovacuum."
+        ],
+        "measured_consequences": "Under A, the failure mode is repeated windows and operator time; the predicate is never weakened. Under B, no such witness is currently specified, the capability gap reopens, and execution is blocked until one is built and validated on the exact hosted engine build.",
+        "recommendation": "A. The conservatism errs fail-closed: it can call a clean window dirty, never a dirty window clean.",
+        "what_remains_blocked_until_answered": "HCQ-2.",
+        "why_not_engineering": "The cost is the owner's operator time and schedule, not a technical property."
+      },
+      {
+        "id": "OD-Q3",
+        "question": "Does the owner accept that, under the preferred mechanism, the provider-side writers are DETECTED rather than PREVENTED?",
+        "options": [
+          "A: accept detect-and-void as the implementing mechanism of QUIESCE.",
+          "B: require prevention of every writer before any window opens."
+        ],
+        "measured_consequences": "Under A, no write is ever accepted as lost — a detected write voids the window — so the owner's refusal of ACCEPT is honoured strictly, with zero hosted mutation. Under B, SECTION_C measures that no available mechanism prevents W-4, W-14 or W-16, so B is a STOP with an unbounded capability gap requiring new Supabase-plane authority and probably new provider capability.",
+        "recommendation": "A, with the honest caveat that A does not reduce the PROBABILITY of a void, only guarantees its detection.",
+        "what_remains_blocked_until_answered": "The entire SECTION_D adjudication, and therefore any execution lane.",
+        "why_not_engineering": "A and B deliver the same guarantee about lost writes and differ in operational cost and in how much residual exposure the owner is willing to hold. That is the owner's to weigh.",
+        "not_a_third_posture": "See SECTION_D.the_reframe_that_makes_this_possible.why_this_is_not_a_weakening. A tolerates no lost write and is therefore inside QUIESCE, not beside it."
+      },
+      {
+        "id": "OD-Q4",
+        "question": "Which executes first, the recovery window or PR #201?",
+        "options": [
+          "A: the recovery window first — PR #201's D-1 measurement is deferred.",
+          "B: PR #201 first — the window then runs against a live bound runtime."
+        ],
+        "measured_consequences": "Under A, W-1, W-2 and the whole of W-3 are absent by construction and the window's probability of voiding is materially lower, at the cost of deferring D-1. Under B, D-1 lands sooner and every window thereafter carries the bound runtime's live write traffic, raising the void rate and making repeated windows likely.",
+        "recommendation": "A. It is the only ordering under which the reduction half of the preferred mechanism exists at all.",
+        "what_remains_blocked_until_answered": "DEP-1, and the scheduling of both lanes.",
+        "why_not_engineering": "Deferring a measurement the programme wants is a schedule cost the owner bears."
+      }
+    ],
+    "decisions_NOT_claimed_as_owner_decisions": [
+      "Whether M-2, M-3, M-5, M-6, M-7, M-8, M-9 or M-10 is viable. These are REJECTED on measured grounds in SECTION_C and are not offered to the owner as choices.",
+      "Whether the witness must be read-only. That is a correctness property (PQ-4), not a preference.",
+      "Whether a maintenance page can serve as proof. It cannot (PQ-8), and no owner ratification would make it one."
+    ]
+  },
+
+  "SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS": {
+    "measurement_gaps": [
+      {
+        "id": "MG-Q1",
+        "gap": "The Vercel environment-variable row inventory for the project serving this repository has never been enumerated with scopes.",
+        "consequence": "W-14 is UNKNOWN. It is not known whether some deployment is ALREADY write-capable against governed staging.",
+        "closure": "PR #201's own PMV-1 defines exactly this read and states the enumeration IS the rollback record. It is read-only. It has not been performed because PR #201 has not executed.",
+        "severity": "HIGHEST in this lane. Every disposition in PQ-5 for W-14 is a guess until this is closed.",
+        "authority_needed": "A read-only management-plane observation. Not conferred by this artifact; this lane performed no live reads at all."
+      },
+      {
+        "id": "MG-Q2",
+        "gap": "The hosted extension inventory and provider-service exposure of bvyzblhqymxruxdguaee are unmeasured.",
+        "consequence": "W-4 exposure, W-5, W-6, W-7, W-10 and W-11 are UNKNOWN.",
+        "why_the_repository_does_not_answer_it": "The only extension evidence in the tree is db/baseline/stella_g2_schema.sql, which its own README states was dumped from the LOCAL container supabase_db_uellix-stella-g2-local-rehearsal. Five source attestations assert pg_cron is absent 'in this project'. ATTESTED IS NOT PROVEN; neither settles the hosted catalog.",
+        "closure": "A read-only hosted observation under its own authority.",
+        "mitigation_in_the_meantime": "M-11's witness is indifferent to this gap. The gap raises the void rate; it does not compromise the proof."
+      },
+      {
+        "id": "MG-Q3",
+        "gap": "The exact hosted PostgreSQL engine build of bvyzblhqymxruxdguaee is not re-measured by this lane.",
+        "consequence": "PQ-4's validation of the witness on the disposable harness must be performed against the SAME build, and this lane cannot name it from measurement.",
+        "closure": "A read-only observation, or reuse of a prior measured build identity with its freshness re-established."
+      }
+    ],
+    "capability_gaps": [
+      {
+        "id": "CG-Q1",
+        "gap": "No mechanism available to this chain PREVENTS W-4, W-14 or W-16.",
+        "status": "OPEN AND NOT CLOSED BY THIS ARTIFACT.",
+        "why_it_does_not_block": "The predicate is established by observation (M-11), not by prevention. The gap governs the void RATE, not the proof.",
+        "what_would_close_it": "Supabase-plane authority that does not exist in this chain, plus a provider control whose existence this lane has not measured. Pursuing it is a separate lane and a separate owner decision (OD-Q3 option B)."
+      },
+      {
+        "id": "CG-Q2",
+        "gap": "IG-2 — no quiesce-attestation shape existed anywhere in the chain.",
+        "status": "CLOSED BY THIS ARTIFACT, subject to certification. SECTION_E PQ-1..PQ-10 is that shape."
+      },
+      {
+        "id": "CG-Q3",
+        "gap": "IG-1 — no quiesce operation is authorized anywhere in the chain.",
+        "status": "ADDRESSED, NOT YET CLOSED. SECTION_G AQ-1..AQ-5 is the proposed narrow grant. It closes only on independent certification plus owner ratification of OD-Q1..OD-Q4. Until then IG-1 remains open and the owner record's fail_closed continues to govern."
+      }
+    ]
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO hosted mutation of any kind is authorized by this artifact in its present state.",
+    "NO backup, NO restore, NO PITR, NO branch clone with data, NO DDL, NO DML.",
+    "NO Stage-A application, in whole or in part.",
+    "NO Vercel deployment, environment-variable act, alias act, scale change or project setting change.",
+    "NO Supabase configuration mutation of any kind, including network restrictions, API exposure and Auth settings.",
+    "NO database role change, ACL change, write lock or credential generation.",
+    "NO production operation against ctaxtgujyyprgynmnvtq under any circumstance.",
+    "NO edit to the Recovery authority, its amendment, the owner-ratification record, or PR #201. All four are byte-unchanged by this lane.",
+    "NO ODS ordinal, HPO-ODS grant id, W2 identifier, migration ordinal or Controller entry is allocated or reserved.",
+    "NO selection of any Supabase project by provider-side display name."
+  ],
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-Q1",
+      "finding": "This artifact uses the subject-form name, matching its parent rather than the node-prefix form used by the FIBDB053 siblings.",
+      "disposition": "Deliberate, for continuity with the Recovery package it is stacked on. Flagged because the parent's OF-1 flagged the same choice.",
+      "blocking": false
+    },
+    {
+      "id": "OF-Q2",
+      "finding": "SECTION_D declines the lane brief's STOP branch, on the ground that the brief's STOP is conditioned on no mechanism being able to PROVE quiescence, and M-11 can.",
+      "disposition": "Recorded prominently rather than buried, because a certifier should test this specific move. If a certifier holds that OD-3 requires PREVENTION and not merely a positively established predicate, then SECTION_D is wrong and this lane STOPS with CG-Q1 unbounded.",
+      "blocking": false,
+      "severity_note": "This is the load-bearing judgement of the lane and the most appropriate target for adversarial review."
+    },
+    {
+      "id": "OF-Q3",
+      "finding": "The witness primitive is specified by its REQUIRED PROPERTIES (PQ-4) rather than by a literal SQL expression.",
+      "disposition": "DELIBERATE. Naming a specific function without having validated it on the exact hosted engine build would assert a measurement this lane did not take, and PQ-4 requires that validation before execution. A literal would look stronger and be weaker.",
+      "blocking": false
+    },
+    {
+      "id": "OF-Q4",
+      "finding": "The writer inventory is derived from tree 2c606a43 and two of its non-writer dispositions rest on source constants.",
+      "disposition": "Converted into a binding rule, THE_TREE_VALIDITY_CAVEAT, rather than left as a caveat in prose. Flagged because it has consequences beyond this artifact: any future reasoning about what a deployment can write is invalid unless it names the commit that deployment was built from.",
+      "blocking": false
+    },
+    {
+      "id": "OF-Q5",
+      "finding": "Four owner decisions (OD-Q1..OD-Q4) are open, and OD-Q3 is blocking for the entire SECTION_D adjudication.",
+      "disposition": "Drives final_state.",
+      "blocking": true
+    },
+    {
+      "id": "OF-Q6",
+      "finding": "MG-Q1 is closable only by a read-only act (PR #201's PMV-1) that belongs to a lane that has not executed.",
+      "disposition": "A scheduling coupling, not an authority conflict. Recorded so that no execution lane assumes the census will already have been taken.",
+      "blocking": false
+    }
+  ],
+
+  "self_check": {
+    "checks": [
+      "No hosted mutation was performed: no Vercel act, no Supabase act, no database connection, no deployment, no environment-variable act, no scale change, no write lock, no credential generation.",
+      "No live management-plane read was performed either, so every hosted property is classified UNKNOWN and fails closed rather than being asserted.",
+      "No credential, DSN, token, key or environment-variable VALUE appears anywhere in this artifact.",
+      "The production ref ctaxtgujyyprgynmnvtq appears only in veto and finding contexts, never as a target, source or subject of an authorized operation.",
+      "The governed staging ref is named as bvyzblhqymxruxdguaee and never selected by provider-side display name.",
+      "Sixteen writer classes W-1..W-16 are enumerated with no gaps and no duplicates, and every one carries KNOWN_WRITER, NON_WRITER or UNKNOWN.",
+      "Every UNKNOWN is treated as a writer; no disposition is inferred from absence of evidence.",
+      "The Recovery authority, its amendment, the owner-ratification record and PR #201 are byte-unchanged; this lane creates two new files and edits none.",
+      "SECTION_B adjudicates scope on the parent's own quoted text and expressly records that the cheaper option was rejected on grounds of the predicate, not of cost.",
+      "Ten mechanisms are assessed and eight are REJECTED with a stated reason; no mechanism is rejected merely for being inconvenient.",
+      "SECTION_G's authorized list AQ-1..AQ-5 contains no backup, no restore, no DDL, no Stage-A act and no production act.",
+      "SECTION_H does not invent a hosted mutation in order to satisfy the confirmation template, and says so explicitly.",
+      "The four owner decisions each state question, options, measured consequences, recommendation and what remains blocked, and each states why it is not an engineering decision.",
+      "OF-Q2 records the lane's most contestable judgement as a finding rather than presenting it as settled.",
+      "IG-1 is stated as ADDRESSED_NOT_CLOSED, not as closed. An artifact that declared IG-1 closed by its own authorship would be asserting the permission it is asking for."
+    ],
+    "self_check_is_not_certification": "These checks are the author's own and are not independent verification. A self-check that reported PASS on its own adjudication would be the self-falsifying construct the parent chain has already been faulted for once."
+  },
+
+  "required_independent_review": "This artifact and its companion manifest require INDEPENDENT adversarial certification as ONE package before any execution lane opens. The certifier should specifically test OF-Q2 — whether replacing PREVENTION with DETECTION genuinely satisfies OD-3 or quietly substitutes a weaker posture — and should test SECTION_B against the possibility that 'the bound runtime' in the parent's OD-3 was a limit rather than an illustration. The writing lane does not certify its own output.",
+
+  "final_state": "AUTHORED_AWAITING_INDEPENDENT_REVIEW_AND_OWNER_RATIFICATION",
+
+  "next_gate": "INDEPENDENT_ADVERSARIAL_CERTIFICATION of STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0 + STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0, followed by owner ratification of OD-Q1..OD-Q4. No quiesce, no abstention posture, no witness observation, no database connection, no Vercel act and no Supabase act is authorized until that certification returns PASS, OD-Q1..OD-Q4 are ratified, and a future execution lane opens with its own prestate, freshness gate and human confirmations. IG-1 remains OPEN until then."
+}
