@@ -15,7 +15,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { EXECUTOR_DELTA_RECERT_PACKAGE_ID, EXECUTOR_DIAGNOSTIC_RECERT_EVENT, INVENTORY_WITNESS_CANDIDATE, EXECUTOR_RECERT_EVENT, assertExecutionRequested, deltaRecertEventPathFor, dn0ConfigFor, main, parseArgs } from '../../scripts/infra-read/run-governed-reads'
+import { EXECUTOR_DELTA_RECERT_PACKAGE_ID, EXECUTOR_DIAGNOSTIC_RECERT_EVENT, INVENTORY_WITNESS_CANDIDATE, SCANNER_HARDENING_CANDIDATE, EXECUTOR_RECERT_EVENT, assertExecutionRequested, deltaRecertEventPathFor, dn0ConfigFor, main, parseArgs } from '../../scripts/infra-read/run-governed-reads'
 import { assessCertificationEvent, terminalClassOf } from '../../scripts/infra-read/certification'
 import { measureDn0, type LocalGit } from '../../scripts/infra-read/protocol'
 import { Refusal } from '../../scripts/infra-read/ops'
@@ -25,7 +25,8 @@ const cfg = dn0ConfigFor(CANDIDATE)
 // v1.0.7: events[2] = 81b56ed4 base recert (fixed); events[3] = diagnostic recert (fixed to 4a3c2837);
 // events[4] = the DELTA recert of the supplied candidate, at a path derived from that candidate.
 // v1.0.8: events[4] = b25f2d32's delta recert (fixed history); events[5] = the delta recert of the supplied candidate.
-const recertReq = cfg.certificationEvents[5]
+// v1.0.9: events[5] = 00d6d383's delta recert (fixed history); events[6] = the delta recert of the supplied candidate.
+const recertReq = cfg.certificationEvents[6]
 const DELTA_PATH = deltaRecertEventPathFor(CANDIDATE)
 
 function recert(over: Record<string, unknown> = {}, verdictOver: Record<string, unknown> = {}): string {
@@ -44,8 +45,9 @@ function refusalToken(fn: () => unknown): string {
 }
 
 describe('dn0ConfigFor (the real entry-point configuration)', () => {
-  it('binds six events, each to an EXACT candidate, and configures NO verdict name', () => {
-    expect(cfg.certificationEvents).toHaveLength(6)
+  it('binds seven events, each to an EXACT candidate, and configures NO verdict name', () => {
+    expect(cfg.certificationEvents).toHaveLength(7)
+    expect(cfg.certificationEvents[5]).toEqual({ path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_00D6D3834989_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC', certifiedCandidate: '00d6d38349890cb02320390191f41720a051d59d' })
     expect(cfg.certificationEvents[4]).toEqual({ path: 'docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_B25F2D32E414_IC_v1.0.0.json', packageId: 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC', certifiedCandidate: 'b25f2d32e414af8cb9b54f53867125a771e43efd' })
     for (const ev of cfg.certificationEvents) {
       expect(Object.keys(ev).sort()).toEqual(['certifiedCandidate', 'packageId', 'path'])
@@ -59,7 +61,7 @@ describe('dn0ConfigFor (the real entry-point configuration)', () => {
   it('the delta-recert path is derived from the candidate: distinct candidates never share an event (no one-use dead end)', () => {
     const other = '0123456789abcdef0123456789abcdef01234567'
     expect(deltaRecertEventPathFor(other)).not.toBe(DELTA_PATH)
-    expect(dn0ConfigFor(other).certificationEvents[5].certifiedCandidate).toBe(other)
+    expect(dn0ConfigFor(other).certificationEvents[6].certifiedCandidate).toBe(other)
     // Every delta-recert path is in the class DN-0 permits to be ADDED after certification.
     expect(cfg.allowedPostCertificationAdditions.some((re) => re.test(DELTA_PATH))).toBe(true)
     expect(() => deltaRecertEventPathFor('not-a-sha')).toThrow()
@@ -75,8 +77,8 @@ describe('dn0ConfigFor (the real entry-point configuration)', () => {
     expect(code('scripts/infra-read/protocol.ts')).not.toMatch(/_IC_PASS/)
   })
 
-  it('the five MATERIALIZED events on disk (incl. the three fixed recerts) satisfy the predicate exactly as configured', () => {
-    for (const ev of cfg.certificationEvents.slice(0, 5)) {
+  it('the six MATERIALIZED events on disk (incl. the four fixed recerts) satisfy the predicate exactly as configured', () => {
+    for (const ev of cfg.certificationEvents.slice(0, 6)) {
       expect(assessCertificationEvent(readFileSync(ev.path, 'utf8'), ev)).toEqual({ ok: true, terminal: 'PASS_WITH_NONBLOCKING_FINDINGS' })
     }
   })
@@ -88,6 +90,15 @@ describe('dn0ConfigFor (the real entry-point configuration)', () => {
     expect(assessCertificationEvent(raw, recertReq)).toEqual({ ok: false, reason: 'event certifies a different candidate' })
     expect(recertReq.path).not.toBe(b25.path)
     expect(INVENTORY_WITNESS_CANDIDATE).not.toBe(CANDIDATE)
+  })
+
+  it('the 00d6d383 delta recert is historical only: it can never certify a new candidate (v1.0.9)', () => {
+    const d00 = cfg.certificationEvents[5]
+    const raw = readFileSync(d00.path, 'utf8')
+    expect(assessCertificationEvent(raw, d00).ok).toBe(true)
+    expect(assessCertificationEvent(raw, recertReq)).toEqual({ ok: false, reason: 'event certifies a different candidate' })
+    expect(recertReq.path).not.toBe(d00.path)
+    expect(SCANNER_HARDENING_CANDIDATE).not.toBe(CANDIDATE)
   })
 
   it('no fixed historical recert can stand in for the delta recert of a later candidate (v1.0.6 / v1.0.7 / v1.0.8)', () => {
@@ -188,13 +199,13 @@ function fakeRepo(recertRaw: string | undefined): LocalGit {
 describe('measureDn0 driven by dn0ConfigFor (entry-point integration, fake git)', () => {
   it('POSITIVE: the real config + materialized events + a canonical-name recert of the exact candidate -> all 3 events verified', () => {
     const r = measureDn0(fakeRepo(recert()), cfg)
-    expect(r.certification_events_verified).toBe(6)
+    expect(r.certification_events_verified).toBe(7)
     expect(r.post_certification_additions).toEqual([DELTA_PATH])
     expect(r.pins_matched).toBe(cfg.pins.length)
   })
   it('POSITIVE: the canonical PASS_WITH_NONBLOCKING_FINDINGS form', () => {
     const raw = recert({}, { verdict: 'INFRA_CONTROL_PLANE_READ_EXECUTOR_HARDENING_IC_PASS_WITH_NONBLOCKING_FINDINGS', nonblocking_findings: 3 })
-    expect(measureDn0(fakeRepo(raw), cfg).certification_events_verified).toBe(6)
+    expect(measureDn0(fakeRepo(raw), cfg).certification_events_verified).toBe(7)
   })
   const refused: [string, string | undefined][] = [
     ['recert absent', undefined],

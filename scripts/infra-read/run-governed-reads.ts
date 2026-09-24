@@ -108,6 +108,8 @@ export const EXECUTOR_DIAGNOSTIC_RECERT_EVENT = {
 export const EXECUTOR_DELTA_RECERT_PACKAGE_ID = 'CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_IC'
 /** v1.0.8: the inventory-witness candidate whose delta recert (materialized at 1d47137f) is fixed history. */
 export const INVENTORY_WITNESS_CANDIDATE = 'b25f2d32e414af8cb9b54f53867125a771e43efd'
+/** v1.0.9: the scanner-hardening candidate whose delta recert (materialized at b402c5d0) is fixed history. */
+export const SCANNER_HARDENING_CANDIDATE = '00d6d38349890cb02320390191f41720a051d59d'
 export function deltaRecertEventPathFor(candidate: string): string {
   if (!SHA40_RE.test(candidate)) throw new Refusal('STOP_EXECUTION_NOT_REQUESTED', 'candidate is not a 40-hex SHA')
   return `docs/ops/release/CV1_INFRA_CONTROL_PLANE_READ_EXECUTOR_DELTA_RECERT_${candidate.slice(0, 12).toUpperCase()}_IC_v1.0.0.json`
@@ -132,6 +134,8 @@ export function dn0ConfigFor(certifiedCandidate: string): Dn0Config {
       { path: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.path, packageId: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.packageId, certifiedCandidate: EXECUTOR_DIAGNOSTIC_RECERT_EVENT.certifiedCandidate },
       // v1.0.8 successor duty (v1.0.7 EVENT_CHAIN_SUCCESSOR): b25f2d32's delta recert is now FIXED history.
       { path: deltaRecertEventPathFor(INVENTORY_WITNESS_CANDIDATE), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate: INVENTORY_WITNESS_CANDIDATE },
+      // v1.0.9 successor duty (v1.0.8 EVENT_CHAIN): 00d6d383's delta recert is now FIXED history.
+      { path: deltaRecertEventPathFor(SCANNER_HARDENING_CANDIDATE), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate: SCANNER_HARDENING_CANDIDATE },
       { path: deltaRecertEventPathFor(certifiedCandidate), packageId: EXECUTOR_DELTA_RECERT_PACKAGE_ID, certifiedCandidate },
     ],
   }
@@ -157,8 +161,8 @@ export function main(argv: readonly string[]): number {
     assertBundleEnvelopeConforms(summaryObject)
     writeFileSync(summary, `${JSON.stringify(summaryObject, null, 1)}\n`)
     written.push(summary)
-    // EC-1 in-run: serialized + decoded leaves; only the SAME-RUN witness can explain a finding.
-    const scan = scanEvidenceFiles(written, (v) => executor.isAdjudicatedValue(v))
+    // EC-1 in-run: serialized + decoded leaves; only the SAME-RUN witness (and, for V-R2.L7, its SAME-PROJECT binding) can explain a finding.
+    const scan = scanEvidenceFiles(written, (v) => executor.isAdjudicatedValue(v), (t, p, v) => executor.isWitnessedLinkRepoFor(t, p, v))
     const ser = scan.unexplained.filter((f) => f.level === 'SERIALIZED').length
     const dec = scan.unexplained.filter((f) => f.level === 'DECODED').length
     for (const f of scan.unexplained) console.error(`  ${f.level} ${f.detector} ${f.file} ${f.where}`)

@@ -42,7 +42,7 @@ export interface EvidenceRecord {
   readonly absent_fields: readonly { path: string; kind: string }[]
   readonly assertions: Readonly<Record<string, boolean | string>>
   /** v1.0.7: same-run scanner adjudications carried by this record (empty for almost every record). */
-  readonly scanner_adjudications: readonly ScannerAdjudication[]
+  readonly scanner_adjudications: readonly (ScannerAdjudication | DeploymentRepoAdjudication)[]
 }
 
 export interface ScannerAdjudication {
@@ -52,6 +52,32 @@ export interface ScannerAdjudication {
   readonly classification: typeof ADJUDICATION_CLASSIFICATION | 'PENDING_SAME_RUN_WITNESS'
   readonly basis: typeof ADJUDICATION_BASIS
 }
+
+/**
+ * v1.0.9: the ONE V-R2.L7 adjudication. It creates no trust source of its own:
+ * it records that every OPAQUE_HIGH_ENTROPY finding of this deployments page
+ * sat at deployments[*].meta.githubRepo and was byte-for-byte the link.repo that
+ * the SAME run's G-R5 witness adjudicated for the SAME team + project (the
+ * scope this page was requested for). It carries no provider value.
+ */
+export interface DeploymentRepoAdjudication {
+  readonly normalized_schema_path: 'deployments[*].meta.githubRepo'
+  readonly team_id: string
+  readonly project_id: string
+  readonly detector_id: 'OPAQUE_HIGH_ENTROPY'
+  readonly classification: typeof ADJUDICATION_CLASSIFICATION
+  readonly basis: typeof DEPLOYMENT_REPO_ADJUDICATION_BASIS
+  readonly source_op_id: 'V-R2.S2'
+  readonly source_normalized_schema_path: 'projects[*].link.repo'
+  readonly source_basis: typeof ADJUDICATION_BASIS
+  readonly same_run_witness_op_id: 'G-R5'
+  readonly exact_equality: true
+  readonly owner_corroboration: typeof OWNER_CORROBORATION_UNAVAILABLE
+}
+
+export const DEPLOYMENT_REPO_ADJUDICATION_BASIS = 'SAME_RUN_SAME_PROJECT_EXACT_EQUALITY_TO_WITNESSED_LINK_REPO'
+/** v1.0.9: the certified L7 projection carries no owner/org field; the request is NOT widened for one. */
+export const OWNER_CORROBORATION_UNAVAILABLE = 'UNAVAILABLE_IN_CERTIFIED_L7_PROJECTION'
 
 const VALIDATED = new WeakSet<object>()
 
@@ -69,6 +95,10 @@ export const ENVELOPE_KEYS = [
   'scanner_adjudications',
 ] as const
 export const SCANNER_ADJUDICATION_KEYS = ['normalized_schema_path', 'project_id', 'detector_id', 'classification', 'basis'] as const
+export const DEPLOYMENT_REPO_ADJUDICATION_KEYS = [
+  'normalized_schema_path', 'team_id', 'project_id', 'detector_id', 'classification', 'basis', 'source_op_id',
+  'source_normalized_schema_path', 'source_basis', 'same_run_witness_op_id', 'exact_equality', 'owner_corroboration',
+] as const
 export const OPERATION_KEYS = ['tool', 'method', 'endpoint', 'fixed_args'] as const
 export const ABSENT_FIELD_KEYS = ['path', 'kind'] as const
 export const ASSERTION_KEYS = [
@@ -94,7 +124,8 @@ export function assertEnvelopeConforms(record: unknown): void {
   }
   if (!Array.isArray(r.absent_fields)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'absent_fields is not an array')
   if (!Array.isArray(r.scanner_adjudications)) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'scanner_adjudications is not an array')
-  for (const a of r.scanner_adjudications) {
+  if (r.op_id === 'V-R2.L7') assertDeploymentRepoAdjudications(r)
+  else for (const a of r.scanner_adjudications) {
     onlyKeys(a, SCANNER_ADJUDICATION_KEYS, 'record.scanner_adjudications[]')
     const x = a as Record<string, unknown>
     if (r.op_id !== 'V-R2.S2' || x.normalized_schema_path !== 'projects[*].link.repo' || x.detector_id !== 'OPAQUE_HIGH_ENTROPY' ||
@@ -110,6 +141,29 @@ export function assertEnvelopeConforms(record: unknown): void {
   }
   if (r.http_status !== null && typeof r.http_status !== 'number') throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'http_status malformed')
 }
+/**
+ * v1.0.9: a V-R2.L7 record carries at most ONE adjudication, in exactly one
+ * form, and that form names the SAME team + project the record's own request
+ * was scoped to (the binding is checkable from the written record alone).
+ */
+function assertDeploymentRepoAdjudications(r: Record<string, unknown>): void {
+  const list = r.scanner_adjudications as unknown[]
+  if (list.length > 1) throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'a V-R2.L7 record carries more than one adjudication')
+  for (const a of list) {
+    onlyKeys(a, DEPLOYMENT_REPO_ADJUDICATION_KEYS, 'record.scanner_adjudications[]')
+    const x = a as Record<string, unknown>
+    const endpoint = (r.operation as Record<string, unknown>).endpoint
+    if (x.normalized_schema_path !== 'deployments[*].meta.githubRepo' || x.detector_id !== 'OPAQUE_HIGH_ENTROPY' ||
+      x.classification !== ADJUDICATION_CLASSIFICATION || x.basis !== DEPLOYMENT_REPO_ADJUDICATION_BASIS ||
+      x.source_op_id !== 'V-R2.S2' || x.source_normalized_schema_path !== 'projects[*].link.repo' || x.source_basis !== ADJUDICATION_BASIS ||
+      x.same_run_witness_op_id !== 'G-R5' || x.exact_equality !== true || x.owner_corroboration !== OWNER_CORROBORATION_UNAVAILABLE ||
+      typeof x.team_id !== 'string' || typeof x.project_id !== 'string' || typeof endpoint !== 'string' ||
+      !endpoint.startsWith(`/v6/deployments?projectId=${x.project_id}&teamId=${x.team_id}&`)) {
+      throw new Refusal('STOP_ENVELOPE_NONCONFORMANT', 'V-R2.L7 adjudication outside its single permitted form')
+    }
+  }
+}
+
 export function isValidatedEvidence(r: unknown): boolean {
   return typeof r === 'object' && r !== null && VALIDATED.has(r)
 }
@@ -171,6 +225,29 @@ function paginationNext(projection: unknown): string | undefined {
   return typeof n === 'number' || (typeof n === 'string' && n !== '') ? String(n) : undefined
 }
 
+const scopeKey = (teamId: string, projectId: string): string => JSON.stringify([teamId, projectId])
+
+/**
+ * v1.0.9: true only if EVERY located finding is OPAQUE_HIGH_ENTROPY at exactly
+ * deployments[*].meta.githubRepo, on a value inside the documented grammar that
+ * trips no other detector, and that value is BYTE-FOR-BYTE `witnessed`. No case
+ * folding, trimming, Unicode normalization, URL parsing, owner or .git
+ * stripping, substring or fuzzy match. Each layer is independently pinned.
+ */
+export function deploymentRepoFindingsExplained(
+  located: readonly { readonly detector: string; readonly generic: string; readonly value: unknown }[], witnessed: string,
+): boolean {
+  if (located.length === 0) return false
+  for (const l of located) {
+    if (l.generic !== 'deployments[].meta.githubRepo' || typeof l.value !== 'string') return false
+    if (l.detector !== 'OPAQUE_HIGH_ENTROPY') return false
+    if (!GITHUB_REPOSITORY_NAME_RE.test(l.value)) return false
+    if (scanText(l.value).some((f) => f.detector !== 'OPAQUE_HIGH_ENTROPY')) return false
+    if (l.value !== witnessed) return false
+  }
+  return true
+}
+
 function adjudication(projectId: string, classification: ScannerAdjudication['classification']): ScannerAdjudication {
   return { normalized_schema_path: 'projects[*].link.repo', project_id: projectId, detector_id: 'OPAQUE_HIGH_ENTROPY', classification, basis: ADJUDICATION_BASIS }
 }
@@ -223,7 +300,16 @@ export class SafeReadExecutor {
   /** v1.0.7: same-run witness; a new executor (a new execution) always starts empty. */
   readonly witness = new RepositoryInventoryWitness()
   private readonly pendingAdjudications = new Map<EvidenceRecord, readonly WitnessTarget[]>()
+  /** v1.0.9: the scope (teamId) each pending V-R2.S2 page was requested for, bound by the executor, never reparsed. */
+  private readonly pendingScope = new Map<EvidenceRecord, string>()
   private readonly adjudicatedValues = new Set<string>()
+  /**
+   * v1.0.9: teamId + projectId -> the link.repo the G-R5 witness adjudicated for
+   * THAT project in THIS executor. Filled only by a successful finalization;
+   * a new executor (a new execution) always starts empty, and nothing can be
+   * injected from a previous run, bundle or cache.
+   */
+  private readonly witnessedLinkRepoByProject = new Map<string, string>()
   private witnessPages = 0
   private witnessFirstRequestUtc: string | undefined
   private witnessLastResponseUtc: string | undefined
@@ -365,7 +451,12 @@ export class SafeReadExecutor {
       this.witnessPages++
     }
     const serialized = JSON.stringify(projection)
-    const hits = scanText(serialized)
+    const scanned = scanText(serialized)
+    // v1.0.9: a V-R2.L7 page whose EVERY finding is explained by the same-run,
+    // same-project witnessed link.repo is adjudicated here; anything short of
+    // that leaves every finding in place for the certified STOP below.
+    const deploymentRepo = op.id === 'V-R2.L7' && scanned.length > 0 ? this.sameProjectDeploymentRepo(params, projection, serialized, scanned) : undefined
+    const hits = deploymentRepo ? [] : scanned
     let deferred: WitnessTarget[] | undefined
     if (hits.length > 0) {
       // v1.0.7: exactly ONE finding class may be deferred to the same-run witness.
@@ -398,12 +489,13 @@ export class SafeReadExecutor {
       projection,
       absent_fields: absent,
       assertions: Object.freeze(assertions),
-      scanner_adjudications: Object.freeze((deferred ?? []).map((t) => Object.freeze(adjudication(t.projectId, 'PENDING_SAME_RUN_WITNESS')))),
+      scanner_adjudications: Object.freeze(deploymentRepo ?? (deferred ?? []).map((t) => Object.freeze(adjudication(t.projectId, 'PENDING_SAME_RUN_WITNESS')))),
     })
     assertEnvelopeConforms(record)
     if (deferred) {
       // NOT validated: an unadjudicated record can never be written as evidence.
       for (const t of deferred) this.witness.addTarget(t)
+      this.pendingScope.set(record, params.teamId ?? '')
       this.pendingAdjudications.set(record, deferred)
       return record
     }
@@ -447,6 +539,8 @@ export class SafeReadExecutor {
     const replacements = new Map<EvidenceRecord, EvidenceRecord>()
     for (const [pending, targets] of this.pendingAdjudications) {
       if (!targets.every((t) => adjudicatedProjects.has(t.projectId))) throw new Refusal('STOP_WITNESS_UNKNOWN', 'a pending V-R2.S2 location was not adjudicated')
+      // v1.0.9: bind each witnessed link.repo to the SAME team + project it was read for.
+      for (const t of targets) this.bindWitnessedLinkRepo(this.pendingScope.get(pending), t, verdict.adjudicated)
       const resolved: EvidenceRecord = Object.freeze({
         ...pending,
         scanner_adjudications: Object.freeze(targets.map((t) => Object.freeze(adjudication(t.projectId, ADJUDICATION_CLASSIFICATION)))),
@@ -457,8 +551,51 @@ export class SafeReadExecutor {
     }
     for (const t of verdict.adjudicated) this.adjudicatedValues.add(t.linkRepo)
     this.pendingAdjudications.clear()
+    this.pendingScope.clear()
     VALIDATED.add(witnessRecord)
     return { witnessRecord, replacements }
+  }
+
+  private bindWitnessedLinkRepo(teamId: string | undefined, t: WitnessTarget, adjudicated: readonly WitnessTarget[]): void {
+    if (typeof teamId !== 'string' || teamId === '') throw new Refusal('STOP_WITNESS_UNKNOWN', 'a witnessed link.repo has no bound scope')
+    if (!adjudicated.some((a) => a.projectId === t.projectId && a.linkRepo === t.linkRepo)) {
+      throw new Refusal('STOP_WITNESS_UNKNOWN', 'a pending link.repo is not the value the witness adjudicated for its project')
+    }
+    const key = scopeKey(teamId, t.projectId)
+    const prior = this.witnessedLinkRepoByProject.get(key)
+    if (prior !== undefined && prior !== t.linkRepo) throw new Refusal('STOP_WITNESS_UNKNOWN', 'two witnessed link.repo values for one project')
+    this.witnessedLinkRepoByProject.set(key, t.linkRepo)
+  }
+
+  /** v1.0.9: same-run, same-project exact lookup for the entry point's evidence re-scan. In memory only. */
+  isWitnessedLinkRepoFor(teamId: string, projectId: string, value: string): boolean {
+    return this.witnessedLinkRepoByProject.get(scopeKey(teamId, projectId)) === value
+  }
+
+  /**
+   * v1.0.9: the V-R2.L7 adjudication, or undefined (-> the certified STOP). EVERY
+   * finding of the page must be OPAQUE_HIGH_ENTROPY, at exactly
+   * deployments[*].meta.githubRepo, on a value inside the documented grammar
+   * that trips no other detector, and that value must be BYTE-FOR-BYTE the
+   * link.repo the G-R5 witness adjudicated, in THIS executor, for the SAME
+   * team + project this page was requested for. No normalization of any kind.
+   * The certified L7 projection has no owner/org field, so owner corroboration
+   * is recorded as unavailable; the request is not widened to obtain it.
+   */
+  private sameProjectDeploymentRepo(p: Params, projection: unknown, serialized: string, hits: readonly { detector: string; offset: number }[]): DeploymentRepoAdjudication[] | undefined {
+    const teamId = p.teamId
+    const projectId = p.projectId
+    if (typeof teamId !== 'string' || typeof projectId !== 'string') return undefined
+    const witnessed = this.witnessedLinkRepoByProject.get(scopeKey(teamId, projectId))
+    if (witnessed === undefined) return undefined // no same-run V-R2.S2 adjudication for THIS project
+    const located = locateFindingsInternal(projection, serialized, hits)
+    if (!located || !deploymentRepoFindingsExplained(located, witnessed)) return undefined
+    return [Object.freeze({
+      normalized_schema_path: 'deployments[*].meta.githubRepo', team_id: teamId, project_id: projectId,
+      detector_id: 'OPAQUE_HIGH_ENTROPY', classification: ADJUDICATION_CLASSIFICATION, basis: DEPLOYMENT_REPO_ADJUDICATION_BASIS,
+      source_op_id: 'V-R2.S2', source_normalized_schema_path: 'projects[*].link.repo', source_basis: ADJUDICATION_BASIS,
+      same_run_witness_op_id: 'G-R5', exact_equality: true, owner_corroboration: OWNER_CORROBORATION_UNAVAILABLE,
+    } as const)]
   }
 
   private minimizeMembers(source: unknown): unknown {
