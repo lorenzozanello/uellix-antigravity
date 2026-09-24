@@ -1,0 +1,112 @@
+{
+  "manifest_id": "CV1-STAGING-RECOVERY-OFFLINE-IMPLEMENTATION-R1",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json (blob 154c3d1d396784ae7189b8088669b0ef8231de67) :: TARGET, RECOVERY_MODEL RM-2/RM-4/RM-5/RM-6/RM-7, ADJUDICATIONS.H/K/L/O, AUTHORIZED_OPERATIONS AO-1/AO-4..AO-9 (local planes only), POST_RESTORE_INVARIANTS PRI-1..PRI-7, CLEANUP CL-1..CL-4, SECRET_CUSTODY_CONTRACT, DATA_PROTECTION_IN_A_REHEARSAL_RESTORE DP-1..DP-5, EVIDENCE, RETENTION_AND_DISPOSAL; as corrected by docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. Bounded by docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST_v1.0.0.json. OFFLINE ONLY: zero hosted contact. OD-3 event-class posture is NOT chosen here.",
+  "dependencies": [
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json (authored; its execution grant is NOT consumed by this node — this node implements local primitives only)",
+    "db/hosted/target-identity.ts verifyStagingTarget (REUSED UNCHANGED, never re-implemented)",
+    "scripts/db-audit-disposable.ts probeServingPostmaster (REUSED UNCHANGED)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "SENT-ROW-CANARY",
+      "purpose": "tests/recovery/fixtures/recovery-fixture-source.sql plants CANARY-ROW-VALUE-* strings in fabricated rows. No BACKUP_PACKET, RESTORE_PROOF, destruction proof, invariant raw output or rehearsal stdout may contain any of them. A single occurrence is a privacy FAIL (DP-5, EVIDENCE.explicit_exclusions)."
+    },
+    {
+      "id": "SENT-SUBSTRATE-PASSWORD",
+      "purpose": "The throwaway POSTGRES_PASSWORD of every disposable container is generated per run, passed to docker through the child ENVIRONMENT (never argv), and must never appear in any evidence packet or in retained output (SECRET_CUSTODY_CONTRACT)."
+    },
+    {
+      "id": "SENT-RESTORE-ERROR-ROW",
+      "purpose": "A deliberately failing restore whose PostgreSQL error message quotes a canary row value (duplicate-key DETAIL) must yield evidence carrying only stderr digest/line-count/classification, never the text."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "OR-P1",
+      "description": "Disposable end-to-end: synthetic source container -> capture (pg_dump -Fc, pinned tool, verified read-only capture principal) -> artifact outside the repo -> integrity validation -> disposable --network none substrate with a labeled named volume -> role-pristine assertion -> roles corpus -> pg_restore (digest bound during streaming) -> post-restore corpus -> invariants (non-mutating first, then the mutating capability probe in a rolled-back transaction) -> destruction -> destruction proof. Verdict OFFLINE_REHEARSAL_PASS.",
+      "test_file": "tests/postgres/recovery-offline.pg.test.ts"
+    },
+    {
+      "id": "OR-P2",
+      "description": "BACKUP_PACKET built from a capture validates against the closed packet grammar; its artifact digest is recomputable from the artifact bytes by an independent verifier; packet digest is canonical and stable.",
+      "test_file": "tests/recovery/artifact-packet.test.ts"
+    },
+    {
+      "id": "OR-P3",
+      "description": "Tool compatibility returns COMPATIBLE only for the exact pin: image id, pg_dump 17.6, pg_restore 17.6, server_version_num 170006 on source and substrate, artifact header dumped-by/dumped-from 17.6.",
+      "test_file": "tests/recovery/tool-pin.test.ts"
+    },
+    {
+      "id": "OR-P4",
+      "description": "A HOSTED_STAGING identity is constructible ONLY from an ok verdict of db/hosted/target-identity.ts verifyStagingTarget over a SYNTHETIC input (no connection is opened); the derived identity carries the structurally derived project ref, never a name.",
+      "test_file": "tests/recovery/recovery-target.test.ts"
+    },
+    {
+      "id": "OR-P5",
+      "description": "On a correct restore every invariant (PRI-1 inventory, PRI-2 public owner + PUBLIC USAGE + SECURITY DEFINER capability call, PRI-3 roles, PRI-4 journal parity, PRI-5 per-relation counts, PRI-6 RLS/FORCE/policies, PRI-7 storage-bytes-out-of-scope declaration, EXT extensions, SEQ sequences + identities, TRG trigger enabled state) returns PASS or an explicit UNKNOWN with reason, each with raw output, predicate id and predicate digest.",
+      "test_file": "tests/postgres/recovery-offline.pg.test.ts"
+    },
+    {
+      "id": "OR-P6",
+      "description": "Destruction proof: container absent (by id and by run label), every recorded volume absent (named AND anonymous), no labeled volume remains, artifact file and artifact directory absent, digest of the destroyed artifact recorded.",
+      "test_file": "tests/postgres/recovery-offline.pg.test.ts"
+    },
+    {
+      "id": "OR-P7",
+      "description": "event_class is carried verbatim into the packet with policy NOT_CHOSEN_BY_THIS_MECHANISM; two captures differing only in event_class produce packets identical in every other field-class and the mechanism never branches on it.",
+      "test_file": "tests/recovery/artifact-packet.test.ts"
+    }
+  ],
+  "negative_controls": [
+    { "id": "OR-N1", "description": "Corrupted artifact (bytes altered, packet digest recomputed to match) is refused by the structural TOC validation; truncated artifact refused.", "test_file": "tests/postgres/recovery-offline.pg.test.ts" },
+    { "id": "OR-N2", "description": "Digest mismatch between packet and artifact bytes is refused before restore; a mismatch detected DURING streaming fails the restore.", "test_file": "tests/recovery/artifact-integrity.test.ts" },
+    { "id": "OR-N3", "description": "Restore into a target whose container id, run label or identity class does not match the substrate this run created is refused (never the canonical local Supabase stack, never a hosted class).", "test_file": "tests/recovery/restore-runner.test.ts" },
+    { "id": "OR-N4", "description": "Tool skew refused: wrong image id, pg_dump/pg_restore version other than 17.6, source or substrate server_version_num other than 170006, artifact header version mismatch. Real skew: a postgres:16-alpine source is refused at capture.", "test_file": "tests/recovery/tool-pin.test.ts" },
+    { "id": "OR-N5", "description": "Restore whose every command exits 0 but whose post-restore corpus was skipped (RR-CAP-7 absent) yields invariant FAIL and rehearsal verdict FAIL — exit status alone never votes.", "test_file": "tests/postgres/recovery-offline.pg.test.ts" },
+    { "id": "OR-N6", "description": "Missing PUBLIC USAGE on schema public -> PRI-2 FAIL (both the ACL predicate and the SECURITY DEFINER capability call).", "test_file": "tests/postgres/recovery-offline.pg.test.ts" },
+    { "id": "OR-N7", "description": "Required extension missing -> EXT FAIL; capture scope omitting a required extension -> restore FAIL.", "test_file": "tests/postgres/recovery-offline.pg.test.ts" },
+    { "id": "OR-N8", "description": "Trigger enabled state differs from source -> TRG FAIL.", "test_file": "tests/postgres/recovery-offline.pg.test.ts" },
+    { "id": "OR-N9", "description": "FORCE RLS dropped -> PRI-6 FAIL.", "test_file": "tests/postgres/recovery-offline.pg.test.ts" },
+    { "id": "OR-N10", "description": "Cleanup that leaves the recovery volume (container removed without -v, or named volume not removed) -> destruction proof FAIL.", "test_file": "tests/recovery/substrate.test.ts" },
+    { "id": "OR-N11", "description": "Substrate whose inspected network mode is not 'none' (or that has any network other than 'none') is refused before any restore byte is streamed.", "test_file": "tests/recovery/substrate.test.ts" },
+    { "id": "OR-N12", "description": "Row content entering evidence (extra field, non-integer count, free text in an identifier field, canary substring) is refused by the evidence grammar.", "test_file": "tests/recovery/evidence-privacy.test.ts" },
+    { "id": "OR-N13", "description": "Production ref ctaxtgujyyprgynmnvtq named by ANY source (declared, host, pooler user, sentinel) is refused as HOSTED_TARGET_IS_PRODUCTION, and no hosted class is ever accepted as a restore target.", "test_file": "tests/recovery/recovery-target.test.ts" },
+    { "id": "OR-N14", "description": "A target selector carrying a provider display name (any name-like key, or a name in the ref field such as 'uellix-staging' / 'Uellix Staging') is refused.", "test_file": "tests/recovery/recovery-target.test.ts" },
+    { "id": "OR-N15", "description": "Sequence reset or identity-column change -> SEQ FAIL.", "test_file": "tests/postgres/recovery-offline.pg.test.ts" },
+    { "id": "OR-N16", "description": "An invariant plan placing a mutating probe before any non-mutating check is refused before execution; non-mutating checks execute inside a READ ONLY transaction.", "test_file": "tests/recovery/post-restore-invariants.test.ts" },
+    { "id": "OR-N17", "description": "Artifact location inside the repository working tree is refused (CL-3 / RETENTION_AND_DISPOSAL).", "test_file": "tests/recovery/artifact-integrity.test.ts" },
+    { "id": "OR-N18", "description": "Capture from a HOSTED_STAGING identity is refused by this mechanism (no hosted contact; future authority must supply and verify a capture principal).", "test_file": "tests/recovery/capture.test.ts" },
+    { "id": "OR-N19", "description": "Capture principal verification refuses superuser, write privilege on any in-scope relation, CREATE on an in-scope schema, pg_write_all_data membership, or missing BYPASSRLS where FORCE RLS exists in scope.", "test_file": "tests/recovery/capture.test.ts" },
+    { "id": "OR-N20", "description": "Substrate that already carries a role the artifact requires (masking hazard, PRI-3) is refused as not role-pristine.", "test_file": "tests/recovery/restore-runner.test.ts" },
+    { "id": "OR-N21", "description": "A failing restore whose error text quotes a canary row value produces evidence with no canary (stderr digest only).", "test_file": "tests/postgres/recovery-offline.pg.test.ts" }
+  ],
+  "mutation_controls": [
+    { "id": "OR-M1", "description": "Remove the structural TOC validation -> OR-N1 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M2", "description": "Remove the pre-restore digest comparison -> OR-N2 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M3", "description": "Remove the substrate ownership (container id + run label) check -> OR-N3 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M4", "description": "Remove the server_version_num / tool version pin comparison -> OR-N4 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M5", "description": "Let the rehearsal verdict be decided by restore exit status (ignore invariant verdicts) -> OR-N5 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M6", "description": "Remove the PUBLIC USAGE predicate -> OR-N6 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M7", "description": "Remove the extension comparison -> OR-N7 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M8", "description": "Remove trigger-state or FORCE-RLS comparison -> OR-N8/OR-N9 go RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M9", "description": "Drop -v from container removal or skip named-volume removal -> OR-N10 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M10", "description": "Remove the network-mode assertion or create the substrate without --network none -> OR-N11 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M11", "description": "Relax the evidence grammar (accept unknown keys / free text) -> OR-N12 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M12", "description": "Bypass verifyStagingTarget (accept declared ref) -> OR-N13 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M13", "description": "Remove the name-selector refusal -> OR-N14 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M14", "description": "Remove the mutating-after-non-mutating plan ordering check -> OR-N16 goes RED.", "test_file": "scripts/recovery/mutation-battery.ts" },
+    { "id": "OR-M-SELF", "description": "Survivor self-test: a REAL neutral mutation (comment edit) declared as expected-KILLED must be reported SURVIVED and drive BATTERY=FAIL; the battery's pure verdict logic is unit-tested separately.", "test_file": "tests/recovery/mutation-verdict.test.ts" }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
