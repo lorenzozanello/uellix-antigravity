@@ -18,8 +18,9 @@
 // changes nothing.
 
 import { spawnSync } from 'node:child_process'
-import { readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { tmpdir } from 'node:os'
 
 interface Mutant {
   readonly id: string
@@ -53,6 +54,7 @@ const BN = 'db/custody/pre-node-boundary.ts'
 const SA = 'scripts/custody/d1-server-auth-measure.ts'
 const T_BOUNDARY = 'tests/custody/d1-pre-node-boundary.test.ts'
 const T_V10 = 'tests/custody/d1-dag-amendment-v1010.test.ts'
+const HM = 'scripts/custody/d1-tls-trust-harness.ts'
 
 export const MUTANTS: readonly Mutant[] = [
   { id: 'M-ECHO', file: CH, from: '          buf[len++] = b\n', to: '          buf[len++] = b\n          output.write(String.fromCharCode(b))\n', tests: [T_CH], expect: 'RED' },
@@ -116,9 +118,9 @@ export const MUTANTS: readonly Mutant[] = [
   {id: "R3-M-COHERENCE",file: EV,from: "  const cr = coherenceReasons(e, ctx)\n",to: "  const cr: string[] = []\n",tests: [T_PM],expect: "RED"},
   // R3-M-PMR15 retired with its target (DAG v1.0.10 supersedes PMR-15); its guarantee is R4-M-PMR16-CA below.
   // --- R4: the pre-node boundary (NB-1), the digest-bound OEP-1 chain (NB-2), the NB-3 test gaps and PMR-16 ---
-  {id: "R4-M-BOUNDARY-AMBIENT",file: BN,from: "if ($hostile.Count -gt 0) { Refuse 'PRE_NODE_AMBIENT_RUNTIME' $hostile }",to: "if ($false) { Refuse 'PRE_NODE_AMBIENT_RUNTIME' $hostile }",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R4-M-BOUNDARY-AMBIENT",file: BN,from: "if ($present.Count -gt 0) { [System.Array]::Sort($present); Refuse 'PRE_NODE_AMBIENT_RUNTIME' $present }",to: "if ($false) { [System.Array]::Sort($present); Refuse 'PRE_NODE_AMBIENT_RUNTIME' $present }",tests: [T_BOUNDARY],expect: "RED"},
   {id: "R4-M-BOUNDARY-ENV",file: BN,from: "$psi.EnvironmentVariables.Clear()\n",to: "",tests: [T_BOUNDARY],expect: "RED"},
-  {id: "R4-M-BOUNDARY-NODE-PIN",file: BN,from: "if ($nodeHash -ne $nodePin) { Refuse 'PRE_NODE_NODE_NOT_PINNED' @() }",to: "if ($false) { Refuse 'PRE_NODE_NODE_NOT_PINNED' @() }",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R4-M-BOUNDARY-NODE-PIN",file: BN,from: "if ((Sha256OfFile $node) -ne $nodePin) { Refuse 'PRE_NODE_NODE_NOT_PINNED' @() }",to: "if ($false) { Refuse 'PRE_NODE_NODE_NOT_PINNED' @() }",tests: [T_BOUNDARY],expect: "RED"},
   {id: "R4-M-LAUNCHER-MARK",file: LA,from: "  if (boundary.length > 0) throw",to: "  if (false) throw",tests: [T_CH],expect: "RED"},
   {id: "R4-M-CHAIN-DIGEST",file: EV,from: "    if (pred.doc.content_digest !== link.content_digest || oep1RecordDigest(pred.doc) !== link.content_digest) reasons.push(",to: "    if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
   {id: "R4-M-CHAIN-TIME",file: EV,from: "    if (!(time(r) > time(pred))) reasons.push(",to: "    if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
@@ -134,6 +136,13 @@ export const MUTANTS: readonly Mutant[] = [
   {id: "R4-M-O8",file: LA,from: "  checkPlannedCa(plan, io.readFile)\n",to: "  if (plan.mode === 'probe') checkPlannedCa(plan, io.readFile)\n",tests: [T_CH],expect: "RED"},
   {id: "R4-M-PMR16",file: SA,from: "  if (codeOf(() => subjects.checkCa({ caFile, caSha256: 'f'.repeat(64) }",to: "  if (false && codeOf(() => subjects.checkCa({ caFile, caSha256: 'f'.repeat(64) }",tests: [T_V10],expect: "RED"},
   {id: "R4-M-PMR16-CA",file: PM,from: "(i) => [...i.operatorChannel.caReasons, ...i.operatorChannel.serverAuthReasons]",to: "(i) => [...i.operatorChannel.serverAuthReasons]",tests: [T_PM,T_V10],expect: "RED"},
+  // --- R5: outermost boundary (A), UTC canonicalization (B), case-stable discovery (C), PMR-16 hostname (D) ---
+  {id: "R5-M-B-UTC",file: EV,from: "  return canonical === value ? t : null",to: "  return t",tests: [T_CHAIN],expect: "RED"},
+  {id: "R5-M-C-DISCOVERY",file: EV,from: "  return { names: tracked, reasons: [...new Set(reasons)] }",to: "  return { names: onDisk, reasons: [] }",tests: [T_CHAIN],expect: "RED"},
+  {id: "R5-M-D-HOSTNAME",file: HM,from: "  if (!call({ subject: { CN: 'wrong.d1.invalid' }, subjectaltname: 'DNS:wrong.d1.invalid' }))",to: "  if (false && !call({ subject: { CN: 'wrong.d1.invalid' }, subjectaltname: 'DNS:wrong.d1.invalid' }))",tests: [T_V10],expect: "RED"},
+  {id: "R5-M-A-INJECTION",file: BN,from: "$injection = '^(COR_ENABLE_PROFILING|COR_PROFILER|COR_PROFILER_PATH(_32|_64)?|CORECLR_ENABLE_PROFILING|CORECLR_PROFILER|CORECLR_PROFILER_PATH(_32|_64)?|DOTNET_STARTUP_HOOKS|DOTNET_ADDITIONAL_DEPS)$'",to: "$injection = '^d1nevermatch$'",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R5-M-A-OUTER-PSMOD",file: BN,from: "  'PSModulePath',\n",to: "",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R5-M-A-DOTNET",file: BN,from: "$table = [System.Environment]::GetEnvironmentVariables()",to: "$table = Get-ChildItem Env:",tests: [T_BOUNDARY],expect: "RED"},
   { id: 'M-SELF-TEST', file: PL, from: '// CLI\n', to: '// CLI (comment-only self-test mutant)\n', tests: [T_CH], expect: 'GREEN' },
 ]
 
@@ -146,7 +155,11 @@ export const MUTANTS: readonly Mutant[] = [
 const PIN_BLOCK = 'P-2: the launcher build is deterministic and pinned'
 
 function runTests(root: string, tests: readonly string[]): { green: boolean; failed: number | null; killedBy: string[] } {
-  const r = spawnSync(process.execPath, [join(root, 'node_modules/vitest/vitest.mjs'), 'run', '--testTimeout=180000', '--reporter=json', ...tests], {
+  // The JSON report is written to a FILE, not stdout: a mutant that makes many tests fail also prints
+  // FAIL dumps to stdout, and scraping the first '{' out of that mixed stream mis-parses. The file is the
+  // reporter's sole, clean JSON, so kill attribution (killedBy) is reliable.
+  const reportFile = join(mkdtempSync(join(tmpdir(), 'd1-mut-report-')), 'report.json')
+  const r = spawnSync(process.execPath, [join(root, 'node_modules/vitest/vitest.mjs'), 'run', '--testTimeout=180000', '--reporter=json', `--outputFile=${reportFile}`, ...tests], {
     cwd: root,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
@@ -155,7 +168,8 @@ function runTests(root: string, tests: readonly string[]): { green: boolean; fai
   let failed: number | null = null
   let killedBy: string[] = []
   try {
-    const j = JSON.parse(r.stdout.slice(r.stdout.indexOf('{'))) as {
+    const raw = existsSync(reportFile) ? readFileSync(reportFile, 'utf8') : r.stdout.slice(r.stdout.indexOf('{'))
+    const j = JSON.parse(raw) as {
       numFailedTests: number
       numTotalTests: number
       testResults: Array<{ assertionResults: Array<{ status: string; fullName: string }> }>
@@ -165,6 +179,8 @@ function runTests(root: string, tests: readonly string[]): { green: boolean; fai
     killedBy = j.testResults.flatMap((t) => t.assertionResults.filter((a) => a.status === 'failed' && !a.fullName.startsWith(PIN_BLOCK)).map((a) => a.fullName))
   } catch {
     failed = null
+  } finally {
+    rmSync(dirname(reportFile), { recursive: true, force: true })
   }
   // GREEN = nothing outside the pin block failed (and the run produced a report).
   return { green: failed !== null && killedBy.length === 0, failed, killedBy }

@@ -30,7 +30,7 @@ import { PLAN_SCHEMA, parsePlan, runLauncher, toolArgs, type ChannelPlan, type L
 import { buildLauncherClosure } from '@/scripts/custody/d1-mint-operator-channel-build'
 import { checkExecutables, checkUtcMargin, derivePlan, deriveTargetHost, findChannelCertification, preExecutionStops, routeBDriver, verifyPlan, worktreeIsClean } from '@/scripts/custody/d1-mint-operator-plan'
 import { HOSTILE_AMBIENT_ENV } from '@/scripts/custody/d1-mint-tool-contract-harness'
-import { PRE_NODE_BOUNDARY_ENV, PRE_NODE_BOUNDARY_PS1, preNodeBoundarySha256 } from '@/db/custody/pre-node-boundary'
+import { PRE_NODE_BOUNDARY_ENV, PRE_NODE_BOUNDARY_PS1, preNodeBoundarySha256, preNodeOuterBoundarySha256 } from '@/db/custody/pre-node-boundary'
 import { readChannelBinding, routeBTransportFacts, type ChannelEventFacts } from '@/scripts/custody/d1-mint-operator-evidence'
 import { goodOep1Facts } from './support/oep1-evidence-fixture'
 import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
@@ -100,6 +100,7 @@ function plan(over: Partial<ChannelPlan> = {}): ChannelPlan {
     caSha256: sha(CA_BYTES),
     nodeExecutable: { path: 'C:/node.exe', sha256: 'd'.repeat(64) },
     preNodeBoundarySha256: preNodeBoundarySha256(),
+    preNodeOuterBoundarySha256: preNodeOuterBoundarySha256(),
     depositor: null,
     tool: { path: 'C:/tools/probe.js', sha256: sha(TOOL_BYTES) },
     launcherDigest: 'a'.repeat(64),
@@ -436,6 +437,7 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     // R4 / OC-15: the node binary the boundary will start, and the pinned boundary script.
     expect(p.nodeExecutable).toEqual({ path: process.execPath, sha256: sha(readFileSync(process.execPath)) })
     expect(p.preNodeBoundarySha256).toBe(preNodeBoundarySha256())
+    expect(p.preNodeOuterBoundarySha256).toBe(preNodeOuterBoundarySha256())
     expect(p.tool).toEqual({ path: join('C:/tools', BINDING!.tools.probe.file), sha256: BINDING!.tools.probe.sha256 })
     expect(p.launcherDigest).toBe(BINDING!.launcher_build_digest)
     expect(verifyPlan(p, p)).toEqual([])
@@ -450,6 +452,7 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     ['caSha256', { caSha256: 'f'.repeat(64) }],
     ['nodeExecutable', { nodeExecutable: { path: 'C:/elsewhere/node.exe', sha256: 'f'.repeat(64) } }],
     ['preNodeBoundarySha256', { preNodeBoundarySha256: 'f'.repeat(64) }],
+    ['preNodeOuterBoundarySha256', { preNodeOuterBoundarySha256: 'f'.repeat(64) }],
     ['targetPort', { targetPort: 6543 }],
     ['targetDatabase', { targetDatabase: 'template1' }],
     ['tool.sha256', { tool: { path: join('C:/tools', BINDING!.tools.probe.file), sha256: 'f'.repeat(64) } }],

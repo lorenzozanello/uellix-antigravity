@@ -39,7 +39,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { OPERATOR_ENV_VAR_NAME, driverDigest } from '../../db/custody/mint-operator-channel'
-import { boundaryEnvironment, preNodeBoundarySha256 } from '../../db/custody/pre-node-boundary'
+import { boundaryEnvironment, preNodeBoundarySha256, preNodeOuterBoundarySha256 } from '../../db/custody/pre-node-boundary'
 import { PebObserver, childrenOf, identityReasons, recordForSpawn, type PebDump, type PebObservedProcess } from './n05-peb-observer'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 import { buildLauncherClosure, writeLauncherBuild } from './d1-mint-operator-channel-build'
@@ -137,7 +137,7 @@ export async function demonstrate(root: string, outDir: string): Promise<{ overa
   const cwd = join(out, 'cwd')
   mkdirSync(cwd, { recursive: true })
   const n09 = deriveEffectiveSchedule(root).N09!
-  const base = { schema: PLAN_SCHEMA as typeof PLAN_SCHEMA, targetHost: host, targetPort: 5432, targetDatabase: 'postgres', caFile: join(root, binding.tls.ca_file), caSha256: binding.tls.ca_raw_sha256, nodeExecutable: { path: process.execPath, sha256: sha256Hex(readFileSync(process.execPath)) }, preNodeBoundarySha256: preNodeBoundarySha256(), driverVersion: '3.4.9', launcherDigest: build.digest, derivedAtHead: '0'.repeat(40), derivedAtUtc: new Date().toISOString() }
+  const base = { schema: PLAN_SCHEMA as typeof PLAN_SCHEMA, targetHost: host, targetPort: 5432, targetDatabase: 'postgres', caFile: join(root, binding.tls.ca_file), caSha256: binding.tls.ca_raw_sha256, nodeExecutable: { path: process.execPath, sha256: sha256Hex(readFileSync(process.execPath)) }, preNodeBoundarySha256: preNodeBoundarySha256(), preNodeOuterBoundarySha256: preNodeOuterBoundarySha256(), driverVersion: '3.4.9', launcherDigest: build.digest, derivedAtHead: '0'.repeat(40), derivedAtUtc: new Date().toISOString() }
   const driverRootFor = (tag: string, driverSource: string, extra: (dir: string) => void): { driverRoot: string; driverDigest: string } => {
     const driverRoot = join(out, `driver-root-${tag}`)
     const dir = join(driverRoot, 'node_modules', 'postgres')

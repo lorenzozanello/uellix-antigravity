@@ -1,0 +1,49 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.11",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.11",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ZERO_NODES_ZERO_EDGES__R5_STRENGTHENINGS__NO_ID_CHANGE__NO_EXECUTION__NO_SECRET",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "Appends to the lineage v1.0.0 .. v1.0.10. No earlier amendment is edited. No node, edge or conjunct id changes. It records the R5 strengthenings measured by the focused recert.",
+  "mission_id": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5",
+  "lane": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 4.8, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "9c8a6889d14d2c9d823aefda8d511e8adff0a5a8",
+  "OWNER_DECISION": "owner R5 (ADOPT_FOCUSED_RECERT_NB_A = YES, NB_C = YES, NB_F = YES; NB_E = ACCEPT_AS_NONBLOCKING_REDUNDANCY; NB_G = ACCEPT_AS_FAIL_CLOSED_NONBLOCKING; SIGNED)",
+  "NEW_NODES": [],
+  "NEW_EDGES": [],
+  "AUTHORITY_CONFLICTS_OPEN": [],
+  "AUTHORITY_CONFLICT_RULINGS": {},
+  "R5_STRENGTHENINGS": {
+    "A_OUTERMOST_BOUNDARY": "The pre-node boundary gained an OUTER cmd.exe /d layer that sanitizes PSModulePath and every CLR profiler / startup-hook input before any PowerShell (a CLR process) starts, and the inner PowerShell now makes every trust decision with .NET APIs, never an autoloadable cmdlet. No node and no PMR id changes; the effective channel authority is execution authority amendment v1.0.4 (re-pinned launcher build digest).",
+    "B_UTC_CANONICALIZATION": "IP-4 closed: one canonical UTC parser (utcMillis) rejects impossible dates (month 13, day 31 of September, Feb 29 in a common year, hour 24, minute/second 60, leap seconds), non-canonical spellings and Date.parse NaN. A single-record OEP-1 chain with an invalid timestamp no longer closes. The OEP-1 chain rule and its conjunct (PMR-14) are unchanged; only the time predicate is stricter.",
+    "C_CASE_STABLE_DISCOVERY": "OEP-1 evidence identity is the tracked Git path, not the working-tree filename casing. A case-only rename of a governed record is an integrity failure and never silently removes a FAIL from the chain while git is clean. PMR-14 is unchanged; discovery is bound to git ls-files.",
+    "D_PMR16_HOSTNAME_BEHAVIOR": "PMR-16 now behaviorally proves hostname verification: the built checkServerIdentity is invoked with a matching and a mismatching certificate; a function that always accepts the peer hostname makes PMR-16 fail. The conjunct id PMR-16 and its measured/declared split are unchanged; only the server-identity term is behavioral rather than existence-only. The already-certified real TLS evidence stays inherited by byte identity of the tools and the trust text."
+  },
+  "N10_PRE_HC1_READINESS_CONJUNCTS_UNCHANGED": "PMR-9 .. PMR-16 keep their ids and roles; PMR-15 remains superseded by PMR-16 (v1.0.10). No conjunct is added or removed.",
+  "RECOMPUTED_GRAPH": {
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_TOTAL": 45,
+    "HARD_EDGE_COUNT": 37,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "ACYCLIC": true,
+    "note": "No node and no edge change."
+  },
+  "EXPECTED_PRE_HC1_STATE_OF_THIS_SUCCESSOR": {
+    "before_its_certification_event": "N10 NOT_READY by PMR-9 (not yet certified) and PMR-14 (no OEP-1 evidence) only.",
+    "after_its_certification_event": "N10 NOT_READY by PMR-14 alone, by design."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No mint, deposit, delivery, probe or hosted connection.",
+    "No certification event is written by this lane (the 9c8a6889 event is not materialized).",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "required_independent_review": "MANDATORY: the final focused independent recertification of the R5 successor, including this amendment.",
+  "final_state": "R5_STRENGTHENINGS_RECORDED__ZERO_NODES_CLOSED",
+  "next_gate": "Final focused independent recertification -> its event -> PHASE 2 OEP-1 probe through the outer+inner boundary -> evidence -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

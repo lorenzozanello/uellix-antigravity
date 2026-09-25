@@ -413,9 +413,10 @@ export function oep1EvidenceReasons(f: Oep1EvidenceFacts, ctx: Oep1RepoContext):
   const r: string[] = []
   if (e.evidence_class !== OEP1_EVIDENCE_CLASS) r.push(`evidence_class is not ${OEP1_EVIDENCE_CLASS}`)
   if (e.append_only !== true) r.push('the evidence is not append-only')
-  const at = typeof e.observed_at_utc === 'string' ? e.observed_at_utc : null
-  if (at === null || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{3})?Z$/.test(at)) r.push('observed_at_utc is not a strict UTC instant')
-  else if (ctx.n08 !== null && Date.parse(at) >= Date.parse(ctx.n08)) r.push('the observation is not before N08')
+  const at = utcMillis(e.observed_at_utc)
+  const n08 = ctx.n08 === null ? null : utcMillis(ctx.n08)
+  if (at === null) r.push('observed_at_utc is not an exact, possible, canonical UTC instant')
+  else if (n08 !== null && at >= n08) r.push('the observation is not before N08')
   if (JSON.stringify(e.derived_settings_list) !== JSON.stringify(OEP1_DERIVED_MATERIAL_SETTINGS)) r.push('derived_settings_list is not the stated list')
   const re = recomputeOep1(e, ctx)
   r.push(...re.reasons)
@@ -485,7 +486,31 @@ export function recomputedLinkVerdict(doc: Readonly<Record<string, unknown>>): '
 }
 
 const RECORD_ID = /^OEP1-[A-Za-z0-9._-]{1,64}$/
-const UTC = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{3})?Z$/
+const UTC = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(\.\d{3})?Z$/
+
+/**
+ * IP-4: the ONE canonical UTC parser. Returns the finite epoch-millisecond value of a canonical
+ * UTC instant, or null. A syntactically plausible but impossible timestamp is null, never a number:
+ * month 1..12, day 1..(days in that month, leap years counted), hour 0..23, minute/second 0..59
+ * (no leap second), and the instant must re-serialize to EXACTLY the input (so `Z` and `.SSSZ` are
+ * the only accepted shapes and no non-canonical spelling of the same instant is admitted). Date.parse
+ * is never used: its leniency is the hole this closes.
+ */
+export function utcMillis(value: unknown): number | null {
+  if (typeof value !== 'string') return null
+  const m = UTC.exec(value)
+  if (m === null) return null
+  const [, y, mo, d, h, mi, s, frac] = m
+  const ms = frac === undefined ? 0 : Number(frac.slice(1))
+  const t = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s), ms)
+  if (!Number.isFinite(t)) return null
+  // The instant must re-serialize to EXACTLY the input. Date.UTC normalizes out-of-range fields (month 13,
+  // day 31 of September, Feb 29 of a common year, hour 24, minute/second 60 for a leap second), so any such
+  // impossible timestamp re-serializes to a different instant and is rejected; only a real, canonical UTC passes.
+  const iso = new Date(t).toISOString()
+  const canonical = frac === undefined ? iso.replace(/\.\d{3}Z$/, 'Z') : iso
+  return canonical === value ? t : null
+}
 
 export interface Oep1ChainLink {
   readonly path: string
@@ -518,14 +543,14 @@ export function oep1ChainReasons(records: readonly { readonly path: string; read
     else if (byId.has(id)) reasons.push(`the record_id ${id} is used by more than one record`)
     else byId.set(id, r)
     if (r.doc.content_digest !== oep1RecordDigest(r.doc)) reasons.push(`${r.path}: its content does not match its content_digest (altered or substituted)`)
-    if (typeof r.doc.observed_at_utc !== 'string' || !UTC.test(r.doc.observed_at_utc)) reasons.push(`${r.path}: observed_at_utc is not an exact UTC instant`)
+    if (utcMillis(r.doc.observed_at_utc) === null) reasons.push(`${r.path}: observed_at_utc is not an exact, possible, canonical UTC instant`)
   }
   type Link = { record_id?: unknown; content_digest?: unknown } | null | undefined
   const linkOf = (r: { doc: Readonly<Record<string, unknown>> }): Link => r.doc.predecessor as Link
   const roots = records.filter((r) => linkOf(r) === null)
   if (roots.length !== 1) reasons.push(`the OEP-1 evidence has ${roots.length} roots (records whose predecessor is null); exactly one is required`)
   const successors = new Map<string, string[]>()
-  const time = (r: { doc: Readonly<Record<string, unknown>> }): number => (typeof r.doc.observed_at_utc === 'string' && UTC.test(r.doc.observed_at_utc) ? Date.parse(r.doc.observed_at_utc) : Number.NaN)
+  const time = (r: { doc: Readonly<Record<string, unknown>> }): number => utcMillis(r.doc.observed_at_utc) ?? Number.NaN
   for (const r of records) {
     const link = linkOf(r)
     if (link === null) continue
@@ -600,12 +625,49 @@ export function oep1EvidenceHistoryReasons(root: string): string[] {
   return touched.length === 0 ? [] : [`an OEP-1 evidence file was deleted, modified or renamed in history: ${touched.slice(0, 3).join('; ')}`]
 }
 
+/**
+ * C (R5): governed evidence identity is the tracked Git path, not the working-tree filename casing.
+ * Inside a git work tree, discovery enumerates `git ls-files` (exact tracked case) so a case-only
+ * rename on a case-insensitive filesystem cannot silently drop a FAIL from the chain: reading the
+ * tracked name still returns the content, and any divergence between tracked case and on-disk case
+ * (or an untracked governed file) is reported as an integrity failure. Outside a git work tree the
+ * working-tree listing is used and the separate history check reports it as unverifiable.
+ */
+export function discoverOep1RecordNames(root: string): { names: string[]; reasons: string[] } {
+  const dir = join(root, OEP1_EVIDENCE_DIR)
+  const onDisk = (existsSync(dir) ? readdirSync(dir) : []).filter((n) => OEP1_EVIDENCE_PATTERN.test(n))
+  let tracked: string[] | null = null
+  try {
+    execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root, stdio: 'ignore' })
+    tracked = execFileSync('git', ['ls-files', '--', `${OEP1_EVIDENCE_DIR}/`], { cwd: root, encoding: 'utf8' })
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((p) => p.slice(`${OEP1_EVIDENCE_DIR}/`.length))
+      .filter((n) => !n.includes('/') && OEP1_EVIDENCE_PATTERN.test(n))
+  } catch {
+    return { names: onDisk, reasons: [] }
+  }
+  const reasons: string[] = []
+  const diskSet = new Set(onDisk)
+  const trackedSet = new Set(tracked)
+  for (const t of tracked) {
+    if (diskSet.has(t)) continue
+    const ci = onDisk.find((n) => n.toLowerCase() === t.toLowerCase())
+    reasons.push(ci === undefined ? `a governed OEP-1 record tracked by git is missing from the working tree: ${t}` : `a governed OEP-1 record's on-disk case is not its tracked case (${t} vs ${ci}); governed identity is the tracked path`)
+  }
+  for (const n of onDisk) {
+    if (trackedSet.has(n)) continue
+    const ci = tracked.find((t) => t.toLowerCase() === n.toLowerCase())
+    reasons.push(ci === undefined ? `an untracked OEP-1 evidence file is present (governed evidence must be tracked): ${n}` : `a governed OEP-1 record's on-disk case is not its tracked case (${ci} vs ${n}); governed identity is the tracked path`)
+  }
+  return { names: tracked, reasons: [...new Set(reasons)] }
+}
+
 /** Gather the evidence facts from the repository: every record as one digest-bound chain, plus its history (R4). */
 export function gatherOep1EvidenceFacts(root: string): Oep1EvidenceFacts {
-  const dir = join(root, OEP1_EVIDENCE_DIR)
-  const names = (existsSync(dir) ? readdirSync(dir) : []).filter((n) => OEP1_EVIDENCE_PATTERN.test(n))
+  const { names, reasons: discoveryReasons } = discoverOep1RecordNames(root)
   const history = oep1EvidenceHistoryReasons(root)
-  if (names.length === 0) return { path: null, evidence: null, channelEvent: null, chain: [], chainReasons: history.filter((h) => !h.startsWith('the OEP-1 evidence history cannot')) }
+  if (names.length === 0) return { path: null, evidence: null, channelEvent: null, chain: [], chainReasons: [...discoveryReasons, ...history.filter((h) => !h.startsWith('the OEP-1 evidence history cannot'))] }
   const records = names.map((n) => {
     const path = `${OEP1_EVIDENCE_DIR}/${n}`
     let doc: Record<string, unknown>
@@ -624,7 +686,7 @@ export function gatherOep1EvidenceFacts(root: string): Oep1EvidenceFacts {
     evidence: evidence ?? { unparseable: true },
     channelEvent: eventPath === null ? null : gatherChannelEventFacts(root, eventPath),
     chain,
-    chainReasons: [...reasons, ...history],
+    chainReasons: [...discoveryReasons, ...reasons, ...history],
   }
 }
 

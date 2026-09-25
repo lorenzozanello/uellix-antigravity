@@ -250,6 +250,27 @@ export function trustPreflightRefusal(variant: TrustVariant, env: Record<string,
 }
 
 /**
+ * D (R5): PMR-16 must behaviorally PROVE hostname verification, not merely that a checkServerIdentity
+ * function exists. The built function is invoked with a certificate whose names match the host (it must
+ * accept: return falsy) and one whose names do not (it must reject: return truthy). A function that always
+ * accepts the peer hostname fails PMR-16.
+ */
+export function hostnameVerificationReasons(checkServerIdentity: unknown, host: string): string[] {
+  if (typeof checkServerIdentity !== 'function') return ['the trust text does not verify the server name (no checkServerIdentity)']
+  const call = (cert: Record<string, unknown>): unknown => {
+    try {
+      return (checkServerIdentity as (h: string, c: unknown) => unknown)(host, cert)
+    } catch (e) {
+      return e
+    }
+  }
+  const r: string[] = []
+  if (call({ subject: { CN: host }, subjectaltname: `DNS:${host}` })) r.push('the trust text rejects a certificate whose name matches the host')
+  if (!call({ subject: { CN: 'wrong.d1.invalid' }, subjectaltname: 'DNS:wrong.d1.invalid' })) r.push('the trust text accepts a certificate whose name does not match the host (hostname not verified)')
+  return r
+}
+
+/**
  * PMR-16: what the CONFORMING trust text DOES with a given CA file and pin (sync, no connection): with the
  * right pin it hands the driver verify-full options whose only anchor is that file; with another pin, or an
  * ambient PG* variable, it refuses. Returns the reasons it does not (empty = it does).
@@ -264,7 +285,8 @@ export function trustTextBehaviourReasons(caFile: string, caSha256: string, host
     const bytes = fs.readFileSync(caFile)
     if (!Array.isArray(s.ca) || s.ca.length !== 1 || !Buffer.isBuffer(s.ca[0]) || !(s.ca[0] as Buffer).equals(bytes)) r.push('the trust text does not hand the driver the pinned CA as its only anchor')
     if (s.rejectUnauthorized !== true) r.push('the trust text does not require a verified chain')
-    if (s.servername !== host || typeof s.checkServerIdentity !== 'function') r.push('the trust text does not verify the server name')
+    if (s.servername !== host) r.push('the trust text does not set the server name')
+    r.push(...hostnameVerificationReasons(s.checkServerIdentity, host))
     if (s.minVersion !== 'TLSv1.2') r.push('the trust text does not require TLS 1.2 or later')
   }
   const wrong = { code: null as string | null }

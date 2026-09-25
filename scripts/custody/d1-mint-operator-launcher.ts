@@ -63,8 +63,10 @@ export interface ChannelPlan {
   readonly caSha256: string
   /** R4 / OC-15: the node binary the pre-node boundary may start (sha256 checked before it starts). */
   readonly nodeExecutable: { readonly path: string; readonly sha256: string }
-  /** R4 / OC-15: the sha256 of the pinned pre-node boundary script; the launcher refuses without its mark. */
+  /** R4 / OC-15: the sha256 of the pinned pre-node (inner) boundary script; the launcher refuses without its mark. */
   readonly preNodeBoundarySha256: string
+  /** R5 / A: the sha256 of the pinned OUTER cmd boundary; the gate pins it, the operator runs it first. */
+  readonly preNodeOuterBoundarySha256: string
   /** Mint only: the built N30 depositor. */
   readonly depositor: string | null
   readonly tool: { readonly path: string; readonly sha256: string }
@@ -96,6 +98,7 @@ export function parsePlan(text: string): ChannelPlan {
     typeof (p.nodeExecutable as Record<string, unknown> | undefined)?.path === 'string' &&
     hex((p.nodeExecutable as Record<string, unknown> | undefined)?.sha256, 64) &&
     hex(p.preNodeBoundarySha256, 64) &&
+    hex(p.preNodeOuterBoundarySha256, 64) &&
     str('driverRoot') &&
     str('driverVersion') &&
     typeof tool?.path === 'string' &&

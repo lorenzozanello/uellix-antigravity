@@ -47,7 +47,7 @@ import {
   caFileReasons,
 } from './d1-mint-operator-evidence'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
-import { PRE_NODE_BOUNDARY_FILE, PRE_NODE_BOUNDARY_PS1, preNodeBoundaryCommand, preNodeBoundarySha256 } from '../../db/custody/pre-node-boundary'
+import { PRE_NODE_BOUNDARY_FILE, PRE_NODE_BOUNDARY_PS1, PRE_NODE_OUTER_BOUNDARY_CMD, PRE_NODE_OUTER_BOUNDARY_FILE, preNodeBoundaryCommand, preNodeBoundarySha256, preNodeOuterBoundarySha256 } from '../../db/custody/pre-node-boundary'
 import { buildProductionEntryPoints } from './build-production-entrypoints'
 import { buildLauncherClosure, digestOfWrittenLauncher, writeLauncherBuild } from './d1-mint-operator-channel-build'
 import { deriveEffectiveSchedule } from './d1-effective-schedule'
@@ -167,6 +167,7 @@ export function derivePlan(root: string, i: PlanInputs): { plan: ChannelPlan | n
     caSha256: binding.tls.ca_raw_sha256,
     nodeExecutable: { path: nodePath, sha256: nodeSha },
     preNodeBoundarySha256: preNodeBoundarySha256(),
+    preNodeOuterBoundarySha256: preNodeOuterBoundarySha256(),
     depositor: i.mode === 'mint' ? i.depositor : null,
     tool: { path: join(i.toolsDir, binding.tools[i.mode].file), sha256: binding.tools[i.mode].sha256 },
     launcherDigest: binding.launcher_build_digest,
@@ -189,6 +190,7 @@ export function verifyPlan(onDisk: ChannelPlan, derived: ChannelPlan): string[] 
     ['caSha256', onDisk.caSha256, derived.caSha256],
     ['nodeExecutable', JSON.stringify(onDisk.nodeExecutable), JSON.stringify(derived.nodeExecutable)],
     ['preNodeBoundarySha256', onDisk.preNodeBoundarySha256, derived.preNodeBoundarySha256],
+    ['preNodeOuterBoundarySha256', onDisk.preNodeOuterBoundarySha256, derived.preNodeOuterBoundarySha256],
     ['operatorPrincipal', onDisk.operatorPrincipal, derived.operatorPrincipal],
     ['validUntil', onDisk.validUntil, derived.validUntil],
     ['driverRoot', onDisk.driverRoot, derived.driverRoot],
@@ -205,9 +207,9 @@ export function verifyPlan(onDisk: ChannelPlan, derived: ChannelPlan): string[] 
 }
 
 /** What will run, against the pins: each tool file's bytes, and the launcher build lying in the channel dir. */
-export function checkExecutables(p: { readonly plan: ChannelPlan; readonly launcherDiskDigest: string; readonly readFile: (path: string) => Buffer; readonly boundaryPath?: string }): string[] {
+export function checkExecutables(p: { readonly plan: ChannelPlan; readonly launcherDiskDigest: string; readonly readFile: (path: string) => Buffer; readonly boundaryPath?: string; readonly outerBoundaryPath?: string }): string[] {
   const r: string[] = []
-  // OC-15: the pre-node boundary on disk is the pinned script, and the node it will start is the pinned binary.
+  // OC-15: the pre-node (inner) boundary on disk is the pinned script, and the node it will start is the pinned binary.
   if (p.boundaryPath !== undefined) {
     let b: Buffer | null = null
     try {
@@ -216,6 +218,16 @@ export function checkExecutables(p: { readonly plan: ChannelPlan; readonly launc
       r.push('STOP_BOUNDARY_MISSING: the pre-node boundary script cannot be read')
     }
     if (b !== null && sha256(b) !== p.plan.preNodeBoundarySha256) r.push('STOP_STALE_BOUNDARY_HASH: the pre-node boundary on disk is not the pinned script')
+  }
+  // R5 / A: the OUTER cmd boundary on disk is the pinned artifact (the operator runs it first).
+  if (p.outerBoundaryPath !== undefined) {
+    let b: Buffer | null = null
+    try {
+      b = p.readFile(p.outerBoundaryPath)
+    } catch {
+      r.push('STOP_OUTER_BOUNDARY_MISSING: the outer cmd boundary cannot be read')
+    }
+    if (b !== null && sha256(b) !== p.plan.preNodeOuterBoundarySha256) r.push('STOP_STALE_OUTER_BOUNDARY_HASH: the outer cmd boundary on disk is not the pinned artifact')
   }
   let nodeBytes: Buffer | null = null
   try {
@@ -293,9 +305,11 @@ function main(argv: readonly string[]): number {
   const nowUtc = new Date().toISOString()
   const build = buildLauncherClosure(root)
   writeLauncherBuild(root, channelDir, build)
-  // OC-15: the one authorized entry, written next to the launcher build.
+  // OC-15 / R5-A: the one authorized entry (outer cmd) and the inner script, written next to the launcher build.
   const boundaryPath = join(resolvePath(channelDir), PRE_NODE_BOUNDARY_FILE)
   writeFileSync(boundaryPath, PRE_NODE_BOUNDARY_PS1, 'utf8')
+  const outerBoundaryPath = join(resolvePath(channelDir), PRE_NODE_OUTER_BOUNDARY_FILE)
+  writeFileSync(outerBoundaryPath, PRE_NODE_OUTER_BOUNDARY_CMD, 'utf8')
   const launcherDiskDigest = digestOfWrittenLauncher(channelDir, build).digest
   const depositor = mode === 'mint' ? buildProductionEntryPoints(root, channelDir).deposit : null
   const { plan, reasons } = derivePlan(root, { mode, toolsDir, depositor, head, nowUtc })
@@ -303,7 +317,7 @@ function main(argv: readonly string[]): number {
   reasons.push(...preExecutionStops({ clean, launcherBuiltDigest: build.digest, pinnedLauncherDigest: binding?.launcher_build_digest ?? null, nowUtc, n08: sched.N08 }))
   const planPath = join(resolvePath(channelDir), `plan-${mode}.json`)
   if (plan !== null) {
-    reasons.push(...checkExecutables({ plan, launcherDiskDigest, readFile: (p) => readFileSync(p), boundaryPath }))
+    reasons.push(...checkExecutables({ plan, launcherDiskDigest, readFile: (p) => readFileSync(p), boundaryPath, outerBoundaryPath }))
     if (write && reasons.length === 0) writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`)
     else if (!write) {
       if (!existsSync(planPath)) reasons.push('STOP_NO_PLAN: no plan on disk to verify (run with --write first)')
@@ -326,7 +340,7 @@ function main(argv: readonly string[]): number {
     n08: sched.N08,
     marginHours: utc.marginMs === null ? null : Math.round(utc.marginMs / 36_000) / 100,
     plan: pass ? planPath : null,
-    command: pass ? preNodeBoundaryCommand(boundaryPath, planPath) : null,
+    command: pass ? preNodeBoundaryCommand(outerBoundaryPath, planPath) : null,
     reasons,
   })
   return pass ? 0 : 1

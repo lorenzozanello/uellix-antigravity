@@ -1,0 +1,130 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.4",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4",
+  "authority_class": "EXECUTION_AUTHORITY_AMENDMENT",
+  "document_class": "MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT__APPEND_ONLY__OUTERMOST_BOUNDARY__NO_CREDENTIAL__NO_HOSTED_CONNECTION",
+  "append_only": true,
+  "supersedes": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+  "supersedes_note": "Appends to v1.0.3. Re-derives CHANNEL_BINDING.launcher_build_digest (the launcher plan gained preNodeOuterBoundarySha256), replaces EXECUTION_PROCEDURE (outer cmd command + the new derivation) and PRE_NODE_BOUNDARY (outer + inner). No other section changes; no node, edge or PMR id changes.",
+  "REPLACES_SECTIONS": [
+    "CHANNEL_BINDING",
+    "EXECUTION_PROCEDURE",
+    "PRE_NODE_BOUNDARY"
+  ],
+  "mission_id": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5",
+  "lane": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 4.8, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "AS_OF_BASE_SHA": "9c8a6889d14d2c9d823aefda8d511e8adff0a5a8",
+  "owner_decision": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0.json + owner R5 (ADOPT_FOCUSED_RECERT_NB_A/C/F = YES; NB_E = ACCEPT_AS_NONBLOCKING_REDUNDANCY; NB_G = ACCEPT_AS_FAIL_CLOSED_NONBLOCKING; SIGNED)",
+  "dag_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.11.json",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.4.json",
+  "CERTIFIED_BLOBS_UNCHANGED": "The v3 tools (mint 601f1f96..., probe 86cbda48...), their source templates and the shared trust text, the pinned project certificate and CHANNEL_BINDING.tools/.tls are byte-identical to b4ca05ac: eligible for certification inheritance. The launcher build changed (it now also pins the outer boundary), so its prior PEB evidence is re-run for R5.",
+  "CHANNEL_BINDING": {
+    "launcher_build_digest": "98e4c11934b132dda1b935fb0a3dbc1898f2a82afa8d4a958b315e405082847f",
+    "launcher_build_rule": "Unchanged rule; re-derived for R5: the launcher plan now also carries preNodeOuterBoundarySha256 (the outer cmd boundary is pinned), which changed the launcher closure digest. Its OC-13/OC-15 behaviour is unchanged.",
+    "tools": {
+      "probe": {
+        "file": "d1-oep1-probe-tool-v3.js",
+        "sha256": "86cbda481c72d2f2149468879e194e0031cfe3be2fa1c8cbb8b16c857171224d"
+      },
+      "mint": {
+        "file": "d1-mint-operator-tool-v3.js",
+        "sha256": "601f1f963042467433fe75a034d0466055a145ff06319fdd61d3b67dbd7b1b25"
+      }
+    },
+    "tools_directory": {
+      "base_env": "LOCALAPPDATA",
+      "relative": "uellix-d1-mint-operator-channel/tools"
+    },
+    "tls": {
+      "policy": "VERIFY_FULL_PINNED_CA",
+      "ca_file": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt",
+      "ca_raw_sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+      "ca_der_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa",
+      "ca_spki_sha256": "ba332649230ce9a764e4eaf70368f1a9de9ce64bd38424769e24c3fbf8e57acb"
+    },
+    "versioned_files": "The v3 tools have their own file names; v1 and v2 files are left in place, unchanged, so 979b1440 and fa43b396 stay reproducible.",
+    "invalidation": "TOOL_BINDING unchanged: any other byte of a tool, of the launcher build or of the CA file is another channel."
+  },
+  "EXECUTION_PROCEDURE": {
+    "gate": "pnpm custody:operator-channel:gate -- --mode=probe|mint --channel-dir=<outside the repository> [--write]",
+    "derivations": {
+      "targetHost": "N04 arm A, only when evaluateN04 is SATISFIED",
+      "targetPort": "route-B ROUTE_B_PORT (5432)",
+      "targetDatabase": "route-B ROUTE_B_DATABASE (postgres)",
+      "validUntil": "the effective N09, mint only (never N08)",
+      "driverRoot": "the repository root; node_modules/postgres version 3.4.9",
+      "driverDigest": "sha256 over the files of node_modules/postgres (realpath)",
+      "depositor": "the built N30 depositor, mint only",
+      "tool": "effective CHANNEL_BINDING.tools[mode]",
+      "launcherDigest": "effective CHANNEL_BINDING.launcher_build_digest",
+      "operatorPrincipal": "the certified OEP-1 evidence's operator_principal, mint only",
+      "caFile": "the repository copy of the pinned project certificate (CHANNEL_BINDING.tls.ca_file), absolute",
+      "caSha256": "CHANNEL_BINDING.tls.ca_raw_sha256",
+      "nodeExecutable": "the node binary running the gate: its absolute path and the sha256 of its bytes",
+      "preNodeBoundarySha256": "the sha256 of PRE_NODE_BOUNDARY_PS1 (the inner script), written by the gate next to the launcher build",
+      "preNodeOuterBoundarySha256": "the sha256 of PRE_NODE_OUTER_BOUNDARY_CMD (the outer cmd), written by the gate next to the inner script; the gate STOPs if either boundary on disk is not its pin"
+    },
+    "stop_on": [
+      "STOP_PLAN_MISMATCH (any field)",
+      "STOP_STALE_TOOL_HASH / STOP_STALE_LAUNCHER_HASH",
+      "STOP_DIRTY",
+      "STOP_SCHEDULE_ELAPSED",
+      "N04 not SATISFIED",
+      "a schedule or channel-authority chain error",
+      "OC-12: probe planning without a certification of the channel as pinned",
+      "mint planning without closed OEP-1 evidence",
+      "STOP_STALE_BOUNDARY_HASH / STOP_BOUNDARY_MISSING",
+      "STOP_STALE_NODE_HASH / STOP_NODE_MISSING"
+    ],
+    "the_only_authorized_command": "C:\\WINDOWS\\System32\\cmd.exe /d /c \"<channel-dir>\\d1-pre-node-outer-boundary.cmd\" \"<channel-dir>\\plan-<mode>.json\"  (printed by the gate; the OUTER cmd sanitizes PSModulePath and every CLR profiler / startup-hook input before any PowerShell starts, then runs the pinned inner script; a direct `node <launcher>` start is NOT an authorized operator channel and the launcher refuses it, OC-15)"
+  },
+  "PRE_NODE_BOUNDARY": {
+    "why": "The focused recert of b4ca05ac measured that an attacker-controlled PSModulePath can compromise the PowerShell boundary before its security-sensitive cmdlets run, and that a CLR profiler / startup hook injects managed code into the PowerShell process at CLR start. A check inside an already-compromised process is not sufficient (owner R5 A).",
+    "outer_boundary": {
+      "file": "d1-pre-node-outer-boundary.cmd",
+      "script_sha256": "dd79326fa1f7f3bd8cc97096b26f2e4590a184f9f9ae1286bbc9437970374347",
+      "runs_in": "C:\\Windows\\System32\\cmd.exe /d (native, not a CLR process; /d disables AutoRun)",
+      "sanitizes_before_powershell": [
+        "PSModulePath",
+        "COR_ENABLE_PROFILING",
+        "COR_PROFILER",
+        "COR_PROFILER_PATH",
+        "COR_PROFILER_PATH_32",
+        "COR_PROFILER_PATH_64",
+        "CORECLR_ENABLE_PROFILING",
+        "CORECLR_PROFILER",
+        "CORECLR_PROFILER_PATH",
+        "CORECLR_PROFILER_PATH_32",
+        "CORECLR_PROFILER_PATH_64",
+        "DOTNET_STARTUP_HOOKS",
+        "DOTNET_ADDITIONAL_DEPS"
+      ],
+      "launches": "the pinned inner PowerShell script and node by ABSOLUTE paths (SystemRoot for powershell.exe, %~dp0 for the script); never through PATH resolution"
+    },
+    "inner_boundary": {
+      "file": "d1-pre-node-boundary.ps1",
+      "script_sha256": "99c397b8534445ba9b086adfdc10a07cc539ae92f606d331d1c5239763128908",
+      "trust_decisions": "made only with .NET APIs and language primitives (System.Environment, System.IO.File, System.Security.Cryptography.SHA256, System.Diagnostics.Process), never an autoloadable cmdlet a poisoned PSModulePath could shadow; PSModulePath is cleared before any command that could autoload",
+      "refuses": "every Node/OpenSSL/loader input (PRE_NODE_HOSTILE_SOURCE) and every CLR profiler / startup-hook input present at entry (PRE_NODE_INJECTION_SOURCE); PSModulePath is not refused on mere presence (PowerShell always populates it) but is sanitized by the outer boundary and neutralized by the .NET-only trust path",
+      "starts_node_with": "no flags, an environment built from the allowlist only, plus the boundary mark (the inner script sha256)"
+    },
+    "launcher_side": "OC-15 (defence in depth, not the boundary): the launcher refuses to prompt unless it carries the boundary mark, has no execArgv and sees no NODE_* variable.",
+    "measured_by": "tests/custody/d1-pre-node-boundary.test.ts: the module-shadowing attack is armed as a control, executes nothing through the boundary (0 module, 0 trojan), the CLR profiler / startup-hook inputs are refused at entry and cleared by the outer cmd before PowerShell, and the preload attack of R4 still refuses with 0 preload executions.",
+    "cannot_defend": "LD_PRELOAD on cmd.exe itself, or a compromised OS.",
+    "measured_on_this_host": "NODE_USE_SYSTEM_CA is present in this host tool environment; the boundary refuses it. The outer cmd tests run under real cmd.exe + Windows PowerShell on this Windows host; the module-shadowing and profiler-refusal tests also run under pwsh on Linux CI."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No hosted connection, no hosted OEP-1, no mint, no deposit, no delivery.",
+    "No certification event is written by this lane (the b4ca05ac event is not materialized).",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": "NONE",
+  "DB_CONNECTIONS_EXECUTED": "NONE",
+  "PROVIDER_MUTATIONS_EXECUTED": "NONE",
+  "required_independent_review": "MANDATORY: the final focused independent recertification of the R5 successor.",
+  "final_state": "D1_PREPHASE2_R5_OUTERMOST_BOUNDARY_AND_CHAIN_HARDENED__READY_FOR_FINAL_FOCUSED_RECERT",
+  "next_gate": "Focused independent recertification -> its event -> PHASE 2 OEP-1 probe through the certified channel (through the pre-node boundary) -> evidence (chain head) -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

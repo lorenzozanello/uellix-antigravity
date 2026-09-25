@@ -9,13 +9,13 @@
 // may not delete or modify an evidence file.
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { OEP1_EXPECTED_CLIENT_SETTINGS } from '@/db/custody/mint-operator-channel'
-import { gatherOep1EvidenceFacts, oep1ChainReasons, oep1RecordDigest, recomputedLinkVerdict, sealOep1Record, type Oep1RepoContext } from '@/scripts/custody/d1-mint-operator-evidence'
+import { discoverOep1RecordNames, gatherOep1EvidenceFacts, oep1ChainReasons, oep1RecordDigest, recomputedLinkVerdict, sealOep1Record, utcMillis, type Oep1RepoContext } from '@/scripts/custody/d1-mint-operator-evidence'
 import { gatherPostMintInputs } from '@/scripts/custody/d1-pre-hc1-post-mint'
 import { unsealedOep1Evidence } from './support/oep1-evidence-fixture'
 
@@ -62,6 +62,42 @@ describe('R4-P-CHAIN: the chains that close', () => {
     const f = failed('OEP1-1', T(1), null, 'NOT_CLOSED', '2.0.0')
     const h = closed('OEP1-2', T(2), f, [{ r: f }], '1.0.0')
     expect(oep1ChainReasons([f, h])).toMatchObject({ head: h.path, reasons: [] })
+  })
+})
+
+describe('R5-B / IP-4: only a canonical, possible UTC instant is a time', () => {
+  it('utcMillis accepts the two canonical shapes and round-trips', () => {
+    expect(utcMillis('2026-09-28T14:00:00Z')).toBe(Date.UTC(2026, 8, 28, 14, 0, 0))
+    expect(utcMillis('2026-09-29T14:00:00.000Z')).toBe(Date.UTC(2026, 8, 29, 14, 0, 0, 0))
+  })
+  it.each([
+    ['month 13', '2026-13-01T00:00:00Z'],
+    ['day 00', '2026-09-00T00:00:00Z'],
+    ['day 31 of September', '2026-09-31T00:00:00Z'],
+    ['Feb 29 in a common year', '2027-02-29T00:00:00Z'],
+    ['hour 24', '2026-09-28T24:00:00Z'],
+    ['minute 60', '2026-09-28T14:60:00Z'],
+    ['leap second :60', '2026-09-28T23:59:60Z'],
+    ['no Z', '2026-09-28T14:00:00'],
+    ['offset instead of Z', '2026-09-28T14:00:00+00:00'],
+    ['one-digit fraction', '2026-09-28T14:00:00.5Z'],
+    ['not a date', 'the day after N07'],
+    ['non-string', 42 as unknown as string],
+  ])('utcMillis rejects %s', (_n, bad) => {
+    expect(utcMillis(bad)).toBeNull()
+  })
+  it('a leap year Feb 29 is accepted', () => {
+    expect(utcMillis('2028-02-29T00:00:00Z')).toBe(Date.UTC(2028, 1, 29, 0, 0, 0))
+  })
+  it('a SINGLE-record chain with an impossible timestamp MUST NOT close', () => {
+    const a = closed('OEP1-1', '2026-13-01T00:00:00Z', null)
+    const r = oep1ChainReasons([a])
+    expect(r.reasons.join(' | ')).toMatch(/observed_at_utc is not an exact, possible, canonical UTC instant/)
+  })
+  it('a two-record chain cannot order itself by an impossible predecessor time', () => {
+    const f = failed('OEP1-1', '2026-02-30T00:00:00Z', null)
+    const h = closed('OEP1-2', T(2), f, [{ r: f }])
+    expect(reasons(f, h)).toMatch(/is not an exact, possible, canonical UTC instant/)
   })
 })
 
@@ -189,5 +225,30 @@ describe('R4-N-CHAIN: the facts gathered from disk, with the history', () => {
       if (prev === undefined) delete process.env.GIT_CEILING_DIRECTORIES
       else process.env.GIT_CEILING_DIRECTORIES = prev
     }
+  })
+  it('R5-C: a case-only rename of a governed record (_v -> _V) is an integrity failure, not a silent removal of the FAIL', () => {
+    const f = failed('OEP1-1', T(1), null, 'NOT_CLOSED', '1.0.0')
+    const h = closed('OEP1-2', T(2), f, [{ r: f }], '1.0.1')
+    const r = repo([f, h])
+    // git tracks the exact lower-case path; only the on-disk casing of the FAIL changes.
+    const lower = join(r, path('1.0.0'))
+    renameSync(lower, join(r, 'docs', 'ops', 'release', 'FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_V1.0.0.json'))
+    const disc = discoverOep1RecordNames(r)
+    // Discovery is driven by the tracked case, so the FAIL is never dropped from the set; the divergence is reported.
+    expect(disc.names).toContain('FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v1.0.0.json')
+    expect(disc.reasons.join(' ')).toMatch(/on-disk case is not its tracked case|missing from the working tree/)
+    expect(gatherOep1EvidenceFacts(r).chainReasons.join(' ')).toMatch(/on-disk case is not its tracked case|missing from the working tree/)
+  })
+  it('R5-C: an untracked governed evidence file is refused (governed evidence must be tracked)', () => {
+    const a = closed('OEP1-1', T(1), null, [], '1.0.0')
+    const r = repo([a])
+    writeFileSync(join(r, path('1.0.1')), JSON.stringify(closed('OEP1-2', T(2), a, [{ r: a }], '1.0.1').doc))
+    const disc = discoverOep1RecordNames(r)
+    expect(disc.names).toEqual(['FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v1.0.0.json'])
+    expect(disc.reasons.join(' ')).toMatch(/untracked OEP-1 evidence file is present/)
+  })
+  it('R5-C: a fully tracked, matching working tree raises no discovery reason', () => {
+    const a = closed('OEP1-1', T(1), null, [], '1.0.0')
+    expect(discoverOep1RecordNames(repo([a])).reasons).toEqual([])
   })
 })

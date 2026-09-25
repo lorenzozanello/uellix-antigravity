@@ -17,7 +17,8 @@ import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule
 import { caFileReasons } from '@/scripts/custody/d1-mint-operator-evidence'
 import { measureServerAuthentication } from '@/scripts/custody/d1-server-auth-measure'
 import { checkPlannedCa } from '@/scripts/custody/d1-mint-operator-launcher'
-import { trustTextBehaviourReasons } from '@/scripts/custody/d1-tls-trust-harness'
+import { hostnameVerificationReasons, trustTextBehaviourReasons } from '@/scripts/custody/d1-tls-trust-harness'
+import { checkServerIdentity } from 'node:tls'
 
 const ROOT = process.cwd()
 const V1010 = 'FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.10.json' as const
@@ -45,7 +46,7 @@ function copyRoot(): string {
 
 describe('v1.0.10 leaves the graph and the schedule as they were', () => {
   it('is registered last, adds no node and no edge, and keeps HC-1 immediately before N11', () => {
-    expect(GRAPH_SOURCES.at(-1)).toBe(V1010)
+    expect(GRAPH_SOURCES).toContain(V1010)
     const facts = deriveGraphFacts({ throughSource: V1010 })
     expect(facts.failures).toEqual([])
     expect([facts.nodeCount, facts.edgeCount, facts.acyclic]).toEqual([32, 45, true])
@@ -122,5 +123,26 @@ describe('the live, measured state of PMR-16', () => {
   })
   it('refuses to measure without a binding', () => {
     expect(measureServerAuthentication(ROOT, null, null)).toEqual(['PMR-16: no pinned trust root to measure against'])
+  })
+})
+
+describe('R5-D: PMR-16 behaviorally proves hostname verification, not merely that a function exists', () => {
+  const HOST = 'db.pmr16.invalid'
+  // Computed once at collection (not under the per-test timeout): gatherPostMintInputs walks git and the authority chain.
+  const b = gatherPostMintInputs(ROOT).operatorChannel.binding!
+  it("Node's real checkServerIdentity accepts a matching cert and rejects a mismatching one", () => {
+    expect(hostnameVerificationReasons(checkServerIdentity, HOST)).toEqual([])
+  })
+  it('a function that ALWAYS ACCEPTS the peer hostname makes PMR-16 fail', () => {
+    expect(hostnameVerificationReasons(() => undefined, HOST)).toEqual(['the trust text accepts a certificate whose name does not match the host (hostname not verified)'])
+  })
+  it('a function that always rejects (even a matching cert) also fails', () => {
+    expect(hostnameVerificationReasons(() => new Error('no'), HOST)).toEqual(['the trust text rejects a certificate whose name matches the host'])
+  })
+  it('a missing function fails', () => {
+    expect(hostnameVerificationReasons(undefined, HOST)).toEqual(['the trust text does not verify the server name (no checkServerIdentity)'])
+  })
+  it('the CONFORMING trust text passes the behavioral hostname gate on the repository CA', () => {
+    expect(trustTextBehaviourReasons(join(ROOT, b.tls!.ca_file), b.tls!.ca_raw_sha256, HOST)).toEqual([])
   })
 })
