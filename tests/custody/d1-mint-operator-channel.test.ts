@@ -30,6 +30,7 @@ import { PLAN_SCHEMA, parsePlan, runLauncher, toolArgs, type ChannelPlan, type L
 import { buildLauncherClosure } from '@/scripts/custody/d1-mint-operator-channel-build'
 import { checkExecutables, checkUtcMargin, derivePlan, deriveTargetHost, findChannelCertification, preExecutionStops, routeBDriver, verifyPlan, worktreeIsClean } from '@/scripts/custody/d1-mint-operator-plan'
 import { HOSTILE_AMBIENT_ENV } from '@/scripts/custody/d1-mint-tool-contract-harness'
+import { PRE_NODE_BOUNDARY_ENV, PRE_NODE_BOUNDARY_PS1, preNodeBoundarySha256 } from '@/db/custody/pre-node-boundary'
 import { readChannelBinding, routeBTransportFacts, type ChannelEventFacts } from '@/scripts/custody/d1-mint-operator-evidence'
 import { goodOep1Facts } from './support/oep1-evidence-fixture'
 import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
@@ -80,6 +81,8 @@ const PASSWORD = 'Synth-Pass-4f9a2c'
 const url = (host: string, user = 'postgres', pw = PASSWORD) => ['postgresql:', `//${user}:`, pw, '@', host, ':5432/postgres'].join('')
 const TOOL_BYTES = Buffer.from('// a tool double\n')
 const CA_BYTES = Buffer.from('-----BEGIN CERTIFICATE-----\na synthetic ca double\n-----END CERTIFICATE-----\n')
+/** The mark the pre-node boundary sets (R4 / OC-15). */
+const MARK = { [PRE_NODE_BOUNDARY_ENV]: preNodeBoundarySha256() }
 
 function plan(over: Partial<ChannelPlan> = {}): ChannelPlan {
   return {
@@ -95,6 +98,8 @@ function plan(over: Partial<ChannelPlan> = {}): ChannelPlan {
     driverDigest: 'c'.repeat(64),
     caFile: 'C:/trust/project-ca.crt',
     caSha256: sha(CA_BYTES),
+    nodeExecutable: { path: 'C:/node.exe', sha256: 'd'.repeat(64) },
+    preNodeBoundarySha256: preNodeBoundarySha256(),
     depositor: null,
     tool: { path: 'C:/tools/probe.js', sha256: sha(TOOL_BYTES) },
     launcherDigest: 'a'.repeat(64),
@@ -110,7 +115,7 @@ interface SpawnCall {
   options: { env: Record<string, string>; windowsHide: boolean; detached: boolean; shell: boolean; stdio: unknown }
 }
 
-function harness(o: { stdin: FakeTty | PassThrough; plan?: ChannelPlan; env?: Record<string, string>; console?: boolean; toolBytes?: Buffer; caBytes?: Buffer | null }) {
+function harness(o: { stdin: FakeTty | PassThrough; plan?: ChannelPlan; env?: Record<string, string>; console?: boolean; toolBytes?: Buffer; caBytes?: Buffer | null; execArgv?: string[] }) {
   const calls: SpawnCall[] = []
   const stdout = sink()
   const stderr = sink()
@@ -119,7 +124,7 @@ function harness(o: { stdin: FakeTty | PassThrough; plan?: ChannelPlan; env?: Re
     stdin: o.stdin as unknown as LauncherIo['stdin'],
     stdout,
     stderr,
-    env: o.env ?? { PATH: 'C:/bin', SystemRoot: 'C:/Windows', HOME_SECRET_LIKE: 'must-not-pass', TEMP: 'C:/t' },
+    env: o.env ?? { PATH: 'C:/bin', SystemRoot: 'C:/Windows', HOME_SECRET_LIKE: 'must-not-pass', TEMP: 'C:/t', ...MARK },
     readFile: (path: string) => {
       if (path === 'plan.json') return Buffer.from(JSON.stringify(p))
       if (path === p.caFile) {
@@ -142,6 +147,7 @@ function harness(o: { stdin: FakeTty | PassThrough; plan?: ChannelPlan; env?: Re
       return child
     }) as unknown as LauncherIo['spawn'],
     execPath: 'C:/node.exe',
+    execArgv: o.execArgv ?? [],
   }
   return { io, calls, stdout, stderr, run: () => runLauncher(['--plan=plan.json'], io) }
 }
@@ -235,8 +241,11 @@ describe('P-3: one child, the value only in its environment block', () => {
     expect([...TOOL_ENV_ALLOWLIST]).toEqual(['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path', 'TEMP', 'TMP'])
   })
   it('R3-N-X08X: hostile PG* and TLS variables in the launcher environment never reach the child (any case)', async () => {
-    const env = { PATH: 'C:/bin', SystemRoot: 'C:/Windows', TEMP: 'C:/t', ...HOSTILE_AMBIENT_ENV, pgpassword: 'lower-case', PgHost: 'mixed.invalid', NODE_EXTRA_CA_CERTS: 'C:/evil.pem' }
+    // NODE_* never reach the launcher (the pre-node boundary refuses them; OC-15 refuses them again): the
+    // launcher's own allowlist is measured here against everything else.
+    const env = { PATH: 'C:/bin', SystemRoot: 'C:/Windows', TEMP: 'C:/t', ...Object.fromEntries(Object.entries(HOSTILE_AMBIENT_ENV).filter(([k]) => !/^NODE_/i.test(k))), pgpassword: 'lower-case', PgHost: 'mixed.invalid', OPENSSL_CONF: 'C:/evil.cnf', ...MARK }
     expect(Object.keys(env).filter((k) => /^PG/i.test(k)).length).toBeGreaterThanOrEqual(8)
+    // the mark is for the launcher only: it is not passed on either
     const h = harness({ stdin: tty(`${url(SYNTH_HOST)}\r`), env })
     expect(await h.run()).toBe(0)
     expect(Object.keys(h.calls[0]!.options.env).sort()).toEqual(['PATH', 'SystemRoot', 'TEMP', OPERATOR_ENV_VAR_NAME].sort())
@@ -300,6 +309,34 @@ describe('refusals, each before anything is spawned', () => {
   it('R3-N-CA-MODIFIED (OC-13): CA bytes that are not the pinned ones -> refused before the prompt', async () => {
     const input = tty(`${url(SYNTH_HOST)}\r`)
     await refused(harness({ stdin: input, caBytes: Buffer.concat([CA_BYTES, Buffer.from('\n')]) }), 'CHANNEL_CA_MISMATCH')
+    expect(input.modes).toEqual([])
+  })
+  it.each([
+    ['absent (a direct start)', {}],
+    ['for another script', { [PRE_NODE_BOUNDARY_ENV]: 'f'.repeat(64) }],
+  ])('R4-N-DIRECT (OC-15): the boundary mark %s -> refused before the prompt', async (_n, mark) => {
+    const input = tty(`${url(SYNTH_HOST)}\r`)
+    await refused(harness({ stdin: input, env: { PATH: 'C:/bin', SystemRoot: 'C:/Windows', TEMP: 'C:/t', ...mark } }), 'CHANNEL_NO_PRE_NODE_BOUNDARY')
+    expect(input.modes).toEqual([])
+  })
+  it.each([
+    ['node started with a --require flag', { execArgv: ['--require=C:/preload.js'] }],
+    ['NODE_OPTIONS reached the launcher', { env: { PATH: 'C:/bin', SystemRoot: 'C:/Windows', ...MARK, NODE_OPTIONS: '--require=C:/preload.js' } }],
+    ['a lower-case node_path reached the launcher', { env: { PATH: 'C:/bin', SystemRoot: 'C:/Windows', ...MARK, node_path: 'C:/evil' } }],
+  ])('R4-N-DIRECT (OC-15, defence in depth): %s -> refused before the prompt', async (_n, over) => {
+    const input = tty(`${url(SYNTH_HOST)}\r`)
+    await refused(harness({ stdin: input, ...over }), 'CHANNEL_NO_PRE_NODE_BOUNDARY')
+    expect(input.modes).toEqual([])
+  })
+  const MINT = () => plan({ mode: 'mint', operatorPrincipal: 'postgres', validUntil: '2026-09-29T14:00:00.000Z', depositor: 'C:/c/deposit.js', tool: { path: 'C:/tools/mint.js', sha256: sha(TOOL_BYTES) } })
+  it('R4-N-O8: in MINT mode too, a missing CA file -> refused before the prompt', async () => {
+    const input = tty(`${url(SYNTH_HOST)}\r`)
+    await refused(harness({ stdin: input, plan: MINT(), caBytes: null }), 'CHANNEL_CA_MISSING')
+    expect(input.modes).toEqual([])
+  })
+  it('R4-N-O8: in MINT mode too, CA bytes that are not the pinned ones -> refused before the prompt', async () => {
+    const input = tty(`${url(SYNTH_HOST)}\r`)
+    await refused(harness({ stdin: input, plan: MINT(), caBytes: Buffer.concat([CA_BYTES, Buffer.from('\n')]) }), 'CHANNEL_CA_MISMATCH')
     expect(input.modes).toEqual([])
   })
   it('N-WRONG-HOST: a string naming another host is refused', async () => {
@@ -382,7 +419,7 @@ describe('the value is checked before any process exists', () => {
 
 describe('P-4 and the execution-procedure STOPs (plan derived from the repository only)', () => {
   const NOW = '2026-09-24T12:00:00.000Z'
-  const CERTIFIED: ChannelEventFacts = { exists: true, terminalPass: true, candidateIsAncestorOfHead: true, bindingAtCandidate: BINDING }
+  const CERTIFIED: ChannelEventFacts = { exists: true, terminalPass: true, candidateIsAncestorOfHead: true, bindingAtCandidate: BINDING, candidateCommit: 'c'.repeat(40), packageClosureDigest: 'e'.repeat(64) }
   const derived = derivePlan(ROOT, { mode: 'probe', toolsDir: 'C:/tools', depositor: null, head: 'c'.repeat(40), nowUtc: NOW, channelCertification: CERTIFIED })
   it('the probe plan derives with no reason, from N04, route B and the binding', () => {
     expect(derived.reasons).toEqual([])
@@ -396,6 +433,9 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     expect(p.caFile).toBe(join(ROOT, BINDING!.tls.ca_file))
     expect(p.caSha256).toBe('700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7')
     expect(sha(readFileSync(p.caFile))).toBe(p.caSha256)
+    // R4 / OC-15: the node binary the boundary will start, and the pinned boundary script.
+    expect(p.nodeExecutable).toEqual({ path: process.execPath, sha256: sha(readFileSync(process.execPath)) })
+    expect(p.preNodeBoundarySha256).toBe(preNodeBoundarySha256())
     expect(p.tool).toEqual({ path: join('C:/tools', BINDING!.tools.probe.file), sha256: BINDING!.tools.probe.sha256 })
     expect(p.launcherDigest).toBe(BINDING!.launcher_build_digest)
     expect(verifyPlan(p, p)).toEqual([])
@@ -408,6 +448,8 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     ['driverDigest', { driverDigest: 'f'.repeat(64) }],
     ['caFile', { caFile: 'C:/elsewhere/other-ca.crt' }],
     ['caSha256', { caSha256: 'f'.repeat(64) }],
+    ['nodeExecutable', { nodeExecutable: { path: 'C:/elsewhere/node.exe', sha256: 'f'.repeat(64) } }],
+    ['preNodeBoundarySha256', { preNodeBoundarySha256: 'f'.repeat(64) }],
     ['targetPort', { targetPort: 6543 }],
     ['targetDatabase', { targetDatabase: 'template1' }],
     ['tool.sha256', { tool: { path: join('C:/tools', BINDING!.tools.probe.file), sha256: 'f'.repeat(64) } }],
@@ -489,20 +531,24 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     expect(m.plan).toBeNull()
     expect(m.reasons.join(' ')).toMatch(/OEP-1: no OEP-1 evidence exists/)
   })
-  it('N-STALE-TOOL-HASH / launcher: the files that will run are compared with the pins', () => {
-    const p = { ...derived.plan!, tool: { path: 'tool.js', sha256: sha(TOOL_BYTES) } }
-    expect(checkExecutables({ plan: p, launcherDiskDigest: p.launcherDigest, readFile: () => TOOL_BYTES })).toEqual([])
-    expect(checkExecutables({ plan: p, launcherDiskDigest: p.launcherDigest, readFile: () => Buffer.from('// one byte off\n') })).toEqual(['STOP_STALE_TOOL_HASH: the tool file on disk is not the pinned bytes'])
-    expect(checkExecutables({ plan: p, launcherDiskDigest: '0'.repeat(64), readFile: () => TOOL_BYTES })).toEqual(['STOP_STALE_LAUNCHER_HASH: the launcher build on disk is not the pinned build'])
-    expect(
-      checkExecutables({
-        plan: p,
-        launcherDiskDigest: p.launcherDigest,
-        readFile: () => {
-          throw new Error('absent')
-        },
-      })
-    ).toEqual(['STOP_TOOL_MISSING: the pinned tool file cannot be read'])
+  it('N-STALE-TOOL-HASH / launcher / OC-15: the files that will run are compared with the pins', () => {
+    const NODE = Buffer.from('a node binary double')
+    const p = { ...derived.plan!, tool: { path: 'tool.js', sha256: sha(TOOL_BYTES) }, nodeExecutable: { path: 'node.exe', sha256: sha(NODE) } }
+    const files: Record<string, Buffer> = { 'tool.js': TOOL_BYTES, 'node.exe': NODE, 'boundary.ps1': Buffer.from(PRE_NODE_BOUNDARY_PS1, 'utf8') }
+    const read = (over: Record<string, Buffer | null> = {}) => (path: string) => {
+      const b = path in over ? over[path] : files[path]
+      if (b === null || b === undefined) throw new Error('absent')
+      return b
+    }
+    const run = (over: Record<string, Buffer | null> = {}, launcherDiskDigest = p.launcherDigest) => checkExecutables({ plan: p, launcherDiskDigest, readFile: read(over), boundaryPath: 'boundary.ps1' })
+    expect(run()).toEqual([])
+    expect(run({ 'tool.js': Buffer.from('// one byte off\n') })).toEqual(['STOP_STALE_TOOL_HASH: the tool file on disk is not the pinned bytes'])
+    expect(run({}, '0'.repeat(64))).toEqual(['STOP_STALE_LAUNCHER_HASH: the launcher build on disk is not the pinned build'])
+    expect(run({ 'tool.js': null })).toEqual(['STOP_TOOL_MISSING: the pinned tool file cannot be read'])
+    expect(run({ 'node.exe': Buffer.from('another node') })).toEqual(['STOP_STALE_NODE_HASH: the node executable is not the pinned binary'])
+    expect(run({ 'node.exe': null })).toEqual(['STOP_NODE_MISSING: the pinned node executable cannot be read'])
+    expect(run({ 'boundary.ps1': Buffer.from(PRE_NODE_BOUNDARY_PS1.replace('exit 64', 'exit 0'), 'utf8') })).toEqual(['STOP_STALE_BOUNDARY_HASH: the pre-node boundary on disk is not the pinned script'])
+    expect(run({ 'boundary.ps1': null })).toEqual(['STOP_BOUNDARY_MISSING: the pre-node boundary script cannot be read'])
   })
   it('the UTC clock is checked against the effective N08 (NB-3)', () => {
     const n08 = deriveEffectiveSchedule(ROOT).N08!

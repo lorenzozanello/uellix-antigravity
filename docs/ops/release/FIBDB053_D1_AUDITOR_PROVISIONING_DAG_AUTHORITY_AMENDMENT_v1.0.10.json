@@ -1,0 +1,62 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.10",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.10",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ZERO_NODES_ZERO_EDGES__PMR15_SUPERSEDED_BY_PMR16_MEASURED__NO_EXECUTION__NO_SECRET",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "Appends to the lineage v1.0.0 .. v1.0.9. No earlier amendment is edited. No node and no edge changes. No new authority conflict is declared.",
+  "mission_id": "CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4",
+  "lane": "CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "b4ca05ac8cdc32c7cd8306028f3adc606d7db5ef",
+  "AS_OF_BASE_TREE": "e4f84105a9dc6e837203e0752386636404dc196c",
+  "OWNER_DECISION": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0.json (R4 D: make PMR-15's policy/clause portion mechanically derived; label declared portions honestly and leave them nonblocking; do not expand authority)",
+  "NEW_NODES": [],
+  "NEW_EDGES": [],
+  "AUTHORITY_CONFLICTS_OPEN": [],
+  "AUTHORITY_CONFLICT_RULINGS": {},
+  "N10_PRE_HC1_READINESS_CONJUNCTS": [
+    {
+      "id": "PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED",
+      "condition": "MEASURED, not declared: (1) the repository copy of the project certificate named by the effective CHANNEL_BINDING holds exactly one CA certificate whose raw bytes, DER and SPKI hash to the pins; (2) the trust text the pinned tools are rendered from, given that file and its pin, hands the driver verify-full options whose ONLY anchor is that certificate (rejectUnauthorized true, servername = the N04 host with a checkServerIdentity function, TLS 1.2 or later), and refuses another pin and an ambient PG* variable; (3) the launcher's OC-13 check (checkPlannedCa, the function runLauncher calls) accepts the pinned bytes and refuses other bytes and a missing file.",
+      "measured_by": "scripts/custody/d1-server-auth-measure.ts measureServerAuthentication + caFileReasons (scripts/custody/d1-mint-operator-evidence.ts)",
+      "source": "Owner decision AC-8 (DAG v1.0.9) as restated by owner R4 D"
+    }
+  ],
+  "N10_PRE_HC1_READINESS_CONJUNCTS_SUPERSEDED": {
+    "PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED": {
+      "superseded_by": "PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED",
+      "why": "PMR-15 compared declarations (the policy name in CHANNEL_BINDING, the authority's TLS_TRUST_POLICY statement, the presence of the clause ids OC-13/OC-14) with literals; the final recertification of b4ca05ac noted that only its certificate-file portion was measured. PMR-16 keeps the measured portion and replaces the declared ones by the behaviour they declare."
+    }
+  },
+  "DECLARED_NOT_MEASURED": {
+    "portions": ["CHANNEL_BINDING.tls.policy = VERIFY_FULL_PINNED_CA", "the effective channel authority's TLS_TRUST_POLICY statement", "the clause ids OC-13 and OC-14 in the channel contract"],
+    "status": "NONBLOCKING for PMR-16 (owner R4 D). They remain compared by other conjuncts under their own authority: PMR-10 maps the AC-8 ruling to the binding's policy and to OC-13/OC-14; PMR-11 compares the authority's clause ids with the implementation. Nothing here changes those.",
+    "what_is_inherently_declared": "A policy NAME is a statement of intent; what it names is measured by PMR-16. The certificate being the owner's dashboard download for bvyzblhqymxruxdguaee is an owner fact (AC-8 owner record), not measurable without a hosted handshake (not authorized)."
+  },
+  "RECOMPUTED_GRAPH": {
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_TOTAL": 45,
+    "HARD_EDGE_COUNT": 37,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "ACYCLIC": true,
+    "note": "No node and no edge change."
+  },
+  "EXPECTED_PRE_HC1_STATE_OF_THIS_SUCCESSOR": {
+    "before_its_certification_event": "N10 NOT_READY by PMR-9 (not yet certified) and PMR-14 (no OEP-1 evidence) only; PMR-16 holds.",
+    "after_its_certification_event": "N10 NOT_READY by PMR-14 alone, by design (the channel is certified before its probe runs)."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No mint, deposit, delivery, probe or hosted connection.",
+    "No certification event is written by this lane (the b4ca05ac event is not materialized).",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "required_independent_review": "MANDATORY: the focused independent recertification of the R4 successor, including this amendment.",
+  "final_state": "PMR15_SUPERSEDED_BY_PMR16_MEASURED__ZERO_NODES_CLOSED",
+  "next_gate": "Focused independent recertification -> its event -> PHASE 2 OEP-1 probe through the certified channel (via the pre-node boundary) -> evidence -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

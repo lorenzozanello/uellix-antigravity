@@ -6,7 +6,8 @@
 // FIBDB-053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1, mutation_controls, and its
 // R2 amendment v1.0.1: R2-M-E1 .. R2-M-X08 re-kill the survivors the
 // recertification of 979b1440 found, plus the SCRAM transport, the startup /
-// database binding, OC-12 and the observer identity). Each
+// database binding, OC-12 and the observer identity; R3 amendment v1.0.2: TLS;
+// R4 amendment v1.0.3: the pre-node boundary, the OEP-1 chain, NB-3, PMR-16). Each
 // mutant removes ONE safety guarantee from the real source, runs the targeted
 // test files, and must turn them RED. The comment-only self-test must SURVIVE
 // (GREEN): a battery that can report nothing but RED proves nothing.
@@ -48,7 +49,10 @@ const PM = 'scripts/custody/d1-pre-hc1-post-mint.ts'
 const SN = 'tests/custody/support/tool-trust-snippet.ts'
 const T_TLS = 'tests/custody/d1-tls-trust.test.ts'
 const T_CHAIN = 'tests/custody/d1-oep1-evidence-chain.test.ts'
-const T_V9 = 'tests/custody/d1-dag-amendment-v109.test.ts'
+const BN = 'db/custody/pre-node-boundary.ts'
+const SA = 'scripts/custody/d1-server-auth-measure.ts'
+const T_BOUNDARY = 'tests/custody/d1-pre-node-boundary.test.ts'
+const T_V10 = 'tests/custody/d1-dag-amendment-v1010.test.ts'
 
 export const MUTANTS: readonly Mutant[] = [
   { id: 'M-ECHO', file: CH, from: '          buf[len++] = b\n', to: '          buf[len++] = b\n          output.write(String.fromCharCode(b))\n', tests: [T_CH], expect: 'RED' },
@@ -106,10 +110,30 @@ export const MUTANTS: readonly Mutant[] = [
   {id: "R3-M-L1X",file: LA,from: "    child = io.spawn(",to: "    process.env[OPERATOR_ENV_VAR_NAME] = secret.toString('utf8')\n    delete process.env[OPERATOR_ENV_VAR_NAME]\n    child = io.spawn(",tests: [T_CH],expect: "RED"},
   {id: "R3-M-P6X",file: PL,from: "  return execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: root, encoding: 'utf8' }).trim() === ''",to: "  return execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: root, encoding: 'utf8' }).trim() === ''",tests: [T_CH],expect: "RED"},
   {id: "R3-M-P6X-CLI",file: PL,from: "  if (!worktreeIsClean(root)) {",to: "  if (false) {",tests: [T_CH],expect: "RED"},
-  {id: "R3-M-CHAIN-ACK",file: EV,from: "      if (JSON.stringify(ackPaths) !== JSON.stringify(nonClosed)) reasons.push(",to: "      if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
+  // R3-M-CHAIN-ACK re-anchored in R4: the v4 chain (NB-2) compares acknowledged record ids, not paths; same guarantee.
+  {id: "R3-M-CHAIN-ACK",file: EV,from: "      if (JSON.stringify(want) !== JSON.stringify(got)) reasons.push(",to: "      if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
   {id: "R3-M-CHAIN-IGNORED",file: EV,from: "  r.push(...f.chainReasons)\n",to: "",tests: [T_PM],expect: "RED"},
   {id: "R3-M-COHERENCE",file: EV,from: "  const cr = coherenceReasons(e, ctx)\n",to: "  const cr: string[] = []\n",tests: [T_PM],expect: "RED"},
-  {id: "R3-M-PMR15",file: PM,from: "    const r: string[] = [...c.caReasons]\n",to: "    const r: string[] = []\n",tests: [T_PM,T_V9],expect: "RED"},
+  // R3-M-PMR15 retired with its target (DAG v1.0.10 supersedes PMR-15); its guarantee is R4-M-PMR16-CA below.
+  // --- R4: the pre-node boundary (NB-1), the digest-bound OEP-1 chain (NB-2), the NB-3 test gaps and PMR-16 ---
+  {id: "R4-M-BOUNDARY-AMBIENT",file: BN,from: "if ($hostile.Count -gt 0) { Refuse 'PRE_NODE_AMBIENT_RUNTIME' $hostile }",to: "if ($false) { Refuse 'PRE_NODE_AMBIENT_RUNTIME' $hostile }",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R4-M-BOUNDARY-ENV",file: BN,from: "$psi.EnvironmentVariables.Clear()\n",to: "",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R4-M-BOUNDARY-NODE-PIN",file: BN,from: "if ($nodeHash -ne $nodePin) { Refuse 'PRE_NODE_NODE_NOT_PINNED' @() }",to: "if ($false) { Refuse 'PRE_NODE_NODE_NOT_PINNED' @() }",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R4-M-LAUNCHER-MARK",file: LA,from: "  if (boundary.length > 0) throw",to: "  if (false) throw",tests: [T_CH],expect: "RED"},
+  {id: "R4-M-CHAIN-DIGEST",file: EV,from: "    if (pred.doc.content_digest !== link.content_digest || oep1RecordDigest(pred.doc) !== link.content_digest) reasons.push(",to: "    if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
+  {id: "R4-M-CHAIN-TIME",file: EV,from: "    if (!(time(r) > time(pred))) reasons.push(",to: "    if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
+  {id: "R4-M-CHAIN-TIME-ACK",file: EV,from: "        if (!(time(head) > time(target))) reasons.push(",to: "        if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
+  {id: "R4-M-CHAIN-RECOMPUTE",file: EV,from: "verdict: recomputedLinkVerdict(cur.doc), observedAt:",to: "verdict: (cur.doc.verdict === 'CLOSED' ? 'CLOSED' : 'NOT_CLOSED'), observedAt:",tests: [T_CHAIN],expect: "RED"},
+  {id: "R4-M-O4",file: SN,from: "new RegExp(${JSON.stringify(HOSTILE_AMBIENT_ENV_SOURCE)}, 'i')",to: "new RegExp(${JSON.stringify(HOSTILE_AMBIENT_ENV_SOURCE)})",tests: [T_TLS],expect: "RED"},
+  {id: "R4-M-O5",file: SN,from: "'^(PG[A-Z0-9_]*|",to: "'^(PG[A-Z]*|",tests: [T_TLS],expect: "RED"},
+  {id: "R4-M-O6",file: SN,from: "|NODE_EXTRA_CA_CERTS|SSL_CERT_FILE",to: "|SSL_CERT_FILE",tests: [T_TLS],expect: "RED"},
+  {id: "R4-M-O14",file: EV,from: "  if (ctx.targetHost === null || cn.host !== ctx.targetHost) r.push(",to: "  if (ctx.targetHost === null || cn.host !== cn.host) r.push(",tests: [T_PM],expect: "RED"},
+  {id: "R4-M-O15",file: EV,from: "  if (ctx.driverDigest === null || cn.driver_digest !== ctx.driverDigest) r.push(",to: "  if (ctx.driverDigest === null || cn.driver_digest !== cn.driver_digest) r.push(",tests: [T_PM],expect: "RED"},
+  {id: "R4-M-O11",file: EV,from: "  if (dc === undefined || dc === null || typeof dc !== 'object' || doc.observation === undefined) return 'NOT_CLOSED'",to: "  if (dc === undefined || dc === null || typeof dc !== 'object' || doc.observation === undefined) return 'CLOSED'",tests: [T_CHAIN],expect: "RED"},
+  {id: "R4-M-O11-VERDICT",file: EV,from: "(doc.verdict === undefined || (doc.verdict",to: "((doc.verdict",tests: [T_CHAIN],expect: "RED"},
+  {id: "R4-M-O8",file: LA,from: "  checkPlannedCa(plan, io.readFile)\n",to: "  if (plan.mode === 'probe') checkPlannedCa(plan, io.readFile)\n",tests: [T_CH],expect: "RED"},
+  {id: "R4-M-PMR16",file: SA,from: "  if (codeOf(() => subjects.checkCa({ caFile, caSha256: 'f'.repeat(64) }",to: "  if (false && codeOf(() => subjects.checkCa({ caFile, caSha256: 'f'.repeat(64) }",tests: [T_V10],expect: "RED"},
+  {id: "R4-M-PMR16-CA",file: PM,from: "(i) => [...i.operatorChannel.caReasons, ...i.operatorChannel.serverAuthReasons]",to: "(i) => [...i.operatorChannel.serverAuthReasons]",tests: [T_PM,T_V10],expect: "RED"},
   { id: 'M-SELF-TEST', file: PL, from: '// CLI\n', to: '// CLI (comment-only self-test mutant)\n', tests: [T_CH], expect: 'GREEN' },
 ]
 

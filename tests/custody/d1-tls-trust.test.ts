@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { TLS_SCENARIOS, expectedOutcome, runTlsTrustScenario, tlsOutcomeReasons, type TlsScenario } from '@/scripts/custody/d1-tls-trust-harness'
+import { TLS_SCENARIOS, expectedOutcome, runTlsTrustScenario, tlsOutcomeReasons, trustPreflightRefusal, type TlsScenario } from '@/scripts/custody/d1-tls-trust-harness'
 import type { TrustVariant } from './support/tool-trust-snippet'
 
 const ROOT = process.cwd()
@@ -51,5 +51,20 @@ describe('R3-M-TLS: each variant that breaks one guarantee is caught on real TLS
     expect(o.server.passwordsReceived).toBe(1)
     const c = await runTlsTrustScenario(ROOT, 'CONFORMING', 'WRONG_CA')
     expect(c.server.passwordsReceived).toBe(0)
+  })
+})
+
+describe('R4-N-O456: every OT-19 alternative refuses ALONE, in upper and in lower case', () => {
+  // Each name is one alternative of the pattern (and several shapes of the PG* one), so a regex that loses the
+  // i flag, narrows PG* or drops one alternative lets at least one of these through.
+  const NAMES = [
+    'PGHOST', 'PGPORT', 'PGDATABASE', 'PGUSER', 'PGPASSWORD', 'PGOPTIONS', 'PGSERVICE', 'PGSSLMODE', 'PGAPPNAME', 'PGTARGETSESSIONATTRS', 'PGCONNECT_TIMEOUT', 'PG2',
+    'NODE_OPTIONS', 'NODE_TLS_REJECT_UNAUTHORIZED', 'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'OPENSSL_CONF', 'OPENSSL_MODULES',
+  ]
+  it.each(NAMES.flatMap((n) => [[n], [n.toLowerCase()]]))('%s', (name) => {
+    expect(trustPreflightRefusal('CONFORMING', { PATH: '/bin', [name]: 'hostile' })).toBe('AMBIENT_ENVIRONMENT')
+  })
+  it('and nothing else is refused (the control passes with only the allowlisted variables)', () => {
+    expect(trustPreflightRefusal('CONFORMING', { PATH: '/bin', SystemRoot: 'C:/Windows', TEMP: '/t', MY_PGHOST: 'x', NODEPATH: 'x' })).toBeNull()
   })
 })

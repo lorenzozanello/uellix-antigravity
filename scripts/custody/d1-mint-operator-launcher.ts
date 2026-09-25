@@ -2,10 +2,11 @@
 //
 // THE OPERATOR LAUNCHER (AC-4, OPTION_A). Built to plain CommonJS OUTSIDE the
 // repository (scripts/custody/d1-mint-operator-channel-build.ts), pinned by the
-// digest of that build, and run by the owner, from his own console, under bare
-// node:
+// digest of that build, and run by the owner, from his own console, ONLY through the pre-node boundary
+// (db/custody/pre-node-boundary.ts), which starts node with no flags and an
+// allowlisted environment after refusing every Node runtime/trust variable:
 //
-//   node <channel-dir>/launcher/scripts/custody/d1-mint-operator-launcher.js --plan=<channel-dir>/plan-<mode>.json
+//   powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File <channel-dir>\d1-pre-node-boundary.ps1 -Plan <channel-dir>\plan-<mode>.json
 //
 // It does ONE thing: take the operator's connection string from the console
 // without echo and hand it to ONE pinned tool (the OEP-1 probe tool or the
@@ -20,6 +21,7 @@ import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { isProcessAttachedToConsole } from '../../db/custody/wcm-credential-store'
+import { launchedThroughBoundaryReasons } from '../../db/custody/pre-node-boundary'
 import { classifyToolRun } from '../../db/custody/mint-route-b-contract'
 import {
   OPERATOR_ENV_VAR_NAME,
@@ -59,6 +61,10 @@ export interface ChannelPlan {
   /** AC-8 / OC-13: the pinned project certificate (absolute path) and the sha256 of its bytes. */
   readonly caFile: string
   readonly caSha256: string
+  /** R4 / OC-15: the node binary the pre-node boundary may start (sha256 checked before it starts). */
+  readonly nodeExecutable: { readonly path: string; readonly sha256: string }
+  /** R4 / OC-15: the sha256 of the pinned pre-node boundary script; the launcher refuses without its mark. */
+  readonly preNodeBoundarySha256: string
   /** Mint only: the built N30 depositor. */
   readonly depositor: string | null
   readonly tool: { readonly path: string; readonly sha256: string }
@@ -87,6 +93,9 @@ export function parsePlan(text: string): ChannelPlan {
     hex(p.driverDigest, 64) &&
     str('caFile') &&
     hex(p.caSha256, 64) &&
+    typeof (p.nodeExecutable as Record<string, unknown> | undefined)?.path === 'string' &&
+    hex((p.nodeExecutable as Record<string, unknown> | undefined)?.sha256, 64) &&
+    hex(p.preNodeBoundarySha256, 64) &&
     str('driverRoot') &&
     str('driverVersion') &&
     typeof tool?.path === 'string' &&
@@ -126,12 +135,25 @@ export interface LauncherIo {
   readonly isAttachedToConsole: () => Promise<boolean>
   readonly spawn: typeof spawn
   readonly execPath: string
+  /** The runtime flags node was started with (the boundary starts it with none). */
+  readonly execArgv: readonly string[]
 }
 
 export const sha256Hex = (b: Buffer): string => createHash('sha256').update(b).digest('hex')
 
 const line = (io: LauncherIo, o: Record<string, unknown>): void => {
   io.stdout.write(`${JSON.stringify(o)}\n`)
+}
+
+/** OC-13, measurable on its own (PMR-16): the planned CA file exists and is the pinned bytes. Throws otherwise. */
+export function checkPlannedCa(plan: Pick<ChannelPlan, 'caFile' | 'caSha256'>, readFile: (path: string) => Buffer): void {
+  let caBytes: Buffer
+  try {
+    caBytes = readFile(plan.caFile)
+  } catch {
+    throw new OperatorChannelError('CHANNEL_CA_MISSING', 'The pinned CA file cannot be read. Nothing was asked.')
+  }
+  if (sha256Hex(caBytes) !== plan.caSha256) throw new OperatorChannelError('CHANNEL_CA_MISMATCH', 'The CA file is not the pinned project certificate (sha256 differs). Nothing was asked.')
 }
 
 export async function runLauncher(argv: readonly string[], io: LauncherIo): Promise<number> {
@@ -141,6 +163,10 @@ export async function runLauncher(argv: readonly string[], io: LauncherIo): Prom
     throw new OperatorChannelError('CHANNEL_AMBIENT_VALUE', `${OPERATOR_ENV_VAR_NAME} is already set in the launcher's own environment. Refusing.`)
   }
   const plan = parsePlan(io.readFile(argv[0]!.slice('--plan='.length)).toString('utf8'))
+  // OC-15 (defence in depth, NOT the boundary): refuse a direct start. A preload that ran before this
+  // line is excluded only by the pre-node boundary, which never lets such a node start.
+  const boundary = launchedThroughBoundaryReasons(io.env, io.execArgv, plan.preNodeBoundarySha256)
+  if (boundary.length > 0) throw new OperatorChannelError('CHANNEL_NO_PRE_NODE_BOUNDARY', `${boundary.join('; ')}. Start the channel only through the pre-node boundary. Nothing was asked.`)
   // OC-8: the tool is the pinned file, checked before anything is asked.
   let toolBytes: Buffer
   try {
@@ -149,14 +175,8 @@ export async function runLauncher(argv: readonly string[], io: LauncherIo): Prom
     throw new OperatorChannelError('CHANNEL_TOOL_MISSING', 'The planned tool file cannot be read.')
   }
   if (sha256Hex(toolBytes) !== plan.tool.sha256) throw new OperatorChannelError('CHANNEL_TOOL_HASH_MISMATCH', 'The tool file is not the pinned one (sha256 differs). Nothing was asked.')
-  // OC-13: the one trust anchor the tool will use is the pinned project certificate, checked before anything is asked.
-  let caBytes: Buffer
-  try {
-    caBytes = io.readFile(plan.caFile)
-  } catch {
-    throw new OperatorChannelError('CHANNEL_CA_MISSING', 'The pinned CA file cannot be read. Nothing was asked.')
-  }
-  if (sha256Hex(caBytes) !== plan.caSha256) throw new OperatorChannelError('CHANNEL_CA_MISMATCH', 'The CA file is not the pinned project certificate (sha256 differs). Nothing was asked.')
+  // OC-13: the one trust anchor the tool will use is the pinned project certificate, checked before anything is asked, in every mode.
+  checkPlannedCa(plan, io.readFile)
   // OC-1: without a console of its own, the tool would be given a fresh conhost that inherits its environment block.
   if (!(await io.isAttachedToConsole())) {
     throw new OperatorChannelError('CHANNEL_NO_CONSOLE', 'The launcher is not attached to a console. Run it from the owner console.')
@@ -216,6 +236,7 @@ if (/d1-mint-operator-launcher\.(ts|js)$/.test(process.argv[1] ?? '')) {
     isAttachedToConsole: () => isProcessAttachedToConsole(process.pid),
     spawn,
     execPath: process.execPath,
+    execArgv: process.execArgv,
   }
   runLauncher(process.argv.slice(2), io)
     .then((code) => {

@@ -2,7 +2,9 @@
 //
 // DAG v1.0.9 (manifest amendment v1.0.2). v1.0.9 changes no node and no edge.
 // It declares AC-8 (the operator channel authenticated nobody) with the
-// owner's signed ruling VERIFY_FULL_PINNED_CA and adds PMR-15.
+// owner's signed ruling VERIFY_FULL_PINNED_CA and adds PMR-15. DAG v1.0.10
+// supersedes PMR-15 by PMR-16 (measured, tests/custody/d1-dag-amendment-v1010.test.ts),
+// so the live-state section asserts the supersession, not PMR-15 holding.
 
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -91,17 +93,19 @@ describe('N-FORGED-RULING: an AC-8 ruling the owner record does not carry is not
 describe('the live state of this successor', () => {
   const inputs = gatherPostMintInputs(ROOT)
   const byId = Object.fromEntries(evaluatePostMintConjuncts(inputs).conjuncts.map((c) => [c.id, c]))
-  it('PMR-15 holds on the repository (pinned project certificate, OC-13/OC-14) and PMR-10 maps AC-8', () => {
-    expect(byId[PMR15]).toMatchObject({ satisfied: true, reasons: [] })
+  it('PMR-15 is no longer live (superseded by PMR-16 in v1.0.10) and PMR-10 still maps AC-8', () => {
+    expect(byId[PMR15]).toBeUndefined()
+    expect(readChain(ROOT, GRAPH_SOURCES).conjunctIds).not.toContain(PMR15)
     expect(byId['PMR-10_RULINGS_MATCH_IMPLEMENTATION']).toMatchObject({ satisfied: true, reasons: [] })
   })
-  it('PMR-15 fails when the repository copy of the trust root is altered', () => {
+  it('PMR-15 on its own can no longer be satisfied, even with an intact trust root', () => {
+    expect(CONJUNCT_EVALUATORS[PMR15]!(inputs).join(' ')).toMatch(/superseded by PMR-16/)
+  })
+  it('the CA facts still carry an altered repository copy of the trust root', () => {
     const r = copyRoot()
     const ca = join(r, 'docs', 'ops', 'release', 'FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt')
     writeFileSync(ca, `${readFileSync(ca, 'utf8')}\n`)
-    // Measured on the altered copy, the CA facts carry the reason, and PMR-15 refuses on them.
     const caReasons = caFileReasons(r, inputs.operatorChannel.binding)
     expect(caReasons.join(' ')).toMatch(/bytes are not the pinned ones/)
-    expect(CONJUNCT_EVALUATORS[PMR15]!({ ...inputs, operatorChannel: { ...inputs.operatorChannel, caReasons } })).toEqual(caReasons)
   })
 })

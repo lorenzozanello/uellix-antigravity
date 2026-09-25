@@ -230,3 +230,46 @@ export function tlsOutcomeReasons(o: TlsTrustOutcome): string[] {
   if (want === 'REFUSED' && o.server.connections !== 0) r.push(`${o.scenario}: a connection was opened after the trust preflight should have refused`)
   return r
 }
+
+/**
+ * R4-N-O456: the trust text's preflight alone, for ONE environment (the pinned CA present and right), so each
+ * OT-19 alternative is measured by itself: returns the refusal code, or null when the preflight lets it pass.
+ */
+export function trustPreflightRefusal(variant: TrustVariant, env: Record<string, string>): string | null {
+  const ca = syntheticCa('d1 tls preflight ca')
+  const dir = mkdtempSync(join(tmpdir(), 'd1-tls-preflight-'))
+  try {
+    const caFile = join(dir, 'project-ca.crt')
+    writeFileSync(caFile, ca.certPem)
+    const refused = { code: null as string | null }
+    const r = renderTrust(variant, env, { '--ca-file=': caFile, '--ca-sha256=': createHash('sha256').update(ca.certPem).digest('hex') }, refused).run(TLS_HARNESS_HOST)
+    return typeof r === 'number' ? refused.code : null
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+/**
+ * PMR-16: what the CONFORMING trust text DOES with a given CA file and pin (sync, no connection): with the
+ * right pin it hands the driver verify-full options whose only anchor is that file; with another pin, or an
+ * ambient PG* variable, it refuses. Returns the reasons it does not (empty = it does).
+ */
+export function trustTextBehaviourReasons(caFile: string, caSha256: string, host: string): string[] {
+  const r: string[] = []
+  const ok = { code: null as string | null }
+  const res = renderTrust('CONFORMING', { PATH: '/bin' }, { '--ca-file=': caFile, '--ca-sha256=': caSha256 }, ok).run(host)
+  if (typeof res === 'number') r.push(`the trust text refused the pinned CA (${String(ok.code)})`)
+  else {
+    const s = res.ssl as { ca?: unknown[]; rejectUnauthorized?: unknown; servername?: unknown; minVersion?: unknown; checkServerIdentity?: unknown }
+    const bytes = fs.readFileSync(caFile)
+    if (!Array.isArray(s.ca) || s.ca.length !== 1 || !Buffer.isBuffer(s.ca[0]) || !(s.ca[0] as Buffer).equals(bytes)) r.push('the trust text does not hand the driver the pinned CA as its only anchor')
+    if (s.rejectUnauthorized !== true) r.push('the trust text does not require a verified chain')
+    if (s.servername !== host || typeof s.checkServerIdentity !== 'function') r.push('the trust text does not verify the server name')
+    if (s.minVersion !== 'TLSv1.2') r.push('the trust text does not require TLS 1.2 or later')
+  }
+  const wrong = { code: null as string | null }
+  if (renderTrust('CONFORMING', { PATH: '/bin' }, { '--ca-file=': caFile, '--ca-sha256=': 'f'.repeat(64) }, wrong).run(host) !== 2 || wrong.code !== 'CA_PIN_MISMATCH') r.push('the trust text does not refuse a CA file that is not the pinned bytes')
+  const amb = { code: null as string | null }
+  if (renderTrust('CONFORMING', { PATH: '/bin', PGHOST: 'x' }, { '--ca-file=': caFile, '--ca-sha256=': caSha256 }, amb).run(host) !== 2 || amb.code !== 'AMBIENT_ENVIRONMENT') r.push('the trust text does not refuse an ambient PG* variable')
+  return r
+}

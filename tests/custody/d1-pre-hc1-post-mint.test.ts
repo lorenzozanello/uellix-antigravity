@@ -18,6 +18,7 @@ import { graphNodes } from '@/scripts/custody/d1-dag-validate'
 import { eventPathFor, evaluateCandidateBinding } from '@/scripts/custody/d1-candidate-certification'
 import { evaluatePreHc1, measureRepoFacts } from '@/scripts/custody/d1-pre-hc1'
 import { goodOep1Evidence, goodOep1Facts } from './support/oep1-evidence-fixture'
+import { derivationContextOf, sessionFingerprint } from '@/scripts/custody/d1-mint-operator-evidence'
 
 const ROOT = process.cwd()
 const REAL = gatherPostMintInputs(ROOT)
@@ -54,6 +55,18 @@ const GOOD_OBS = goodOep1Evidence(CTX, OBSERVED_AT).observation as { client_sett
 /** R3-N-COHERENCE: one OBSERVED connection term changed, every constant and the recorded fingerprint left as they were. */
 const withObservedConnection = (over: Record<string, unknown>, tls: Record<string, unknown> = {}) =>
   withEvidence({ observation: { ...GOOD_OBS, connection: { ...GOOD_OBS.connection, ...over, tls: { ...GOOD_OBS.connection.tls, ...tls } } } })
+/**
+ * R4-N-O1415: a CONSISTENT record of the wrong session -- the observed host (or driver digest) is wrong AND
+ * the recorded fingerprint is recomputed for that wrong observation, so only the comparison with what the
+ * mint will use can refuse it (a self-comparison would not).
+ */
+const withConsistentWrongSession = (over: { host?: string; driver_digest?: string }) => {
+  const cn = { ...GOOD_OBS.connection, ...over } as { host: string; port: number; database: string; user: string; driver_digest: string; tls: { anchor_sha256: string } }
+  return withEvidence({
+    observation: { ...GOOD_OBS, connection: cn },
+    session_fingerprint: sessionFingerprint({ host: cn.host, port: cn.port, database: cn.database, principal: cn.user, driverDigest: cn.driver_digest, anchorSha256: cn.tls.anchor_sha256 }),
+  })
+}
 const withChainReasons = (reasons: string[]) => ({ operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { ...GOOD_CHANNEL.oep1.facts, chainReasons: reasons } } } })
 const withChannelFacts = (over: Record<string, unknown>) => ({ operatorChannel: { ...GOOD_CHANNEL, ...over } })
 const withChannelEvent = (over: Record<string, unknown>) => ({
@@ -207,17 +220,21 @@ describe('negative controls (one input each)', () => {
     ['CONTROL F another trust anchor', withObservedConnection({}, { anchor_sha256: 'b'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL F no observed peer certificate', withObservedConnection({}, { peer_sha256: null }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL F the probe loaded another driver', withObservedConnection({ driver_digest: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL O14 a consistent record of another HOST (fingerprint recomputed for it)', withConsistentWrongSession({ host: 'db.other-project.supabase.co' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL O15 a consistent record of another DRIVER (fingerprint recomputed for it)', withConsistentWrongSession({ driver_digest: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    // R4-N-CHAIN at the head: the certified candidate and the facts the verdict was derived from.
+    ['CONTROL R4 the head observed another candidate', withEvidence({ candidate: { commit: 'f'.repeat(40), package_closure_digest: 'd'.repeat(64) } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL R4 the head observed another package', withEvidence({ candidate: { commit: 'c'.repeat(40), package_closure_digest: 'f'.repeat(64) } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL R4 the head derived its verdict from other facts', withEvidence({ derivation_context: { ...derivationContextOf(CTX), driverDigest: 'f'.repeat(64) } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL F no observed connection at all', withEvidence({ observation: { ...GOOD_OBS, connection: undefined } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     // R3-N-CHAIN (E): the chain reasons travel with the head.
     ['CONTROL E the chain does not acknowledge an earlier FAIL', withChainReasons(['the head must acknowledge exactly the earlier non-CLOSED records [x], not []']), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
-    // DAG v1.0.9 (AC-8): the server is authenticated against the pinned project certificate.
-    ['CONTROL PMR-15 the repository trust root is not the pinned one', withChannelFacts({ caReasons: ['AC-8: the trust-root file bytes are not the pinned ones'] }), 'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED'],
-    ['CONTROL PMR-15 the effective authority states no TLS policy', withChannelFacts({ tlsPolicyStated: null }), 'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED'],
-    [
-      'CONTROL PMR-15 + AC-8 the binding is not VERIFY_FULL_PINNED_CA',
-      withChannelFacts({ binding: { ...BINDING, tls: { ...BINDING.tls, policy: 'REQUIRE' } } }),
-      ['PMR-10_RULINGS_MATCH_IMPLEMENTATION', 'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED'],
-    ],
+    // DAG v1.0.10 (PMR-16, measured): the server is authenticated against the pinned project certificate.
+    ['CONTROL PMR-16 the repository trust root is not the pinned one', withChannelFacts({ caReasons: ['AC-8: the trust-root file bytes are not the pinned ones'] }), 'PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED'],
+    ['CONTROL PMR-16 the trust text does not anchor on the pinned certificate', withChannelFacts({ serverAuthReasons: ['PMR-16: the trust text does not hand the driver the pinned certificate as its only anchor'] }), 'PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED'],
+    ['CONTROL PMR-16 the launcher accepts CA bytes that are not the pin', withChannelFacts({ serverAuthReasons: ['PMR-16: the launcher accepts CA bytes that are not the pin'] }), 'PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED'],
+    // The DECLARED portions are not PMR-16's (DAG v1.0.10 DECLARED_NOT_MEASURED): the binding's policy name is PMR-10's.
+    ['CONTROL AC-8 the binding is not VERIFY_FULL_PINNED_CA', withChannelFacts({ binding: { ...BINDING, tls: { ...BINDING.tls, policy: 'REQUIRE' } } }), 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-8 the contract lost OC-13/OC-14', { implementation: { ...ALL_GOOD.implementation, operatorChannel: { ...ALL_GOOD.implementation.operatorChannel, serverAuthenticationClauses: false } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL OEP-1 evidence observed at/after N08', withEvidence({ observed_at_utc: CTX.n08 }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL OEP-1 evidence principal differs from the session', withEvidence({ operator_principal: 'someone_else' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
@@ -235,6 +252,9 @@ describe('negative controls (one input each)', () => {
   ]
   it.each(cases)('%s -> only its conjunct fails', (_name, change, conjunct) => {
     expect(unsat({ ...ALL_GOOD, ...change })).toEqual(Array.isArray(conjunct) ? conjunct : [conjunct])
+  })
+  it('DECLARED_NOT_MEASURED is nonblocking: an authority that states no TLS policy fails no conjunct on its own (DAG v1.0.10)', () => {
+    expect(unsat({ ...ALL_GOOD, ...withChannelFacts({ tlsPolicyStated: null }) })).toEqual([])
   })
   it('CONTROL delivery-consumer-in-successor-omitted: a HOSTED_SQL session node added by a later amendment is a gap', () => {
     const nodes = [...graphNodes(), { id: 'N33', plane: 'HOSTED_SQL', act: 'Read the privilege state again as uellix_auditor.', source: 'v9.9.9' }]

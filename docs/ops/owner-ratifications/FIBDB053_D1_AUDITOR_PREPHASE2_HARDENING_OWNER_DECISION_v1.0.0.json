@@ -1,0 +1,55 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD",
+  "document_class": "OWNER_DECISION__ADOPT_FINAL_RECERT_NB1_NB2_NB3__APPEND_ONLY__NO_EXECUTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4",
+  "lane": "CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor, from the owner's signed message of this lane. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "materialized_at_base": { "commit": "b4ca05ac8cdc32c7cd8306028f3adc606d7db5ef", "tree": "e4f84105a9dc6e837203e0752386636404dc196c" },
+  "CONTEXT": "The final independent recertification of b4ca05ac returned D1_TLS_TRUST_CHANNEL_FINAL_RECERT_PASS_WITH_NONBLOCKING_FINDINGS. NB-1: NODE_OPTIONS=--require=<preload> in the owner console captured the operator credential before the Node launcher could reject it (measured). NB-2: the OEP-1 chain accepted a head observed BEFORE the FAIL it acknowledges and did not validate predecessors or history. NB-3: test gaps O4/O5/O6 (OT-19 regex), O14/O15 (host/driver coherence), O11 (predecessor without verdict), O8 (launcher CA path only in probe mode).",
+  "DECISIONS_VERBATIM": {
+    "R4": {
+      "ADOPT_D1_FINAL_RECERT_NB1": "YES",
+      "ADOPT_D1_FINAL_RECERT_NB2": "YES",
+      "CLOSE_CHEAP_NB3_TEST_GAPS_WHILE_PACKAGE_IS_MUTABLE": "YES",
+      "EVENT": "Do NOT materialize the b4ca05ac certification event.",
+      "PURPOSE": "close the two measured security / evidence-chain residuals BEFORE any hosted OEP-1 evidence is created",
+      "NB1_RULE": "A Node process itself is NOT an acceptable first security boundary for this condition. Design the minimum governed PRE-NODE entrypoint or equivalent boundary that executes BEFORE the secret-bearing Node launcher starts.",
+      "NB1_GUARANTEES": [
+        "no secret-bearing Node process starts while ambient NODE_OPTIONS is present",
+        "no secret is prompted before that condition is proven safe",
+        "direct invocation that bypasses the pre-node boundary is NOT an authorized operator channel",
+        "NODE_OPTIONS with --require, --import or equivalent preload mechanisms cannot execute before the governed check",
+        "hostile NODE_PATH / NODE_EXTRA_CA_CERTS / NODE_TLS_REJECT_UNAUTHORIZED / OPENSSL_CONF / SSL_CERT_FILE and equivalent inherited trust/runtime inputs are handled fail-closed according to the effective contract"
+      ],
+      "NB1_EXPECTED": "PRELOAD_EXECUTIONS_BEFORE_GOVERNED_SECRET = 0",
+      "NB2_RULE": "Replace the weak highest-version-wins / acknowledgement model with an explicit mechanically verified chain; do not make latest filename/version wins an authority rule; use exact timestamps and digest binding.",
+      "NB2_RECORD_BINDS": ["record_id", "candidate/package identity", "observed_at", "content digest", "predecessor identity", "predecessor content digest", "verdict", "facts used to derive verdict", "supersedes/acknowledges semantics where applicable"],
+      "NB2_CLOSING_PASS_REQUIRES": [
+        "every required predecessor exists",
+        "every predecessor digest matches",
+        "the complete chain is acyclic and unbroken",
+        "the head observation is temporally AFTER every predecessor it claims to supersede or acknowledge",
+        "every link's verdict is independently recomputed from its facts rather than trusted as a string",
+        "any prior FAIL/INCONCLUSIVE not validly superseded by a later observation remains blocking",
+        "deletion, substitution, fork or stale predecessor fails closed"
+      ],
+      "NB3": "O4/O5/O6 OT-19 regex loses case-insensitivity / narrows / loses alternative; O14/O15 host/driver coherence self-comparison; O11 predecessor without verdict; O8 CA launcher path only covered in probe mode. Each control must fail for the weakened behaviour for the correct semantic reason; no digest-only mutant death counts; keep a harmless-survivor self-test.",
+      "PMR15": "Where possible within existing authority, make PMR-15's policy/clause portion mechanically derived rather than self-asserted. Do not expand authority merely to make the test prettier. If some portion is inherently authority-declared rather than measured, label it honestly and leave it nonblocking.",
+      "PRESERVE": "Do NOT unnecessarily modify the mint tool or CA/TLS implementation that just passed independent certification. If those blobs remain byte-identical, record them as eligible for certification inheritance in the next focused recert. If any of them changes, mark the relevant prior TLS/PG evidence invalidated.",
+      "SCHEDULE": "N08 = 2026-09-28T14:00:00Z; N31 = 2026-09-28T18:00:00Z; N09 = 2026-09-29T14:00:00.000Z; do not silently move the schedule.",
+      "NOT_AUTHORIZED": ["a certification event", "hosted OEP-1", "HC-1", "N11", "any hosted database connection"]
+    },
+    "SIGNED": "YES"
+  },
+  "SOURCE": "Owner message CONTINUATION — CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4 (SIGNED = YES).",
+  "execution_not_authorized_by_this_ratification": ["No certification event, no hosted OEP-1, no HC-1, no N11, no hosted database connection."],
+  "required_independent_review": "A focused independent recertification of the R4 successor.",
+  "final_state": "R4_ADOPTED__NB1_NB2_NB3__SIGNED",
+  "next_gate": "Implementation -> focused independent recertification -> its event -> PHASE 2 OEP-1 probe through the certified channel."
+}

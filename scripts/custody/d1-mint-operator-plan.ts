@@ -47,6 +47,7 @@ import {
   caFileReasons,
 } from './d1-mint-operator-evidence'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
+import { PRE_NODE_BOUNDARY_FILE, PRE_NODE_BOUNDARY_PS1, preNodeBoundaryCommand, preNodeBoundarySha256 } from '../../db/custody/pre-node-boundary'
 import { buildProductionEntryPoints } from './build-production-entrypoints'
 import { buildLauncherClosure, digestOfWrittenLauncher, writeLauncherBuild } from './d1-mint-operator-channel-build'
 import { deriveEffectiveSchedule } from './d1-effective-schedule'
@@ -110,6 +111,8 @@ export interface PlanInputs {
   /** Test seams: the OEP-1 evidence facts and the channel certification facts (default: gathered from the repository). */
   readonly oep1Facts?: Oep1EvidenceFacts
   readonly channelCertification?: ChannelEventFacts | null
+  /** R4 / OC-15: the node binary the pre-node boundary will start (default: the node running the gate). */
+  readonly nodeExecutablePath?: string
 }
 
 /** Derive the plan from the repository. Reasons non-empty -> STOP (the plan is not usable). */
@@ -140,7 +143,15 @@ export function derivePlan(root: string, i: PlanInputs): { plan: ChannelPlan | n
     principal = er.length === 0 ? String(ef.evidence!.operator_principal) : null
     if (i.depositor === null) reasons.push('the mint needs the built N30 depositor')
   }
-  if (binding === null || host === null || drv.version === null || drv.digest === null || reasons.length > 0) return { plan: null, reasons }
+  // R4 / OC-15: the node binary the boundary may start, pinned by the sha256 of its bytes.
+  const nodePath = i.nodeExecutablePath ?? process.execPath
+  let nodeSha: string | null = null
+  try {
+    nodeSha = sha256(readFileSync(nodePath))
+  } catch {
+    reasons.push('OC-15: the node executable cannot be read')
+  }
+  if (binding === null || host === null || drv.version === null || drv.digest === null || nodeSha === null || reasons.length > 0) return { plan: null, reasons }
   const plan: ChannelPlan = {
     schema: PLAN_SCHEMA,
     mode: i.mode,
@@ -154,6 +165,8 @@ export function derivePlan(root: string, i: PlanInputs): { plan: ChannelPlan | n
     driverDigest: drv.digest,
     caFile: resolvePath(root, binding.tls.ca_file),
     caSha256: binding.tls.ca_raw_sha256,
+    nodeExecutable: { path: nodePath, sha256: nodeSha },
+    preNodeBoundarySha256: preNodeBoundarySha256(),
     depositor: i.mode === 'mint' ? i.depositor : null,
     tool: { path: join(i.toolsDir, binding.tools[i.mode].file), sha256: binding.tools[i.mode].sha256 },
     launcherDigest: binding.launcher_build_digest,
@@ -174,6 +187,8 @@ export function verifyPlan(onDisk: ChannelPlan, derived: ChannelPlan): string[] 
     ['targetDatabase', onDisk.targetDatabase, derived.targetDatabase],
     ['caFile', onDisk.caFile, derived.caFile],
     ['caSha256', onDisk.caSha256, derived.caSha256],
+    ['nodeExecutable', JSON.stringify(onDisk.nodeExecutable), JSON.stringify(derived.nodeExecutable)],
+    ['preNodeBoundarySha256', onDisk.preNodeBoundarySha256, derived.preNodeBoundarySha256],
     ['operatorPrincipal', onDisk.operatorPrincipal, derived.operatorPrincipal],
     ['validUntil', onDisk.validUntil, derived.validUntil],
     ['driverRoot', onDisk.driverRoot, derived.driverRoot],
@@ -190,8 +205,25 @@ export function verifyPlan(onDisk: ChannelPlan, derived: ChannelPlan): string[] 
 }
 
 /** What will run, against the pins: each tool file's bytes, and the launcher build lying in the channel dir. */
-export function checkExecutables(p: { readonly plan: ChannelPlan; readonly launcherDiskDigest: string; readonly readFile: (path: string) => Buffer }): string[] {
+export function checkExecutables(p: { readonly plan: ChannelPlan; readonly launcherDiskDigest: string; readonly readFile: (path: string) => Buffer; readonly boundaryPath?: string }): string[] {
   const r: string[] = []
+  // OC-15: the pre-node boundary on disk is the pinned script, and the node it will start is the pinned binary.
+  if (p.boundaryPath !== undefined) {
+    let b: Buffer | null = null
+    try {
+      b = p.readFile(p.boundaryPath)
+    } catch {
+      r.push('STOP_BOUNDARY_MISSING: the pre-node boundary script cannot be read')
+    }
+    if (b !== null && sha256(b) !== p.plan.preNodeBoundarySha256) r.push('STOP_STALE_BOUNDARY_HASH: the pre-node boundary on disk is not the pinned script')
+  }
+  let nodeBytes: Buffer | null = null
+  try {
+    nodeBytes = p.readFile(p.plan.nodeExecutable.path)
+  } catch {
+    r.push('STOP_NODE_MISSING: the pinned node executable cannot be read')
+  }
+  if (nodeBytes !== null && sha256(nodeBytes) !== p.plan.nodeExecutable.sha256) r.push('STOP_STALE_NODE_HASH: the node executable is not the pinned binary')
   let tool: Buffer | null = null
   try {
     tool = p.readFile(p.plan.tool.path)
@@ -260,7 +292,10 @@ function main(argv: readonly string[]): number {
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
   const nowUtc = new Date().toISOString()
   const build = buildLauncherClosure(root)
-  const launcherEntry = writeLauncherBuild(root, channelDir, build)
+  writeLauncherBuild(root, channelDir, build)
+  // OC-15: the one authorized entry, written next to the launcher build.
+  const boundaryPath = join(resolvePath(channelDir), PRE_NODE_BOUNDARY_FILE)
+  writeFileSync(boundaryPath, PRE_NODE_BOUNDARY_PS1, 'utf8')
   const launcherDiskDigest = digestOfWrittenLauncher(channelDir, build).digest
   const depositor = mode === 'mint' ? buildProductionEntryPoints(root, channelDir).deposit : null
   const { plan, reasons } = derivePlan(root, { mode, toolsDir, depositor, head, nowUtc })
@@ -268,7 +303,7 @@ function main(argv: readonly string[]): number {
   reasons.push(...preExecutionStops({ clean, launcherBuiltDigest: build.digest, pinnedLauncherDigest: binding?.launcher_build_digest ?? null, nowUtc, n08: sched.N08 }))
   const planPath = join(resolvePath(channelDir), `plan-${mode}.json`)
   if (plan !== null) {
-    reasons.push(...checkExecutables({ plan, launcherDiskDigest, readFile: (p) => readFileSync(p) }))
+    reasons.push(...checkExecutables({ plan, launcherDiskDigest, readFile: (p) => readFileSync(p), boundaryPath }))
     if (write && reasons.length === 0) writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`)
     else if (!write) {
       if (!existsSync(planPath)) reasons.push('STOP_NO_PLAN: no plan on disk to verify (run with --write first)')
@@ -291,7 +326,7 @@ function main(argv: readonly string[]): number {
     n08: sched.N08,
     marginHours: utc.marginMs === null ? null : Math.round(utc.marginMs / 36_000) / 100,
     plan: pass ? planPath : null,
-    command: pass ? `node "${launcherEntry}" --plan="${planPath}"` : null,
+    command: pass ? preNodeBoundaryCommand(boundaryPath, planPath) : null,
     reasons,
   })
   return pass ? 0 : 1

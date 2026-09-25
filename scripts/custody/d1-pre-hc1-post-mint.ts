@@ -36,6 +36,7 @@ import { OEP1_DERIVED_MATERIAL_SETTINGS, OEP1_EXPECTED_CLIENT_SETTINGS, OEP1_PRO
 import { ROUTE_B_PASSWORD_TRANSPORT } from '../../db/custody/mint-route-b-contract'
 import { TLS_TRUST_POLICY, gatherOperatorChannelFacts, oep1EvidenceReasons, routeBTransportFacts, type OperatorChannelFacts } from './d1-mint-operator-evidence'
 import { buildLauncherClosure } from './d1-mint-operator-channel-build'
+import { measureServerAuthentication } from './d1-server-auth-measure'
 import { PROBE_FORBIDDEN_SOURCE_TOKENS } from './d1-oep1-probe-harness'
 import { deriveEffectiveSchedule } from './d1-effective-schedule'
 
@@ -225,15 +226,12 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
   // Superseded by PMR-14 in DAG v1.0.8 (the closed-list design failed its recertification); kept registered so a chain that still carries it is evaluated, never satisfied.
   'PMR-13_OEP1_LOGGING_POSTURE_CLOSED': () => ['PMR-13 is superseded by PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED (DAG v1.0.8) and cannot be satisfied on its own'],
   'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED': (i) => oep1EvidenceReasons(i.operatorChannel.oep1.facts, i.operatorChannel.oep1.ctx),
-  // DAG v1.0.9 (AC-8): the channel authenticates the server against the pinned project certificate.
-  'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED': (i) => {
-    const c = i.operatorChannel
-    const r: string[] = [...c.caReasons]
-    if (c.binding?.tls?.policy !== TLS_TRUST_POLICY) r.push(`CHANNEL_BINDING.tls.policy is not ${TLS_TRUST_POLICY}`)
-    if (c.tlsPolicyStated !== TLS_TRUST_POLICY) r.push(`the effective channel authority does not state TLS_TRUST_POLICY ${TLS_TRUST_POLICY}`)
-    for (const id of ['OC-13', 'OC-14']) if (!OPERATOR_CHANNEL_CONTRACT.some((x) => x.id === id)) r.push(`the channel contract carries no ${id}`)
-    return r
-  },
+  // Superseded by PMR-16 in DAG v1.0.10 (owner R4 D: measured, not declared); kept registered so a chain that still carries it is evaluated, never satisfied.
+  'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED': () => ['PMR-15 is superseded by PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED (DAG v1.0.10) and cannot be satisfied on its own'],
+  // DAG v1.0.10: server authentication MEASURED -- the certificate's bytes/DER/SPKI, the trust text's behaviour
+  // and the launcher's CA check. The declared portions (policy name, TLS_TRUST_POLICY statement, clause ids) are
+  // not PMR-16's: PMR-10 (AC-8 mapping) and PMR-11 (clause ids) compare those declarations.
+  'PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED': (i) => [...i.operatorChannel.caReasons, ...i.operatorChannel.serverAuthReasons],
   'PMR-10_RULINGS_MATCH_IMPLEMENTATION': (i) => {
     const { active } = effectiveRulings(i.chain)
     const f = i.implementation
@@ -561,6 +559,7 @@ export function gatherPostMintInputs(root: string): PostMintInputs {
     candidate: gatherCandidateFacts(root),
     operatorChannel: gatherOperatorChannelFacts(root, {
       buildDigest: (r) => buildLauncherClosure(r).digest,
+      serverAuth: measureServerAuthentication,
       operatorSectionReasons: checkOperatorCredentialSection,
       effectiveN08: (r) => deriveEffectiveSchedule(r).N08,
       driverDigest: (r) => {

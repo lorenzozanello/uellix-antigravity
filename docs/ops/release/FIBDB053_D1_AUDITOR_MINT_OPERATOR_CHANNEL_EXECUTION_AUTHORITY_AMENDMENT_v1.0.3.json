@@ -1,0 +1,180 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.3",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3",
+  "authority_class": "EXECUTION_AUTHORITY_AMENDMENT",
+  "document_class": "OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT__APPEND_ONLY__R4_PRE_NODE_BOUNDARY__OEP1_DIGEST_CHAIN__NO_EXECUTION__NO_SECRET",
+  "append_only": true,
+  "supersedes": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "supersedes_note": "v1.0.0 .. v1.0.2 are not edited; the sections below replace theirs through the chain reader.",
+  "REPLACES_SECTIONS": [
+    "CHANNEL_BINDING",
+    "CHANNEL_CONTRACT",
+    "EXECUTION_PROCEDURE",
+    "OEP1_EVIDENCE_CONTRACT",
+    "PRE_NODE_BOUNDARY"
+  ],
+  "mission_id": "CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4",
+  "lane": "CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "AS_OF_BASE_SHA": "b4ca05ac8cdc32c7cd8306028f3adc606d7db5ef",
+  "owner_decision": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0.json",
+  "dag_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.10.json",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.3.json",
+  "CERTIFIED_BLOBS_UNCHANGED": "The v3 tools (mint 601f1f96..., probe 86cbda48...), their source templates and the shared trust text, the pinned project certificate and CHANNEL_BINDING.tools/.tls are byte-identical to b4ca05ac: eligible for certification inheritance. The launcher build changed (OC-15), so its prior PEB evidence is re-run for R4.",
+  "CHANNEL_BINDING": {
+    "launcher_build_digest": "a92b9baac33a529b506dabe29315ad0b67c63ad442faaaf847af94db702e9dea",
+    "launcher_build_rule": "Unchanged rule; re-derived for R4: the launcher now refuses a start without the pre-node boundary mark (OC-15) and carries the node/boundary plan fields.",
+    "tools": {
+      "probe": {
+        "file": "d1-oep1-probe-tool-v3.js",
+        "sha256": "86cbda481c72d2f2149468879e194e0031cfe3be2fa1c8cbb8b16c857171224d"
+      },
+      "mint": {
+        "file": "d1-mint-operator-tool-v3.js",
+        "sha256": "601f1f963042467433fe75a034d0466055a145ff06319fdd61d3b67dbd7b1b25"
+      }
+    },
+    "tools_directory": {
+      "base_env": "LOCALAPPDATA",
+      "relative": "uellix-d1-mint-operator-channel/tools"
+    },
+    "tls": {
+      "policy": "VERIFY_FULL_PINNED_CA",
+      "ca_file": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt",
+      "ca_raw_sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+      "ca_der_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa",
+      "ca_spki_sha256": "ba332649230ce9a764e4eaf70368f1a9de9ce64bd38424769e24c3fbf8e57acb"
+    },
+    "versioned_files": "The v3 tools have their own file names; v1 and v2 files are left in place, unchanged, so 979b1440 and fa43b396 stay reproducible.",
+    "invalidation": "TOOL_BINDING unchanged: any other byte of a tool, of the launcher build or of the CA file is another channel."
+  },
+  "CHANNEL_CONTRACT": {
+    "clause_ids": [
+      "OC-1",
+      "OC-2",
+      "OC-3",
+      "OC-4",
+      "OC-5",
+      "OC-6",
+      "OC-7",
+      "OC-8",
+      "OC-9",
+      "OC-10",
+      "OC-11",
+      "OC-12",
+      "OC-13",
+      "OC-14",
+      "OC-15"
+    ],
+    "clauses_source": "db/custody/mint-operator-channel.ts OPERATOR_CHANNEL_CONTRACT; OC-15 (the channel starts only through the pre-node boundary) is new in R4."
+  },
+  "EXECUTION_PROCEDURE": {
+    "gate": "pnpm custody:operator-channel:gate -- --mode=probe|mint --channel-dir=<outside the repository> [--write]",
+    "derivations": {
+      "targetHost": "N04 arm A, only when evaluateN04 is SATISFIED",
+      "targetPort": "route-B ROUTE_B_PORT (5432)",
+      "targetDatabase": "route-B ROUTE_B_DATABASE (postgres)",
+      "validUntil": "the effective N09, mint only (never N08)",
+      "driverRoot": "the repository root; node_modules/postgres version 3.4.9",
+      "driverDigest": "sha256 over the files of node_modules/postgres (realpath)",
+      "depositor": "the built N30 depositor, mint only",
+      "tool": "effective CHANNEL_BINDING.tools[mode]",
+      "launcherDigest": "effective CHANNEL_BINDING.launcher_build_digest",
+      "operatorPrincipal": "the certified OEP-1 evidence's operator_principal, mint only",
+      "caFile": "the repository copy of the pinned project certificate (CHANNEL_BINDING.tls.ca_file), absolute",
+      "caSha256": "CHANNEL_BINDING.tls.ca_raw_sha256",
+      "nodeExecutable": "the node binary running the gate: its absolute path and the sha256 of its bytes",
+      "preNodeBoundarySha256": "the sha256 of PRE_NODE_BOUNDARY_PS1 (db/custody/pre-node-boundary.ts), written by the gate next to the launcher build"
+    },
+    "stop_on": [
+      "STOP_PLAN_MISMATCH (any field)",
+      "STOP_STALE_TOOL_HASH / STOP_STALE_LAUNCHER_HASH",
+      "STOP_DIRTY",
+      "STOP_SCHEDULE_ELAPSED",
+      "N04 not SATISFIED",
+      "a schedule or channel-authority chain error",
+      "OC-12: probe planning without a certification of the channel as pinned",
+      "mint planning without closed OEP-1 evidence",
+      "STOP_STALE_BOUNDARY_HASH / STOP_BOUNDARY_MISSING",
+      "STOP_STALE_NODE_HASH / STOP_NODE_MISSING"
+    ],
+    "the_only_authorized_command": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"<channel-dir>\\d1-pre-node-boundary.ps1\" -Plan \"<channel-dir>\\plan-<mode>.json\"  (printed by the gate; a direct `node <launcher>` start is NOT an authorized operator channel and the launcher refuses it, OC-15)"
+  },
+  "OEP1_EVIDENCE_CONTRACT": {
+    "path": "docs/ops/release/FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v<semver>.json (discovery only: the file name carries no authority; the chain is bound by record ids and digests)",
+    "evidence_class": "D1_OEP1_EVIDENCE_V4",
+    "required_fields": [
+      "evidence_class",
+      "append_only",
+      "target_host",
+      "target_port",
+      "target_database",
+      "operator_principal",
+      "observation {identity, client_settings, derived_settings, connection}",
+      "sub_verdicts {PLAINTEXT_NOT_SERVER_VISIBLE, TARGET_SESSION_BOUND, STARTUP_PARAMETERS_CLOSED, TOOL_HASH_BOUND, PROBE_MINT_CONFIGURATION_COHERENT}",
+      "verdict (CLOSED only when every gating sub-verdict is PASS)",
+      "derived_material_exposure {classification, emitters}",
+      "derived_settings_list",
+      "probe_tool_sha256",
+      "mint_tool_sha256",
+      "launcher_build_digest",
+      "driver_digest",
+      "session_fingerprint",
+      "observed_at_utc",
+      "invalidation_predicates",
+      "channel_certification_event",
+      "record_id (OEP1-<id>, unique)",
+      "candidate {commit, package_closure_digest} (the candidate the channel certification event certifies)",
+      "derivation_context (the facts the verdict was derived from: binding, targetHost, n08, driverDigest, transport, doBlockGuarded)",
+      "predecessor (null for the root, else {record_id, content_digest})",
+      "acknowledges [{record_id, content_digest, resolution}] (exactly the earlier links that do not recompute to CLOSED)",
+      "content_digest (sha256 of the canonical JSON of the record without this field)"
+    ],
+    "recomputation": "PMR-14 RECOMPUTES every sub-verdict and the derived classification from the observation and the repository (never trusts the record); a consistent non-PASS record does not close OEP-1 (recertification survivor E1).",
+    "invalidation_predicates": [
+      "IP-1: any CHANNEL_BINDING pin differs from the evidence's hashes.",
+      "IP-2: N04's host, the route-B port or database differ from the evidence's.",
+      "IP-3: the mint's operator URL names another principal (launcher OC-4 and mint OT-14 refuse).",
+      "IP-4: observed_at_utc is not before the effective N08.",
+      "IP-5: a later OEP-1 evidence record exists on the chain (it becomes the head and must itself close OEP-1 and acknowledge every earlier non-CLOSED record).",
+      "IP-6: the channel certification event is not a terminal PASS for an ancestor carrying the same effective CHANNEL_BINDING.",
+      "IP-7: the driver digest differs from the repository's.",
+      "IP-8: the pinned trust root (CHANNEL_BINDING.tls) differs from the anchor the evidence observed."
+    ],
+    "chain": {
+      "rule": "ONE digest-bound chain: unique record_ids; each record's content_digest matches its canonical content; exactly one root; every other record names its predecessor by record_id AND content_digest and that record exists with that digest; no fork, cycle or orphan; each record observed STRICTLY after its predecessor (exact UTC); every link's verdict RECOMPUTED from its own observation and derivation_context (a recorded verdict its facts do not recompute to is refused); the head acknowledges, by id and digest with a resolution, exactly the earlier links that do not recompute to CLOSED, each observed before the head; the head binds the certified candidate and derived its verdict from the context the repository states now; no evidence file was ever deleted, modified or renamed in the history of HEAD.",
+      "replaces": "the R3 rule (predecessor paths with lower versions; acknowledged_non_closed by path), which accepted a head observed before the FAIL it acknowledged and did not verify predecessors or history (final recertification of b4ca05ac, N-1..N-3).",
+      "measured_by": "R4-N-CHAIN, R4-N-O11 (tests/custody/d1-oep1-evidence-chain.test.ts), R4-P-CHAIN",
+      "residual": "A merge that adds the same evidence path on two sides is not a deletion in `git log --diff-filter=DMRT`; the certifier reads the history of a PHASE 2 candidate."
+    }
+  },
+  "PRE_NODE_BOUNDARY": {
+    "why": "The final recertification of b4ca05ac measured NODE_OPTIONS=--require=<preload> in the owner console capturing the operator credential before the launcher could reject it. A Node process cannot be its own first boundary.",
+    "script": "db/custody/pre-node-boundary.ts PRE_NODE_BOUNDARY_PS1 (fixed text, no interpolation), written by the gate as <channel-dir>\\d1-pre-node-boundary.ps1",
+    "script_sha256": "7a536ed589271f34a6cbf4b818083696ce27d00d93e95a0df89e1578f9efe388",
+    "runs_in": "the operator shell: Windows PowerShell (powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File); pwsh elsewhere",
+    "before_node_exists": [
+      "refuses (exit 64, naming the variables) when any environment variable matches ^(NODE_.*|OPENSSL_.*|SSL_CERT_FILE|SSL_CERT_DIR|LD_PRELOAD|LD_LIBRARY_PATH|LD_AUDIT|DYLD_.*|UELLIX_D1_MINT_OPERATOR_DATABASE_URL|UELLIX_D1_PRE_NODE_BOUNDARY)$ case-insensitively: NODE_OPTIONS (--require, -r, --import, --loader), NODE_PATH, NODE_EXTRA_CA_CERTS, NODE_TLS_REJECT_UNAUTHORIZED, NODE_USE_SYSTEM_CA and every NODE_*, OPENSSL_*, SSL_CERT_FILE/DIR, LD_*/DYLD_* preload variables, and an ambient operator value or boundary mark",
+      "refuses unless the node binary named by the plan hashes to its pin",
+      "refuses unless the launcher build lies next to the script"
+    ],
+    "starts_node_with": "no runtime flags; an environment built from [\"SystemRoot\",\"SYSTEMROOT\",\"windir\",\"PATH\",\"Path\",\"TEMP\",\"TMP\"] only, plus UELLIX_D1_PRE_NODE_BOUNDARY = the script's own sha256; nothing inherited by omission",
+    "launcher_side": "OC-15 in the launcher (defence in depth, NOT the boundary): no prompt without the mark for the pinned script, with runtime flags, or with any NODE_* variable.",
+    "measured_by": "tests/custody/d1-pre-node-boundary.test.ts (real shell, real preload: --require, -r, --import refused with 0 preload executions and nothing captured; each runtime/trust input refused alone; node pin; the clean path runs the channel; control: a direct start lets the preload run and capture)",
+    "cannot_defend": "the shell that runs it (a hostile profile is excluded with -NoProfile; LD_PRELOAD on the shell precedes the script) and an administrator-level hook (IFEO).",
+    "measured_on_this_host": "NODE_USE_SYSTEM_CA was present in the environment the executor ran in; the boundary refused it. An operator console carrying any NODE_* variable must clear it before the channel starts."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No hosted connection, no hosted OEP-1, no mint, no deposit, no delivery.",
+    "No certification event is written by this lane (the b4ca05ac event is not materialized).",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": "hosted: 0",
+  "PROVIDER_MUTATIONS_EXECUTED": "0 by this lane's acts; a git push creates a Vercel Preview deployment by platform behaviour",
+  "required_independent_review": "MANDATORY: the focused independent recertification of the R4 successor.",
+  "final_state": "CHANNEL_PRE_NODE_BOUNDED__OEP1_DIGEST_CHAIN__TOOLS_AND_TRUST_ROOT_UNCHANGED",
+  "next_gate": "Focused independent recertification -> its event -> PHASE 2 OEP-1 probe through the certified channel (through the pre-node boundary) -> evidence (chain head) -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

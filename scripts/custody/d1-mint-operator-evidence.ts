@@ -25,10 +25,14 @@
 //                                     anchor, the driver digest it loaded) = what
 //                                     the mint will use (R3: never constants alone)
 //
-// The evidence is an explicit append-only CHAIN (R3): each record names its
-// predecessor; the head is evaluated, and it must acknowledge every earlier
-// record that did not close OEP-1, so a later PASS cannot silently erase an
-// earlier FAIL or INCONCLUSIVE.
+// The evidence is an explicit append-only CHAIN bound by digests (R4, NB-2):
+// every record carries its record_id, the certified candidate it observed, its
+// observation time, the facts it derived its verdict from, and the canonical
+// sha256 of its own content; each names its predecessor by record_id AND
+// content digest. Every link's verdict is RECOMPUTED from its own facts; the
+// head must be observed after every link and acknowledge, by id and digest,
+// each earlier link that does not recompute to CLOSED. File names carry no
+// meaning, and the history may not delete or modify an evidence file.
 // DERIVED_MATERIAL_EXPOSURE is recomputed and must match the record, and gates
 // nothing: the verifier is derived material, classified apart.
 
@@ -52,7 +56,7 @@ export const CHANNEL_AUTHORITY = `${RELEASE}/FIBDB053_D1_AUDITOR_MINT_OPERATOR_C
 export const CHANNEL_AUTHORITY_AMENDMENT = /^FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v(\d+)\.(\d+)\.(\d+)\.json$/
 export const OEP1_EVIDENCE_DIR = RELEASE
 export const OEP1_EVIDENCE_PATTERN = /^FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v(\d+)\.(\d+)\.(\d+)\.json$/
-export const OEP1_EVIDENCE_CLASS = 'D1_OEP1_EVIDENCE_V3'
+export const OEP1_EVIDENCE_CLASS = 'D1_OEP1_EVIDENCE_V4'
 /** AC-8: the only TLS policy the channel binding may carry. */
 export const TLS_TRUST_POLICY = 'VERIFY_FULL_PINNED_CA'
 const CA_FILE_PATTERN = /^docs\/ops\/release\/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_[a-z0-9]+_v\d+\.\d+\.\d+\.crt$/
@@ -238,6 +242,9 @@ export interface ChannelEventFacts {
   readonly candidateIsAncestorOfHead: boolean
   /** CHANNEL_BINDING of the EFFECTIVE operator-channel authority AT the certified candidate. */
   readonly bindingAtCandidate: ChannelBinding | null
+  /** R4: the certified candidate's identity, as the event states it (null when absent or malformed). */
+  readonly candidateCommit: string | null
+  readonly packageClosureDigest: string | null
 }
 
 export function gatherChannelEventFacts(root: string, eventPath: string): ChannelEventFacts {
@@ -261,7 +268,8 @@ export function gatherChannelEventFacts(root: string, eventPath: string): Channe
   }
   const eff = cand === null ? null : readEffectiveChannelAuthority(commitSource(root, cand))
   const bindingAtCandidate = eff === null || eff.doc === null || eff.errors.length > 0 ? null : ((eff.doc.CHANNEL_BINDING as ChannelBinding | undefined) ?? null)
-  return { exists, terminalPass, candidateIsAncestorOfHead: ancestor, bindingAtCandidate }
+  const digest = typeof body.package_closure_digest === 'string' && /^[0-9a-f]{64}$/.test(body.package_closure_digest) ? body.package_closure_digest : null
+  return { exists, terminalPass, candidateIsAncestorOfHead: ancestor, bindingAtCandidate, candidateCommit: cand, packageClosureDigest: digest }
 }
 
 /** Pure: does a certification event certify the channel as currently pinned? (OC-12: required to plan the probe.) */
@@ -284,8 +292,8 @@ export interface Oep1EvidenceFacts {
   readonly path: string | null
   readonly evidence: Readonly<Record<string, unknown>> | null
   readonly channelEvent: ChannelEventFacts | null
-  /** Every record of the chain, root first, with its recorded verdict. */
-  readonly chain: readonly { readonly path: string; readonly verdict: string }[]
+  /** Every record of the chain, root first, with its RECOMPUTED verdict. */
+  readonly chain: readonly Oep1ChainLink[]
   /** Why the files do not form one acknowledged chain (empty = they do). */
   readonly chainReasons: readonly string[]
 }
@@ -420,79 +428,184 @@ export function oep1EvidenceReasons(f: Oep1EvidenceFacts, ctx: Oep1RepoContext):
   if (re.derived !== null && dm?.classification !== re.derived.classification) r.push('the recorded DERIVED_MATERIAL_EXPOSURE is not the recomputed classification')
   if (!Array.isArray(e.invalidation_predicates) || e.invalidation_predicates.length === 0) r.push('invalidation_predicates are absent')
   r.push(...channelCertificationReasons(f.channelEvent, ctx.binding))
+  // R4: the head observed the certified candidate, and derived its verdict from what the repository says NOW.
+  const cand = e.candidate as { commit?: unknown; package_closure_digest?: unknown } | undefined
+  if (f.channelEvent === null || cand?.commit !== f.channelEvent.candidateCommit || cand?.package_closure_digest !== f.channelEvent.packageClosureDigest || f.channelEvent.candidateCommit === null)
+    r.push('the head does not bind the candidate the channel certification event certifies (commit and package digest)')
+  if (canonicalJson(e.derivation_context ?? null) !== canonicalJson(derivationContextOf(ctx))) r.push('the head derived its verdict from other facts than the repository states now (derivation_context)')
   r.push(...f.chainReasons)
   return r
 }
 
-const versionOf = (name: string): [number, number, number] | null => {
-  const m = OEP1_EVIDENCE_PATTERN.exec(name)
-  return m === null ? null : [Number(m[1]), Number(m[2]), Number(m[3])]
+/** Canonical JSON: object keys sorted at every depth, so a digest does not depend on key order. */
+export function canonicalJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map((x) => canonicalJson(x)).join(',')}]`
+  if (v !== null && typeof v === 'object') {
+    const o = v as Record<string, unknown>
+    return `{${Object.keys(o)
+      .filter((k) => o[k] !== undefined)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${canonicalJson(o[k])}`)
+      .join(',')}}`
+  }
+  return JSON.stringify(v)
 }
-const versionLess = (a: [number, number, number], b: [number, number, number]): boolean => a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2])))
+
+/** The canonical sha256 of a record's content, excluding its own content_digest field. */
+export function oep1RecordDigest(doc: Readonly<Record<string, unknown>>): string {
+  const rest: Record<string, unknown> = { ...doc }
+  delete rest.content_digest
+  return createHash('sha256').update(canonicalJson(rest)).digest('hex')
+}
+
+/** A record with its content_digest set (for the probe's evidence writer and for fixtures). */
+export function sealOep1Record<T extends Record<string, unknown>>(doc: T): T & { content_digest: string } {
+  return { ...doc, content_digest: oep1RecordDigest(doc) }
+}
+
+/** The facts a record derives its verdict from: the repository context, as plain data. */
+export function derivationContextOf(ctx: Oep1RepoContext): Record<string, unknown> {
+  return { binding: ctx.binding, targetHost: ctx.targetHost, n08: ctx.n08, driverDigest: ctx.driverDigest, transport: ctx.transport, doBlockGuarded: ctx.doBlockGuarded }
+}
+
+/** A link's verdict, RECOMPUTED from its own facts (its observation and its derivation_context); never read from its verdict string. */
+export function recomputedLinkVerdict(doc: Readonly<Record<string, unknown>>): 'CLOSED' | 'NOT_CLOSED' {
+  const dc = doc.derivation_context as Partial<Oep1RepoContext> | undefined
+  if (dc === undefined || dc === null || typeof dc !== 'object' || doc.observation === undefined) return 'NOT_CLOSED'
+  const ctx: Oep1RepoContext = {
+    binding: (dc.binding ?? null) as ChannelBinding | null,
+    targetHost: typeof dc.targetHost === 'string' ? dc.targetHost : null,
+    n08: typeof dc.n08 === 'string' ? dc.n08 : null,
+    driverDigest: typeof dc.driverDigest === 'string' ? dc.driverDigest : null,
+    transport: String(dc.transport ?? ''),
+    doBlockGuarded: dc.doBlockGuarded === true,
+  }
+  const re = recomputeOep1(doc, ctx)
+  return OEP1_GATING_SUBVERDICTS.every((k) => re.subVerdicts[k] === 'PASS') ? 'CLOSED' : 'NOT_CLOSED'
+}
+
+const RECORD_ID = /^OEP1-[A-Za-z0-9._-]{1,64}$/
+const UTC = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{3})?Z$/
+
+export interface Oep1ChainLink {
+  readonly path: string
+  readonly recordId: string
+  /** RECOMPUTED from the link's own facts. */
+  readonly verdict: 'CLOSED' | 'NOT_CLOSED'
+  readonly observedAt: string | null
+}
 
 /**
- * The chain rules (pure; R3-N-CHAIN). Records are {path, doc}. One root (predecessor null); every
- * other record names an existing record with a LOWER version; no two records name the same
- * predecessor; every record is on the chain; the head acknowledges, with a resolution, exactly the
- * earlier records whose verdict is not CLOSED.
+ * The chain rules (pure; R4-N-CHAIN). Records are {path, doc}; the path is for reporting only.
+ *   - every record has a unique record_id and a content_digest equal to the canonical digest of its content;
+ *   - exactly one root (predecessor null); every other record names its predecessor by record_id AND
+ *     content_digest, and that record exists with that digest (no deletion, no substitution);
+ *   - no fork (two records naming one predecessor), no cycle, every record on the chain ending at the head;
+ *   - every record is observed STRICTLY after its predecessor (exact UTC instants);
+ *   - every link's verdict is recomputed from its own facts; a recorded verdict that its facts do not
+ *     recompute to is refused;
+ *   - the head acknowledges, by record_id and content_digest with a resolution, exactly the earlier links
+ *     that do not recompute to CLOSED, each observed before the head.
  */
-export function oep1ChainReasons(records: readonly { readonly path: string; readonly doc: Readonly<Record<string, unknown>> }[]): { head: string | null; chain: { path: string; verdict: string }[]; reasons: string[] } {
+export function oep1ChainReasons(records: readonly { readonly path: string; readonly doc: Readonly<Record<string, unknown>> }[]): { head: string | null; chain: Oep1ChainLink[]; reasons: string[] } {
   const reasons: string[] = []
   if (records.length === 0) return { head: null, chain: [], reasons }
-  const byPath = new Map(records.map((r) => [r.path, r]))
-  const pred = (r: { doc: Readonly<Record<string, unknown>> }): string | null | undefined => (r.doc.predecessor === null ? null : typeof r.doc.predecessor === 'string' ? r.doc.predecessor : undefined)
-  const roots = records.filter((r) => pred(r) === null)
-  if (roots.length !== 1) reasons.push(`the OEP-1 evidence has ${roots.length} roots (records with predecessor null); exactly one is required`)
-  const named = new Map<string, string[]>()
+  const idOf = (r: { doc: Readonly<Record<string, unknown>> }): string | null => (typeof r.doc.record_id === 'string' && RECORD_ID.test(r.doc.record_id) ? r.doc.record_id : null)
+  const byId = new Map<string, (typeof records)[number]>()
   for (const r of records) {
-    const p = pred(r)
-    if (p === undefined) {
-      reasons.push(`${r.path} does not name its predecessor (null for the first record)`)
-      continue
-    }
-    if (p === null) continue
-    const target = byPath.get(p)
-    if (target === undefined) {
-      reasons.push(`${r.path} names a predecessor that does not exist: ${p}`)
-      continue
-    }
-    const va = versionOf(p.split('/').pop()!)
-    const vb = versionOf(r.path.split('/').pop()!)
-    if (va === null || vb === null || !versionLess(va, vb)) reasons.push(`${r.path} names a predecessor that is not an earlier version`)
-    named.set(p, [...(named.get(p) ?? []), r.path])
+    const id = idOf(r)
+    if (id === null) reasons.push(`${r.path} carries no valid record_id`)
+    else if (byId.has(id)) reasons.push(`the record_id ${id} is used by more than one record`)
+    else byId.set(id, r)
+    if (r.doc.content_digest !== oep1RecordDigest(r.doc)) reasons.push(`${r.path}: its content does not match its content_digest (altered or substituted)`)
+    if (typeof r.doc.observed_at_utc !== 'string' || !UTC.test(r.doc.observed_at_utc)) reasons.push(`${r.path}: observed_at_utc is not an exact UTC instant`)
   }
-  for (const [p, succ] of named) if (succ.length > 1) reasons.push(`the OEP-1 evidence forks at ${p}: ${succ.join(', ')}`)
-  const heads = records.filter((r) => !named.has(r.path))
+  type Link = { record_id?: unknown; content_digest?: unknown } | null | undefined
+  const linkOf = (r: { doc: Readonly<Record<string, unknown>> }): Link => r.doc.predecessor as Link
+  const roots = records.filter((r) => linkOf(r) === null)
+  if (roots.length !== 1) reasons.push(`the OEP-1 evidence has ${roots.length} roots (records whose predecessor is null); exactly one is required`)
+  const successors = new Map<string, string[]>()
+  const time = (r: { doc: Readonly<Record<string, unknown>> }): number => (typeof r.doc.observed_at_utc === 'string' && UTC.test(r.doc.observed_at_utc) ? Date.parse(r.doc.observed_at_utc) : Number.NaN)
+  for (const r of records) {
+    const link = linkOf(r)
+    if (link === null) continue
+    if (link === undefined || typeof link !== 'object' || typeof link.record_id !== 'string' || typeof link.content_digest !== 'string' || !HEX64.test(link.content_digest)) {
+      reasons.push(`${r.path} does not name its predecessor by record_id and content_digest (null for the first record)`)
+      continue
+    }
+    const pred = byId.get(link.record_id)
+    if (pred === undefined) {
+      reasons.push(`${r.path} names a predecessor that does not exist (deleted?): ${link.record_id}`)
+      continue
+    }
+    if (pred.doc.content_digest !== link.content_digest || oep1RecordDigest(pred.doc) !== link.content_digest) reasons.push(`${r.path} names ${link.record_id} with another content digest (substituted predecessor)`)
+    if (!(time(r) > time(pred))) reasons.push(`${r.path} is not observed strictly after its predecessor ${link.record_id}`)
+    successors.set(link.record_id, [...(successors.get(link.record_id) ?? []), r.path])
+  }
+  for (const [id, succ] of successors) if (succ.length > 1) reasons.push(`the OEP-1 evidence forks at ${id}: ${succ.join(', ')}`)
+  const heads = records.filter((r) => { const id = idOf(r); return id === null || !successors.has(id) })
   if (heads.length !== 1) reasons.push(`the OEP-1 evidence has ${heads.length} heads; exactly one is required`)
   const head = heads.length === 1 ? heads[0]! : null
-  const chain: { path: string; verdict: string }[] = []
+  const chain: Oep1ChainLink[] = []
   if (head !== null) {
     const seen = new Set<string>()
     let cur: (typeof records)[number] | undefined = head
     while (cur !== undefined && !seen.has(cur.path)) {
       seen.add(cur.path)
-      chain.unshift({ path: cur.path, verdict: String(cur.doc.verdict ?? 'MISSING') })
-      const p = pred(cur)
-      cur = typeof p === 'string' ? byPath.get(p) : undefined
+      chain.unshift({ path: cur.path, recordId: idOf(cur) ?? '', verdict: recomputedLinkVerdict(cur.doc), observedAt: typeof cur.doc.observed_at_utc === 'string' ? cur.doc.observed_at_utc : null })
+      const link = linkOf(cur)
+      cur = link !== null && link !== undefined && typeof link.record_id === 'string' ? byId.get(link.record_id) : undefined
     }
-    if (seen.size !== records.length) reasons.push(`${records.length - seen.size} OEP-1 evidence record(s) are not on the chain that ends at the head`)
-    const nonClosed = chain.slice(0, -1).filter((c) => c.verdict !== 'CLOSED').map((c) => c.path).sort()
-    const ack = Array.isArray(head.doc.acknowledged_non_closed) ? (head.doc.acknowledged_non_closed as Array<{ path?: unknown; resolution?: unknown }>) : null
-    if (ack === null) reasons.push('the head does not carry acknowledged_non_closed')
+    if (seen.size !== records.length) reasons.push(`${records.length - seen.size} OEP-1 evidence record(s) are not on the chain that ends at the head (orphan or cycle)`)
+    for (const l of chain) {
+      const doc = byId.get(l.recordId)?.doc
+      // A recorded string is never trusted; it may only AGREE with the recomputation (any non-CLOSED word -- FAIL,
+      // INCONCLUSIVE, NOT_CLOSED -- agrees with NOT_CLOSED; a missing verdict agrees with nothing).
+      if (doc !== undefined && (doc.verdict === undefined || (doc.verdict === 'CLOSED') !== (l.verdict === 'CLOSED')))
+        reasons.push(`${l.path}: the recorded verdict ${String(doc.verdict)} is not what its facts recompute to (${l.verdict})`)
+    }
+    const nonClosed = chain.slice(0, -1).filter((c) => c.verdict !== 'CLOSED')
+    const ack = Array.isArray(head.doc.acknowledges) ? (head.doc.acknowledges as Array<{ record_id?: unknown; content_digest?: unknown; resolution?: unknown }>) : null
+    if (ack === null) reasons.push('the head does not carry acknowledges')
     else {
-      const ackPaths = ack.map((a) => String(a.path)).sort()
-      if (JSON.stringify(ackPaths) !== JSON.stringify(nonClosed)) reasons.push(`the head must acknowledge exactly the earlier non-CLOSED records [${nonClosed.join(', ')}], not [${ackPaths.join(', ')}]`)
-      if (ack.some((a) => typeof a.resolution !== 'string' || a.resolution.trim() === '')) reasons.push('an acknowledged non-CLOSED record carries no resolution')
+      const want = nonClosed.map((c) => c.recordId).sort()
+      const got = ack.map((a) => String(a.record_id)).sort()
+      if (JSON.stringify(want) !== JSON.stringify(got)) reasons.push(`the head must acknowledge exactly the earlier links that do not recompute to CLOSED [${want.join(', ')}], not [${got.join(', ')}]`)
+      for (const a of ack) {
+        const target = typeof a.record_id === 'string' ? byId.get(a.record_id) : undefined
+        if (target === undefined) continue
+        if (a.content_digest !== target.doc.content_digest) reasons.push(`the head acknowledges ${String(a.record_id)} with another content digest`)
+        if (typeof a.resolution !== 'string' || a.resolution.trim() === '') reasons.push(`the acknowledgement of ${String(a.record_id)} carries no resolution`)
+        if (!(time(head) > time(target))) reasons.push(`the head is not observed after ${String(a.record_id)}, which it claims to supersede`)
+      }
     }
   }
   return { head: head?.path ?? null, chain, reasons }
 }
 
-/** Gather the evidence facts from the repository: every record, as one explicit chain (R3). */
+/** R4: no OEP-1 evidence file may ever have been deleted or modified in the history of HEAD. */
+export function oep1EvidenceHistoryReasons(root: string): string[] {
+  try {
+    execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root, stdio: 'ignore' })
+  } catch {
+    return ['the OEP-1 evidence history cannot be read (not a git work tree)']
+  }
+  let out = ''
+  try {
+    out = execFileSync('git', ['log', '--full-history', '-m', '--diff-filter=DMRT', '--name-status', '--format=', 'HEAD', '--', `${OEP1_EVIDENCE_DIR}/FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_*`], { cwd: root, encoding: 'utf8' })
+  } catch {
+    return ['the OEP-1 evidence history cannot be read']
+  }
+  const touched = out.split(/\r?\n/).filter((l) => l.trim() !== '')
+  return touched.length === 0 ? [] : [`an OEP-1 evidence file was deleted, modified or renamed in history: ${touched.slice(0, 3).join('; ')}`]
+}
+
+/** Gather the evidence facts from the repository: every record as one digest-bound chain, plus its history (R4). */
 export function gatherOep1EvidenceFacts(root: string): Oep1EvidenceFacts {
   const dir = join(root, OEP1_EVIDENCE_DIR)
   const names = (existsSync(dir) ? readdirSync(dir) : []).filter((n) => OEP1_EVIDENCE_PATTERN.test(n))
-  if (names.length === 0) return { path: null, evidence: null, channelEvent: null, chain: [], chainReasons: [] }
+  const history = oep1EvidenceHistoryReasons(root)
+  if (names.length === 0) return { path: null, evidence: null, channelEvent: null, chain: [], chainReasons: history.filter((h) => !h.startsWith('the OEP-1 evidence history cannot')) }
   const records = names.map((n) => {
     const path = `${OEP1_EVIDENCE_DIR}/${n}`
     let doc: Record<string, unknown>
@@ -511,7 +624,7 @@ export function gatherOep1EvidenceFacts(root: string): Oep1EvidenceFacts {
     evidence: evidence ?? { unparseable: true },
     channelEvent: eventPath === null ? null : gatherChannelEventFacts(root, eventPath),
     chain,
-    chainReasons: reasons,
+    chainReasons: [...reasons, ...history],
   }
 }
 
@@ -537,6 +650,8 @@ export interface OperatorChannelFacts {
   readonly caReasons: readonly string[]
   /** AC-8: the TLS policy the EFFECTIVE authority states (TLS_TRUST_POLICY section), or null. */
   readonly tlsPolicyStated: string | null
+  /** R4 / PMR-16: why the channel does not authenticate the server, MEASURED (empty = it does). */
+  readonly serverAuthReasons: readonly string[]
 }
 
 export function gatherOperatorChannelFacts(
@@ -546,6 +661,8 @@ export function gatherOperatorChannelFacts(
     readonly operatorSectionReasons: (section: unknown) => string[]
     readonly effectiveN08: (root: string) => string | null
     readonly driverDigest: (root: string) => string | null
+    /** R4 / PMR-16: the behavioural measurement of server authentication (d1-server-auth-measure.ts). */
+    readonly serverAuth: (root: string, binding: ChannelBinding | null, targetHost: string | null) => string[]
   }
 ): OperatorChannelFacts {
   const { binding, reasons } = readChannelBinding(root)
@@ -575,6 +692,7 @@ export function gatherOperatorChannelFacts(
     },
     operatorSectionReasons: deps.operatorSectionReasons(inventory.operator_credential),
     caReasons: caFileReasons(root, binding),
+    serverAuthReasons: deps.serverAuth(root, binding, authorizedDirectHost(root)),
     tlsPolicyStated: typeof (eff.doc as { TLS_TRUST_POLICY?: { policy?: unknown } } | null)?.TLS_TRUST_POLICY?.policy === 'string' ? String((eff.doc as { TLS_TRUST_POLICY: { policy: string } }).TLS_TRUST_POLICY.policy) : null,
     oep1: {
       facts: gatherOep1EvidenceFacts(root),
