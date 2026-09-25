@@ -1,0 +1,56 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PREPHASE2_R5_CI_REMEDIATION_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "R5_CI_REMEDIATION_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_HOSTED_CONNECTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5 (bounded CI remediation)",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "PRESTATE": { "branch": "codex/cv1-d1-auditor-custody-realization-r1", "head": "999109c2ef53df6ea75bffc4eeb0865c26f8307f", "tree": "af3c6604f5db57cc3ee695291a35cbc2eb463a00", "clean": true, "origin_head": "999109c2ef53df6ea75bffc4eeb0865c26f8307f" },
+  "FAILED_CI_CONSUMED": {
+    "run": "GitHub Actions run 36140437048 (CI) on 999109c2, job 'Lint, typecheck, test, build', step Test, ubuntu runner",
+    "failures": [
+      "tests/custody/d1-pre-node-boundary.test.ts R4-N-NODE-PIN: exit 1, expected 64",
+      "tests/custody/d1-pre-node-boundary.test.ts R4-P-BOUNDARY step (3): exit 1, expected 0",
+      "tests/custody/d1-pre-node-boundary.test.ts R5-A DOTNET_STARTUP_HOOKS: exit null (signal), expected 64",
+      "tests/custody/d1-cert-event-termination.test.ts B: the nested complete custody suite reported exactly those three"
+    ]
+  },
+  "ROOT_CAUSE": {
+    "classification": "A (implementation defect) for the first two; B (invalid cross-platform test expectation) for DOTNET_STARTUP_HOOKS; the termination failure is their truthful nested consequence",
+    "A": "The R5 rewrite of the inner PowerShell script regressed portability relative to R4 (green on the same runner): it set PSModulePath to empty before its only module-qualified cmdlet (ConvertFrom-Json), and PowerShell 7 on Linux then failed the plan read (exit 1 before the node pin, for both failing tests); and it built the launcher path from a backslash-joined literal, which cannot exist on Linux (R4 used Join-Path). Locally Windows PowerShell 5.1 still resolved the module and accepted backslashes, which masked both. The rejection paths (NODE_*, COR_PROFILER, CORECLR_PROFILER) passed on Linux because they refuse before the plan read.",
+    "B": "DOTNET_STARTUP_HOOKS is a CoreCLR host feature. Measured locally: the governed inner shell, Windows PowerShell 5.1, runs on .NET Framework 4.8.9345.0, which does not implement startup hooks, so the script runs and refuses the variable. On Linux CI the shell is PowerShell 7 (CoreCLR); its host resolved the (absent) hook before any script line and the process ended by signal. The expectation 'the inner script refuses it on every runtime' is false for CoreCLR; it is also exactly why the governed Windows entry clears the variable in the outer cmd before PowerShell starts.",
+    "evidence_limit": "pwsh is not installed on this workstation and no download was authorized, so the Linux behaviour is taken from the CI run; the boundary test now reports the shell's stderr and signal on any exit-code failure, so the next CI run carries the actual error if anything remains."
+  },
+  "REMEDIATION": {
+    "implementation": "db/custody/pre-node-boundary.ts inner script: PSModulePath is restricted to $PSHOME/Modules (not emptied, not inherited) after the environment check, and the launcher path is built with System.IO.Path.Combine. No other line of either boundary changed; the outer cmd and its sha256 dd79326f... are unchanged.",
+    "tests": "tests/custody/d1-pre-node-boundary.test.ts: the run helper captures stderr and the signal and every exit-code assertion carries them; the pinned-text control asserts the restricted module path and the Path.Combine launcher path (and no backslash-joined literal); COR_PROFILER / CORECLR_PROFILER refusal unchanged on every runtime; the DOTNET_STARTUP_HOOKS control is routed by the MEASURED runtime of the shell (asserted to be measured): .NET Framework -> the script refuses it (64, names [DOTNET_STARTUP_HOOKS]); CoreCLR -> non-zero exit, no script output, no node start, the hook named in the error. Nothing is skipped; no negative control is removed; the termination suite is unchanged.",
+    "battery": "scripts/custody/d1-mint-operator-channel-mutation.ts: two mutants added (R5-M-A-PSMODPATH, R5-M-A-PORTABLE-PATH).",
+    "authority": "execution authority amendment v1.0.5 (append-only over v1.0.4: launcher build digest 98e4c119... -> 81b6fb72...; PRE_NODE_BOUNDARY inner sha256 8f390316... and the corrected description); test manifest amendment v1.0.5."
+  },
+  "SECURITY_INVARIANTS_WEAKENED": "NO. The module path the one cmdlet can autoload from is $PSHOME/Modules only (the modules beside the PowerShell the outer cmd starts by absolute path); attacker entries remain removed by the outer cmd and excluded by the restriction; trust decisions remain .NET-only; every refusal pattern, the node pin, the mark, the allowlisted environment and the outer sanitization are unchanged.",
+  "COVERAGE": {
+    "windows_behavioral": "cmd.exe outer boundary (sanitization of PSModulePath and the profiler / startup-hook inputs, module-shadowing end to end with 0 module and 0 trojan executions) and the inner script under Windows PowerShell 5.1 (.NET Framework), including the DOTNET_STARTUP_HOOKS refusal: 27/27 here.",
+    "linux_ci": "the inner script under PowerShell 7: preload refusal, runtime-input refusals, node pin, step (3) environment measurement, module-shadowing control and 0-execution case, COR_PROFILER / CORECLR_PROFILER refusal, DOTNET_STARTUP_HOOKS stopped by the CoreCLR host; plus the pure/static controls (pinned text of both boundaries, patterns, outer sanitized list). The cmd.exe tests stay Windows-only because cmd.exe does not exist on Linux; their text is validated statically there."
+  },
+  "GATES": {
+    "targeted": "tests/custody/d1-pre-node-boundary.test.ts 27/27; channel + post-mint 169/169",
+    "custody_suite": "39 files / 1012 tests passed (termination included)",
+    "mutation": "boundary set 9/9 RED + self-test GREEN (R4-M-BOUNDARY-AMBIENT/ENV/NODE-PIN, R4-M-LAUNCHER-MARK, R5-M-A-INJECTION, R5-M-A-OUTER-PSMOD, R5-M-A-DOTNET, R5-M-A-PSMODPATH, R5-M-A-PORTABLE-PATH); byte restoration verified; R5-M-A-INJECTION's per-mutant attribution is empty under the JSON reporter and was re-verified by hand: 4 real assertions fail",
+    "peb": "3/3 SATISFIED_CANDIDATE with launcher 81b6fb72...",
+    "typecheck": "clean",
+    "lint": "changed and new TS: 0 problems",
+    "secrets": "CURRENT_TREE: no credential material found",
+    "authority_seal": "PASS",
+    "dag": "PASS (unchanged lineage through v1.0.11)",
+    "pre_hc1": "NOT_READY by PMR-9 and PMR-14 only"
+  },
+  "EXPLICIT_NON_ACTIONS": [
+    "No certification event; no final focused recertification started.",
+    "No hosted connection, no OEP-1, no HC-1, no N11, no real credential, no merge.",
+    "No earlier authority, record or amendment edited."
+  ],
+  "final_state": "D1_PREPHASE2_R5_CI_REMEDIATED__READY_FOR_FINAL_FOCUSED_RECERT_ONLY_IF_EXACT_HEAD_CI_IS_GREEN"
+}

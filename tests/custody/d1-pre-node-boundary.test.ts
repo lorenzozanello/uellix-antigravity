@@ -41,6 +41,11 @@ const sha = (b: Buffer | string) => createHash('sha256').update(b).digest('hex')
 const SHELL = process.platform === 'win32' ? 'powershell.exe' : 'pwsh'
 const CMD_EXE = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'cmd.exe')
 const SHELL_AVAILABLE = spawnSync(SHELL, ['-NoProfile', '-NonInteractive', '-Command', 'exit 0'], { windowsHide: true }).status === 0
+/** The .NET runtime the shell under test runs on (".NET Framework ..." for Windows PowerShell 5.1, ".NET <n>" for PowerShell 7). */
+const SHELL_RUNTIME = SHELL_AVAILABLE
+  ? String(spawnSync(SHELL, ['-NoProfile', '-NonInteractive', '-Command', '[System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription'], { encoding: 'utf8', windowsHide: true }).stdout ?? '').trim()
+  : ''
+const SHELL_IS_NET_FRAMEWORK = SHELL_RUNTIME.startsWith('.NET Framework')
 const HOSTILE = new RegExp(PRE_NODE_HOSTILE_SOURCE, 'i')
 const INJECTION = new RegExp(PRE_NODE_INJECTION_SOURCE, 'i')
 const SENTINEL = `postgresql://postgres:d1-r4-synthetic-${createHash('sha256').update(String(Date.now())).digest('hex').slice(0, 12)}@db.boundary-test.invalid:5432/postgres`
@@ -70,19 +75,25 @@ const trojanExecutions = (): number => (existsSync(trojanMarker) ? readFileSync(
 
 interface Run {
   code: number | null
+  signal: NodeJS.Signals | null
   stdout: string
+  stderr: string
 }
 function run(cmd: string, args: string[], env: Record<string, string>, stdin: string): Promise<Run> {
   return new Promise((res) => {
     const c = spawn(cmd, args, { env: env as unknown as NodeJS.ProcessEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: false })
     let out = ''
+    let err = ''
     c.stdout.setEncoding('utf8')
+    c.stderr.setEncoding('utf8')
     c.stdout.on('data', (d: string) => (out += d))
-    c.stderr.on('data', () => undefined)
+    c.stderr.on('data', (d: string) => (err += d))
     c.stdin.end(stdin)
-    c.on('close', (code) => res({ code, stdout: out }))
+    c.on('close', (code, signal) => res({ code, signal, stdout: out, stderr: err }))
   })
 }
+/** Failure context for an exit-code assertion: what the shell actually printed (the sentinel never reaches stderr). */
+const diag = (r: Run): string => `signal=${String(r.signal)} stdout=${r.stdout.slice(-600)} stderr=${r.stderr.slice(-1200)}`
 /** Direct invocation of the INNER script (defence-in-depth path; not the governed entry). */
 const viaBoundary = (extra: Record<string, string>, plan = planPath) =>
   run(SHELL, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', boundaryPath, '-Plan', plan], { ...baseEnv(), ...extra }, `${SENTINEL}\n`)
@@ -168,7 +179,12 @@ describe('the boundary artifacts are the pinned, fixed text the TypeScript side 
     // poisoned PSModulePath could shadow; PSModulePath is cleared before any command that could autoload.
     expect(PRE_NODE_BOUNDARY_PS1).toContain('[System.Environment]::GetEnvironmentVariables()')
     expect(PRE_NODE_BOUNDARY_PS1).toContain('[System.IO.File]::Exists')
-    expect(PRE_NODE_BOUNDARY_PS1).toContain("$env:PSModulePath = ''")
+    // The module path is restricted to the modules beside this PowerShell (never the inherited one, never empty:
+    // an empty path broke the plan read under PowerShell 7 on Linux CI).
+    expect(PRE_NODE_BOUNDARY_PS1).toContain("$env:PSModulePath = [System.IO.Path]::Combine($PSHOME, 'Modules')")
+    // The launcher path is built with the platform separator (a backslash-joined literal cannot exist on Linux).
+    expect(PRE_NODE_BOUNDARY_PS1).toContain("[System.IO.Path]::Combine($PSScriptRoot, 'launcher', 'scripts', 'custody', 'd1-mint-operator-launcher.js')")
+    expect(PRE_NODE_BOUNDARY_PS1).not.toContain("'\\launcher\\")
     for (const cmdlet of ['Get-FileHash', 'Get-Content', 'Test-Path', 'Get-ChildItem']) expect(PRE_NODE_BOUNDARY_PS1, cmdlet).not.toContain(cmdlet)
     expect(PRE_NODE_BOUNDARY_PS1).not.toMatch(/\$\{|`/)
     expect(preNodeBoundarySha256()).toBe(sha(PRE_NODE_BOUNDARY_PS1))
@@ -217,7 +233,7 @@ describe.runIf(SHELL_AVAILABLE)('R4-N-PRELOAD / R4-N-RUNTIME-INPUTS: through the
   ])('%s: refused before node exists; PRELOAD_EXECUTIONS_BEFORE_GOVERNED_SECRET = 0; nothing captured', async (_n, env) => {
     resetTraps()
     const r = await viaBoundary(env())
-    expect(r.code).toBe(PRE_NODE_REFUSAL_EXIT)
+    expect(r.code, diag(r)).toBe(PRE_NODE_REFUSAL_EXIT)
     expect(JSON.parse(r.stdout.trim())).toMatchObject({ boundary: 'REFUSED', code: 'PRE_NODE_AMBIENT_RUNTIME', names: ['NODE_OPTIONS'] })
     expect(preloadExecutions()).toBe(0)
     expect(captured()).toBe(false)
@@ -227,7 +243,7 @@ describe.runIf(SHELL_AVAILABLE)('R4-N-PRELOAD / R4-N-RUNTIME-INPUTS: through the
     async (name) => {
       resetTraps()
       const r = await viaBoundary({ [name]: name === 'NODE_TLS_REJECT_UNAUTHORIZED' ? '0' : join(dir, 'hostile') })
-      expect(r.code).toBe(PRE_NODE_REFUSAL_EXIT)
+      expect(r.code, diag(r)).toBe(PRE_NODE_REFUSAL_EXIT)
       expect(JSON.parse(r.stdout.trim())).toMatchObject({ code: 'PRE_NODE_AMBIENT_RUNTIME', names: [name] })
     },
     60_000
@@ -235,12 +251,12 @@ describe.runIf(SHELL_AVAILABLE)('R4-N-PRELOAD / R4-N-RUNTIME-INPUTS: through the
   it.runIf(process.platform === 'win32')('a lower-case node_options is the same variable on Windows and is refused', async () => {
     resetTraps()
     const r = await viaBoundary({ node_options: `--require=${preloadCjs}` })
-    expect(r.code).toBe(PRE_NODE_REFUSAL_EXIT)
+    expect(r.code, diag(r)).toBe(PRE_NODE_REFUSAL_EXIT)
     expect(preloadExecutions()).toBe(0)
   }, 60_000)
   it('R4-N-NODE-PIN: a node binary that is not the pinned one is refused before it starts', async () => {
     const r = await viaBoundary({}, join(dir, 'plan-bad-node.json'))
-    expect(r.code).toBe(PRE_NODE_REFUSAL_EXIT)
+    expect(r.code, diag(r)).toBe(PRE_NODE_REFUSAL_EXIT)
     expect(JSON.parse(r.stdout.trim())).toMatchObject({ code: 'PRE_NODE_NODE_NOT_PINNED' })
   }, 60_000)
 })
@@ -257,7 +273,7 @@ describe.runIf(SHELL_AVAILABLE)('R4-P-BOUNDARY step (3), measured: what node its
       mkdirSync(standIn, { recursive: true })
       writeFileSync(join(standIn, 'd1-mint-operator-launcher.js'), 'process.stdout.write(JSON.stringify({ keys: Object.keys(process.env).sort(), execArgv: process.execArgv, mark: process.env.' + PRE_NODE_BOUNDARY_ENV + ' ?? null }) + "\\n")\n')
       const r = await run(SHELL, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script, '-Plan', planPath], { ...baseEnv(), UELLIX_R4_INHERITED_CANARY: 'must-not-reach-node' }, '')
-      expect(r.code).toBe(0)
+      expect(r.code, diag(r)).toBe(0)
       const seen = JSON.parse(r.stdout.trim().split('\n').at(-1)!) as { keys: string[]; execArgv: string[]; mark: string | null }
       const allowed = new Set<string>([...PRE_NODE_ENV_ALLOWLIST, PRE_NODE_BOUNDARY_ENV].map((k) => k.toUpperCase()))
       expect(seen.keys.filter((k) => !allowed.has(k.toUpperCase()))).toEqual([])
@@ -274,7 +290,7 @@ describe.runIf(SHELL_AVAILABLE && process.platform === 'win32')('R4-P-BOUNDARY: 
   it('node starts with no flags and the allowlisted environment; the launcher accepts the mark and the tool runs; no preload ran', async () => {
     resetTraps()
     const r = await viaBoundary({})
-    expect(r.code).toBe(0)
+    expect(r.code, diag(r)).toBe(0)
     expect(r.stdout).toContain('"launcher":"TOOL_SPAWNED"')
     expect(r.stdout).toContain('"probe":"OBSERVED"')
     expect(r.stdout).not.toContain('d1-r4-synthetic')
@@ -287,7 +303,7 @@ describe.runIf(SHELL_AVAILABLE)('R5-A: the module-shadowing attack, and the boun
     rmSync(moduleMarker, { force: true })
     rmSync(trojanMarker, { force: true })
     const r = await run(SHELL, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', 'Import-Module EvilMod -Force; exit 0'], { ...baseEnv(), PSModulePath: psmodRoot }, '')
-    expect(r.code).toBe(0)
+    expect(r.code, diag(r)).toBe(0)
     expect(moduleExecutions()).toBeGreaterThanOrEqual(1)
     expect(trojanExecutions()).toBeGreaterThanOrEqual(1)
   }, 60_000)
@@ -298,15 +314,38 @@ describe.runIf(SHELL_AVAILABLE)('R5-A: the module-shadowing attack, and the boun
     expect(moduleExecutions()).toBe(0)
     expect(trojanExecutions()).toBe(0)
   }, 60_000)
-  it.each([['COR_PROFILER', '{01020304-0506-0708-090a-0b0c0d0e0f10}'], ['CORECLR_PROFILER', '{01020304-0506-0708-090a-0b0c0d0e0f10}'], ['DOTNET_STARTUP_HOOKS', join('C:', 'hook.dll')]])(
+  // A profiler variable alone does not load a profiler (the *_ENABLE_PROFILING switch is absent), so on every
+  // runtime the script runs and must refuse it.
+  it.each([['COR_PROFILER', '{01020304-0506-0708-090a-0b0c0d0e0f10}'], ['CORECLR_PROFILER', '{01020304-0506-0708-090a-0b0c0d0e0f10}']])(
     'the inner script refuses %s present at entry (fail closed, CLR may be hooked)',
     async (name, value) => {
       const r = await viaBoundary({ [name]: value })
-      expect(r.code).toBe(PRE_NODE_REFUSAL_EXIT)
+      expect(r.code, diag(r)).toBe(PRE_NODE_REFUSAL_EXIT)
       expect(JSON.parse(r.stdout.trim())).toMatchObject({ code: 'PRE_NODE_AMBIENT_RUNTIME', names: [name] })
     },
     60_000
   )
+  // DOTNET_STARTUP_HOOKS is a CoreCLR host feature. Which runtime runs the script is MEASURED, not assumed from
+  // the OS: Windows PowerShell 5.1 (.NET Framework, the governed inner shell) does not implement startup hooks, so
+  // the script runs and must refuse the variable; PowerShell 7 (CoreCLR) resolves the hook in the host BEFORE any
+  // script line, which no in-process check can see -- the reason the governed Windows entry clears it in the outer
+  // cmd before PowerShell starts (measured in the Windows outer-cmd test below).
+  it('DOTNET_STARTUP_HOOKS present at entry never reaches the channel (refused by the script on .NET Framework; stopped by the CoreCLR host before the script)', async () => {
+    expect(SHELL_RUNTIME, 'the runtime of the shell under test must be measured').toMatch(/^\.NET/)
+    resetTraps()
+    const r = await viaBoundary({ DOTNET_STARTUP_HOOKS: join(dir, 'absent-startup-hook.dll') })
+    if (SHELL_IS_NET_FRAMEWORK) {
+      expect(r.code, diag(r)).toBe(PRE_NODE_REFUSAL_EXIT)
+      expect(JSON.parse(r.stdout.trim())).toMatchObject({ code: 'PRE_NODE_AMBIENT_RUNTIME', names: ['DOTNET_STARTUP_HOOKS'] })
+    } else {
+      expect(r.code, diag(r)).not.toBe(0)
+      // The host, not the script, stopped it: no line of the script ran and no node was started.
+      expect(r.stdout, diag(r)).not.toContain('"boundary"')
+      expect(r.stdout, diag(r)).not.toContain('"launcher"')
+      expect(`${r.stderr}${r.stdout}`, diag(r)).toMatch(/startup.?hook/i)
+    }
+    expect(preloadExecutions()).toBe(0)
+  }, 60_000)
 })
 
 describe.runIf(SHELL_AVAILABLE && process.platform === 'win32')('R5-A (Windows): the outer cmd sanitizes startup-injection inputs before PowerShell starts', () => {
@@ -322,7 +361,7 @@ describe.runIf(SHELL_AVAILABLE && process.platform === 'win32')('R5-A (Windows):
       )
       const attacker = join(d, 'attacker-modules')
       const r = await run(CMD_EXE, ['/d', '/c', join(d, PRE_NODE_OUTER_BOUNDARY_FILE), planPath], { ...baseEnv(), PSModulePath: attacker, COR_PROFILER: '{deadbeef-0000-0000-0000-000000000000}', CORECLR_PROFILER: '{deadbeef-0000-0000-0000-000000000000}', DOTNET_STARTUP_HOOKS: join(d, 'hook.dll') }, '')
-      expect(r.code).toBe(0)
+      expect(r.code, diag(r)).toBe(0)
       const seen = Object.fromEntries(r.stdout.trim().split(/\r?\n/).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]))
       expect(seen.COR_PROFILER).toBe('')
       expect(seen.CORECLR_PROFILER).toBe('')
@@ -337,7 +376,7 @@ describe.runIf(SHELL_AVAILABLE && process.platform === 'win32')('R5-A (Windows):
     rmSync(trojanMarker, { force: true })
     resetTraps()
     const r = await viaOuter({ PSModulePath: psmodRoot })
-    expect(r.code).toBe(0)
+    expect(r.code, diag(r)).toBe(0)
     expect(r.stdout).toContain('"probe":"OBSERVED"')
     expect(moduleExecutions()).toBe(0)
     expect(trojanExecutions()).toBe(0)

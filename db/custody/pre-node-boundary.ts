@@ -25,8 +25,9 @@
 // autoloadable cmdlet runs, reads the environment with a .NET API and refuses
 // every Node/OpenSSL/loader variable and every CLR-profiler / startup-hook input
 // that survived; it makes all trust decisions with .NET APIs and language
-// primitives (never an autoloadable cmdlet), and clears PSModulePath, so a
-// poisoned module path cannot inject code through command autoloading. Finally
+// primitives (never an autoloadable cmdlet for a trust decision), and restricts
+// PSModulePath to $PSHOME/Modules, so a poisoned module path cannot inject code
+// through command autoloading. Finally
 // it starts node with no flags and an allowlisted environment plus the boundary
 // mark. The launcher's OC-15 check (mark, no execArgv, no NODE_* variable) runs
 // after node started and is defence in depth against a direct invocation, not
@@ -128,9 +129,11 @@ $table = [System.Environment]::GetEnvironmentVariables()
 foreach ($k in $table.Keys) { $n = [string]$k; if ($n -match $hostile -or $n -match $injection) { $present += $n } }
 if ($present.Count -gt 0) { [System.Array]::Sort($present); Refuse 'PRE_NODE_AMBIENT_RUNTIME' $present }
 
-# No hostile input survived. Clear PSModulePath so no command autoloading can occur, and make every
-# remaining trust decision with .NET APIs.
-$env:PSModulePath = ''
+# No hostile input survived. Restrict the module path to the modules shipped beside this PowerShell
+# ($PSHOME is fixed by the executable, which the outer boundary starts by absolute path), so the one
+# cmdlet used below (module-qualified ConvertFrom-Json) can autoload only from there. An empty path is
+# not portable: under PowerShell 7 on Linux CI the plan read then failed. Every trust decision stays .NET.
+$env:PSModulePath = [System.IO.Path]::Combine($PSHOME, 'Modules')
 
 if (-not [System.IO.File]::Exists($Plan)) { Refuse 'PRE_NODE_PLAN_MISSING' @() }
 $p = Microsoft.PowerShell.Utility\ConvertFrom-Json ([System.IO.File]::ReadAllText($Plan))
@@ -138,7 +141,7 @@ $node = [string]$p.nodeExecutable.path
 $nodePin = ([string]$p.nodeExecutable.sha256).ToLowerInvariant()
 if ($node -eq '' -or -not [System.IO.File]::Exists($node)) { Refuse 'PRE_NODE_NODE_MISSING' @() }
 if ((Sha256OfFile $node) -ne $nodePin) { Refuse 'PRE_NODE_NODE_NOT_PINNED' @() }
-$launcher = $PSScriptRoot + '\launcher\scripts\custody\d1-mint-operator-launcher.js'
+$launcher = [System.IO.Path]::Combine($PSScriptRoot, 'launcher', 'scripts', 'custody', 'd1-mint-operator-launcher.js')
 if (-not [System.IO.File]::Exists($launcher)) { Refuse 'PRE_NODE_LAUNCHER_MISSING' @() }
 if ($launcher.Contains('"') -or $Plan.Contains('"')) { Refuse 'PRE_NODE_PATH_QUOTE' @() }
 $self = Sha256OfFile $PSCommandPath

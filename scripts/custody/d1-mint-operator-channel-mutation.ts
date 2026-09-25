@@ -143,6 +143,9 @@ export const MUTANTS: readonly Mutant[] = [
   {id: "R5-M-A-INJECTION",file: BN,from: "$injection = '^(COR_ENABLE_PROFILING|COR_PROFILER|COR_PROFILER_PATH(_32|_64)?|CORECLR_ENABLE_PROFILING|CORECLR_PROFILER|CORECLR_PROFILER_PATH(_32|_64)?|DOTNET_STARTUP_HOOKS|DOTNET_ADDITIONAL_DEPS)$'",to: "$injection = '^d1nevermatch$'",tests: [T_BOUNDARY],expect: "RED"},
   {id: "R5-M-A-OUTER-PSMOD",file: BN,from: "  'PSModulePath',\n",to: "",tests: [T_BOUNDARY],expect: "RED"},
   {id: "R5-M-A-DOTNET",file: BN,from: "$table = [System.Environment]::GetEnvironmentVariables()",to: "$table = Get-ChildItem Env:",tests: [T_BOUNDARY],expect: "RED"},
+  // --- R5 CI remediation: the inner boundary stays portable (module path, launcher path) ---
+  {id: "R5-M-A-PSMODPATH",file: BN,from: "$env:PSModulePath = [System.IO.Path]::Combine($PSHOME, 'Modules')",to: "$env:PSModulePath = $env:PSModulePath",tests: [T_BOUNDARY],expect: "RED"},
+  {id: "R5-M-A-PORTABLE-PATH",file: BN,from: "$launcher = [System.IO.Path]::Combine($PSScriptRoot, 'launcher', 'scripts', 'custody', 'd1-mint-operator-launcher.js')",to: "$launcher = $PSScriptRoot + '\\launcher\\scripts\\custody\\d1-mint-operator-launcher.js'",tests: [T_BOUNDARY],expect: "RED"},
   { id: 'M-SELF-TEST', file: PL, from: '// CLI\n', to: '// CLI (comment-only self-test mutant)\n', tests: [T_CH], expect: 'GREEN' },
 ]
 
