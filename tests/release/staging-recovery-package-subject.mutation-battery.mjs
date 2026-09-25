@@ -170,6 +170,11 @@ export const MUTANTS = [
   { id: 'PS17', cls: 'INTRODUCING', why: 'a shallow boundary commit is taken as the introducing commit (review N-4)', anchor: "  if (isShallow(cwd)) throw new Error('shallow repository: the introducing commit is unverifiable')\n", replacement: '' },
   { id: 'PS18', cls: 'INTRODUCING', why: 'a path added twice yields the first adder instead of a STOP', anchor: '  if (found.length !== 1) throw new Error', replacement: '  if (found.length < 1) throw new Error' },
   { id: 'PS15', cls: 'RESERVATION', why: 'the closure comparison ignores the record', anchor: "  return typeof before !== 'string' && typeof after !== 'string' && before.package_digest === after.package_digest\n", replacement: "  return typeof before !== 'string'\n" },
+  // ---- OF-PS-4 live store guard and regression control
+  { id: 'LS1', cls: 'LIVE_GUARD', why: 'live guard skips store integrity', anchor: '  const v = [...storeIntegrity(C(), raw), ...everAddedViolations(cwd, root, new Map(raw.map((e) => [e.path, e.oid])), cgit, ref)]', replacement: '  const v = [...everAddedViolations(cwd, root, new Map(raw.map((e) => [e.path, e.oid])), cgit, ref)]' },
+  { id: 'LS2', cls: 'LIVE_GUARD', why: 'live guard skips ever-added history', anchor: '  const v = [...storeIntegrity(C(), raw), ...everAddedViolations(cwd, root, new Map(raw.map((e) => [e.path, e.oid])), cgit, ref)]', replacement: '  const v = [...storeIntegrity(C(), raw)]' },
+  { id: 'LS3', cls: 'LIVE_GUARD', why: 'live guard skips chain integrity', anchor: '    if (broken) v.push(`chain ${kind}: ${broken}`)', replacement: '    void broken' },
+  { id: 'RG1', cls: 'REGRESSION', why: 'the HEAD-empty regression scanner detects nothing', anchor: 'const headEmptyDefects = (source: string): string[] => HEAD_EMPTY_DEFECTS.filter((d) => source.includes(d))', replacement: 'const headEmptyDefects = (source: string): string[] => HEAD_EMPTY_DEFECTS.filter(() => source === null)' },
   // ---- self-test
   { id: 'HARMLESS', cls: 'SELF_TEST', why: 'comment-only edit; must SURVIVE', anchor: '// WHAT THIS FILE IS NOT.', replacement: '// WHAT THIS FILE IS NOT (harmless mutant).', harmless: true },
 ]

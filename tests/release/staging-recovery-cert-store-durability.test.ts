@@ -2394,12 +2394,25 @@ describe('§10 preservation, write set and the real repository', () => {
     for (const code of C().consumer_rule.consumer_results.filter((x) => x !== 'USABLE')) expect(used.has(code), code).toBe(true)
     expect(Object.values(C().state.stops).join(' ')).toContain('STOP_RECERT_ATTEMPT_OPEN')
   })
-  it('the real repository: the controlled environment and the object store hold, the store is empty and clean, and the recorded provider state STOPS every kind', { timeout: 900_000 }, () => {
+  it('the real repository: the controlled environment and the object store hold, the store was empty when v1.0.5 was introduced and stays intact at HEAD, and the recorded provider state STOPS every kind', { timeout: 900_000 }, () => {
     expect(environmentViolations(ROOT)).toEqual([])
     expect(objectIntegrityViolations(ROOT)).toEqual([])
     const root = C().path_and_identity.adjudication_root
-    expect(lsTree(ROOT, 'HEAD', [root])).toEqual([])
-    expect(everAddedViolations(ROOT, root, new Map(), cgit, 'HEAD')).toEqual([])
+    // Owner-authorized correction (Recovery v1.0.6 OF-PS-4): "empty" is a fact of the commit that
+    // introduced v1.0.5, never of the evolving HEAD, where later governed lanes add records.
+    const introducing = text(cgit(ROOT, ['log', '--full-history', '--diff-filter=A', '--format=%H', 'HEAD', '--', `:(top,literal)${PATHS.v105}`]))
+    expect(introducing).toBe('ae958aa04f534be50a648bd1e43a069d0c2111c7')
+    expect(lsTree(ROOT, introducing, [root])).toEqual([])
+    expect(everAddedViolations(ROOT, root, new Map(), cgit, introducing)).toEqual([])
+    // At HEAD whatever is present must keep the store contract: integrity, ever-added history, one chain per kind.
+    // Record validation against the effective contract (v1.0.6 SECTION_G3) is the v1.0.6 companion test's live guard.
+    const entries = lsTree(ROOT, 'HEAD', [root])
+    const blobs = readBlobs(entries.filter((e) => e.type === 'blob').map((e) => e.oid))
+    const raw: RawEntry[] = entries.map((e) => ({ path: e.path, mode: e.mode, oid: e.oid, bytes: e.type === 'blob' ? (blobs.get(e.oid) ?? '') : '' }))
+    expect(storeIntegrity(C(), raw)).toEqual([])
+    expect(everAddedViolations(ROOT, root, new Map(raw.map((e) => [e.path, e.oid])), cgit, 'HEAD')).toEqual([])
+    const present: Stored[] = raw.map((e) => ({ path: e.path, record: JSON.parse(e.bytes) as Rec }))
+    for (const kind of new Set(present.map((r) => r.record.subject_kind))) expect(chainIntegrity(present.filter((r) => r.record.subject_kind === kind)), kind).toBeNull()
     expect(isAncestorIn(ROOT, BASE_COMMIT, 'HEAD')).toBe(true)
     const head = text(cgit(ROOT, ['rev-parse', 'HEAD']))
     const store: Store = { raw: [], records: [], history: [], shallow: isShallow(ROOT), occurrenceRootFiles: [], envViolations: [], objectIntegrity: [], tipRaw: new Map() }

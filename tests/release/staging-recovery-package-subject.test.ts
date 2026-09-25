@@ -68,9 +68,10 @@ const IMMUTABLE = [
   'tests/release/staging-recovery-integration-successor.test.ts',
   'tests/release/staging-recovery-cert-adjudication.test.ts',
   'tests/release/staging-recovery-cert-adjudication.mutation-battery.mjs',
-  'tests/release/staging-recovery-cert-store-durability.test.ts',
   'tests/release/staging-recovery-cert-store-durability.mutation-battery.mjs',
 ]
+/** OF-PS-4: the v1.0.5 companion test carries ONE owner-authorized correction (its real-repository case); see §13. */
+const V105_TEST = 'tests/release/staging-recovery-cert-store-durability.test.ts'
 
 const readBytes = (rel: string): Buffer => readFileSync(path.join(ROOT, rel))
 const readJson = <T>(rel: string): T => JSON.parse(readBytes(rel).toString('utf8')) as T
@@ -1501,7 +1502,9 @@ describe('§1 owner decisions, SECTION_G3 as F3 plus the declared delta, and the
     for (const p of WRITE_SET) expect(introducingCommitOf(p), p).toBe(c)
     expect(text(cgit(ROOT, ['rev-parse', `${c}^`]))).toBe(BASE_COMMIT)
     for (const p of WRITE_SET) expect(introducingView().blob(p), p).toBe(lsTree(ROOT, c, [p])[0]?.oid)
-    for (const p of WRITE_SET) expect(gitBlobSha(storedBytes(p)), `${p} worktree == introducing commit`).toBe(introducingView().blob(p))
+    const versioned = [PATHS.v106, PATHS.manifest106, PATHS.owner104]
+    for (const p of versioned) expect(gitBlobSha(storedBytes(p)), `${p} worktree == introducing commit`).toBe(introducingView().blob(p))
+    for (const p of WRITE_SET.filter((x) => !versioned.includes(x as (typeof versioned)[number]))) expect([PATHS.self, PATHS.battery], p).toContain(p)
   })
   it('the delta is additive: no stop code, consumer result or unchanged validation step of F3 is removed', () => {
     const F = PRIOR.SECTION_F3_CERTIFICATION_STORE_CONTRACT
@@ -2420,6 +2423,7 @@ describe('§10 preservation, write set and the real repository', () => {
     expect(live.occurrenceRootFiles).toEqual([])
     expect(storeIntegrity(C(), live.raw)).toEqual([])
     expect(live.history).toEqual([])
+    expect(liveStoreViolations(ROOT)).toEqual([])
     const derivedFor = (r: Rec): Identity | string => (r.subject_kind === PACKAGE ? deriveAtCandidate(ROOT, PACKAGE, r.subject.candidate_sha) : derivedDefault(r))
     const base: ConsumerInput = {
       contract: C(), kind: CENSUS, head: commitView(head), headSha: head, store: live, provider: measuredProvider(), genesis: C().canonical_store.STORE_GENESIS.commit,
@@ -2850,5 +2854,106 @@ describe('§12 package subject: the protected canonical candidate, its own tree,
     expect(owner.filter((l) => l.startsWith('=> ')).length).toBe(6)
     const vocabulary = [...C().stop_codes, ...C().consumer_rule.consumer_results, ...C().record_schema.RECERT_ATTEMPT.states]
     for (const c of cases) expect(vocabulary.some((v) => c.outcome.includes(v)), c.case).toBe(true)
+  })
+})
+
+/* ========================================================================== */
+/* §13 OF-PS-4: owner-authorized correction of the v1.0.5 HEAD-empty assertion */
+/* ========================================================================== */
+
+/** Owner decision of 2026-09-25, verbatim (ASCII escapes); carried by the commit that applies the correction. */
+const OWNER_TEST_CORRECTION =
+  'Autorizo la corrección mínima del test v1.0.5 según v1.0.6, preservando byte-idénticos los artefactos versionados v1.0.3, v1.0.4 y v1.0.5. No autorizo todavía reserva, certificación, merge ni ninguna operación hosted.'
+/** The defective assertions: an empty store, and an empty ever-added history, required at the evolving HEAD. */
+const HEAD_EMPTY_DEFECTS = ["lsTree(ROOT, " + "'HEAD', [root])).toEqual([])", "new Map(), cgit, " + "'HEAD')).toEqual([])"]
+const headEmptyDefects = (source: string): string[] => HEAD_EMPTY_DEFECTS.filter((d) => source.includes(d))
+/** Live guard at a head: whatever is under the store root keeps integrity, ever-added history and one chain per kind. */
+function liveStoreViolations(cwd: string, ref = 'HEAD'): string[] {
+  const root = C().path_and_identity.adjudication_root
+  const entries = lsTree(cwd, ref, [root])
+  const blobs = readBlobs(entries.filter((e) => e.type === 'blob').map((e) => e.oid), cwd)
+  const raw: RawEntry[] = entries.map((e) => ({ path: e.path, mode: e.mode, oid: e.oid, bytes: e.type === 'blob' ? (blobs.get(e.oid) ?? '') : '' }))
+  const v = [...storeIntegrity(C(), raw), ...everAddedViolations(cwd, root, new Map(raw.map((e) => [e.path, e.oid])), cgit, ref)]
+  if (v.length > 0) return v
+  const present: Stored[] = raw.map((e) => ({ path: e.path, record: JSON.parse(e.bytes) as Rec }))
+  for (const kind of new Set(present.map((r) => r.record.subject_kind))) {
+    const broken = chainIntegrity(present.filter((r) => r.record.subject_kind === kind))
+    if (broken) v.push(`chain ${kind}: ${broken}`)
+  }
+  return v
+}
+const blockOf = (source: string): { before: string; block: string; after: string } => {
+  const i = source.indexOf("  it('the real repository:")
+  const j = source.indexOf('\n  })\n})\n', i)
+  if (i < 0 || j < 0) throw new Error('real-repository block not found')
+  return { before: source.slice(0, i), block: source.slice(i, j), after: source.slice(j) }
+}
+
+describe('§13 OF-PS-4: the v1.0.5 real-repository case checks emptiness historically and validates the live store', () => {
+  const original = text(cgit(ROOT, ['show', `${BASE_COMMIT}:${V105_TEST}`]))
+  it('the correction is confined to the real-repository case; the rest of the v1.0.5 test is byte-identical', () => {
+    const now = storedBytes(V105_TEST).toString('utf8')
+    const a = blockOf(`${original}\n`)
+    const b = blockOf(now)
+    expect(b.before).toBe(a.before)
+    expect(b.after).toBe(a.after)
+    expect(b.block).not.toBe(a.block)
+    expect(b.block).toContain("expect(introducing).toBe('ae958aa04f534be50a648bd1e43a069d0c2111c7')")
+    expect(b.block).toContain('expect(lsTree(ROOT, introducing, [root])).toEqual([])')
+    expect(b.block).toContain('expect(storeIntegrity(C(), raw)).toEqual([])')
+    expect(b.block).toContain('chainIntegrity(')
+  })
+  it('the commit that applies the correction carries the owner decision verbatim', () => {
+    const c = text(cgit(ROOT, ['log', '-1', '--format=%H', 'HEAD', '--', `:(top,literal)${V105_TEST}`]))
+    expect(c).not.toBe(BASE_COMMIT)
+    expect(cgit(ROOT, ['log', '-1', '--format=%B', c]).toString('utf8')).toContain(OWNER_TEST_CORRECTION)
+  })
+  it('D regression: the defective HEAD-empty assertions are detected in the pre-correction test and absent from both tests now', () => {
+    expect(headEmptyDefects(original)).toEqual(HEAD_EMPTY_DEFECTS)
+    expect(headEmptyDefects(storedBytes(V105_TEST).toString('utf8'))).toEqual([])
+    expect(headEmptyDefects(readFileSync(path.join(ROOT, PATHS.self), 'utf8'))).toEqual([])
+  })
+  it('A/B the historical introducing view is empty; a first legitimate reservation at HEAD passes the live guard although the old assertion would fail', () => {
+    const s = new PackageScenario()
+    const root = C().path_and_identity.adjudication_root
+    expect(lsTree(s.repo.dir, s.repo.introducing, [root])).toEqual([])
+    expect(everAddedViolations(s.repo.dir, root, new Map(), cgit, s.repo.introducing)).toEqual([])
+    s.attempt()
+    expect(lsTree(s.repo.dir, 'HEAD', [root]).length).toBe(1)
+    expect(liveStoreViolations(s.repo.dir)).toEqual([])
+    expect(everAddedViolations(s.repo.dir, root, new Map(), cgit, 'HEAD').length).toBeGreaterThan(0)
+    expect(s.consume().result).toBe('STOP_RECERT_ATTEMPT_OPEN')
+  })
+  it('C malformed, modified, deleted, forked or orphaned records still fail closed at HEAD', () => {
+    const fresh = (): { s: PackageScenario; att: Stored; out: Stored } => {
+      const s = new PackageScenario()
+      const att = s.attempt()
+      return { s, att, out: s.adjudicate('PASS', att) }
+    }
+    const root = C().path_and_identity.adjudication_root
+    const malformed = fresh()
+    malformed.s.repo.write(`${root}PACKAGE/${'0'.repeat(64)}/${'1'.repeat(64)}.json`, '{ "not": "canonical" }\n')
+    malformed.s.repo.commit('malformed record')
+    expect(liveStoreViolations(malformed.s.repo.dir).length, 'malformed').toBeGreaterThan(0)
+    const modified = fresh()
+    modified.s.repo.write(modified.out.path, canonicalPretty({ ...modified.out.record, meaning: 'rewritten in place' }))
+    modified.s.repo.commit('modify a record')
+    expect(liveStoreViolations(modified.s.repo.dir).length, 'modified').toBeGreaterThan(0)
+    const deleted = fresh()
+    deleted.s.repo.g(['rm', '-q', deleted.out.path])
+    deleted.s.repo.commit('delete a record')
+    expect(liveStoreViolations(deleted.s.repo.dir).length, 'deleted').toBeGreaterThan(0)
+    const forked = fresh()
+    const twin = stored(attemptFor(forked.s.ks(), [forked.att], { tip: forked.s.repo.head(), attemptId: 'FIXTURE-FORK' }))
+    forked.s.repo.put(twin)
+    forked.s.repo.commit('a second successor of the attempt')
+    expect(liveStoreViolations(forked.s.repo.dir), 'forked').toEqual([expect.stringMatching(/^chain RECOVERY_AUTHORITY_PACKAGE_RECERT: fork/)])
+    const orphaned = fresh()
+    const orphan = attemptFor(orphaned.s.ks(), [], { tip: orphaned.s.repo.head(), attemptId: 'FIXTURE-ORPHAN' })
+    orphan.chain.predecessor = { path: `${root}PACKAGE/${'2'.repeat(64)}/${'3'.repeat(64)}.json`, record_digest: '4'.repeat(64) }
+    orphaned.s.repo.put(stored(orphan))
+    orphaned.s.repo.commit('an orphaned record')
+    expect(liveStoreViolations(orphaned.s.repo.dir), 'orphaned').toEqual([expect.stringMatching(/^chain RECOVERY_AUTHORITY_PACKAGE_RECERT: missing predecessor/)])
+    expect(orphaned.s.consume().result).toBe('STOP_CHAIN_INTEGRITY_VIOLATED')
   })
 })
