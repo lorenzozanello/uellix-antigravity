@@ -1,0 +1,297 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.39",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39",
+  "authority_class": "ODS_LINEAGE_AND_PROTECTED_GRANT_ALLOCATION",
+  "materialization_step": "ALLOCATION_ONLY. This artifact allocates ONE ODS lineage position and DECLARES ONE protected-surface grant. It registers nothing, implements nothing, authorizes no hosted execution, and reserves no ordinal of any other kind.",
+  "GRANT_ID": "HPO-ODS-W2-36",
+  "hpo_mission_id": "CV1-SECURITY-ACL-ODS-ALLOCATION-R1",
+  "predecessor_hpo_mission_id": "CV1-STAGING-SECURITY-ACL-DURABLE-SUCCESSOR-R1",
+  "lineage_predecessor_hpo_mission_id": "FIBDB053-STAGE-A-W2-35-ODS-LINEAGE-ALLOCATION-R1",
+  "PREDECESSOR_AXES_ARE_DISTINCT_AND_BOTH_ARE_RECORDED": {
+    "MISSION_CHAIN_PREDECESSOR": "predecessor_hpo_mission_id. The act immediately preceding THIS one in governed sequence is the lane CV1-STAGING-SECURITY-ACL-DURABLE-SUCCESSOR-R1, which STOPPED without writing anything to the repository because its write set lives under db/prepared/** (DEFAULT_PROTECTED_PATTERNS) and no PROTECTED_GRANTS row binds its branch. That STOP is what this allocation unblocks, and ONLY the allocation half of it.",
+    "ODS_LINEAGE_PREDECESSOR": "lineage_predecessor_hpo_mission_id. The act immediately preceding THIS one on the ODS LINEAGE axis is the mission that allocated v1.0.38 and declared HPO-ODS-W2-35 (FIBDB-053 Stage-A).",
+    "NEITHER_IS_AN_ALLOCATION": "Naming a predecessor records a relation. It allocates nothing, reopens nothing, and confers no claim on any identifier either predecessor named."
+  },
+  "lane_id": "LANE_CV1_SECURITY_ACL_ODS_ALLOCATION_R1",
+  "materialization_date": "2026-09-25",
+  "supersedes": null,
+  "refines": null,
+  "succeeds": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38",
+  "succeeds_note": "Succession on the ODS LINEAGE axis only. v1.0.38 allocated the FIBDB-053 Stage-A line and declared HPO-ODS-W2-35, which a separate later act has since registered. This artifact neither reopens, edits, widens nor reinterprets v1.0.38; it only reads it.",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "CURRENT_REVISION": "R1",
+  "purpose": "Allocate the ODS lineage position and DECLARE the protected-surface grant required by the future durable platform-authority ACL successor implementation (stella_0022), so that the later implementation writer has a governed grant to consume and can never self-register one.",
+  "OWNER_DECISION": {
+    "status": "SIGNED",
+    "source": "Owner (HPO) decision recorded in the opening of lane CV1-SECURITY-ACL-ODS-ALLOCATION-R1, 2026-09-25. Reproduced here field-for-field.",
+    "SECURITY_ODS_GRANT_ID": "HPO-ODS-W2-36",
+    "SECURITY_ODS_ADDENDUM_VERSION": "v1.0.39",
+    "SECURITY_ODS_BRANCH": "codex/cv1-staging-security-acl-durable-r1",
+    "SECURITY_ODS_PROTECTED_PATHS": [
+      "db/prepared/stella_0022_platform_authority_acl_successor.sql",
+      "db/prepared/README.md"
+    ],
+    "DEVOS_DRAFT_V1_0_39_ON_PR222_IS_NOT_CANONICAL": "YES",
+    "DEVOS_R3_MUST_RENUMBER_ITS_CURRENT_DRAFT_ADDENDUM_TO": "v1.0.40",
+    "THE_OWNER_DECISION_IS_CONSISTENT_WITH_THE_MEASURED_DERIVATION": "The owner-named ordinal and grant id were NOT taken on trust. Both were independently re-derived at START_HEAD (see PRESTATE_MEASURED) and both coincide with the mechanical derivation: the dense lineage is 1..38, so the next position is 1.0.39; the allocation-axis GRANT_ID maximum is W2-35, so the next id is HPO-ODS-W2-36. Had either disagreed, this act would have stopped with STOP_ODS_ORDINAL_COLLISION instead of writing.",
+    "NO_REPOSITORY_IMPLEMENTATION_AUTHORITY_EXISTS_YET": "MEASURED. No docs/** artifact at START_HEAD freezes the stella_0022 package, its branch or its write set; the only textual occurrence of 'stella_0022' at START_HEAD is an unrelated NEGATIVE fixture literal ('db/prepared/stella_0022_future_package.sql') in tests/ods/ods-scope.test.ts. The branch and the two literals are therefore CONSUMED from the signed owner decision above, not from a frozen authority document. This allocation does NOT supply the implementation lane's controlling authority; see risks_and_open_findings F-SECACL-W2-36-2."
+  },
+  "AS_OF": {
+    "branch": "codex/cv1-security-acl-ods-allocation-r1",
+    "START_HEAD": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "START_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "origin_ref": "origin/integration/commercial-v1",
+    "origin_head_equals_start_head_AT_PRESTATE": true,
+    "working_tree_clean_at_prestate": true,
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/cv1-security-acl-ods-allocation-r1 --head 537487ac7b102d51f553fcb8f5cfe19614e113d8 --tree 7228f833c57bfd37fe025546d939ecd46336159c --clean => PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS.",
+    "FINAL_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8"
+  },
+  "PRESTATE_MEASURED": {
+    "method": "git fetch --prune --all, then rev-parse of HEAD, HEAD^{tree} and origin/integration/commercial-v1; directory enumeration for the lineage axis; JSON parse of every addendum for the version and GRANT_ID keys; structural array extraction for the Controller axis; the real PROTECTED_GRANTS export and resolveProtectedGrant for the registry axis; an exhaustive per-ref sweep over 713 refs (refs/heads and refs/remotes) for the collision scan. No figure is inherited from the mission opening, from a predecessor artifact, or from a checkpoint.",
+    "ods_lineage": {
+      "addendum_versions_present": "v1.0.1 through v1.0.38, dense, no gap",
+      "CURRENT_ODS_VERSION_AT_START_HEAD": "1.0.38",
+      "measurement_method": "Directory enumeration of docs/ops/ods/ matched against /^ODS_V1_MAINTENANCE_ADDENDUM_v1\\.0\\.(\\d+)\\.json$/, numeric sort, gap scan across [min, max]. 38 files, min 1, max 38, zero gaps. No addendum at START_HEAD carries version === \"1.0.39\".",
+      "NEXT_ODS_LINEAGE_VERSION_DERIVED": "1.0.39"
+    },
+    "controller_state": {
+      "IMMUTABLE_BY_CONVENTION_length": 49,
+      "IMMUTABLE_BY_CONVENTION_Set_size": 49,
+      "IMMUTABLE_BY_CONVENTION_final_item": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json",
+      "extraction_method": "Array literal located by anchoring on \"export const IMMUTABLE_BY_CONVENTION: readonly string[] = [\" and closed on the first subsequent \"\\n] as const\".",
+      "CONTROLLER_PREREQUISITE_STATE": "DISCHARGED BEFORE THIS MISSION OPENED. v1.0.38 CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS blocked v1.0.39 until a Controller successor act enumerating v1.0.38 integrated. Commit 46a93a91 ('chore(ods): enumerate v1.0.38 in Controller closed world') is that act and is an ancestor of START_HEAD: the array is 49 entries with terminal v1.0.38."
+    },
+    "grant_state": {
+      "PROTECTED_GRANTS_rows_at_START_HEAD": 23,
+      "TAIL_IDENTITY": "HPO-ODS-W2-35, bound to codex/fibdb053-stage-a-implementation-r1.",
+      "HIGHEST_ALLOCATED_GRANT_ID": "HPO-ODS-W2-35",
+      "allocated_in": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json",
+      "HOW_THE_NEXT_GRANT_ID_WAS_DERIVED": "Numeric maximum of the W2-NN suffix of the GRANT_ID key across every addendum in the dense lineage (the ALLOCATION axis), plus one. The maximum is 35, carried by v1.0.38, so the next free id is HPO-ODS-W2-36. The registry tail (W2-35) coincides at this head; that coincidence is corroboration, not the derivation.",
+      "W2_36_STATE_AT_START_HEAD": {
+        "rows_in_PROTECTED_GRANTS_carrying_it": 0,
+        "textual_occurrences_in_scripts_ods_scope_ts": 0,
+        "resolveProtectedGrant_result": "UNDEFINED on codex/cv1-staging-security-acl-durable-r1 and on every other branch.",
+        "addenda_carrying_it_as_GRANT_ID": 0
+      },
+      "NO_EXISTING_GRANT_BINDS_THE_TARGET_BRANCH": "MEASURED. ZERO of the 23 registered rows bind codex/cv1-staging-security-acl-durable-r1. resolveProtectedGrant matches the branch by EXACT string equality, so no existing row can authorize anything there.",
+      "why_a_NEW_grant_and_not_a_widening_of_an_existing_one": "No existing row binds the target branch. The nearest ACL precedent, HPO-ODS-W2-33 (stella_0021, codex/current-schema-runtime-acl-implementation-r1), is bound to a different branch and a different package; widening or rebranching it would rewrite a live registered grant. A new grant is the only purely additive change."
+    }
+  },
+  "ALLOCATION_COLLISION_SWEEP": {
+    "method": "Two independent sweeps after git fetch --prune --all. (1) Per-ref OBJECT-EXISTENCE sweep over all 713 refs from git for-each-ref refs/heads refs/remotes: git cat-file -e <ref>:docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json, and a source inspection of <ref>:scripts/ods-scope.ts for a row carrying authorityId: 'HPO-ODS-W2-36'. (2) A history pickaxe (git log --all -S'HPO-ODS-W2-36' over docs/ops/ods/* and scripts/ods-scope.ts) plus a tracked-file content sweep at START_HEAD.",
+    "SWEEP_REF": "537487ac7b102d51f553fcb8f5cfe19614e113d8 plus 713 refs.",
+    "CANDIDATE_1_ODS_v1_0_39": {
+      "at_START_HEAD": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json ABSENT from the integration lineage. No addendum carries version 1.0.39.",
+      "every_ref": "PRESENT on exactly TWO refs, both the same blob 7b7609486bfeef1389c58c63ac4674cc03ed7f26: refs/heads/codex/cv1-devos-opus55-closure-state-r1 and refs/remotes/origin/codex/cv1-devos-opus55-closure-state-r1 (head a52cb7ce603068dab98f9d2bbd2faef1960fc589, introduced by 545461ed). That branch is the head of PR #222 (OPEN, DRAFT, not merged) and is NOT an ancestor of START_HEAD (git merge-base --is-ancestor => false).",
+      "classification": "UNINTEGRATED DRAFT, NOT CANONICAL. The draft carries version 1.0.39, GRANT_ID null, authority_class ODS_PROCESS_TOOLING_PATH_GRANT_MATERIALIZATION, hpo_mission_id CV1-DEVOS-OPUS55-AND-CLOSURE-STATE-R1. The owner decision declares it NOT canonical (DEVOS_DRAFT_V1_0_39_ON_PR222_IS_NOT_CANONICAL = YES). See DEVOS_DRAFT_COLLISION_DISPOSITION.",
+      "CANONICAL_COLLISION": "NONE. No canonical artifact in the effective integration lineage owns the ordinal."
+    },
+    "CANDIDATE_2_HPO_ODS_W2_36": {
+      "rows_in_PROTECTED_GRANTS_on_any_ref": 0,
+      "GRANT_ID_in_any_addendum_on_any_ref": "0. The history pickaxe over docs/ops/ods/* and scripts/ods-scope.ts returns exactly one commit changing the occurrence count of the string, 29912a1f (the v1.0.38 allocation), whose occurrences are PROHIBITION_NOT_ALLOCATION forward semantics. The PR #222 draft v1.0.39 carries GRANT_ID null.",
+      "classification_of_every_textual_occurrence_at_START_HEAD": "NON-ALLOCATION: v1.0.38 NO_PREALLOCATION prohibition prose, and registry-axis absence sentinels in tests/ods/ods-scope.test.ts and tests/ods/ods-controller.test.ts.",
+      "CANONICAL_COLLISION": "NONE."
+    },
+    "CANDIDATE_3_THE_TWO_PROTECTED_LITERALS": {
+      "db/prepared/stella_0022_platform_authority_acl_successor.sql": "ABSENT at START_HEAD. Carried by ZERO of the 23 rows on any branch. The only 'stella_0022' text at START_HEAD is a different literal ('db/prepared/stella_0022_future_package.sql'), a NEGATIVE fixture that a W2-33 test asserts is REFUSED; it is not an allocation and is not this path.",
+      "db/prepared/README.md": "EXISTS. Carried by seven registered rows (HPO-ODS-W2-03, W2-08, W2-11, W2-31, W2-32, W2-33, W2-35), none of which binds codex/cv1-staging-security-acl-durable-r1. Disambiguated by exact branch match, exactly as every earlier README-carrying grant.",
+      "no_wildcard_is_used": "Both patterns are exact file literals."
+    },
+    "CANDIDATE_4_THE_TARGET_BRANCH": {
+      "measured": "codex/cv1-staging-security-acl-durable-r1 exists as a LOCAL ref only (refs/heads, at 537487ac, checked out in the worktree of the stopped predecessor lane). It is ABSENT on origin.",
+      "disposition": "This act BINDS the branch string only. It does not create, move, push or modify the ref."
+    }
+  },
+  "DEVOS_DRAFT_COLLISION_DISPOSITION": {
+    "binding": "Records ONLY the owner decision necessary to avoid the draft collision on the v1.0.39 ordinal.",
+    "OWNER_DECISION_RECORDED": "The unintegrated DevOS draft addendum currently at docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json on codex/cv1-devos-opus55-closure-state-r1 (PR #222) is NOT canonical and MUST be renumbered to v1.0.40 before it can become canonical.",
+    "CANONICAL_OWNER_OF_v1_0_39": "This artifact, once integrated.",
+    "PR_222_IS_NOT_MODIFIED_BY_THIS_ACT": "BINDING. No commit, push, comment, rebase or label is made on PR #222 or its branch by this lane. The renumbering is PR #222's own act (its R3), under its own authority and certification.",
+    "WHAT_THIS_RECORD_DOES_NOT_DO": [
+      "It does not allocate v1.0.40 on behalf of the DevOS lane; the owner decision fixes the target number and the DevOS R3 performs the allocation.",
+      "It does not waive the standing lineage gates for that renumber: the DevOS R3 must re-derive the lineage at its own head, and CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS below applies to it exactly as to any other v1.0.40 allocation.",
+      "It does not assign, reserve or imply any GRANT_ID for the DevOS lane.",
+      "It does not adjudicate the content, findings or certification state of PR #222."
+    ]
+  },
+  "CONTROLLER_SUCCESSOR_RULE": {
+    "requirement": "The NEXT Controller successor act is REQUIRED to enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json in scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION, taking the THEN-LIVE array length to length + EXACTLY ONE, making v1.0.39 FINAL, and preserving predecessor order. Stated in terms of array state, never line numbers.",
+    "NOT_PERFORMED_HERE": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are byte-unchanged. After integration, v1.0.39 exists on disk and is absent from IMMUTABLE_BY_CONVENTION -- the intended intermediate state, identical to the one v1.0.38 occupied before 46a93a91.",
+    "NEXT_LINEAGE_ALLOCATION_BLOCKS": [
+      "THE NEXT ODS LINEAGE ALLOCATION (v1.0.40 and beyond, INCLUDING the owner-directed DevOS renumber to v1.0.40), until the next Controller successor act is integrated"
+    ],
+    "WHAT_IS_NOT_BLOCKED": [
+      "The HPO-ODS-W2-36 registration act this artifact declares but does not perform. Registration is a registry-axis act and the Controller array does not gate it."
+    ]
+  },
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-36",
+    "branch": "codex/cv1-staging-security-acl-durable-r1",
+    "patterns": [
+      "db/prepared/stella_0022_platform_authority_acl_successor.sql",
+      "db/prepared/README.md"
+    ],
+    "pattern_count": 2,
+    "registration_status": "DECLARED_NOT_REGISTERED",
+    "THIS_IS_A_DECLARATION_AND_NOT_A_REGISTRY_ROW": "BINDING. The object above is a DECLARATION recorded in authority. It is NOT a row in scripts/ods-scope.ts PROTECTED_GRANTS, and scripts/ods-scope.ts is byte-unchanged by this mission. Until a SEPARATE governed registration act adds the row, resolveProtectedGrant('HPO-ODS-W2-36', <any branch>) stays UNDEFINED and the grant authorizes nothing at all.",
+    "ORDER_IS_BINDING": "The two patterns MUST be registered in the order above, byte-identically. A registration that reorders, adds or drops a pattern has not registered what was declared.",
+    "BRANCH_BINDING_IS_EXACT": "The bound branch is the exact string codex/cv1-staging-security-acl-durable-r1. Any other spelling -- including this allocation's own branch codex/cv1-security-acl-ods-allocation-r1 -- resolves to nothing.",
+    "grant_does_not_replace_allow": "A resolved grant removes only the PROTECTED violation. The implementation writer must supply both --protected-authority HPO-ODS-W2-36 and an exact --allow for each of the two literals.",
+    "BOTH_PATTERNS_NAME_GENUINELY_PROTECTED_PATHS": "MEASURED. Both literals sit under db/prepared/**, which is in DEFAULT_PROTECTED_PATTERNS. Neither would pass without a grant.",
+    "WHY_EXACTLY_THESE_TWO_PATTERNS": {
+      "PATTERN_1": "db/prepared/stella_0022_platform_authority_acl_successor.sql -- the forward-only durable successor package for the platform-authority ACL defect. A NEW file the implementation will create.",
+      "PATTERN_2": "db/prepared/README.md -- the package-order document every prepared package registers in, shared by seven other rows and disambiguated by exact branch match.",
+      "NO_ROLLBACK_PATTERN": "DELIBERATE. No stella_0022 rollback file is a pattern of this grant. The successor is forward-only, as the stella_0021 and stella_hosted_0010 ACL packages were: a rollback of an ACL hardening would re-open the very defect it closes.",
+      "NO_WILDCARD": "ZERO glob metacharacters. db/prepared/** would admit every prepared unit including applied packages, and is refused."
+    },
+    "EXPLICITLY_NOT_AUTHORIZED_BY_THIS_GRANT": [
+      "db/prepared/**",
+      "db/prepared/stella_0022_*_rollback.sql",
+      "db/prepared/stella_0022_rollback.sql",
+      "db/prepared/hosted/**",
+      "db/prepared/journal/**",
+      "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql",
+      "db/prepared/stella_0011*",
+      "db/prepared/stella_0012*",
+      "db/migrations/**",
+      "db/baseline/**",
+      "docs/ops/fib/**",
+      "docs/ops/pc01b/**",
+      "docs/ops/im01b/**",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"
+    ],
+    "TESTS_AND_DOCS_REMAIN_ORDINARY_ALLOWS": "No test file and no documentation file is a pattern of this grant. The implementation lane derives its own ordinary allow-set at its own head."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "ALLOCATION_DOES_NOT_REGISTER_ITSELF": "BINDING. Allocating HPO-ODS-W2-36 is not registering it. scripts/ods-scope.ts is byte-unchanged, PROTECTED_GRANTS still holds 23 rows with tail HPO-ODS-W2-35, and the string HPO-ODS-W2-36 occurs zero times in that file at the candidate head.",
+    "ALLOCATION_DOES_NOT_AUTHORIZE_HOSTED_EXECUTION": "BINDING. Neither this allocation nor the future registration of HPO-ODS-W2-36 authorizes applying stella_0022 -- or any SQL -- to any hosted, staging or production database. The grant governs only which repository paths a writer on the bound branch may change. Any hosted apply requires its own separate governed authority and its own certification.",
+    "ALLOCATION_DOES_NOT_AUTHORIZE_A_DEFECT_REOPENING_ROLLBACK": "BINDING. Nothing in this artifact authorizes any rollback, revert, down-migration, REVOKE-of-the-hardening or GRANT-restoration that would re-open the platform-authority ACL defect (authenticated write access to platform-authority columns such as users.is_super_admin, or to organizations/organization_members authority columns). That prohibition covers the repository package, any hosted database, and any out-of-band containment already applied there.",
+    "REGISTRATION_MUST_BE_A_SEPARATE_ACT_BY_A_SEPARATE_LANE": "BINDING. Registration of HPO-ODS-W2-36 is a SEPARATE governed act, performed by a SEPARATE lane from this allocation lane AND from the stella_0022 implementation lane, with its own opening, write set and independent certification. The implementation writer may NOT self-register: identity of the resulting row is not identity of the act, and what the separation protects is the act."
+  },
+  "ALLOCATION_ONLY": {
+    "IT_DOES": [
+      "Allocate the ODS lineage position v1.0.39.",
+      "Declare the protected grant HPO-ODS-W2-36.",
+      "Record the owner decision that the PR #222 DevOS draft v1.0.39 is non-canonical and must be renumbered to v1.0.40."
+    ],
+    "IT_DOES_NOT": [
+      "Register HPO-ODS-W2-36 or edit scripts/ods-scope.ts / PROTECTED_GRANTS.",
+      "Author, create or edit db/prepared/stella_0022_platform_authority_acl_successor.sql, db/prepared/README.md, or anything under db/**.",
+      "Create, move, push or modify the branch codex/cv1-staging-security-acl-durable-r1.",
+      "Modify PR #222, its branch codex/cv1-devos-opus55-closure-state-r1, or its draft addendum.",
+      "Modify scripts/ods-controller.ts or tests/ods/ods-controller.test.ts, or enumerate v1.0.39 in IMMUTABLE_BY_CONVENTION.",
+      "Create v1.0.40, allocate the v1.0.40 position, or allocate HPO-ODS-W2-37 or any later grant id.",
+      "Apply any SQL or touch any hosted, staging or Real-PostgreSQL substrate."
+    ]
+  },
+  "IMPLEMENTATION_SEQUENCING": {
+    "THE_ORDER_AFTER_THIS_ACT": [
+      "1. Independent certification of this allocation, then integration into integration/commercial-v1.",
+      "2. HPO-ODS-W2-36 REGISTRATION by a separate lane: appends exactly the declared row to PROTECTED_GRANTS, advances the registry-axis sentinels from W2-36 to W2-37, is independently certified and integrated.",
+      "3. The stella_0022 implementation on codex/cv1-staging-security-acl-durable-r1, under its own controlling authority (see F-SECACL-W2-36-2), with --protected-authority HPO-ODS-W2-36 and exact --allow entries.",
+      "4. Any hosted apply only under a separate hosted-execution authority."
+    ],
+    "NOT_PERFORMED_BY_THIS_ACT": "None of the acts above is performed, authorized or pre-approved here. Listing them records the sequence; it does not schedule or permit them."
+  },
+  "NO_PREALLOCATION": {
+    "binding": "Beyond the ONE lineage position and the ONE grant this artifact allocates, NOTHING is allocated, reserved or implied. Naming an identifier inside a prohibition is not an allocation of it.",
+    "MIGRATION_ORDINAL_ALLOCATED": "NO",
+    "HOSTED_ORDINAL_ALLOCATED": "NO",
+    "PREPARED_ORDINAL_ALLOCATED": "NO beyond the exact literal db/prepared/stella_0022_platform_authority_acl_successor.sql named by the owner decision; no stella_0023+ and no stella_hosted_NNNN is reserved.",
+    "GRANT_REGISTERED": "NO",
+    "NEXT_ODS_LINEAGE_VERSION_AFTER_THIS_ONE": {
+      "value": "ODS v1.0.40",
+      "classification": "PROHIBITION_NOT_ALLOCATION",
+      "note": "Named so the corpus collision sweep has a correct forward disjunct, and because the owner decision directs the DevOS renumber there. This artifact does not create it and does not allocate it; it is additionally BLOCKED by CONTROLLER_SUCCESSOR_RULE."
+    },
+    "NEXT_PROTECTED_GRANT_AFTER_THIS_ONE": {
+      "value": "HPO-ODS-W2-37",
+      "classification": "PROHIBITION_NOT_ALLOCATION",
+      "REGISTRATION_AXIS_IS_NOT_ADVANCED_BY_THIS_ACT": "BINDING. Registry-axis absence controls pinned to HPO-ODS-W2-36 remain TRUE and untouched, because W2-36 is DECLARED and NOT REGISTERED. Advancing them to W2-37 belongs to the registration act."
+    },
+    "explicitly_not_allocated": [
+      "ODS v1.0.40",
+      "HPO-ODS-W2-37",
+      "any migration, hosted or journal ordinal",
+      "any stella_0022 rollback file",
+      "the next Controller successor act, by any label or numeral",
+      "the HPO-ODS-W2-36 registration act"
+    ]
+  },
+  "FILESYSTEM_SENTINEL_DISPOSITION": {
+    "method": "This artifact was materialized FIRST and the existing ODS suites were run against it UNCHANGED, so that the controls it falsifies were OBSERVED, not predicted.",
+    "WHAT_MOVES": "Only LINEAGE-axis (filesystem) sentinels in tests/ods/ods-scope.test.ts: existsSync(v1.0.39) absence assertions become positive existence proofs (the v1.0.38 existence proof is retained beside them), the dense maximum advances 38 -> 39, the NEXT_UNALLOCATED lineage constants and the corpus-sweep disjuncts advance to the next unallocated pair (1.0.40 / HPO-ODS-W2-37) keeping their shape, and a mechanically-next absence sentinel for v1.0.40 is kept.",
+    "WHAT_DOES_NOT_MOVE": [
+      "Registry-axis sentinels pinned to HPO-ODS-W2-36 (absent from PROTECTED_GRANTS, resolves nowhere, zero occurrences in scripts/ods-scope.ts): still TRUE.",
+      "Controller-axis sentinels (scripts/ods-controller.ts does not enumerate v1.0.39): still TRUE; tests/ods/ods-controller.test.ts is byte-unchanged.",
+      "Historical assertions pinning what a frozen predecessor addendum says about itself."
+    ],
+    "NO_SECOND_LIVE_COUNT_GUARD_IS_INTRODUCED": "The forward figure 24 is a literal in this artifact only; nothing derives a forward grant count from the live array."
+  },
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 23,
+  "PROTECTED_GRANTS_COUNT_AFTER": 23,
+  "PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_36": 24,
+  "REGISTERED_GRANT_TAIL_BEFORE": "HPO-ODS-W2-35",
+  "REGISTERED_GRANT_TAIL_AFTER": "HPO-ODS-W2-35",
+  "authorized_changed_paths_this_mission": [
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json",
+    "tests/ods/ods-scope.test.ts"
+  ],
+  "authorized_changed_paths_note": "EXACTLY TWO PATHS: this NEW artifact and the existing test file carrying the lineage-axis sentinels it falsifies. Neither is protected, so both are ordinary --allow entries and the scope gate consumes no --protected-authority.",
+  "PROTECTED_AUTHORITY_CONSUMED_BY_THIS_MISSION": "NONE.",
+  "DIFFERENTIAL_INTEGRITY": {
+    "verified_byte_unchanged_against_START_HEAD": [
+      "every docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.N.json for N in 1..38",
+      "scripts/ods-scope.ts",
+      "scripts/ods-controller.ts",
+      "tests/ods/ods-controller.test.ts",
+      "db/** in its entirety"
+    ],
+    "method": "git diff --name-status against 537487ac7b102d51f553fcb8f5cfe19614e113d8 cross-checked with git status --untracked-files=all, and pnpm ods:poststate with the two exact allows."
+  },
+  "risks_and_open_findings": [
+    {
+      "id": "F-SECACL-W2-36-1",
+      "severity": "NONBLOCKING_FOR_THIS_ACT",
+      "finding": "A second blob at the same v1.0.39 path exists on the PR #222 branch (7b760948). If PR #222 were integrated without its owner-directed renumber, the lineage would carry two different v1.0.39 artifacts (a git content conflict at best, a silent overwrite at worst).",
+      "disposition": "Owner decision recorded in DEVOS_DRAFT_COLLISION_DISPOSITION: the draft is non-canonical and must become v1.0.40 before integration. Enforcement is PR #222's own R3 and its certification; this lane does not touch PR #222."
+    },
+    {
+      "id": "F-SECACL-W2-36-2",
+      "severity": "OPEN_FOR_THE_IMPLEMENTATION_NODE",
+      "finding": "No frozen repository authority yet specifies the stella_0022 package (its objects, owner/grantor model, column set, trigger guard, forward-only posture, tests). The branch and literals come from the signed owner decision.",
+      "disposition": "Not closed here and not required for an allocation. The implementation lane must operate under its own controlling authority; this grant decides only WHICH paths may be written, never WHAT they contain."
+    },
+    {
+      "id": "F-SECACL-W2-36-3",
+      "severity": "INFORMATIVE",
+      "finding": "db/prepared/README.md becomes the literal of an eighth declared grant (seven registered rows already carry it).",
+      "disposition": "No collision: resolveProtectedGrant disambiguates by exact branch, and none of the seven binds codex/cv1-staging-security-acl-durable-r1."
+    },
+    {
+      "id": "F-SECACL-W2-36-4",
+      "severity": "INFORMATIVE",
+      "finding": "The bound branch exists as a local ref at 537487ac but not on origin.",
+      "disposition": "Binding a grant to a branch string is independent of the ref's existence; this act neither creates nor moves it."
+    }
+  ],
+  "self_check": {
+    "SC-1_version_and_filename_agree": "PASS. version 1.0.39, artifact_id and filename ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.",
+    "SC-2_succeeds_the_measured_tail": "PASS. succeeds = v1.0.38, the maximum of the dense lineage at START_HEAD.",
+    "SC-3_lineage_dense_and_next": "PASS. 1..38 dense; 39 is next.",
+    "SC-4_grant_id_from_allocation_axis": "PASS. GRANT_ID maximum 35 (v1.0.38); next W2-36; equals the owner decision.",
+    "SC-5_no_canonical_collision": "PASS. The only other v1.0.39 blob is the unintegrated PR #222 draft, not an ancestor of START_HEAD, declared non-canonical by the owner.",
+    "SC-6_grant_declared_not_registered": "PASS. registration_status DECLARED_NOT_REGISTERED; scripts/ods-scope.ts byte-unchanged.",
+    "SC-7_exact_two_patterns_no_wildcard": "PASS. pattern_count 2, owner order, zero glob metacharacters.",
+    "SC-8_no_existing_grant_binds_target_branch": "PASS. 0 of 23.",
+    "SC-9_controller_prerequisite_discharged_and_not_advanced": "PASS. 49 entries terminal v1.0.38 via 46a93a91; scripts/ods-controller.ts unchanged.",
+    "SC-10_explicit_non_authorizations_stated": "PASS. Self-registration, hosted execution and defect-reopening rollback are each explicitly not authorized; registration is a separate act by a separate lane.",
+    "SC-11_pr222_not_modified": "PASS. No write to PR #222 or its branch.",
+    "SC-12_write_set_is_exactly_two_paths": "PASS.",
+    "SC-13_no_db_path_in_diff": "PASS. No db/** path changes."
+  },
+  "final_state": "ODS_V1_0_39_ALLOCATED_W2_36_DECLARED_NOT_REGISTERED_SECURITY_ACL_IMPLEMENTATION_NOT_AUTHORIZED",
+  "next_gate": "SECURITY_ACL_ODS_W2_36_ALLOCATED__READY_FOR_SEPARATE_REGISTRATION"
+}
