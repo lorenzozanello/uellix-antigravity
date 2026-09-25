@@ -1283,7 +1283,9 @@ class FixtureRepo {
     }
     mkdirSync(this.dir, { recursive: true })
     this.g(['init', '-q', '-b', 'main', '.'])
-    this.write('README.fixture', 'fixture\n')
+    // Unique content: two repositories created within one second with identical content
+    // and identity would share one base commit id and make "foreign" commits vacuous.
+    this.write('README.fixture', `fixture ${path.basename(this.dir)} ${process.pid} ${Date.now()}\n`)
     this.commit('base')
     this.genesis = this.head()
   }
@@ -1609,6 +1611,7 @@ describe('§3 every git-rewrite mechanism is neutralized by the controlled reads
       GIT_DIR: path.join(other.dir, '.git'),
       GIT_NAMESPACE: 'hostile',
     }
+    expect(other.head()).not.toBe(repo.head())
     const run = makeControlled(hostile)
     expect(environmentViolations(repo.dir, run)).toEqual([])
     expect(text(run(repo.dir, ['rev-parse', 'HEAD']))).toBe(repo.head())
@@ -2156,6 +2159,7 @@ describe('§7 canonical monotonicity, provider protection and store attacks', ()
     expect(st.records.some((r) => r.path === reserved.path)).toBe(true)
     expect(s.consume().result).toBe('STOP_CANONICAL_STORE_NOT_MONOTONIC')
     const orphan = new FixtureRepo()
+    expect(orphan.genesis).not.toBe(s.repo.genesis)
     expect(s.consume(CENSUS, { genesis: orphan.genesis }).result).toBe('STOP_CANONICAL_STORE_NOT_MONOTONIC')
   })
   it('a provider tip that does not descend from the pinned store genesis is NOT_MONOTONIC on its own', () => {
@@ -2163,6 +2167,7 @@ describe('§7 canonical monotonicity, provider protection and store attacks', ()
     s.adjudicate('PASS', s.attempt())
     expect(s.consume().result).toBe('USABLE')
     const orphan = new FixtureRepo()
+    expect(orphan.genesis).not.toBe(s.repo.genesis)
     expect(s.consume(CENSUS, { genesis: orphan.genesis }).result).toBe('STOP_CANONICAL_STORE_NOT_MONOTONIC')
   })
   it('canonical ancestry: a provider tip that is not an ancestor of H is STALE, even if H contains the same records', () => {
