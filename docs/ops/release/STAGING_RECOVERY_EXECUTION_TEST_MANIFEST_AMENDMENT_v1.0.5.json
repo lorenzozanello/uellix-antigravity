@@ -1,0 +1,172 @@
+{
+  "manifest_id": "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.5",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json with docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json -- the certification store durability remediation authored by mission CV1-RECOVERY-CERT-STORE-DURABILITY-REMEDIATION-R3. Governs the delta of v1.0.5 only; the v1.0.4 manifest, test and battery remain as history of the superseded SECTION_E3.",
+  "dependencies": [
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4 -- blob 85c76024aa1c52058a6f36953c4da743ba247293. NOT edited (immutable).",
+    "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.4 -- blob d9cc1aa739c79e91570793a189f9a711457b619b. NOT edited.",
+    "tests/release/staging-recovery-cert-adjudication.test.ts -- blob e7e143805edccf8178a5538457c8f7662f37d353. NOT edited.",
+    "tests/release/staging-recovery-cert-adjudication.mutation-battery.mjs -- blob 0e164220003f4056c0e5788c1707451ab310bd52. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3 -- blob c20cc4f123bce9659e09a6e3fb0878a7de2752b0. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2 -- blob e4030e734b96ca8b0e68372a4e98111782e8f76e. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3 -- added by the same act (blob pinned in v1.0.5 SECTION_F2 and the declared layers).",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5 -- this manifest's controlling authority, added by the same act."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "SENT-NO-RECORD-FILE",
+      "purpose": "No path under docs/ops/release/rca/ or the retired occurrence root exists in the introducing tree; fixture attempts and adjudications live only in private temporary git repositories."
+    },
+    {
+      "id": "SENT-NO-PROTECTION-MUTATION",
+      "purpose": "The lane reads provider state only (recorded 2026-09-24 measurement); SECTION_F18 records mutation_by_this_lane NONE; the test never calls the provider."
+    },
+    {
+      "id": "SENT-EVENT-A-POLICY-PENDING",
+      "purpose": "EVENT_A_POLICY is PENDING in v1.0.5 SECTION_F10 and owner v1.0.3; structural check."
+    },
+    {
+      "id": "SENT-NO-PR220-MERGE",
+      "purpose": "The introducing tree has no OFFLINE covered path (the OFFLINE derivation at the introducing view is empty COVERED), i.e. PR #220 is not merged by this act."
+    },
+    {
+      "id": "SENT-NO-SECRET-VALUE",
+      "purpose": "No password, token, DSN or connection string in the write set; verified by the secrets_scan exit gate."
+    }
+  ],
+  "known_conditions": [
+    "KC-PROVIDER-PROTECTION: the canonical ref is NOT provider-protected (measured 2026-09-24). Every consumer STOPS at STOP_PROVIDER_PROTECTION_REQUIRED until the owner applies SECTION_F18.required_change; this is the terminal state of the lane, not a test failure.",
+    "KC-GATES-OUTSIDE-THE-ENUM: eslint over the write set and the mutation battery run are executed and reported by the lane; the manifest schema exit-gate enum has no value for them."
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-SD-1",
+      "description": "Owner v1.0.3 verbatim and structured forms agree; every owner binding field is a key of the attempt schema; the owner blob pinned in SECTION_F2 and the declared layers is the actual blob.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "PC-SD-2",
+      "description": "Closure V3: the interpreter grammars equal the normative grammars; KS-A recomputes from git with its v1.0.4 digest; KS-B recomputes when fetched (required in CI); the package kind derives at the introducing tree and covers this artifact, its owner record, this test and battery.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "PC-SD-3",
+      "description": "Controlled reads: a fresh repository passes the self-check; the environment is built from nothing; a single add, a root-commit add and a side-branch add merged normally are clean ever-added history.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "PC-SD-4",
+      "description": "On real git fixtures: attempt then PASS is USABLE (RESOLVED_PASS) with scope; PASS, attempt, PASS is usable once the second attempt is resolved; an open attempt on a different package digest does not suspend.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "PC-SD-5",
+      "description": "The required ruleset (SECTION_F18) and classic protection with enforce_admins pass the provider evaluator.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "PC-SD-6",
+      "description": "The consumer registry equals the union of discovery rules 1, 2 and 3; M-1 (D12[0], E8[0]), next_gate (v1.0.3, v1.0.4), E7, PS-2 and HX-1 are PACKAGE_CONSUMERS; every consumer is restated through consumer_rule.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "PC-SD-7",
+      "description": "Every topic is anchored to existing sections of its domain; 17 RECOVERY topics; an anchor moved to another domain, to a missing section, or an empty anchor list is RED.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "PC-SD-8",
+      "description": "Every earlier artifact of the chain is byte-identical; the write set is five added paths; declared layers are mechanical; Event A untouched; no operation added; the real repository passes the self-check and git fsck --full with an empty, clean store.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-SD-1",
+      "description": "PASS -> attempt -> no result materialized => STOP_RECERT_ATTEMPT_OPEN (the earlier PASS is suspended).",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-2",
+      "description": "PASS -> attempt -> FAIL, BLOCKED or INSUFFICIENT_EVIDENCE => STOP_CERTIFICATION_REVOKED; a sibling-SHA FAIL with the same digest revokes; FAIL then PASS => STOP_CONTRADICTORY_CERTIFICATION.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-3",
+      "description": "merge -s ours dropping a FAIL, and dropping an attempt with its FAIL together => STOP_ADJUDICATION_HISTORY_VIOLATED (the second case is caught by the ever-added rule alone).",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-4",
+      "description": "Ever-added history on real DAGs: normal merge + git rm, evil merge, add/add, delete and restart, modify, rename, zero adds, executable add, unexpected raw output.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-5",
+      "description": "Git rewrites: a loose object forged under its own id (detected only by git fsck --full; review B1), replace refs (log and ls-tree), info/grafts (including one hiding a deletion), a forged commit-graph, a repository log.showRoot=false, an alias, included configuration and a hostile inherited environment are defeated; a shallow clone is UNVERIFIABLE.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-6",
+      "description": "Self-check: an unpinned runner, a global scope, an fsck.* key, a sha256 repository and a present graft path are reported; history is walked from the evaluated head H even when the checkout HEAD is older (review B2).",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-7",
+      "description": "Provider: the recorded 2026-09-24 state => STOP_PROVIDER_PROTECTION_REQUIRED; missing deletion or non_fast_forward rule, rules split across rulesets, evaluate mode, a bypass actor, another ref, a tag target and classic protection without enforce_admins or allowing deletion or force-push all fail; a force_push or branch_deletion activity, or a second branch_creation => STOP_CANONICAL_STORE_REWRITTEN.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-8",
+      "description": "Canonical monotonicity: a provider tip no longer containing a reservation tip (force-push), or not descending from genesis in an otherwise USABLE store => STOP_CANONICAL_STORE_NOT_MONOTONIC; a provider tip not an ancestor of H => STOP_ADJUDICATION_STORE_STALE; containment diagnostic; wrong provider ref.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-9",
+      "description": "Attempt validation: prior_state mismatch, a second attempt while one is open, duplicate (separator-insensitive) attempt id, malformed ids, wrong canonical ref or tip, wrong tree/digest/algorithm, contract of v1.0.4, authority claim, shape.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-10",
+      "description": "Resolution: missing attempt, wrong attempt digest or id, another adjudicator, another candidate, tree or digest, an adjudication dated before its reservation, an attempt of another kind => STOP_RECERT_ATTEMPT_RESOLUTION_INVALID; a second outcome for one attempt => STOP_RECERT_ATTEMPT_DOUBLY_RESOLVED; an unreserved adjudication or an invalid record of another kind makes the store unusable.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-11",
+      "description": "Store integrity: record type not matching the file-name form, non-canonical bytes, executable mode, foreign directory, wrong content digest; retired occurrence root; broken chain; changed or added governing layer => STOP_NOT_CURRENT.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-12",
+      "description": "Closure: import-shaped strings are not imports while statements, multi-line imports and call forms are; multi-\"../\" runtime literal; absent references STOP for CENSUS/OFFLINE and are excluded for PACKAGE; missing toolchain root or setup file.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "NC-SD-13",
+      "description": "Registry: every spelling of CERTIFIED_CENSUS_EXECUTION, \"recertified PASS-class\", \"On PASS-class\", \"returns PASS\", the owner-record next_gates, v1.0.0 next_gate, v1.0.3 SECTION_D13.HX-1 and the E7 key are discovered (review B3); no locus unclassified, doubly classified or dead.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MUT-SD-1",
+      "description": "Kill matrix: disabling ANY single record check (W1..W13, A1..A10, R1, R2) lets at least one negative case through; a NOOP check survives (self-test); the check orders follow the artifact.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.test.ts"
+    },
+    {
+      "id": "MUT-SD-2",
+      "description": "Independent textual mutation battery: 85 semantic mutants over the environment (including object integrity and fsck configuration), ever-added history, canonical store, provider evaluator, attempt states, resolution, attempt validation, store integrity, consumer, closure V3, registry and precedence must all be KILLED; the HARMLESS comment mutant must SURVIVE; original byte-identical; no residue. Three EQUIVALENT mutants are documented and not counted.",
+      "test_file": "tests/release/staging-recovery-cert-store-durability.mutation-battery.mjs"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
