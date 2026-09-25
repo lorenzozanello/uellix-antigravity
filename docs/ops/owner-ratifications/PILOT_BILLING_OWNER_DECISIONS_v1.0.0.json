@@ -1,0 +1,133 @@
+{
+ "package_id": "PILOT_BILLING_OWNER_DECISIONS",
+ "version": "1.0.0",
+ "artifact_id": "PILOT_BILLING_OWNER_DECISIONS_v1.0.0",
+ "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+ "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION__NO_STRIPE_ACTION",
+ "append_only": true,
+ "mission_id": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R1",
+ "lane": "codex/cv1-pilot-billing-minimum-authority-r1",
+ "role": "PILOT_BILLING_MINIMUM_AUTHORITY_WRITER",
+ "mode": "DOCS_ONLY_AUTHORITY_MATERIALIZATION",
+ "materialization_date": "2026-09-25",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "materialized_at_base": {
+  "base_branch": "integration/commercial-v1",
+  "BASE_SHA": "20308b1121e3960361374f8eeabc8b100fdacad7",
+  "BASE_TREE": "8a950637cbe1f5e050471e464cf2953177f3d507",
+  "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty before any write)."
+ },
+ "amends": "NOTHING. This is a NEW owner-ratification record. It edits no existing ratification and rewrites no historical evidence.",
+ "supersedes": null,
+ "companion_authority": "docs/ops/commercial/PILOT_BILLING_EXECUTION_AUTHORITY_v1.0.0.json",
+ "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_PRIOR_TO_THIS_MATERIALIZATION_LANE. The decision below was approved by the Product Owner and supplied to this lane as its binding directing text (OWNER DECISION — BINDING INPUT, identifier PILOT-BILLING-01, title 'ACTIVE_WITHOUT_STRIPE'). THIS FILE IS NOT A VERBATIM CHAT TRANSCRIPT and is not a new adjudication. It is the canonical normalized record so that successor lanes cite a stable repository artifact instead of re-deriving the decision. The precedent for doing so is COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json#OPEN_FINDINGS[OF-1], which recorded that HPO-B had NO repository source and that its first materialization was therefore its own only corroboration. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout.",
+ "precedence_note": "This record is canonical for product-owner intent on PILOT-BILLING-01 only. It does NOT override executable FIB/ODS/database/security authority and it does NOT itself make anything implementable. The frozen Tier-A parents (docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json and its amendments) and the tenancy, legal-acceptance and release authorities they reference remain controlling. The companion execution authority is the artifact that makes this decision execution-effective, and it does so by STAGE-SCOPING existing authority, never by weakening it. Where the companion requires an amendment of a frozen parent, that amendment is an append-only act (PB-A00) whose content the companion freezes; this record does not perform it. The lesson of docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json#precedence_note applies: a bare owner record cannot by itself make a sequencing exception effective.",
+ "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen HPO-A..HPO-G, CA-01..CA-08, MO-01..MO-12, SS-01..SS-03, RAT-AO-01..03, RAT-OP-01 or OD-1..OD-9. PILOT-BILLING-01 is a STAGE decision about PILOT_READY; it deletes, weakens and supersedes none of them. Absence of implementation is not a contradiction. A conflict between this record and active executable authority that the companion does not resolve fails closed (STOP_FOR_AUTHORITY_CONFLICT).",
+ "definitional_intent": {
+  "PILOT_BILLING_READY": "The billing-and-entitlement readiness the Commercial V1 stage PILOT_READY requires: a CommercialAccount can become commercially usable WITHOUT Stripe through the explicit, authorized, governed and audited ACTIVE_WITHOUT_STRIPE path, administered entirely from the Uellix platform control plane. It is a NECESSARY input to PILOT_READY, never sufficient for it. Normative closed-conjunction definition lives in the companion authority SECTION_3, not here.",
+  "COMMERCIAL_CORE_USABLE": "The later, FULL commercial target: the complete Stripe lifecycle (first binding, checkout, webhook ordering, past_due, suspension, cancellation, reactivation, invoices, dunning and the rest contemplated by HPO-B and the frozen commercial parents). PILOT-BILLING-01 does not delete, weaken or supersede it; it only removes it from the PILOT_READY critical path.",
+  "PRO_BONO": "A governed commercial basis for an ACTIVE_WITHOUT_STRIPE arrangement. It is not a role, not an authorization bypass, not a Stripe payment and not automatically unlimited. Normative representation lives in the companion authority SECTION_15."
+ },
+ "ratifications": [
+  {
+   "id": "PILOT-BILLING-01",
+   "domain": "COMMERCIAL_ENTITLEMENT_BILLING_STAGE_SCOPE",
+   "title": "ACTIVE_WITHOUT_STRIPE",
+   "statement": "For the Commercial V1 stage PILOT_READY, Stripe/payment automation is NOT required. A CommercialAccount may become commercially usable through the already-conceived ACTIVE_WITHOUT_STRIPE path, but ONLY through an explicit, authorized, governed and audited administrative action in Uellix. From the Uellix administrative control plane an authorized administrator must be able to assign plan/commercial package, entitlement capabilities, credits/limits, effective period/validity, applicable commercial basis, and Pro Bono status/policy where applicable; this must support pro bono service. No routine Pilot activation, plan assignment, entitlement change or credit adjustment may require direct SQL, manual Supabase row editing, developer intervention, or direct manipulation of legacy quota columns. Payment, Activation, Entitlement and Authorization remain separate concerns. Pro Bono is not an authorization bypass and is not automatically unlimited. Full Stripe automation remains part of the later/full COMMERCIAL_CORE_USABLE target and this decision does not delete, weaken or supersede the full future Stripe lifecycle contemplated by HPO-B / Commercial Core. Pilot Billing should use existing architecture whenever possible rather than create a second billing, quota, credit or entitlement system. No new customer-facing entitlement capability key is authorized merely by this decision; the current production catalogue contains stella.grounded_query.",
+   "status": "RATIFIED_BY_PRODUCT_OWNER",
+   "ratification_date": "2026-09-25",
+   "clauses": [
+    {
+     "id": "PILOT-BILLING-01.1",
+     "text": "Stripe/payment automation is NOT required for PILOT_READY.",
+     "repository_binding": "Stage-scopes, never deletes, the Stripe-dependent nodes of docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json#IMPLEMENTATION_PACKAGES (CB-3, CB-4, CB-5, CB-6, CB-9) and CE-6 of docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json#MIGRATION_DAG. Companion SECTION_6."
+    },
+    {
+     "id": "PILOT-BILLING-01.2",
+     "text": "ACTIVE_WITHOUT_STRIPE is reachable ONLY through an explicit, authorized, governed and audited administrative action in Uellix.",
+     "repository_binding": "Coincides with, and does not widen, HPO-B.7 (docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json) and OD-7 / COMMERCIAL_STATE_MACHINE.states[ACTIVE_WITHOUT_STRIPE] / MANUAL_ACTIVATION of the billing authority."
+    },
+    {
+     "id": "PILOT-BILLING-01.3",
+     "text": "The administrative control plane assigns plan/commercial package, entitlement capabilities, credits/limits, effective period/validity, applicable commercial basis, and Pro Bono status/policy where applicable.",
+     "repository_binding": "Realised through the existing EntitlementGrant model (source COMMERCIAL_EXCEPTION, limit_kind UNMETERED | BLOCKED | CAPPED, plan_ref snapshot, effective_from) and the manual-activation inputs of MANUAL_ACTIVATION.mandatory_inputs. Companion SECTIONS 10, 11, 14, 15."
+    },
+    {
+     "id": "PILOT-BILLING-01.4",
+     "text": "Pro bono service must be supported.",
+     "repository_binding": "No Pro Bono artifact exists in the repository at BASE_SHA (measured: zero case-insensitive hits for pro bono / pro_bono / probono / ProBonoPolicyVersion across the whole tree). Representation derived in companion SECTION_15 without a new entitlement source, a new capability key or a project-scoped grant."
+    },
+    {
+     "id": "PILOT-BILLING-01.5",
+     "text": "No routine Pilot activation, plan assignment, entitlement change or credit adjustment may require direct SQL, manual Supabase row editing, developer intervention, or direct manipulation of legacy quota columns.",
+     "repository_binding": "Consistent with SS-03 ('technical provisioning intervention cannot be required') and SELF_SERVICE.frozen[0] of the entitlement authority. Companion SECTION_11 and control PB-N-20."
+    },
+    {
+     "id": "PILOT-BILLING-01.6",
+     "text": "Payment, Activation, Entitlement and Authorization remain separate concerns.",
+     "repository_binding": "Restates CA-03, CA-05, SS-03 and the invariants of COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json#invariants_reference_only. Companion SECTION_18."
+    },
+    {
+     "id": "PILOT-BILLING-01.7",
+     "text": "Pro Bono is NOT an authorization bypass and is NOT automatically unlimited.",
+     "repository_binding": "Companion SECTION_15 and controls PB-N-17, PB-N-18, PB-M-9."
+    },
+    {
+     "id": "PILOT-BILLING-01.8",
+     "text": "Full Stripe automation remains part of the later/full COMMERCIAL_CORE_USABLE target; this decision does not delete, weaken or supersede the full future Stripe lifecycle contemplated by HPO-B / Commercial Core.",
+     "repository_binding": "HPO-B.1..B.9 and OD-1..OD-9 are PRESERVED; companion SECTION_7 records the disposition of each."
+    },
+    {
+     "id": "PILOT-BILLING-01.9",
+     "text": "Pilot Billing uses existing architecture wherever possible and creates no second billing, quota, credit or entitlement system.",
+     "repository_binding": "The live EntitlementGrant stays the single source of the limit (EC-1, USAGE_QUOTA_BOUNDARY); the Stella ledger stays where the prepared chain puts it. Companion SECTION_14."
+    },
+    {
+     "id": "PILOT-BILLING-01.10",
+     "text": "No new customer-facing entitlement capability key is authorized merely by this decision; the known production catalogue is stella.grounded_query.",
+     "repository_binding": "Measured: lib/capabilities/entitlement-catalogue.ts carries exactly one key and db/migrations/0073_commercial_account_ce3_entitlement_grants.sql re-validates it at the database boundary (U0114). Companion control PB-N-21."
+    }
+   ]
+  }
+ ],
+ "explicit_non_authorizations": [
+  "NO implementation of any kind is performed or authorized to begin by THIS record.",
+  "NO migration, prepared package, hosted APPLY, Supabase mutation, Vercel mutation or environment/provider change.",
+  "NO Stripe action of any kind.",
+  "NO ODS addendum, HPO grant, Controller enumeration, migration ordinal, prepared ordinal, hosted ordinal or SQLSTATE is allocated, reserved or implied.",
+  "NO edit to any frozen, sealed or certified artifact.",
+  "NO new entitlement capability key, NO new entitlement-grant source literal, NO new limit_kind literal.",
+  "NO price, discount, list value or plan catalogue amount is frozen (HPO-B.9 / OD-9 preserved).",
+  "NO platform, support or commercial-team mechanism that records legal or commercial acceptance on an organization's behalf (RAT-AO-02 preserved).",
+  "NO support capability, tenant impersonation or change to the platform-principal model.",
+  "NO acceptance, in writing or otherwise, of any PILOT_READY security or legal stop line (SSL-03, SSL-04, LSL-02 of docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json). Those remain separately owned.",
+  "NO modification of PR #178 or of its branch."
+ ],
+ "self_check": {
+  "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+  "expected_ratification_count": 1,
+  "expected_id_set": [
+   "PILOT-BILLING-01"
+  ],
+  "expected_clause_count": 10,
+  "expected_defined_term_count": 3,
+  "expected_defined_terms": [
+   "PILOT_BILLING_READY",
+   "COMMERCIAL_CORE_USABLE",
+   "PRO_BONO"
+  ],
+  "checks": [
+   "ratifications.length == 1 and ratifications[0].id == 'PILOT-BILLING-01'",
+   "ratifications[0].clauses.length == 10 with ids PILOT-BILLING-01.1 .. PILOT-BILLING-01.10, unique",
+   "every clause carries id, text and repository_binding",
+   "ratifications[0].status == 'RATIFIED_BY_PRODUCT_OWNER'",
+   "definitional_intent has exactly the three keys in expected_defined_terms",
+   "companion_authority names a path that exists in the same commit",
+   "no clause statement authorizes an apply, a deployment, an allocation or a Stripe action",
+   "clause PILOT-BILLING-01.8 is present: a stage record that states what it removes from the critical path and never what it preserves is incomplete by construction"
+  ]
+ },
+ "required_independent_review": "This record and its companion authority require INDEPENDENT certification before any implementation act opens. The writing lane does not certify its own output.",
+ "final_state": "PILOT_BILLING_OWNER_DECISIONS_v1_0_0_FROZEN",
+ "next_gate": "PILOT_BILLING_AUTHORITY_READY_FOR_INDEPENDENT_CERTIFICATION"
+}
