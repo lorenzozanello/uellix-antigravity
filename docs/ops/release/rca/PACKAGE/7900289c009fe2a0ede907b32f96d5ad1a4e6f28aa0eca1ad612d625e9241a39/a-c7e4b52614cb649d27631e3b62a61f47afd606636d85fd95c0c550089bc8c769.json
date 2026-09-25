@@ -1,0 +1,38 @@
+{
+  "attempt_id": "CV1-RECOVERY-PACKAGE-RECERT-ATTEMPT-7900289C-1",
+  "authority_class": "RECERT_ATTEMPT_RESERVATION_RECORD__NOT_EXECUTABLE_AUTHORITY",
+  "authorizes": [],
+  "canonical_store": {
+    "ref": "refs/heads/codex/cv1-recovery-integration-successor-r1",
+    "tip_observed_at_reservation": "d5e86b4dfcc02b324fa5b652deeabf8554bd3690"
+  },
+  "chain": {
+    "predecessor": null
+  },
+  "contract": {
+    "blob": "bb8bcebc9203778304d65ed139dc88bf4e77ea21",
+    "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+    "section": "SECTION_G3_PACKAGE_SUBJECT_CONTRACT"
+  },
+  "meaning": "An independent recertification of the cited package closure was reserved before its review began and must be resolved by exactly one materialized adjudication. Nothing else.",
+  "prior_state": {
+    "disposition_status": "NOT_ADJUDICATED",
+    "state": "NO_ATTEMPT"
+  },
+  "record_type": "RECERT_ATTEMPT",
+  "reservation": {
+    "adjudicator_lane_id": "CV1-RECOVERY-PACKAGE-RECERT-R1",
+    "reservation_date": "2026-09-25",
+    "reserved_by": {
+      "executor": "Claude Code (claude-opus-5-5)",
+      "lane_id": "CV1-RECOVERY-RECERT-ATTEMPT-RESERVATION-R1"
+    }
+  },
+  "subject": {
+    "candidate_sha": "d5e86b4dfcc02b324fa5b652deeabf8554bd3690",
+    "digest_algorithm": "RCO_CLOSURE_DIGEST_V3",
+    "package_digest": "7900289c009fe2a0ede907b32f96d5ad1a4e6f28aa0eca1ad612d625e9241a39",
+    "tree_sha": "51f1732a43838fb4ac26e82ba933107d008f1abc"
+  },
+  "subject_kind": "RECOVERY_AUTHORITY_PACKAGE_RECERT"
+}
