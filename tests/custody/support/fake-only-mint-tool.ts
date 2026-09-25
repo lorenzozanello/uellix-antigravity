@@ -25,10 +25,14 @@
 // and the harness passes an RFC 6761 `.invalid` host.
 //
 // Each non-conforming VARIANT breaks one contract clause, so the harness is
-// shown able to FAIL on each, not only to pass.
+// shown able to FAIL on each, not only to pass. The server-authentication and
+// ambient-environment code (OT-18 / OT-19) is the text shared with the probe
+// template (support/tool-trust-snippet.ts), with its own variants.
+
+import { trustDeclarations, trustPreflight, trustSslExpression, type TrustVariant } from './tool-trust-snippet'
 
 export type ToolVariant =
-  | 'CONFORMING'
+  | TrustVariant
   | 'LITERAL_IN_SQL'
   | 'INTERPOLATED_NOT_BOUND'
   | 'SECRET_IN_DEPOSITOR_ARGV'
@@ -66,6 +70,7 @@ export type ToolVariant =
 
 export function renderFakeOnlyMintTool(variant: ToolVariant = 'CONFORMING'): string {
   const v = (name: ToolVariant, yes: string, no: string): string => (variant === name ? yes : no)
+  const trust = (variant as string) as TrustVariant
   return `'use strict'
 const { createRequire } = require('node:module')
 const { spawn } = require('node:child_process')
@@ -114,8 +119,10 @@ function driverDigest(dir) {
   return createHash('sha256').update(lines.sort().join('')).digest('hex')
 }
 
+${trustDeclarations(trust)}
+
 async function main() {
-  const KNOWN = ['--driver-root=', '--driver-digest=', '--depositor=', '--valid-until=', '--target-host=', '--target-port=', '--target-database=', '--operator-principal=']
+  const KNOWN = ['--driver-root=', '--driver-digest=', '--depositor=', '--valid-until=', '--target-host=', '--target-port=', '--target-database=', '--operator-principal=', '--ca-file=', '--ca-sha256=']
   for (const a of process.argv.slice(2)) if (!KNOWN.some((k) => a.startsWith(k))) { out({ refused: 'UNKNOWN_ARGUMENT' }); return 2 }
   const validUntil = argOf('--valid-until=') || ''
   if (!/^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d{3})?Z$/.test(validUntil)) { out({ refused: 'VALID_UNTIL' }); return 2 }
@@ -123,6 +130,7 @@ async function main() {
   const targetPort = argOf('--target-port=') || ''
   const targetDatabase = argOf('--target-database=') || ''
   if (targetHost === '' || targetPort === '' || targetDatabase === '') { out({ refused: 'NO_TARGET' }); return 2 }
+  ${trustPreflight(trust)}
   const adminUrl = process.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL
   ${v('ADMIN_ENV_LEAKED_TO_DEPOSITOR', '', 'delete process.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL')}
   if (!adminUrl) { out({ refused: 'NO_OPERATOR_CONNECTION' }); return 2 }
@@ -164,8 +172,8 @@ async function main() {
 
   const sql = ${v(
     'URL_CONSTRUCTED',
-    "postgres(adminUrl, { max: 1, prepare: false, ssl: 'require', onnotice: () => undefined })",
-    "postgres({ host: u.hostname, port: Number(targetPort), database: targetDatabase, username: principal, password: decodeURIComponent(u.password), max: 1, prepare: false, ssl: 'require', onnotice: () => undefined })"
+    `postgres(adminUrl, { max: 1, prepare: false, ssl: ${trustSslExpression(trust, 'targetHost')}, onnotice: () => undefined })`,
+    `postgres({ host: u.hostname, port: Number(targetPort), database: targetDatabase, username: principal, password: decodeURIComponent(u.password), max: 1, prepare: false, ssl: ${trustSslExpression(trust, 'u.hostname')}, onnotice: () => undefined })`
   )}
   u = null
   // callbackCompleted flips as the LAST act of the callback, right before the
@@ -212,10 +220,10 @@ async function main() {
   try { n30 = JSON.parse(depOut.trim().split(/\\r?\\n/).pop() || 'null') } catch { n30 = null }
   const n30ExitMet = n30 !== null && n30.n30ExitMet === true
   if (outcome === 'COMMIT_OUTCOME_UNKNOWN') {
-    out({ mint: outcome, token: STOP_TOKEN, depositorExit: code, n30ExitMet })
+    out({ mint: outcome, token: STOP_TOKEN, depositorExit: code, n30ExitMet, tlsVerified: seen.verified === true })
     return 4
   }
-  out({ mint: outcome, depositorExit: code, n30ExitMet })
+  out({ mint: outcome, depositorExit: code, n30ExitMet, tlsVerified: seen.verified === true })
   return outcome === 'COMMITTED' && code === 0 ? 0 : 1
 }
 main().then((c) => { process.exitCode = c }, () => { out({ aborted: true }); process.exitCode = 3 })

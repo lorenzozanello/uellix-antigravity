@@ -6,7 +6,7 @@
 // signed rulings and adds three N10 conjuncts: the operator channel is bound,
 // the operator credential is inventoried, and OEP-1 is closed.
 
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -87,7 +87,13 @@ describe('P-8: the rulings and conjuncts, as the chain reader sees them', () => 
     // sections the R2 amendment replaces are read through the supersedes chain.
     const eff = readEffectiveChannelAuthority(workingTreeSource(ROOT))
     expect(eff.errors).toEqual([])
-    expect(eff.chain).toEqual([AUTHORITY, 'docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json'])
+    // Derived from the amendments on disk (a later amendment extends the chain; none is pinned as the last).
+    const amendments = readdirSync(RELEASE)
+      .filter((n) => /^FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v\d+\.\d+\.\d+\.json$/.test(n))
+      .sort((x, y) => x.localeCompare(y, 'en', { numeric: true }))
+      .map((n) => `docs/ops/release/${n}`)
+    expect(eff.chain).toEqual([AUTHORITY, ...amendments])
+    expect(eff.chain[1]).toBe('docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json')
     const doc = eff.doc as { CHANNEL_CONTRACT: { clause_ids: string[] }; OEP1_PROBE_CONTRACT: { expected_client_settings: unknown; derived_settings_list: string[]; statements: Record<string, string> } }
     expect(doc.CHANNEL_CONTRACT.clause_ids).toEqual(OPERATOR_CHANNEL_CONTRACT.map((c) => c.id))
     expect(doc.OEP1_PROBE_CONTRACT.derived_settings_list).toEqual([...OEP1_DERIVED_MATERIAL_SETTINGS])

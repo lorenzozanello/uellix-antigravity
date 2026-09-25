@@ -48,6 +48,8 @@ export const EXECUTION_ENTRY_POINTS: readonly string[] = [
   'scripts/custody/d1-mint-operator-channel-demonstration.ts',
   // R2 (DAG v1.0.8): the SCRAM-verifier transport proved on a disposable PostgreSQL.
   'scripts/custody/d1-scram-disposable-proof.ts',
+  // R3 (DAG v1.0.9, AC-8): the server-authentication controls on real TLS.
+  'scripts/custody/d1-tls-trust-harness.ts',
 ]
 
 export const AUTHORITY_PREFIXES: readonly string[] = [

@@ -10,12 +10,18 @@
 // under the OS temp directory, which on the authoring workstation is inside a
 // git work tree); TOOL_INSIDE_GIT_TREE is measured on the real outside tool.
 //
-// Each non-conforming VARIANT breaks one PROBE_CONTRACT clause.
+// Each non-conforming VARIANT breaks one PROBE_CONTRACT clause. The server-
+// authentication and ambient-environment code (OT-18 / OT-19) is the text shared
+// with the mint template (support/tool-trust-snippet.ts), with its own variants.
+// The probe prints the connection it OBSERVED (the TLS peer and trust anchor its
+// verification saw, the driver digest it loaded): PROBE_MINT_CONFIGURATION_
+// COHERENT is evaluated over those, never over constants.
 
 import { OEP1_DERIVED_MATERIAL_SETTINGS } from '@/db/custody/mint-operator-channel'
+import { trustDeclarations, trustPreflight, trustSslExpression, type TrustVariant } from './tool-trust-snippet'
 
 export type ProbeVariant =
-  | 'CONFORMING'
+  | TrustVariant
   /** PC-1: the transaction is not opened READ ONLY. */
   | 'READ_WRITE'
   /** PC-2: one statement beyond the pinned three. */
@@ -43,9 +49,12 @@ export type ProbeVariant =
   | 'URL_CONSTRUCTED'
   /** PC-2: the derived-material list bound is not the stated one. */
   | 'WRONG_SETTINGS_LIST'
+  /** F: the probe reports the planned connection facts instead of the ones it observed. */
+  | 'REPORTS_PLANNED_NOT_OBSERVED'
 
 export function renderFakeOnlyProbeTool(variant: ProbeVariant = 'CONFORMING'): string {
   const v = (name: ProbeVariant, yes: string, no: string): string => (variant === name ? yes : no)
+  const trust = (variant as string) as TrustVariant
   const settings = variant === 'WRONG_SETTINGS_LIST' ? OEP1_DERIVED_MATERIAL_SETTINGS.filter((s) => s !== 'log_statement') : OEP1_DERIVED_MATERIAL_SETTINGS
   return `'use strict'
 const { createRequire } = require('node:module')
@@ -65,13 +74,16 @@ function driverDigest(dir) {
   return createHash('sha256').update(lines.sort().join('')).digest('hex')
 }
 
+${trustDeclarations(trust)}
+
 async function main() {
-  const KNOWN = ['--driver-root=', '--driver-digest=', '--target-host=', '--target-port=', '--target-database=']
+  const KNOWN = ['--driver-root=', '--driver-digest=', '--target-host=', '--target-port=', '--target-database=', '--ca-file=', '--ca-sha256=']
   for (const a of process.argv.slice(2)) if (!KNOWN.some((k) => a.startsWith(k))) { out({ refused: 'UNKNOWN_ARGUMENT' }); return 2 }
   const targetHost = argOf('--target-host=') || ''
   const targetPort = argOf('--target-port=') || ''
   const targetDatabase = argOf('--target-database=') || ''
   if (targetHost === '' || targetPort === '' || targetDatabase === '') { out({ refused: 'NO_TARGET' }); return 2 }
+  ${trustPreflight(trust)}
   const adminUrl = process.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL
   delete process.env.UELLIX_D1_MINT_OPERATOR_DATABASE_URL
   if (!adminUrl) { out({ refused: 'NO_OPERATOR_CONNECTION' }); return 2 }
@@ -86,7 +98,8 @@ async function main() {
   let version = null
   try { version = JSON.parse(fs.readFileSync(path.join(driverRoot, 'node_modules', 'postgres', 'package.json'), 'utf8')).version } catch { version = null }
   ${v('NO_DRIVER_VERSION_CHECK', '', "if (version !== '3.4.9') { out({ refused: 'DRIVER_VERSION_NOT_ROUTE_B' }); return 2 }")}
-  ${v('NO_DRIVER_DIGEST_CHECK', '', "if (driverDigest(path.join(driverRoot, 'node_modules', 'postgres')) !== (argOf('--driver-digest=') || '')) { out({ refused: 'DRIVER_DIGEST_NOT_PINNED' }); return 2 }")}
+  const loadedDigest = driverDigest(path.join(driverRoot, 'node_modules', 'postgres'))
+  ${v('NO_DRIVER_DIGEST_CHECK', '', "if (loadedDigest !== (argOf('--driver-digest=') || '')) { out({ refused: 'DRIVER_DIGEST_NOT_PINNED' }); return 2 }")}
   const postgres = createRequire(path.join(driverRoot, 'package.json'))('postgres')
   // FAKE-ONLY GUARD: this fixture refuses every real driver.
   if (postgres.__UELLIX_CONTRACT_FAKE__ !== true) { out({ refused: 'FAKE_ONLY_FIXTURE' }); return 97 }
@@ -94,9 +107,10 @@ async function main() {
 
   const sql = ${v(
     'URL_CONSTRUCTED',
-    "postgres(adminUrl, { max: 1, prepare: false, ssl: 'require', onnotice: () => undefined })",
-    "postgres({ host: u.hostname, port: Number(targetPort), database: targetDatabase, username: decodeURIComponent(u.username), password: decodeURIComponent(u.password), max: 1, prepare: false, ssl: 'require', onnotice: () => undefined })"
+    `postgres(adminUrl, { max: 1, prepare: false, ssl: ${trustSslExpression(trust, 'targetHost')}, onnotice: () => undefined })`,
+    `postgres({ host: u.hostname, port: Number(targetPort), database: targetDatabase, username: decodeURIComponent(u.username), password: decodeURIComponent(u.password), max: 1, prepare: false, ssl: ${trustSslExpression(trust, 'u.hostname')}, onnotice: () => undefined })`
   )}
+  const bound = { host: u.hostname, port: Number(u.port || '5432'), database: decodeURIComponent(u.pathname.slice(1)), user: decodeURIComponent(u.username) }
   u = null
   let observed = null
   try {
@@ -120,6 +134,11 @@ async function main() {
     identity: { current_user: String(id.current_user_name), session_user: String(id.session_user_name), database: String(id.database_name), server_version_num: String(id.server_version_num) },
     client_settings: observed.client.map((r) => [String(r.name), String(r.setting)]),
     derived_settings: observed.derived.map((r) => ({ name: String(r.name), setting: String(r.setting), source: String(r.source) })),
+    connection: ${v(
+      'REPORTS_PLANNED_NOT_OBSERVED',
+      "{ ...bound, tls: { verified: true, peer_sha256: null, anchor_sha256: pinned.anchor }, driver_digest: argOf('--driver-digest=') }",
+      '{ ...bound, tls: { verified: seen.verified === true, peer_sha256: seen.peer, anchor_sha256: seen.anchor }, driver_digest: loadedDigest }'
+    )},
   })
   return 0
 }

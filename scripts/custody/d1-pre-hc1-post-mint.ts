@@ -34,7 +34,7 @@ import { N14_BODY } from '../../db/custody/n14-observation'
 import { AC3_DEFERRED_ROWS, N21_BODY, N22_BODY, n21ExitFromRows, n22ExitFromRows, n22Rows, type PvRow } from '../../db/custody/n22-poststate'
 import { OEP1_DERIVED_MATERIAL_SETTINGS, OEP1_EXPECTED_CLIENT_SETTINGS, OEP1_PROBE_STATEMENTS, OPERATOR_CHANNEL_CONTRACT, TOOL_SPAWN_FLAGS, acceptsPipedInput, driverDigest, hiddenPromptPrecondition } from '../../db/custody/mint-operator-channel'
 import { ROUTE_B_PASSWORD_TRANSPORT } from '../../db/custody/mint-route-b-contract'
-import { gatherOperatorChannelFacts, oep1EvidenceReasons, routeBTransportFacts, type OperatorChannelFacts } from './d1-mint-operator-evidence'
+import { TLS_TRUST_POLICY, gatherOperatorChannelFacts, oep1EvidenceReasons, routeBTransportFacts, type OperatorChannelFacts } from './d1-mint-operator-evidence'
 import { buildLauncherClosure } from './d1-mint-operator-channel-build'
 import { PROBE_FORBIDDEN_SOURCE_TOKENS } from './d1-oep1-probe-harness'
 import { deriveEffectiveSchedule } from './d1-effective-schedule'
@@ -92,6 +92,8 @@ export interface ImplementationFacts {
     readonly mintNeedsOep1Evidence: boolean
     /** DAG v1.0.8 AC-7: the route-B transport as implemented, and the DO-block guard. */
     readonly passwordTransport: string
+    /** DAG v1.0.9 AC-8: the channel contract carries OC-13 (server authenticated against the pinned CA) and OC-14 (no ambient PG* or TLS variable). */
+    readonly serverAuthenticationClauses: boolean
     readonly doBlockGuarded: boolean
   }
 }
@@ -223,6 +225,15 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
   // Superseded by PMR-14 in DAG v1.0.8 (the closed-list design failed its recertification); kept registered so a chain that still carries it is evaluated, never satisfied.
   'PMR-13_OEP1_LOGGING_POSTURE_CLOSED': () => ['PMR-13 is superseded by PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED (DAG v1.0.8) and cannot be satisfied on its own'],
   'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED': (i) => oep1EvidenceReasons(i.operatorChannel.oep1.facts, i.operatorChannel.oep1.ctx),
+  // DAG v1.0.9 (AC-8): the channel authenticates the server against the pinned project certificate.
+  'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED': (i) => {
+    const c = i.operatorChannel
+    const r: string[] = [...c.caReasons]
+    if (c.binding?.tls?.policy !== TLS_TRUST_POLICY) r.push(`CHANNEL_BINDING.tls.policy is not ${TLS_TRUST_POLICY}`)
+    if (c.tlsPolicyStated !== TLS_TRUST_POLICY) r.push(`the effective channel authority does not state TLS_TRUST_POLICY ${TLS_TRUST_POLICY}`)
+    for (const id of ['OC-13', 'OC-14']) if (!OPERATOR_CHANNEL_CONTRACT.some((x) => x.id === id)) r.push(`the channel contract carries no ${id}`)
+    return r
+  },
   'PMR-10_RULINGS_MATCH_IMPLEMENTATION': (i) => {
     const { active } = effectiveRulings(i.chain)
     const f = i.implementation
@@ -280,6 +291,11 @@ export const CONJUNCT_EVALUATORS: Readonly<Record<string, Evaluator>> = {
       if (oc.passwordTransport !== 'CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER') r.push('AC-7: the route-B transport is not the client-side SCRAM verifier')
       if (!oc.doBlockGuarded) r.push('AC-7: the DO block does not refuse a non-verifier before the ALTER ROLE')
     } else if (ac7 !== undefined) r.push(`AC-7 ruling outcome ${ac7.outcome} has no implementation mapping`)
+    const ac8 = active['AC-8']
+    if (ac8?.outcome === TLS_TRUST_POLICY) {
+      if (!oc.serverAuthenticationClauses) r.push('AC-8: the channel contract does not carry OC-13 and OC-14')
+      if (i.operatorChannel.binding?.tls?.policy !== TLS_TRUST_POLICY) r.push('AC-8: the effective CHANNEL_BINDING does not pin the project certificate under VERIFY_FULL_PINNED_CA')
+    } else if (ac8 !== undefined) r.push(`AC-8 ruling outcome ${ac8.outcome} has no implementation mapping`)
     return r
   },
 }
@@ -482,8 +498,9 @@ export function measureOperatorChannel(): ImplementationFacts['operatorChannel']
     parentSurfaceDerived: derived.some((s) => s.surface === 'OPERATOR_CREDENTIAL_LAUNCHER_SURFACE'),
     n06RefusesOmittedParent: checkOperatorCredentialSection(withoutParent).length > 0,
     mintNeedsOep1Evidence:
-      oep1EvidenceReasons({ path: null, evidence: null, channelEvent: null }, { binding: null, targetHost: null, n08: null, driverDigest: null, transport: ROUTE_B_PASSWORD_TRANSPORT, doBlockGuarded: true }).length > 0,
+      oep1EvidenceReasons({ path: null, evidence: null, channelEvent: null, chain: [], chainReasons: [] }, { binding: null, targetHost: null, n08: null, driverDigest: null, transport: ROUTE_B_PASSWORD_TRANSPORT, doBlockGuarded: true }).length > 0,
     passwordTransport: routeBTransportFacts().transport,
+    serverAuthenticationClauses: ['OC-13', 'OC-14'].every((id) => OPERATOR_CHANNEL_CONTRACT.some((x) => x.id === id)),
     doBlockGuarded: routeBTransportFacts().doBlockGuarded,
   }
 }

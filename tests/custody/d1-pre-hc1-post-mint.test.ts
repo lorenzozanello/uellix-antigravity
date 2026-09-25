@@ -50,7 +50,12 @@ const withEvidence = (over: Record<string, unknown>) => ({
   operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { ...GOOD_CHANNEL.oep1.facts, evidence: { ...goodOep1Evidence(CTX, OBSERVED_AT), ...over } } } },
 })
 const withCtx = (over: Record<string, unknown>) => ({ operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, ctx: { ...CTX, ...over } } } })
-const GOOD_OBS = goodOep1Evidence(CTX, OBSERVED_AT).observation as { client_settings: unknown[] }
+const GOOD_OBS = goodOep1Evidence(CTX, OBSERVED_AT).observation as { client_settings: unknown[]; connection: Record<string, unknown> & { tls: Record<string, unknown> } }
+/** R3-N-COHERENCE: one OBSERVED connection term changed, every constant and the recorded fingerprint left as they were. */
+const withObservedConnection = (over: Record<string, unknown>, tls: Record<string, unknown> = {}) =>
+  withEvidence({ observation: { ...GOOD_OBS, connection: { ...GOOD_OBS.connection, ...over, tls: { ...GOOD_OBS.connection.tls, ...tls } } } })
+const withChainReasons = (reasons: string[]) => ({ operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { ...GOOD_CHANNEL.oep1.facts, chainReasons: reasons } } } })
+const withChannelFacts = (over: Record<string, unknown>) => ({ operatorChannel: { ...GOOD_CHANNEL, ...over } })
 const withChannelEvent = (over: Record<string, unknown>) => ({
   operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { ...GOOD_CHANNEL.oep1.facts, channelEvent: { ...GOOD_CHANNEL.oep1.facts.channelEvent!, ...over } } } },
 })
@@ -154,7 +159,7 @@ describe('negative controls (one input each)', () => {
     ['CONTROL authority probe statement drifts from code', { operatorChannel: { ...GOOD_CHANNEL, authorityStates: { ...GOOD_CHANNEL.authorityStates, probeStatements: { ...GOOD_CHANNEL.authorityStates.probeStatements, SETTINGS: 'SELECT 1' } } } }, 'PMR-11_OPERATOR_CHANNEL_BOUND'],
     ['CONTROL authority settings list drifts from code', { operatorChannel: { ...GOOD_CHANNEL, authorityStates: { ...GOOD_CHANNEL.authorityStates, derivedSettingsList: ['log_statement'] } } }, 'PMR-11_OPERATOR_CHANNEL_BOUND'],
     ['CONTROL operator surface omitted from N06', { operatorChannel: { ...GOOD_CHANNEL, operatorSectionReasons: ['operator_credential omits surface OPERATOR_CREDENTIAL_LAUNCHER_SURFACE'] } }, 'PMR-12_OPERATOR_CREDENTIAL_INVENTORIED'],
-    ['CONTROL no OEP-1 evidence', { operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { path: null, evidence: null, channelEvent: null } } } }, 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL no OEP-1 evidence', { operatorChannel: { ...GOOD_CHANNEL, oep1: { ...GOOD_CHANNEL.oep1, facts: { path: null, evidence: null, channelEvent: null, chain: [], chainReasons: [] } } } }, 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL OEP-1 evidence from another probe tool', withEvidence({ probe_tool_sha256: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL OEP-1 evidence from another launcher', withEvidence({ launcher_build_digest: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL OEP-1 evidence on another host', withEvidence({ target_host: 'db.other.supabase.co' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
@@ -193,6 +198,27 @@ describe('negative controls (one input each)', () => {
     ['CONTROL AC-7 transport regressed in the implementation', { implementation: { ...ALL_GOOD.implementation, operatorChannel: { ...ALL_GOOD.implementation.operatorChannel, passwordTransport: 'PLAINTEXT_SET_CONFIG' } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL AC-7 DO block unguarded in the implementation', { implementation: { ...ALL_GOOD.implementation, operatorChannel: { ...ALL_GOOD.implementation.operatorChannel, doBlockGuarded: false } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL OEP-1 evidence with a partial derived list', withEvidence({ derived_settings_list: ['log_statement'] }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    // R3-N-COHERENCE (F): the probe OBSERVED another session than the one the mint will use.
+    ['CONTROL F observed host differs', withObservedConnection({ host: 'db.other-project.supabase.co' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F observed port differs', withObservedConnection({ port: 6543 }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F observed database differs', withObservedConnection({ database: 'template1' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F observed user is not the recorded principal', withObservedConnection({ user: 'someone_else' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F TLS not verified', withObservedConnection({}, { verified: false }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F another trust anchor', withObservedConnection({}, { anchor_sha256: 'b'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F no observed peer certificate', withObservedConnection({}, { peer_sha256: null }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F the probe loaded another driver', withObservedConnection({ driver_digest: 'f'.repeat(64) }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    ['CONTROL F no observed connection at all', withEvidence({ observation: { ...GOOD_OBS, connection: undefined } }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    // R3-N-CHAIN (E): the chain reasons travel with the head.
+    ['CONTROL E the chain does not acknowledge an earlier FAIL', withChainReasons(['the head must acknowledge exactly the earlier non-CLOSED records [x], not []']), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
+    // DAG v1.0.9 (AC-8): the server is authenticated against the pinned project certificate.
+    ['CONTROL PMR-15 the repository trust root is not the pinned one', withChannelFacts({ caReasons: ['AC-8: the trust-root file bytes are not the pinned ones'] }), 'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED'],
+    ['CONTROL PMR-15 the effective authority states no TLS policy', withChannelFacts({ tlsPolicyStated: null }), 'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED'],
+    [
+      'CONTROL PMR-15 + AC-8 the binding is not VERIFY_FULL_PINNED_CA',
+      withChannelFacts({ binding: { ...BINDING, tls: { ...BINDING.tls, policy: 'REQUIRE' } } }),
+      ['PMR-10_RULINGS_MATCH_IMPLEMENTATION', 'PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED'],
+    ],
+    ['CONTROL AC-8 the contract lost OC-13/OC-14', { implementation: { ...ALL_GOOD.implementation, operatorChannel: { ...ALL_GOOD.implementation.operatorChannel, serverAuthenticationClauses: false } } }, 'PMR-10_RULINGS_MATCH_IMPLEMENTATION'],
     ['CONTROL OEP-1 evidence observed at/after N08', withEvidence({ observed_at_utc: CTX.n08 }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL OEP-1 evidence principal differs from the session', withEvidence({ operator_principal: 'someone_else' }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],
     ['CONTROL OEP-1 evidence without invalidation predicates', withEvidence({ invalidation_predicates: [] }), 'PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED'],

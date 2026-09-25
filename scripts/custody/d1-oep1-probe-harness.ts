@@ -31,7 +31,7 @@ import { join, resolve as resolvePath } from 'node:path'
 import { OEP1_DERIVED_MATERIAL_SETTINGS, OEP1_EXPECTED_CLIENT_SETTINGS, OEP1_PROBE_STATEMENTS, OPERATOR_ENV_VAR_NAME, ROUTE_B_DRIVER, driverDigest } from '../../db/custody/mint-operator-channel'
 import { ROUTE_B_DATABASE, ROUTE_B_PORT } from '../../db/custody/mint-route-b-contract'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
-import { ALLOWED_DRIVER_OPTION_KEYS } from './d1-mint-tool-contract-harness'
+import { ALLOWED_DRIVER_OPTION_KEYS, FAKE_DRIVER_SSL_SHAPE, HOSTILE_AMBIENT_ENV, sslShapeReasons, writeHarnessCa } from './d1-mint-tool-contract-harness'
 
 export type ProbeScenario =
   | 'SUCCESS'
@@ -44,9 +44,12 @@ export type ProbeScenario =
   | 'WRONG_DRIVER_VERSION'
   | 'DRIVER_DIGEST_MISMATCH'
   | 'TOOL_INSIDE_GIT_TREE'
+  | 'CA_MISSING'
+  | 'CA_MODIFIED'
+  | 'AMBIENT_PG_ENV'
 type State = 'PASSED' | 'FAILED'
 
-export const PROBE_REFUSAL_SCENARIOS: readonly ProbeScenario[] = ['UNPINNED_TARGET', 'HOST_LOOKALIKE', 'URL_WITH_QUERY', 'WRONG_DATABASE', 'WRONG_PORT', 'WRONG_DRIVER_VERSION', 'DRIVER_DIGEST_MISMATCH', 'TOOL_INSIDE_GIT_TREE']
+export const PROBE_REFUSAL_SCENARIOS: readonly ProbeScenario[] = ['UNPINNED_TARGET', 'HOST_LOOKALIKE', 'URL_WITH_QUERY', 'WRONG_DATABASE', 'WRONG_PORT', 'WRONG_DRIVER_VERSION', 'DRIVER_DIGEST_MISMATCH', 'TOOL_INSIDE_GIT_TREE', 'CA_MISSING', 'CA_MODIFIED', 'AMBIENT_PG_ENV']
 
 export const PROBE_HARNESS_TARGET_HOST = 'db.probe-harness-target.invalid'
 const OTHER_HOST = 'db.probe-harness-other.invalid'
@@ -71,9 +74,24 @@ const LOG = path.join(__dirname, 'driver-log.jsonl')
 const rec = (o) => fs.appendFileSync(LOG, JSON.stringify({ at: Date.now(), ...o }) + '\\n')
 const CANNED = JSON.parse(fs.readFileSync(path.join(__dirname, 'canned.json'), 'utf8'))
 const flag = (n) => fs.existsSync(path.join(__dirname, n))
+${FAKE_DRIVER_SSL_SHAPE}
+// A canned server whose chain verifies to the ONE CA the tool pinned: the driver hands its
+// peer certificate to the tool's checkServerIdentity the way node:tls does after a verified
+// chain (leaf -> issuer -> self-signed anchor), so the probe can report what it observed.
+const presentChain = (o) => {
+  const s = o && o.ssl
+  if (!s || typeof s !== 'object' || typeof s.checkServerIdentity !== 'function') return { called: false }
+  const { X509Certificate, createHash } = require('node:crypto')
+  const fp = (b) => createHash('sha256').update(b).digest('hex').toUpperCase().match(/../g).join(':')
+  const anchor = Array.isArray(s.ca) && s.ca.length === 1 ? { fingerprint256: new X509Certificate(s.ca[0]).fingerprint256 } : { fingerprint256: fp('no pinned anchor') }
+  anchor.issuerCertificate = anchor
+  const leaf = { subject: { CN: o.host }, subjectaltname: 'DNS:' + o.host, fingerprint256: fp('leaf:' + o.host), issuerCertificate: anchor }
+  const err = s.checkServerIdentity(o.host, leaf)
+  return { called: true, rejected: err !== undefined }
+}
 module.exports = function postgres(a, b) {
-  if (typeof a === 'string') rec({ event: 'construct', form: 'url', host: new URL(a).hostname, query: new URL(a).search, ssl: b && b.ssl, keys: Object.keys(b || {}).sort(), connection: (b && b.connection) || null })
-  else rec({ event: 'construct', form: 'options', host: a.host, port: a.port, database: a.database, username: a.username, ssl: a.ssl, prepare: a.prepare, keys: Object.keys(a).sort(), connection: a.connection || null })
+  if (typeof a === 'string') rec({ event: 'construct', form: 'url', host: new URL(a).hostname, query: new URL(a).search, ssl: sslShape(b && b.ssl), keys: Object.keys(b || {}).sort(), connection: (b && b.connection) || null })
+  else rec({ event: 'construct', form: 'options', host: a.host, port: a.port, database: a.database, username: a.username, ssl: sslShape(a.ssl), prepare: a.prepare, keys: Object.keys(a).sort(), connection: a.connection || null, tls: presentChain(a) })
   const q = (strings, ...values) => {
     const text = strings.reduce((acc, s, i) => acc + (i ? '$' + i : '') + s, '')
     rec({ event: 'query', text, params: values })
@@ -153,6 +171,7 @@ export function runOep1ProbeHarness(params: { readonly repoRoot: string; readonl
   writeCannedProbeAnswers(driverDir)
   if (params.scenario === 'QUERY_FAILS') writeFileSync(join(driverDir, 'FAIL_CLIENT'), '')
   const pinnedDriverDigest = params.scenario === 'DRIVER_DIGEST_MISMATCH' ? '0'.repeat(64) : driverDigest(driverDir)
+  const trust = writeHarnessCa(join(work, 'trust'), params.scenario)
 
   const adminPassword = `probe-harness-${Date.now().toString(36)}-synthetic`
   const host = params.scenario === 'UNPINNED_TARGET' ? OTHER_HOST : params.scenario === 'HOST_LOOKALIKE' ? LOOKALIKE_HOST : PROBE_HARNESS_TARGET_HOST
@@ -160,7 +179,7 @@ export function runOep1ProbeHarness(params: { readonly repoRoot: string; readonl
   const port = params.scenario === 'WRONG_PORT' ? 6543 : ROUTE_B_PORT
   const query = params.scenario === 'URL_WITH_QUERY' ? '?debug_print_parse=on' : ''
   const adminUrl = ['postgresql:', `//${PROBE_HARNESS_PRINCIPAL}:`, adminPassword, '@', host, `:${port}/${database}${query}`].join('')
-  const env: Record<string, string> = { [OPERATOR_ENV_VAR_NAME]: adminUrl, TEMP: temp, TMP: temp }
+  const env: Record<string, string> = { [OPERATOR_ENV_VAR_NAME]: adminUrl, TEMP: temp, TMP: temp, ...(params.scenario === 'AMBIENT_PG_ENV' ? HOSTILE_AMBIENT_ENV : {}) }
   for (const k of ['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path']) {
     const val = process.env[k]
     if (val !== undefined) env[k] = val
@@ -174,7 +193,7 @@ export function runOep1ProbeHarness(params: { readonly repoRoot: string; readonl
   }
   const run = spawnSync(
     process.execPath,
-    [toolToRun, `--driver-root=${driverRoot}`, `--driver-digest=${pinnedDriverDigest}`, `--target-host=${PROBE_HARNESS_TARGET_HOST}`, `--target-port=${ROUTE_B_PORT}`, `--target-database=${ROUTE_B_DATABASE}`],
+    [toolToRun, `--driver-root=${driverRoot}`, `--driver-digest=${pinnedDriverDigest}`, `--target-host=${PROBE_HARNESS_TARGET_HOST}`, `--target-port=${ROUTE_B_PORT}`, `--target-database=${ROUTE_B_DATABASE}`, `--ca-file=${trust.caFile}`, `--ca-sha256=${trust.caSha256}`],
     { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', timeout: 60_000, windowsHide: true }
   )
   const output = `${run.stdout ?? ''}${run.stderr ?? ''}`
@@ -200,7 +219,7 @@ export function runOep1ProbeHarness(params: { readonly repoRoot: string; readonl
         ? ['construct', 'BEGIN:read only', `query:${s.IDENTITY}`, `query:${s.CLIENT_SETTINGS}`, `query:${s.DERIVED_MATERIAL_SETTINGS}`, 'COMMIT', 'end']
         : ['construct', 'BEGIN:read only', `query:${s.IDENTITY}`, `query:${s.CLIENT_SETTINGS}`, 'ROLLBACK', 'end']
     checks.SEQUENCE = pf(JSON.stringify(shape) === JSON.stringify(expected))
-    checks.TLS_REQUIRED = pf(events[0]?.ssl === 'require')
+    checks.TLS_VERIFY_FULL_PINNED = pf(sslShapeReasons(events[0]?.ssl, PROBE_HARNESS_TARGET_HOST, trust.caSha256).length === 0)
     const c = events[0]
     checks.STARTUP_CLOSED = pf(
       c !== undefined &&
@@ -222,7 +241,7 @@ export function runOep1ProbeHarness(params: { readonly repoRoot: string; readonl
     )
     const lines = (run.stdout ?? '').split(/\r?\n/).filter((l) => l.trim() !== '')
     if (params.scenario === 'SUCCESS') {
-      type Observed = { probe?: string; identity?: unknown; client_settings?: unknown; derived_settings?: unknown }
+      type Observed = { probe?: string; identity?: unknown; client_settings?: unknown; derived_settings?: unknown; connection?: { host?: unknown; port?: unknown; database?: unknown; user?: unknown; tls?: { verified?: unknown; peer_sha256?: unknown; anchor_sha256?: unknown }; driver_digest?: unknown } }
       const parseOne = (): Observed | null => {
         try {
           return lines.length === 1 ? (JSON.parse(lines[0]!) as Observed) : null
@@ -237,6 +256,21 @@ export function runOep1ProbeHarness(params: { readonly repoRoot: string; readonl
           JSON.stringify(parsed.identity) === JSON.stringify({ current_user: PROBE_HARNESS_PRINCIPAL, session_user: PROBE_HARNESS_PRINCIPAL, database: ROUTE_B_DATABASE, server_version_num: '170006' }) &&
           JSON.stringify(parsed.client_settings) === JSON.stringify(OEP1_EXPECTED_CLIENT_SETTINGS) &&
           JSON.stringify(parsed.derived_settings) === JSON.stringify(CANNED_DERIVED_ROWS)
+      )
+      // F: the connection the probe OBSERVED -- the verified peer and the anchor its verification reached, and
+      // the driver digest of the files it loaded -- not the planned values echoed back.
+      const cn = parsed?.connection
+      checks.OUTPUT_CARRIES_THE_OBSERVED_CONNECTION = pf(
+        cn !== undefined &&
+          cn.host === PROBE_HARNESS_TARGET_HOST &&
+          cn.port === ROUTE_B_PORT &&
+          cn.database === ROUTE_B_DATABASE &&
+          cn.user === PROBE_HARNESS_PRINCIPAL &&
+          cn.tls?.verified === true &&
+          typeof cn.tls.peer_sha256 === 'string' &&
+          /^[0-9a-f]{64}$/.test(cn.tls.peer_sha256) &&
+          cn.tls.anchor_sha256 === trust.anchorSha256 &&
+          cn.driver_digest === pinnedDriverDigest
       )
       checks.EXIT = pf(run.status === 0)
     } else {

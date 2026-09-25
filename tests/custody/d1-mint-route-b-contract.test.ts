@@ -33,7 +33,7 @@ import {
   classifyToolRun,
   findRepositoryHostedLiveMintScripts,
 } from '@/db/custody/mint-route-b-contract'
-import { COMMIT_FAILURES, HARNESS_TARGET_HOST, REFUSAL_SCENARIOS, runMintToolContractHarness, type Scenario } from '@/scripts/custody/d1-mint-tool-contract-harness'
+import { COMMIT_FAILURES, HARNESS_TARGET_HOST, REFUSAL_SCENARIOS, runMintToolContractHarness, writeHarnessCa, type Scenario } from '@/scripts/custody/d1-mint-tool-contract-harness'
 import { driverDigest } from '@/db/custody/mint-operator-channel'
 import { COMMIT_FAILURE_MATRIX } from '@/scripts/custody/d1-post-mint'
 import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
@@ -146,11 +146,12 @@ describe('the harness measures a conforming candidate at every commit boundary',
     const dir = mkdtempSync(join(tmpdir(), 'd1-mint-real-'))
     const tool = join(dir, 'tool.cjs')
     writeFileSync(tool, renderFakeOnlyMintTool('CONFORMING'))
+    const trust = writeHarnessCa(join(dir, 'trust'), 'CONFORMING')
     let status = 0
     let out = ''
     try {
-      out = execFileSync(process.execPath, [tool, `--driver-root=${REPO}`, `--driver-digest=${driverDigest(join(REPO, 'node_modules', 'postgres'))}`, `--depositor=${join(dir, 'none.js')}`, `--valid-until=${N09}`, `--target-host=${HARNESS_TARGET_HOST}`, '--target-port=5432', '--target-database=postgres', '--operator-principal=postgres'], {
-        env: { ...process.env, UELLIX_D1_MINT_OPERATOR_DATABASE_URL: ['postgresql:', '//postgres:', 'x', '@', HARNESS_TARGET_HOST, ':5432/postgres'].join('') },
+      out = execFileSync(process.execPath, [tool, `--driver-root=${REPO}`, `--driver-digest=${driverDigest(join(REPO, 'node_modules', 'postgres'))}`, `--depositor=${join(dir, 'none.js')}`, `--valid-until=${N09}`, `--target-host=${HARNESS_TARGET_HOST}`, '--target-port=5432', '--target-database=postgres', '--operator-principal=postgres', `--ca-file=${trust.caFile}`, `--ca-sha256=${trust.caSha256}`], {
+        env: { ...Object.fromEntries(['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path', 'TEMP', 'TMP'].filter((k) => process.env[k] !== undefined).map((k) => [k, process.env[k]!])), UELLIX_D1_MINT_OPERATOR_DATABASE_URL: ['postgresql:', '//postgres:', 'x', '@', HARNESS_TARGET_HOST, ':5432/postgres'].join('') } as unknown as NodeJS.ProcessEnv,
         encoding: 'utf8',
       })
     } catch (e) {
@@ -234,6 +235,12 @@ describe('the harness FAILS each non-conforming candidate on the clause it break
     ['NO_DATABASE_CHECK', 'WRONG_DATABASE', 'REFUSES_WRONG_DATABASE'],
     ['NO_PORT_CHECK', 'WRONG_PORT', 'REFUSES_WRONG_PORT'],
     ['NO_DRIVER_DIGEST_CHECK', 'DRIVER_DIGEST_MISMATCH', 'REFUSES_DRIVER_DIGEST_MISMATCH'],
+    // OT-18 / OT-19 as the fake driver can see them (the real TLS behaviour is d1-tls-trust.test.ts).
+    ['TLS_REQUIRE', 'SUCCESS', 'TLS_VERIFY_FULL_PINNED'],
+    ['TLS_NO_VERIFY', 'SUCCESS', 'TLS_VERIFY_FULL_PINNED'],
+    ['TLS_SYSTEM_TRUST', 'SUCCESS', 'TLS_VERIFY_FULL_PINNED'],
+    ['NO_CA_PIN_CHECK', 'CA_MODIFIED', 'REFUSES_CA_MODIFIED'],
+    ['NO_AMBIENT_ENV_CHECK', 'AMBIENT_PG_ENV', 'REFUSES_AMBIENT_PG_ENV'],
   ]
   it.each(cases)('%s under %s -> %s FAILED', (variant, scenario, check) => {
     const r = harness(variant, scenario)

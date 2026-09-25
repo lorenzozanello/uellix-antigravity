@@ -7,7 +7,8 @@
 // R2-N-LEAK-CLASSES, R2-N-WRONG-PASSWORD, R2-N-NOT-A-VERIFIER, R2-N-STARTUP).
 //
 // It refuses any container that does not carry the label uellix.d1r2=disposable
-// and connects only to 127.0.0.1. It never touches a hosted database.
+// and connects only to loopback (localhost, the port published on 127.0.0.1). It never
+// touches a hosted database.
 //
 // What it does:
 //   1. Arms every emitter the recertification of 979b1440 measured quoting the
@@ -25,7 +26,12 @@
 //      the server log and in pg_stat_statements, while the verifier (derived
 //      material, classified separately) DOES occur where each emitter quotes the
 //      statement — so every emitter was active during the ALTER.
-//   4. Controls: the 979b1440 route (plaintext through set_config) against a
+//   4. Server authentication (R3, owner AC-8): the container serves a synthetic
+//      certificate for `localhost` issued by a synthetic CA; the tool is given that
+//      CA pinned by sha256 and verifies the server (verify-full), and a tool given
+//      ANOTHER CA is refused by TLS before any startup message. The governed
+//      project certificate is not used here: this is not the project's server.
+//   5. Controls: the 979b1440 route (plaintext through set_config) against a
 //      separate control role puts its plaintext in the same log (the search can
 //      find one); the guarded DO block refuses a non-verifier before ALTER ROLE;
 //      the tool refuses an operator URL carrying startup parameters.
@@ -45,6 +51,7 @@ import { parseVerifier, verifierMatches } from '../../db/custody/scram-verifier'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 import { defaultToolsDir, readChannelBinding } from './d1-mint-operator-evidence'
 import { routeBDriver } from './d1-mint-operator-plan'
+import { syntheticCa, syntheticLeaf } from './synthetic-x509'
 import { deriveEffectiveSchedule } from './d1-effective-schedule'
 
 type State = 'PASSED' | 'FAILED'
@@ -173,8 +180,11 @@ function runTool(tool: string, args: string[], operatorUrl: string): Promise<Too
   })
 }
 
-async function authOutcome(o: { host: string; port: number; user: string; password: string }): Promise<'AUTHENTICATED' | string> {
-  const sql = postgres({ host: o.host, port: o.port, database: ROUTE_B_DATABASE, username: o.user, password: o.password, max: 1, prepare: false, ssl: 'require', onnotice: () => undefined, connect_timeout: 10 })
+/** The proof's own sessions verify the server too: the synthetic CA, rejectUnauthorized, the host name. */
+const verifiedSsl = (caPem: string, host: string) => ({ ca: [caPem], rejectUnauthorized: true, servername: host, minVersion: 'TLSv1.2' as const })
+
+async function authOutcome(o: { host: string; port: number; user: string; password: string; caPem: string }): Promise<'AUTHENTICATED' | string> {
+  const sql = postgres({ host: o.host, port: o.port, database: ROUTE_B_DATABASE, username: o.user, password: o.password, max: 1, prepare: false, ssl: verifiedSsl(o.caPem, o.host), onnotice: () => undefined, connect_timeout: 10 })
   try {
     const r = await sql`SELECT current_user AS u`
     return r[0]?.u === o.user ? 'AUTHENTICATED' : 'WRONG_IDENTITY'
@@ -197,7 +207,8 @@ export async function prove(root: string, container: string, outDir: string): Pr
   const mapped = docker(['port', container, '5432/tcp']).trim().split(/\r?\n/)[0] ?? ''
   const m = /^127\.0\.0\.1:(\d+)$/.exec(mapped)
   if (m === null) throw new Error('the disposable container must publish 5432 on 127.0.0.1 only')
-  const host = '127.0.0.1'
+  // verify-full needs a NAME: the synthetic server certificate is issued for localhost.
+  const host = 'localhost'
   const port = Number(m[1])
   const envLines = docker(['inspect', container, '--format', '{{range .Config.Env}}{{println .}}{{end}}']).split(/\r?\n/)
   const operatorPassword = (envLines.find((l) => l.startsWith('POSTGRES_PASSWORD=')) ?? '').slice('POSTGRES_PASSWORD='.length)
@@ -213,6 +224,22 @@ export async function prove(root: string, container: string, outDir: string): Pr
   c.PINNED_DRIVER = pf(drv.digest !== null && driverDigest(join(drv.driverRoot, 'node_modules', 'postgres')) === drv.digest)
   const validUntil = deriveEffectiveSchedule(root).N09!
 
+  // --- a synthetic server certificate for localhost, from a synthetic CA the tool will pin ---
+  const ca = syntheticCa('d1 disposable proof ca')
+  const other = syntheticCa('d1 disposable proof OTHER ca')
+  const leaf = syntheticLeaf(ca, [host], { notAfter: new Date(Date.now() + 2 * 60 * 60 * 1000) })
+  const trustDir = join(out, 'trust')
+  mkdirSync(trustDir, { recursive: true })
+  writeFileSync(join(trustDir, 'server.crt'), leaf.certPem)
+  writeFileSync(join(trustDir, 'server.key'), leaf.keyPem)
+  writeFileSync(join(trustDir, 'ca.crt'), ca.certPem)
+  writeFileSync(join(trustDir, 'other-ca.crt'), other.certPem)
+  const caSha256 = createHash('sha256').update(ca.certPem).digest('hex')
+  for (const f of ['server.crt', 'server.key']) docker(['cp', join(trustDir, f), `${container}:/var/lib/postgresql/data/d1r3-${f}`])
+  // The key must be readable by postgres only; it is synthetic and lives only in this disposable container and the out dir.
+  docker(['exec', '-u', 'root', container, 'sh', '-c', 'chown postgres:postgres /var/lib/postgresql/data/d1r3-server.crt /var/lib/postgresql/data/d1r3-server.key && chmod 600 /var/lib/postgresql/data/d1r3-server.key'])
+  rmSync(join(trustDir, 'server.key'), { force: true })
+
   // --- arm the disposable server --------------------------------------------------
   psqlOperator(container, [
     `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${ROUTE_B_ROLE}') THEN CREATE ROLE ${ROUTE_B_ROLE} LOGIN; END IF; END $$`,
@@ -225,6 +252,9 @@ export async function prove(root: string, container: string, outDir: string): Pr
     `CREATE OR REPLACE FUNCTION public.d1r2_passcheck(username text, password text, password_type pgtle.password_types, valid_until timestamptz, valid_null boolean) RETURNS void LANGUAGE plpgsql AS $f$ BEGIN RAISE LOG '${PASSCHECK_MARKER} type=% value=%', password_type, password; END $f$`,
     "DO $$ BEGIN PERFORM pgtle.register_feature('public.d1r2_passcheck', 'passcheck'); EXCEPTION WHEN OTHERS THEN NULL; END $$",
     ...SYSTEM_EMITTERS.map(([k, v]) => `ALTER SYSTEM SET ${k} = '${v}'`),
+    "ALTER SYSTEM SET ssl = 'on'",
+    "ALTER SYSTEM SET ssl_cert_file = '/var/lib/postgresql/data/d1r3-server.crt'",
+    "ALTER SYSTEM SET ssl_key_file = '/var/lib/postgresql/data/d1r3-server.key'",
     ...OPERATOR_ROLE_EMITTERS.map(([k, v]) => `ALTER ROLE ${OPERATOR} SET ${k} = '${v}'`),
     'SELECT pg_reload_conf()',
     'SELECT pg_stat_statements_reset()',
@@ -249,7 +279,14 @@ export async function prove(root: string, container: string, outDir: string): Pr
     `--depositor=${depositor}`,
     `--valid-until=${validUntil}`,
     `--operator-principal=${OPERATOR}`,
+    `--ca-file=${join(trustDir, 'ca.crt')}`,
+    `--ca-sha256=${caSha256}`,
   ]
+
+  // R3 (AC-8 on a real server): the tool pinned to ANOTHER CA is refused by TLS before any startup message.
+  const otherSha256 = createHash('sha256').update(other.certPem).digest('hex')
+  const unpinned = await runTool(tool, toolArgs.map((a) => (a.startsWith('--ca-file=') ? `--ca-file=${join(trustDir, 'other-ca.crt')}` : a.startsWith('--ca-sha256=') ? `--ca-sha256=${otherSha256}` : a)), operatorUrl)
+  c.TOOL_REFUSES_AN_UNPINNED_SERVER = pf(unpinned.exitCode !== 0 && unpinned.lines.some((l) => l.phase === 'DRIVER_REJECTED' && /UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED/.test(String(l.code))) && unpinned.lines.some((l) => l.mint === 'DEFINITELY_NOT_COMMITTED' && l.tlsVerified === false))
 
   // R2-N-STARTUP: an operator URL carrying a startup GUC is refused before any connection.
   const startup = await runTool(tool, toolArgs, `${operatorUrl}?options=-c%20log_statement%3Dall`)
@@ -264,6 +301,7 @@ export async function prove(root: string, container: string, outDir: string): Pr
   const mint = await runTool(tool, toolArgs, operatorUrl)
   await new Promise((r) => blocker.on('close', r))
   c.TOOL_COMMITTED = pf(mint.exitCode === 0 && mint.lines.some((l) => l.mint === 'COMMITTED' && l.n30ExitMet === true))
+  c.TOOL_VERIFIED_THE_SERVER = pf(mint.lines.some((l) => l.mint === 'COMMITTED' && l.tlsVerified === true))
 
   // --- the synthetic plaintext, handed back by the depositor, held in memory only ---
   let plaintext = ''
@@ -283,12 +321,12 @@ export async function prove(root: string, container: string, outDir: string): Pr
   const parsed = parseVerifier(stored)
   c.STORED_IS_A_SCRAM_SHA_256_VERIFIER = pf(parsed !== null)
   c.STORED_VERIFIER_IS_OF_THE_DEPOSITED_PLAINTEXT = pf(parsed !== null && plaintext !== '' && verifierMatches(stored, plaintext))
-  c.PLAINTEXT_AUTHENTICATES = pf(plaintext !== '' && (await authOutcome({ host, port, user: ROUTE_B_ROLE, password: plaintext })) === 'AUTHENTICATED')
-  c.WRONG_PASSWORD_REFUSED = pf((await authOutcome({ host, port, user: ROUTE_B_ROLE, password: `${plaintext}x` })) === 'REFUSED_28P01')
-  c.VERIFIER_AS_PASSWORD_REFUSED = pf(stored !== '' && (await authOutcome({ host, port, user: ROUTE_B_ROLE, password: stored })) === 'REFUSED_28P01')
+  c.PLAINTEXT_AUTHENTICATES = pf(plaintext !== '' && (await authOutcome({ host, port, user: ROUTE_B_ROLE, password: plaintext, caPem: ca.certPem })) === 'AUTHENTICATED')
+  c.WRONG_PASSWORD_REFUSED = pf((await authOutcome({ host, port, user: ROUTE_B_ROLE, password: `${plaintext}x`, caPem: ca.certPem })) === 'REFUSED_28P01')
+  c.VERIFIER_AS_PASSWORD_REFUSED = pf(stored !== '' && (await authOutcome({ host, port, user: ROUTE_B_ROLE, password: stored, caPem: ca.certPem })) === 'REFUSED_28P01')
 
   // --- R2-N-NOT-A-VERIFIER: the guarded DO block refuses a non-verifier before ALTER ROLE ---
-  const admin = postgres({ host, port, database: ROUTE_B_DATABASE, username: OPERATOR, password: operatorPassword, max: 1, prepare: false, ssl: 'require', onnotice: () => undefined })
+  const admin = postgres({ host, port, database: ROUTE_B_DATABASE, username: OPERATOR, password: operatorPassword, max: 1, prepare: false, ssl: verifiedSsl(ca.certPem, host), onnotice: () => undefined })
   const nonVerifier = NON_VERIFIER_SENTINEL
   let guardCode = 'NO_ERROR'
   try {
@@ -364,6 +402,7 @@ export async function prove(root: string, container: string, outDir: string): Pr
     proof: 'D1_SCRAM_VERIFIER_TRANSPORT_DISPOSABLE_POSTGRES',
     container: { label: DISPOSABLE_LABEL, image: docker(['inspect', container, '--format', '{{.Config.Image}}']).trim(), server_version_num: psqlAdmin(container, ['SHOW server_version_num']).trim(), bound_to: 'loopback' },
     pins: { mint_tool_sha256: binding.tools.mint.sha256, driver_digest: drv.digest, launcher_build_digest: binding.launcher_build_digest },
+    tls: { server: 'synthetic certificate for localhost issued by a synthetic CA (NOT the governed project certificate)', pinned_ca_der_sha256: ca.derSha256, tool_pinned_to: 'the synthetic CA by the sha256 of its bytes', negative: 'the same tool pinned to another synthetic CA' },
     emitters_armed: { operator_role: OPERATOR_ROLE_EMITTERS.map(([k]) => k), system: SYSTEM_EMITTERS.map(([k]) => k), passcheck_hook: 'pg_tle passcheck RAISE LOG of what it is handed', lock_wait: 'a second session held SHARE on pg_authid across the ALTER ROLE' },
     classification: {
       PLAINTEXT: plaintextCounts.server_log === 0 && plaintextCounts.pg_stat_statements === 0 ? 'PLAINTEXT_NOT_PRESENT' : 'PLAINTEXT_PRESENT',

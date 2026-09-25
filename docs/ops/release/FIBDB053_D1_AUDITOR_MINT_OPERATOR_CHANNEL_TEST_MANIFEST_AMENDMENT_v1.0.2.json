@@ -1,0 +1,55 @@
+{
+  "manifest_id": "FIBDB-053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R3",
+  "node_or_batch": "D-1 operator channel, final successor over fa43b396: TLS trust (AC-8) + recertification residuals X08x L1x P6x, OEP-1 chain, probe/mint coherence",
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+  "append_only": true,
+  "frozen_note": "Frozen before the launcher, gate, evidence and authority implementation of this lane. The shared trust text (tests/custody/support/tool-trust-snippet.ts), the synthetic X.509 builder and the real-TLS harness were drafted first to measure feasibility; their controls are listed here and are the ones the implementation must pass.",
+  "authority_reference": [
+    "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_TLS_TRUST_OWNER_DECISION_v1.0.0.json (AC-8)",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.9.json"
+  ],
+  "dependencies": ["fa43b39636de766f228b16c459b721fe80fcb109"],
+  "protected_surfaces": [],
+  "protected_authority": ["every earlier amendment, record and owner decision (append-only)", "the effective schedule N08 2026-09-28T14:00:00Z, N31 2026-09-28T18:00:00Z, N09 2026-09-29T14:00:00.000Z"],
+  "sentinels": [
+    { "id": "S-OPERATOR-PASSWORD", "purpose": "The (synthetic) password the channel carries: it may reach ONLY a server whose certificate chains to the pinned project CA and names the planned host; zero PasswordMessages to any other server." },
+    { "id": "S-CA-PIN", "purpose": "raw sha256 700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7 / DER sha256 807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa: the ONLY trust anchor of the governed tools." }
+  ],
+  "known_conditions": [
+    "postgres.js 3.4.9 passes an ssl OBJECT through Object.assign to tls.connect with servername = host (connection.js), and reads PG<OPTION> ambient variables for every option not given explicitly (index.js).",
+    "A Windows environment is case-insensitive: OT-19 matches variable names case-insensitively."
+  ],
+  "positive_controls": [
+    { "id": "R3-P-TLS", "description": "Real TLS, real postgres.js, the rendered conforming trust text: the right CA + the right host name -> the server is reached, the verified anchor is the pinned CA, the password is sent exactly once and only then.", "test_file": "tests/custody/d1-tls-trust.test.ts" },
+    { "id": "R3-P-CA", "description": "The repository copy of the project certificate is byte-identical to the pin (raw sha256), parses as exactly one CA certificate with the pinned DER and SPKI sha256.", "test_file": "tests/custody/d1-tls-trust-root.test.ts" },
+    { "id": "R3-P-OBSERVED", "description": "The probe prints the connection it OBSERVED (host, port, database, user, TLS verified with peer and anchor fingerprints, the loaded driver digest).", "test_file": "tests/custody/d1-oep1-probe-contract.test.ts" }
+  ],
+  "negative_controls": [
+    { "id": "R3-N-TLS-WRONG-CA", "description": "A server certificate from another CA -> TLS rejected, no startup, no password.", "test_file": "tests/custody/d1-tls-trust.test.ts" },
+    { "id": "R3-N-TLS-WRONG-HOSTNAME", "description": "A certificate from the pinned CA for another host -> ERR_TLS_CERT_ALTNAME_INVALID, no password.", "test_file": "tests/custody/d1-tls-trust.test.ts" },
+    { "id": "R3-N-TLS-EXPIRED", "description": "An expired certificate from the pinned CA -> CERT_HAS_EXPIRED, no password.", "test_file": "tests/custody/d1-tls-trust.test.ts" },
+    { "id": "R3-N-TLS-UNTRUSTED", "description": "A self-signed server certificate -> rejected, no password.", "test_file": "tests/custody/d1-tls-trust.test.ts" },
+    { "id": "R3-N-CA-MISSING", "description": "No CA file -> refused before any connection (trust text, both tools under their harnesses, the launcher before the prompt).", "test_file": "tests/custody/d1-tls-trust.test.ts, tests/custody/d1-mint-route-b-contract.test.ts, tests/custody/d1-oep1-probe-contract.test.ts, tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R3-N-CA-MODIFIED", "description": "CA bytes that are not the pinned ones -> refused before any connection (same four places).", "test_file": "tests/custody/d1-tls-trust.test.ts, tests/custody/d1-mint-route-b-contract.test.ts, tests/custody/d1-oep1-probe-contract.test.ts, tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R3-N-X08X", "description": "Hostile PGHOST, PGPORT, PGDATABASE, PGOPTIONS, PGSERVICE, PGSSLMODE (+PGAPPNAME, NODE_TLS_REJECT_UNAUTHORIZED, mixed case) in the launcher environment never reach the governed child; and each tool refuses them if present.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts, tests/custody/d1-mint-route-b-contract.test.ts, tests/custody/d1-oep1-probe-contract.test.ts, tests/custody/d1-tls-trust.test.ts" },
+    { "id": "R3-N-L1X", "description": "A launcher run performs no write, define or delete on the real process.env — not even a transient set-then-delete.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R3-N-P6X", "description": "The real gate CLI, run on a disposable clone, stops with STOP_DIRTY when the only change is an UNTRACKED file.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R3-N-CHAIN", "description": "OEP-1 evidence is an explicit chain: every record names its predecessor; a fork, a gap, an orphan, a dangling predecessor, or a later record that does not acknowledge an earlier non-CLOSED record is refused; a later PASS never erases an earlier FAIL/INCONCLUSIVE.", "test_file": "tests/custody/d1-pre-hc1-post-mint.test.ts, tests/custody/d1-oep1-evidence-chain.test.ts" },
+    { "id": "R3-N-COHERENCE", "description": "PROBE_MINT_CONFIGURATION_COHERENT fails when the OBSERVED connection differs from what the mint will use (host, port, database, principal, TLS not verified, another anchor, another driver digest), even when every constant and the recorded fingerprint agree.", "test_file": "tests/custody/d1-pre-hc1-post-mint.test.ts" }
+  ],
+  "mutation_controls": [
+    { "id": "R3-M-TLS-NO-VERIFY", "description": "rejectUnauthorized true -> false in the shared trust text -> R3-N-TLS-WRONG-CA RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-TLS-REQUIRE", "description": "The ssl expression -> 'require' -> R3-N-TLS-WRONG-CA RED (password harvested).", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-TLS-NO-HOSTNAME", "description": "Hostname check removed -> R3-N-TLS-WRONG-HOSTNAME RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-TLS-SYSTEM-TRUST", "description": "`ca` removed -> R3-P-TLS RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-CA-PIN", "description": "CA pin comparison removed (tool text and launcher) -> R3-N-CA-MODIFIED RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-X08X", "description": "The tool environment copies PG* from the base -> R3-N-X08X RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-L1X", "description": "The launcher sets then deletes process.env[the variable] around spawn -> R3-N-L1X RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-P6X", "description": "The CLI's status reads --untracked-files=no -> R3-N-P6X RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-CHAIN", "description": "Highest version wins again -> R3-N-CHAIN RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-COHERENCE", "description": "Coherence over constants and the recorded fingerprint only -> R3-N-COHERENCE RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R3-M-SELF-TEST", "description": "A comment-only mutant must survive; kills are attributed only to tests outside the pin block.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" }
+  ],
+  "exit_gates": ["typecheck", "lint", "secrets_scan", "authority_seal_verify", "custody_dag_validate", "custody_suite_including_termination", "mutation_battery", "ods_scope", "ods_poststate", "exact_head_ci_and_vercel"]
+}

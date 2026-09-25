@@ -18,6 +18,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { CANNED_DERIVED_ROWS, PROBE_HARNESS_TARGET_HOST, PROBE_REFUSAL_SCENARIOS, runOep1ProbeHarness, type ProbeScenario } from '@/scripts/custody/d1-oep1-probe-harness'
+import { writeHarnessCa } from '@/scripts/custody/d1-mint-tool-contract-harness'
 import {
   OEP1_DERIVED_MATERIAL_SETTINGS,
   OEP1_EXPECTED_CLIENT_SETTINGS,
@@ -47,20 +48,21 @@ describe('the probe contract, on a conforming fake-only fixture', () => {
   })
   it('SUCCESS measures every PC clause (no vacuous pass)', () => {
     expect(Object.keys(harness('CONFORMING').checks).sort()).toEqual(
-      ['CLOSED_LISTS_BOUND', 'EXIT', 'FILES_CLEAN', 'NO_UNSAFE', 'OUTPUT_CLEAN', 'OUTPUT_IS_THE_OBSERVATION', 'OUTSIDE_REPOSITORY', 'READ_ONLY_ONLY', 'SEQUENCE', 'SOURCE_INERT', 'STARTUP_CLOSED', 'TLS_REQUIRED'].sort()
+      ['CLOSED_LISTS_BOUND', 'EXIT', 'FILES_CLEAN', 'NO_UNSAFE', 'OUTPUT_CLEAN', 'OUTPUT_IS_THE_OBSERVATION', 'OUTSIDE_REPOSITORY', 'READ_ONLY_ONLY', 'SEQUENCE', 'SOURCE_INERT', 'STARTUP_CLOSED', 'TLS_VERIFY_FULL_PINNED', 'OUTPUT_CARRIES_THE_OBSERVED_CONNECTION'].sort()
     )
   })
   it('the fixture refuses a REAL driver (it can reach no hosted target)', () => {
     const dir = mkdtempSync(join(tmpdir(), 'd1-oep1-probe-real-'))
     const tool = join(dir, 'probe.cjs')
     writeFileSync(tool, renderFakeOnlyProbeTool('CONFORMING'))
+    const trust = writeHarnessCa(join(dir, 'trust'), 'CONFORMING')
     let status = 0
     let out = ''
     try {
       out = execFileSync(
         process.execPath,
-        [tool, `--driver-root=${REPO}`, `--driver-digest=${driverDigest(join(REPO, 'node_modules', 'postgres'))}`, `--target-host=${PROBE_HARNESS_TARGET_HOST}`, '--target-port=5432', '--target-database=postgres'],
-        { env: { ...process.env, UELLIX_D1_MINT_OPERATOR_DATABASE_URL: ['postgresql:', '//postgres:', 'x', '@', PROBE_HARNESS_TARGET_HOST, ':5432/postgres'].join('') }, encoding: 'utf8' }
+        [tool, `--driver-root=${REPO}`, `--driver-digest=${driverDigest(join(REPO, 'node_modules', 'postgres'))}`, `--target-host=${PROBE_HARNESS_TARGET_HOST}`, '--target-port=5432', '--target-database=postgres', `--ca-file=${trust.caFile}`, `--ca-sha256=${trust.caSha256}`],
+        { env: { ...Object.fromEntries(['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path', 'TEMP', 'TMP'].filter((k) => process.env[k] !== undefined).map((k) => [k, process.env[k]!])), UELLIX_D1_MINT_OPERATOR_DATABASE_URL: ['postgresql:', '//postgres:', 'x', '@', PROBE_HARNESS_TARGET_HOST, ':5432/postgres'].join('') } as unknown as NodeJS.ProcessEnv, encoding: 'utf8' }
       )
     } catch (e) {
       status = (e as { status: number }).status
@@ -88,6 +90,14 @@ describe('the harness FAILS each non-conforming probe on the clause it breaks (N
     ['NO_DRIVER_DIGEST_CHECK', 'DRIVER_DIGEST_MISMATCH', 'REFUSES_DRIVER_DIGEST_MISMATCH'],
     ['URL_CONSTRUCTED', 'SUCCESS', 'STARTUP_CLOSED'],
     ['WRONG_SETTINGS_LIST', 'SUCCESS', 'CLOSED_LISTS_BOUND'],
+    // OT-18 / OT-19 as the fake driver can see them (the real TLS behaviour is d1-tls-trust.test.ts).
+    ['TLS_REQUIRE', 'SUCCESS', 'TLS_VERIFY_FULL_PINNED'],
+    ['TLS_NO_VERIFY', 'SUCCESS', 'TLS_VERIFY_FULL_PINNED'],
+    ['TLS_SYSTEM_TRUST', 'SUCCESS', 'TLS_VERIFY_FULL_PINNED'],
+    ['NO_CA_PIN_CHECK', 'CA_MODIFIED', 'REFUSES_CA_MODIFIED'],
+    ['NO_AMBIENT_ENV_CHECK', 'AMBIENT_PG_ENV', 'REFUSES_AMBIENT_PG_ENV'],
+    // F: a probe that echoes the planned connection instead of what it observed.
+    ['REPORTS_PLANNED_NOT_OBSERVED', 'SUCCESS', 'OUTPUT_CARRIES_THE_OBSERVED_CONNECTION'],
   ]
   it.each(cases)('%s under %s -> %s FAILED', (variant, scenario, check) => {
     const r = harness(variant, scenario)

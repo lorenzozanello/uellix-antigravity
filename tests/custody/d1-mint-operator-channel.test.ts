@@ -10,7 +10,8 @@
 import { EventEmitter } from 'node:events'
 import { PassThrough } from 'node:stream'
 import { createHash } from 'node:crypto'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -27,7 +28,8 @@ import {
 } from '@/db/custody/mint-operator-channel'
 import { PLAN_SCHEMA, parsePlan, runLauncher, toolArgs, type ChannelPlan, type LauncherIo } from '@/scripts/custody/d1-mint-operator-launcher'
 import { buildLauncherClosure } from '@/scripts/custody/d1-mint-operator-channel-build'
-import { checkExecutables, checkUtcMargin, derivePlan, deriveTargetHost, findChannelCertification, preExecutionStops, routeBDriver, verifyPlan } from '@/scripts/custody/d1-mint-operator-plan'
+import { checkExecutables, checkUtcMargin, derivePlan, deriveTargetHost, findChannelCertification, preExecutionStops, routeBDriver, verifyPlan, worktreeIsClean } from '@/scripts/custody/d1-mint-operator-plan'
+import { HOSTILE_AMBIENT_ENV } from '@/scripts/custody/d1-mint-tool-contract-harness'
 import { readChannelBinding, routeBTransportFacts, type ChannelEventFacts } from '@/scripts/custody/d1-mint-operator-evidence'
 import { goodOep1Facts } from './support/oep1-evidence-fixture'
 import { deriveEffectiveSchedule } from '@/scripts/custody/d1-effective-schedule'
@@ -77,6 +79,7 @@ const REAL_LIKE_HOST = 'db.bvyzblhqymxruxdguaee.supabase.co'
 const PASSWORD = 'Synth-Pass-4f9a2c'
 const url = (host: string, user = 'postgres', pw = PASSWORD) => ['postgresql:', `//${user}:`, pw, '@', host, ':5432/postgres'].join('')
 const TOOL_BYTES = Buffer.from('// a tool double\n')
+const CA_BYTES = Buffer.from('-----BEGIN CERTIFICATE-----\na synthetic ca double\n-----END CERTIFICATE-----\n')
 
 function plan(over: Partial<ChannelPlan> = {}): ChannelPlan {
   return {
@@ -90,6 +93,8 @@ function plan(over: Partial<ChannelPlan> = {}): ChannelPlan {
     driverRoot: 'C:/driver-root',
     driverVersion: '3.4.9',
     driverDigest: 'c'.repeat(64),
+    caFile: 'C:/trust/project-ca.crt',
+    caSha256: sha(CA_BYTES),
     depositor: null,
     tool: { path: 'C:/tools/probe.js', sha256: sha(TOOL_BYTES) },
     launcherDigest: 'a'.repeat(64),
@@ -105,7 +110,7 @@ interface SpawnCall {
   options: { env: Record<string, string>; windowsHide: boolean; detached: boolean; shell: boolean; stdio: unknown }
 }
 
-function harness(o: { stdin: FakeTty | PassThrough; plan?: ChannelPlan; env?: Record<string, string>; console?: boolean; toolBytes?: Buffer }) {
+function harness(o: { stdin: FakeTty | PassThrough; plan?: ChannelPlan; env?: Record<string, string>; console?: boolean; toolBytes?: Buffer; caBytes?: Buffer | null }) {
   const calls: SpawnCall[] = []
   const stdout = sink()
   const stderr = sink()
@@ -115,7 +120,14 @@ function harness(o: { stdin: FakeTty | PassThrough; plan?: ChannelPlan; env?: Re
     stdout,
     stderr,
     env: o.env ?? { PATH: 'C:/bin', SystemRoot: 'C:/Windows', HOME_SECRET_LIKE: 'must-not-pass', TEMP: 'C:/t' },
-    readFile: (path: string) => (path === 'plan.json' ? Buffer.from(JSON.stringify(p)) : (o.toolBytes ?? TOOL_BYTES)),
+    readFile: (path: string) => {
+      if (path === 'plan.json') return Buffer.from(JSON.stringify(p))
+      if (path === p.caFile) {
+        if (o.caBytes === null) throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+        return o.caBytes ?? CA_BYTES
+      }
+      return o.toolBytes ?? TOOL_BYTES
+    },
     isAttachedToConsole: async () => o.console ?? true,
     spawn: ((command: string, args: string[], options: SpawnCall['options']) => {
       calls.push({ command, args, options })
@@ -222,6 +234,36 @@ describe('P-3: one child, the value only in its environment block', () => {
   it('R2-N-X08: the tool environment allowlist is exactly this literal, not the constant under test', () => {
     expect([...TOOL_ENV_ALLOWLIST]).toEqual(['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path', 'TEMP', 'TMP'])
   })
+  it('R3-N-X08X: hostile PG* and TLS variables in the launcher environment never reach the child (any case)', async () => {
+    const env = { PATH: 'C:/bin', SystemRoot: 'C:/Windows', TEMP: 'C:/t', ...HOSTILE_AMBIENT_ENV, pgpassword: 'lower-case', PgHost: 'mixed.invalid', NODE_EXTRA_CA_CERTS: 'C:/evil.pem' }
+    expect(Object.keys(env).filter((k) => /^PG/i.test(k)).length).toBeGreaterThanOrEqual(8)
+    const h = harness({ stdin: tty(`${url(SYNTH_HOST)}\r`), env })
+    expect(await h.run()).toBe(0)
+    expect(Object.keys(h.calls[0]!.options.env).sort()).toEqual(['PATH', 'SystemRoot', 'TEMP', OPERATOR_ENV_VAR_NAME].sort())
+  })
+  it('R3-N-L1X: a launcher run writes, defines and deletes NOTHING on the real process.env, not even transiently', async () => {
+    const writes: string[] = []
+    const original = process.env
+    const trap = new Proxy(
+      { ...original },
+      {
+        set: (o, k, v) => (writes.push(`set:${String(k)}`), Reflect.set(o, k, v)),
+        defineProperty: (o, k, d) => (writes.push(`define:${String(k)}`), Reflect.defineProperty(o, k, d)),
+        deleteProperty: (o, k) => (writes.push(`delete:${String(k)}`), Reflect.deleteProperty(o, k)),
+      }
+    )
+    const h = harness({ stdin: tty(`${url(SYNTH_HOST)}\r`) })
+    ;(process as { env: NodeJS.ProcessEnv }).env = trap as NodeJS.ProcessEnv
+    let code: number
+    try {
+      code = await h.run()
+    } finally {
+      ;(process as { env: NodeJS.ProcessEnv }).env = original
+    }
+    expect(code).toBe(0)
+    expect(h.calls).toHaveLength(1)
+    expect(writes).toEqual([])
+  })
   it('the mint tool argv carries the plan fields and nothing secret', () => {
     const p = plan({ mode: 'mint', operatorPrincipal: 'postgres', validUntil: '2026-09-29T14:00:00.000Z', depositor: 'C:/c/deposit.js' })
     const args = toolArgs(p)
@@ -232,6 +274,8 @@ describe('P-3: one child, the value only in its environment block', () => {
       `--target-host=${SYNTH_HOST}`,
       '--target-port=5432',
       '--target-database=postgres',
+      '--ca-file=C:/trust/project-ca.crt',
+      `--ca-sha256=${sha(CA_BYTES)}`,
       '--depositor=C:/c/deposit.js',
       '--valid-until=2026-09-29T14:00:00.000Z',
       '--operator-principal=postgres',
@@ -247,6 +291,16 @@ describe('refusals, each before anything is spawned', () => {
   }
   it('N-PARENT-ENV: an ambient operator variable in the launcher is refused', async () => {
     await refused(harness({ stdin: tty(`${url(SYNTH_HOST)}\r`), env: { PATH: 'x', [OPERATOR_ENV_VAR_NAME]: url(SYNTH_HOST) } }), 'CHANNEL_AMBIENT_VALUE')
+  })
+  it('R3-N-CA-MISSING (OC-13): the planned CA file absent -> refused before the prompt', async () => {
+    const input = tty(`${url(SYNTH_HOST)}\r`)
+    await refused(harness({ stdin: input, caBytes: null }), 'CHANNEL_CA_MISSING')
+    expect(input.modes).toEqual([])
+  })
+  it('R3-N-CA-MODIFIED (OC-13): CA bytes that are not the pinned ones -> refused before the prompt', async () => {
+    const input = tty(`${url(SYNTH_HOST)}\r`)
+    await refused(harness({ stdin: input, caBytes: Buffer.concat([CA_BYTES, Buffer.from('\n')]) }), 'CHANNEL_CA_MISMATCH')
+    expect(input.modes).toEqual([])
   })
   it('N-WRONG-HOST: a string naming another host is refused', async () => {
     await refused(harness({ stdin: tty(`${url('db.elsewhere.invalid')}\r`) }), 'CHANNEL_WRONG_HOST')
@@ -338,6 +392,10 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     expect(p.driverRoot).toBe(routeBDriver(ROOT).driverRoot)
     expect(p.driverDigest).toBe(routeBDriver(ROOT).digest)
     expect([p.targetPort, p.targetDatabase]).toEqual([5432, 'postgres'])
+    // AC-8: the repository copy of the project certificate, pinned by the sha256 of its bytes.
+    expect(p.caFile).toBe(join(ROOT, BINDING!.tls.ca_file))
+    expect(p.caSha256).toBe('700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7')
+    expect(sha(readFileSync(p.caFile))).toBe(p.caSha256)
     expect(p.tool).toEqual({ path: join('C:/tools', BINDING!.tools.probe.file), sha256: BINDING!.tools.probe.sha256 })
     expect(p.launcherDigest).toBe(BINDING!.launcher_build_digest)
     expect(verifyPlan(p, p)).toEqual([])
@@ -348,6 +406,8 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     ['driverRoot', { driverRoot: 'C:/another-root' }],
     ['driverVersion', { driverVersion: '3.4.8' }],
     ['driverDigest', { driverDigest: 'f'.repeat(64) }],
+    ['caFile', { caFile: 'C:/elsewhere/other-ca.crt' }],
+    ['caSha256', { caSha256: 'f'.repeat(64) }],
     ['targetPort', { targetPort: 6543 }],
     ['targetDatabase', { targetDatabase: 'template1' }],
     ['tool.sha256', { tool: { path: join('C:/tools', BINDING!.tools.probe.file), sha256: 'f'.repeat(64) } }],
@@ -386,6 +446,28 @@ describe('P-4 and the execution-procedure STOPs (plan derived from the repositor
     expect(preExecutionStops({ ...base, clean: false })).toEqual(['STOP_DIRTY: the worktree carries changes; the plan must be derived from a committed state'])
     expect(preExecutionStops({ ...base, launcherBuiltDigest: '0'.repeat(64) })).toEqual(['STOP_STALE_LAUNCHER_HASH: the launcher built from this repository is not the pinned build'])
   })
+  it('R3-N-P6X: the REAL gate CLI stops STOP_DIRTY when the only change is an UNTRACKED file', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'd1-p6x-repo-'))
+    const chan = mkdtempSync(join(tmpdir(), 'd1-p6x-chan-'))
+    try {
+      const git = (...a: string[]) => execFileSync('git', ['-c', 'user.name=d1', '-c', 'user.email=d1@p6x.invalid', '-c', 'commit.gpgsign=false', ...a], { cwd: repo, encoding: 'utf8' })
+      git('init', '-q')
+      // The gate's modules locate the repository by its docs/ops/release directory; nothing in it is read before the clean check.
+      mkdirSync(join(repo, 'docs', 'ops', 'release'), { recursive: true })
+      writeFileSync(join(repo, 'docs', 'ops', 'release', 'tracked.txt'), 'committed state\n')
+      git('add', '.')
+      git('commit', '-q', '-m', 'base')
+      expect(worktreeIsClean(repo)).toBe(true)
+      writeFileSync(join(repo, 'untracked.txt'), 'not added\n')
+      expect(worktreeIsClean(repo)).toBe(false)
+      const r = spawnSync(process.execPath, [join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs'), join(ROOT, 'scripts', 'custody', 'd1-mint-operator-plan.ts'), '--mode=probe', `--channel-dir=${chan}`, `--tools-dir=${chan}`], { cwd: repo, encoding: 'utf8', timeout: 120_000 })
+      expect(r.status).toBe(1)
+      expect(JSON.parse(r.stdout)).toEqual({ gate: 'STOP', mode: 'probe', reasons: ['STOP_DIRTY: the worktree carries changes; the plan must be derived from a committed state'] })
+    } finally {
+      rmSync(repo, { recursive: true, force: true })
+      rmSync(chan, { recursive: true, force: true })
+    }
+  }, 150_000)
   it('R2-N-P10: when N04 is NOT_SATISFIED there is no target host and no plan', () => {
     const r = mkdtempSync(join(tmpdir(), 'd1-n04-bypass-'))
     const copy = (rel: string) => {

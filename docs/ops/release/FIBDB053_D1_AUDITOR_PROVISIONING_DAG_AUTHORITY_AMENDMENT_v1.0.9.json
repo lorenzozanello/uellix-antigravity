@@ -1,0 +1,76 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.9",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.9",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ZERO_NODES_ZERO_EDGES__AC8_TLS_TRUST_RULING__PMR15_SERVER_AUTHENTICATED__NO_EXECUTION__NO_SECRET",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "Appends to the lineage v1.0.0 .. v1.0.8. No earlier amendment is edited. No node and no edge changes.",
+  "mission_id": "CV1-D1-TLS-TRUST-AND-FINAL-CHANNEL-HARDENING-R3",
+  "lane": "CV1-D1-TLS-TRUST-AND-FINAL-CHANNEL-HARDENING-R3",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "fa43b39636de766f228b16c459b721fe80fcb109",
+  "AS_OF_BASE_TREE": "eeeaf49399a7fef6f14c76e73f5600819d7942cf",
+  "INDEPENDENT_RECERT_CONSUMED": {
+    "verdict": "NO VERDICT (insufficient evidence: the disposable-PostgreSQL sections were not run independently)",
+    "candidate": "fa43b39636de766f228b16c459b721fe80fcb109",
+    "findings_consumed": [
+      "TLS = B: ssl 'require' in postgres.js 3.4.9 is rejectUnauthorized = false and answers AuthenticationCleartextPassword with the operator password; an impostor harvests it before the hosted OEP-1 probe.",
+      "Surviving mutants X08x (PG* copied from the base: no fixture carried PG*), L1x (a set-then-delete write to process.env), P6x (the CLI with --untracked-files=no; only the pure function was tested).",
+      "Non-blocking: OEP-1 evidence 'highest version wins' without a supersedes chain; PROBE_MINT_CONFIGURATION_COHERENT tautological (repository constants and the record's own principal, nothing observed)."
+    ]
+  },
+  "NEW_NODES": [],
+  "NEW_EDGES": [],
+  "AUTHORITY_CONFLICTS_OPEN": [
+    {
+      "id": "AC-8",
+      "conflict": "The operator channel authenticated nobody: the certified tools connected with ssl 'require', so the operator's privileged password could be answered to any server on the path, while OEP-1 and the mint trusted the session they reached.",
+      "found_at": "independent recertification of fa43b396, 2026-09-24"
+    }
+  ],
+  "AUTHORITY_CONFLICT_RULINGS": {
+    "AC-8": {
+      "kind": "OWNER_POLICY_DECISION",
+      "outcome": "VERIFY_FULL_PINNED_CA",
+      "source": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_TLS_TRUST_OWNER_DECISION_v1.0.0.json",
+      "effect": "Every governed tool authenticates the PostgreSQL server against ONE pinned certificate, the project certificate the owner downloaded from the Supabase dashboard (bound by the sha256 of its bytes), with rejectUnauthorized and hostname verification, no system trust and no download; the launcher refuses before the prompt when the file is absent or differs.",
+      "implementation_must": [
+        "the effective CHANNEL_BINDING carries tls.policy = VERIFY_FULL_PINNED_CA and the pinned raw, DER and SPKI sha256 of the repository copy of the project certificate",
+        "the channel contract carries OC-13 (server authenticated) and OC-14 (no ambient PG* or TLS variable reaches a tool)",
+        "the tools implement OT-18 and OT-19 (measured on real TLS and under both harnesses)"
+      ]
+    }
+  },
+  "N10_PRE_HC1_READINESS_CONJUNCTS": [
+    {
+      "id": "PMR-15_OPERATOR_CHANNEL_SERVER_AUTHENTICATED",
+      "condition": "The effective CHANNEL_BINDING pins the project certificate under VERIFY_FULL_PINNED_CA; the repository copy it names holds exactly one CA certificate whose raw bytes, DER and SPKI hash to the pins; the effective channel authority states TLS_TRUST_POLICY VERIFY_FULL_PINNED_CA; the channel contract carries OC-13 and OC-14.",
+      "source": "Owner decision AC-8 (TLS_TRUST_POLICY = VERIFY_FULL_PINNED_CA; CA_TRUST_ROOT_SOURCE = PROJECT_SPECIFIC_SUPABASE_CERTIFICATE)"
+    }
+  ],
+  "RECOMPUTED_GRAPH": {
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_TOTAL": 45,
+    "HARD_EDGE_COUNT": 37,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "ACYCLIC": true,
+    "note": "No node and no edge change."
+  },
+  "EXPECTED_PRE_HC1_STATE_OF_THIS_SUCCESSOR": {
+    "before_its_certification_event": "N10 NOT_READY by PMR-9 (not yet certified) and PMR-14 (no OEP-1 evidence) only; PMR-15 holds.",
+    "after_its_certification_event": "N10 NOT_READY by PMR-14 alone, by design (the channel is certified before its probe runs)."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No mint, deposit, delivery, probe or hosted connection.",
+    "No certification event is written by this lane.",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "required_independent_review": "MANDATORY: the final independent recertification of the channel successor, including this amendment.",
+  "final_state": "AC8_VERIFY_FULL_PINNED_CA_RULED__PMR15_ADDED__ZERO_NODES_CLOSED",
+  "next_gate": "Final independent recertification -> its event -> PHASE 2 OEP-1 v3 probe through the certified channel -> evidence -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

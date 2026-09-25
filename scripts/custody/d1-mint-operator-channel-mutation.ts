@@ -44,6 +44,11 @@ const T_PM = 'tests/custody/d1-pre-hc1-post-mint.test.ts'
 const T_RB = 'tests/custody/d1-mint-route-b-contract.test.ts'
 const T_SC = 'tests/custody/d1-scram-verifier.test.ts'
 const T_PEB = 'tests/custody/d1-peb-identity.test.ts'
+const PM = 'scripts/custody/d1-pre-hc1-post-mint.ts'
+const SN = 'tests/custody/support/tool-trust-snippet.ts'
+const T_TLS = 'tests/custody/d1-tls-trust.test.ts'
+const T_CHAIN = 'tests/custody/d1-oep1-evidence-chain.test.ts'
+const T_V9 = 'tests/custody/d1-dag-amendment-v109.test.ts'
 
 export const MUTANTS: readonly Mutant[] = [
   { id: 'M-ECHO', file: CH, from: '          buf[len++] = b\n', to: '          buf[len++] = b\n          output.write(String.fromCharCode(b))\n', tests: [T_CH], expect: 'RED' },
@@ -89,6 +94,22 @@ export const MUTANTS: readonly Mutant[] = [
   { id: 'R2-M-SCRAM-KEY', file: SC, from: "  const clientKey = hmac(saltedPassword, 'Client Key')", to: "  const clientKey = hmac(saltedPassword, 'Client key')", tests: [T_SC], expect: 'RED' },
   // F: the observer's parent resolution by pid alone (a later reuser adopts the child).
   { id: 'R2-M-PID-REUSE', file: OB, from: '    if (p.pid !== child.ppid || p.createdMs <= 0 || p.createdMs > child.createdMs) continue', to: '    if (p.pid !== child.ppid) continue', tests: [T_PEB], expect: 'RED' },
+  // --- R3: server authentication (AC-8, OT-18) on real TLS, the pinned CA, and the recertification survivors of fa43b396 ---
+  {id: "R3-M-TLS-NO-VERIFY",file: SN,from: "rejectUnauthorized: ${v('TLS_NO_VERIFY', 'false', 'true')},",to: "rejectUnauthorized: ${v('TLS_NO_VERIFY', 'false', 'false')},",tests: [T_TLS],expect: "RED"},
+  {id: "R3-M-TLS-REQUIRE",file: SN,from: "  return variant === 'TLS_REQUIRE' ? \"'require'\" : `pinnedTls(pinned.ca, ${hostExpr}, seen)`",to: "  return \"'require'\"",tests: [T_TLS],expect: "RED"},
+  {id: "R3-M-TLS-NO-HOSTNAME",file: SN,from: "${v('TLS_NO_HOSTNAME', 'undefined', 'tls.checkServerIdentity(h, cert)')}",to: "${v('TLS_NO_HOSTNAME', 'undefined', 'undefined')}",tests: [T_TLS],expect: "RED"},
+  {id: "R3-M-TLS-SYSTEM-TRUST",file: SN,from: "${v('TLS_SYSTEM_TRUST', '', 'ca: [ca],')}",to: "${v('TLS_SYSTEM_TRUST', '', '')}",tests: [T_TLS],expect: "RED"},
+  {id: "R3-M-CA-PIN-TOOL",file: SN,from: "${v('NO_CA_PIN_CHECK', '', \"if (!/^[0-9a-f]{64}$/.test(pin) || createHash('sha256').update(bytes).digest('hex') !== pin) return { refused: 'CA_PIN_MISMATCH' }\")}",to: "",tests: [T_TLS],expect: "RED"},
+  {id: "R3-M-CA-PIN-LAUNCHER",file: LA,from: "  if (sha256Hex(caBytes) !== plan.caSha256) throw",to: "  if (false) throw",tests: [T_CH],expect: "RED"},
+  {id: "R3-M-X08X",file: CH,from: "  const env: Record<string, string> = {}\n  for (const k of TOOL_ENV_ALLOWLIST) {",to: "  const env: Record<string, string> = Object.fromEntries(Object.entries(base).filter(([k, v]) => /^PG/i.test(k) && v !== undefined)) as Record<string, string>\n  for (const k of TOOL_ENV_ALLOWLIST) {",tests: [T_CH],expect: "RED"},
+  {id: "R3-M-X08X-TOOL",file: SN,from: "${v('NO_AMBIENT_ENV_CHECK', '', \"const ambient = ambientEnvironment(); if (ambient.length > 0) { out({ refused: 'AMBIENT_ENVIRONMENT', names: ambient }); return 2 }\")}",to: "",tests: [T_TLS],expect: "RED"},
+  {id: "R3-M-L1X",file: LA,from: "    child = io.spawn(",to: "    process.env[OPERATOR_ENV_VAR_NAME] = secret.toString('utf8')\n    delete process.env[OPERATOR_ENV_VAR_NAME]\n    child = io.spawn(",tests: [T_CH],expect: "RED"},
+  {id: "R3-M-P6X",file: PL,from: "  return execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: root, encoding: 'utf8' }).trim() === ''",to: "  return execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: root, encoding: 'utf8' }).trim() === ''",tests: [T_CH],expect: "RED"},
+  {id: "R3-M-P6X-CLI",file: PL,from: "  if (!worktreeIsClean(root)) {",to: "  if (false) {",tests: [T_CH],expect: "RED"},
+  {id: "R3-M-CHAIN-ACK",file: EV,from: "      if (JSON.stringify(ackPaths) !== JSON.stringify(nonClosed)) reasons.push(",to: "      if (false) reasons.push(",tests: [T_CHAIN],expect: "RED"},
+  {id: "R3-M-CHAIN-IGNORED",file: EV,from: "  r.push(...f.chainReasons)\n",to: "",tests: [T_PM],expect: "RED"},
+  {id: "R3-M-COHERENCE",file: EV,from: "  const cr = coherenceReasons(e, ctx)\n",to: "  const cr: string[] = []\n",tests: [T_PM],expect: "RED"},
+  {id: "R3-M-PMR15",file: PM,from: "    const r: string[] = [...c.caReasons]\n",to: "    const r: string[] = []\n",tests: [T_PM,T_V9],expect: "RED"},
   { id: 'M-SELF-TEST', file: PL, from: '// CLI\n', to: '// CLI (comment-only self-test mutant)\n', tests: [T_CH], expect: 'GREEN' },
 ]
 

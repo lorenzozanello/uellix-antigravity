@@ -20,12 +20,21 @@
 //                                     observed principal and database
 //   STARTUP_PARAMETERS_CLOSED         client-sourced settings = the measured set
 //   TOOL_HASH_BOUND                   probe, mint, launcher and driver = the pins
-//   PROBE_MINT_CONFIGURATION_COHERENT the probe's session fingerprint = the mint's
+//   PROBE_MINT_CONFIGURATION_COHERENT the connection the probe OBSERVED (host, port,
+//                                     database, user, TLS verified to the pinned
+//                                     anchor, the driver digest it loaded) = what
+//                                     the mint will use (R3: never constants alone)
+//
+// The evidence is an explicit append-only CHAIN (R3): each record names its
+// predecessor; the head is evaluated, and it must acknowledge every earlier
+// record that did not close OEP-1, so a later PASS cannot silently erase an
+// earlier FAIL or INCONCLUSIVE.
 // DERIVED_MATERIAL_EXPOSURE is recomputed and must match the record, and gates
 // nothing: the verifier is derived material, classified apart.
 
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import { X509Certificate } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -43,7 +52,10 @@ export const CHANNEL_AUTHORITY = `${RELEASE}/FIBDB053_D1_AUDITOR_MINT_OPERATOR_C
 export const CHANNEL_AUTHORITY_AMENDMENT = /^FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v(\d+)\.(\d+)\.(\d+)\.json$/
 export const OEP1_EVIDENCE_DIR = RELEASE
 export const OEP1_EVIDENCE_PATTERN = /^FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v(\d+)\.(\d+)\.(\d+)\.json$/
-export const OEP1_EVIDENCE_CLASS = 'D1_OEP1_EVIDENCE_V2'
+export const OEP1_EVIDENCE_CLASS = 'D1_OEP1_EVIDENCE_V3'
+/** AC-8: the only TLS policy the channel binding may carry. */
+export const TLS_TRUST_POLICY = 'VERIFY_FULL_PINNED_CA'
+const CA_FILE_PATTERN = /^docs\/ops\/release\/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_[a-z0-9]+_v\d+\.\d+\.\d+\.crt$/
 export const OEP1_GATING_SUBVERDICTS = [
   'PLAINTEXT_NOT_SERVER_VISIBLE',
   'TARGET_SESSION_BOUND',
@@ -56,6 +68,14 @@ export interface ChannelBinding {
   readonly launcher_build_digest: string
   readonly tools: Readonly<Record<ChannelMode, { readonly file: string; readonly sha256: string }>>
   readonly tools_directory: { readonly base_env: 'LOCALAPPDATA'; readonly relative: string }
+  /** AC-8: the project certificate every governed tool uses as its ONLY trust anchor. */
+  readonly tls: {
+    readonly policy: typeof TLS_TRUST_POLICY
+    readonly ca_file: string
+    readonly ca_raw_sha256: string
+    readonly ca_der_sha256: string
+    readonly ca_spki_sha256: string
+  }
 }
 
 const HEX64 = /^[0-9a-f]{64}$/
@@ -161,6 +181,38 @@ export function bindingShapeReasons(b: ChannelBinding | undefined): string[] {
   }
   if (b.tools?.probe?.sha256 === b.tools?.mint?.sha256) r.push('the probe and mint tools are pinned to the same bytes')
   if (b.tools_directory?.base_env !== 'LOCALAPPDATA' || typeof b.tools_directory?.relative !== 'string') r.push('CHANNEL_BINDING.tools_directory is not LOCALAPPDATA-relative')
+  const tls = b.tls
+  if (tls === undefined || tls.policy !== TLS_TRUST_POLICY) r.push(`CHANNEL_BINDING.tls.policy is not ${TLS_TRUST_POLICY}`)
+  else {
+    if (!CA_FILE_PATTERN.test(String(tls.ca_file))) r.push('CHANNEL_BINDING.tls.ca_file is not a repository trust-root file')
+    for (const k of ['ca_raw_sha256', 'ca_der_sha256', 'ca_spki_sha256'] as const) if (!HEX64.test(String(tls[k]))) r.push(`CHANNEL_BINDING.tls.${k} is not a sha256`)
+  }
+  return r
+}
+
+/**
+ * AC-8, measured on the repository copy: exactly one CA certificate whose raw bytes, DER and SPKI
+ * are the pinned ones. Returns the bytes' facts or the reasons they are not the governed anchor.
+ */
+export function caFileReasons(root: string, b: ChannelBinding | null): string[] {
+  if (b === null || b.tls === undefined) return ['AC-8: no pinned trust root in CHANNEL_BINDING']
+  let bytes: Buffer
+  try {
+    bytes = readFileSync(join(root, b.tls.ca_file))
+  } catch {
+    return [`AC-8: the pinned trust root ${b.tls.ca_file} is absent`]
+  }
+  const r: string[] = []
+  if (createHash('sha256').update(bytes).digest('hex') !== b.tls.ca_raw_sha256) r.push('AC-8: the trust-root file bytes are not the pinned ones')
+  if ((bytes.toString('latin1').match(/-----BEGIN CERTIFICATE-----/g) ?? []).length !== 1) r.push('AC-8: the trust-root file does not hold exactly one certificate')
+  try {
+    const x = new X509Certificate(bytes)
+    if (!x.ca) r.push('AC-8: the trust root is not a CA certificate')
+    if (createHash('sha256').update(x.raw).digest('hex') !== b.tls.ca_der_sha256) r.push('AC-8: the trust root DER is not the pinned one')
+    if (createHash('sha256').update(x.publicKey.export({ type: 'spki', format: 'der' })).digest('hex') !== b.tls.ca_spki_sha256) r.push('AC-8: the trust root key is not the pinned one')
+  } catch {
+    r.push('AC-8: the trust-root file does not parse as a certificate')
+  }
   return r
 }
 
@@ -228,9 +280,14 @@ export function channelCertificationReasons(ev: ChannelEventFacts | null, bindin
 // ---------------------------------------------------------------------------
 
 export interface Oep1EvidenceFacts {
+  /** The chain HEAD (the record no other record names as predecessor). */
   readonly path: string | null
   readonly evidence: Readonly<Record<string, unknown>> | null
   readonly channelEvent: ChannelEventFacts | null
+  /** Every record of the chain, root first, with its recorded verdict. */
+  readonly chain: readonly { readonly path: string; readonly verdict: string }[]
+  /** Why the files do not form one acknowledged chain (empty = they do). */
+  readonly chainReasons: readonly string[]
 }
 
 /** What the repository says, which the evidence is recomputed against. */
@@ -256,10 +313,45 @@ export function routeBTransportFacts(): { transport: string; doBlockGuarded: boo
 }
 
 /** The session the probe observed and the mint will use: every field the two must share. */
-export function sessionFingerprint(p: { host: string; port: number; database: string; principal: string; driverDigest: string }): string {
+export function sessionFingerprint(p: { host: string; port: number; database: string; principal: string; driverDigest: string; anchorSha256: string }): string {
   return createHash('sha256')
-    .update(JSON.stringify([p.host, p.port, p.database, p.principal, p.driverDigest, OEP1_EXPECTED_CLIENT_SETTINGS]))
+    .update(JSON.stringify([p.host, p.port, p.database, p.principal, p.driverDigest, p.anchorSha256, OEP1_EXPECTED_CLIENT_SETTINGS]))
     .digest('hex')
+}
+
+/** The connection a v3 probe reports it OBSERVED. */
+export interface ObservedConnection {
+  readonly host: string
+  readonly port: number
+  readonly database: string
+  readonly user: string
+  readonly tls: { readonly verified: boolean; readonly peer_sha256: string | null; readonly anchor_sha256: string | null }
+  readonly driver_digest: string
+}
+
+/**
+ * PROBE_MINT_CONFIGURATION_COHERENT (R3): the probe OBSERVED the session the mint will use. Every
+ * term is an observation compared with a bound value -- never a constant compared with itself.
+ */
+export function coherenceReasons(e: Readonly<Record<string, unknown>>, ctx: Oep1RepoContext): string[] {
+  const obs = e.observation as (Oep1Observation & { connection?: ObservedConnection }) | undefined
+  const cn = obs?.connection
+  if (cn === undefined || cn === null || typeof cn !== 'object') return ['the probe recorded no observed connection']
+  const r: string[] = []
+  if (ctx.targetHost === null || cn.host !== ctx.targetHost) r.push('the observed host is not the N04 host the mint will use')
+  if (cn.port !== ROUTE_B_PORT) r.push('the observed port is not the route-B port')
+  if (cn.database !== ROUTE_B_DATABASE) r.push('the observed database is not the route-B database')
+  const principal = typeof e.operator_principal === 'string' ? e.operator_principal : null
+  if (principal === null || cn.user !== principal || obs?.identity?.current_user !== principal || obs.identity.session_user !== principal) r.push('the observed session user is not the principal the mint will use')
+  if (cn.tls?.verified !== true) r.push('the probe did not observe a verified TLS session')
+  if (ctx.binding?.tls === undefined || cn.tls?.anchor_sha256 !== ctx.binding.tls.ca_der_sha256) r.push('the observed trust anchor is not the pinned project certificate')
+  if (typeof cn.tls?.peer_sha256 !== 'string' || !HEX64.test(cn.tls.peer_sha256)) r.push('the probe recorded no observed server certificate')
+  if (ctx.driverDigest === null || cn.driver_digest !== ctx.driverDigest) r.push('the driver the probe loaded is not the driver the mint will load')
+  if (r.length === 0) {
+    const fp = sessionFingerprint({ host: cn.host, port: cn.port, database: cn.database, principal: cn.user, driverDigest: cn.driver_digest, anchorSha256: cn.tls.anchor_sha256! })
+    if (e.session_fingerprint !== fp) r.push('the recorded session fingerprint is not the one of the observed connection')
+  }
+  return r
 }
 
 /** Recompute every sub-verdict from the observation and the repository. */
@@ -288,9 +380,9 @@ export function recomputeOep1(e: Readonly<Record<string, unknown>>, ctx: Oep1Rep
   const hashes = b !== null && s('probe_tool_sha256') === b.tools.probe.sha256 && s('mint_tool_sha256') === b.tools.mint.sha256 && s('launcher_build_digest') === b.launcher_build_digest && ctx.driverDigest !== null && s('driver_digest') === ctx.driverDigest
   if (!hashes) r.push('TOOL_HASH_BOUND: a probe, mint, launcher or driver hash is not the pinned one')
 
-  const expectedFp = ctx.targetHost === null || ctx.driverDigest === null ? null : sessionFingerprint({ host: ctx.targetHost, port: ROUTE_B_PORT, database: ROUTE_B_DATABASE, principal, driverDigest: ctx.driverDigest })
-  const coherent = expectedFp !== null && s('session_fingerprint') === expectedFp
-  if (!coherent) r.push('PROBE_MINT_CONFIGURATION_COHERENT: the probe session fingerprint is not the one the mint will use')
+  const cr = coherenceReasons(e, ctx)
+  const coherent = cr.length === 0
+  if (!coherent) r.push(...cr.map((x) => `PROBE_MINT_CONFIGURATION_COHERENT: ${x}`))
 
   const derived = obsOk ? classifyDerivedMaterialExposure(obs.derived_settings) : null
   return {
@@ -328,26 +420,99 @@ export function oep1EvidenceReasons(f: Oep1EvidenceFacts, ctx: Oep1RepoContext):
   if (re.derived !== null && dm?.classification !== re.derived.classification) r.push('the recorded DERIVED_MATERIAL_EXPOSURE is not the recomputed classification')
   if (!Array.isArray(e.invalidation_predicates) || e.invalidation_predicates.length === 0) r.push('invalidation_predicates are absent')
   r.push(...channelCertificationReasons(f.channelEvent, ctx.binding))
+  r.push(...f.chainReasons)
   return r
 }
 
-/** Gather the evidence facts from the repository (the effective = highest version). */
+const versionOf = (name: string): [number, number, number] | null => {
+  const m = OEP1_EVIDENCE_PATTERN.exec(name)
+  return m === null ? null : [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+const versionLess = (a: [number, number, number], b: [number, number, number]): boolean => a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2])))
+
+/**
+ * The chain rules (pure; R3-N-CHAIN). Records are {path, doc}. One root (predecessor null); every
+ * other record names an existing record with a LOWER version; no two records name the same
+ * predecessor; every record is on the chain; the head acknowledges, with a resolution, exactly the
+ * earlier records whose verdict is not CLOSED.
+ */
+export function oep1ChainReasons(records: readonly { readonly path: string; readonly doc: Readonly<Record<string, unknown>> }[]): { head: string | null; chain: { path: string; verdict: string }[]; reasons: string[] } {
+  const reasons: string[] = []
+  if (records.length === 0) return { head: null, chain: [], reasons }
+  const byPath = new Map(records.map((r) => [r.path, r]))
+  const pred = (r: { doc: Readonly<Record<string, unknown>> }): string | null | undefined => (r.doc.predecessor === null ? null : typeof r.doc.predecessor === 'string' ? r.doc.predecessor : undefined)
+  const roots = records.filter((r) => pred(r) === null)
+  if (roots.length !== 1) reasons.push(`the OEP-1 evidence has ${roots.length} roots (records with predecessor null); exactly one is required`)
+  const named = new Map<string, string[]>()
+  for (const r of records) {
+    const p = pred(r)
+    if (p === undefined) {
+      reasons.push(`${r.path} does not name its predecessor (null for the first record)`)
+      continue
+    }
+    if (p === null) continue
+    const target = byPath.get(p)
+    if (target === undefined) {
+      reasons.push(`${r.path} names a predecessor that does not exist: ${p}`)
+      continue
+    }
+    const va = versionOf(p.split('/').pop()!)
+    const vb = versionOf(r.path.split('/').pop()!)
+    if (va === null || vb === null || !versionLess(va, vb)) reasons.push(`${r.path} names a predecessor that is not an earlier version`)
+    named.set(p, [...(named.get(p) ?? []), r.path])
+  }
+  for (const [p, succ] of named) if (succ.length > 1) reasons.push(`the OEP-1 evidence forks at ${p}: ${succ.join(', ')}`)
+  const heads = records.filter((r) => !named.has(r.path))
+  if (heads.length !== 1) reasons.push(`the OEP-1 evidence has ${heads.length} heads; exactly one is required`)
+  const head = heads.length === 1 ? heads[0]! : null
+  const chain: { path: string; verdict: string }[] = []
+  if (head !== null) {
+    const seen = new Set<string>()
+    let cur: (typeof records)[number] | undefined = head
+    while (cur !== undefined && !seen.has(cur.path)) {
+      seen.add(cur.path)
+      chain.unshift({ path: cur.path, verdict: String(cur.doc.verdict ?? 'MISSING') })
+      const p = pred(cur)
+      cur = typeof p === 'string' ? byPath.get(p) : undefined
+    }
+    if (seen.size !== records.length) reasons.push(`${records.length - seen.size} OEP-1 evidence record(s) are not on the chain that ends at the head`)
+    const nonClosed = chain.slice(0, -1).filter((c) => c.verdict !== 'CLOSED').map((c) => c.path).sort()
+    const ack = Array.isArray(head.doc.acknowledged_non_closed) ? (head.doc.acknowledged_non_closed as Array<{ path?: unknown; resolution?: unknown }>) : null
+    if (ack === null) reasons.push('the head does not carry acknowledged_non_closed')
+    else {
+      const ackPaths = ack.map((a) => String(a.path)).sort()
+      if (JSON.stringify(ackPaths) !== JSON.stringify(nonClosed)) reasons.push(`the head must acknowledge exactly the earlier non-CLOSED records [${nonClosed.join(', ')}], not [${ackPaths.join(', ')}]`)
+      if (ack.some((a) => typeof a.resolution !== 'string' || a.resolution.trim() === '')) reasons.push('an acknowledged non-CLOSED record carries no resolution')
+    }
+  }
+  return { head: head?.path ?? null, chain, reasons }
+}
+
+/** Gather the evidence facts from the repository: every record, as one explicit chain (R3). */
 export function gatherOep1EvidenceFacts(root: string): Oep1EvidenceFacts {
   const dir = join(root, OEP1_EVIDENCE_DIR)
-  const files = (existsSync(dir) ? readdirSync(dir) : [])
-    .map((n) => ({ n, m: OEP1_EVIDENCE_PATTERN.exec(n) }))
-    .filter((x): x is { n: string; m: RegExpExecArray } => x.m !== null)
-    .sort((a, b) => Number(a.m[1]) - Number(b.m[1]) || Number(a.m[2]) - Number(b.m[2]) || Number(a.m[3]) - Number(b.m[3]))
-  if (files.length === 0) return { path: null, evidence: null, channelEvent: null }
-  const rel = `${OEP1_EVIDENCE_DIR}/${files[files.length - 1]!.n}`
-  let evidence: Record<string, unknown> | null = null
-  try {
-    evidence = JSON.parse(readFileSync(join(root, rel), 'utf8')) as Record<string, unknown>
-  } catch {
-    evidence = { unparseable: true }
+  const names = (existsSync(dir) ? readdirSync(dir) : []).filter((n) => OEP1_EVIDENCE_PATTERN.test(n))
+  if (names.length === 0) return { path: null, evidence: null, channelEvent: null, chain: [], chainReasons: [] }
+  const records = names.map((n) => {
+    const path = `${OEP1_EVIDENCE_DIR}/${n}`
+    let doc: Record<string, unknown>
+    try {
+      doc = JSON.parse(readFileSync(join(root, path), 'utf8')) as Record<string, unknown>
+    } catch {
+      doc = { unparseable: true }
+    }
+    return { path, doc }
+  })
+  const { head, chain, reasons } = oep1ChainReasons(records)
+  const evidence = head === null ? null : records.find((r) => r.path === head)!.doc
+  const eventPath = typeof evidence?.channel_certification_event === 'string' ? evidence.channel_certification_event : null
+  return {
+    path: head,
+    evidence: evidence ?? { unparseable: true },
+    channelEvent: eventPath === null ? null : gatherChannelEventFacts(root, eventPath),
+    chain,
+    chainReasons: reasons,
   }
-  const eventPath = typeof evidence.channel_certification_event === 'string' ? evidence.channel_certification_event : null
-  return { path: rel, evidence, channelEvent: eventPath === null ? null : gatherChannelEventFacts(root, eventPath) }
 }
 
 // ---------------------------------------------------------------------------
@@ -368,6 +533,10 @@ export interface OperatorChannelFacts {
   }
   readonly operatorSectionReasons: readonly string[]
   readonly oep1: { readonly facts: Oep1EvidenceFacts; readonly ctx: Oep1RepoContext }
+  /** AC-8: why the repository trust-root file is not the pinned anchor (empty = it is). */
+  readonly caReasons: readonly string[]
+  /** AC-8: the TLS policy the EFFECTIVE authority states (TLS_TRUST_POLICY section), or null. */
+  readonly tlsPolicyStated: string | null
 }
 
 export function gatherOperatorChannelFacts(
@@ -405,6 +574,8 @@ export function gatherOperatorChannelFacts(
       probeStatements: doc.OEP1_PROBE_CONTRACT?.statements ?? null,
     },
     operatorSectionReasons: deps.operatorSectionReasons(inventory.operator_credential),
+    caReasons: caFileReasons(root, binding),
+    tlsPolicyStated: typeof (eff.doc as { TLS_TRUST_POLICY?: { policy?: unknown } } | null)?.TLS_TRUST_POLICY?.policy === 'string' ? String((eff.doc as { TLS_TRUST_POLICY: { policy: string } }).TLS_TRUST_POLICY.policy) : null,
     oep1: {
       facts: gatherOep1EvidenceFacts(root),
       ctx: { binding, targetHost: authorizedDirectHost(root), n08: deps.effectiveN08(root), driverDigest: deps.driverDigest(root), ...routeBTransportFacts() },

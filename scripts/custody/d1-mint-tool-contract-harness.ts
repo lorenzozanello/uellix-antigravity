@@ -47,6 +47,7 @@
 // clauses OPERATOR_TOOL_CONTRACT marks `measuredBy`.
 
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { checkDsnShape } from '../../db/custody/production-custody'
@@ -54,6 +55,7 @@ import { COMMIT_UNKNOWN_TOKEN, ROUTE_B_DATABASE, ROUTE_B_PORT, ROUTE_B_ROLE, ROU
 import { SCRAM_VERIFIER_PATTERN, verifierMatches } from '../../db/custody/scram-verifier'
 import { driverDigest } from '../../db/custody/mint-operator-channel'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
+import { syntheticCa } from './synthetic-x509'
 
 export type Scenario =
   | 'SUCCESS'
@@ -82,6 +84,12 @@ export type Scenario =
   | 'WRONG_OPERATOR_PRINCIPAL'
   /** OT-1 at run time: the tool file lies inside a git work tree. */
   | 'TOOL_INSIDE_GIT_TREE'
+  /** OT-18: the pinned CA file is absent. */
+  | 'CA_MISSING'
+  /** OT-18: the CA file's bytes are not the pinned ones. */
+  | 'CA_MODIFIED'
+  /** OT-19: ambient PG* / TLS variables in the tool's environment. */
+  | 'AMBIENT_PG_ENV'
 type State = 'PASSED' | 'FAILED'
 
 /** The scenarios the tool must refuse before any driver call, with the check that measures each. */
@@ -94,6 +102,9 @@ export const REFUSAL_SCENARIOS: Readonly<Partial<Record<Scenario, string>>> = {
   WRONG_DRIVER_VERSION: 'REFUSES_WRONG_DRIVER_VERSION',
   DRIVER_DIGEST_MISMATCH: 'REFUSES_DRIVER_DIGEST_MISMATCH',
   WRONG_OPERATOR_PRINCIPAL: 'REFUSES_WRONG_OPERATOR_PRINCIPAL',
+  CA_MISSING: 'REFUSES_CA_MISSING',
+  CA_MODIFIED: 'REFUSES_CA_MODIFIED',
+  AMBIENT_PG_ENV: 'REFUSES_AMBIENT_PG_ENV',
   TOOL_INSIDE_GIT_TREE: 'REFUSES_INSIDE_GIT_TREE',
 }
 
@@ -130,15 +141,58 @@ export const HARNESS_DRIVER_VERSION = '3.4.9'
 /** The only construction option keys a conforming tool passes (OT-16: no `connection`, no URL). */
 export const ALLOWED_DRIVER_OPTION_KEYS = ['database', 'host', 'max', 'onnotice', 'password', 'port', 'prepare', 'ssl', 'username'] as const
 
+/**
+ * OT-18 as a fake driver can see it: the SHAPE of the `ssl` option (never the
+ * CA bytes, never a function). Shared by both fake drivers.
+ */
+export const FAKE_DRIVER_SSL_SHAPE = `const sslShape = (s) => (s && typeof s === 'object' ? { kind: 'object', rejectUnauthorized: s.rejectUnauthorized, servername: s.servername, minVersion: s.minVersion, caCount: Array.isArray(s.ca) ? s.ca.length : 0, caSha256: Array.isArray(s.ca) && s.ca.length === 1 ? require('node:crypto').createHash('sha256').update(s.ca[0]).digest('hex') : null, checkServerIdentity: typeof s.checkServerIdentity } : s)`
+
+/** What OT-18 requires of that shape: the one pinned CA, verification on, the target as servername. */
+export function sslShapeReasons(shape: unknown, host: string, caSha256: string): string[] {
+  const s = shape as { kind?: string; rejectUnauthorized?: unknown; servername?: unknown; minVersion?: unknown; caCount?: unknown; caSha256?: unknown; checkServerIdentity?: unknown } | null | undefined
+  if (s === null || s === undefined || s.kind !== 'object') return ['ssl is not an options object (a mode string cannot pin a CA)']
+  const r: string[] = []
+  if (s.rejectUnauthorized !== true) r.push('rejectUnauthorized is not true')
+  if (s.caCount !== 1 || s.caSha256 !== caSha256) r.push('the trust anchors are not exactly the pinned CA')
+  if (s.servername !== host) r.push('servername is not the target host')
+  if (s.minVersion !== 'TLSv1.2') r.push('minVersion is not TLSv1.2')
+  if (s.checkServerIdentity !== 'function') r.push('no hostname check')
+  return r
+}
+
+/** The ambient variables OT-19 must refuse (and the channel must never pass down). */
+export const HOSTILE_AMBIENT_ENV: Readonly<Record<string, string>> = {
+  PGHOST: 'db.hostile.invalid',
+  PGPORT: '6543',
+  PGDATABASE: 'template1',
+  PGOPTIONS: '-c log_statement=all',
+  PGSERVICE: 'hostile',
+  PGSSLMODE: 'disable',
+  PGAPPNAME: 'hostile',
+  NODE_TLS_REJECT_UNAUTHORIZED: '0',
+}
+
+/** A synthetic CA for a harness run, pinned; CA_MODIFIED writes other bytes under the same pin, CA_MISSING none. */
+export function writeHarnessCa(dir: string, scenario: string): { caFile: string; caSha256: string; anchorSha256: string } {
+  mkdirSync(dir, { recursive: true })
+  const ca = syntheticCa('d1 harness synthetic ca')
+  const caFile = join(dir, 'project-ca.crt')
+  const caSha256 = createHash('sha256').update(ca.certPem).digest('hex')
+  if (scenario === 'CA_MODIFIED') writeFileSync(caFile, syntheticCa('d1 harness other ca').certPem)
+  else if (scenario !== 'CA_MISSING') writeFileSync(caFile, ca.certPem)
+  return { caFile, caSha256, anchorSha256: ca.derSha256 }
+}
+
 /** Exported for the operator-channel PEB demonstration and the disposable proof (same bytes the harness uses). */
 export const FAKE_DRIVER = `'use strict'
 const fs = require('node:fs'); const path = require('node:path')
+${FAKE_DRIVER_SSL_SHAPE}
 const LOG = path.join(__dirname, 'driver-log.jsonl')
 const rec = (o) => fs.appendFileSync(LOG, JSON.stringify({ at: Date.now(), ...o }) + '\\n')
 const flag = (n) => fs.existsSync(path.join(__dirname, n))
 module.exports = function postgres(a, b) {
-  if (typeof a === 'string') rec({ event: 'construct', form: 'url', host: new URL(a).hostname, query: new URL(a).search, ssl: b && b.ssl, prepare: b && b.prepare, keys: Object.keys(b || {}).sort(), connection: (b && b.connection) || null })
-  else rec({ event: 'construct', form: 'options', host: a.host, port: a.port, database: a.database, username: a.username, hasPassword: typeof a.password === 'string', ssl: a.ssl, prepare: a.prepare, keys: Object.keys(a).sort(), connection: a.connection || null })
+  if (typeof a === 'string') rec({ event: 'construct', form: 'url', host: new URL(a).hostname, query: new URL(a).search, ssl: sslShape(b && b.ssl), prepare: b && b.prepare, keys: Object.keys(b || {}).sort(), connection: (b && b.connection) || null })
+  else rec({ event: 'construct', form: 'options', host: a.host, port: a.port, database: a.database, username: a.username, hasPassword: typeof a.password === 'string', ssl: sslShape(a.ssl), prepare: a.prepare, keys: Object.keys(a).sort(), connection: a.connection || null })
   const q = (strings, ...values) => { const text = strings.reduce((acc, s, i) => acc + (i ? '$' + i : '') + s, ''); rec({ event: 'query', text, params: values }); return Promise.resolve([]) }
   q.unsafe = (text, params) => { rec({ event: 'unsafe', text, params: params || [] }); if (flag('FAIL_DO') && text.includes('DO $rotate$')) return Promise.reject(Object.assign(new Error('fake failure'), { code: 'XX000' })); return Promise.resolve([]) }
   return {
@@ -238,6 +292,7 @@ export function runMintToolContractHarness(params: {
   if (commitFailure !== undefined) writeFileSync(join(driverDir, 'COMMIT_FAILURE'), JSON.stringify(commitFailure))
   // OT-17: the digest the plan would carry, of the driver as it lies BEFORE the run.
   const pinnedDriverDigest = params.scenario === 'DRIVER_DIGEST_MISMATCH' ? '0'.repeat(64) : driverDigest(driverDir)
+  const trust = writeHarnessCa(join(work, 'trust'), params.scenario)
   // Carrier lost: the run leaves no terminal line (killed, or ended from outside while COMMIT hangs).
   const carrierLost = commitFailure?.mode === 'exit' || commitFailure?.mode === 'hang'
   const depositor = join(depositorDir, 'fake-n30-deposit.js')
@@ -250,7 +305,7 @@ export function runMintToolContractHarness(params: {
   const query = params.scenario === 'URL_WITH_QUERY' ? '?debug_print_parse=on' : ''
   const adminUrl = ['postgresql:', `//${HARNESS_OPERATOR_PRINCIPAL}:`, adminPassword, '@', host, `:${port}/${database}${query}`].join('')
 
-  const env: Record<string, string> = { UELLIX_D1_MINT_OPERATOR_DATABASE_URL: adminUrl, TEMP: temp, TMP: temp }
+  const env: Record<string, string> = { UELLIX_D1_MINT_OPERATOR_DATABASE_URL: adminUrl, TEMP: temp, TMP: temp, ...(params.scenario === 'AMBIENT_PG_ENV' ? HOSTILE_AMBIENT_ENV : {}) }
   for (const k of ['SystemRoot', 'SYSTEMROOT', 'windir', 'PATH', 'Path']) {
     const val = process.env[k]
     if (val !== undefined) env[k] = val
@@ -276,6 +331,8 @@ export function runMintToolContractHarness(params: {
       `--target-port=${ROUTE_B_PORT}`,
       `--target-database=${ROUTE_B_DATABASE}`,
       `--operator-principal=${principal}`,
+      `--ca-file=${trust.caFile}`,
+      `--ca-sha256=${trust.caSha256}`,
     ],
     { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', timeout: commitFailure?.mode === 'hang' ? 8_000 : 60_000, windowsHide: true }
   )
@@ -332,7 +389,8 @@ export function runMintToolContractHarness(params: {
       ...tail,
     ]
     checks.SEQUENCE = pf(JSON.stringify(shape) === JSON.stringify(expected))
-    checks.TLS_REQUIRED = pf(events[0]?.ssl === 'require')
+    // OT-18: the driver was handed the pinned CA as its only anchor, with verification and the hostname check on.
+    checks.TLS_VERIFY_FULL_PINNED = pf(sslShapeReasons(events[0]?.ssl, HARNESS_TARGET_HOST, trust.caSha256).length === 0)
     // OT-16: explicit options, the exact session, nothing that can carry a startup GUC.
     const c = events[0]
     checks.STARTUP_CLOSED = pf(

@@ -44,6 +44,7 @@ import {
   type ChannelBinding,
   type ChannelEventFacts,
   type Oep1EvidenceFacts,
+  caFileReasons,
 } from './d1-mint-operator-evidence'
 import { isInsideRepositoryTree } from './build-sentinel-consumer'
 import { buildProductionEntryPoints } from './build-production-entrypoints'
@@ -120,6 +121,8 @@ export function derivePlan(root: string, i: PlanInputs): { plan: ChannelPlan | n
   reasons.push(...hr)
   const drv = routeBDriver(root)
   reasons.push(...drv.reasons)
+  // AC-8 / OC-13: the pinned project certificate, measured on the repository copy.
+  reasons.push(...caFileReasons(root, binding))
   const sched = deriveEffectiveSchedule(root)
   reasons.push(...sched.errors.map((e) => `schedule: ${e}`))
   let principal: string | null = null
@@ -149,6 +152,8 @@ export function derivePlan(root: string, i: PlanInputs): { plan: ChannelPlan | n
     driverRoot: drv.driverRoot,
     driverVersion: drv.version,
     driverDigest: drv.digest,
+    caFile: resolvePath(root, binding.tls.ca_file),
+    caSha256: binding.tls.ca_raw_sha256,
     depositor: i.mode === 'mint' ? i.depositor : null,
     tool: { path: join(i.toolsDir, binding.tools[i.mode].file), sha256: binding.tools[i.mode].sha256 },
     launcherDigest: binding.launcher_build_digest,
@@ -167,6 +172,8 @@ export function verifyPlan(onDisk: ChannelPlan, derived: ChannelPlan): string[] 
     ['targetHost', onDisk.targetHost, derived.targetHost],
     ['targetPort', onDisk.targetPort, derived.targetPort],
     ['targetDatabase', onDisk.targetDatabase, derived.targetDatabase],
+    ['caFile', onDisk.caFile, derived.caFile],
+    ['caSha256', onDisk.caSha256, derived.caSha256],
     ['operatorPrincipal', onDisk.operatorPrincipal, derived.operatorPrincipal],
     ['validUntil', onDisk.validUntil, derived.validUntil],
     ['driverRoot', onDisk.driverRoot, derived.driverRoot],
@@ -203,6 +210,14 @@ export function checkUtcMargin(nowUtc: string, n08: string | null): { reasons: s
 }
 
 /** The gate's own STOPs, independent of the plan (pure, so each is testable). */
+/**
+ * OC-10 / R3-N-P6X: the worktree is clean -- no staged, unstaged or UNTRACKED change. The CLI
+ * calls this FIRST and stops before deriving anything from a tree that is not committed state.
+ */
+export function worktreeIsClean(root: string): boolean {
+  return execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: root, encoding: 'utf8' }).trim() === ''
+}
+
 export function preExecutionStops(p: { readonly clean: boolean; readonly launcherBuiltDigest: string; readonly pinnedLauncherDigest: string | null; readonly nowUtc: string; readonly n08: string | null }): string[] {
   const r: string[] = []
   if (!p.clean) r.push('STOP_DIRTY: the worktree carries changes; the plan must be derived from a committed state')
@@ -230,14 +245,19 @@ function main(argv: readonly string[]): number {
     out({ gate: 'STOP', reasons: ['the channel dir must be outside the repository'] })
     return 2
   }
+  // OC-10: a dirty worktree (untracked files included) is STOP before anything is read or derived from it.
+  if (!worktreeIsClean(root)) {
+    out({ gate: 'STOP', mode, reasons: ['STOP_DIRTY: the worktree carries changes; the plan must be derived from a committed state'] })
+    return 1
+  }
   const { binding } = readChannelBinding(root)
   const toolsDir = get('--tools-dir=') ?? (binding === null ? null : defaultToolsDir(binding))
   if (toolsDir === null) {
     out({ gate: 'STOP', reasons: ['no tools dir'] })
     return 2
   }
+  const clean = true // checked first, above
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
-  const clean = execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: root, encoding: 'utf8' }).trim() === ''
   const nowUtc = new Date().toISOString()
   const build = buildLauncherClosure(root)
   const launcherEntry = writeLauncherBuild(root, channelDir, build)

@@ -56,6 +56,9 @@ export interface ChannelPlan {
   readonly driverVersion: string
   /** OT-17: sha256 over the driver package's files, re-derived by the gate from the repository. */
   readonly driverDigest: string
+  /** AC-8 / OC-13: the pinned project certificate (absolute path) and the sha256 of its bytes. */
+  readonly caFile: string
+  readonly caSha256: string
   /** Mint only: the built N30 depositor. */
   readonly depositor: string | null
   readonly tool: { readonly path: string; readonly sha256: string }
@@ -82,6 +85,8 @@ export function parsePlan(text: string): ChannelPlan {
     typeof p.targetPort === 'number' &&
     str('targetDatabase') &&
     hex(p.driverDigest, 64) &&
+    str('caFile') &&
+    hex(p.caSha256, 64) &&
     str('driverRoot') &&
     str('driverVersion') &&
     typeof tool?.path === 'string' &&
@@ -104,6 +109,8 @@ export function toolArgs(plan: ChannelPlan): string[] {
     `--target-host=${plan.targetHost}`,
     `--target-port=${plan.targetPort}`,
     `--target-database=${plan.targetDatabase}`,
+    `--ca-file=${plan.caFile}`,
+    `--ca-sha256=${plan.caSha256}`,
   ]
   if (plan.mode === 'probe') return [plan.tool.path, ...common]
   return [plan.tool.path, ...common, `--depositor=${plan.depositor!}`, `--valid-until=${plan.validUntil!}`, `--operator-principal=${plan.operatorPrincipal!}`]
@@ -142,6 +149,14 @@ export async function runLauncher(argv: readonly string[], io: LauncherIo): Prom
     throw new OperatorChannelError('CHANNEL_TOOL_MISSING', 'The planned tool file cannot be read.')
   }
   if (sha256Hex(toolBytes) !== plan.tool.sha256) throw new OperatorChannelError('CHANNEL_TOOL_HASH_MISMATCH', 'The tool file is not the pinned one (sha256 differs). Nothing was asked.')
+  // OC-13: the one trust anchor the tool will use is the pinned project certificate, checked before anything is asked.
+  let caBytes: Buffer
+  try {
+    caBytes = io.readFile(plan.caFile)
+  } catch {
+    throw new OperatorChannelError('CHANNEL_CA_MISSING', 'The pinned CA file cannot be read. Nothing was asked.')
+  }
+  if (sha256Hex(caBytes) !== plan.caSha256) throw new OperatorChannelError('CHANNEL_CA_MISMATCH', 'The CA file is not the pinned project certificate (sha256 differs). Nothing was asked.')
   // OC-1: without a console of its own, the tool would be given a fresh conhost that inherits its environment block.
   if (!(await io.isAttachedToConsole())) {
     throw new OperatorChannelError('CHANNEL_NO_CONSOLE', 'The launcher is not attached to a console. Run it from the owner console.')
