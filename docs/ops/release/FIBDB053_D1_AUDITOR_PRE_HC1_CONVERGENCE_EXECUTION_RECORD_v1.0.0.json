@@ -1,0 +1,300 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PRE_HC1_CONVERGENCE_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "PRE_HC1_CONVERGENCE_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_HOSTED_MUTATION__NO_HC1_ANSWER",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-PRE-HC1-CONVERGENCE-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner and not the custodian.",
+  "LANE_BASE": {
+    "head": "c62fdc6b6fe975ef3328513d28afef88bacffa9e",
+    "tree": "595c838a34cd397ad6118a4a6db1062f041d0123"
+  },
+  "MEASURED_AT": {
+    "rule": "Every state below was produced by `pnpm custody:pre-hc1` (scripts/custody/d1-pre-hc1.ts) run at the clean commit named here, which carries the evaluator. This record is committed on top of it; N01 is a freshness gate and MUST be re-run at whatever base the next lane acts from.",
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "head": "346370d003e6ba0f4c6380f066ee766b648c34af",
+    "tree": "e88b91cc3c63cb056480e9641f5230017f4ddc6f",
+    "clean_including_untracked": true,
+    "origin_integration_commercial_v1": "537487ac7b102d51f553fcb8f5cfe19614e113d8"
+  },
+  "N06_REDERIVATION": {
+    "status": "SATISFIED",
+    "method": "evaluateN06InRepo, re-run inside deriveUpstreamStates; 8 fields, 7 pre-mint present, mint_date deferred to N12, HARD predecessors N03 N05 N09 N31 N32 all satisfied. No new certification of N06 is made here."
+  },
+  "N01": {
+    "contract": "Re-derive branch, HEAD, tree, clean-including-untracked; re-derive origin/integration/commercial-v1; re-derive the six CANDIDATE_BINDING blobs at the lane's own base. Exit: the four machine facts match the frozen base and the six blobs match the ratification record.",
+    "frozen_integration_base_source": "capability authority AS_OF_INTEGRATION_REF (the base the capability package was frozen on)",
+    "evidence_source": "git rev-parse / git status --porcelain --untracked-files=all / git ls-remote origin refs/heads/integration/commercial-v1 / git rev-parse HEAD:<path> — the repository's own remote, read-only; no provider or database read.",
+    "result": {
+      "status": "PASS",
+      "tokens": [],
+      "measuredAt": {
+        "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+        "head": "346370d003e6ba0f4c6380f066ee766b648c34af",
+        "tree": "e88b91cc3c63cb056480e9641f5230017f4ddc6f"
+      },
+      "integration": {
+        "frozen": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+        "measured": "537487ac7b102d51f553fcb8f5cfe19614e113d8"
+      },
+      "bindings": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+          "blob_sha": "eb77f0954495625d110be3791053a6850ba2b590",
+          "measured": "eb77f0954495625d110be3791053a6850ba2b590",
+          "match": true
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json",
+          "blob_sha": "2790f3530ce44fd77e12ecdf49430d93ec7a4a70",
+          "measured": "2790f3530ce44fd77e12ecdf49430d93ec7a4a70",
+          "match": true
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "blob_sha": "b233bd1f947fd6c49e0416279a2f98a260a6d5de",
+          "measured": "b233bd1f947fd6c49e0416279a2f98a260a6d5de",
+          "match": true
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+          "blob_sha": "f4a9956012c471044a6044efd9f3a79bedc77cee",
+          "measured": "f4a9956012c471044a6044efd9f3a79bedc77cee",
+          "match": true
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "blob_sha": "f7387d720eb8e6ec439ae968ff11661aa1c53e47",
+          "measured": "f7387d720eb8e6ec439ae968ff11661aa1c53e47",
+          "match": true
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+          "blob_sha": "1433789381483733502d503a8f55c23a05185bb4",
+          "measured": "1433789381483733502d503a8f55c23a05185bb4",
+          "match": true
+        }
+      ]
+    },
+    "status": "PASS at 346370d003e6ba0f4c6380f066ee766b648c34af"
+  },
+  "N02": {
+    "contract": "Resolved by a certified mechanism (DAG v1.0.1 N02_RESOLUTION): docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1.json at blob e639396719e6d2701f7894a50bc51056741bfa92, conditional on N01 at the execution base.",
+    "rederivation": "N01 measured at the same base; mechanism blob and parent ratification record blob re-verified by git.",
+    "status": "SATISFIED",
+    "reasons": []
+  },
+  "N03": {
+    "status": "SATISFIED",
+    "reasons": []
+  },
+  "N04": {
+    "contract": "Arm A, pre-connection: the declared ref against KNOWN_STAGING_PROJECT_REF, the connection mechanism classified direct-db, the session pooler refused; exit: ref selected by ref and never by name, host, declared ref and declared environment agree. The in-database sentinel is arm B (N13), which needs a session and is NOT attempted.",
+    "target_identity": {
+      "project_ref": "bvyzblhqymxruxdguaee",
+      "connection_mechanism": "direct-db",
+      "role": "uellix_auditor",
+      "environment": "staging",
+      "selection": "BY REF, never by name (the production-vetoed project carries the name uellix-staging)"
+    },
+    "evidence": "Ref declared identically by the DAG TARGET_IDENTITY and the custody inventory; equal to KNOWN_STAGING_PROJECT_REF in db/hosted/target-identity.ts; the DAG's authorized direct host passed through the repository's own deriveConnectionIdentity (mechanism direct-db, same ref); productionDenylistStatus loaded and the DAG-vetoed production ref present in the code veto; role equal to AUDITOR_DATABASE_ROLE. The host string itself is not recorded (MUST_NEVER_CONTAIN).",
+    "status": "SATISFIED",
+    "reasons": []
+  },
+  "N07": {
+    "contract": {
+      "purpose": "Evidence package and rollback readiness, derived prerequisite of MR-2 (EVIDENCE_MATERIALIZATION, MUTATION_ROLLBACK_CONTRACT.rule).",
+      "act": "Derive the evidence filename from the docs/ops/staging/evidence/ precedent at the execution lane's base; the skeleton with every REQUIRED_CONTENTS field as an explicit hole; the exact rollback statements pre-written and reviewed.",
+      "exit_condition": "Every REQUIRED_CONTENTS field is present as a field; every rollback statement is exact and pre-reviewed.",
+      "hard_predecessors": [
+        "N03"
+      ],
+      "requires_credential_or_db": false
+    },
+    "EVIDENCE_PACKAGE": {
+      "skeleton": {
+        "schema": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.1.json @ 1c3995be16c3d276a438dfd18e509bd1a076f23f",
+        "template": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.1.json @ 154c86e833d3cde8b7460a6bc6571b8098ca38b5",
+        "certified_by": "CERT-OCC-N07 and the consolidated-closure IC (successor pins)",
+        "template_status": "UNPOPULATED_TEMPLATE",
+        "independent_schema_check": "jsonschema 4.26 Draft7Validator: template VALID; removing the MR-1 statement or declaring MR-2 reversible makes it INVALID."
+      },
+      "REQUIRED_CONTENTS": "All 15 items, each present as an explicit NOT_EXECUTED/UNKNOWN hole in the template and constrained by the schema (additionalProperties:false at every level).",
+      "destination": {
+        "namespace": "docs/ops/staging/evidence/",
+        "naming_rule_derived_at_this_base": "<UTC date of the attempt, YYYY-MM-DD>-<attempt identifier>-<subject>.json",
+        "precedent_entries_matching_the_rule": 30,
+        "components_that_are_execution_time_data": [
+          {
+            "component": "UTC date of the attempt",
+            "type": "YYYY-MM-DD",
+            "producer": "the execution lane at MR-2 (N11)",
+            "future_source": "the UTC date on which N11 runs"
+          },
+          {
+            "component": "attempt identifier",
+            "type": "lowercase token, attempt-scoped",
+            "producer": "the execution lane when it opens the provisioning attempt",
+            "future_source": "that attempt's own identifier"
+          },
+          {
+            "component": "subject",
+            "type": "lowercase hyphenated token",
+            "producer": "the execution lane at N25, per FILENAME_NON_FIXATION",
+            "future_source": "the evidence it files"
+          }
+        ],
+        "why_no_instance_file_is_created_now": "The certified N07 authority (FILENAME_NON_FIXATION) places the populated instance at N25, copied from the template, and the evidence directory's README admits only consumed measurements of acts that happened. An empty instance created now would breach both, so none is created and no component is invented.",
+        "OPEN_ADJUDICATION_FOR_THE_PRE_HC1_IC": "Whether deriving the naming RULE at this base, with its three components as execution-time data, discharges N07's 'derive the evidence artifact filename' clause, as MR2-PRE-7 ('the evidence artifact skeleton exists') and the certified FILENAME_NON_FIXATION suggest — or whether the concrete name must exist before HC-1."
+      },
+      "never_contains": "No password, no DSN, no userinfo, no credential value, no host string, no token fingerprint."
+    },
+    "ROLLBACK_PACKAGE": {
+      "PRIMARY_ACT": {
+        "id": "MR-2 (N11)",
+        "act": "Set a freshly generated credential for uellix_auditor on bvyzblhqymxruxdguaee with VALID UNTIL 2026-09-25T14:00:00.000Z. Management plane preferred; SQL only with the set_config bound-parameter pattern.",
+        "rollback": "NONE — the prior credential was never known and its hash is not reversible."
+      },
+      "COMPENSATING_ACT": {
+        "statement": "ROTATE AGAIN",
+        "when": "A failed or compromised MR-2: a fresh credential under the same policy, with a FRESH HC-1."
+      },
+      "EMERGENCY_DISABLE_ACT": {
+        "statement": "ALTER ROLE uellix_auditor PASSWORD NULL",
+        "effect": "Withdraws the capability: a LOGIN role that cannot authenticate, the repository's designed resting state.",
+        "source": "MR2_CONTRACT.COMPENSATING_ACTION"
+      },
+      "OTHER_PRE_WRITTEN_ROLLBACKS": {
+        "MR-1": {
+          "statement": "ALTER ROLE uellix_auditor NOLOGIN",
+          "scope": "MR-1's rollback only; MR-1 is DECLARED_UNREACHABLE and this is NOT the MR-2 compensation."
+        },
+        "MR-3": {
+          "statement": "REVOKE USAGE ON SCHEMA uellix_stella_ops FROM uellix_auditor",
+          "condition": "Only if KP-5 measured the prestate false; never against a measured true prestate."
+        }
+      },
+      "REMOVAL_AND_ROTATION_ACT": {
+        "N24": "Remove the delivered value and verify absence positively, recorded as a boolean.",
+        "N28": "After the FINAL WITNESS is recorded: mandatory rotation, removal with positive absence verification, and custody closure in the inventory.",
+        "WCM": "The real entry is removed only by the governed removal/rotation acts via removeCredential on its exact target; sweepCredentials refuses anything outside the sentinel namespace.",
+        "deadline": "As soon as governed work completes and never later than min(planned removal 2026-09-24T18:00:00Z, expiry 2026-09-25T14:00:00.000Z)."
+      },
+      "EXECUTABILITY_CHECKED_WITHOUT_A_CONNECTION": [
+        "target ref exact and derived (N04)",
+        "role exact (N04, AUDITOR_DATABASE_ROLE)",
+        "mechanism direct-db, pooler refused (N04)",
+        "evidence destination exists with 30 dated precedents (N07)",
+        "ordering from the graph: N10 -> N11 -> {N12, N13, N30}; N30 -> N23 -> N24 -> N25; removal instant within [W, E]"
+      ],
+      "nothing_executed": true
+    },
+    "status": "SATISFIED",
+    "reasons": []
+  },
+  "N10": {
+    "hard_predecessors_from_graph": [
+      "N02",
+      "N03",
+      "N04",
+      "N05",
+      "N06",
+      "N07",
+      "N09"
+    ],
+    "states": {
+      "N05": "SATISFIED",
+      "N06": "SATISFIED",
+      "N09": "SATISFIED",
+      "N02": "SATISFIED",
+      "N03": "SATISFIED",
+      "N04": "SATISFIED",
+      "N07": "SATISFIED"
+    },
+    "readiness": "READY_FOR_HUMAN_CONFIRMATION",
+    "it_is_not_satisfied": "N10 is SATISFIED only by the owner's affirmative HC-1 answer, after all six statements, for THIS act. No answer is supplied or simulated here."
+  },
+  "HC1_PACKAGE": [
+    {
+      "id": "HC1-S1",
+      "verbatim": "the exact project REF, and that the ref rather than the name is what selects the target",
+      "value": "bvyzblhqymxruxdguaee, selected by ref; the production-vetoed project is named uellix-staging, so selection by name would pick production",
+      "evidence": "N04 SATISFIED",
+      "machine_verifiable": true,
+      "human_statement_required": "Confirm this exact ref is the target."
+    },
+    {
+      "id": "HC1-S2",
+      "verbatim": "the exact role",
+      "value": "uellix_auditor",
+      "evidence": "N04 role check against AUDITOR_DATABASE_ROLE and the custody inventory",
+      "machine_verifiable": true,
+      "human_statement_required": "Confirm the role."
+    },
+    {
+      "id": "HC1-S3",
+      "verbatim": "that the act REPLACES any existing credential and will break any unrecorded consumer",
+      "value": "Any existing uellix_auditor credential is replaced; an unrecorded consumer of it will stop authenticating (HU-4, ACCEPTED under OD-2)",
+      "evidence": "OD-2 ratification; MR2_CONTRACT",
+      "machine_verifiable": false,
+      "human_statement_required": "Acknowledge the replacement and the possible breakage."
+    },
+    {
+      "id": "HC1-S4",
+      "verbatim": "whether an expiry is being set, and its value (OD-3)",
+      "value": "YES — VALID UNTIL 2026-09-25T14:00:00.000Z (planned FINAL WITNESS 2026-09-24T14:00:00Z + 24 h)",
+      "evidence": "N09 machine-derived; inventory expiry_exact_utc",
+      "machine_verifiable": true,
+      "human_statement_required": "Confirm the expiry value as stated."
+    },
+    {
+      "id": "HC1-S5",
+      "verbatim": "where the credential will be stored and how it will be delivered (OD-2)",
+      "value": "Stored in Windows Credential Manager (DPAPI, CRED_TYPE_GENERIC) under the custodian Lorenzo Zanello; deposited through stdin by N30; delivered process-scoped into one consuming process per delivery (PRECHECK-R2, FINAL WITNESS) by the certified N05 mechanism, from a launcher attached to a console",
+      "evidence": "N05 SATISFIED (R2 recertification, EXEC_NOTE_2); N06 inventory",
+      "machine_verifiable": true,
+      "human_statement_required": "Confirm custody and delivery."
+    },
+    {
+      "id": "HC1-S6",
+      "verbatim": "when it will be removed",
+      "value": "Planned removal 2026-09-24T18:00:00Z, and in any case as soon as governed work completes and no later than the expiry 2026-09-25T14:00:00.000Z; N24 removal with positive absence verification, N28 rotation after the FINAL WITNESS",
+      "evidence": "N31, N06",
+      "machine_verifiable": true,
+      "human_statement_required": "Confirm the removal plan."
+    }
+  ],
+  "HUMAN_CONFIRMATION_REQUIRED": "HC-1: after the six statements are stated to the owner, an affirmative, unambiguous answer for THIS act (MR-2 on bvyzblhqymxruxdguaee / uellix_auditor with VALID UNTIL 2026-09-25T14:00:00.000Z). Silence is not consent; the confirmation is not transferable. Not asked in this lane; asked only after ONE independent PRE-HC1 certification of this package passes.",
+  "NEXT_CREDENTIAL_SENSITIVE_ACT": {
+    "node": "N11, MR-2 CREDENTIAL MINT AND ROTATION (the only successor of N10 in the graph)",
+    "target": "bvyzblhqymxruxdguaee / role uellix_auditor",
+    "act": "Set a freshly generated credential (>= 32 bytes CSPRNG, base64url, distinct from every other credential), generated by the operator or the management plane and never by a repository script, with VALID UNTIL 2026-09-25T14:00:00.000Z.",
+    "reversibility": "IRREVERSIBLE as to the prior secret; CONVERGENT as to the end state.",
+    "compensation": "ROTATE AGAIN, or ALTER ROLE uellix_auditor PASSWORD NULL to withdraw.",
+    "expiry": "2026-09-25T14:00:00.000Z",
+    "planned_removal": "2026-09-24T18:00:00Z",
+    "custody_path": "N11 mint -> N30 deposit into WCM (stdin, never argv) -> N23 process-scoped delivery -> N24 removal -> N28 rotation and custody closure; N12 records the mint date in the inventory.",
+    "expected_evidence": "A session as uellix_auditor in which the server reports current_user = session_user = 'uellix_auditor' (the session IS the verification; no hash read, value never echoed); the N12 inventory update; the N07 evidence instance filled at N25.",
+    "failure_token": "STOP_CREDENTIAL_MUTATION_FAILED"
+  },
+  "FINAL_WITNESS_SCHEDULE_FEASIBILITY": {
+    "preserved": {
+      "N08_W": "2026-09-24T14:00:00Z",
+      "N31_R": "2026-09-24T18:00:00Z",
+      "N09_E": "2026-09-25T14:00:00.000Z"
+    },
+    "evaluated_at_utc": "2026-09-23T14:30Z (approximate, at record time)",
+    "remaining_before_W": "PRE-HC1 IC -> HC-1 -> N11 -> N13..N22 (P1 reads, conditional MR-3, P3 poststate) -> N30 -> N23 -> PRECHECK-R2 (N27 lane) -> FINAL WITNESS at W. About 23.5 hours.",
+    "verdict": "FEASIBLE, WITH A NARROW MARGIN. No act has a fixed duration in any authority, so this is a logical check, not a promise.",
+    "if_W_slips_before_the_mint": "No credential exists yet, so a new W only needs fresh owner N08/N31 data and a new mechanical N09; nothing is re-rotated.",
+    "if_W_slips_after_the_mint": "THE_SLIP_RULE: RE-ROTATE under the same policy with a fresh N08, N09 and HC-1; never extend VALID UNTIL.",
+    "time_authorizes_nothing": "The schedule defines the window. It is never a reason to mint."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "final_state": "D1_PRE_HC1_CONVERGED__N07_SATISFIED__N01_N02_N04_FRESH__N10_READY_FOR_HUMAN_CONFIRMATION",
+  "next_gate": "ONE independent PRE-HC1 certification of the complete non-secret package. Only after it passes: the owner's explicit HC-1, immediately before N11."
+}

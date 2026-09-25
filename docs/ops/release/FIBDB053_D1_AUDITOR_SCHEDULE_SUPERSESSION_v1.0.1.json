@@ -1,0 +1,64 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.1",
+  "artifact_id": "FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.1",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "D1_SCHEDULE_SUPERSESSION__APPEND_ONLY__OWNER_N08_N31__MACHINE_N09__NO_CREDENTIAL__NO_CONNECTION",
+  "append_only": true,
+  "supersedes": "docs/ops/release/FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.0.json",
+  "supersedes_note": "Supersedes ONLY the schedule (N08, N31, N09, W_R_E_RELATION) carried by v1.0.0, which is append-only and is not edited. Read by scripts/custody/d1-effective-schedule.ts deriveEffectiveSchedule(), which re-checks every link of the chain N06 closure record -> v1.0.0 -> v1.0.1.",
+  "mission_id": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not the custodian, not a certifier.",
+  "OWNER_INPUTS_SIGNED": {
+    "N08_PLANNED_FINAL_WITNESS": "2026-09-28T14:00:00Z",
+    "N31_PLANNED_REMOVAL_INSTANT": "2026-09-28T18:00:00Z",
+    "SIGNED": "YES",
+    "received_in": "Owner mandate CONTINUATION — CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1 ('SCHEDULE_SUPERSESSION_AUTHORIZED = YES / N08 = 2026-09-28T14:00:00Z / N31 = 2026-09-28T18:00:00Z / N09 debe derivarse mecánicamente del algoritmo gobernado. No copies ni reutilices el N09 anterior. / SIGNED = YES'), 2026-09-24; restated unchanged in the owner's OEP1_PROBE = C ratification ('SCHEDULE remains').",
+    "rule": "Exact UTC instants, bound verbatim. Not rounded, localized or reinterpreted."
+  },
+  "N08": {
+    "value": "2026-09-28T14:00:00Z",
+    "provenance": "HUMAN_SUPPLIED_EXECUTION_DATUM",
+    "status": "SATISFIED — for planned-witness scheduling only.",
+    "NOT_A_WITNESS_RECORD": "This datum schedules the FINAL WITNESS. It does not state, imply or evidence that the witness has occurred."
+  },
+  "N31": {
+    "value": "2026-09-28T18:00:00Z",
+    "provenance": "HUMAN_SUPPLIED_EXECUTION_DATUM",
+    "exit_condition_check": "Supplied by the owner; exact UTC; not earlier than N08; not later than N09.",
+    "status": "SATISFIED"
+  },
+  "N09": {
+    "derivation": "computeValidUntilUtc(N08) in scripts/custody/d1-n09-valid-until.ts, EXECUTED at 2026-09-24T11:34:22.786Z (not hand-computed, not copied): strict UTC input with an explicit Z, +86400000 ms, UTC output.",
+    "input": "2026-09-28T14:00:00Z",
+    "expiry_exact_utc": "2026-09-29T14:00:00.000Z",
+    "interval_ms": 86400000,
+    "provenance": "MACHINE_DERIVED_FROM_N08",
+    "historical_n09_reused": false,
+    "status": "SATISFIED — one exact UTC instant."
+  },
+  "W_R_E_RELATION": {
+    "W": "2026-09-28T14:00:00Z",
+    "R": "2026-09-28T18:00:00Z",
+    "E": "2026-09-29T14:00:00.000Z",
+    "W_le_R_le_E": true,
+    "checker": "checkPlannedRemoval (validates, never rewrites): ok = true, problems = []",
+    "problems": [],
+    "operational_rule": "Remove the credential as soon as the governed work completes, and never later than the earlier of R and E."
+  },
+  "ORDERING": {
+    "rule": "SCHEDULE_BEFORE_CERTIFICATION, inherited unchanged from v1.0.0. This link is written inside the successor candidate BEFORE its independent recertification, so the candidate that is certified already carries the schedule that will be executed.",
+    "a_later_schedule_change": "Makes HEAD differ from the certified candidate by more than the event: N10 NOT_READY by PMR-9 until a new candidate is certified."
+  },
+  "WHY_A_NEW_LINK": "The successor candidate (operator channel, DAG v1.0.7) needs a channel recertification, then an OEP-1 probe and a focused recertification of its evidence before HC-1. The owner supplied a later schedule for that sequence.",
+  "INVENTORY_BINDING": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json expiry_exact_utc and planned_removal_date are set to this link's E and R under update_record_schedule_supersession_v1_0_1; N06 re-derives both against this effective schedule.",
+  "SCHEDULE_SAFETY": {
+    "evaluated_at_utc": "2026-09-24T11:34:22.786Z",
+    "planned_final_witness_is_in_the_future": true,
+    "it_authorizes_nothing": "A future N08 instant defines the schedule and the validity window. It does not authorize any credential-sensitive act, and wall-clock time is never a reason to mint."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": 0
+}

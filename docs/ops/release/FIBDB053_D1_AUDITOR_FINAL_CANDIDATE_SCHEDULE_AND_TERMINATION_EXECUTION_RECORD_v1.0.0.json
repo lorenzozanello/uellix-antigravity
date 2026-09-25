@@ -1,0 +1,219 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_FINAL_CANDIDATE_SCHEDULE_AND_TERMINATION_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "FINAL_CANDIDATE_SCHEDULE_AND_TERMINATION_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_PROVIDER_MUTATION__NO_HC1__NO_CERTIFICATION_EVENT",
+  "append_only": true,
+  "mission_id": "CV1-D1-FINAL-CANDIDATE-SCHEDULE-AND-TERMINATION-CLOSURE-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not the custodian, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "head": "13a9456ac6235616f1da62af4a0ffeefb3fc6f0e",
+    "tree": "1b3517e74bd0395e0fc04d9746feb455708d5c5f",
+    "prestate_gate": "PASS, declared, 2026-09-23T23:19:01Z"
+  },
+  "INDEPENDENT_RECERT_CONSUMED": "D1_CERT_EVENT_TERMINATION_FINAL_RECERT_FAIL on 13a9456a: with candidate + ONLY the event, the termination test itself went red (it excluded itself from its own nested suite and assumed HEAD was the candidate), and CI #429 failed because the nested suite's success was read from ANSI-coloured console text. Non-blocking: rescheduling N08/N31 after the event reopens the candidate; d1-n06-closure pinned historical W/R literals; lexical role guard evadable (unqualified/quoted pg_roles, information_schema).",
+  "SCHEDULE": {
+    "status": "SCHEDULE_BEFORE_CERTIFICATION: PASS",
+    "owner_inputs": {
+      "N08": "2026-09-25T14:00:00Z",
+      "N31": "2026-09-25T18:00:00Z",
+      "provenance": "HUMAN_SUPPLIED_EXECUTION_DATUM, the lane mandate's explicit fresh owner values"
+    },
+    "derived_N09": "2026-09-26T14:00:00.000Z (computeValidUntilUtc executed; historical N09 not reused)",
+    "record": "docs/ops/release/FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.0.json (append-only; supersedes ONLY the schedule of the N06 closure record, which is not edited)",
+    "resolver": "scripts/custody/d1-effective-schedule.ts deriveEffectiveSchedule(): the base plus every SCHEDULE_SUPERSESSION link in version order; each link must be append-only, owner-signed, carry N08/N31 verbatim, N09 == computeValidUntilUtc(N08), N31 in [N08, N09], and supersede exactly the link before it; any break is an error.",
+    "pre_hc1": "deriveUpstreamStates() reads the EFFECTIVE schedule (no fixed-path N08 read remains): schedule errors, an inventory expiry that is not N09(effective N08), or an inventory removal that is not the effective N31 make N06/N09 NOT_SATISFIED.",
+    "inventory": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json: expiry_exact_utc, planned_removal_date and the W/R/E relation values updated from the effective schedule, with update_record_schedule_supersession; provenance narratives kept as history.",
+    "ordering_superseded": "The earlier next_gate texts (IC_BLOCKERS and CERT_EVENT_TERMINATION records) put 'fresh schedule' AFTER certification, a sequence that cannot terminate; the supersession record's ORDERING supersedes them. No schedule write is required or permitted between the certification event and N11."
+  },
+  "W_R_LITERAL_COUPLING": "REMOVED: tests/custody/d1-n06-closure.test.ts binds the effective link's owner-signed values verbatim and the W<=R<=E relation; its mutation controls are offsets from the effective W/R/E. tests/custody/d1-mint-route-b-contract.test.ts takes the harness VALID UNTIL from the effective N09. No 2026-09-24/25 literal remains in tests/custody. Pressure: a valid schedule change in a temporary root re-derives (effective values move, N06 SATISFIED, PRE-HC1 N06/N09 SATISFIED); the same root with the inventory left on the old schedule is NOT_SATISFIED.",
+  "TERMINATION": {
+    "self_included": "YES: the nested run executes EVERY tests/custody/*.test.ts, d1-cert-event-termination.test.ts included. Recursion is bounded by UELLIX_D1_TERMINATION_NESTED=1: in that mode the file runs A, B (minus the further nested run) and C. The marker is honoured only when the test runs inside a d1-termination-* copy (asserted), so it cannot disable the check in the repository or in CI.",
+    "candidate_derivation": "tests/custody/support/d1-termination-repo.ts deriveSourceCandidate(): a content-neutral merge (GitHub refs/pull/N/merge, tree == a parent) is peeled to the parent it copies; then, if that head's whole diff from its parent is exactly the event file derived from the parent, the candidate is the parent (CANDIDATE_PLUS_EVENT), else the head (CANDIDATE). Unit-tested on real repos: author branch, certifier successor, GitHub merge of each, content-changing merge (not peeled), event + edit, event for another commit.",
+    "wrong_candidate_cases": "An event for a SIBLING of the candidate (commit-tree: same tree, same parent, different commit) and for the candidate's parent, asserted distinct from the candidate; plus wrong path, wrong tree, FAIL, blocking>0, self-certification, other digest: each NOT_READY with exactly [PMR-9].",
+    "schedule_event_ordering": "B: schedule (in the candidate) -> candidate -> event: effective schedule identical at candidate and successor, N10 READY_FOR_HUMAN_CONFIRMATION. C: candidate -> event -> a VALID schedule change: the schedule re-derives, N10 NOT_READY with exactly [PMR-9]."
+  },
+  "CI_OUTPUT_ENVIRONMENT_INDEPENDENT": {
+    "status": "YES",
+    "change": "The nested suite is judged by exit code + vitest --reporter=json --outputFile (success, numFailedTests, every file 'passed', this file present with > 10 passing assertions). NO_COLOR=1 / FORCE_COLOR=0 are set for the nested run as well, but nothing reads console text.",
+    "ci_429_reproduced": "The old check /Test Files {2}\\d+ passed/ on the exact CI #429 coloured string '\\x1b[2m Test Files \\x1b[22m \\x1b[1m\\x1b[32m24 passed...' -> no match; on the uncoloured string -> match. That is why it passed locally and failed in CI.",
+    "ci_like_local_run": "CI=true GITHUB_ACTIONS=true FORCE_COLOR=1 npx vitest run tests/custody -> green (see VALIDATION)."
+  },
+  "ROLE_ENUMERATION_GUARD": {
+    "status": "COMPLETE",
+    "invariant": "Only the explicitly authorized keyed role observations may touch the role surface: AUTHORIZED_ROLE_OBSERVATIONS = IDENTITY, ROLE_ATTRIBUTES, MEMBERSHIPS, REACH, OWNERSHIP, DATDBA, DEFAULT_ACL, each pinned by the sha256 of its exact SQL. Any other statement touching role catalogs in any spelling (qualified or not, quoted or not), information_schema, rolname, regrole, role functions, ACLs or owner columns is a finding; so is any byte change to a pinned observation. Pattern matching and uellix_cap_ remain banned everywhere; role-catalog reads still need a keyed WHERE. Wired into PMR-10 through measureImplementation.",
+    "x10_pressure": "unqualified pg_roles, quoted \"pg_catalog\".\"pg_roles\", information_schema.applicable_roles / enabled_roles / role_table_grants, owners via pg_get_userbyid, OWNERSHIP widened with OR true, DATDBA re-keyed: each a finding.",
+    "placement": "Evaluator only (scripts/custody/d1-pre-hc1-post-mint.ts); no SQL changed; delivery closures byte-identical."
+  },
+  "PRIOR_CLOSURES_PRESERVED": [
+    "B-1",
+    "B-2",
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "COMMIT_OUTCOME_UNKNOWN semantics",
+    "WCM custody (PM-0U/PM-0K)",
+    "closed-world amendment lineage",
+    "PV-28 TRUNCATE",
+    "fake harness .invalid host"
+  ],
+  "CERTIFIER_PROVENANCE_CLASS": "PROCESS_GOVERNED (unchanged: certifier_is_not_the_author is self-declared; no signing infrastructure)",
+  "MUTATION_RESULTS": {
+    "result": "21 of 21 as expected",
+    "mutants": [
+      {
+        "id": "T1_TERMINATION_EXCLUDES_ITSELF",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "T2_CANDIDATE_ASSUMED_TO_BE_HEAD",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "T3_GITHUB_MERGE_NOT_PEELED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 5 passed (7)"
+      },
+      {
+        "id": "T4_STRUCTURED_REPORT_REMOVED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 15 passed (16)"
+      },
+      {
+        "id": "T5_WRONG_CANDIDATE_IS_THE_CANDIDATE",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 14 passed (16)"
+      },
+      {
+        "id": "T6_EVENT_PLUS_EDIT_OR_SCHEDULE_ACCEPTED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  3 failed | 13 passed (16)"
+      },
+      {
+        "id": "S1_HISTORICAL_W_LITERAL_REINTRODUCED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 19 passed (20)"
+      },
+      {
+        "id": "S2_N09_NOT_REDERIVED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 16 passed (17)"
+      },
+      {
+        "id": "S3_PREHC1_READS_THE_FIXED_RECORD",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 15 passed (17)"
+      },
+      {
+        "id": "S4_SUPERSEDES_NOT_CHECKED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 16 passed (17)"
+      },
+      {
+        "id": "S5_OWNER_VALUE_NOT_CHECKED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 16 passed (17)"
+      },
+      {
+        "id": "S6_INVENTORY_REMOVAL_NOT_CHECKED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 16 passed (17)"
+      },
+      {
+        "id": "R1_ROLE_ALLOWLIST_REMOVED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  6 failed | 56 passed (62)"
+      },
+      {
+        "id": "R2_ROLE_PIN_NOT_CHECKED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 60 passed (62)"
+      },
+      {
+        "id": "R3_UNQUALIFIED_PG_ROLES_IN_A_STATEMENT",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  3 failed | 59 passed (62)"
+      },
+      {
+        "id": "P1_PRIOR_CODE_KEYED_COMMIT",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  6 failed | 37 passed (43)"
+      },
+      {
+        "id": "P2_PRIOR_CONTRACT_AMBIGUITY_AS_NOT_COMMITTED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  4 failed | 57 passed (61)"
+      },
+      {
+        "id": "P3_PRIOR_PV28_WITHOUT_TRUNCATE",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  1 failed | 61 passed (62)"
+      },
+      {
+        "id": "P4_PRIOR_LINEAGE_CHECK_REMOVED",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  7 failed | 3 passed (10)"
+      },
+      {
+        "id": "P5_PRIOR_MEMBERSHIPS_LIKE_CAP",
+        "expected": "RED",
+        "result": "RED",
+        "tests": "Tests  2 failed | 60 passed (62)"
+      },
+      {
+        "id": "SELFTEST_HARMLESS_COMMENT",
+        "expected": "GREEN_SURVIVED",
+        "result": "GREEN_SURVIVED",
+        "tests": "Tests  37 passed (37)"
+      }
+    ],
+    "restore": "every target restored byte-identical (sha256 per mutant); tree digest equal before and after"
+  },
+  "VALIDATION": {
+    "custody_suite_ci_like": "CI=true GITHUB_ACTIONS=true FORCE_COLOR=1 npx vitest run tests/custody: 26 files, 586/586 before the merge-peel/derivation additions; re-run on the final tree is reported in the lane's final report (the record cannot contain a run of the tree that contains it)",
+    "termination_regression": "tests/custody/d1-cert-event-termination.test.ts 16/16: A, B (nested COMPLETE custody suite at candidate + synthetic event, this file included in nested mode, judged by exit code + JSON report), C (3 edits, schedule after event, uncommitted edit, 8 wrong events)",
+    "source_candidate_derivation": "tests/custody/d1-source-candidate-derivation.test.ts 7/7 (incl. synthetic GitHub test merges)",
+    "schedule": "tests/custody/d1-effective-schedule.test.ts 17/17; tests/custody/d1-n06-closure.test.ts 20/20",
+    "role_enumeration": "tests/custody/d1-n14-n22-consumers.test.ts (NB-B allowlist + 7 X10-equivalent controls + new-statement control)",
+    "typecheck": "PASS",
+    "lint": "PASS (0 findings on every changed file)",
+    "secrets_scan": "PASS (CURRENT_TREE: no credential material found)",
+    "authority_seal_verify": "PASS",
+    "dag_validate": "PASS (7 sources, 32 nodes, 45 edges 37H/8C, acyclic)"
+  },
+  "N10_AT_AUTHOR_CANDIDATE": "NOT_READY, by PMR-9 only.",
+  "SCHEDULE_STATUS": {
+    "verdict": "FEASIBLE",
+    "basis": "N08 = 2026-09-25T14:00:00Z is in the future at materialization; the schedule is already inside the candidate, so the remaining sequence (final independent recert -> certifier event -> fresh PRE-HC1 -> fresh HC-1 -> N11) needs no schedule write. Feasibility is a statement about ordering, not a promise of timing: if that sequence cannot complete before N08, the schedule must be re-supplied and a NEW candidate certified.",
+    "it_authorizes_nothing": "Wall-clock time is never a reason to mint."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": 0,
+  "final_state": "D1_FINAL_CANDIDATE_SCHEDULED__CERT_EVENT_TERMINATION_COMPLETE__CI_STABLE__READY_FOR_FINAL_INDEPENDENT_RECERT",
+  "next_gate": "ONE final independent recertification of THIS candidate. Only after PASS may the independent certifier write its event. Then: fresh PRE-HC1 -> fresh HC-1 -> immediate N11 confirmation. NO schedule mutation between certification and N11."
+}

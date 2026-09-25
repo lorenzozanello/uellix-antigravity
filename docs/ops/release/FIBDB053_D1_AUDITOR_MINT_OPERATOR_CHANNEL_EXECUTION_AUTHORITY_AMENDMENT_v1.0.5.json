@@ -1,0 +1,97 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.5",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5",
+  "authority_class": "EXECUTION_AUTHORITY_AMENDMENT",
+  "document_class": "MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT__APPEND_ONLY__R5_CI_REMEDIATION__NO_CREDENTIAL__NO_HOSTED_CONNECTION",
+  "append_only": true,
+  "supersedes": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+  "supersedes_note": "Appends to v1.0.4 (which is not edited). Re-derives CHANNEL_BINDING.launcher_build_digest and replaces PRE_NODE_BOUNDARY (inner script sha256 and its PSModulePath / path-portability description). The outer cmd, its sha256 and the authorized command are unchanged.",
+  "REPLACES_SECTIONS": [
+    "CHANNEL_BINDING",
+    "PRE_NODE_BOUNDARY"
+  ],
+  "mission_id": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5 (CI remediation)",
+  "lane": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "AS_OF_BASE_SHA": "999109c2ef53df6ea75bffc4eeb0865c26f8307f",
+  "failed_ci_consumed": "GitHub Actions run 36140437048 on 999109c2 (Lint, typecheck, test, build -> Test): d1-pre-node-boundary.test.ts R4-N-NODE-PIN (1, expected 64), R4-P-BOUNDARY step (3) (1, expected 0), R5-A DOTNET_STARTUP_HOOKS (null, expected 64); d1-cert-event-termination.test.ts reflected those three.",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.5.json",
+  "CERTIFIED_BLOBS_UNCHANGED": "The v3 tools (mint 601f1f96..., probe 86cbda48...), their source templates and the shared trust text, the pinned project certificate and CHANNEL_BINDING.tools/.tls are byte-identical to b4ca05ac: eligible for certification inheritance. The launcher build changed (it now also pins the outer boundary), so its prior PEB evidence is re-run for R5.",
+  "CHANNEL_BINDING": {
+    "launcher_build_digest": "81b6fb72fe3d65c11f501a770aaf1ee49011e39cfab3972058917a0d74dd5040",
+    "launcher_build_rule": "Unchanged rule; re-derived for the R5 CI remediation: the inner boundary text (db/custody/pre-node-boundary.ts, part of the launcher closure) changed, so the launcher closure digest changed. OC-13/OC-15 behaviour is unchanged.",
+    "tools": {
+      "probe": {
+        "file": "d1-oep1-probe-tool-v3.js",
+        "sha256": "86cbda481c72d2f2149468879e194e0031cfe3be2fa1c8cbb8b16c857171224d"
+      },
+      "mint": {
+        "file": "d1-mint-operator-tool-v3.js",
+        "sha256": "601f1f963042467433fe75a034d0466055a145ff06319fdd61d3b67dbd7b1b25"
+      }
+    },
+    "tools_directory": {
+      "base_env": "LOCALAPPDATA",
+      "relative": "uellix-d1-mint-operator-channel/tools"
+    },
+    "tls": {
+      "policy": "VERIFY_FULL_PINNED_CA",
+      "ca_file": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt",
+      "ca_raw_sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+      "ca_der_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa",
+      "ca_spki_sha256": "ba332649230ce9a764e4eaf70368f1a9de9ce64bd38424769e24c3fbf8e57acb"
+    },
+    "versioned_files": "The v3 tools have their own file names; v1 and v2 files are left in place, unchanged, so 979b1440 and fa43b396 stay reproducible.",
+    "invalidation": "TOOL_BINDING unchanged: any other byte of a tool, of the launcher build or of the CA file is another channel."
+  },
+  "PRE_NODE_BOUNDARY": {
+    "why": "The focused recert of b4ca05ac measured that an attacker-controlled PSModulePath can compromise the PowerShell boundary before its security-sensitive cmdlets run, and that a CLR profiler / startup hook injects managed code into the PowerShell process at CLR start. A check inside an already-compromised process is not sufficient (owner R5 A).",
+    "outer_boundary": {
+      "file": "d1-pre-node-outer-boundary.cmd",
+      "script_sha256": "dd79326fa1f7f3bd8cc97096b26f2e4590a184f9f9ae1286bbc9437970374347",
+      "runs_in": "C:\\Windows\\System32\\cmd.exe /d (native, not a CLR process; /d disables AutoRun)",
+      "sanitizes_before_powershell": [
+        "PSModulePath",
+        "COR_ENABLE_PROFILING",
+        "COR_PROFILER",
+        "COR_PROFILER_PATH",
+        "COR_PROFILER_PATH_32",
+        "COR_PROFILER_PATH_64",
+        "CORECLR_ENABLE_PROFILING",
+        "CORECLR_PROFILER",
+        "CORECLR_PROFILER_PATH",
+        "CORECLR_PROFILER_PATH_32",
+        "CORECLR_PROFILER_PATH_64",
+        "DOTNET_STARTUP_HOOKS",
+        "DOTNET_ADDITIONAL_DEPS"
+      ],
+      "launches": "the pinned inner PowerShell script and node by ABSOLUTE paths (SystemRoot for powershell.exe, %~dp0 for the script); never through PATH resolution"
+    },
+    "inner_boundary": {
+      "file": "d1-pre-node-boundary.ps1",
+      "script_sha256": "8f390316a2d5e117ae54c80f9e4713483d60fc4493dfa6b900519fac8e6ea06e",
+      "trust_decisions": "made only with .NET APIs and language primitives (System.Environment, System.IO.File, System.IO.Path, System.Security.Cryptography.SHA256, System.Diagnostics.Process), never an autoloadable cmdlet a poisoned PSModulePath could shadow. After the environment check, PSModulePath is RESTRICTED to $PSHOME/Modules (the modules beside the PowerShell the outer boundary started by absolute path), so the single cmdlet used (module-qualified ConvertFrom-Json, for the plan) can autoload only from there; the launcher path is built with System.IO.Path.Combine (platform separator).",
+      "refuses": "every Node/OpenSSL/loader input (PRE_NODE_HOSTILE_SOURCE) and every CLR profiler / startup-hook input present at entry (PRE_NODE_INJECTION_SOURCE); PSModulePath is not refused on mere presence (PowerShell always populates it) but is sanitized by the outer boundary and neutralized by the .NET-only trust path",
+      "starts_node_with": "no flags, an environment built from the allowlist only, plus the boundary mark (the inner script sha256)",
+      "remediation_note": "v1.0.4 described PSModulePath as cleared to empty. Linux CI (PowerShell 7) measured that an empty module path made the plan read fail, and that a backslash-joined launcher path cannot exist there. The restricted, non-empty path and Path.Combine fix both without widening trust."
+    },
+    "launcher_side": "OC-15 (defence in depth, not the boundary): the launcher refuses to prompt unless it carries the boundary mark, has no execArgv and sees no NODE_* variable.",
+    "measured_by": "tests/custody/d1-pre-node-boundary.test.ts: the module-shadowing attack is armed as a control, executes nothing through the boundary (0 module, 0 trojan), the CLR profiler / startup-hook inputs are refused at entry and cleared by the outer cmd before PowerShell, and the preload attack of R4 still refuses with 0 preload executions.",
+    "cannot_defend": "LD_PRELOAD on cmd.exe itself, or a compromised OS.",
+    "measured_on_this_host": "NODE_USE_SYSTEM_CA is present in this host tool environment; the boundary refuses it. The outer cmd tests run under real cmd.exe + Windows PowerShell on this Windows host; the module-shadowing and profiler-refusal tests also run under pwsh on Linux CI.",
+    "dotnet_startup_hooks_by_runtime": "Measured, not assumed from the OS: Windows PowerShell 5.1 (.NET Framework, the governed inner shell) does not implement DOTNET_STARTUP_HOOKS, so the script runs and refuses it; PowerShell 7 (CoreCLR) resolves the hook in the host before any script line, which no in-process check can see. The governed Windows entry therefore clears it in the OUTER cmd before PowerShell starts. The non-Windows pwsh command is a development fallback, not the authorized channel, and cannot defend a valid startup-hook assembly."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No hosted connection, no hosted OEP-1, no mint, no deposit, no delivery.",
+    "No certification event is written by this lane (the b4ca05ac event is not materialized).",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": "NONE",
+  "DB_CONNECTIONS_EXECUTED": "NONE",
+  "PROVIDER_MUTATIONS_EXECUTED": "NONE",
+  "required_independent_review": "MANDATORY: the final focused independent recertification of the R5 successor.",
+  "final_state": "D1_PREPHASE2_R5_CI_REMEDIATED__READY_FOR_FINAL_FOCUSED_RECERT_WHEN_EXACT_HEAD_CI_IS_GREEN",
+  "next_gate": "Focused independent recertification -> its event -> PHASE 2 OEP-1 probe through the certified channel (through the pre-node boundary) -> evidence (chain head) -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

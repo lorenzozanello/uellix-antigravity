@@ -1,0 +1,37 @@
+{
+  "manifest_id": "FIBDB-053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R5-CI",
+  "node_or_batch": "D-1 operator channel, R5 CI remediation over 999109c2: the inner boundary's portability (module path, launcher path) and a runtime-truthful DOTNET_STARTUP_HOOKS control",
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.4.json",
+  "append_only": true,
+  "frozen_note": "Every control and mutant of v1.0.1..v1.0.4 remains in force; nothing is removed or skipped. This amendment re-expresses one control by the measured runtime of the shell and adds two mutants.",
+  "authority_reference": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json"
+  ],
+  "root_cause": {
+    "A_implementation_defect": "The R5 rewrite of the inner PowerShell script (1) set PSModulePath to empty before its one module-qualified cmdlet (ConvertFrom-Json): under PowerShell 7 on Linux CI the plan read then failed (exit 1 before the node pin); (2) built the launcher path by concatenating a backslash-joined literal, which cannot exist on Linux. R4 used Join-Path and an intact module path and was green on the same runner. Windows PowerShell 5.1 masked both locally.",
+    "B_invalid_cross_platform_expectation": "The DOTNET_STARTUP_HOOKS control expected the inner script to refuse the variable on every runtime. DOTNET_STARTUP_HOOKS is a CoreCLR host feature: PowerShell 7 resolves it before any script line (CI: exit by signal), while Windows PowerShell 5.1 (.NET Framework) ignores it and the script refuses it. The expectation is re-expressed by the MEASURED runtime of the shell, not by OS.",
+    "consequence": "d1-cert-event-termination.test.ts runs the complete custody suite nested and truthfully reported the three failures; it is not changed."
+  },
+  "positive_controls": [
+    { "id": "R5CI-P-PORTABLE", "test": "tests/custody/d1-pre-node-boundary.test.ts", "asserts": "R4-N-NODE-PIN and R4-P-BOUNDARY step (3) run the inner script end to end under PowerShell 7 on Linux CI and under Windows PowerShell 5.1 here; the pinned text restricts PSModulePath to $PSHOME/Modules and builds the launcher path with Path.Combine." }
+  ],
+  "negative_controls": [
+    { "id": "R5CI-N-STARTUP-HOOK", "test": "tests/custody/d1-pre-node-boundary.test.ts", "asserts": "DOTNET_STARTUP_HOOKS never reaches the channel: on .NET Framework the script refuses it (64, names [DOTNET_STARTUP_HOOKS]); on CoreCLR the host stops before the script (non-zero exit, no script output, no node start, the hook named in the error). The runtime is measured and must be measured." }
+  ],
+  "mutation_controls": [
+    { "id": "R5-M-A-PSMODPATH", "description": "The inner script keeps the inherited module path -> the pinned-text control RED." },
+    { "id": "R5-M-A-PORTABLE-PATH", "description": "The launcher path goes back to a backslash-joined literal -> the pinned-text control RED here; step (3) RED on Linux." }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "lint",
+    "secrets_scan",
+    "authority_seal_verify",
+    "custody_dag_validate",
+    "custody_suite_including_termination",
+    "mutation_battery",
+    "ods_scope",
+    "ods_poststate",
+    "exact_head_ci_and_vercel"
+  ]
+}

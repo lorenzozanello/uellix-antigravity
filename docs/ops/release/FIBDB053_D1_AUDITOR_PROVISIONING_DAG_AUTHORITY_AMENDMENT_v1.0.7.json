@@ -1,0 +1,119 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.7",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.7",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ZERO_NODES_ZERO_EDGES__OPERATOR_CHANNEL_CONFLICT_RULINGS__N10_OPERATOR_CHANNEL_AND_OEP1_CONJUNCTS__NO_EXECUTION__NO_SECRET",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "Appends to the lineage v1.0.0 .. v1.0.6. No earlier amendment is edited. The node and edge sets are unchanged; this amendment declares three authority conflicts found at the HC-1 boundary of candidate d0c56661, records their owner rulings, and adds three N10 PRE-HC1 readiness conjuncts.",
+  "mission_id": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "lane": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "role": "Make the operator channel (OT-3), its narrow NON_AUTHORIZATIONS[23] exception, the SSL-06 inventory of the operator credential and the closure of OEP-1 MECHANICAL conditions of N10, so that PRE-HC1 cannot report READY while any of them is open.",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "3cf9d2ffd2aabd056a7c69a3f9c2450edc4cb0c9",
+  "AS_OF_BASE_TREE": "fddab60021618135a4bf662d964c7be209781d93",
+  "AS_OF_WORKTREE_STATE": "clean at the base; this amendment is part of the successor candidate's write set",
+  "PREDECESSOR_CERTIFICATION": {
+    "event": "docs/ops/release/FIBDB053_D1_AUDITOR_PREHC1_PACKAGE_CERTIFICATION_d0c56661e1bf_v1.0.0.json",
+    "candidate": "d0c56661e1bfec3b4c5490f05bc9ab1127a51f91",
+    "verdict": "D1_FINAL_CANDIDATE_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+    "why_a_successor": "At that candidate's HC-1 boundary the effective authority left the N11 execution inputs undecided (below). The certified candidate is not edited; this successor is a new candidate that needs its own certification event."
+  },
+  "NEW_NODES": [],
+  "NEW_EDGES": [],
+  "AUTHORITY_CONFLICTS_OPEN": [
+    {
+      "id": "AC-4",
+      "conflict": "OT-3 (db/custody/mint-route-b-contract.ts) and the post-mint completeness record leave the channel that supplies UELLIX_D1_MINT_OPERATOR_DATABASE_URL to 'the future execution authority', while N11 requires a privileged operator session and route B requires the owner as operator in his own environment. N11 is not executable without a decided channel.",
+      "found_at": "HC-1 boundary of candidate d0c56661, lane CV1-D1-CERT-MATERIALIZATION-TO-N11-R1, 2026-09-24"
+    },
+    {
+      "id": "AC-5",
+      "conflict": "The capability EXECUTION_AUTHORITY's NON_AUTHORIZATIONS[23] does not authorize operator credential use except as the separately confirmed and inventoried alternative of OD-2 (not elected), and then only for the P1 read list; route B's mint requires the operator credential.",
+      "found_at": "same"
+    },
+    {
+      "id": "AC-6",
+      "conflict": "SSL-06 requires every privileged credential to be inventoried with who and what holds it; the operator credential's holders (the parent that asks for it, the tool that uses it) were not in the N06 inventory.",
+      "found_at": "same"
+    }
+  ],
+  "AUTHORITY_CONFLICT_RULINGS": {
+    "AC-4": {
+      "kind": "OWNER_POLICY_DECISION",
+      "outcome": "OPTION_A",
+      "source": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0.json",
+      "effect": "The operator connection string is supplied ONLY through the ephemeral launcher (built from scripts/custody/d1-mint-operator-launcher.ts, run by the owner from his console), asked for without echo, and handed ONLY to the environment block of one pinned tool process.",
+      "implementation_must": [
+        "TOOL_SPAWN_FLAGS are windowsHide:false, detached:false, shell:false",
+        "the prompt refuses a non-TTY and a stream that does not report raw",
+        "piped input is accepted only for an RFC 6761 .invalid target",
+        "the launcher build digest equals CHANNEL_BINDING.launcher_build_digest"
+      ]
+    },
+    "AC-5": {
+      "kind": "OWNER_POLICY_DECISION",
+      "outcome": "AUTHORIZE_NARROW_N11_OPERATOR_CREDENTIAL_EXCEPTION",
+      "source": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0.json",
+      "effect": "The operator credential may be used through the certified channel for exactly two tools: the route-B mint tool (N11/MR-2) and the read-only OEP-1 probe tool of PHASE 2 (OEP1_PROBE = C). No P1 read, no other DB act, no other consumer, no reuse, no persistence.",
+      "implementation_must": [
+        "CHANNEL_BINDING pins exactly two tools, probe and mint, to different bytes",
+        "the probe statements are the three pinned read-only statements and the probe contract forbids every mutation token",
+        "the mint plan cannot be derived without closed OEP-1 evidence"
+      ]
+    },
+    "AC-6": {
+      "kind": "OWNER_POLICY_DECISION",
+      "outcome": "INVENTORY_EPHEMERAL_PARENT_LAUNCHER_AS_CREDENTIAL_BEARING_SURFACE",
+      "source": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0.json",
+      "effect": "The inventory carries an operator_credential section whose surfaces (OPERATOR_CREDENTIAL_LAUNCHER_SURFACE, OPERATOR_CREDENTIAL_TOOL_SURFACE) are checked by N06 against scripts/custody/d1-delivery-matrix.ts deriveOperatorCredentialSurfaces().",
+      "implementation_must": [
+        "deriveOperatorCredentialSurfaces() names the parent launcher surface",
+        "N06 reports NOT_SATISFIED when a derived operator surface is omitted or an undeclared one is listed"
+      ]
+    }
+  },
+  "N10_PRE_HC1_READINESS_CONJUNCTS": [
+    {
+      "id": "PMR-11_OPERATOR_CHANNEL_BOUND",
+      "condition": "The operator-channel execution authority exists; its CHANNEL_BINDING is well formed (launcher build digest and two different tool pins, LOCALAPPDATA-relative tools directory); the launcher rebuilt deterministically from this repository has exactly the pinned digest; and the authority's channel clause ids, closed OEP-1 settings list and pinned probe statements are byte-identical to the implementation's.",
+      "source": "Owner TOOL_BINDING ('fijados por SHA-256 antes de HC-1'); AC-4"
+    },
+    {
+      "id": "PMR-12_OPERATOR_CREDENTIAL_INVENTORIED",
+      "condition": "The inventory's operator_credential section lists exactly the operator surfaces the channel derives, with persistence NONE and a human custodian.",
+      "source": "AC-6; SSL-06"
+    },
+    {
+      "id": "PMR-13_OEP1_LOGGING_POSTURE_CLOSED",
+      "condition": "An append-only OEP-1 evidence record exists, bound to N04's host, the observed operator principal, the pinned probe tool and launcher hashes, a strict-UTC timestamp before N08, exactly the closed settings list, a verdict RECOMPUTED as PASS, and invalidation predicates; and it names a channel certification event that is a terminal PASS for an ancestor candidate whose operator-channel authority carried the same CHANNEL_BINDING.",
+      "source": "Owner OEP1_DECISION (NOT_WAIVED, 'OEP-1 debe cerrarse antes de HC-1') and OEP1_PROBE = C (evidence binding list)"
+    }
+  ],
+  "RECOMPUTED_GRAPH": {
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_TOTAL": 45,
+    "HARD_EDGE_COUNT": 37,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "ACYCLIC": true,
+    "note": "No node and no edge change."
+  },
+  "EXPECTED_PRE_HC1_STATE_OF_THIS_SUCCESSOR": {
+    "before_its_certification_event": "N10 NOT_READY by PMR-9 (not yet certified) and PMR-13 (no OEP-1 evidence: PHASE 2 has not run).",
+    "after_its_certification_event": "N10 NOT_READY by PMR-13 alone. This is intended: the channel certification is the precondition of PHASE 2, not of HC-1.",
+    "after_phase_2": "OEP-1 evidence added -> a new candidate -> focused recertification of that delta -> its event -> N10 READY_FOR_HUMAN_CONFIRMATION only if PMR-13 and every other conjunct hold."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No mint, deposit, delivery, probe or hosted connection.",
+    "No operator credential is requested, typed or used in PHASE 1.",
+    "No certification event is written by this lane.",
+    "HC-1 is not requested and is not granted."
+  ],
+  "required_independent_review": "MANDATORY: ONE independent recertification of the operator-channel successor (PHASE 1), including this amendment, the owner record, the execution authority and its test manifest, the launcher, the outside tools at their pinned hashes, the harnesses and the PEB demonstration.",
+  "final_state": "AC4_OPTION_A__AC5_NARROW_N11_EXCEPTION__AC6_OPERATOR_SURFACES_INVENTORIED__PMR11_PMR12_PMR13_ADDED__ZERO_NODES_CLOSED",
+  "next_gate": "Independent recertification of the channel -> its certification event -> PHASE 2 OEP-1 probe through the certified channel -> OEP-1 evidence -> focused recertification of that delta -> its event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

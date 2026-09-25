@@ -1,0 +1,142 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PREPHASE2_OUTERMOST_BOUNDARY_AND_CHAIN_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "PREPHASE2_OUTERMOST_BOUNDARY_AND_CHAIN_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_HOSTED_CONNECTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-PREPHASE2-OUTERMOST-BOUNDARY-AND-CHAIN-R5",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 4.8, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "base_commit": "9c8a6889d14d2c9d823aefda8d511e8adff0a5a8",
+    "base_tree": "2961dfaccebed7334e2f1bc659766d58e0c11ce2"
+  },
+  "RECERT_CONSUMED": {
+    "candidate": "9c8a6889",
+    "verdict": "PASS_WITH_NONBLOCKING_FINDINGS (focused independent recertification)",
+    "findings_adopted": [
+      "NB_A: PSModulePath can compromise the PowerShell boundary before its security-sensitive cmdlets run; a CLR profiler / startup hook injects at CLR start (ADOPTED)",
+      "NB_C: IP-4 — a syntactically plausible but impossible timestamp could close OEP-1 (ADOPTED)",
+      "NB_F: PMR-16 proved only that a checkServerIdentity function exists, not that it verifies the hostname (ADOPTED)",
+      "NB_E: accepted as nonblocking redundancy",
+      "NB_G: accepted as fail-closed nonblocking"
+    ],
+    "certification_event": "NOT materialized for 9c8a6889 (owner instruction)."
+  },
+  "OWNER_DECISION": "owner R5 (ADOPT_FOCUSED_RECERT_NB_A/C/F = YES; NB_E = ACCEPT_AS_NONBLOCKING_REDUNDANCY; NB_G = ACCEPT_AS_FAIL_CLOSED_NONBLOCKING; SIGNED)",
+  "AUTHORITY_WRITTEN": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json (append-only; supersedes v1.0.3; re-pins launcher build digest; outer cmd command; PRE_NODE_BOUNDARY outer+inner)",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.4.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.11.json (0 nodes / 0 edges; records R5 strengthenings; no id change)"
+  ],
+  "WRITE_SET": {
+    "files": [
+      "db/custody/pre-node-boundary.ts (modified)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.4.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PREPHASE2_OUTERMOST_BOUNDARY_AND_CHAIN_EXECUTION_RECORD_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.11.json (new)",
+      "scripts/custody/d1-dag-validate.ts (modified)",
+      "scripts/custody/d1-mint-operator-channel-demonstration.ts (modified)",
+      "scripts/custody/d1-mint-operator-channel-mutation.ts (modified)",
+      "scripts/custody/d1-mint-operator-evidence.ts (modified)",
+      "scripts/custody/d1-mint-operator-launcher.ts (modified)",
+      "scripts/custody/d1-mint-operator-plan.ts (modified)",
+      "scripts/custody/d1-tls-trust-harness.ts (modified)",
+      "tests/custody/d1-dag-amendment-v1010.test.ts (modified)",
+      "tests/custody/d1-mint-operator-channel.test.ts (modified)",
+      "tests/custody/d1-oep1-evidence-chain.test.ts (modified)",
+      "tests/custody/d1-pre-node-boundary.test.ts (modified)"
+    ],
+    "count": 16
+  },
+  "SCHEDULE_PRESERVED": {
+    "N08": "2026-09-28T14:00:00Z",
+    "N31": "2026-09-28T18:00:00Z",
+    "N09": "2026-09-29T14:00:00.000Z"
+  },
+  "E_CERTIFIED_BLOBS": {
+    "byte_identical_to_b4ca05ac": [
+      {
+        "path": "tests/custody/support/tool-trust-snippet.ts",
+        "blob_at_b4ca05ac": "a2bc63e78684c2237beb1cbf9242fc066f0298a4",
+        "byte_identical": true
+      },
+      {
+        "path": "tests/custody/support/fake-only-mint-tool.ts",
+        "blob_at_b4ca05ac": "b49b09e7100e984d20629694427804baa85420bc",
+        "byte_identical": true
+      },
+      {
+        "path": "tests/custody/support/fake-only-oep1-probe-tool.ts",
+        "blob_at_b4ca05ac": "cf6496127ac7e6225338717e61d2d91d1c3e2c00",
+        "byte_identical": true
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt",
+        "blob_at_b4ca05ac": "3d693669b23c340c57a3457bdc8b6fefe1806cc5",
+        "byte_identical": true
+      }
+    ],
+    "pinned_tools_unchanged": {
+      "mint": "601f1f963042467433fe75a034d0466055a145ff06319fdd61d3b67dbd7b1b25",
+      "probe": "86cbda481c72d2f2149468879e194e0031cfe3be2fa1c8cbb8b16c857171224d"
+    },
+    "eligible_for_certification_inheritance": "The mint tool, the probe tool, the shared CONFORMING trust text and the project certificate are byte-identical to b4ca05ac: the real-TLS evidence is eligible for inheritance. R5 D strengthened only the MEASUREMENT of hostname verification (the harness), not the certified trust text.",
+    "changed_and_therefore_re_measured": "The launcher build changed (its plan now pins the outer boundary too): digest a92b9baa... -> 98e4c119.... Its PEB evidence is re-run for R5. The inner PowerShell boundary was rewritten to .NET-only trust decisions and gained the outer cmd layer."
+  },
+  "A_OUTERMOST_BOUNDARY": {
+    "design": "The pre-node boundary gained an OUTER layer built from trusted OS primitives (db/custody/pre-node-boundary.ts PRE_NODE_OUTER_BOUNDARY_CMD): C:\\Windows\\System32\\cmd.exe /d /c <channel-dir>\\d1-pre-node-outer-boundary.cmd <plan>. cmd.exe is native (not a CLR process), /d disables AutoRun; the .cmd clears PSModulePath and every CLR-profiler / startup-hook input (COR_*, CORECLR_* incl. _32/_64, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS) in a localized scope, then launches Windows PowerShell and the launcher by ABSOLUTE paths (SystemRoot for powershell.exe, %~dp0 for the script), never through PATH resolution.",
+    "inner": "The inner PowerShell script was rewritten to make every trust decision with .NET APIs and language primitives (System.Environment.GetEnvironmentVariables, System.IO.File, System.Security.Cryptography.SHA256, System.Diagnostics.Process), never an autoloadable cmdlet a poisoned PSModulePath could shadow; it reads the environment with a .NET API before anything could autoload, refuses every Node/OpenSSL/loader input and every CLR-profiler / startup-hook input present at entry, and clears PSModulePath. ConvertFrom-Json is module-qualified.",
+    "not_claimed": "A check inside an already-compromised PowerShell process is not sufficient and is not claimed to be; PSModulePath is neutralized by the .NET-only path plus the outer clear, not by refusing its mere presence (PowerShell always populates it).",
+    "measured": "tests/custody/d1-pre-node-boundary.test.ts (27/27 on this Windows host; the cross-platform subset also under pwsh on Linux CI). CONTROL: the malicious PSModulePath module is armed — imported it executes and runs the node trojan. Through the boundary (direct inner AND end-to-end through the outer cmd): 0 malicious module executions, 0 trojan node executions, 0 secret prompts; the channel still runs (probe OBSERVED). The inner refuses COR_PROFILER / CORECLR_PROFILER / DOTNET_STARTUP_HOOKS present at entry. The outer cmd (Windows) clears those inputs and removes the attacker PSModulePath entry before PowerShell. The R4 NODE_OPTIONS preload attack still refuses with 0 preload executions.",
+    "authority": "execution authority amendment v1.0.4 (re-pins launcher build digest a92b9baa... -> 98e4c119..., outer cmd command, PRE_NODE_BOUNDARY outer+inner); gate writes and pins both boundaries and STOPs on a stale/absent outer or inner boundary (STOP_OUTER_BOUNDARY_MISSING / STOP_STALE_OUTER_BOUNDARY_HASH)."
+  },
+  "B_UTC_CANONICALIZATION": {
+    "design": "IP-4 closed with one canonical UTC parser (utcMillis in d1-mint-operator-evidence.ts): regex for the two canonical shapes, Date.UTC, finite check, and an exact re-serialization round-trip. Date.parse is never used. Impossible-but-plausible timestamps normalize to a different instant and are rejected.",
+    "measured": "tests/custody/d1-oep1-evidence-chain.test.ts: month 13, day 00, day 31 of September, Feb 29 of a common year, hour 24, minute 60, leap second :60, missing Z, an offset instead of Z, a one-digit fraction, a non-date and a non-string are all rejected; a leap-year Feb 29 is accepted; a SINGLE-record chain with an impossible timestamp does not close, and a two-record chain cannot order itself by an impossible predecessor time. The chain rule and PMR-14 are unchanged; only the time predicate is stricter."
+  },
+  "C_CASE_STABLE_DISCOVERY": {
+    "design": "Governed OEP-1 evidence identity is the tracked Git path, not the working-tree filename casing (discoverOep1RecordNames). Inside a git work tree, discovery enumerates git ls-files (exact tracked case); reading the tracked name returns the content on any filesystem casing; a case divergence between tracked and on-disk, an untracked governed file, or a tracked file missing from the working tree is an integrity failure. Outside a git work tree the working-tree listing is used and the history check reports it unverifiable.",
+    "measured": "A case-only rename (_v -> _V) is reported as an integrity failure and never silently removes the FAIL from the chain while git is clean (the tracked lower-case name stays in the discovered set); an untracked governed evidence file is refused; a fully tracked, matching working tree raises no reason. Tested on Windows semantics here and cross-platform on CI."
+  },
+  "D_PMR16_HOSTNAME": {
+    "design": "PMR-16 behaviorally proves hostname verification (hostnameVerificationReasons in d1-tls-trust-harness.ts, used by trustTextBehaviourReasons / measureServerAuthentication): the built checkServerIdentity is invoked with a certificate whose names match the host (must accept) and one whose names do not (must reject).",
+    "measured": "tests/custody/d1-dag-amendment-v1010.test.ts: a function that always accepts the peer hostname, one that always rejects, and a missing function each make PMR-16 fail; Node's real checkServerIdentity passes; the CONFORMING trust text passes the behavioral gate on the repository CA. The certified trust text is byte-identical to b4ca05ac (only the measurement was strengthened)."
+  },
+  "F_GATES": {
+    "targeted": "boundary 27/27; OEP-1 chain 40/40; TLS 56/56; channel 68/68; post-mint; v1010 16/16; v109 updated",
+    "custody_suite": "39 files / 1012 tests passed (includes termination and package closure)",
+    "typecheck": "tsc --noEmit clean",
+    "eslint": "changed and new TS files: 0 errors, 0 warnings",
+    "secrets_scan": "CURRENT_TREE: no credential material found",
+    "authority_seal_verify": "PASS (NATIVE_RELATIONSHIPS=PASS)",
+    "dag_validate": "PASS (N28 declared external segment); GRAPH_SOURCES includes v1.0.11",
+    "pre_hc1": "NOT_READY by PMR-9 (this candidate is not certified) and PMR-14 (no hosted OEP-1 evidence) only",
+    "ods_scope": "PASS (base 9c8a6889; allow db/custody/**, scripts/custody/**, tests/custody/**, docs/ops/release/FIBDB053_D1_AUDITOR_*)"
+  },
+  "MUTATION_BATTERY": {
+    "battery": "scripts/custody/d1-mint-operator-channel-mutation.ts, run in two chunks under the 10-minute cap; tar backup and hash snapshot first; byte-identical restoration verified after each chunk; the JSON report is now read from --outputFile for reliable kill attribution",
+    "total": "70 mutants: 69 expect-RED all RED, 0 survivors; the comment-only self-test GREEN (proves the battery is not vacuously RED)",
+    "r5": "R5-M-A-INJECTION, R5-M-A-OUTER-PSMOD, R5-M-A-DOTNET (boundary), R5-M-B-UTC, R5-M-C-DISCOVERY, R5-M-D-HOSTNAME — all RED",
+    "r5_a_injection_note": "R5-M-A-INJECTION prints a large FAIL dump the JSON reporter interleaves, so its per-mutant killedBy came back empty; it was independently re-run and confirmed to fail 4 real assertions (the profiler-refusal controls and the pinned-text control), a genuine kill.",
+    "re_anchored": "the R4 boundary mutants (AMBIENT, ENV, NODE-PIN) were re-anchored onto the R5-rewritten inner script; the whole R2/R3/R4 catalogue still runs RED."
+  },
+  "PEB_DEMONSTRATION": {
+    "command": "pnpm custody:operator-channel:demonstrate -- --out-dir=<outside the repository>",
+    "launcher_build_digest": "98e4c11934b132dda1b935fb0a3dbc1898f2a82afa8d4a958b315e405082847f",
+    "runs": "3/3 SATISFIED_CANDIDATE, failed []",
+    "note": "Author development confidence only; certifies nothing."
+  },
+  "MEASURED_HOST_FINDING": "NODE_USE_SYSTEM_CA is present in this host tool environment; both boundaries refuse it. cmd.exe and Windows PowerShell are present; the outer-cmd tests run here, and the module-shadowing and profiler-refusal tests also run under pwsh on Linux CI.",
+  "EXPLICIT_NON_ACTIONS": [
+    "No certification event written (9c8a6889 nor any candidate).",
+    "No hosted OEP-1 executed; no hosted database connection; no network download by any tool.",
+    "HC-1 not requested; N11 not executed.",
+    "No earlier authority, record or amendment edited (append-only)."
+  ],
+  "final_state": "D1_PREPHASE2_R5_OUTERMOST_BOUNDARY_AND_CHAIN_HARDENED__READY_FOR_FINAL_FOCUSED_RECERT",
+  "next_gate": "Final focused independent recertification of this candidate (inheriting the byte-identical tool/TLS evidence) -> its certification event -> PHASE 2 OEP-1 probe through the outer+inner boundary -> evidence -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

@@ -1,0 +1,61 @@
+{
+  "manifest_id": "FIBDB-053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R4",
+  "node_or_batch": "D-1 operator channel, pre-PHASE-2 successor over b4ca05ac: NB-1 pre-node boundary, NB-2 OEP-1 evidence chain, NB-3 test gaps, PMR-15 measured",
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+  "append_only": true,
+  "frozen_note": "Frozen before any R4 implementation.",
+  "authority_reference": [
+    "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0.json (R4)",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.10.json"
+  ],
+  "dependencies": ["b4ca05ac8cdc32c7cd8306028f3adc606d7db5ef"],
+  "protected_surfaces": [
+    "tests/custody/support/tool-trust-snippet.ts, tests/custody/support/fake-only-mint-tool.ts, tests/custody/support/fake-only-oep1-probe-tool.ts (the source of the certified v3 tools: kept byte-identical so the tools stay the certified bytes)",
+    "the pinned v3 tools and the pinned project certificate"
+  ],
+  "protected_authority": ["every earlier amendment, record and owner decision (append-only)", "N08 2026-09-28T14:00:00Z, N31 2026-09-28T18:00:00Z, N09 2026-09-29T14:00:00.000Z"],
+  "sentinels": [
+    { "id": "S-PRELOAD", "purpose": "A NODE_OPTIONS preload (--require, -r, --import) that records its own execution and tries to capture the synthetic operator string from stdin. PRELOAD_EXECUTIONS_BEFORE_GOVERNED_SECRET must be 0 through the governed entry." },
+    { "id": "S-OPERATOR-STRING", "purpose": "The synthetic operator string (.invalid host): captured by nothing but the governed tool." }
+  ],
+  "known_conditions": [
+    "Node reads NODE_OPTIONS before any user code; a check inside the launcher runs after a preload and is defence in depth only.",
+    "The pre-node boundary runs in the operator's shell (Windows PowerShell 5.1; pwsh where available): that shell is the trust root it cannot defend against itself (LD_PRELOAD on the shell, a hostile profile when -NoProfile is omitted)."
+  ],
+  "positive_controls": [
+    { "id": "R4-P-BOUNDARY", "description": "Through the pre-node boundary, with a clean environment: the node binary's sha256 is the plan pin, node starts with the allowlisted environment plus the boundary mark and no execArgv, and the synthetic channel runs to completion.", "test_file": "tests/custody/d1-pre-node-boundary.test.ts" },
+    { "id": "R4-P-CHAIN", "description": "A digest-bound chain whose FAIL predecessor is superseded by a LATER, recomputed-CLOSED head that acknowledges it closes OEP-1.", "test_file": "tests/custody/d1-oep1-evidence-chain.test.ts" },
+    { "id": "R4-P-PMR16", "description": "PMR-16 holds by measurement: the repository trust root, the rendered trust text's behaviour (pin refused on mismatch, verify-full options on match) and the launcher's CA check (refuses a mismatch in both modes).", "test_file": "tests/custody/d1-dag-amendment-v1010.test.ts" }
+  ],
+  "negative_controls": [
+    { "id": "R4-N-PRELOAD", "description": "NODE_OPTIONS=--require=<preload>, -r <preload>, --import=<preload URL> through the boundary: refused before node starts; the preload's execution marker is absent; the sentinel is not captured.", "test_file": "tests/custody/d1-pre-node-boundary.test.ts" },
+    { "id": "R4-N-RUNTIME-INPUTS", "description": "NODE_PATH, NODE_EXTRA_CA_CERTS, NODE_TLS_REJECT_UNAUTHORIZED, OPENSSL_CONF, SSL_CERT_FILE, SSL_CERT_DIR and a lower-case node_options: each alone is refused by the boundary before node starts.", "test_file": "tests/custody/d1-pre-node-boundary.test.ts" },
+    { "id": "R4-N-NODE-PIN", "description": "A node binary whose sha256 is not the plan pin is refused before it starts.", "test_file": "tests/custody/d1-pre-node-boundary.test.ts" },
+    { "id": "R4-N-DIRECT", "description": "Starting the launcher directly (no boundary mark) is refused before the prompt; the control shows that the direct path lets a preload run (the attack is real outside the boundary).", "test_file": "tests/custody/d1-pre-node-boundary.test.ts, tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R4-N-CHAIN", "description": "Missing predecessor, predecessor digest mismatch (substitution), a record whose own digest does not match its content, fork, cycle, head observed before a predecessor, a verdict string that its facts do not recompute to, an unacknowledged earlier FAIL/INCONCLUSIVE, a candidate identity that is not the certified one, and an evidence path deleted or modified in history: each fails closed.", "test_file": "tests/custody/d1-oep1-evidence-chain.test.ts" },
+    { "id": "R4-N-O456", "description": "OT-19: each hostile variable alone, in upper and in lower case, is refused by the rendered trust text (no dependence on another variable, on case, or on a subset of the alternatives).", "test_file": "tests/custody/d1-tls-trust.test.ts" },
+    { "id": "R4-N-O1415", "description": "PROBE_MINT_CONFIGURATION_COHERENT fails for a wrong observed host and for a wrong observed driver digest even when the recorded fingerprint is recomputed to match the wrong observation.", "test_file": "tests/custody/d1-pre-hc1-post-mint.test.ts" },
+    { "id": "R4-N-O11", "description": "A predecessor without a verdict and without facts is blocking unless the head acknowledges it.", "test_file": "tests/custody/d1-oep1-evidence-chain.test.ts" },
+    { "id": "R4-N-O8", "description": "The launcher refuses a missing or mismatching CA before the prompt in MINT mode too.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" }
+  ],
+  "mutation_controls": [
+    { "id": "R4-M-BOUNDARY-AMBIENT", "description": "The boundary's ambient-runtime refusal removed -> R4-N-PRELOAD RED." },
+    { "id": "R4-M-BOUNDARY-ENV", "description": "The boundary passes the inherited environment to node instead of the allowlist -> R4-P-BOUNDARY / R4-N-PRELOAD RED." },
+    { "id": "R4-M-BOUNDARY-NODE-PIN", "description": "The node sha256 check removed -> R4-N-NODE-PIN RED." },
+    { "id": "R4-M-LAUNCHER-MARK", "description": "The launcher no longer requires the boundary mark -> R4-N-DIRECT RED." },
+    { "id": "R4-M-CHAIN-DIGEST", "description": "Predecessor digest not compared -> R4-N-CHAIN RED." },
+    { "id": "R4-M-CHAIN-TIME", "description": "Temporal order not checked -> R4-N-CHAIN RED." },
+    { "id": "R4-M-CHAIN-RECOMPUTE", "description": "Link verdicts trusted as strings -> R4-N-CHAIN RED." },
+    { "id": "R4-M-O4", "description": "OT-19 regex without the i flag -> R4-N-O456 RED." },
+    { "id": "R4-M-O5", "description": "OT-19 PG alternative narrowed -> R4-N-O456 RED." },
+    { "id": "R4-M-O6", "description": "One OT-19 alternative dropped -> R4-N-O456 RED." },
+    { "id": "R4-M-O14", "description": "Observed host compared with itself -> R4-N-O1415 RED." },
+    { "id": "R4-M-O15", "description": "Observed driver digest compared with itself -> R4-N-O1415 RED." },
+    { "id": "R4-M-O11", "description": "A link without facts recomputes to CLOSED -> R4-N-O11 RED." },
+    { "id": "R4-M-O8", "description": "The launcher checks the CA in probe mode only -> R4-N-O8 RED." },
+    { "id": "R4-M-PMR16", "description": "PMR-16 stops measuring the launcher CA check -> R4-P-PMR16 RED." },
+    { "id": "R4-M-SELF-TEST", "description": "A comment-only mutant must survive; kills are attributed only to tests outside the pin block." }
+  ],
+  "exit_gates": ["typecheck", "lint", "secrets_scan", "authority_seal_verify", "custody_dag_validate", "custody_suite_including_termination", "mutation_battery", "ods_scope", "ods_poststate", "exact_head_ci_and_vercel"]
+}

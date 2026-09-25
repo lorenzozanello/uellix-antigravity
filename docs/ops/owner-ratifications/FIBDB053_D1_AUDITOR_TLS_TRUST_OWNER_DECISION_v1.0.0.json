@@ -1,0 +1,69 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_TLS_TRUST_OWNER_DECISION_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD",
+  "document_class": "OWNER_DECISION__TLS_TRUST_POLICY__CA_TRUST_ROOT_SOURCE__APPEND_ONLY__NO_EXECUTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-TLS-TRUST-AND-FINAL-CHANNEL-HARDENING-R3",
+  "lane": "CV1-D1-TLS-TRUST-AND-FINAL-CHANNEL-HARDENING-R3",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor, from the owner's two signed messages of this lane. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "materialized_at_base": { "commit": "fa43b39636de766f228b16c459b721fe80fcb109", "tree": "eeeaf49399a7fef6f14c76e73f5600819d7942cf" },
+  "CONTEXT": "The recertification of fa43b396 measured that ssl 'require' in postgres.js 3.4.9 sets rejectUnauthorized = false and answers an AuthenticationCleartextPassword request with the operator's password, so an impostor server harvests it (TLS = B), before the hosted OEP-1 probe. The first attempt of this lane stopped (STOP_CA_TRUST_ROOT_NOT_AVAILABLE): the official Supabase CLI embeds two production roots with the same distinguished name and different keys, so which one anchors the project could not be bound without a hosted connection.",
+  "DECISIONS_VERBATIM": {
+    "AC-8": {
+      "TLS_TRUST_POLICY": "VERIFY_FULL_PINNED_CA",
+      "CA_TRUST_ROOT_SOURCE": "PROJECT_SPECIFIC_SUPABASE_CERTIFICATE",
+      "RULE": "The D-1 operator channel must authenticate the PostgreSQL server, not merely encrypt transport.",
+      "MUST_USE": ["TLS", "certificate validation", "hostname validation", "an explicitly supplied trusted CA", "a SHA-256 pin of the exact CA material used by the governed tool"],
+      "CA_NATURE": "The CA is public trust material, not a secret.",
+      "MUST_NOT": [
+        "download trust material at runtime",
+        "silently fall back to system trust",
+        "use rejectUnauthorized=false",
+        "accept ssl=require semantics without server verification",
+        "disable hostname verification",
+        "continue when the CA file/hash does not match the certified pin"
+      ],
+      "MEASURE_BEFORE_CERTIFICATION": "The exact CA bytes and SHA-256 must be measured before certification.",
+      "TRUST_ROOT": "The governed trust root is the exact downloaded project certificate, not a bundle and not a certificate selected by distinguished name alone.",
+      "PROJECT_REF": "bvyzblhqymxruxdguaee",
+      "SUPPLIED_AT": "C:\\Users\\Lorenzo\\Documents\\secrets-public\\uellix-staging-ca.crt",
+      "NOT_AUTHORIZED": ["network download from the tool", "hosted DB authentication", "N11", "HC-1", "a hosted connection in this lane"]
+    },
+    "SIGNED": "YES"
+  },
+  "SOURCE": "Owner messages in this session: 'TLS_TRUST_POLICY = VERIFY_FULL_PINNED_CA / SIGNED = YES' and 'CA_TRUST_ROOT_SOURCE = PROJECT_SPECIFIC_SUPABASE_CERTIFICATE / SIGNED = YES'.",
+  "CA_MEASURED_BY_THE_EXECUTOR": {
+    "file_found": "C:\\Users\\Lorenzo\\Documents\\secrets-public\\uellix-staging-ca.crt.crt — the ONLY file in that directory; the named path does not exist, the file carries a doubled extension (a Windows rename with hidden extensions). Used as the supplied file; the pin binds its bytes, not its name.",
+    "raw_file_sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+    "certificates_in_file": 1,
+    "line_endings": "LF (0 CR bytes)",
+    "der_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa",
+    "spki_sha256": "ba332649230ce9a764e4eaf70368f1a9de9ce64bd38424769e24c3fbf8e57acb",
+    "subject": "C=US, ST=Delware, L=New Castle, O=Supabase Inc, CN=Supabase Root 2021 CA",
+    "issuer": "C=US, ST=Delware, L=New Castle, O=Supabase Inc, CN=Supabase Root 2021 CA (self-signed; openssl verify -CAfile self: OK)",
+    "validity": "2021-04-28T10:56:53Z .. 2031-04-26T10:56:53Z",
+    "serial": "6CBC4CA1DEB63F692D0A2024C67289C2D13D54F6",
+    "extensions": "basicConstraints critical CA:TRUE; keyUsage Certificate Sign, CRL Sign; SKI = AKI = A8:D7:B9:76:37:D8:2C:ED:92:12:26:9E:0E:32:24:D5:2D:69:46:2C",
+    "comparison_with_the_official_cli_roots": {
+      "source": "@supabase/cli-windows-x64@2.109.1 supabase-go.exe (embedded PEMs, read locally, no network)",
+      "prod_root_2021_2031": "BYTE-IDENTICAL (same raw sha256, same DER sha256 807025ad...)",
+      "prod_root_2025_2035_same_dn": "DIFFERENT (DER 5f9b7795..., other key 81874281...)",
+      "staging_root": "DIFFERENT (DER ce0efcea...)",
+      "conclusion": "The project certificate is exactly one of the official production roots; the same-DN ambiguity is resolved by the owner's source, not by name."
+    },
+    "repository_copy": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt — byte-identical copy (cmp), pinned by the same raw sha256; docs/** is eol=lf in .gitattributes, so no checkout rewrites it."
+  },
+  "CONDITIONS_EVALUATED_BY_THE_EXECUTOR_NOT_DECIDED": [
+    "The file parses (one X.509 certificate, CA:TRUE, self-signed, valid until 2031).",
+    "It corresponds to the expected trust chain: it is the Supabase production root the official CLI ships, not the staging platform root and not the 2025 root; no hosted handshake was made to confirm the project's leaf chains to it (not authorized) — the owner's dashboard download is the binding source.",
+    "No ambiguity remains: exactly one certificate, one key, one pin."
+  ],
+  "execution_not_authorized_by_this_ratification": ["No hosted connection, no hosted OEP-1, no HC-1, no N11."],
+  "required_independent_review": "The final independent recertification of the channel successor that implements this decision.",
+  "final_state": "AC8_VERIFY_FULL_PINNED_CA__PROJECT_CERTIFICATE_BOUND__SIGNED",
+  "next_gate": "Implementation (tools v3, launcher, gate) -> final independent recertification -> its event -> PHASE 2 OEP-1 probe through the certified channel."
+}

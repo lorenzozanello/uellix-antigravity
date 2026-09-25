@@ -1,0 +1,287 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_POST_MINT_PATH_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "POST_MINT_PATH_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_HOSTED_MUTATION__NO_HC1_REUSE__NO_VAULT_LOCATOR",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-POST-MINT-PATH-AND-N11-N30-ORDERING-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner and not the custodian.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "head": "87520a97f7a8c56e9fc9b023afd2abb605f4216a",
+    "tree": "e8e4560bf52df26b44265c3a34a48bb503f20e45",
+    "prestate_gate": "PASS, declared branch/head/tree/clean, 2026-09-23T15:12:04Z"
+  },
+  "STOP_OCCURRENCE": {
+    "recorded_through": "This EXECUTION_RECORD, the existing class the PRE-HC1 convergence used. No new artifact class is created.",
+    "lane_that_stopped": "CV1-D1-AUDITOR-HC1-BOUNDARY-R1",
+    "at_head": "87520a97f7a8c56e9fc9b023afd2abb605f4216a",
+    "hc1_received": "HC1_S1..HC1_S6 = YES, SIGNED = YES, answered by the owner in the lane conversation after the six statements were presented.",
+    "why_it_stopped": "After the answer, the re-check found N11 NOT_READY: no governed post-mint path existed. N11's exit needs an authenticated session on the new value; the only governed holder of the value is the N05 delivery from the N30 entry; N30 needs N11. No production N30 depositor and no governed N13 consumer existed. The lane stopped fail-closed before any credential or database action.",
+    "N11": "NOT EXECUTED",
+    "credential_actions": 0,
+    "db_connections": 0,
+    "wcm_real_entries_written": 0
+  },
+  "HC1_STATUS": {
+    "HC1_AT_87520a97": "SPENT",
+    "basis": "DAG v1.0.0 HC1 contract: 'It is spent when its act completes or its lane stops.' The HC-1 boundary lane stopped. The owner's instruction for this lane states the same: the HC-1 is CONSUMED by this STOP and MUST NOT be reused.",
+    "future_mint_requires": [
+      "a fresh schedule check",
+      "a fresh PRE-HC1 evaluation (pnpm custody:pre-hc1) at a declared prestate",
+      "a fresh independent PRE-HC1 certification, because the package changed materially (DAG v1.0.4, the production custody implementation, and the N06 surface gap below)",
+      "fresh HC1-S1..S6 statements, re-derived; HC1-S5 must now name the production topology demonstrated here",
+      "a fresh, immediate, explicit confirmation from the owner for that act alone"
+    ]
+  },
+  "CONTRACTS_RE_DERIVED": {
+    "N11": {
+      "purpose": "MR-2 credential mint and rotation, the only mutation that always fires.",
+      "predecessors": [
+        "N10"
+      ],
+      "act": "Set a freshly generated credential for uellix_auditor on the pinned ref with VALID UNTIL = N09; management plane preferred, SQL only with the set_config bound-parameter pattern.",
+      "exit_v1_0_0": "A connection opens as uellix_auditor using the new value and the SERVER reports current_user = session_user = uellix_auditor.",
+      "exit_v1_0_4": "SPLIT: ACT_EXIT (accepted, VALID UNTIL = N09, value only in transit to N30) enables N30 and N12; CLOSURE = N13 KP-1 on a delivered session.",
+      "secret_constraints": "generated in the operator's own secure environment or by the management plane, never by a repository script; no literal in SQL editor text, chat, repo, history, argv or logs.",
+      "producer_of_the_value": "the operator (or the management plane)",
+      "consumer_of_the_value": "the N30 depositor stdin, and nothing else",
+      "successors": [
+        "N12",
+        "N13",
+        "N30"
+      ]
+    },
+    "N30": {
+      "purpose": "Deposit the minted value into the WCM entry the N29 reader reads.",
+      "predecessors": [
+        "N11",
+        "N29"
+      ],
+      "act": "Write exactly one entry.",
+      "exit": "Exactly one entry, the one the reader reads, value nowhere else; measured by a read of the same scope (post-write probe AND round-trip equality).",
+      "secret_constraints": "no argv, no log, no repo file, no persistent env, no setx, evidence by mechanism name only, no vault handle in inventory or evidence.",
+      "producer": "N11's operator process via stdin pipe",
+      "consumer": "the N05 delivery path (launcher)",
+      "successors_v1_0_4": [
+        "N13",
+        "N23"
+      ]
+    },
+    "N13": {
+      "purpose": "First authenticated session: KP-1, KP-2, target identity arm B.",
+      "predecessors_v1_0_4": [
+        "N11",
+        "N30"
+      ],
+      "act": "KP-1 current_user = session_user = uellix_auditor from the server; KP-2 transaction_read_only = on; staging_sentinel as exactly two columns of one row-set, completing verifyStagingTarget(required).",
+      "exit": "Server confirms identity, transaction read-only, sentinel agrees with N04's ref.",
+      "secret_constraints": "value only in the consumer's environment block, delivered by N05; never argv, never logged, never persisted.",
+      "producer": "N30 entry via the launcher",
+      "consumer": "scripts/custody/d1-auditor-n13-consumer.ts",
+      "successors": [
+        "N14"
+      ]
+    },
+    "N23": {
+      "purpose": "Secret delivery to the PRECHECK process only.",
+      "predecessors": [
+        "N22",
+        "N30"
+      ],
+      "act": "Place the value as UELLIX_AUDITOR_DATABASE_URL into the single consuming process by the N05 mechanism.",
+      "exit": "Present in exactly one process environment and nowhere else.",
+      "note": "The PRECHECK consumer belongs to the PRECHECK-R2 lane; it must run under bare node and be topology-re-demonstrated there before it holds a real value."
+    }
+  },
+  "ORDERING_ADJUDICATION": {
+    "cycle_or_impossible_ordering": "YES, at the level of EXIT CONDITIONS: N11's exit needs the governed delivery, which needs N30, which needs N11. The edge set (preconditions) was acyclic and did not show it.",
+    "classification": "AUTHORITY_DAG_CONTRADICTION (the exit-level cycle) PLUS IMPLEMENTATION_GAPS (no production N30 depositor, no governed N13 consumer, no delivery rule for the HOSTED_SQL sessions N13/N14/N22).",
+    "N11_EXIT_ADJUDICATION": "C (BOTH), split: A = the act (mutation accepted, VALID UNTIL = N09, value only in transit to N30) is the exit that enables successors; B = proved usable (N13 KP-1 on a delivered session) is the CLOSURE. No proof is faked: N11 is never reported CLOSED from the act alone (scripts/custody/d1-post-mint.ts n11Status).",
+    "correction": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4.json: zero nodes, one HARD edge E-30-13 (N30 -> N13), the N11 exit split, the N30 adjacency rule, and the HOSTED_SQL session delivery rule. 32 nodes, 45 edges (37 HARD, 8 CONDITIONAL), acyclic, N28 the only (declared) orphan. HC-1 immediately before the mutation, N05, N30, N23, N13 server-side verification, N24 and N28 preserved."
+  },
+  "PRODUCTION_DEPOSITOR": {
+    "files": [
+      "db/custody/production-custody.ts",
+      "scripts/custody/d1-n30-deposit.ts"
+    ],
+    "properties": [
+      "stdin pipe only; refuses a terminal (no echo); refuses every argument in production",
+      "value held as a Buffer and zeroed",
+      "shape checked on bytes: role uellix_auditor, no whitespace or control byte, exactly one @, the pinned project's direct host (production) or an .invalid host (synthetic)",
+      "exactly one entry: a pre-existing entry is STOP_N30_ENTRY_ALREADY_PRESENT, never overwritten",
+      "Type GENERIC, Persist LOCAL_MACHINE, in the running user's profile (the certified N29 primitive)",
+      "N30 exit only after a positive post-write probe AND an equal round trip",
+      "no removal, no sweep: removal is scripts/custody/d1-wcm-remove.ts, by exact derived name, with a positive absence check",
+      "errors carry a code and an author-fixed sentence, never the value"
+    ],
+    "target_locator": "Derived at run time by d1AuditorWcmTarget() from the pinned staging ref, shared by depositor and launcher so their identities match by construction (N30's last constraint). It lies outside every sweepable namespace. Its literal is written into no governance artifact (OF-DAG-6); the name alone retrieves nothing without the custodian's logon and DPAPI context. No STOP_TARGET_LOCATOR_AUTHORITY_GAP: v1.0.2 authorizes the future technical choice under constraints, all of which hold."
+  },
+  "PRODUCTION_CONSUMER": {
+    "files": [
+      "db/custody/n13-verification.ts",
+      "scripts/custody/d1-auditor-n13-consumer.ts",
+      "scripts/custody/d1-deliver-n13.ts",
+      "scripts/custody/build-production-entrypoints.ts"
+    ],
+    "properties": [
+      "reads the value only through resolveAuditorDatabaseUrl from its own environment, as the N05 delivery left it",
+      "refuses every argument but --mode, --dwell-ms, --driver-root, without echoing",
+      "pinned statements, each a verbatim member of AUTHORIZED_FUTURE_SQL.PHASE_P1_OBSERVATION_ONLY_READS, inside BEGIN READ ONLY ... ROLLBACK unconditionally",
+      "target identity arm A (host, direct-db, pinned ref, production veto) BEFORE any socket; arm B verifyStagingTarget(required) with the sentinel after",
+      "KP-1, KP-2 and the sentinel row-set shape as pure, DB-free parsers",
+      "the default transport REFUSES to connect; a session opens only in --mode=execute with an explicit driver root, reserved for a separately authorized lane",
+      "reports booleans, codes and pinned statement texts only; driver and server messages are never relayed",
+      "runtime closure derived from emitted require() calls: no fs, no child_process, no net module, no vault access; runs under bare node"
+    ],
+    "connected_in_this_lane": false
+  },
+  "TOPOLOGY_REDEMONSTRATION": {
+    "command": "pnpm custody:production:demonstrate -- --out-dir=<outside the repository>",
+    "value": "freshly generated NON-SECRET sentinel, RFC 6761 .invalid host, synthetic shape, sentinel namespace",
+    "topology": "harness -> built d1-n30-deposit.js (stdin pipe) ; harness -> built d1-deliver-n13.js (console, bare node) -> built d1-auditor-n13-consumer.js (bare node, CONSUMER_SPAWN_FLAGS)",
+    "database_socket_attempted": false,
+    "run_1": {
+      "overall": "SATISFIED_CANDIDATE",
+      "controls": {
+        "T_OBS0_OBSERVER_SEES_FIXTURE": "PASSED",
+        "T_B1_PRODUCTION_LAUNCHER_REFUSES_WITHOUT_CONSOLE": "PASSED",
+        "T_N30_DEPOSIT_EXIT_MET_BY_READBACK": "PASSED",
+        "T_N30_EXACTLY_ONE_ENTRY_SECOND_DEPOSIT_REFUSED": "PASSED",
+        "T_RC2_CONSUMER_RESOLVED_DELIVERED_VALUE_WITHOUT_SOCKET": "PASSED",
+        "T_NEG_CONSUMER_RESOLVES_NOTHING_WITHOUT_DELIVERY": "PASSED",
+        "T_SUCCESS_PATH_REMOVED": "PASSED",
+        "T_FAILURE_PATH_REMOVED": "PASSED",
+        "T_CONSUMER_KILLED_NO_HOLDER": "PASSED",
+        "T_TIMEOUT_KILLED_NO_HOLDER": "PASSED",
+        "T_LAUNCHER_KILLED_CONSUMER_DIES_WITH_JOB": "PASSED",
+        "T_NP10_NO_VALUE_IN_ANY_COMMAND_LINE": "PASSED",
+        "T_RC3_NAMED_SUBJECTS_ARGV_CLEAN": "PASSED",
+        "T_RC7_VALUE_ONLY_IN_DELIVERED_CONSUMERS": "PASSED",
+        "T_FRESH_SHELL_AND_PERSISTENT_ENV_ABSENT": "PASSED",
+        "T_HISTORY_SINKS_CLEAN": "PASSED",
+        "T_CLEANUP_EXACT_REMOVAL_AND_ABSENCE": "PASSED",
+        "T_PRODUCTION_ENTRY_NEVER_WRITTEN": "PASSED"
+      },
+      "observer_polls": 937,
+      "delivered_consumers": "5/5",
+      "launchers_observed": "5/5",
+      "consumer_descendants": [],
+      "observed_process_names": [
+        "conhost",
+        "node",
+        "powershell",
+        "sleep"
+      ]
+    },
+    "run_2": {
+      "overall": "SATISFIED_CANDIDATE",
+      "failed_controls": [],
+      "observer_polls": 869,
+      "delivered_consumers": "5/5",
+      "launchers_observed": "5/5"
+    },
+    "uellix_wcm_entries_after": 0,
+    "ceiling": "SATISFIED_CANDIDATE. A builder's demonstration certifies nothing; an independent certifier must re-run it."
+  },
+  "POST_MINT_ATOMICITY": {
+    "source": "scripts/custody/d1-post-mint.ts POST_MINT_SCENARIOS (pinned by tests/custody/d1-post-mint-and-build.test.ts)",
+    "scenarios": "PM-0 mint refused; PM-1 mint ok / deposit fails; PM-2 mint ok / consumer fails; PM-3 deposit ok / verification fails; PM-4 launcher dies; PM-5 WCM cleanup fails; PM-6 operator aborts",
+    "invariants": [
+      "every further credential mutation needs a fresh HC-1",
+      "an undeposited live credential is always withdrawn (ROTATE AGAIN or PASSWORD NULL), never parked in a second store",
+      "a deposited value may wait in custody until R and a read-only node may be re-run by a fresh delivery",
+      "a failed verification or failed cleanup removes the entry by the governed path, never by a sweep"
+    ],
+    "NB8": "Whether PASSWORD NULL needs its own human confirmation remains UNRESOLVED and is carried, not answered.",
+    "executed": "NOTHING"
+  },
+  "MINT_ROUTE_A": "MANAGEMENT_PLANE: NOT EVIDENCED. The consulted Supabase documentation provides a dashboard password change for the postgres role only; for custom LOGIN roles it documents SQL with a literal. Whether any management surface sets a custom-role password, how it sets VALID UNTIL, and whether it forms a loggable SQL literal internally are UNVERIFIED (not disproven) and cannot be measured without touching the hosted plane. The authority prefers this route.",
+  "MINT_ROUTE_B": "SQL_BOUND_PARAMETER: DOCUMENTED and compliant ONLY under stated constraints: the owner as operator, in the operator's own environment (never a repository script), generates >= 32 CSPRNG bytes base64url; sends them only as the bound parameter of set_config(..., $1, true); a DO block EXECUTEs the ALTER ROLE with VALID UNTIL = E, reading the value back with current_setting, inside an exception handler that re-raises by SQLSTATE only; the same operator process composes the DSN and writes it to the N30 depositor stdin, then discards it. Residuals: a nested-statement audit facility (pg_stat_statements track = all, an audit extension logging role statements) would record the EXECUTEd text and no authorized read can measure it; the operator's privileged session is itself a credential outside this lane's custody.",
+  "MINT_ROUTE_DECISION_STATUS": "OWNER_DECISION_REQUIRED_MINT_ROUTE. Not chosen here: the authority-preferred route is not evidenced, and the documented route needs an operator tool and a privileged session no authority names. The owner decides A (with a measurement of its behaviour) or B (naming the operator tool), and answers NB-8.",
+  "EXITS_AFTER_REMEDIATION": {
+    "N11": "EXECUTABLE IN PRINCIPLE, NOT AUTHORIZED: the ordering is coherent (v1.0.4) and the post-mint path exists; blocked by the mint route decision, the fresh HC-1 chain, and OF-PM-1/OF-PM-4.",
+    "N30": "IMPLEMENTED: exit is machine-measured (post-write probe + round trip); demonstrated on a synthetic value.",
+    "N13": "IMPLEMENTED WITHOUT CONNECTION: identity, KP-1, KP-2, sentinel and ROLLBACK are tested over a fake transport; the real session is never opened in this lane."
+  },
+  "OPEN_ITEMS": [
+    {
+      "id": "OF-PM-1",
+      "blocking_for": "N14, N22 (and therefore the W schedule)",
+      "item": "N14 and N22 consumers are not built; each needs its own topology re-demonstration."
+    },
+    {
+      "id": "OF-PM-2",
+      "blocking_for": "nothing",
+      "item": "N13 has no token for a KP-2 failure; reported as failedAt KP-2, token null."
+    },
+    {
+      "id": "OF-PM-3",
+      "blocking_for": "certifier ruling",
+      "item": "Scope of 'no repository script can reach a hosted target' vs the N13 consumer's execute mode."
+    },
+    {
+      "id": "OF-PM-4",
+      "blocking_for": "the fresh PRE-HC1",
+      "item": "The N06 custody inventory's processes_or_environments lists deliveries to PRECHECK-R2 and FINAL WITNESS only. It does not list the N13 (and N14, N22) deliveries, the N30 depositor process, or the operator process that mints. N06 must be re-derived before a fresh PRE-HC1; this lane does not edit the certified inventory."
+    },
+    {
+      "id": "OF-PM-5",
+      "blocking_for": "N11",
+      "item": "Mint route owner decision and NB-8."
+    }
+  ],
+  "SCHEDULE_FEASIBILITY": {
+    "preserved": {
+      "N08_W": "2026-09-24T14:00:00Z",
+      "N31_R": "2026-09-24T18:00:00Z",
+      "N09_E": "2026-09-25T14:00:00.000Z"
+    },
+    "evaluated_at_utc": "2026-09-23T15:40:41Z",
+    "remaining_before_W": "about 22.3 hours",
+    "required_before_W": [
+      "owner mint-route decision and NB-8",
+      "independent certification of this lane",
+      "N14 and N22 consumers built and topology-re-demonstrated (OF-PM-1)",
+      "N06 re-derivation (OF-PM-4)",
+      "fresh PRE-HC1 evaluation and independent certification",
+      "fresh HC-1 and immediate confirmation",
+      "N11, N30, N13, N14, N15..N21 as measured, N22, N23, N24, N25",
+      "N26 independent certification of the executed provisioning",
+      "N27 PRECHECK-R2 lane with its own human confirmation and its own consumer re-demonstration",
+      "the FINAL WITNESS at W"
+    ],
+    "verdict": "SCHEDULE_AT_RISK. At least four more independent certifications and two unbuilt consumers lie on the path before W. No authority fixes durations, so this is a logical assessment, not a measurement.",
+    "the_dates_are_not_moved": "W, R and E stand as the owner set them. If W slips BEFORE any mint, only fresh owner N08/N31 data and a mechanical N09 are needed; nothing is re-rotated. If it slips AFTER a mint, THE_SLIP_RULE applies: re-rotate with fresh N08, N09 and HC-1, never extend VALID UNTIL.",
+    "time_authorizes_nothing": "The schedule is never a reason to mint."
+  },
+  "MUTATION_CONTROLS": {
+    "harness": "Each mutant applied to the source, the focused test file run, the original bytes restored and SHA-256 re-verified; the worktree status was byte-identical before and after the battery.",
+    "results": "17 of 17 RED",
+    "mutants": [
+      "M01 depositor argv secret",
+      "M02 depositor echo",
+      "M03 missing post-write probe",
+      "M04 wildcard sweep in removal",
+      "M05 consumer CLI secret",
+      "M06 consumer logging",
+      "M07 consumer persisting",
+      "M08 consumer bypassing N05 (vault read)",
+      "M09 wrong role (KP-1)",
+      "M10 wrong project (arm A pin)",
+      "M11 missing KP assertion (KP-2)",
+      "M12 N11 closed before verification",
+      "M13 N30 closed without positive probe",
+      "M14a topology leak: consumer with its own conhost",
+      "M14b topology leak: consumer under a development runtime",
+      "M15 mint ok / deposit fail with no compensation",
+      "M16 unauthorized statement (pg_authid)"
+    ]
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "final_state": "D1_POST_MINT_PATH_IMPLEMENTED__OWNER_DECISION_REQUIRED_MINT_ROUTE",
+  "next_gate": "The owner's mint-route decision (A or B, and NB-8). Then ONE independent certification of this package; then a fresh schedule check, a fresh PRE-HC1 evaluation and certification, a fresh HC-1 and an immediate confirmation before N11."
+}

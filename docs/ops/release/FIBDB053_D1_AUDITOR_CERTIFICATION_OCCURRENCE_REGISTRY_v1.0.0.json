@@ -98,17 +98,402 @@
       "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate prior verdict document exists and none is reconstructed.",
       "IMPORTANT_SUCCESSOR_NOTE": "The schema and template blobs pinned above are the v1.0.0 files AS CERTIFIED, and they remain byte-intact in the tree. This lane adds SUCCESSOR files at v1.0.1 rather than editing them, so these pins stay true.",
       "node_status_unchanged_by_this_record": "N07 remains OPEN and NOT SATISFIED. A certified skeleton is not a filled evidence artifact, and the execution-time filename is still derived at the execution lane's own base."
+    },
+    {
+      "occurrence_id": "CERT-OCC-CONSOLIDATED",
+      "subject_node": "NONE. The consolidated closure package certifies an AUTHORITY PACKAGE spanning N05, N06, N07, N29, N30 and N31, and closes none of them.",
+      "subject_package": "FIBDB053-D1-AUDITOR-CONSOLIDATED-CLOSURE",
+      "certified_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CONSOLIDATED_CLOSURE_AUTHORITY_v1.0.0.json",
+          "blob_sha": "a563866cbc3e65f8d62aa882cfe5bb4acaacd443"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CONSOLIDATED_CLOSURE_TEST_MANIFEST_v1.0.0.json",
+          "blob_sha": "dd30af82da393650bf98faa89cbd3419416ab9ba"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "blob_sha": "5d345e001a4179fa4a83a1a9f62a899dead16279"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "ff32c91dc2da4894a35445e298c8b4abc3f3ca19"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_SCHEMA_v1.0.1.json",
+          "blob_sha": "1c3995be16c3d276a438dfd18e509bd1a076f23f"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N07_EVIDENCE_SKELETON_TEMPLATE_v1.0.1.json",
+          "blob_sha": "154c86e833d3cde8b7460a6bc6571b8098ca38b5"
+        },
+        {
+          "path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json",
+          "blob_sha": "d99d19a19f12aaad23d38c5168be313321641f31"
+        }
+      ],
+      "certified_at_commit": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL CERTIFICATION of the consolidated closure package",
+      "VERDICT": "D1_AUDITOR_CONSOLIDATED_CLOSURE_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-22",
+      "blocking_findings": 0,
+      "nonblocking_findings": 10,
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate prior verdict document exists and none is reconstructed.",
+      "SELF_PIN_NOTE": "The fourth certified artifact above is THIS REGISTRY, pinned at the blob it carried when the certification ran. That pin is deliberately NOT updated to the blob this append produces. The certification examined the THREE-occurrence registry; a self-pin re-derived after an append would claim the four-occurrence version is what was certified, which is false. The pin is a historical fact about a past blob, not a pointer to the current file. NM11 of the N05 test manifest names the mirror-image defect — an artifact pinning the pre-commit draft of its own base — and the reasoning is the same in both directions.",
+      "what_the_verdict_string_itself_discloses": "PASS WITH NONBLOCKING FINDINGS: zero blockers, ten non-blocking findings. The certifier re-derived the graph independently and found it COINCIDENT, and reproduced five mutants with a different JSON Schema engine. Non-blocking finding NB-1 recorded that human_custodian had no producer node while planned_removal_date was given one at N31, classified the human_custodian gap NONBLOCKING_FUTURE_INPUT, and expressly declined to rule on the asymmetry, calling it one of SCOPE rather than of CLASS.",
+      "what_the_successor_lane_did_with_it": "NB-1 was put to the product owner, who ratified ADD_N32_OWNER_INTAKE at OD-N32-1, recorded at docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json and implemented as node N32 by DAG amendment v1.0.3. The other nine non-blocking findings are NOT addressed by the CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1 lane and remain OPEN.",
+      "node_status_unchanged_by_this_record": "ZERO nodes closed. N05, N06 and N07 remain OPEN and NOT SATISFIED; N29, N30 and N31 remain declared and unexecuted. Certifying a consolidated authority package is not demonstrating a mechanism, supplying an owner datum, or filling an evidence artifact."
+    },
+    {
+      "occurrence_id": "CERT-OCC-CUSTODY-REALIZATION-R1",
+      "subject_node": "NONE CLOSED. The certification examined the custody realization candidate — the N29 reader, the N30 depositor mechanism, the N05 sentinel demonstration and its harness, the N32 owner-intake node and DAG amendment v1.0.3 — and was the gate at which N05 could have been certified. It was not.",
+      "subject_package": "FIBDB053-D1-AUDITOR-CUSTODY-REALIZATION",
+      "certified_artifacts": [],
+      "certified_artifacts_note": "EMPTY BY CONSTRUCTION. A FAIL certifies nothing, so this occurrence contributes nothing to CERTIFIED_ARTIFACT_COUNT. What was EXAMINED is pinned separately below, so a reader can tell exactly which bytes failed.",
+      "examined_candidate_commit": "feb849154af8bc75d18d5477512060db217771fb",
+      "examined_candidate_tree": "67e8f57f346ceeb73adb37164acfb22bb82f3935",
+      "examined_parent_commit": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+      "examined_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0.json",
+          "blob_sha": "51cecd661a412bc33f7b126948292cc94c498063"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_v1.0.0.json",
+          "blob_sha": "6c0831731e996e91162a864b1083d69e80b9bbeb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "blob_sha": "8cfeaefb1e239c55cc9064000f4749c6d31fcbab"
+        },
+        {
+          "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json",
+          "blob_sha": "83a64ff872b8e2f42e9ab13b762dc42b42b9b2fb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "907edad77bd0c588f6fd02ff5dbc17b8e51745ac"
+        }
+      ],
+      "examined_implementation": "db/custody/** and scripts/custody/** and tests/custody/** at examined_candidate_commit.",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL IMPLEMENTATION CERTIFICATION, including an independent Windows sentinel reproduction with an external PEB environment-block and command-line observer, and a mutation battery.",
+      "VERDICT": "D1_AUDITOR_CUSTODY_REALIZATION_IC_FAIL",
+      "certification_date": "2026-09-23",
+      "blocking_findings": 1,
+      "nonblocking_findings": 9,
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate verdict document exists and none is reconstructed.",
+      "BLOCKING_FINDING_B_1": {
+        "id": "B-1",
+        "finding": "The delivered value was present in the environment block of a SECOND process. process-delivery.ts spawned the consumer with windowsHide:true; Node passes CREATE_NO_WINDOW; the consumer was given a new console, and the conhost.exe hosting it — a child of the consumer — carried UELLIX_AUDITOR_DATABASE_URL and the sentinel value in its own environment block, on the success, failure and kill paths.",
+        "how_it_was_measured": "By reading each process's environment block from its PEB with an external reader, not by reasoning. A negative control discriminated: the conhost.exe children of the bridge, whose environment is an allowlist, did not carry the variable.",
+        "why_the_candidate_reported_green": "The candidate's own RC7 control exempted conhost.exe BY NAME, on the stated reason that the console subsystem attaches it rather than the application handing it an environment block. The certifier ran the candidate's own demonstration under the external reader in the same session: it printed RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD PASSED, 'ENVIRONMENT-INHERITING CHILDREN: NONE' and SATISFIED_CANDIDATE while two credential-bearing conhost.exe processes were observed.",
+        "why_it_blocks": "RC-7's binding_status in the N05 readiness authority: a child that retains the value breaches WCM-C1's own scope and STOP_SECRET_DELIVERY_NONCOMPLIANT fires on that ground. The candidate's own finding F_2 applied exactly that standard to a runtime helper (esbuild).",
+        "measured_alternatives_at_certification": "windowsHide:false and detached:true each removed the credential-bearing conhost child; detached:true also removes the consumer from the launcher's kill-on-close job.",
+        "BLOCKER_STATUS": "OPEN. It remains open until an INDEPENDENT recertification of a successor candidate records it closed. A remediation lane's own statement that it is fixed does not close it, and this entry is not to be edited to say otherwise."
+      },
+      "NONBLOCKING_FINDINGS": [
+        {
+          "id": "NB-1",
+          "finding": "Mutants M05 (value appended to the bridge argv), M06 (process.env written during delivery), M07 (assertArgvIsClean disabled) and M08 (ambient-value refusal disabled) survived the whole custody suite, 146 of 146 green. The manifest attributed CN3 and CN5 to tests that did not exist."
+        },
+        {
+          "id": "NB-2",
+          "finding": "Mutants D11 (process.env written and then deleted during delivery) and D13 (base64 of the value appended to the consumer argv) survived the candidate's demonstration harness, which reported SATISFIED_CANDIDATE. Its command-line search recognised only the raw value."
+        },
+        {
+          "id": "NB-3",
+          "finding": "RC3_DEPOSIT_ARGV_CLEAN did not assert that the deposit and retrieval bridge processes were observed at all, and the command-line poller's effective cadence was about 39 polls per run rather than one per 100ms."
+        },
+        {
+          "id": "NB-4",
+          "finding": "OF-CUST-1 was understated: at least twelve copies of the value in three encodings, including base64 copies created on the RETRIEVAL path, remained in the launcher heap for the launcher's whole lifetime, not only a string at the spawn boundary until garbage collection."
+        },
+        {
+          "id": "NB-5",
+          "finding": "Edge E-03-32's 'why' in DAG amendment v1.0.3 cited 'E-01-08', an edge id that does not exist; the parallel edge is E-03-08."
+        },
+        {
+          "id": "NB-6",
+          "finding": "Comments claimed controls and functions that did not exist: that sweepCredentials refuses prefixes outside the reserved namespaces, and a function named sweepSentinelEntries."
+        },
+        {
+          "id": "NB-7",
+          "finding": "The out-of-tree fresh-shell probe left its non-secret result files in %TEMP%."
+        },
+        {
+          "id": "NB-8",
+          "finding": "parentIsNotThisTree only checked that the probe's parent was not the launcher itself."
+        },
+        {
+          "id": "NB-9",
+          "finding": "This registry's DERIVED_FACTS.why_the_last_number_is_zero prose was edited in place by the previous append."
+        }
+      ],
+      "open_finding_dispositions_at_certification": {
+        "OF-CUST-1": "NONBLOCKING_RESIDUAL. No certified authority promises JavaScript heap zeroization; the disclosure was inaccurate (NB-4).",
+        "OF-CUST-2": "EXEMPTION INVALID. Measured, not reasoned: it is B-1.",
+        "OF-CUST-3": "A — consistent with the durable custody model. The vault entry surviving an abrupt kill is by design; the entry's lifetime is outside WCM-C1..C5; the sentinel recovery sweep was measured finding and removing it.",
+        "OF-CUST-4": "DISCHARGED. The certifier read explorer.exe's environment block directly — what a freshly launched shell inherits — and the registry User and Machine blocks with a capability-of-true control; the WMI probe's parent was measured as WmiPrvSE."
+      },
+      "what_the_verdict_string_itself_discloses": "FAIL: one blocking finding, nine non-blocking. Everything else the certifier reproduced independently passed: ancestry and write set, the sentinel contract, WCM-C2 through WCM-C5, read-after-delete ERROR_NOT_FOUND, the graph (32 nodes, 44 edges, 36 HARD, 8 CONDITIONAL, acyclic) and every machine gate. N05 was NOT certified, and PRs #215, #216 and #217 were NOT made eligible for closure by this verdict.",
+      "what_the_successor_lane_did_with_it": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-REMEDIATION-R2 remediated B-1 and the execution-critical non-blocking findings on the same branch and recorded what it did at docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_AMENDMENT_v1.0.1.json. That lane cannot close B-1; only an independent recertification can.",
+      "node_status_unchanged_by_this_record": "ZERO nodes closed. N05 is OPEN and, at the examined candidate, STOP_SECRET_DELIVERY_NONCOMPLIANT fired on the measured topology. N06 and N07 are NOT SATISFIED. N30's act is NOT PERFORMED. N32's datum is UNSUPPLIED."
+    },
+    {
+      "occurrence_id": "CERT-OCC-CUSTODY-REALIZATION-R2",
+      "subject_node": "N05. This is the first occurrence in this registry that closes a DAG node: the independent recertification ruled N05 SATISFIED. It also recorded N29 IMPLEMENTED and N30's mechanism IMPLEMENTED with its real act NOT PERFORMED. N06 and N07 remain NOT SATISFIED.",
+      "subject_package": "FIBDB053-D1-AUDITOR-CUSTODY-REALIZATION, remediation R2",
+      "certified_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0.json",
+          "blob_sha": "51cecd661a412bc33f7b126948292cc94c498063"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "blob_sha": "7012cd1a9f6133f0f840162217a0bdee841d484d"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_v1.0.0.json",
+          "blob_sha": "6c0831731e996e91162a864b1083d69e80b9bbeb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+          "blob_sha": "0fa50122da2fef1504f51910d69c7d67e87887f2"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "blob_sha": "9df6f82ae2f0ce5267ac4fb57b75eea47c00ecc0"
+        },
+        {
+          "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N32_HUMAN_CUSTODIAN_INTAKE_OWNER_DECISION_v1.0.0.json",
+          "blob_sha": "83a64ff872b8e2f42e9ab13b762dc42b42b9b2fb"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "6374e4be4abe981c68e2abdd62205b6acd953b65"
+        }
+      ],
+      "certified_implementation": "db/custody/**, scripts/custody/** and tests/custody/** at certified_at_commit.",
+      "certified_at_commit": "1c47566357f06fdc41280297bc7bc2e8bed4d504",
+      "certified_at_tree": "279307715e06057369af7d182bea9b3a4b93fea0",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL SHORT RECERTIFICATION of the remediation delta feb84915..1c475663, with the certifier's OWN external PEB observer (not the candidate's) and live Windows mutants.",
+      "VERDICT": "D1_AUDITOR_CUSTODY_REALIZATION_R2_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-23",
+      "blocking_findings": 0,
+      "nonblocking_findings": null,
+      "nonblocking_findings_hole_reason": "The total count was not supplied to the recording lane. The findings below are the ones evidenced to it, and are recorded as a list rather than turned into a number nobody counted.",
+      "nonblocking_findings_evidenced": [
+        "The sentinel recovery sweep enumerated UELLIX-N05-SENTINEL* without enforcing the '-' separator and swept a UELLIX-N05-SENTINELX-* decoy. Hardened by CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1; the decoy now survives.",
+        "Mutant B1d — a failed console probe read as 'attached' — survived every control.",
+        "Four bridge mutants are killed only by the Windows demonstration, not by the cross-platform suite.",
+        "Six non-secret probe result files from the previous candidate remained in %TEMP%."
+      ],
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate verdict document exists and none is reconstructed.",
+      "SELF_PIN_NOTE": "The seventh certified artifact is THIS REGISTRY at the blob it carried at the certified commit, which held five occurrences. It is not re-pinned to the blob this append produces.",
+      "B_1_STATUS_AFTER_THIS_OCCURRENCE": {
+        "status": "CLOSED",
+        "how_it_supersedes": "CERT-OCC-CUSTODY-REALIZATION-R1 recorded B-1 with BLOCKER_STATUS OPEN until an independent recertification of a successor candidate records it closed. THIS occurrence is that recertification. R1 is NOT edited; its OPEN status is superseded by this later append, which is the only way this registry changes a state.",
+        "evidence_as_ruled": "The certifier's own PEB observer found the value in the delivered consumer only: zero descendants, zero credential-bearing conhost, zero unreadable blocks, on the success, failure, timeout and launcher-kill paths. A launcher without a console was refused before the vault was read. Mutants reintroducing windowsHide:true, removing the console precondition, or detaching the consumer reproduced the leak under the certifier's observer."
+      },
+      "NODE_STATES_RULED": {
+        "N05": "SATISFIED",
+        "N29": "IMPLEMENTED",
+        "N30": "MECHANISM IMPLEMENTED; REAL ACT NOT PERFORMED",
+        "N32": "EXISTS; datum unsupplied at the certified commit",
+        "N06": "NOT SATISFIED",
+        "N07": "NOT SATISFIED"
+      },
+      "RESIDUALS_THAT_TRAVEL_WITH_N05": [
+        "The launcher heap holds the value for the launcher's lifetime (OF-CUST-1); no zeroization is claimed. processes_or_environments must name the launcher surface.",
+        "The WCM entry survives an abrupt kill by design; recovery is the bounded sentinel sweep, and for the real credential only the governed rotation removes it (OF-CUST-3).",
+        "The behavioural controls run only on Windows; ubuntu-latest runners do not execute them.",
+        "The production consumer topology must be re-demonstrated wherever it differs from the certified sentinel consumer."
+      ],
+      "ADMINISTRATIVE_CONSEQUENCE": "PRs #215, #216 and #217 became eligible for closure as SUPERSEDED_BY_PR_219; they were closed administratively, not merged, with branches retained, by CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1.",
+      "node_status_unchanged_by_this_record": "Beyond N05, no node is closed by this certification. N06 and N07 remain NOT SATISFIED; N08, N09 and N31 remain open; no credential exists."
+    },
+    {
+      "occurrence_id": "CERT-OCC-PRE-HC1-CONVERGENCE",
+      "subject_node": "N10 readiness, over the complete non-secret PRE-HC1 package (N01-N07, N09, and the owner intakes N08, N31, N32 carried into N06).",
+      "subject_package": "FIBDB053-D1-AUDITOR-PRE-HC1-CONVERGENCE",
+      "certified_artifacts": [
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PRE_HC1_CONVERGENCE_EXECUTION_RECORD_v1.0.0.json",
+          "blob_sha": "f001edaa724b209d20aa0793197b737b9fba5588"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_N06_CLOSURE_EXECUTION_RECORD_v1.0.0.json",
+          "blob_sha": "735da6270ca516d4501efc3531b420728dcbff80"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_RUNTIME_INPUTS_EXECUTION_RECORD_v1.0.0.json",
+          "blob_sha": "7f0ceb07f0745e9232cc45b7c0ca7baaa0f1ece4"
+        },
+        {
+          "path": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json",
+          "blob_sha": "7bd03fb296854f293ddf7bbe81cb4bdf78fb089f"
+        },
+        {
+          "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+          "blob_sha": "903a72e814f1785a7fd4dde208a791a3deefa072"
+        },
+        {
+          "path": "scripts/custody/d1-pre-hc1.ts",
+          "blob_sha": "a9f48ff7331679109dfca32103059f39dc953dac"
+        },
+        {
+          "path": "scripts/custody/d1-n06-closure.ts",
+          "blob_sha": "f6bed19b2ac85be5db2c44d6878cb656361091f4"
+        },
+        {
+          "path": "scripts/custody/d1-n09-valid-until.ts",
+          "blob_sha": "7093b9ce434062479907cc74984a3bdeb48f89a6"
+        }
+      ],
+      "certified_at_commit": "8aa5366c4303e55d802d55b3c2ae2aff2b677593",
+      "certified_at_tree": "0d011de8f94b6b53e9d373f42e7211085f69992a",
+      "CERTIFICATION_OCCURRED": true,
+      "certification_kind": "INDEPENDENT ADVERSARIAL PRE-HC1 CERTIFICATION of the complete non-secret package.",
+      "VERDICT": "D1_AUDITOR_PRE_HC1_CONVERGENCE_IC_PASS_WITH_NONBLOCKING_FINDINGS",
+      "certification_date": "2026-09-23",
+      "blocking_findings": 0,
+      "nonblocking_findings": 9,
+      "reviewer_identity": null,
+      "reviewer_identity_hole_reason": "NOT SUPPLIED by any artifact in this repository. Not inferred, not attributed.",
+      "exact_timestamp_utc": null,
+      "exact_timestamp_utc_hole_reason": "NOT SUPPLIED. Only the date is evidenced; no instant is invented.",
+      "VERDICT_ARTIFACT": "THIS REGISTRY ENTRY. No separate verdict document exists and none is reconstructed.",
+      "SELF_PIN_NOTE": "The fifth certified artifact is THIS REGISTRY at the blob it carried at the certified commit (six occurrences). It is not re-pinned to the blob this append produces.",
+      "PRE_HC1_NON_SECRET_PACKAGE": "CERTIFIED",
+      "N10": "READY_FOR_HUMAN_CONFIRMATION",
+      "HC1_EXECUTED": "NO",
+      "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+      "DB_CONNECTIONS_EXECUTED": 0,
+      "N07_ADJUDICATION": "N07 does NOT require a concrete evidence filename or instance file before HC-1. The certified authority deliberately defers the concrete name and the instance to N25 (FILENAME_NON_FIXATION); N07's exit condition and MR2-PRE-7 require only the skeleton and the pre-written rollback statements. The absence of an instance is CORRECT. N07 SATISFIED.",
+      "NONBLOCKING_FINDINGS": [
+        {
+          "id": "NB-1",
+          "headline_verbatim": "El CLI se autodeclara la base.",
+          "body_verbatim": "`pnpm custody:pre-hc1` usa como base declarada lo mismo que mide. Por eso `STOP_WRONG_HEAD` y `STOP_WRONG_TREE` no pueden saltar nunca desde el CLI: medido, da N01 PASS y N10 READY en una rama equivocada y",
+          "truncated_at_retrieval": true,
+          "consequence_carried": "At the HC-1 boundary an explicitly DECLARED prestate (branch, head, tree obtained independently before invocation) is required; the CLI's self-declared N01 alone is not sufficient."
+        },
+        {
+          "id": "NB-2",
+          "headline_verbatim": "N07 no detecta una instancia fabricada en `evidence/`:",
+          "body_verbatim": "con ella el conteo pasa de 30 a 31 y sigue en SATISFIED. En el candidato no hay ninguna: los 30 ficheros son de 2026-08 y el delta no toca el directorio.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-3",
+          "headline_verbatim": "La regex de precedentes es más ancha",
+          "body_verbatim": "que la convención `YYYY-MM-DD-att_<hex>-<slug>` que fija el manifiesto de N07. Cuenta nombres como `m8-`, `lifecycle1-` y un `.txt`.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-4",
+          "headline_verbatim": "N06 hereda estados en vez de recalcularlos.",
+          "body_verbatim": "Dentro de pre-HC1, N06 toma los `predecessor_states` que escribió su propio registro. Y N03 no depende de N01 en la evaluación completa. N10 sigue fallando cerrado por N02 y N04.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-5",
+          "headline_verbatim": "N05 se deriva solo del registro,",
+          "body_verbatim": "sin ligarlo a los blobs del mecanismo certificado.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-6",
+          "headline_verbatim": "HC1-S5 está marcada como verificable por máquina, pero no lo es del todo.",
+          "body_verbatim": "Incluye el nombre del custodio, que es un dato humano. Además no le transmite al owner los residuales de N05: - OF-CUST-1: copias del valor en el heap del lanzador",
+          "truncated_at_retrieval": true,
+          "consequence_carried": "HC1-S5 must be presented as NOT purely machine-verifiable and must disclose to the owner: (A) OF-CUST-1, copies of the value can remain in the launcher heap for the launcher's lifetime; (B) OF-CUST-3, the WCM entry can survive an abnormal launcher kill and must then be removed by the governed recovery path; (C) if the production consumer differs from the certified topology, delivery topology must be re-demonstrated."
+        },
+        {
+          "id": "NB-7",
+          "headline_verbatim": "El chequeo de \"misma base\" de N02 compara solo el HEAD,",
+          "body_verbatim": "no la rama. Sin impacto dentro de `evaluatePreHc1`.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-8",
+          "headline_verbatim": "PASSWORD NULL como retirada de emergencia:",
+          "body_verbatim": "la autoridad no dice si necesita su propia confirmación humana, y el paquete tampoco.",
+          "truncated_at_retrieval": false
+        },
+        {
+          "id": "NB-9",
+          "headline_verbatim": "N06 exige el expiry literal, milisegundos incluidos.",
+          "body_verbatim": "Rechaza el mismo instante escrito sin milisegundos. Falla cerrado.",
+          "truncated_at_retrieval": false
+        }
+      ],
+      "nonblocking_findings_source": "The IC session transcript \"D-1 PRE-HC1 adversarial certification\" (the certifier's own report, in Spanish), retrieved verbatim by transcript search. Text is quoted as retrieved; where the body continues past what was retrievable, \"truncated_at_retrieval\" is true and nothing is completed from inference.",
+      "node_status_after_this_record": "N05 and N07 are ruled SATISFIED by independent certification (R2 and this occurrence). The other package states — N01 at the candidate, N02, N03, N04, N06, N09, and the owner data N08, N31, N32 — are certified here as part of the package, not re-ruled one by one. N10 is READY, not SATISFIED. No credential exists."
     }
   ],
 
   "DERIVED_FACTS": {
-    "OCCURRENCE_COUNT": 3,
-    "CERTIFIED_ARTIFACT_COUNT": 10,
-    "VERDICTS_RECORDING_A_PASS": 3,
-    "VERDICTS_RECORDING_A_FAIL": 0,
-    "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 0,
-    "why_the_last_number_is_zero": "Every one of the three verdicts certifies an AUTHORITY PACKAGE. None of the three demonstrates a mechanism, supplies an owner datum, or fills an evidence artifact, which is what closing N05, N06 or N07 respectively would require. A registry that let three PASS strings read as three closed nodes would be the most expensive error it could make.",
+    "OCCURRENCE_COUNT": 7,
+    "CERTIFIED_ARTIFACT_COUNT": 32,
+    "VERDICTS_RECORDING_A_PASS": 6,
+    "VERDICTS_RECORDING_A_FAIL": 1,
+    "NODES_CLOSED_BY_THESE_CERTIFICATIONS": 2,
+    "COUNTS_RECOMPUTED_ON_APPEND": "The first three numbers were 3, 10 and 3 when this registry held three occurrences. They are RECOMPUTED from the arrays on every append, never incremented: an incremented count is a count nobody re-derived, which is the defect OF-N05-9 records. CERTIFIED_ARTIFACT_COUNT is the union of path-and-blob pairs, so the consolidated occurrence's pin of this registry at its own earlier blob counts once and does not collide with anything.",
+    "why_nodes_closed_is_two": "Two nodes have their closure ruled by an independent certification: N05 (the R2 recertification) and N07 (the PRE-HC1 certification, which adjudicated its filename clause). The PRE-HC1 certification also certifies the package states of N01-N04, N06, N09 and the owner data, but it does not re-rule each as a closure, and this count does not pretend it did. N10 is READY FOR HUMAN CONFIRMATION, which is not a closure.",
+    "DERIVED_PROSE_RULE": "The prose fields of DERIVED_FACTS state the counts in words, so they are REGENERATED with the counts on every append, exactly like the numbers. Only OCCURRENCES entries, their blob pins, verdict strings and hole reasons are immutable. This rule was stated after NB-9 of the custody realization certification observed the previous append editing this prose without saying so.",
     "derivation_note": "OCCURRENCE_COUNT and CERTIFIED_ARTIFACT_COUNT are derived by counting this document's own OCCURRENCES array and the union of its certified_artifacts entries, and are re-derivable by any reader from the arrays above."
+  },
+
+  "APPEND_RECORD": {
+    "rule": "This registry is APPEND_ONLY. An occurrence is ADDED to OCCURRENCES and the DERIVED_FACTS counts are RECOMPUTED from the arrays. No existing occurrence, blob pin, verdict string or hole reason is edited by an append, and this block records each one so a reader can tell the original write from a later addition.",
+    "appends": [
+      {
+        "appended_occurrence": "CERT-OCC-CONSOLIDATED",
+        "appended_by": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-R1",
+        "append_date": "2026-09-22",
+        "appended_at_base": "9ea0a9806a7a7be109cf7e2f17ce4d00c4107cbe",
+        "what_was_not_touched": "CERT-OCC-N05, CERT-OCC-N06 and CERT-OCC-N07 are byte-unchanged, including CERT-OCC-N06's deliberate pin to the PRE-correction custody inventory blob 28c2379f. Re-pinning that to the corrected blob would report that the corrected file is what was certified, which is false, and the consolidated closure authority says so in terms. The original self_check block below is also unedited and its 'three of three' phrasing is preserved rather than restated, because it is a claim about the three occurrences it was written for.",
+        "why_the_original_self_check_is_left_alone": "It is an assertion the AUTHORING lane made about ITS write set. Rewriting it to say 'four of four' would put this lane's words in that lane's mouth. The fourth occurrence's own fields carry the same guarantees and are checkable independently: reviewer_identity and exact_timestamp_utc are explicit nulls with stated hole reasons, no prior verdict document is reconstructed, and no secret value appears."
+      },
+      {
+        "appended_occurrence": "CERT-OCC-CUSTODY-REALIZATION-R1",
+        "appended_by": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-REMEDIATION-R2",
+        "append_date": "2026-09-23",
+        "appended_at_base": "feb849154af8bc75d18d5477512060db217771fb",
+        "what_was_not_touched": "The four earlier occurrences are byte-unchanged, and the original self_check is left as its authoring lane wrote it. The recomputed counts are OCCURRENCE_COUNT 5, VERDICTS_RECORDING_A_FAIL 1, VERDICTS_RECORDING_A_PASS 4, and CERTIFIED_ARTIFACT_COUNT unchanged at 17 because a FAIL certifies nothing. The examined blobs are pinned in the occurrence under a separate key so they cannot be mistaken for certified ones."
+      },
+      {
+        "appended_occurrence": "CERT-OCC-CUSTODY-REALIZATION-R2",
+        "appended_by": "CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1",
+        "append_date": "2026-09-23",
+        "appended_at_base": "1c47566357f06fdc41280297bc7bc2e8bed4d504",
+        "what_was_not_touched": "The five earlier occurrences are byte-unchanged, including R1's BLOCKER_STATUS OPEN, which is superseded by this append and not rewritten. Counts recomputed from the arrays: OCCURRENCE_COUNT 6, VERDICTS_RECORDING_A_PASS 5, VERDICTS_RECORDING_A_FAIL 1, NODES_CLOSED 1 (N05). The DERIVED_FACTS prose key was renamed with its content, per DERIVED_PROSE_RULE, because its old name asserted a zero that is no longer true."
+      },
+      {
+        "appended_occurrence": "CERT-OCC-PRE-HC1-CONVERGENCE",
+        "appended_by": "CV1-D1-AUDITOR-HC1-BOUNDARY-R1",
+        "append_date": "2026-09-23",
+        "appended_at_base": "8aa5366c4303e55d802d55b3c2ae2aff2b677593",
+        "what_was_not_touched": "The six earlier occurrences are byte-unchanged. Counts recomputed from the arrays: OCCURRENCE_COUNT 7, VERDICTS_RECORDING_A_PASS 6, VERDICTS_RECORDING_A_FAIL 1, NODES_CLOSED 2 (N05, N07). The DERIVED_FACTS prose key was renamed with its content, per DERIVED_PROSE_RULE."
+      }
+    ]
   },
 
   "self_check": {

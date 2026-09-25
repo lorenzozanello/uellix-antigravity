@@ -1,0 +1,183 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_N06_CLOSURE_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "PRE_MINT_EXECUTION_DATA_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_HOSTED_MUTATION__NO_WITNESS_EVIDENCE",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-N08-N09-N31-N06-CLOSURE-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner and not the custodian.",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "97a6caf6fa6878fd101e895110ed6017db28cfbe",
+  "AS_OF_BASE_TREE": "a7cd041dbcc5ca3b85f3ac011c803282bb7c6b91",
+  "predecessor_record": "docs/ops/release/FIBDB053_D1_AUDITOR_RUNTIME_INPUTS_EXECUTION_RECORD_v1.0.0.json",
+  "OWNER_INPUTS_SIGNED": {
+    "N08_PLANNED_FINAL_WITNESS": "2026-09-24T14:00:00Z",
+    "N31_PLANNED_REMOVAL_INSTANT": "2026-09-24T18:00:00Z",
+    "SIGNED": "YES",
+    "rule": "Exact UTC instants, bound verbatim. Not rounded, localized or reinterpreted."
+  },
+  "N08": {
+    "contract_re_derived": "DAG v1.0.0 N08 PLANNED FINAL WITNESS TIMESTAMP INTAKE: act \"The owner supplies a CONCRETE planned FINAL WITNESS timestamp\"; exit \"A concrete planned witness time exists\"; precondition N03. It is a PLANNED instant. No authority contradicts this reading.",
+    "value": "2026-09-24T14:00:00Z",
+    "provenance": "HUMAN_SUPPLIED_EXECUTION_DATUM",
+    "status": "SATISFIED — for planned-witness scheduling only.",
+    "NOT_A_WITNESS_RECORD": "This datum schedules the FINAL WITNESS. It does not state, imply or evidence that the witness has occurred."
+  },
+  "N09": {
+    "derivation": "computeValidUntilUtc(N08) in scripts/custody/d1-n09-valid-until.ts: strict UTC input with an explicit Z, +86400000 ms, UTC output, no local time and no rounding.",
+    "input": "2026-09-24T14:00:00Z",
+    "expiry_exact_utc": "2026-09-25T14:00:00.000Z",
+    "interval_ms": 86400000,
+    "provenance": "MACHINE_DERIVED_FROM_N08",
+    "status": "SATISFIED — one exact UTC instant, expressed in UTC."
+  },
+  "N31": {
+    "value": "2026-09-24T18:00:00Z",
+    "provenance": "HUMAN_SUPPLIED_EXECUTION_DATUM",
+    "exit_condition_check": "Supplied by the owner; exact UTC; not earlier than N08.",
+    "status": "SATISFIED",
+    "supersedes": "The date-only input 2026-09-24 recorded as RECEIVED by the predecessor record."
+  },
+  "W_R_E_RELATION": {
+    "W": "2026-09-24T14:00:00Z",
+    "R": "2026-09-24T18:00:00Z",
+    "E": "2026-09-25T14:00:00.000Z",
+    "W_le_R_le_E": true,
+    "checker": "checkPlannedRemoval, which validates and never rewrites",
+    "problems": [],
+    "operational_rule": "Remove the credential as soon as the governed work completes, and never later than the earlier of R and E. R is the owner-selected schedule; E is the validity ceiling. Neither is converted into the other."
+  },
+  "N06_EVALUATION": {
+    "method": "evaluateN06InRepo in scripts/custody/d1-n06-closure.ts. Fields parsed from SECRET_CUSTODY_CONTRACT.SSL_06_ADJUDICATION.CONSEQUENT_BINDING_REQUIREMENT; values read from the custody inventory; N09 re-derived from N08; N31 bounds re-checked; secret patterns refused; HARD predecessors read from the graph by hardPredecessorsOf.",
+    "root_clause_field_count": 8,
+    "pre_mint_field_count": 7,
+    "mint_date_excluded_by": "DAG N06 exit condition: \"contains all seven pre-mint fields. The mint date is absent and is expected to be, because the mint has not occurred.\" It is produced by N12 after N11.",
+    "fields": [
+      {
+        "phrase": "the capability name",
+        "field": "capability_name",
+        "preMint": true,
+        "present": true
+      },
+      {
+        "phrase": "the role",
+        "field": "role",
+        "preMint": true,
+        "present": true
+      },
+      {
+        "phrase": "the target project ref",
+        "field": "target_project_ref",
+        "preMint": true,
+        "present": true
+      },
+      {
+        "phrase": "the human custodian",
+        "field": "human_custodian",
+        "preMint": true,
+        "present": true
+      },
+      {
+        "phrase": "every process or environment that will hold it",
+        "field": "processes_or_environments",
+        "preMint": true,
+        "present": true
+      },
+      {
+        "phrase": "the mint date",
+        "field": "mint_date",
+        "preMint": false,
+        "present": false
+      },
+      {
+        "phrase": "the expiry if OD-3 sets one",
+        "field": "expiry_exact_utc",
+        "preMint": true,
+        "present": true
+      },
+      {
+        "phrase": "the planned removal date",
+        "field": "planned_removal_date",
+        "preMint": true,
+        "present": true
+      }
+    ],
+    "pre_mint_holes": [],
+    "mint_date_present": false,
+    "expiry_matches_N09": true,
+    "removal_within_bounds": true,
+    "secret_findings": [],
+    "hard_predecessors_from_graph": [
+      "N03",
+      "N05",
+      "N09",
+      "N31",
+      "N32"
+    ],
+    "predecessor_states": {
+      "N03": "SATISFIED",
+      "N05": "SATISFIED",
+      "N09": "SATISFIED",
+      "N31": "SATISFIED",
+      "N32": "SATISFIED"
+    },
+    "predecessor_state_basis": {
+      "N03": "OD-1..OD-6 ratified and blob-bound (N06 authority N06_STATUS_DETERMINATION).",
+      "N05": "Independent R2 recertification, registry occurrence CERT-OCC-CUSTODY-REALIZATION-R2.",
+      "N09": "This record, machine-derived from N08.",
+      "N31": "This record, owner-signed exact UTC instant within bounds.",
+      "N32": "docs/ops/release/FIBDB053_D1_AUDITOR_RUNTIME_INPUTS_EXECUTION_RECORD_v1.0.0.json."
+    },
+    "unsatisfied_predecessors": [],
+    "reasons": [],
+    "status": "SATISFIED"
+  },
+  "PROCESSES_OR_ENVIRONMENTS": {
+    "status": "POPULATED AT THE SURFACE-CLASS LEVEL N06 REQUIRES",
+    "surfaces": "WCM entry; bridge during each call; launcher heap for its lifetime; one consumer environment per delivery.",
+    "deliveries": "PRECHECK-R2 (exact command produced by N23 / the N27 lane) and FINAL WITNESS (macro-chain node 9, outside this DAG).",
+    "exact_consumer_commands": "NOT REQUIRED BY N06. N06 records every process or environment that WILL hold the value, and each surface class is fixed. The exact commands have designated later producers and must be re-demonstrated where they differ from the certified sentinel consumer. Not silently closed: carried as a future detail."
+  },
+  "N06_STATUS": "SATISFIED",
+  "N06_REMAINING_HOLES": [],
+  "FINAL_WITNESS_ACTUAL_EXECUTION": "NOT YET OCCURRED. No hosted execution evidence exists; the N08 instant is a planning datum.",
+  "SCHEDULE_SAFETY": {
+    "evaluated_at_utc": "2026-09-23T13:58:17.242Z",
+    "planned_final_witness_is_in_the_future": true,
+    "it_authorizes_nothing": "A future N08 instant defines the schedule and the validity window. It does not authorize any credential-sensitive act, and wall-clock time is never a reason to mint."
+  },
+  "NEXT": {
+    "N10_hard_predecessors_from_graph": [
+      "N02",
+      "N03",
+      "N04",
+      "N05",
+      "N06",
+      "N07",
+      "N09"
+    ],
+    "N10_predecessor_states": {
+      "N02": "SATISFIED per DAG v1.0.1 N02_RESOLUTION, SUBJECT TO N01 freshness re-derived at the execution lane base.",
+      "N03": "SATISFIED",
+      "N04": "NOT ESTABLISHED — target identity must be re-derived at execution time (v1.0.1: not a standing fact).",
+      "N05": "SATISFIED",
+      "N06": "SATISFIED",
+      "N07": "NOT SATISFIED — the certified skeleton is not a filled evidence package; the filename is derived at the execution lane base and the rollback statements pre-reviewed.",
+      "N09": "SATISFIED"
+    },
+    "NEXT_GOVERNED_NODES": "N07 (evidence package and rollback readiness) and the execution-time re-derivations of N01/N02 and N04 — all repository/workstation acts with no credential — then N10.",
+    "NEXT_CREDENTIAL_SENSITIVE_ACT": {
+      "node": "N11, MR-2 CREDENTIAL MINT AND ROTATION, reachable only after N10 (HC-1) is answered affirmatively.",
+      "act": "Set a freshly generated credential for role uellix_auditor on project bvyzblhqymxruxdguaee with VALID UNTIL 2026-09-25T14:00:00.000Z.",
+      "target": "Hosted Supabase project bvyzblhqymxruxdguaee, role uellix_auditor.",
+      "reversibility": "MR-2 has NO rollback; its compensating action is ROTATE AGAIN or ALTER ROLE uellix_auditor NOLOGIN (N07 pre-reviewed statements).",
+      "expected_evidence": "A connection as uellix_auditor with the new value in which the server reports current_user = session_user = uellix_auditor; N12 then records the mint date in this inventory; N30 deposits the value into WCM.",
+      "cleanup": "Removal as soon as governed work completes and no later than min(R, E); positive absence verification; N28 rotation and custody closure after the FINAL WITNESS.",
+      "gate": "HUMAN_CONFIRMATION_REQUIRED_BEFORE_CREDENTIAL_ACT — HC-1 (N10) with all six statements HC1-S1..S6, including VALID UNTIL 2026-09-25T14:00:00.000Z."
+    },
+    "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+    "DB_CONNECTIONS_EXECUTED": 0
+  }
+}

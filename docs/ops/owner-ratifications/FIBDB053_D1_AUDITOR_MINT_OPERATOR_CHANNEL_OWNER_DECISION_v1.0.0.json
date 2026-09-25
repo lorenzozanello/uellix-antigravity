@@ -1,0 +1,143 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD",
+  "document_class": "OPERATOR_CHANNEL_AND_OEP1_AND_SCHEDULE_DECISION_RECORD__APPEND_ONLY__NO_EXECUTION__NO_SECRET__NO_CREDENTIAL_ACT_AUTHORIZED_BY_ITSELF",
+  "append_only": true,
+  "mission_id": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "lane": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "role": "Record, verbatim and without reinterpretation, the owner decisions that answer the open execution gaps found at the HC-1 boundary of candidate d0c56661 (OT-3 channel, NON_AUTHORIZATIONS[23], SSL-06 for the operator credential, OEP-1) and the fresh schedule.",
+  "mode": "DOCS_AND_IMPLEMENTATION__THIS_FILE_IS_THE_DOCS_HALF",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner.",
+  "repository": "uellix",
+  "materialized_at_base": "3cf9d2ffd2aabd056a7c69a3f9c2450edc4cb0c9",
+  "CONTEXT": {
+    "gap_found": "At the HC-1 boundary of certified candidate d0c56661 (event docs/ops/release/FIBDB053_D1_AUDITOR_PREHC1_PACKAGE_CERTIFICATION_d0c56661e1bf_v1.0.0.json), N11 could not be executed under the effective authority: OT-3 (db/custody/mint-route-b-contract.ts) left the channel of UELLIX_D1_MINT_OPERATOR_DATABASE_URL to 'the future execution authority'; the capability EXECUTION_AUTHORITY's NON_AUTHORIZATIONS[23] does not authorize operator credential use outside the OD-2 alternative the owner did not elect; SSL-06 requires the operator credential's holders to be inventoried; OEP-1 (hosted logging posture) was unmeasured.",
+    "sequence": "The owner first stated the OT-3 posture as a design posture, then signed the decisions below in two messages of the same chat on 2026-09-24."
+  },
+  "DECISIONS_VERBATIM": {
+    "AC-4": {
+      "OT3_CHANNEL": "OPTION_A",
+      "TEXT": "La credencial privilegiada de UELLIX_D1_MINT_OPERATOR_DATABASE_URL será suministrada exclusivamente mediante un launcher/herramienta Node efímero, ejecutado por Lorenzo Zanello en su propio entorno con consola.",
+      "SECRET_CONSTRAINTS": [
+        "se solicita sin eco;",
+        "no se envía a Claude;",
+        "no se imprime;",
+        "no se persiste;",
+        "no se escribe en fichero;",
+        "no aparece en argv;",
+        "no queda en historial;",
+        "no se incorpora al repositorio;",
+        "solo puede existir durante la ejecución autorizada en la superficie mínima necesaria para lanzar el proceso hijo."
+      ]
+    },
+    "AC-5": {
+      "NON_AUTHORIZATIONS_23_DECISION": "AUTHORIZE_NARROW_N11_OPERATOR_CREDENTIAL_EXCEPTION",
+      "SCOPE": "La excepción es exclusivamente para el acto N11/MR-2 gobernado por este successor.",
+      "NOT_AUTHORIZED": [
+        "lecturas P1 adicionales;",
+        "otros actos DB;",
+        "otros consumidores;",
+        "reutilización posterior de la credencial;",
+        "persistencia de la credencial."
+      ]
+    },
+    "AC-6": {
+      "SSL06_DECISION": "INVENTORY_EPHEMERAL_PARENT_LAUNCHER_AS_CREDENTIAL_BEARING_SURFACE",
+      "SURFACE_MUST": [
+        "entrar mecánicamente en N06;",
+        "tener lifetime acotado;",
+        "ser destruida después del child;",
+        "no dejar secreto en parent process.env;",
+        "no transmitirlo a procesos no autorizados;",
+        "probar ausencia de herencia accidental hacia conhost/depositor mediante el mecanismo PEB autorizado."
+      ]
+    },
+    "EXECUTION_PROCEDURE": [
+      "target-host derivado exclusivamente de N04;",
+      "valid-until derivado exclusivamente del schedule efectivo;",
+      "driver-root derivado de la ruta B autorizada;",
+      "cualquier mismatch => STOP."
+    ],
+    "TOOL_BINDING": "La herramienta y launcher efectivos deben estar fijados por SHA-256 antes de HC-1. Cualquier cambio posterior invalida la preparación y exige re-evaluación.",
+    "HC1_SCOPE_DECISION": {
+      "TEXT": "HC-1 deberá confirmar explícitamente:",
+      "ITEMS": [
+        "1. MR-2;",
+        "2. el uso único de la credencial privilegiada del operador por este canal certificado;",
+        "3. target;",
+        "4. role;",
+        "5. VALID UNTIL;",
+        "6. custody/delivery/retirement contract."
+      ]
+    },
+    "OEP1_DECISION": {
+      "VALUE": "NOT_WAIVED.",
+      "TEXT": "OEP-1 debe cerrarse antes de HC-1. Deriva la mínima verificación no-secret-bearing necesaria. Si cerrarlo exige una autoridad/provider/DB capability que hoy no existe, STOP y reporta el mínimo gap; no inventes ni aceptes el riesgo."
+    },
+    "OEP1_PROBE": {
+      "VALUE": "C",
+      "RATIFICATION": "El canal OT-3 debe quedar implementado y sometido a recertificación independiente ANTES de utilizar una credencial privilegiada real, incluso para la sonda OEP-1.",
+      "NOT_AUTHORIZED": "No autorizo OPTION_A ni OPTION_B.",
+      "PHASE_1": "author successor → implementación del canal OT-3 → inventario SSL-06 / N06 → launcher + tool binding → tests/mutations/PEB sintético → schedule successor → commit/push → exact-head CI → READY_FOR_INDEPENDENT_RECERT",
+      "PHASE_1_NOT_EXECUTED": [
+        "la sonda OEP-1 real;",
+        "N11;",
+        "HC-1;",
+        "ninguna conexión DB hosted."
+      ],
+      "PHASE_2_ONLY_AFTER_INDEPENDENT_PASS": [
+        "volveremos a este mismo lineage;",
+        "la sonda OEP-1 será una lectura real, fija y read-only;",
+        "se ejecutará por el canal ya certificado;",
+        "no podrá mutar DB ni proveedor;",
+        "no podrá ejecutar N11;",
+        "no podrá generar/rotar credenciales."
+      ],
+      "OEP1_EVIDENCE_BINDING": {
+        "TEXT": "La evidencia OEP-1 deberá incorporarse de forma append-only y quedar ligada a:",
+        "ITEMS": [
+          "target N04;",
+          "principal del operador;",
+          "tool/launcher hashes certificados;",
+          "timestamp;",
+          "lista cerrada de settings observados;",
+          "verdict;",
+          "invalidation predicates."
+        ]
+      },
+      "OEP1_DELTA_RECERT": "Luego deberá someterse únicamente el delta OEP-1 a una recertificación independiente focalizada.",
+      "THEN": "Solo después: certification event → PRE-HC1 fresco → UTC margin → HC-1 → N11."
+    },
+    "SCHEDULE": {
+      "SCHEDULE_SUPERSESSION_AUTHORIZED": "YES",
+      "N08": "2026-09-28T14:00:00Z",
+      "N31": "2026-09-28T18:00:00Z",
+      "N09_RULE": "N09 debe derivarse mecánicamente del algoritmo gobernado. No copies ni reutilices el N09 anterior.",
+      "RESTATED": "SCHEDULE remains: N08 = 2026-09-28T14:00:00Z / N31 = 2026-09-28T18:00:00Z / N09 = mechanically derived only."
+    },
+    "HC1": "HC-1 IS NOT GRANTED.",
+    "SIGNED": "YES"
+  },
+  "SOURCE": "The owner's two messages in the lane conversation on 2026-09-24: 'CONTINUATION — CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1 / OWNER DECISION — OT-3 + SCHEDULE SUCCESSION ... SIGNED = YES / HC-1 IS NOT GRANTED.' and 'OEP1_PROBE = C / SIGNED = YES / RATIFICATION ... HC-1 IS NOT GRANTED.' Transcribed; no field is inferred. The AC-4/AC-5/AC-6 keys are the conflict ids DAG v1.0.7 declares for these three decisions, so that the chain's ruling reader can confirm each outcome against this SIGNED record; the decision fields inside each key are the owner's own names and values.",
+  "NOT_AN_OWNER_DECISION": [
+    "The minimal non-secret OEP-1 verification (the closed settings list, the probe statement, the verdict rules and the invalidation predicates) is DERIVED by the execution authority from the owner's instruction 'Deriva la mínima verificación no-secret-bearing necesaria'; it is a technical derivation for independent review, not an owner choice.",
+    "The engineering shape of the channel (launcher source in the repository built to bare node outside it; mint and probe tools outside the repository; pins by sha256) is the executor's implementation of OPTION_A, recorded in the execution authority for independent review."
+  ],
+  "WHAT_THESE_DECISIONS_DO_NOT_DECIDE": [
+    "No credential act is authorized. HC-1 is NOT granted.",
+    "No hosted connection is authorized in PHASE 1, including the OEP-1 probe.",
+    "PASSWORD NULL remains under D1_PASSWORD_NULL_REQUIRES_SEPARATE_HUMAN_CONFIRMATION (mint-route owner decision), unchanged.",
+    "The operator principal's identity is not named by the owner; the OEP-1 evidence records the principal the probe observes, and N11 is bound to it."
+  ],
+  "execution_not_authorized_by_this_ratification": "No credential is minted, rotated, deposited or delivered. No PostgreSQL connection is opened. No provider is touched. No operator credential is requested, typed or used.",
+  "self_check": {
+    "no_secret_value": "No credential, DSN, userinfo, password hash, vault handle, entry key or lookup token appears anywhere in this document.",
+    "verbatim": "Every decision string is transcribed exactly as supplied, including Spanish text and punctuation."
+  },
+  "required_independent_review": "MANDATORY, as part of the operator-channel successor package this record belongs to.",
+  "final_state": "D1_OPERATOR_CHANNEL_OPTION_A__NA23_NARROW_N11_EXCEPTION__SSL06_PARENT_LAUNCHER_INVENTORIED__OEP1_NOT_WAIVED_PROBE_C__SCHEDULE_2026_09_28__HC1_NOT_GRANTED",
+  "next_gate": "PHASE 1 successor -> independent recertification of the channel. PHASE 2 (OEP-1 probe through the certified channel) only after its PASS."
+}

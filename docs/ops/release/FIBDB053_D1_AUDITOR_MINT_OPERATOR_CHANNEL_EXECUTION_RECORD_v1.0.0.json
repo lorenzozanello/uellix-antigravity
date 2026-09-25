@@ -1,0 +1,207 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "OPERATOR_CHANNEL_SUCCESSOR_PHASE_1_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_CONNECTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R1",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "base_commit": "3cf9d2ffd2aabd056a7c69a3f9c2450edc4cb0c9",
+    "base_tree": "fddab60021618135a4bf662d964c7be209781d93",
+    "base_state": "certified candidate d0c56661 + its certification event only; its HC-1 boundary found the N11 execution inputs undecided"
+  },
+  "OWNER_DECISIONS_CONSUMED": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0.json (AC-4 OPTION_A, AC-5 narrow N11 exception, AC-6 parent launcher inventoried, EXECUTION_PROCEDURE, TOOL_BINDING, HC1_SCOPE_DECISION, OEP1 NOT_WAIVED, OEP1_PROBE = C, schedule 2026-09-28; SIGNED; HC-1 NOT GRANTED)",
+  "OEP1_GAP_REPORTED_BEFORE_THIS_LANE": "The minimal non-secret OEP-1 verification needs a session as the operator principal; no authority authorized a pre-HC1 read (P1 reads are the auditor's, post-mint; the authorized management-plane observation is one project listing). The owner chose C: certify the channel first, probe in PHASE 2.",
+  "WRITE_SET": {
+    "authority_and_records": [
+      "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_OWNER_DECISION_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_v1.0.0.json (new, frozen before implementation)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.7.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.1.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_RECORD_v1.0.0.json (this record)",
+      "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json (schedule values under update_record_schedule_supersession_v1_0_1; new operator_credential section under update_record_operator_credential_section)"
+    ],
+    "code": [
+      "db/custody/mint-operator-channel.ts (new: prompt, value checks, tool environment, argv guard, channel clauses, OEP-1 closed list, statements, verdict)",
+      "db/custody/mint-route-b-contract.ts (OT-13, OT-14 added to OPERATOR_TOOL_CONTRACT)",
+      "scripts/custody/d1-mint-operator-launcher.ts (new: the launcher)",
+      "scripts/custody/d1-mint-operator-channel-build.ts (new: deterministic launcher build and digest)",
+      "scripts/custody/d1-mint-operator-evidence.ts (new: CHANNEL_BINDING reader, OEP-1 evidence contract, PMR facts)",
+      "scripts/custody/d1-mint-operator-plan.ts (new: pre-execution gate)",
+      "scripts/custody/d1-oep1-probe-harness.ts (new: probe contract harness)",
+      "scripts/custody/d1-mint-operator-channel-demonstration.ts (new: PEB demonstration)",
+      "scripts/custody/d1-mint-operator-channel-mutation.ts (new: mutation battery)",
+      "scripts/custody/d1-mint-tool-contract-harness.ts (WRONG_DRIVER_VERSION, WRONG_OPERATOR_PRINCIPAL, TOOL_INSIDE_GIT_TREE; --operator-principal; fake driver reports 3.4.9; fakes exported)",
+      "scripts/custody/d1-delivery-matrix.ts (operator credential surfaces and their check)",
+      "scripts/custody/d1-n06-closure.ts (N06 checks the operator section)",
+      "scripts/custody/d1-pre-hc1-post-mint.ts (PMR-11/12/13; PMR-10 mapping for AC-4/5/6)",
+      "scripts/custody/d1-dag-validate.ts (v1.0.7 registered in GRAPH_SOURCES)",
+      "scripts/custody/d1-package-closure.ts (launcher, gate, probe harness, demonstration are execution entry points)",
+      "package.json (custody:operator-channel:gate|build|demonstrate|mutation)"
+    ],
+    "tests": [
+      "tests/custody/d1-mint-operator-channel.test.ts (new)",
+      "tests/custody/d1-oep1-probe-contract.test.ts (new)",
+      "tests/custody/d1-dag-amendment-v107.test.ts (new)",
+      "tests/custody/support/fake-only-oep1-probe-tool.ts (new)",
+      "tests/custody/support/oep1-evidence-fixture.ts (new)",
+      "tests/custody/support/fake-only-mint-tool.ts (--operator-principal and driver-version checks; two non-conforming variants)",
+      "tests/custody/d1-mint-route-b-contract.test.ts (OT-13/OT-14 controls; the real-driver refusal passes --operator-principal)",
+      "tests/custody/d1-pre-hc1-post-mint.test.ts (ALL_GOOD carries a satisfied operator channel; 25 one-input controls for PMR-10/11/12/13)",
+      "tests/custody/d1-cert-event-termination.test.ts (expected open set = PMR-9 plus only what is open by design, derived from the OEP-1 evidence files, not from the evaluator)",
+      "tests/custody/d1-effective-schedule.test.ts and tests/custody/d1-graph-lineage.test.ts (the 'next' version is derived from the live chain instead of the literal 1.0.1 / 1.0.7, which had become the live links)",
+      "tests/custody/d1-dag-amendment-v106.test.ts (measured through v1.0.6 itself, the pattern of the v1.0.5 test)"
+    ],
+    "outside_the_repository": [
+      "%LOCALAPPDATA%/uellix-d1-mint-operator-channel/tools/d1-mint-operator-tool.js (sha256 ecef0bf03e0564f42692b9d948ce96fa6f9c1574a5d9d6b5d1cf99f13bb20fcf)",
+      "%LOCALAPPDATA%/uellix-d1-mint-operator-channel/tools/d1-oep1-probe-tool.js (sha256 3c47f81e512d9bbaecb7b61c92ead6fe6608cc85f4f47f8492af919a1ebb7977)"
+    ],
+    "not_touched": [
+      "any certification event",
+      "the certification occurrence registry",
+      "any earlier DAG amendment or schedule link",
+      "the N05 delivery mechanism (process-delivery.ts, wcm-credential-store.ts)",
+      "any hosted resource"
+    ]
+  },
+  "SCHEDULE": {
+    "effective_source": "docs/ops/release/FIBDB053_D1_AUDITOR_SCHEDULE_SUPERSESSION_v1.0.1.json",
+    "N08": "2026-09-28T14:00:00Z",
+    "N31": "2026-09-28T18:00:00Z",
+    "N09": "2026-09-29T14:00:00.000Z",
+    "N09_derivation": "computeValidUntilUtc executed at 2026-09-24T11:34:22.786Z; chain N06 -> v1.0.0 -> v1.0.1 re-derived with 0 errors",
+    "ordering": "written before the successor's certification"
+  },
+  "CHANNEL_BINDING_AT_THIS_CANDIDATE": {
+    "launcher_build_digest": "18871829e026ae20dfe56f22a665ad58f7b322d735c46c9bcd9cc09c03a318a4",
+    "mint_tool_sha256": "ecef0bf03e0564f42692b9d948ce96fa6f9c1574a5d9d6b5d1cf99f13bb20fcf",
+    "probe_tool_sha256": "3c47f81e512d9bbaecb7b61c92ead6fe6608cc85f4f47f8492af919a1ebb7977"
+  },
+  "REAL_TOOLS_UNDER_THE_CONTRACT_HARNESSES": {
+    "mint_tool": {
+      "SUCCESS": "CONFORMS (13 checks, exit 0)",
+      "FAILS_BEFORE_TRANSACTION": "CONFORMS (6 checks, exit 1)",
+      "MINT_FAILS": "CONFORMS (13 checks, exit 1)",
+      "COMMIT_TRANSPORT_LOST": "CONFORMS (13 checks, exit 4)",
+      "COMMIT_TIMEOUT": "CONFORMS (13 checks, exit 4)",
+      "COMMIT_GENERIC_TRANSPORT_ERROR": "CONFORMS (13 checks, exit 4)",
+      "COMMIT_SERVER_ERROR_SQLSTATE": "CONFORMS (13 checks, exit 4)",
+      "KILLED_DURING_COMMIT": "CONFORMS (10 checks, exit 137)",
+      "COMMIT_NO_FINAL_OUTPUT": "CONFORMS (10 checks, exit null)",
+      "UNPINNED_TARGET": "CONFORMS (2 checks, exit 2)",
+      "WRONG_DRIVER_VERSION": "CONFORMS (2 checks, exit 2)",
+      "WRONG_OPERATOR_PRINCIPAL": "CONFORMS (2 checks, exit 2)",
+      "TOOL_INSIDE_GIT_TREE": "CONFORMS (2 checks, exit 2)"
+    },
+    "probe_tool": {
+      "SUCCESS": "CONFORMS (11 checks, exit 0)",
+      "QUERY_FAILS": "CONFORMS (11 checks, exit 1)",
+      "UNPINNED_TARGET": "CONFORMS (5 checks, exit 2)",
+      "WRONG_DRIVER_VERSION": "CONFORMS (5 checks, exit 2)",
+      "TOOL_INSIDE_GIT_TREE": "CONFORMS (5 checks, exit 2)"
+    },
+    "summary": "18/18 scenarios CONFORMS on the pinned bytes; fake drivers and RFC 6761 .invalid hosts only"
+  },
+  "PEB_DEMONSTRATION": {
+    "script": "pnpm custody:operator-channel:demonstrate -- --out-dir=<outside>",
+    "run_directory": "%LOCALAPPDATA%/uellix-d1-mint-operator-channel/demo-1790252227 (demonstration.json)",
+    "overall": "SATISFIED_CANDIDATE",
+    "observer": {
+      "polls": 427,
+      "processes_observed": 41
+    },
+    "controls_passed": 29,
+    "controls": [
+      "PINS_TOOLS_MATCH",
+      "PINS_LAUNCHER_MATCH",
+      "OBS0_OBSERVER_SEES_FIXTURE",
+      "CH_MINT_TOOL_SPAWNED_AND_OBSERVED",
+      "CH_MINT_VALUE_IN_TOOL_BLOCK",
+      "CH_MINT_LAUNCHER_BLOCK_CLEAN",
+      "CH_MINT_NO_CONHOST_HOLDS_IT",
+      "CH_MINT_ONLY_THE_TOOL_HOLDS_IT",
+      "CH_MINT_DEPOSITOR_OBSERVED_AND_CLEAN",
+      "CH_MINT_OUTCOME",
+      "CH_PROBE_TOOL_SPAWNED_AND_OBSERVED",
+      "CH_PROBE_VALUE_IN_TOOL_BLOCK",
+      "CH_PROBE_LAUNCHER_BLOCK_CLEAN",
+      "CH_PROBE_NO_CONHOST_HOLDS_IT",
+      "CH_PROBE_ONLY_THE_TOOL_HOLDS_IT",
+      "CH_PROBE_OUTCOME",
+      "CH_HIDDEN_TOOL_SPAWNED_AND_OBSERVED",
+      "CH_HIDDEN_VALUE_IN_TOOL_BLOCK",
+      "CH_HIDDEN_LAUNCHER_BLOCK_CLEAN",
+      "CH_HIDDEN_NO_CONHOST_HOLDS_IT",
+      "CH_HIDDEN_ONLY_THE_TOOL_HOLDS_IT",
+      "CH_HIDDEN_OUTCOME",
+      "NP10_NO_VALUE_IN_ANY_COMMAND_LINE",
+      "CH_NOCON_REFUSED_NOTHING_SPAWNED",
+      "MUT_HIDE_CAUGHT_CONHOST_HOLDS_VALUE",
+      "MUT_PENV_CAUGHT_LAUNCHER_HOLDS_VALUE",
+      "OUTPUT_CLEAN",
+      "FILES_CLEAN",
+      "HISTORY_CLEAN"
+    ],
+    "measured_model": {
+      "shared_console": "Launcher run from a console, tool spawned with windowsHide:false, detached:false: the value is in the tool's environment block only; the launcher's own block, the depositor's block and every conhost block are clean.",
+      "hidden_console": "A launcher started with windowsHide:true (CREATE_NO_WINDOW) HAS a console without a window, so it passes OC-1; its tool shares that console; measured: no conhost carries the value.",
+      "no_console": "A launcher started DETACHED (no console at all, the B-1 hazard) is refused with CHANNEL_NO_CONSOLE before anything is read.",
+      "negative_controls": "A launcher build mutated to spawn the tool with windowsHide:true IS caught (a conhost carries the value); one mutated to write its own process.env IS caught (the launcher's block carries it)."
+    },
+    "first_run_note": "The first run used windowsHide:true for the 'no console' case and failed that control: the launcher passed OC-1. Measured cause: CREATE_NO_WINDOW gives the process a hidden console. The control was corrected to a DETACHED launcher (no console), and the hidden-console case was added as its own measured run. Recorded, not hidden."
+  },
+  "MUTATION_RESULTS": {
+    "script": "pnpm custody:operator-channel:mutation",
+    "attribution_rule": "A mutant of the launcher closure also changes the pinned launcher digest, which fails the pin test (P-2) for every such mutant. A mutant counts as KILLED only by a failing test OUTSIDE the pin block.",
+    "finding_while_building_it": "Before that rule, M-WINDOWS-HIDE was killed ONLY by the pin test: P-3 compared the spawn flags with TOOL_SPAWN_FLAGS, the very constant under mutation. P-3 now compares with the literal flags and asserts the constant separately. Recorded as a defect the battery found in its own control.",
+    "results": {
+      "M-ECHO": "RED (N-ECHO: reads the line in raw mode, writes only the prompt and a newline)",
+      "M-NO-RAW": "RED (N-ECHO: refuses a console that does not enter raw mode)",
+      "M-ENV-SPREAD": "RED (P-3: allowlisted environment)",
+      "M-PARENT-ENV-WRITE": "RED (P-3: the launcher's own environment is unchanged)",
+      "M-WINDOWS-HIDE": "RED (P-3: literal spawn flags)",
+      "M-ARGV-CHECK": "RED (N-ARGV: password alone / base64)",
+      "M-HOST-CHECK": "RED (N-WRONG-HOST)",
+      "M-PLAN-HOST": "RED (STOP_PLAN_MISMATCH targetHost)",
+      "M-PLAN-VALID-UNTIL": "RED (STOP_PLAN_MISMATCH validUntil)",
+      "M-PLAN-DRIVER": "RED (STOP_PLAN_MISMATCH driverRoot)",
+      "M-TOOL-HASH": "RED (N-STALE-TOOL-HASH before the prompt)",
+      "M-SYNTHETIC-GATE": "RED (N-SYNTHETIC-MODE-REAL-HOST)",
+      "M-N06-OPERATOR": "RED (N-SURFACE-OMITTED, 5 cases)",
+      "M-OEP1-VERDICT": "RED (N-OEP1-VERDICT log_statement all/mod)",
+      "M-PMR13-PINS": "RED (PMR-13 evidence from another probe tool)",
+      "M-SELF-TEST": "GREEN (comment-only mutant survives: the battery can report green)"
+    },
+    "summary": "15/15 RED by behaviour + self-test GREEN; every mutated file restored byte for byte from memory (git checkout never used)"
+  },
+  "PRE_HC1_STATE_OF_THIS_CANDIDATE": {
+    "expected_before_its_event": "N10 NOT_READY by PMR-9 (not certified) and PMR-13 (no OEP-1 evidence) only",
+    "expected_after_its_event": "N10 NOT_READY by PMR-13 only, by design (OEP1_PROBE = C)",
+    "measured": "at the committed and pushed head, recorded by the lane report (not in this file, which is part of the measured tree)"
+  },
+  "RESIDUALS_FOR_THE_INDEPENDENT_RECERTIFICATION": [
+    "RC-ECHO: the no-echo property is measured on a TTY double (raw mode entered, nothing written, raw refused if not honoured) and by the libuv raw-mode contract; the PEB demonstration feeds the synthetic value on a pipe (OC-3). A real console keystroke run with the screen buffer read back was not performed.",
+    "RC-TOCTOU: the hosted logging posture can change between the PHASE 2 probe and N11; no in-act re-read is authorized (AC-5). Bounded by IP-1..IP-6 and the observation time shown at HC-1.",
+    "RC-TOOLS-OUTSIDE-VCS: the two tools live outside version control by authority; their bytes are pinned by sha256 and must still exist at the pinned path for the certifier and for execution. Losing them means a new pin and a new candidate.",
+    "RC-HEAP: the launcher holds the value as one non-zeroable JavaScript string for its short life (OF-CUST-1 analogue), disclosed in the inventory's launcher surface.",
+    "RC-VERDICT-RULES: the OEP-1 verdict rules are a technical derivation (pgaudit treated conservatively; three unruled statement recorders are INCONCLUSIVE); they are for independent review, not owner decisions.",
+    "RC-GIT-TREE-CHECK: the tools' run-time OT-1 refusal keys on a .git ancestor; the fake-only fixtures cannot carry it (rendered under a temp directory that is itself inside a git work tree on this workstation) and it is measured on the real tools only.",
+    "Carried unchanged: the six nonblocking findings of the d0c56661 certification event (NB-1..NB-6)."
+  ],
+  "LOCAL_VALIDATION": {
+    "custody_suite": "710/710 with CI=true FORCE_COLOR=1, including tests/custody/d1-cert-event-termination.test.ts and its nested complete custody suite in a real-git copy",
+    "measured_at_tree": "d838cdeb619674a17f8bbdc7ec6dd970d604e56b",
+    "note": "measured on the successor tree BEFORE this record was added (the record is documentation; the exact-head CI of the pushed commit measures the final tree)"
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "OPERATOR_CREDENTIAL_REQUESTED_OR_USED": 0,
+  "DB_CONNECTIONS_EXECUTED": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": "0 by this lane's acts; a git push creates a Vercel Preview deployment by platform behaviour",
+  "final_state": "READY_FOR_INDEPENDENT_RECERT",
+  "next_gate": "ONE independent recertification of this operator-channel successor (PHASE 1). The certifier writes (in its own lane) the certification event for this candidate. Only then PHASE 2: the OEP-1 probe through the certified channel. No HC-1, no N11, no hosted connection before that."
+}

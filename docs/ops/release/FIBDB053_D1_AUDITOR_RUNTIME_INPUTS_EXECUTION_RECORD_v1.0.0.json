@@ -1,0 +1,186 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_RUNTIME_INPUTS_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "PRE_EXECUTION_OWNER_INTAKE_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_HOSTED_MUTATION__NO_TIMESTAMP_INVENTED__NO_NEW_AUTHORITY_CHAIN",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-RUNTIME-INPUTS-AND-N06-PREEXECUTION-R1",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not the custodian and not an owner.",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "1c47566357f06fdc41280297bc7bc2e8bed4d504",
+  "AS_OF_BASE_TREE": "279307715e06057369af7d182bea9b3a4b93fea0",
+  "OWNER_INPUTS_RECEIVED": {
+    "rule": "Supplied and ratified by the human owner in this lane's mandate as EXECUTION DATA — not product policy, not secrets, not credentials, not derived values. Recorded as supplied, without substitution.",
+    "human_custodian": {
+      "value": "Lorenzo Zanello",
+      "for_node": "N32",
+      "disposition": "BOUND"
+    },
+    "planned_removal_date": {
+      "value": "2026-09-24",
+      "form": "calendar date, no time, no zone",
+      "for_node": "N31",
+      "disposition": "RECEIVED, NOT BOUND — STOP_SCHEMA_NEEDS_EXACT_REMOVAL_INSTANT"
+    },
+    "owner_constraint": "planned_removal_date is independent of expiry_exact_utc and is never set equal to it. If N09's expiry is earlier than the planned removal, the expiry is the hard outer bound and removal must occur no later than it."
+  },
+  "N32_HUMAN_CUSTODIAN_INTAKE": {
+    "act_per_DAG_v1_0_3": "OBTAIN the human custodian as a NON-SECRET, owner-supplied execution datum, and carry it to N06.",
+    "checks": {
+      "acquired_not_selected": "YES. The value is the owner's, taken verbatim from the owner's mandate; no lane chose, inferred or defaulted it.",
+      "contains_no_credential_or_secret": "YES. A person's name. No credential, DSN, userinfo, hash, host string, vault handle, entry key or lookup token.",
+      "hard_upstream_of_N06": "YES. E-32-06, kind HARD, re-derived by pnpm custody:dag:validate.",
+      "precondition_N03": "SATISFIED (OD-1..OD-6 ratified)."
+    },
+    "on_the_no_name_clauses": "DAG v1.0.3 and OD-N32-1 forbid any LANE from naming, proposing or defaulting a custodian, and keep those two documents free of a name. They are unedited. The name enters only where N32's own act carries it: this execution record and the custody inventory's human_custodian field.",
+    "bound_into": "docs/ops/staging/FIBDB053_AUDITOR_CREDENTIAL_CUSTODY_INVENTORY_v1.0.0.json, entries[0].human_custodian",
+    "exit_condition": "One human custodian, supplied by the owner, identifying a specific accountable person — MET.",
+    "N32_STATUS": "SATISFIED for this execution instance."
+  },
+  "N31_PLANNED_REMOVAL_INTAKE": {
+    "exit_condition_verbatim": "One planned removal date, supplied by the owner, expressed in UTC and not in a local Windows time zone, and not earlier than the planned FINAL WITNESS instant N08 supplied.",
+    "act_requires": "an exact UTC instant",
+    "received": "2026-09-24 (a calendar date)",
+    "STOP": "STOP_SCHEMA_NEEDS_EXACT_REMOVAL_INSTANT",
+    "exact_requirement": "An exact UTC instant (for example 2026-09-24THH:MM:SSZ), supplied by the owner, not earlier than the N08 planned FINAL WITNESS instant, and — by the owner's own constraint — no later than the N09 expiry (planned FINAL WITNESS + 24 h). No clock time was filled in for the date.",
+    "also_blocked_by": "N31's HARD precondition N08 is unsupplied (edge E-08-31).",
+    "N31_STATUS": "NOT SATISFIED. The date is recorded as RECEIVED in the custody inventory and not bound.",
+    "compatibility_window_for_the_owner": "For a removal instant R on 2026-09-24 (UTC) to satisfy both bounds, the planned FINAL WITNESS W must satisfy W <= R <= W + 24h, i.e. W no later than R and no earlier than 24 hours before R. This is stated for the owner, not chosen for them."
+  },
+  "N05_STATE": {
+    "status": "SATISFIED",
+    "basis": "Independent R2 recertification of PR #219 at 1c47566357f06fdc41280297bc7bc2e8bed4d504, registry occurrence CERT-OCC-CUSTODY-REALIZATION-R2. The builder did not re-certify anything.",
+    "residuals_preserved": [
+      "Launcher heap residual for the launcher's lifetime (OF-CUST-1); carried into processes_or_environments.",
+      "WCM entry survives abrupt kill; bounded sentinel recovery; real entry removed only by governed rotation (OF-CUST-3).",
+      "Behavioural controls run only on Windows.",
+      "The production consumer topology must be re-demonstrated wherever it differs from the certified sentinel consumer."
+    ]
+  },
+  "N06_FIELD_MATRIX": {
+    "derivation": "Parsed at record time from SECRET_CUSTODY_CONTRACT.SSL_06_ADJUDICATION.CONSEQUENT_BINDING_REQUIREMENT of the capability authority ('The entry records: ...'), which yields EIGHT fields; the DAG's N06 exit condition names the seven PRE-MINT ones (all but the mint date). Values read from the inventory instance after this lane's update. No historical count was trusted.",
+    "root_clause_field_count": 8,
+    "pre_mint_field_count": 7,
+    "fields": [
+      {
+        "root_clause_phrase": "the capability name",
+        "inventory_field": "capability_name",
+        "pre_mint_required": true,
+        "current_value": "UELLIX_AUDITOR_DATABASE_URL",
+        "state": "POPULATED",
+        "producer": "Capability authority SECRET_CUSTODY_CONTRACT.classification",
+        "basis": "RATIFIED/CERTIFIED (N06 skeleton IC)"
+      },
+      {
+        "root_clause_phrase": "the role",
+        "inventory_field": "role",
+        "pre_mint_required": true,
+        "current_value": "uellix_auditor",
+        "state": "POPULATED",
+        "producer": "db/safety/database-role.ts; capability authority",
+        "basis": "RATIFIED/CERTIFIED (N06 skeleton IC)"
+      },
+      {
+        "root_clause_phrase": "the target project ref",
+        "inventory_field": "target_project_ref",
+        "pre_mint_required": true,
+        "current_value": "bvyzblhqymxruxdguaee",
+        "state": "POPULATED",
+        "producer": "DAG N11 act; SSL06_INVENTORY_PREREQUISITE",
+        "basis": "RATIFIED/CERTIFIED (N06 skeleton IC)"
+      },
+      {
+        "root_clause_phrase": "the human custodian",
+        "inventory_field": "human_custodian",
+        "pre_mint_required": true,
+        "current_value": "Lorenzo Zanello",
+        "state": "POPULATED",
+        "producer": "N32 (owner intake)",
+        "basis": "OWNER-SUPPLIED EXECUTION DATUM, bound this lane; not a certification"
+      },
+      {
+        "root_clause_phrase": "every process or environment that will hold it",
+        "inventory_field": "processes_or_environments",
+        "pre_mint_required": true,
+        "current_value": "[4 surfaces]",
+        "state": "POPULATED (4 surfaces) WITH ONE OPEN SUB-ITEM: production consumer command",
+        "producer": "N05 (closure path per N06 authority), from N29/N30 certified mechanism",
+        "basis": "CERTIFIED_MECHANISM_SURFACE (R2 recert); real surfaces planned, not measured"
+      },
+      {
+        "root_clause_phrase": "the mint date",
+        "inventory_field": "mint_date",
+        "pre_mint_required": false,
+        "current_value": null,
+        "state": "ABSENT_BY_DESIGN (post-mint)",
+        "producer": "N12, after N11 mints",
+        "basis": "POST-MINT FIELD; absent by design before the mint"
+      },
+      {
+        "root_clause_phrase": "the expiry if OD-3 sets one",
+        "inventory_field": "expiry_exact_utc",
+        "pre_mint_required": true,
+        "current_value": null,
+        "state": "HOLE",
+        "producer": "N09 from N08 (OD-3 offset +24h)",
+        "basis": "NOT PRODUCED: N08 unsupplied"
+      },
+      {
+        "root_clause_phrase": "the planned removal date",
+        "inventory_field": "planned_removal_date",
+        "pre_mint_required": true,
+        "current_value": null,
+        "state": "HOLE",
+        "producer": "N31 (owner intake), after N08",
+        "basis": "NOT BOUND: date-only input, exact UTC instant required, N08 unsupplied"
+      }
+    ],
+    "pre_mint_holes": [
+      "expiry_exact_utc",
+      "planned_removal_date"
+    ]
+  },
+  "N06_PRECONDITIONS": {
+    "effective_set": "N03, N05, N09, N31, N32 (v1.0.0 plus v1.0.2 and v1.0.3 widenings), all HARD.",
+    "N03": "SATISFIED",
+    "N05": "SATISFIED (R2 recertification)",
+    "N09": "NOT SATISFIED — its operand N08 is unsupplied",
+    "N31": "NOT SATISFIED — STOP_SCHEMA_NEEDS_EXACT_REMOVAL_INSTANT and N08 unsupplied",
+    "N32": "SATISFIED (this record)"
+  },
+  "N06_STATUS": "NOT SATISFIED",
+  "N06_REMAINING_HOLES": [
+    "expiry_exact_utc — needs N08 then N09.",
+    "planned_removal_date — needs N08, then an owner-supplied exact UTC removal instant (N31) within [N08, N08 + 24h].",
+    "processes_or_environments sub-item — the production consumer command, fixed by the production-invocation decision before N23; recorded as an open sub-item, not a hole in the field."
+  ],
+  "N08_HUMAN_CONFIRMATION_REQUEST": {
+    "N08_per_the_effective_DAG": "PLANNED FINAL WITNESS TIMESTAMP INTAKE (OWNER plane). Act: the owner supplies a CONCRETE planned FINAL WITNESS timestamp. Exit: a concrete planned witness time exists. It is a PLANNED instant, not a record that the witness has happened.",
+    "what_the_human_is_witnessing_or_fixing": "The planned instant of the FINAL WITNESS of the D-1 old-database observation — the second, final hosted observation that follows PRECHECK-R2 under the parent observation authority (macro-chain node 9) — for which the auditor credential exists.",
+    "what_must_already_be_true": [
+      "N03 SATISFIED (it is).",
+      "The owner accepts that VALID UNTIL will be exactly that instant + 24 hours (OD-3) and that a slip means RE-ROTATE, never extend (THE_SLIP_RULE).",
+      "The instant leaves room, before it, for HC-1 (N10), the mint (N11) and PRECHECK-R2; and, for the owner's own removal date, satisfies W <= R <= W + 24h for the removal instant R they will supply on 2026-09-24 UTC."
+    ],
+    "action_required": "The owner states one exact planned FINAL WITNESS instant in UTC, in the form YYYY-MM-DDTHH:MM:SSZ, and — in the same statement or after — the exact planned removal instant in UTC on 2026-09-24 (N31).",
+    "timestamp_captured": "The owner-stated planned FINAL WITNESS instant, verbatim, as N08's datum. Not the time the statement is made, not a default, not a rounded value.",
+    "what_N09_then_derives_mechanically": "expiry_exact_utc = that instant + 24 hours, by scripts/custody/d1-n09-valid-until.ts computeValidUntilUtc, and checkPlannedRemoval validates the owner's removal instant against [W, W + 24h] without rewriting it.",
+    "no_secret_is_requested": true
+  },
+  "N09_STATUS": "NOT EXECUTED. No N08 datum exists; no expiry is computed, estimated or recorded.",
+  "EXPIRY_EXACT_UTC": null,
+  "REAL_CREDENTIAL_BOUNDARY": {
+    "status": "NOT REACHED AND NOT CROSSED",
+    "next_governed_credential_act": "N10 (HC-1, owner confirmation of the credential mutation with all six statements including the exact UTC VALID UNTIL) followed by N11 (MR-2, the mint). Both require N06 SATISFIED first, which requires N08, N09 and N31. HUMAN_CONFIRMATION_REQUIRED_BEFORE_CREDENTIAL_ACT.",
+    "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+    "DB_CONNECTIONS_EXECUTED": 0
+  },
+  "self_check": {
+    "no_secret": "No credential, DSN, userinfo, hash, host string, vault handle, entry key or lookup token appears in this record.",
+    "no_timestamp_invented": "The only dates are the materialization date and the owner's own removal date as supplied. No UTC instant is computed or defaulted.",
+    "no_node_falsely_closed": "N32 is the only node this record marks SATISFIED, on its own exit condition. N05's SATISFIED is the recertifier's ruling, cited. N06, N08, N09 and N31 are open."
+  },
+  "next_gate": "HUMAN: the N08 planned FINAL WITNESS instant and the N31 exact removal instant, in UTC. Then mechanical N09 and N06 closure, then a separately confirmed credential act (N10 -> N11)."
+}

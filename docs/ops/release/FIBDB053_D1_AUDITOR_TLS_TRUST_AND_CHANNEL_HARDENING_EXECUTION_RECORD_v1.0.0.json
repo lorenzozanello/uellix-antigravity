@@ -1,0 +1,171 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_TLS_TRUST_AND_CHANNEL_HARDENING_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "TLS_TRUST_AND_FINAL_CHANNEL_HARDENING_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_HOSTED_CONNECTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-TLS-TRUST-AND-FINAL-CHANNEL-HARDENING-R3",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "base_commit": "fa43b39636de766f228b16c459b721fe80fcb109",
+    "base_tree": "eeeaf49399a7fef6f14c76e73f5600819d7942cf"
+  },
+  "RECERT_CONSUMED": {
+    "candidate": "fa43b396",
+    "verdict": "NO VERDICT (insufficient evidence: its disposable-PostgreSQL sections were not run independently)",
+    "findings": [
+      "TLS = B (ssl require: no server authentication; the operator password answers a cleartext request)",
+      "X08x, L1x, P6x surviving mutants",
+      "OEP-1 highest-version-wins without a chain",
+      "PROBE_MINT_CONFIGURATION_COHERENT tautological"
+    ]
+  },
+  "OWNER_DECISIONS_CONSUMED": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_TLS_TRUST_OWNER_DECISION_v1.0.0.json (AC-8: TLS_TRUST_POLICY = VERIFY_FULL_PINNED_CA; CA_TRUST_ROOT_SOURCE = PROJECT_SPECIFIC_SUPABASE_CERTIFICATE; SIGNED YES)",
+  "FIRST_ATTEMPT_STOPPED": "STOP_CA_TRUST_ROOT_NOT_AVAILABLE (2026-09-24 ~21:40Z): no CA in the repository or on disk; the official Supabase CLI (2.109.1) embeds two production roots with the same DN and different keys; nothing was implemented until the owner supplied the project certificate.",
+  "CA_MEASURED": {
+    "supplied_file": "C:\\Users\\Lorenzo\\Documents\\secrets-public\\uellix-staging-ca.crt.crt (the named .crt path does not exist; the only file in the directory has a doubled extension)",
+    "raw_sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+    "der_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa",
+    "spki_sha256": "ba332649230ce9a764e4eaf70368f1a9de9ce64bd38424769e24c3fbf8e57acb",
+    "subject_issuer": "CN=Supabase Root 2021 CA, O=Supabase Inc (self-signed, CA:TRUE critical)",
+    "validity": "2021-04-28T10:56:53Z .. 2031-04-26T10:56:53Z",
+    "against_the_cli_roots": "byte-identical to the 2021 production root; not the same-DN 2025 root (other key); not the staging root",
+    "repository_copy": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt (cmp-identical; eol=lf under docs/**)"
+  },
+  "WRITE_SET": {
+    "files": [
+      "db/custody/mint-operator-channel.ts (modified)",
+      "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_TLS_TRUST_OWNER_DECISION_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.2.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.9.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_AND_CHANNEL_HARDENING_EXECUTION_RECORD_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt (new)",
+      "scripts/custody/d1-dag-validate.ts (modified)",
+      "scripts/custody/d1-mint-operator-channel-demonstration.ts (modified)",
+      "scripts/custody/d1-mint-operator-channel-mutation.ts (modified)",
+      "scripts/custody/d1-mint-operator-evidence.ts (modified)",
+      "scripts/custody/d1-mint-operator-launcher.ts (modified)",
+      "scripts/custody/d1-mint-operator-plan.ts (modified)",
+      "scripts/custody/d1-mint-tool-contract-harness.ts (modified)",
+      "scripts/custody/d1-oep1-probe-harness.ts (modified)",
+      "scripts/custody/d1-package-closure.ts (modified)",
+      "scripts/custody/d1-pre-hc1-post-mint.ts (modified)",
+      "scripts/custody/d1-scram-disposable-proof.ts (modified)",
+      "scripts/custody/d1-tls-trust-harness.ts (new)",
+      "scripts/custody/synthetic-x509.ts (new)",
+      "tests/custody/d1-dag-amendment-v107.test.ts (modified)",
+      "tests/custody/d1-dag-amendment-v109.test.ts (new)",
+      "tests/custody/d1-mint-operator-channel.test.ts (modified)",
+      "tests/custody/d1-mint-route-b-contract.test.ts (modified)",
+      "tests/custody/d1-oep1-evidence-chain.test.ts (new)",
+      "tests/custody/d1-oep1-probe-contract.test.ts (modified)",
+      "tests/custody/d1-pre-hc1-post-mint.test.ts (modified)",
+      "tests/custody/d1-tls-trust-root.test.ts (new)",
+      "tests/custody/d1-tls-trust.test.ts (new)",
+      "tests/custody/support/fake-only-mint-tool.ts (modified)",
+      "tests/custody/support/fake-only-oep1-probe-tool.ts (modified)",
+      "tests/custody/support/oep1-evidence-fixture.ts (modified)",
+      "tests/custody/support/tool-trust-snippet.ts (new)"
+    ],
+    "count": 33
+  },
+  "SCHEDULE_PRESERVED": {
+    "N08": "2026-09-28T14:00:00Z",
+    "N31": "2026-09-28T18:00:00Z",
+    "N09": "2026-09-29T14:00:00.000Z",
+    "measured_by": "tests/custody/d1-dag-amendment-v109.test.ts"
+  },
+  "CHANNEL_BINDING_AT_THIS_CANDIDATE": {
+    "effective_authority": "v1.0.0 as amended append-only by v1.0.1 and v1.0.2 (REPLACES_SECTIONS)",
+    "launcher_build_digest": "5c0d973435a866d4b112380134407fe5a460ed647a53be90a22bb08bab263110",
+    "mint_tool": {
+      "file": "d1-mint-operator-tool-v3.js",
+      "sha256": "601f1f963042467433fe75a034d0466055a145ff06319fdd61d3b67dbd7b1b25"
+    },
+    "probe_tool": {
+      "file": "d1-oep1-probe-tool-v3.js",
+      "sha256": "86cbda481c72d2f2149468879e194e0031cfe3be2fa1c8cbb8b16c857171224d"
+    },
+    "tls": {
+      "policy": "VERIFY_FULL_PINNED_CA",
+      "ca_raw_sha256": "700723581420...f3b7",
+      "ca_der_sha256": "807025ad50...cafa"
+    },
+    "tools_derivation": "Rendered from the conforming fixture templates (which now share tests/custody/support/tool-trust-snippet.ts), the fake-only guard removed, the run-time git-tree refusal and a header added -- the same derivation as v2; the generator refuses to overwrite a pinned file with other bytes. v1 and v2 tools left in place."
+  },
+  "A_TLS": {
+    "implementation": "OT-18 in the shared trust text: the CA file must hash to the pin and hold exactly one CA certificate; it is the ONLY `ca` (no system store), rejectUnauthorized true, servername = the target host, minVersion TLSv1.2, tls.checkServerIdentity; nothing is downloaded. OC-13 in the launcher: the plan carries caFile/caSha256 and the launcher refuses before the prompt when the file is absent or differs.",
+    "real_tls_harness": "tests/custody/d1-tls-trust.test.ts, 17/17: real node:tls on both ends, the REAL postgres.js 3.4.9, a fake PostgreSQL on loopback that asks for a CLEARTEXT password after TLS. Conforming text: right CA + right host -> reached, anchor = pinned CA, password sent once; wrong CA -> UNABLE_TO_VERIFY_LEAF_SIGNATURE; wrong host -> ERR_TLS_CERT_ALTNAME_INVALID; expired -> CERT_HAS_EXPIRED; self-signed -> DEPTH_ZERO_SELF_SIGNED_CERT; each with zero startup messages and zero passwords; CA missing / modified / ambient env -> refused with no connection.",
+    "impostor_reproduced": "Under ssl require the impostor with another CA receives the cleartext password (1 PasswordMessage); under the conforming text it receives none.",
+    "variants_killed": "TLS_REQUIRE, TLS_NO_VERIFY, TLS_NO_HOSTNAME, TLS_SYSTEM_TRUST, NO_CA_PIN_CHECK, NO_AMBIENT_ENV_CHECK -- each misbehaves on real TLS in its scenario (test) and each source mutation of the conforming text is RED (battery).",
+    "pinned_tools_on_real_tls": "The pinned v3 tools themselves with the real driver against the fake TLS server: probe and mint each PERMITTED -> TLS verified, password once, 28000 from the fake server; WRONG_CA / WRONG_HOSTNAME / EXPIRED / UNTRUSTED_SELF_SIGNED -> the certificate error, zero passwords, the mint DEFINITELY_NOT_COMMITTED with tlsVerified false and nothing deposited. 10/10."
+  },
+  "B_ENVIRONMENT": "X08x: hostile PGHOST, PGPORT, PGDATABASE, PGOPTIONS, PGSERVICE, PGSSLMODE, PGAPPNAME, NODE_TLS_REJECT_UNAUTHORIZED, lower/mixed-case pg* and NODE_EXTRA_CA_CERTS in the launcher environment: the child gets exactly PATH, SystemRoot, TEMP and the one variable (R3-N-X08X). Each tool also refuses such variables (OT-19; harness REFUSES_AMBIENT_PG_ENV, real TLS AMBIENT_ENV). Measured why it matters: postgres.js reads PG<OPTION> for every option not given (PGAPPNAME changes the application_name startup parameter).",
+  "C_PARENT_ENV": "L1x: process.env replaced by a Proxy during a launcher run records every set, define and delete: none (R3-N-L1X). The set-then-delete mutant is RED.",
+  "D_DIRTY_WORKTREE": "P6x: the gate CLI checks cleanliness FIRST (worktreeIsClean, --untracked-files=all) and stops before reading any authority; the real CLI, run by tsx in a disposable git repository whose only change is an untracked file, prints {gate: STOP, reasons: [STOP_DIRTY ...]} and exits 1 (R3-N-P6X). Both the --untracked-files=no mutant and the skipped-check mutant are RED.",
+  "E_OEP1_CHAIN": "OEP-1 evidence is one explicit chain: predecessor links, one root, no fork, no gap, no dangling or later-version predecessor; the head is evaluated and must acknowledge, each with a resolution, exactly the earlier non-CLOSED records. A later PASS cannot erase an earlier FAIL/INCONCLUSIVE (tests/custody/d1-oep1-evidence-chain.test.ts 15/15; PMR-14 carries the chain reasons). Residual: the rules read the files present; deletion from history is for the certifier to read.",
+  "F_COHERENCE": "PROBE_MINT_CONFIGURATION_COHERENT is now computed over the connection the probe OBSERVED: the host, port, database and user it bound, TLS verified with the peer fingerprint and the anchor its chain reached, and the digest of the driver files it loaded -- against the N04 host, the route-B port and database, the recorded principal (= current_user = session_user), the pinned CA DER and the pinned driver digest; the fingerprint is recomputed from the observed values. Nine controls change one observed term each with every constant and the recorded fingerprint untouched: each fails PMR-14 alone. No hosted fact is invented: the fixture is synthetic and PHASE 2 has not run.",
+  "G_DISPOSABLE_POSTGRES": {
+    "note": "Author development confidence only; does not substitute for the independent certifier.",
+    "container": "d1r3-probe, public.ecr.aws/supabase/postgres:17.6.1.159, label uellix.d1r2=disposable, 127.0.0.1 only; removed at the end of the lane",
+    "tls": "the container served a synthetic certificate for localhost from a synthetic CA; the pinned v3 mint tool verified it (tlsVerified true) and the same tool pinned to another CA was refused by TLS (DEFINITELY_NOT_COMMITTED)",
+    "result": "SATISFIED_CANDIDATE, 25/25 controls: plaintext 0 in the server log and pg_stat_statements with every emitter live; the verifier present (derived, classified apart); the plaintext authenticates, a wrong password and the verifier-as-password do not; the guard refuses a non-verifier; the 979b1440 route reproduces the leak (40); the startup-GUC URL is refused."
+  },
+  "PEB_DEMONSTRATION": "3/3 consecutive runs SATISFIED_CANDIDATE with the v3 tools and the repository trust root.",
+  "REAL_TOOLS_UNDER_THE_CONTRACT_HARNESSES": "mint v3: 21/21 scenarios CONFORMS (incl. CA_MISSING, CA_MODIFIED, AMBIENT_PG_ENV, WRONG_PORT, HOST_LOOKALIKE, URL_WITH_QUERY, TOOL_INSIDE_GIT_TREE); probe v3: 13/13 CONFORMS (SUCCESS carries the observed connection).",
+  "MUTATION_RESULTS": {
+    "script": "pnpm custody:operator-channel:mutation",
+    "result": "46/46 RED (behavioural, pin block excluded) + M-SELF-TEST GREEN; survivors none; originals restored byte for byte (tar backup compared: 0 differences)",
+    "r3_mutants": [
+      "R3-M-TLS-NO-VERIFY",
+      "R3-M-TLS-REQUIRE",
+      "R3-M-TLS-NO-HOSTNAME",
+      "R3-M-TLS-SYSTEM-TRUST",
+      "R3-M-CA-PIN-TOOL",
+      "R3-M-CA-PIN-LAUNCHER",
+      "R3-M-X08X",
+      "R3-M-X08X-TOOL",
+      "R3-M-L1X",
+      "R3-M-P6X",
+      "R3-M-P6X-CLI",
+      "R3-M-CHAIN-ACK",
+      "R3-M-CHAIN-IGNORED",
+      "R3-M-COHERENCE",
+      "R3-M-PMR15"
+    ],
+    "attribution": "each R3 mutant killed by its own behavioural test: the real-TLS scenarios, the hostile-environment test, the process.env Proxy, the real CLI, the chain rules, the observed-connection controls, the PMR-15 controls"
+  },
+  "PRE_HC1_STATE_OF_THIS_CANDIDATE": {
+    "expected_before_its_event": "N10 NOT_READY by PMR-9 and PMR-14 only; PMR-15 holds",
+    "expected_after_its_event": "N10 NOT_READY by PMR-14 alone, by design",
+    "measured": "unsatisfied exactly {PMR-9_CANDIDATE_CERTIFIED, PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED} on the lane working tree; re-measured at the pushed head by the lane report"
+  },
+  "RESIDUALS_FOR_THE_FINAL_INDEPENDENT_RECERTIFICATION": [
+    "RC-CLEARTEXT-AUTH: postgres.js 3.4.9 still answers AuthenticationCleartextPassword and has no SCRAM channel binding; with the server authenticated only the real server can ask. Not closable in this driver version.",
+    "RC-NODE-OPTIONS: NODE_OPTIONS acts before a tool runs; the launcher allowlist keeps it out, OT-19 in the tool is defence in depth only.",
+    "RC-CA-ROTATION: the project certificate expires 2031-04-26; the same-DN 2025 root exists in the CLI. A rotation is a new owner decision and a new channel pin.",
+    "RC-NO-HOSTED-HANDSHAKE: no hosted handshake confirmed that the project server chains to the pinned root (not authorized); the owner's dashboard download is the binding source, and the PHASE 2 probe will observe the anchor (IP-8).",
+    "RC-CHAIN-HISTORY: the OEP-1 chain rules read the files present; a record removed from history is for the certifier to read (git log of the evidence paths).",
+    "RC-HEAP / RC-OBSERVER-POLLING / RC-GUARD-MESSAGE: carried from R2 unchanged."
+  ],
+  "LOCAL_VALIDATION": "custody suite 887/887 (37 files) with CI=true FORCE_COLOR=1 including tests/custody/d1-cert-event-termination.test.ts and its nested complete suite; mutation 46/46 + self-test; real TLS 17/17; real v3 tools 34/34 harness + 10/10 real TLS; PEB 3/3; disposable PG 25/25. Measured on the working tree carrying this record with this field pending (the field text is the only difference). typecheck/lint/secrets/seal/DAG/scope/poststate: in the lane report at the committed head.",
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "OPERATOR_CREDENTIAL_REQUESTED_OR_USED": 0,
+  "HOSTED_DB_CONNECTIONS_EXECUTED": 0,
+  "NETWORK_DOWNLOADS": 0,
+  "PROVIDER_MUTATIONS_EXECUTED": "0 by this lane's acts; a git push creates a Vercel Preview deployment by platform behaviour",
+  "EXPLICIT_NON_AUTHORIZATIONS_RESPECTED": [
+    "no self-certification",
+    "no certification event written",
+    "no hosted OEP-1",
+    "HC-1 not requested",
+    "N11 not executed",
+    "no hosted connection or authentication"
+  ],
+  "final_state": "D1_TLS_TRUST_AND_CHANNEL_HARDENING_REMEDIATED__READY_FOR_FINAL_INDEPENDENT_RECERT",
+  "next_gate": "The final independent recertification of this successor (AC-8, DAG v1.0.9, channel authority v1.0.2, manifest v1.0.2, tools v3). The certifier writes its own event. Then PHASE 2 OEP-1 v3 probe through the certified channel -> evidence (chain head) -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin vs N08 -> HC-1 -> N11."
+}

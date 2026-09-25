@@ -1,0 +1,52 @@
+{
+  "manifest_id": "FIBDB-053-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-R5",
+  "node_or_batch": "D-1 operator channel, pre-PHASE-2 successor over 9c8a6889: R5 outermost boundary (A), UTC canonicalization (B, IP-4), case-stable record discovery (C), PMR-16 hostname behavior (D)",
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.3.json",
+  "append_only": true,
+  "frozen_note": "Frozen before implementation of R5. Lists the R5 controls and mutants; the R4 catalogue and the frozen surfaces of v1.0.1..v1.0.3 remain in force.",
+  "authority_reference": [
+    "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0.json + owner R5 (ADOPT_FOCUSED_RECERT_NB_A/C/F = YES; NB_E = ACCEPT_AS_NONBLOCKING_REDUNDANCY; NB_G = ACCEPT_AS_FAIL_CLOSED_NONBLOCKING; SIGNED)",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.11.json"
+  ],
+  "protected_surfaces": [
+    "tests/custody/support/tool-trust-snippet.ts (byte-identical to b4ca05ac; the CONFORMING trust text is the certified surface, unchanged by D)",
+    "tests/custody/support/fake-only-mint-tool.ts, tests/custody/support/fake-only-oep1-probe-tool.ts (byte-identical)",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt (byte-identical)",
+    "the v3 tools in %LOCALAPPDATA%: mint 601f1f96..., probe 86cbda48... (byte-identical)"
+  ],
+  "positive_controls": [
+    { "id": "R5-P-BOUNDARY-OUTER", "test": "tests/custody/d1-pre-node-boundary.test.ts", "asserts": "the outer cmd clears PSModulePath and every CLR profiler / startup-hook input before PowerShell, and launches PowerShell and the script by absolute paths (Windows)." },
+    { "id": "R5-P-UTC", "test": "tests/custody/d1-oep1-evidence-chain.test.ts", "asserts": "utcMillis accepts the two canonical shapes and a leap-year Feb 29; the chain closes only with real, canonical instants." },
+    { "id": "R5-P-DISCOVERY", "test": "tests/custody/d1-oep1-evidence-chain.test.ts", "asserts": "a fully tracked, matching working tree raises no discovery reason." },
+    { "id": "R5-P-PMR16-HOSTNAME", "test": "tests/custody/d1-dag-amendment-v1010.test.ts", "asserts": "the CONFORMING trust text passes the behavioral hostname gate; Node's real checkServerIdentity accepts a matching cert and rejects a mismatching one." }
+  ],
+  "negative_controls": [
+    { "id": "R5-N-MODULE-SHADOW", "test": "tests/custody/d1-pre-node-boundary.test.ts", "asserts": "the malicious PSModulePath module is armed (control), yet through the boundary 0 module executions and 0 node-trojan executions; end to end through the outer cmd the channel still runs." },
+    { "id": "R5-N-PROFILER", "test": "tests/custody/d1-pre-node-boundary.test.ts", "asserts": "the inner script refuses COR_PROFILER / CORECLR_PROFILER / DOTNET_STARTUP_HOOKS present at entry." },
+    { "id": "R5-N-UTC", "test": "tests/custody/d1-oep1-evidence-chain.test.ts", "asserts": "month 13, day 31 of September, Feb 29 of a common year, hour 24, minute/second 60, a leap second, a missing Z, an offset, a one-digit fraction and Date.parse-NaN are rejected; a single-record chain with an impossible timestamp does not close." },
+    { "id": "R5-N-CASE", "test": "tests/custody/d1-oep1-evidence-chain.test.ts", "asserts": "a case-only rename (_v -> _V) is an integrity failure and never silently removes the FAIL; an untracked governed evidence file is refused." },
+    { "id": "R5-N-PMR16-HOSTNAME", "test": "tests/custody/d1-dag-amendment-v1010.test.ts", "asserts": "a checkServerIdentity that always accepts, or always rejects, or is missing, makes PMR-16 fail." }
+  ],
+  "mutation_controls": [
+    { "id": "R5-M-A-INJECTION", "description": "The inner script's injection pattern matches nothing -> R5-N-PROFILER and the pinned-text control RED." },
+    { "id": "R5-M-A-OUTER-PSMOD", "description": "The outer cmd no longer clears PSModulePath -> the pinned-text control RED." },
+    { "id": "R5-M-A-DOTNET", "description": "The inner script reads the environment with an autoloadable cmdlet (Get-ChildItem) instead of a .NET API -> the pinned-text control RED." },
+    { "id": "R5-M-B-UTC", "description": "utcMillis drops the canonical round-trip -> R5-N-UTC RED." },
+    { "id": "R5-M-C-DISCOVERY", "description": "discovery returns the working-tree casing instead of the tracked path -> R5-N-CASE RED." },
+    { "id": "R5-M-D-HOSTNAME", "description": "PMR-16 stops rejecting a mismatching hostname -> R5-N-PMR16-HOSTNAME RED." },
+    { "id": "R4/R3/R2/M-* re-anchored", "description": "The R4 boundary mutants are re-anchored onto the R5-rewritten inner script; the whole prior catalogue still runs RED with the comment-only self-test GREEN." }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "lint",
+    "secrets_scan",
+    "authority_seal_verify",
+    "custody_dag_validate",
+    "custody_suite_including_termination",
+    "mutation_battery",
+    "ods_scope",
+    "ods_poststate",
+    "exact_head_ci_and_vercel"
+  ]
+}

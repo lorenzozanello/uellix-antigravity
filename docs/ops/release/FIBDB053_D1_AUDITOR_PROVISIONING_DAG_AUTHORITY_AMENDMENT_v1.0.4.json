@@ -1,0 +1,171 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.4",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.4",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ZERO_NODES_ONE_EDGE__ONE_EXIT_SPLIT__NO_EXECUTION__NO_SECRET__NO_VAULT_LOCATOR__NO_POSTGRESQL_CONNECTION__NO_CREDENTIAL_MINT__NO_NODE_CLOSED",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "As already amended by v1.0.1, v1.0.2 and v1.0.3. None of the four earlier artifacts is edited; every change below is stated here and applied by readers of the union.",
+  "mission_id": "CV1-D1-AUDITOR-POST-MINT-PATH-AND-N11-N30-ORDERING-R1",
+  "lane": "CV1-D1-AUDITOR-POST-MINT-PATH-AND-N11-N30-ORDERING-R1",
+  "role": "Remove the exit-level ordering contradiction between N11 and N30 that stopped the first HC-1 boundary, with the smallest append-only change.",
+  "mode": "DOCS_AND_IMPLEMENTATION__THIS_FILE_IS_THE_GRAPH_HALF",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "87520a97f7a8c56e9fc9b023afd2abb605f4216a",
+  "AS_OF_BASE_TREE": "e8e4560bf52df26b44265c3a34a48bb503f20e45",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the base; prestate gate PASS at 2026-09-23T15:12:04Z.",
+  "AS_OF_BASE_BRANCH_FOR_THE_STACKED_PR": "codex/cv1-d1-auditor-consolidated-closure-r1",
+  "WHY_THIS_AMENDMENT_EXISTS": {
+    "the_stop": "At 87520a97 the HC-1 boundary lane received HC-1 (six YES and SIGNED) and then stopped before N11, because N11 could not be executed as written. The stop is recorded in docs/ops/release/FIBDB053_D1_AUDITOR_POST_MINT_PATH_EXECUTION_RECORD_v1.0.0.json. Nothing was minted.",
+    "N11_exit_verbatim": "A connection opens as uellix_auditor using the new value and the SERVER reports current_user = session_user = 'uellix_auditor'. The successful authenticated session IS the verification. No hash is read and the value is never echoed.",
+    "N13_act_verbatim": "KP-1: assert current_user = session_user = 'uellix_auditor' FROM THE SERVER. KP-2: assert current_setting('transaction_read_only') = 'on'. Then complete verifyStagingTarget's sentinelPolicy required contract by reading uellix_bootstrap.staging_sentinel as exactly two columns of exactly one row-set.",
+    "the_contradiction": "N11's exit requires a connection that opens as uellix_auditor USING THE NEW VALUE. The only governed way any process may hold the value is the N05-certified delivery from the Windows Credential Manager entry (OD-2; SECRET_CUSTODY_CONTRACT.who_may_know_it; N23.ONLY_THIS_PROCESS: a second consuming process requires its own delivery). That entry is written by N30, and N30 has N11 as a HARD precondition (v1.0.2). So N11 cannot exit before N30, and N30 cannot start before N11 exits: a cycle at the level of EXIT CONDITIONS that the edge set does not show, because edges encode preconditions, not exits.",
+    "classification": {
+      "AUTHORITY_DAG_CONTRADICTION": [
+        "The N11-exit / N30-precondition cycle above. Not fixable by code: any implementation of N11's exit as written either holds the value outside the governed path or waits forever on N30."
+      ],
+      "IMPLEMENTATION_GAPS": [
+        "No production N30 depositor existed (only the N05 sentinel deposit).",
+        "No governed N13 consumer existed (the only consumer was the N05 sentinel consumer).",
+        "N13, N14 and N22 are HOSTED_SQL sessions as uellix_auditor, and no node or rule delivered the value to any of them: N23, the first delivery node, delivers to the PRECHECK process only, after N22."
+      ]
+    }
+  },
+  "EXIT_SPLIT_N11": {
+    "rule": "N11's exit condition is SPLIT into an ACT EXIT and a CLOSURE CONDITION. The v1.0.0 text is not edited; this section supersedes it for the purpose of enabling successors, and preserves it verbatim as the closure condition.",
+    "ACT_EXIT": "The credential-set mutation was ACCEPTED by the target (management-plane success, or the SQL statement completed without error); the VALID UNTIL set equals N09's value; and the new value exists only in the operator process that produced it and in transit to the N30 depositor's stdin. This exit, and nothing weaker, satisfies the edges N11->N30 and N11->N12.",
+    "CLOSURE_CONDITION": "N11 is CLOSED only when N13's KP-1 passes on a session opened by a consumer that received the value by the N05 delivery path FROM THE N30 ENTRY. That is the v1.0.0 exit, made at the first node where a governed process can hold the value. The assertion, the server that makes it and the statement that asks it are unchanged.",
+    "tokens": "STOP_CREDENTIAL_MUTATION_FAILED and STOP_AUDITOR_ROLE_ABSENT stay with N11's act. STOP_AUDITOR_AUTHENTICATION_FAILED is raised at N13 (which already lists it) and is attributed to N11's closure.",
+    "machine_form": "scripts/custody/d1-post-mint.ts n11Status(): CLOSED requires mutationAccepted AND validUntilEqualsN09 AND n30ExitMet AND n13RanOnDeliveredValue AND n13Kp1Passed. Every weaker combination is a named non-closed state.",
+    "why_this_is_not_a_weakening": "No assertion is removed and none moves to a weaker witness: the usability proof is still KP-1, from the server, on the new value. What changes is WHERE it is observed: not inside N11 (impossible without breaking custody) but at N13, over the governed delivery (the only place it can be observed at all)."
+  },
+  "N30_ADJACENCY_RULE": {
+    "rule": "N30 executes IMMEDIATELY after N11's act exit, in the same operator sitting, and no other node executes between them. N13 executes after N30's exit and before any other consumer of the value.",
+    "why": "Between N11's act and N30's exit the value is live on the target and held by no governed store. Adjacency minimizes that window; it does not make it zero, which is why the post-mint atomicity table exists.",
+    "N30_exit_is_measured_not_declared": "N30's exit is a READ of the same scope showing the entry present and carrying the same bytes (db/custody/production-custody.ts, depositGovernedCredential: post-write probe AND round-trip equality). A write call that returned is not N30's exit."
+  },
+  "NEW_NODES": [],
+  "NEW_EDGES": [
+    {
+      "id": "E-30-13",
+      "from": "N30",
+      "to": "N13",
+      "kind": "HARD",
+      "why": "N13 consumes the value N30 deposited, through the N05 delivery path. Without this edge N13 has no governed producer of its input and its session could only be opened by a value held outside custody, which is the contradiction this amendment removes."
+    }
+  ],
+  "PRECONDITION_SETS_WIDENED_BY_THESE_EDGES": {
+    "rule": "One node gains an incoming HARD edge. Its v1.0.0 object is NOT edited.",
+    "N13": {
+      "v1_0_0": [
+        "N11"
+      ],
+      "amended": [
+        "N11",
+        "N30"
+      ]
+    },
+    "nothing_is_weakened": "No precondition is removed and no exit condition is relaxed. The widening can only make N13 harder to reach."
+  },
+  "HOSTED_SQL_SESSION_DELIVERY_RULE": {
+    "rule": "Every HOSTED_SQL session as uellix_auditor (N13, N14, N22) is opened ONLY by a consumer started by the N05 delivery path from the N30 entry, one delivery per consuming process, under bare node, from a console, with the value never left set between two deliveries.",
+    "applies_existing_authority": "This applies OD-2 and N23.ONLY_THIS_PROCESS ('A second consuming process ... requires its OWN delivery') to the three sessions that precede N23. It creates no delivery class and no store.",
+    "N13_consumer": "scripts/custody/d1-auditor-n13-consumer.ts (built by scripts/custody/build-production-entrypoints.ts), started only by scripts/custody/d1-deliver-n13.ts.",
+    "N14_and_N22_consumers": "NOT BUILT by this amendment's lane. They are required before N14 and N22 may execute, and each must be re-demonstrated under the same topology before it holds a real value."
+  },
+  "PRESERVED_UNCHANGED": [
+    "HC-1 immediately before the mutation: N10->N11 remains N10's only outgoing edge and N11's only precondition.",
+    "N05: the certified mechanism is the only delivery path.",
+    "N30: its preconditions N11 and N29, its exit, its prohibitions (no vault handle, entry key or lookup token in the inventory or any evidence artifact).",
+    "N23: delivery to the PRECHECK process only, with its own delivery.",
+    "N13: server-side KP-1, KP-2 and target identity arm B.",
+    "N24: removal and positive absence verification.",
+    "N28: post-final-witness mandatory rotation and custody closure."
+  ],
+  "RECOMPUTED_GRAPH": {
+    "method": "Kahn topological sort plus breadth-first forward reachability sweeps over the union of v1.0.0..v1.0.4, by scripts/custody/d1-dag-validate.ts (`pnpm custody:dag:validate`). Transcribed from its output, asserted by tests/custody/d1-dag-amendment-v104.test.ts.",
+    "NODE_COUNT_BASE": 32,
+    "NODE_COUNT_NEW": 0,
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_BASE": 44,
+    "EDGE_COUNT_NEW": 1,
+    "EDGE_COUNT_TOTAL": 45,
+    "HARD_EDGE_COUNT": 37,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "DUPLICATE_NODE_IDS": [],
+    "DUPLICATE_EDGE_IDS": [],
+    "DUPLICATE_EDGE_PAIRS": [],
+    "EDGE_ENDPOINTS_NOT_DECLARED": [],
+    "DECLARED_PRECONDITION_WITHOUT_EDGE": 0,
+    "INCOMING_EDGE_NOT_DECLARED_OR_WIDENED": 0,
+    "ACYCLIC": true,
+    "TOPOLOGICAL_ORDER_LENGTH": 32,
+    "NODES_IN_A_CYCLE": [],
+    "TOPOLOGICAL_ORDER": "N01 N02 N03 N04 N07 N08 N09 N28 N29 N05 N31 N32 N06 N10 N11 N12 N30 N13 N14 N15 N16 N17 N18 N19 N20 N21 N22 N23 N24 N25 N26 N27",
+    "TOPOLOGICAL_ORDER_IS_NOT_UNIQUE": "ONE valid order, ties broken on node id. Nothing here is derived from a node's position in it. Under v1.0.3 the same tie-break placed N30 after N22; that placement was never a dependency and v1.0.4 does not rely on its change either: the edge E-30-13 is what orders N30 before N13.",
+    "SINK_NODES": [
+      "N12",
+      "N16",
+      "N27",
+      "N28"
+    ],
+    "REACHABILITY_PROPERTIES_BY_TRAVERSAL": {
+      "N13_reachable_from_N30": true,
+      "N30_reachable_from_N11": true,
+      "N23_reachable_from_N30": true,
+      "N05_reachable_from_N29": true,
+      "N32_reachable_from_N03": true,
+      "N06_reachable_from_N32": true,
+      "N06_reachable_from_N31": true,
+      "N10_reachable_from_N06": true,
+      "method_note": "Each is a breadth-first sweep over the edge set from the named source."
+    },
+    "ORPHAN_AND_UNREACHABLE_DISCLOSURE": {
+      "ORPHAN_NODES_AFTER": [
+        "N28"
+      ],
+      "UNREACHABLE_FROM_N01_AFTER": [
+        "N28"
+      ],
+      "ORPHAN_NODES_BEFORE": [
+        "N28"
+      ],
+      "UNREACHABLE_FROM_N01_BEFORE": [
+        "N28"
+      ],
+      "DELTA_INTRODUCED_BY_THIS_AMENDMENT": "NONE.",
+      "why_N28_is_not_a_defect": "Declared external segment of v1.0.0 (DAG_EDGES.EXTERNAL_SEGMENT_BETWEEN_N27_AND_N28), unchanged."
+    }
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "This amendment authorizes no mint, no deposit of a real value, no delivery of a real value, no PostgreSQL connection and no N11 execution.",
+    "It does not decide the mint route (the execution record carries OWNER_DECISION_REQUIRED_MINT_ROUTE).",
+    "It does not answer NB-8 (whether PASSWORD NULL needs its own human confirmation).",
+    "It records no vault locator: the entry name is derived at run time by the depositor-and-reader code and is written into no governance artifact."
+  ],
+  "OPEN_FINDINGS_ADDED": [
+    {
+      "id": "OF-PM-1",
+      "finding": "N14 and N22 consumers are not built. N11 may be executed only when the whole value-consuming path up to N24 can run before R; see SCHEDULE_FEASIBILITY in the execution record."
+    },
+    {
+      "id": "OF-PM-2",
+      "finding": "N13's token list has no token for a KP-2 failure (transaction not read-only). The N13 consumer reports it as failedAt KP-2 with a code and token null; no token is invented."
+    },
+    {
+      "id": "OF-PM-3",
+      "finding": "The generation clause says 'no repository script can reach a hosted target and none may be made to'. The N13 consumer's execute mode is a repository script that reaches a hosted target. It generates and mints nothing, and N13/N14/N22 are HOSTED_SQL nodes of this same DAG, but the sentence is absolute in form and a certifier should rule on its scope."
+    }
+  ],
+  "self_check": {
+    "every_count_is_machine_derived": "RECOMPUTED_GRAPH is transcribed from deriveGraphFacts() over the five graph sources and asserted by tests/custody/d1-dag-amendment-v104.test.ts.",
+    "reachability_never_positional": "Every reachability claim is a breadth-first sweep."
+  },
+  "required_independent_review": "MANDATORY. ONE independent adversarial certification of the post-mint path package: this amendment, the execution record, and the production custody implementation with its topology demonstration.",
+  "final_state": "N11_EXIT_SPLIT__E_30_13_ADDED__ZERO_NODES_CLOSED",
+  "next_gate": "ONE independent certification; then a fresh schedule check, a fresh PRE-HC1 evaluation, a fresh HC-1 and an immediate confirmation before N11."
+}

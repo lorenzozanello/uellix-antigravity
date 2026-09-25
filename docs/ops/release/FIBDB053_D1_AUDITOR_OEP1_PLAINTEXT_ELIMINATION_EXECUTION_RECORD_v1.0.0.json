@@ -1,0 +1,268 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_OEP1_PLAINTEXT_ELIMINATION_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "OEP1_PLAINTEXT_ELIMINATION_REMEDIATION_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_HOSTED_CONNECTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-OEP1-PLAINTEXT-ELIMINATION-REMEDIATION-R2",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "base_commit": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+    "base_tree": "ac00fc4da4ae192144355dd515356670470142ca",
+    "base_state": "The operator-channel successor whose independent recertification returned D1_MINT_OPERATOR_CHANNEL_SUCCESSOR_RECERT_FAIL. No certification event exists for 979b1440 and none is written here."
+  },
+  "RECERT_FINDINGS_CONSUMED": {
+    "blocking": "OEP-1 said PASS while the route-B plaintext was measured in PostgreSQL logs through the CONTEXT line of the nested EXECUTE (log_parser_stats, log_lock_waits, a startup GUC via the URL query, a pg_tle passcheck hook).",
+    "survivors": [
+      "E1",
+      "X06",
+      "P1",
+      "P6",
+      "P10",
+      "L1",
+      "X08"
+    ],
+    "non_blocking": [
+      "PEB observer keyed by PID and nondeterministic",
+      "ssl 'require' = rejectUnauthorized false, no channel binding",
+      "driver bound by version only",
+      "the gate did not require a certification before planning the probe",
+      "heap copies"
+    ]
+  },
+  "OWNER_DECISIONS_CONSUMED": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N11_PASSWORD_TRANSPORT_OWNER_DECISION_v1.0.0.json (AC-7: N11_PASSWORD_TRANSPORT = CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER; OEP1 NOT_WAIVED; SIGNED YES)",
+  "GOVERNED_VALUES_USED_NOT_CHOSEN": {
+    "entropy": "The effective custody authority already fixes >= 32 CSPRNG bytes (capability SECRET_GENERATION_CONTRACT.generation_requirements.entropy). Used as is; base64url so SASLprep is the identity.",
+    "scram_parameters": "4096 iterations and a 16-byte random salt: PostgreSQL's own defaults for password_encryption = scram-sha-256.",
+    "target_database_and_port": "postgres / 5432, from the route-B DSN contract already in the repository.",
+    "verifier_is_not_a_direct_credential": "Measured on the disposable server: the stored verifier used AS a password is refused (28P01). Authentication needs ClientKey, which the verifier does not contain."
+  },
+  "WRITE_SET": {
+    "authority_and_records": [
+      "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N11_PASSWORD_TRANSPORT_OWNER_DECISION_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (new, supersedes sections of v1.0.0 append-only)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.1.json (new, frozen before implementation)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.8.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_OEP1_PLAINTEXT_ELIMINATION_EXECUTION_RECORD_v1.0.0.json (new, this record)"
+    ],
+    "code": [
+      "db/custody/scram-verifier.ts (new)",
+      "db/custody/mint-route-b-contract.ts",
+      "db/custody/mint-operator-channel.ts",
+      "scripts/custody/d1-mint-operator-launcher.ts",
+      "scripts/custody/d1-mint-operator-plan.ts",
+      "scripts/custody/d1-mint-operator-evidence.ts",
+      "scripts/custody/d1-pre-hc1-post-mint.ts",
+      "scripts/custody/d1-dag-validate.ts (GRAPH_SOURCES += v1.0.8)",
+      "scripts/custody/d1-package-closure.ts (EXECUTION_ENTRY_POINTS += the disposable proof)",
+      "scripts/custody/d1-mint-tool-contract-harness.ts",
+      "scripts/custody/d1-oep1-probe-harness.ts",
+      "scripts/custody/d1-mint-operator-channel-demonstration.ts",
+      "scripts/custody/d1-mint-operator-channel-mutation.ts",
+      "scripts/custody/d1-scram-disposable-proof.ts (new)",
+      "scripts/custody/n05-peb-observer.ts",
+      "package.json (script custody:scram:disposable-proof)"
+    ],
+    "tests": [
+      "tests/custody/d1-scram-verifier.test.ts (new)",
+      "tests/custody/d1-peb-identity.test.ts (new)",
+      "tests/custody/d1-dag-amendment-v108.test.ts (new)",
+      "tests/custody/d1-mint-route-b-contract.test.ts",
+      "tests/custody/d1-oep1-probe-contract.test.ts",
+      "tests/custody/d1-mint-operator-channel.test.ts",
+      "tests/custody/d1-pre-hc1-post-mint.test.ts",
+      "tests/custody/d1-dag-amendment-v107.test.ts",
+      "tests/custody/d1-dag-amendment-v105.test.ts (live pin -> chain-derived; v1.0.5 itself not edited)",
+      "tests/custody/d1-cert-event-termination.test.ts (OPEN_BY_DESIGN -> PMR-14)",
+      "tests/custody/n05-observation-controls.test.ts (fixture gains the identity fields; controls unchanged)",
+      "tests/custody/support/fake-only-mint-tool.ts",
+      "tests/custody/support/fake-only-oep1-probe-tool.ts",
+      "tests/custody/support/oep1-evidence-fixture.ts"
+    ],
+    "outside_the_repository": [
+      "%LOCALAPPDATA%/uellix-d1-mint-operator-channel/tools/d1-mint-operator-tool-v2.js (sha256 9d5aea3a...0836)",
+      "%LOCALAPPDATA%/uellix-d1-mint-operator-channel/tools/d1-oep1-probe-tool-v2.js (sha256 117ad544...f17f)"
+    ],
+    "count": 35
+  },
+  "SCHEDULE_PRESERVED": {
+    "N08": "2026-09-28T14:00:00Z",
+    "N31": "2026-09-28T18:00:00Z",
+    "N09": "2026-09-29T14:00:00.000Z",
+    "measured_by": "tests/custody/d1-dag-amendment-v108.test.ts (the schedule does not move)"
+  },
+  "CHANNEL_BINDING_AT_THIS_CANDIDATE": {
+    "effective_authority": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_v1.0.0.json as amended append-only by ..._AMENDMENT_v1.0.1.json (REPLACES_SECTIONS)",
+    "launcher_build_digest": "40bb037936f3eb1c4a9bdee83d7b3ea7709da46657714c94809f35d43a192603",
+    "mint_tool": {
+      "file": "d1-mint-operator-tool-v2.js",
+      "sha256": "9d5aea3a6bce4e9ab94f96ab4bd0903d8aef0bd9f9f2b6bda8996417b11a0836"
+    },
+    "probe_tool": {
+      "file": "d1-oep1-probe-tool-v2.js",
+      "sha256": "117ad54403eb6c43713c34b445d8c28abcb65615ece61e222b2b084c46a6f17f"
+    },
+    "route_b_driver": {
+      "package": "postgres",
+      "version": "3.4.9",
+      "content_digest": "9d6c2298bd1b4157f03c88cf91c0c937d58c5424ebb08975fd432803e5310ba4"
+    },
+    "v1_tools": "d1-mint-operator-tool.js / d1-oep1-probe-tool.js left in place unchanged (979b1440 stays reproducible)."
+  },
+  "A_PLAINTEXT_TRANSPORT_REPLACED": {
+    "route_b": "SET_VERIFIER binds the client-derived SCRAM-SHA-256 verifier; the DO block refuses (SQLSTATE 22023) any value that is not a verifier BEFORE the EXECUTE; no pinned statement references a plaintext GUC.",
+    "derivation": "db/custody/scram-verifier.ts reproduces RFC 7677 byte-exact (ClientProof and ServerSignature).",
+    "tools": "The pinned v2 tools derive the verifier in-process; the plaintext goes only to the N30 depositor on stdin after the database act."
+  },
+  "B_DISPOSABLE_POSTGRES_PROOF": {
+    "script": "pnpm custody:scram:disposable-proof -- --container=<label uellix.d1r2=disposable> --out-dir=<outside>",
+    "image": "public.ecr.aws/supabase/postgres:17.6.1.159 (server_version_num 170006), published on 127.0.0.1 only, SSL on",
+    "runs": {
+      "total": 6,
+      "on_the_final_proof_code": "run 6: SATISFIED_CANDIDATE, 23/23 controls (run 5 identical on the same code before the last test-only edits)",
+      "earlier": [
+        "run 1 NOT_SATISFIED: the lock-wait blocker ALTERed the same pg_authid row -> the tool's ALTER failed XX000 (see measured_on_first_run); and the proof's own verifier check had its arguments swapped",
+        "run 2 NOT_SATISFIED: only the swapped-argument check (PostgreSQL itself authenticated the plaintext against the stored verifier)",
+        "runs 3-4 SATISFIED_CANDIDATE with a generated control value; replaced by constant sentinels (why_constant_sentinels)"
+      ],
+      "record_scan": "the proof record carries no verifier, no plaintext and no connection string (grep SCRAM-SHA-256$ / postgresql:// = 0)"
+    },
+    "emitters_armed_for_the_operator_session": [
+      "log_statement=all",
+      "log_min_duration_statement=0",
+      "log_min_error_statement=debug5",
+      "log_error_verbosity=verbose",
+      "log_parser_stats",
+      "log_planner_stats",
+      "log_executor_stats",
+      "debug_print_parse/rewritten/plan",
+      "log_lock_waits + deadlock_timeout=100ms + a REAL lock wait (SHARE on pg_authid held across the ALTER ROLE)",
+      "auto_explain nested at 0 ms",
+      "pgaudit.log=all + log_parameter",
+      "pg_stat_statements.track=all + track_utility",
+      "pgtle.enable_password_check with a passcheck hook that RAISE LOGs what it is handed",
+      "log_parameter_max_length=-1"
+    ],
+    "startup_guc_injection": "An operator URL carrying ?options=... is refused by the real mint tool before any connection (OPERATOR_URL_HAS_STARTUP_PARAMETERS).",
+    "results": {
+      "PLAINTEXT": "PLAINTEXT_NOT_PRESENT: 0 occurrences in the server log and 0 in pg_stat_statements",
+      "DERIVED_MATERIAL": "DERIVED_MATERIAL_PRESENT (classified separately, never merged): the verifier appears 40 times in the server log and once in pg_stat_statements; StoredKey 40, ServerKey 42",
+      "every_emitter_was_live_during_the_ALTER": "The lock-wait message's own CONTEXT line, the passcheck hook (type PASSWORD_TYPE_SCRAM_SHA_256), pgaudit and the CONTEXT of the nested EXECUTE each quote the verifier; parser stats, log_statement and debug_print_parse fired.",
+      "stored": "pg_authid.rolpassword is a valid SCRAM-SHA-256 verifier of the plaintext the depositor received (recomputed client-side)",
+      "authentication": "the plaintext authenticates over SCRAM (hba scram-sha-256 for the host); plaintext+'x' is refused 28P01; the verifier used as the password is refused 28P01",
+      "guard": "a non-verifier through the pinned statements is refused with SQLSTATE 22023 and rolpassword is unchanged",
+      "negative_control": "the 979b1440 route (plaintext through set_config), run against a separate control role with a PUBLIC constant sentinel, puts that sentinel 40 times in the same log and once in pg_stat_statements: the search can find a plaintext that reached the server"
+    },
+    "why_constant_sentinels": "The first draft generated its control value with randomBytes; the repository-hosted live-mint detector flagged the script (marker + generator + driver). The detector was NOT changed: the script was changed so that it genuinely generates no secret. The only generated value is the pinned outside tool's.",
+    "measured_on_first_run": "A blocker that ALTERed the same pg_authid row made the tool's own ALTER fail with XX000 (tuple concurrently updated), masked by the DO block as D1_CREDENTIAL_SET_FAILED; the tool classified it DEFINITELY_NOT_COMMITTED and deposited nothing. The blocker was changed to a SHARE lock on pg_authid, which produces the lock wait without touching the row."
+  },
+  "C_STARTUP_AND_TARGET_BINDING": {
+    "launcher": "The operator URL must carry no query or fragment, the exact planned host (equality, never a prefix), the planned port and the planned database; for the mint, the planned principal. Each refused before spawn (tests/custody/d1-mint-operator-channel.test.ts R2-N-STARTUP).",
+    "tools": "Both pinned tools refuse HOST_LOOKALIKE, URL_WITH_QUERY, WRONG_DATABASE, WRONG_PORT, DRIVER_DIGEST_MISMATCH before any driver call; they construct the connection from explicit options, never from the URL.",
+    "plan": "N04 cannot be bypassed (no host, no plan); VALID UNTIL is the effective N09, never N08; a dirty worktree is STOP_DIRTY; the probe is planned only for a channel a terminal-PASS certification event certifies (OC-12); driver digest, port and database are plan fields verified against the repository."
+  },
+  "D_OEP1_REDESIGN": {
+    "gating_sub_verdicts": [
+      "PLAINTEXT_NOT_SERVER_VISIBLE",
+      "TARGET_SESSION_BOUND",
+      "STARTUP_PARAMETERS_CLOSED",
+      "TOOL_HASH_BOUND",
+      "PROBE_MINT_CONFIGURATION_COHERENT"
+    ],
+    "non_gating": "DERIVED_MATERIAL_EXPOSURE (POSSIBLE / NOT_INDICATED / UNKNOWN), recomputed and compared, never read as absence",
+    "what_the_hosted_probe_still_proves": "the session is the planned principal on the planned database; the client-sourced startup settings are exactly the measured postgres.js set; the probe, mint, launcher and driver hashes are the pinned ones; the probe session fingerprint equals the mint's; the derived-material classification of the hosted posture",
+    "what_it_no_longer_infers": "plaintext absence from a closed list of logging settings (the class of emitters quoting the nested EXECUTE is open); plaintext absence now holds by construction",
+    "E1": "PMR-14 refuses a consistent non-PASS record: the verdict must be CLOSED AND every recomputed gating sub-verdict PASS, each branch killed by its own isolated control"
+  },
+  "E_SURVIVORS_KILLED_AND_ATTRIBUTED": {
+    "script": "pnpm custody:operator-channel:mutation",
+    "attribution_rule": "Kills are attributed only to failing tests OUTSIDE the pin block (P-2: the launcher build is deterministic and pinned); no digest-only kill counts. Originals restored in memory byte for byte (verified against a tar backup: 0 differences).",
+    "final_battery_on_the_final_code": "31/31 RED (behavioural) + M-SELF-TEST GREEN; survivors: none",
+    "survivors_of_979b1440": {
+      "E1": "R2-M-E1 (verdict gate) killed only by \"CONTROL E1 every sub-verdict PASS but the record says NOT_CLOSED\"; R2-M-E1-SUBVERDICTS (the pair: recomputed reasons + sub-verdict gate) killed only by \"CONTROL E1 consistent FAIL recorded as CLOSED\"",
+      "X06": "R2-M-X06 (host by startsWith) killed by \"R2-N-STARTUP: a host that only STARTS with the planned host (X06) is refused\"",
+      "P1": "R2-M-P1 (VALID UNTIL = N08) killed by \"R2-N-P1: with closed OEP-1 evidence the mint plan carries the effective N09 as VALID UNTIL, never N08\"",
+      "P6": "R2-M-P6 (STOP_DIRTY removed) killed by \"R2-N-P6: a dirty worktree is STOP_DIRTY ...\"",
+      "P10": "R2-M-P10 (N04 bypassed) killed by \"R2-N-P10: when N04 is NOT_SATISFIED there is no target host and no plan\"",
+      "L1": "R2-M-L1 (launcher writes process.env) killed only by \"R2-N-L1: a launcher run leaves the REAL process environment untouched\"",
+      "X08": "R2-M-X08 (allowlist widened) killed only by \"R2-N-X08: the tool environment allowlist is exactly this literal\""
+    },
+    "new_guarantees": [
+      "R2-M-STARTUP-QUERY",
+      "R2-M-DATABASE",
+      "R2-M-PLAN-DRIVER-DIGEST",
+      "R2-M-OC12",
+      "R2-M-OEP1-STARTUP-CLOSED",
+      "R2-M-PMR14-PINS",
+      "R2-M-TRANSPORT",
+      "R2-M-GUARD-REGEX (killed also by the behavioural guard-pattern test)",
+      "R2-M-SCRAM-KEY (RFC 7677 ClientProof)",
+      "R2-M-PID-REUSE (parentOf by pid alone)"
+    ],
+    "first_battery_finding": "The first full run left R2-M-E1 and R2-M-E1-SUBVERDICTS GREEN: the E1 control carried both a NOT_CLOSED verdict and a FAIL sub-verdict, and the single-line sub-verdict gate is equivalent to the recomputed reasons. Fixed by one isolating control per branch and by mutating the pair; not by weakening anything.",
+    "manifest_mapping": {
+      "R2-M-VERIFIER": "R2-M-SCRAM-KEY",
+      "R2-M-PID": "R2-M-PID-REUSE",
+      "R2-M-SELF-TEST": "M-SELF-TEST"
+    }
+  },
+  "F_PEB_OBSERVER": {
+    "change": "Records keyed by (pid, creation time); creation time, image name and parent pid read through the same handle as the PEB; the baseline is keyed the same way, so a new process reusing a baseline PID is inspected; parentOf attributes a child to the same-pid record created most recently before it; recordForSpawn fails closed on ambiguity.",
+    "tests": "tests/custody/d1-peb-identity.test.ts: PID reuse stays two records, a later reuser never adopts an earlier child, an ambiguous spawn window is null, the old pid-keyed merge reproduced; plus the real observer on Windows (creation time present, keys unique, planted fixture seen).",
+    "demonstration_determinism": {
+      "script": "pnpm custody:operator-channel:demonstrate -- --out-dir=<outside>",
+      "final": "3/3 consecutive runs SATISFIED_CANDIDATE (all controls PASSED, OBS_IDENTITY_KEYED included)",
+      "before_the_fix": "4/4 runs NOT_SATISFIED deterministically on CH_HIDDEN_OUTCOME only: every run after the first reused a fake-driver root whose files the first run had changed, so the v2 tool refused DRIVER_DIGEST_NOT_PINNED (correct behaviour). Each run now gets its own driver root.",
+      "observed_processes": "about 850-980 per run on this host: the identity-keyed baseline admits only processes created after the observer started (measured: 2 pre-existing, the watched root and explorer); the rest is concurrent host activity"
+    },
+    "not_claimed": "No Windows guarantee is claimed: the observer polls, so a process living less than one poll is never seen and a protected process is recorded unreadable. Its findings are evidence of presence; absence is only as strong as the controls showing the process WAS read and the planted fixture seen (OBS0).",
+    "n05_consumers": "The N05 / production-topology demonstrations aggregate by sets of pids; with identity-keyed records a reused pid now yields two records, which those set-based checks include conservatively (over-inclusion, fail-closed). Their logic is not changed by this lane."
+  },
+  "G_TLS": "OPEN OWNER BOUNDARY, recorded in the channel authority amendment v1.0.1 TLS_TRUST_BOUNDARY and not decided here. Additional interplay measured by this lane: the verifier (derived material) reaches server logs wherever an emitter quotes the ALTER ROLE; its ServerKey lets a holder impersonate the server in a SCRAM exchange, and its StoredKey plus one observed exchange yields ClientKey. With no server authentication (ssl 'require') and no channel binding, the confidentiality of the auditor's future sessions against an on-path actor who can also read those logs depends on the root-of-trust decision. The plaintext fix itself does not depend on TLS.",
+  "REAL_TOOLS_UNDER_THE_CONTRACT_HARNESSES": {
+    "mint_tool": "CONFORMS in all 18 scenarios: SUCCESS, FAILS_BEFORE_TRANSACTION, MINT_FAILS, COMMIT_TRANSPORT_LOST, COMMIT_TIMEOUT, COMMIT_GENERIC_TRANSPORT_ERROR, COMMIT_SERVER_ERROR_SQLSTATE, KILLED_DURING_COMMIT, COMMIT_NO_FINAL_OUTPUT, UNPINNED_TARGET, HOST_LOOKALIKE, URL_WITH_QUERY, WRONG_DATABASE, WRONG_PORT, WRONG_DRIVER_VERSION, DRIVER_DIGEST_MISMATCH, WRONG_OPERATOR_PRINCIPAL, TOOL_INSIDE_GIT_TREE",
+    "probe_tool": "CONFORMS in all 10 scenarios: SUCCESS, QUERY_FAILS, UNPINNED_TARGET, HOST_LOOKALIKE, URL_WITH_QUERY, WRONG_DATABASE, WRONG_PORT, WRONG_DRIVER_VERSION, DRIVER_DIGEST_MISMATCH, TOOL_INSIDE_GIT_TREE",
+    "summary": "28/28 on the pinned bytes; fake drivers and RFC 6761 .invalid hosts only",
+    "note": "WRONG_PORT was added to both harnesses in this lane (the manifest's R2-N-STARTUP names another port); the fixtures gain a NO_PORT_CHECK variant whose conforming line renders byte-identical."
+  },
+  "PRE_HC1_STATE_OF_THIS_CANDIDATE": {
+    "expected_before_its_event": "N10 NOT_READY by PMR-9 (not certified) and PMR-14 (no OEP-1 v2 evidence) only",
+    "expected_after_its_event": "N10 NOT_READY by PMR-14 only, by design (the channel is certified before its probe runs)",
+    "measured": "NOT_READY, unsatisfied exactly {PMR-9_CANDIDATE_CERTIFIED, PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED} (pnpm custody:pre-hc1 on the lane's final working tree); re-measured at the pushed head by the lane report"
+  },
+  "RESIDUALS_FOR_THE_SHORT_INDEPENDENT_RECERTIFICATION": [
+    "RC-GUARD-MESSAGE: the DO block's EXCEPTION WHEN OTHERS re-raises the guard as D1_CREDENTIAL_SET_FAILED keeping SQLSTATE 22023 (measured); the name D1_VERIFIER_REQUIRED is not surfaced to the client. Fail-closed, before ALTER ROLE.",
+    "RC-DERIVED-MATERIAL: DERIVED_MATERIAL_PRESENT is expected on any hosted posture with an emitter on; OEP-1 classifies it and does not gate on it (owner decision). See G_TLS for its interplay with server authentication.",
+    "RC-OBSERVER-POLLING: the PEB observer is a poller; see F_PEB_OBSERVER.not_claimed.",
+    "RC-EQUIVALENT-MUTANT: the single-line sub-verdict gate in oep1EvidenceReasons is equivalent to the recomputed reasons (both carry every FAIL); the battery mutates the pair.",
+    "RC-HEAP: the plaintext and the operator URL still live in Node heap copies inside the tool and the launcher until process exit; no zeroing guarantee is claimed.",
+    "RC-DISPOSABLE-VS-HOSTED: the leak-class proof is on supabase/postgres 17.6.1.159 locally; the hosted posture is observed only by the PHASE 2 probe, which does not read logs."
+  ],
+  "LOCAL_VALIDATION": {
+    "custody_suite": "800/800 (33 files) with CI=true FORCE_COLOR=1, including tests/custody/d1-cert-event-termination.test.ts (16/16) and its nested COMPLETE custody suite in a real-git copy with a certification event",
+    "mutation": "31/31 RED + self-test GREEN on the final code; L1/X08 re-attributed to their own tests after the final battery (6-mutant rerun: all as expected)",
+    "disposable_proof": "SATISFIED_CANDIDATE 23/23",
+    "peb_demonstration": "3/3 SATISFIED_CANDIDATE",
+    "real_tools": "28/28 CONFORMS",
+    "typecheck_lint_secrets_seal_dag_scope_poststate": "recorded in the lane report at the committed head",
+    "note": "measured on the working tree that carries this record with this field pending; the field text is the only difference."
+  },
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "OPERATOR_CREDENTIAL_REQUESTED_OR_USED": 0,
+  "HOSTED_DB_CONNECTIONS_EXECUTED": 0,
+  "DISPOSABLE_DB_CONNECTIONS_EXECUTED": "Only to the labelled disposable container on 127.0.0.1 (synthetic roles uellix_auditor and uellix_d1r2_control); removed at the end of the lane.",
+  "PROVIDER_MUTATIONS_EXECUTED": "0 by this lane's acts; a git push creates a Vercel Preview deployment by platform behaviour",
+  "EXPLICIT_NON_AUTHORIZATIONS_RESPECTED": [
+    "no independent recertification written",
+    "no certification event written",
+    "no hosted OEP-1",
+    "HC-1 not requested",
+    "N11 not executed",
+    "no hosted PostgreSQL touched"
+  ],
+  "final_state": "D1_OEP1_PLAINTEXT_ELIMINATION_REMEDIATED__READY_FOR_SHORT_INDEPENDENT_RECERT",
+  "next_gate": "A SHORT independent recertification of this remediation (including DAG v1.0.8, the channel authority amendment v1.0.1 and its test manifest amendment). The certifier writes its own event. Then PHASE 2: the OEP-1 v2 probe through the certified channel -> evidence -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin vs N08 -> HC-1 -> N11. The TLS root of trust is a separate owner decision."
+}

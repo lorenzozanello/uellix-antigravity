@@ -1,0 +1,66 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_AC1_AC3_OWNER_DECISION_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD",
+  "document_class": "TWO_DECISION_RECORD__APPEND_ONLY__NO_EXECUTION__NO_SECRET__NO_CREDENTIAL__NO_AUTHORIZATION_OF_ANY_CREDENTIAL_ACT",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-IC-BLOCKERS-AND-AUTHORITY-CLOSURE-R1",
+  "lane": "CV1-D1-AUDITOR-IC-BLOCKERS-AND-AUTHORITY-CLOSURE-R1",
+  "role": "Record, verbatim, the owner's policy decisions on the two authority conflicts the independent recertification CONFIRMED (AC-1, AC-3). AC-2 is NOT an owner decision: it is a technical authority ruling, recorded in DAG amendment v1.0.6.",
+  "mode": "DOCS_AND_IMPLEMENTATION__THIS_FILE_IS_THE_DOCS_HALF",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner.",
+  "repository": "uellix",
+  "materialized_at_base": "adbe6dacd034a50e5f40b8faed98c9a063abe658",
+  "CONTEXT": "The independent recertification of the post-mint completeness package at adbe6dac returned D1_POST_MINT_COMPLETENESS_RECERT_FAIL and ruled AC-1 CONFIRMED, AC-2 REFUTED, AC-3 CONFIRMED (conflicts declared in DAG amendment v1.0.5 AUTHORITY_CONFLICTS_OPEN). The owner then ratified the decisions below in the lane mandate of CV1-D1-AUDITOR-IC-BLOCKERS-AND-AUTHORITY-CLOSURE-R1, as binding, SIGNED = YES.",
+  "DECISIONS_VERBATIM": {
+    "AC-1": {
+      "D1_AC1_DECISION": "AUTHORIZE_NARROW_HAS_TABLE_PRIVILEGE_OBSERVATION",
+      "AUTHORIZED_RELATION_PRIVILEGE_SURFACE": {
+        "uellix_bootstrap.staging_sentinel": [
+          "SELECT",
+          "INSERT",
+          "UPDATE",
+          "DELETE",
+          "TRUNCATE"
+        ],
+        "public.users": [
+          "SELECT"
+        ]
+      },
+      "AUTHORIZED_ROLE": "uellix_auditor",
+      "PURPOSE": "Only N14 prestate and N22 poststate verification for PV-22, PV-28 and PV-32.",
+      "LIMIT": "NO OTHER RELATION OR PRIVILEGE IS AUTHORIZED."
+    },
+    "AC-3": {
+      "D1_AC3_DECISION": "DEFER_FUNCTION_EXECUTE_ASSERTIONS_TO_PRECHECK_R2",
+      "EFFECT": "P1[13], PV-24, PV-25 and the EXECUTE assertions of N21 SHALL NOT be required to terminate the provisioning observation/poststate lane.",
+      "RETAINED": "N21 USAGE and CREATE assertions remain in the provisioning lane.",
+      "NOT_AUTHORIZED": [
+        "No to_regprocedure relaxation is authorized here.",
+        "No catalog enumeration is authorized here."
+      ],
+      "SUCCESSOR_OBLIGATION": "A successor PRECHECK-R2 authority must define a non-raising, fail-closed way to verify the canonical function EXECUTE contract after provisioning.",
+      "FAIL_CLOSED": "UNKNOWN or inability to verify remains STOP."
+    },
+    "SIGNED": "YES"
+  },
+  "NOT_AN_OWNER_DECISION": {
+    "AC-2": "D1_AC2_RULING = AC2_REFUTED_BY_EXISTING_AUTHORITY_AND_POSTGRESQL_ROLE_REACHABILITY_SEMANTICS. Stated by the owner as a TECHNICAL RULING requiring no owner policy expansion; materialized with its structural proof conditions in docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.6.json."
+  },
+  "WHAT_THESE_DECISIONS_DO_NOT_DECIDE": [
+    "No credential act is authorized; no HC-1 exists; the HC-1 at 87520a97 is SPENT.",
+    "AC-1 authorizes no relation, privilege or role beyond the six (relation, privilege) pairs above, and no dynamic relation name.",
+    "AC-3 does not authorize to_regprocedure, any function-resolution SQL, any catalog enumeration or any new EXECUTE probe in this DAG; it moves the EXECUTE verification to PRECHECK-R2 without choosing its SQL.",
+    "N08, N31 and N09 are unchanged."
+  ],
+  "execution_not_authorized_by_this_ratification": "No credential is minted, rotated, deposited or delivered. No PostgreSQL connection is opened. No ALTER ROLE, GRANT, REVOKE or PASSWORD NULL occurs. No provider is touched.",
+  "self_check": {
+    "no_secret_value": "No credential, DSN, userinfo, host string, hash, vault handle or lookup token appears in this document.",
+    "verbatim": "The decision fields are transcribed exactly as supplied."
+  },
+  "required_independent_review": "MANDATORY, in the short recertification of the remediated candidate.",
+  "final_state": "AC1_AUTHORIZED_NARROW__AC3_DEFERRED_TO_PRECHECK_R2__AC2_LEFT_TO_TECHNICAL_RULING__NO_CREDENTIAL_ACT_AUTHORIZED",
+  "next_gate": "ONE short independent recertification of the remediated candidate."
+}

@@ -1,0 +1,52 @@
+{
+  "manifest_id": "FIBDB053-D1-OEP1-PLAINTEXT-ELIMINATION-REMEDIATION-R2",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N11_PASSWORD_TRANSPORT_OWNER_DECISION_v1.0.0.json (N11_PASSWORD_TRANSPORT = CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER); docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json SECRET_GENERATION_CONTRACT.generation_requirements.entropy ('At least 32 bytes from a cryptographically secure random source'); recertification D1_MINT_OPERATOR_CHANNEL_SUCCESSOR_RECERT_FAIL of 979b1440 (OEP-1 blocker: plaintext in CONTEXT of the nested EXECUTE via log_parser_stats, log_lock_waits, startup GUC, pg_tle passcheck; survivors E1 X06 P1 P6 P10 L1 X08; PID-keyed PEB observer); amends docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_v1.0.0.json (not edited)",
+  "dependencies": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_v1.0.0.json (predecessor manifest; its controls stay in force except where superseded below)",
+    "Docker with public.ecr.aws/supabase/postgres:17.6.1.159 (the image the recertifier measured the leaks on) for the disposable proof; hosted PostgreSQL is NOT used"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    { "id": "S-PLAINTEXT", "purpose": "The freshly generated plaintext auditor password (synthetic run): must occur ZERO times in every PostgreSQL log line, in pg_stat_statements, in every driver-recorded statement text, bind value and connection option, and in tool output. PLAINTEXT_NOT_PRESENT is the gating property." },
+    { "id": "S-VERIFIER", "purpose": "The SCRAM-SHA-256 verifier derived from it: counted separately (DERIVED_MATERIAL_PRESENT is measured and classified, never merged with PLAINTEXT_NOT_PRESENT)." },
+    { "id": "S-OPERATOR-URL", "purpose": "Carried from v1.0.0: the operator connection string appears only in the tool's environment block (PEB), now bound to process identity (pid + creation time)." }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    { "id": "R2-P-1", "description": "The SCRAM-SHA-256 derivation reproduces the RFC 7677 test exchange (ClientProof and ServerSignature byte-exact) and emits PostgreSQL's verifier format SCRAM-SHA-256$<iter>:<salt>$<StoredKey>:<ServerKey>.", "test_file": "tests/custody/d1-scram-verifier.test.ts" },
+    { "id": "R2-P-2", "description": "Disposable PostgreSQL (supabase/postgres:17.6.1.159): the real outside mint tool installs a verifier; pg_authid holds exactly a valid SCRAM verifier; authentication with the original plaintext succeeds.", "test_file": "scripts/custody/d1-scram-disposable-proof.ts" },
+    { "id": "R2-P-3", "description": "The mint harness: the only password-related value sent is a verifier that verifies against the plaintext handed to the depositor; the plaintext appears in no driver event, bind value or connection option.", "test_file": "tests/custody/d1-mint-route-b-contract.test.ts" },
+    { "id": "R2-P-4", "description": "OEP-1 v2 evaluates PLAINTEXT_NOT_SERVER_VISIBLE, TARGET_SESSION_BOUND, STARTUP_PARAMETERS_CLOSED, TOOL_HASH_BOUND and PROBE_MINT_CONFIGURATION_COHERENT separately, with DERIVED_MATERIAL_EXPOSURE classified apart and non-gating for plaintext.", "test_file": "tests/custody/d1-oep1-probe-contract.test.ts" },
+    { "id": "R2-P-5", "description": "The PEB observer binds each observation to (pid, creation time); the author demonstration is repeated and reported with its pass count.", "test_file": "tests/custody/d1-peb-identity.test.ts" }
+  ],
+  "negative_controls": [
+    { "id": "R2-N-LEAK-CLASSES", "description": "With log_parser_stats, log_lock_waits (+ a real lock wait on pg_authid), startup GUC injection and a pg_tle passcheck hook ALL enabled, plus log_statement=all with parameters, debug_print_*, auto_explain nested at 0 ms, pg_stat_statements track=all and pgaudit where available, the synthetic plaintext occurs ZERO times in the PostgreSQL logs and pg_stat_statements; the same pressure on the OLD route-B statements reproduces the leak (control that the pressure works).", "test_file": "scripts/custody/d1-scram-disposable-proof.ts" },
+    { "id": "R2-N-WRONG-PASSWORD", "description": "After installation a wrong plaintext fails authentication; the verifier string itself used as a password fails authentication.", "test_file": "scripts/custody/d1-scram-disposable-proof.ts" },
+    { "id": "R2-N-NOT-A-VERIFIER", "description": "The DO block refuses (D1_VERIFIER_REQUIRED) a value that is not a SCRAM verifier, so a plaintext can never be stored or passed to a password-check hook through this statement.", "test_file": "scripts/custody/d1-scram-disposable-proof.ts" },
+    { "id": "R2-N-STARTUP", "description": "An operator URL with any query parameter or fragment, another database, another port, or a host that only shares a prefix/suffix with the planned host is refused by the launcher and by both tools before any driver call.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R2-N-E1", "description": "OEP-1 evidence whose recorded and recomputed verdicts are both a non-PASS is NOT accepted by PMR-14.", "test_file": "tests/custody/d1-pre-hc1-post-mint.test.ts" },
+    { "id": "R2-N-P1", "description": "The mint plan's validUntil is the effective N09, never N08 (with synthetic closed OEP-1 evidence).", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R2-N-P6", "description": "A dirty worktree makes the gate STOP (STOP_DIRTY), exercised through the gate's evaluation function.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R2-N-P10", "description": "When N04 is NOT_SATISFIED no plan is derived.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R2-N-L1", "description": "The launcher run leaves the REAL process.env without the operator variable (not only the injected env).", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R2-N-X08", "description": "The tool environment allowlist is asserted against a literal, not against the constant under test.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R2-N-PID-REUSE", "description": "Two processes with the same pid and different creation times are two observations; a clean process's name never labels a leaking one that reused its pid.", "test_file": "tests/custody/d1-peb-identity.test.ts" },
+    { "id": "R2-N-PROBE-UNCERTIFIED", "description": "The gate refuses to plan the probe unless a terminal-PASS certification event certifies an ancestor candidate carrying the same channel binding.", "test_file": "tests/custody/d1-mint-operator-channel.test.ts" },
+    { "id": "R2-N-DRIVER-DIGEST", "description": "A driver whose files differ from the pinned driver digest is refused (not only by version).", "test_file": "tests/custody/d1-mint-route-b-contract.test.ts" }
+  ],
+  "mutation_controls": [
+    { "id": "R2-M-E1", "description": "PMR-14 stops requiring a PASS verdict -> R2-N-E1 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-X06", "description": "Host comparison by startsWith -> R2-N-STARTUP RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-P1", "description": "validUntil derived from N08 -> R2-N-P1 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-P6", "description": "STOP_DIRTY removed -> R2-N-P6 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-P10", "description": "N04 bypassed -> R2-N-P10 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-L1", "description": "Launcher writes process.env -> R2-N-L1 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-X08", "description": "Allowlist widened -> R2-N-X08 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-VERIFIER", "description": "SCRAM derivation altered (wrong key label / iteration) -> R2-P-1 RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-PID", "description": "Observation keyed by pid alone -> R2-N-PID-REUSE RED.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" },
+    { "id": "R2-M-SELF-TEST", "description": "A comment-only mutant must survive; kills are attributed only to tests outside the pin block.", "test_file": "scripts/custody/d1-mint-operator-channel-mutation.ts" }
+  ],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

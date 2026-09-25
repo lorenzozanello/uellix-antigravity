@@ -1,0 +1,514 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.1",
+  "artifact_id": "FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "IMPLEMENTATION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "REMEDIATION_RECORD__APPEND_ONLY__NO_REAL_CREDENTIAL__NO_POSTGRESQL_CONNECTION__NO_HOSTED_MUTATION__NO_CREDENTIAL_MINT__NO_CUSTODY_INVENTORY_WRITE__NO_CUSTODIAN_NAMED__NO_NODE_CLOSED__NO_SELF_CERTIFICATION_OF_N05__NO_NEW_AUTHORITY_CHAIN",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0.json",
+  "amends_note": "v1.0.0 is NOT edited. Every field of v1.0.0 stands as written except where SUPERSEDED_V100_CLAUSES below names a locus and a replacement. This is the same lane's record continued after a FAIL, not a new authority chain.",
+  "mission_id": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-REMEDIATION-R2",
+  "lane": "CV1-D1-AUDITOR-CUSTODY-REALIZATION-REMEDIATION-R2",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor.",
+  "repository": "uellix",
+  "companion_manifest_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "feb849154af8bc75d18d5477512060db217771fb",
+  "AS_OF_BASE_TREE": "67e8f57f346ceeb73adb37164acfb22bb82f3935",
+  "AS_OF_WORKTREE_STATE": "CLEAN at the start of this lane. ods:prestate PASS on branch, head, tree and clean.",
+  "FAIL_CONSUMED": {
+    "verdict": "D1_AUDITOR_CUSTODY_REALIZATION_IC_FAIL",
+    "candidate": "feb849154af8bc75d18d5477512060db217771fb",
+    "blocking_findings": 1,
+    "nonblocking_findings": 9,
+    "recorded_at": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json, occurrence CERT-OCC-CUSTODY-REALIZATION-R1, with BLOCKER_STATUS OPEN.",
+    "THIS_LANE_DOES_NOT_CLOSE_B_1": "ABSOLUTE. This record states what was changed and measured. Whether B-1 is closed is for an independent recertification of this successor candidate."
+  },
+  "B_1_REMEDIATION": {
+    "root_cause": "process-delivery.ts spawned the consumer with windowsHide:true. Node translates that to CREATE_NO_WINDOW, which gives a console application a NEW console; the conhost.exe hosting it is a child of the consumer and is created with the consumer's environment block, value included. The previous RC7 control exempted conhost.exe by name and could not see it.",
+    "PROCESS_CREATION_MODEL_AS_MEASURED": {
+      "method": "A launcher spawned a console consumer carrying a non-secret marker in the delivery variable; an external reader read every resulting process's environment block from its PEB; the launcher was then killed with TerminateProcess and the consumer's survival checked. Three launcher types by two consumer flags.",
+      "results": [
+        {
+          "launcher": "attached to a console",
+          "consumer_windowsHide": true,
+          "conhost_child_of_consumer": true,
+          "conhost_carries_variable": true,
+          "consumer_dies_with_launcher": true
+        },
+        {
+          "launcher": "attached to a console",
+          "consumer_windowsHide": false,
+          "conhost_child_of_consumer": false,
+          "conhost_carries_variable": false,
+          "consumer_dies_with_launcher": true
+        },
+        {
+          "launcher": "own hidden console",
+          "consumer_windowsHide": true,
+          "conhost_child_of_consumer": true,
+          "conhost_carries_variable": true,
+          "consumer_dies_with_launcher": true
+        },
+        {
+          "launcher": "own hidden console",
+          "consumer_windowsHide": false,
+          "conhost_child_of_consumer": false,
+          "conhost_carries_variable": false,
+          "consumer_dies_with_launcher": true
+        },
+        {
+          "launcher": "NO console (DETACHED_PROCESS)",
+          "consumer_windowsHide": true,
+          "conhost_child_of_consumer": true,
+          "conhost_carries_variable": true,
+          "consumer_dies_with_launcher": true
+        },
+        {
+          "launcher": "NO console (DETACHED_PROCESS)",
+          "consumer_windowsHide": false,
+          "conhost_child_of_consumer": true,
+          "conhost_carries_variable": true,
+          "consumer_dies_with_launcher": true
+        }
+      ],
+      "detached_true": "Measured by the certifier: no conhost child, but the consumer leaves the launcher's kill-on-close job, so it survives an abrupt launcher kill with the value in its block. REJECTED on that ground, as the lane mandate requires."
+    },
+    "THE_FIX": {
+      "consumer_spawn_flags": "windowsHide:false, detached:false — exported as CONSUMER_SPAWN_FLAGS and asserted by a cross-platform control.",
+      "fail_closed_precondition": "runWithDeliveredSecret REFUSES, before the vault is read, unless the launcher is attached to a console (CUSTODY_DELIVERY_TOPOLOGY_UNSAFE). The answer comes from a new bridge op that detaches from the bridge's own console and calls AttachConsole(launcher pid); ERROR_INVALID_HANDLE is the only 'no console' answer, any other failure throws. The precondition is demonstrated capable of refusing on a real console-less process in every run (control B1).",
+      "lifecycle_preserved": "The consumer stays in Node's kill-on-close job. Measured in the demonstration: a delivered consumer killed with the value live leaves no live process of the launcher tree carrying the variable or value.",
+      "no_new_helper_process": "The fix adds none. It REMOVES processes: the bridge no longer uses Add-Type, which started csc.exe and cvtres.exe on every call; the P/Invoke signatures are emitted in-process with Reflection.Emit. The launcher tree of a full demonstration went from 80-86 observed processes to 55-56, every one readable."
+    },
+    "WHY_THE_BRIDGE_NO_LONGER_COMPILES": "Once every process in the tree is judged by its own externally read environment block and command line, with no exemption by name, a process that exits before it can be read is a failure. Two cvtres.exe processes did exactly that in the first remediated run, and NP10 failed on them. Exempting them — by name or by ancestry — would reintroduce the class B-1 came from. They were removed instead."
+  },
+  "CONTROL_MODEL_AFTER_REMEDIATION": {
+    "observer": "scripts/custody/n05-peb-observer.ts: a SEPARATE process that polls every ~15ms and reads, for every process created after it started, plus the launcher and every explorer.exe, the command line AND the environment block from the PEB. It reports booleans and bit masks only; needles arrive on its stdin; its environment is a four-variable allowlist.",
+    "derivation": "scripts/custody/n05-observation-controls.ts: RC3, NP10, RC7 and OBS0 are PURE functions of the observation, tested on every platform.",
+    "RC7": "Every descendant of every delivered consumer is judged by its OWN environment block. A descendant that carries the variable or any governed representation, or whose block could not be read, FAILS it. Every other process of the launcher tree, including the launcher, must carry neither. Each delivered consumer must itself show the variable — the capability of true, in the scope the value was set in. There is no name list.",
+    "OBSERVED_SUBJECTS": "RC7 is NOT_RUN when no delivered consumer was observed. RC3 is NOT_RUN unless at least three bridge processes, the launcher and one delivered consumer were observed. NP10 is NOT_RUN when the launcher tree was not observed, and FAILED when any process in it could not be read. NOT_RUN is blocking in the summary and can never be PASSED.",
+    "RC3_ENCODINGS": "Exactly the representations the transport creates, as returned by governedRepresentations(): the raw value (the consumer's environment entry) and its base64 (the deposit's stdin framing and the retrieval's blob line). Both are searched in every command line and every environment block, as UTF-16LE because that is how Windows stores both. No third encoding exists on this path and none is invented.",
+    "RC3_POSITIVE_CONTROL": "OBS0. Two fixture processes carry a random NON-credential token — one with the raw form in argv and the base64 form in its environment, the other the reverse. OBS0 PASSES only if the observer found every representation in BOTH surfaces; until it does, RC3, NP10 and RC7 are NOT_RUN.",
+    "RC5_ABRUPT_TERMINATION": "Measured every run: a delivered consumer is killed with the value live, and no live process of the tree carries it afterwards; a separate depositor is killed after depositing, its entry SURVIVES, and the bounded recovery sweep finds and removes it."
+  },
+  "OF_CUST_1_DISPOSITION": {
+    "classification": "NONBLOCKING_RESIDUAL, as the certification adjudicated. No certified authority promises JavaScript heap zeroization, and none is claimed here.",
+    "what_changed": "Avoidable copies were removed. The deposit framing and the retrieval blob now travel as Buffers through db/custody/base64-bytes.ts, bridge stdout is collected as bytes, and delivery creates ONE string of the value instead of two.",
+    "measured_before_and_after": {
+      "method": "A clean launcher that saw the value only through the mechanism; its committed memory scanned from outside at checkpoints for the password in Latin-1 and UTF-16 and for the base64 of the value.",
+      "after_retrieval_buffer_zeroed_and_gc": {
+        "before": "3 base64 copies",
+        "after": "0 copies"
+      },
+      "after_delivery_and_gc": {
+        "before": "4 Latin-1, 2 UTF-16, 6 base64",
+        "after": "3 Latin-1, 1-2 UTF-16, 0 base64"
+      }
+    },
+    "THE_RESIDUAL_STATED_ACCURATELY": "After a delivery the launcher heap holds the value as the environment string spawn requires and the strings Node and libuv derive from it — about three one-byte copies and one or two UTF-16 copies — for the WHOLE LIFETIME OF THE LAUNCHER, not until a garbage collection. The PowerShell bridge holds it as .NET strings for the duration of one deposit or retrieval call. Neither is zeroed.",
+    "N06_PROCESSES_OR_ENVIRONMENTS_INPUT": {
+      "rule": "Stated for the custody inventory's processes_or_environments field, which this lane does NOT write. It is the list of process surfaces that actually hold the material in the implemented topology.",
+      "surfaces": [
+        "The delivered consumer process: environment block, for the consumer's lifetime.",
+        "The launcher process running runWithDeliveredSecret: heap, for the launcher's lifetime (OF-CUST-1 residual).",
+        "The PowerShell bridge process of a retrieval or deposit: .NET strings and unmanaged buffers, for that call's lifetime.",
+        "The Windows Credential Manager entry: DPAPI-protected at rest, until removed by the governed rotation act."
+      ],
+      "constraint_carried_to_the_production_invocation": "The launcher must be short-lived, must run from a console, and must not run under a development runtime; the consumer must not run under one either."
+    }
+  },
+  "OF_CUST_3_LIFECYCLE_PROPERTY": {
+    "property": "An abrupt kill of a depositor or launcher does NOT delete the vault entry. The entry is CRED_PERSIST_LOCAL_MACHINE by design because depositor and reader are different runs.",
+    "recovery": "Deterministic and bounded: sweepCredentials refuses any prefix outside SWEEPABLE_TARGET_PREFIXES (the UELLIX-N05-SENTINEL namespace only), so a recovery can never enumerate or remove a real credential entry. Measured in every demonstration run: entry survived the kill, the sweep found it, removal left it absent.",
+    "real_credential": "No sweep exists or may exist for it. Removing the real entry is the rotation act N28 governs, inside governed execution."
+  },
+  "NONBLOCKING_FINDINGS_DISPOSITION": [
+    {
+      "id": "NB-1",
+      "status": "REMEDIATED",
+      "how": "tests/custody/custody-delivery-isolation.test.ts replaces node:child_process with a fake that plays the bridge protocol, and kills M05, M06, M07 and M08 on every platform. CN3 and CN5 are re-pointed to it by the manifest amendment."
+    },
+    {
+      "id": "NB-2",
+      "status": "REMEDIATED",
+      "how": "D11 is killed statically by a Proxy over process.env that records any write or delete during delivery, and dynamically by the external reader seeing the variable in the launcher's own block. D13 is killed statically on the spawned argv and dynamically by RC3/NP10 searching the base64 representation."
+    },
+    {
+      "id": "NB-3",
+      "status": "REMEDIATED",
+      "how": "RC3 requires observed bridge, launcher and consumer subjects or reports NOT_RUN. The observer polls every ~15ms (700-900 polls per run, measured)."
+    },
+    {
+      "id": "NB-4",
+      "status": "REMEDIATED AS DISCLOSURE, RESIDUAL KEPT",
+      "how": "OF_CUST_1_DISPOSITION above."
+    },
+    {
+      "id": "NB-5",
+      "status": "CORRECTED IN PLACE",
+      "how": "E-03-32's why in DAG amendment v1.0.3 now cites E-03-08. See ERRATA."
+    },
+    {
+      "id": "NB-6",
+      "status": "CORRECTED",
+      "how": "The sweep restriction is now IMPLEMENTED (SWEEPABLE_TARGET_PREFIXES) rather than claimed, and SENTINEL_TARGET_PREFIX is derived from it; the nonexistent sweepSentinelEntries reference is gone."
+    },
+    {
+      "id": "NB-7",
+      "status": "REMEDIATED",
+      "how": "observeFromOutsideProcessTree removes its result file on every path."
+    },
+    {
+      "id": "NB-8",
+      "status": "REMEDIATED",
+      "how": "It participates in NP9, so it now requires the measured parent to BE WmiPrvSE.exe and not merely to differ from the launcher."
+    },
+    {
+      "id": "NB-9",
+      "status": "ADDRESSED",
+      "how": "The registry now states DERIVED_PROSE_RULE: DERIVED_FACTS prose is regenerated with the counts on every append; occurrences are immutable."
+    }
+  ],
+  "SUPERSEDED_V100_CLAUSES": [
+    {
+      "id": "SCR101-1",
+      "locus": "N29_WHAT_WAS_SELECTED_AND_BUILT.mechanism_named_by_behaviour",
+      "replacement": "As v1.0.0, and additionally: the P/Invoke signatures are emitted in-process with Reflection.Emit (no Add-Type, no compiler child); the value is held by the launcher as Buffers except for the one environment string spawn requires; the consumer is spawned without CREATE_NO_WINDOW and without DETACHED_PROCESS, shares the launcher's console and stays in its kill-on-close job; delivery refuses to run from a launcher with no console."
+    },
+    {
+      "id": "SCR101-2",
+      "locus": "N29_WHAT_WAS_SELECTED_AND_BUILT.ALTERNATIVES_CONSIDERED_AND_WHY_THEY_WERE_REFUSED[SELECTED].why",
+      "replacement": "Windows PowerShell 5.1 with P/Invoke into advapi32 and kernel32, bound by Reflection.Emit rather than compiled by Add-Type, for the reason in B_1_REMEDIATION.WHY_THE_BRIDGE_NO_LONGER_COMPILES."
+    },
+    {
+      "id": "SCR101-3",
+      "locus": "FINDINGS_THE_DEMONSTRATION_PRODUCED_BY_BEING_RUN.F_2_THE_RUNTIME_SPAWNED_A_CHILD_THAT_INHERITED_THE_VALUE.fix",
+      "old_text_summary": "'The observed consumer topology is now console hosts only.'",
+      "replacement": "The consumer runs under bare node AND without CREATE_NO_WINDOW. The observed consumer topology is now NO descendants at all. 'Console hosts only' was not a clean topology: the console host carried the value (B-1)."
+    },
+    {
+      "id": "SCR101-4",
+      "locus": "WHAT_THE_DEMONSTRATION_MEASURED.THE_OBSERVATIONS_ARE_MADE_FROM_OUTSIDE.command_lines_RC_3",
+      "replacement": "CONTROL_MODEL_AFTER_REMEDIATION.observer of this amendment. The Win32_Process poller is removed."
+    },
+    {
+      "id": "SCR101-5",
+      "locus": "WHAT_THE_DEMONSTRATION_MEASURED.the_two_layers.A_cross_platform_deterministic",
+      "replacement": "The count of 146 is superseded; the custody suite count is whatever the manifest amendment's gate run records. The layer additionally covers the delivery and bridge invariants (custody-delivery-isolation.test.ts), the byte codec, and the pure process-control derivation."
+    },
+    {
+      "id": "SCR101-6",
+      "locus": "OPEN_FINDINGS_ADDED[OF-CUST-1].finding",
+      "replacement": "OF_CUST_1_DISPOSITION.THE_RESIDUAL_STATED_ACCURATELY of this amendment."
+    },
+    {
+      "id": "SCR101-7",
+      "locus": "OPEN_FINDINGS_ADDED[OF-CUST-2]",
+      "replacement": "CLOSED BY REPLACEMENT, not by argument: the exemption is deleted and conhost is no longer created. Whether B-1 is closed is the recertifier's."
+    },
+    {
+      "id": "SCR101-8",
+      "locus": "OPEN_FINDINGS_ADDED[OF-CUST-3]",
+      "replacement": "OF_CUST_3_LIFECYCLE_PROPERTY of this amendment."
+    },
+    {
+      "id": "SCR101-9",
+      "locus": "OPEN_FINDINGS_ADDED[OF-CUST-4]",
+      "replacement": "DISCHARGED by the certification. The demonstration additionally reads every explorer.exe environment block, the block a freshly launched shell inherits."
+    }
+  ],
+  "ERRATA_EDITED_IN_PLACE": {
+    "rule": "Two uncertified artifacts of this same lane were corrected in place because the certification found them wrong and no certification pins their blobs as certified. The examined blobs remain pinned in the registry occurrence, so the pre-correction bytes stay recoverable.",
+    "edits": [
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "NEW_EDGES[E-03-32].why",
+        "old": "Parallel to E-01-08's role",
+        "new": "Parallel to E-03-08's role",
+        "examined_blob": "8cfeaefb1e239c55cc9064000f4749c6d31fcbab"
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CERTIFICATION_OCCURRENCE_REGISTRY_v1.0.0.json",
+        "locus": "APPEND ONLY: occurrence CERT-OCC-CUSTODY-REALIZATION-R1 and one APPEND_RECORD entry added; DERIVED_FACTS recomputed",
+        "examined_blob": "907edad77bd0c588f6fd02ff5dbc17b8e51745ac"
+      }
+    ]
+  },
+  "SENTINEL_CONTRACT_PRESERVED": "SYNTHETIC, NON-SECRET, NON-PRODUCTION, CREDENTIAL-SHAPED, freshly generated per run, SP-1 and SP-4 intact, the .invalid host and the reserved target prefix intact. The positive-control fixture is a separate random NON-credential token and is never the sentinel.",
+  "MUTATION_ACCEPTANCE": {
+    "where": "A copy of this lane's working tree outside the repository; every mutant restored before the next.",
+    "static_baseline": "213 passed (213)",
+    "static_mutants_against_the_full_custody_suite": [
+      {
+        "mutant": "M05_value_base64_appended_to_bridge_argv",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M06_delivery_writes_process_env",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "D11_delivery_writes_then_deletes_process_env",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M07_assertArgvIsClean_disabled",
+        "custody_suite": "3 failed | 210 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M08_ambient_refusal_disabled",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "D13_base64_value_appended_to_consumer_argv",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "B1a_consumer_windowsHide_true",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "B1b_console_precondition_removed",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "RACE_zero_framed_before_flush",
+        "custody_suite": "5 failed | 208 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "ADDTYPE_compiler_child_reintroduced",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "SWEEP_namespace_guard_removed",
+        "custody_suite": "4 failed | 209 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "RC7_conhost_name_exemption_reintroduced",
+        "custody_suite": "2 failed | 211 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "RC7_zero_subjects_reported_PASSED",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "OBS0_positive_control_bypassed",
+        "custody_suite": "2 failed | 211 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "RC3_base64_representation_dropped",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "NP10_unreadable_process_accepted",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M01_NOT_RUN_counted_as_PASSED",
+        "custody_suite": "17 failed | 196 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M02_isSatisfied_accepts_NOT_RUN",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M03_bridge_argv_drops_NonInteractive",
+        "custody_suite": "2 failed | 211 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M04_secret_param_in_bridge_source",
+        "custody_suite": "1 failed | 212 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M09_sentinel_password_fixture_marker",
+        "custody_suite": "3 failed | 210 passed (213)",
+        "verdict": "RED"
+      },
+      {
+        "mutant": "M10_DAG_edge_E-32-06_CONDITIONAL",
+        "custody_suite": "2 failed | 211 passed (213)",
+        "verdict": "RED"
+      }
+    ],
+    "static_survivors": [],
+    "dynamic_mutants_against_the_demonstration": [
+      {
+        "mutant": "X00_UNMUTATED_BASELINE",
+        "harness_exit": 0,
+        "aggregate": "aggregate       : SATISFIED_CANDIDATE",
+        "non_passed_controls": {},
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X01_B1a_consumer_windowsHide_true",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X02_D13_base64_value_in_consumer_argv",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "NP10_EXTERNAL_COMMAND_LINE_CLEAN": "FAILED",
+          "RC3_DEPOSIT_ARGV_CLEAN": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X03_D12_raw_value_in_consumer_argv",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "NP10_EXTERNAL_COMMAND_LINE_CLEAN": "FAILED",
+          "RC3_DEPOSIT_ARGV_CLEAN": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X04_D11_process_env_write_then_delete",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "NP11_BOTH_REMOVAL_PATHS_EXERCISED": "FAILED",
+          "RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD": "FAILED",
+          "RC5_ABRUPT_TERMINATION_RECOVERED": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X05_consumer_observation_zero_subjects",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "RC3_DEPOSIT_ARGV_CLEAN": "NOT_RUN",
+          "RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD": "NOT_RUN"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X06_consumer_under_tsx",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X07_cleanup_omitted",
+        "harness_exit": 4,
+        "aggregate": "CLEANUP FAILURE: sentinel entries survived the run.",
+        "non_passed_controls": {
+          "NP12_ABSENCE_CHECK_PROVEN_CAPABLE_OF_FALSE": "FAILED",
+          "RC6_VAULT_ENTRY_ABSENT_AFTER_CLEANUP": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X08_remove_reports_deleted_without_deleting",
+        "harness_exit": 4,
+        "aggregate": "CLEANUP FAILURE: sentinel entries survived the run.",
+        "non_passed_controls": {
+          "NP12_ABSENCE_CHECK_PROVEN_CAPABLE_OF_FALSE": "FAILED",
+          "RC6_VAULT_ENTRY_ABSENT_AFTER_CLEANUP": "FAILED",
+          "RC5_ABRUPT_TERMINATION_RECOVERED": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 2,
+          "after_repair_with_UNMUTATED_mechanism": 0
+        }
+      },
+      {
+        "mutant": "X09_wrong_target_probed",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "NP12_ABSENCE_CHECK_PROVEN_CAPABLE_OF_FALSE": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X10_reader_returns_mismatched_bytes",
+        "harness_exit": 1,
+        "aggregate": "aggregate       : NOT_SATISFIED",
+        "non_passed_controls": {
+          "RC2_CONSUMER_RESOLVED_VALUE": "FAILED"
+        },
+        "vault_after": {
+          "leaked": 0
+        }
+      },
+      {
+        "mutant": "X11_zeroing_race",
+        "harness_exit": 5,
+        "aggregate": "DEMONSTRATION ABORTED: CredWriteW failed for target \"UELLIX-N05-SENTINEL-976605F4B733\" (BRIDGE_EXCEPTION: MethodInvocationException).",
+        "non_passed_controls": {},
+        "vault_after": {
+          "leaked": 0
+        }
+      }
+    ]
+  },
+  "WHAT_REMAINS_OPEN": {
+    "N05": "OPEN. The demonstration reports SATISFIED_CANDIDATE on the remediated candidate; only an independent certifier may rule.",
+    "N29": "IMPLEMENTED; bridge re-bound without a compiler.",
+    "N30": "Mechanism IMPLEMENTED; the ACT is NOT PERFORMED.",
+    "N32": "EXISTS; datum UNSUPPLIED.",
+    "N06": "NOT SATISFIED (N05, N09, N31, N32 open).",
+    "N07": "NOT SATISFIED.",
+    "B_1": "OPEN in the registry until independently recertified."
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO real auditor credential was read, written, minted, rotated, deposited or delivered.",
+    "NO PostgreSQL connection. NO hosted mutation. NO provisioning.",
+    "NO custody inventory field written. NO custodian named.",
+    "NO node declared closed. NO new fail-closed token.",
+    "NO CI workflow added or modified."
+  ],
+  "required_independent_review": "MANDATORY. ONE short independent recertification focused on this remediation delta.",
+  "final_state": "CUSTODY_REALIZATION_REMEDIATED__N05_READY_FOR_SHORT_RECERT__NO_REAL_CREDENTIAL",
+  "next_gate": "ONE short independent recertification of the remediation delta. No real credential and no provisioning before PASS."
+}

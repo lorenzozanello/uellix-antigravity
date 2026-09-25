@@ -1,0 +1,82 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.8",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.8",
+  "authority_class": "CERTIFIED_PROVISIONING_DAG_AMENDMENT",
+  "document_class": "DAG_AMENDMENT__APPEND_ONLY__ZERO_NODES_ZERO_EDGES__AC7_PASSWORD_TRANSPORT_RULING__PMR13_SUPERSEDED_BY_PMR14__NO_EXECUTION__NO_SECRET",
+  "append_only": true,
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json",
+  "amends_note": "Appends to the lineage v1.0.0 .. v1.0.7. No earlier amendment is edited. No node and no edge changes.",
+  "mission_id": "CV1-D1-OEP1-PLAINTEXT-ELIMINATION-REMEDIATION-R2",
+  "lane": "CV1-D1-OEP1-PLAINTEXT-ELIMINATION-REMEDIATION-R2",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "repository": "uellix",
+  "AS_OF_BRANCH": "codex/cv1-d1-auditor-custody-realization-r1",
+  "AS_OF_BASE_SHA": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+  "AS_OF_BASE_TREE": "ac00fc4da4ae192144355dd515356670470142ca",
+  "INDEPENDENT_RECERT_CONSUMED": {
+    "verdict": "D1_MINT_OPERATOR_CHANNEL_SUCCESSOR_RECERT_FAIL",
+    "candidate": "979b1440dc52cff3b211714c00d03a6f3b7370cc",
+    "blocking": "OEP-1: evaluateOep1 PASS on server postures that logged the route-B plaintext (log_parser_stats, log_lock_waits, a startup GUC via the URL, a pg_tle passcheck hook), measured on supabase/postgres:17.6.1.159.",
+    "survivors": ["E1", "X06", "P1", "P6", "P10", "L1", "X08"],
+    "source": "The recertifier's final report (session LANE CV1-D1-MINT-OPERATOR-CHANNEL-SUCCESSOR-RECERT-R1). Read-only; no event was written for 979b1440."
+  },
+  "NEW_NODES": [],
+  "NEW_EDGES": [],
+  "AUTHORITY_CONFLICTS_OPEN": [
+    {
+      "id": "AC-7",
+      "conflict": "Route B (set_config bound parameter + DO/EXECUTE format) was ratified as keeping the plaintext out of logged statement TEXT; the recertification measured it in the CONTEXT line of any log message emitted during the nested EXECUTE, so no closed-list OEP-1 verification can guarantee the plaintext is not logged.",
+      "found_at": "independent recertification of 979b1440, 2026-09-24"
+    }
+  ],
+  "AUTHORITY_CONFLICT_RULINGS": {
+    "AC-7": {
+      "kind": "OWNER_POLICY_DECISION",
+      "outcome": "CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER",
+      "source": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_N11_PASSWORD_TRANSPORT_OWNER_DECISION_v1.0.0.json",
+      "effect": "The mint tool derives a PostgreSQL SCRAM-SHA-256 verifier from the generated plaintext and sends ONLY the verifier; the plaintext never reaches the server and is deposited locally through N30 after the database act.",
+      "route_b_delta_ruled": "RB-DELTA-4 (the precedent's password GUC carries the client-derived verifier; the DO block refuses a non-verifier before the ALTER ROLE)",
+      "implementation_must": [
+        "ROUTE_B_PASSWORD_TRANSPORT = CLIENT_SIDE_POSTGRESQL_SCRAM_SHA_256_VERIFIER",
+        "the DO block refuses a non-verifier before the ALTER ROLE",
+        "no pinned statement references the plaintext GUC"
+      ]
+    }
+  },
+  "N10_PRE_HC1_READINESS_CONJUNCTS": [
+    {
+      "id": "PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED",
+      "condition": "An append-only OEP-1 v2 evidence record exists whose gating sub-verdicts, each RECOMPUTED from the observation and the repository, are all PASS: PLAINTEXT_NOT_SERVER_VISIBLE (by construction: guarded SCRAM-verifier route B and the certified mint tool), TARGET_SESSION_BOUND, STARTUP_PARAMETERS_CLOSED, TOOL_HASH_BOUND, PROBE_MINT_CONFIGURATION_COHERENT; its verdict is CLOSED; its derived-material classification matches the recomputed one; it was observed before N08; and it names a channel certification event that is a terminal PASS for an ancestor carrying the same effective CHANNEL_BINDING.",
+      "source": "Owner decision N11_PASSWORD_TRANSPORT (OEP1 NOT_WAIVED; invariant PLAINTEXT_PASSWORD_SERVER_EXPOSURE = IMPOSSIBLE_BY_CONSTRUCTION)"
+    }
+  ],
+  "N10_PRE_HC1_READINESS_CONJUNCTS_SUPERSEDED": {
+    "PMR-13_OEP1_LOGGING_POSTURE_CLOSED": {
+      "superseded_by": "PMR-14_OEP1_PLAINTEXT_ELIMINATION_CLOSED",
+      "why": "A closed list of logging settings cannot bound the class of emitters that quote the nested EXECUTE (measured); the plaintext is removed from the server boundary instead, and OEP-1 proves the session."
+    }
+  },
+  "RECOMPUTED_GRAPH": {
+    "NODE_COUNT_TOTAL": 32,
+    "EDGE_COUNT_TOTAL": 45,
+    "HARD_EDGE_COUNT": 37,
+    "CONDITIONAL_EDGE_COUNT": 8,
+    "ACYCLIC": true,
+    "note": "No node and no edge change."
+  },
+  "EXPECTED_PRE_HC1_STATE_OF_THIS_SUCCESSOR": {
+    "before_its_certification_event": "N10 NOT_READY by PMR-9 (not yet certified) and PMR-14 (no OEP-1 v2 evidence) only.",
+    "after_its_certification_event": "N10 NOT_READY by PMR-14 alone, by design (the channel is certified before its probe runs)."
+  },
+  "TLS_TRUST_BOUNDARY_RECORDED": "The operator-channel amendment v1.0.1 records server authentication (ssl 'require' = rejectUnauthorized false; no channel binding in postgres.js 3.4.9) as an OPEN owner boundary; it is not a PRE-HC1 conjunct here because no authority fixes the root of trust, and it is surfaced to the owner rather than chosen.",
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No mint, deposit, delivery, probe or hosted connection.",
+    "No certification event is written by this lane.",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "required_independent_review": "MANDATORY: short independent recertification of the remediation, including this amendment.",
+  "final_state": "AC7_CLIENT_SIDE_SCRAM_VERIFIER__PMR13_SUPERSEDED_BY_PMR14__ZERO_NODES_CLOSED",
+  "next_gate": "Short independent recertification -> its event -> PHASE 2 OEP-1 v2 probe through the certified channel -> evidence -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

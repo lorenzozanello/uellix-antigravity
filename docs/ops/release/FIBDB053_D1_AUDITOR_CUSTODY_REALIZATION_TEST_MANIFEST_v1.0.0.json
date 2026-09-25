@@ -1,0 +1,201 @@
+{
+  "manifest_id": "FIBDB053-D1-AUDITOR-CUSTODY-REALIZATION",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "FIBDB053-D1-AUDITOR-CONSOLIDATED-CLOSURE",
+    "FIBDB053-D1-AUDITOR-N05-WCM-READINESS"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SENT-DAG-1",
+      "purpose": "CARRIED, NOT CREATED. The sentinel the certified DAG's companion manifest declares for the N05 demonstration, with the three derived properties the N05 readiness authority adds at SENTINEL_CONTRACT. Implemented by generateSentinel in scripts/custody/n05-sentinel.ts: a fabricated, non-functional, connection-string-shaped value carrying userinfo (SP-1), freshly generated per call from crypto.randomBytes, never written into any authority artifact and never appearing in any tracked file (SP-2), produced and consumed only outside the repository working tree (SP-3), and constructed so the repository secret scanner classifies it exactly as it would the real credential (SP-4). Its non-production markers live in the USERNAME and the HOST — the host is under the RFC 6761 .invalid TLD, which can never resolve — and NEVER in the password component, because scan-secrets tests only the password against isUnmistakablePlaceholder. NOTE A DECLARED CONFLICT: the lane mandate said a sentinel must not resemble a DSN, and SP-1 says it must. The certified authority governs and the departure is recorded at THE_SENTINEL_AND_A_DECLARED_CONFLICT_WITH_THE_LANE_MANDATE of the companion authority. It is an owner decision point, not a resolved question."
+    },
+    {
+      "id": "SENT-CUST-1",
+      "purpose": "The generator's own rejection canary. A random base62 password can contain a fixture-marker word by chance, which would make the scanner suppress the finding and reproduce mutant NM12 by accident. generateSentinel calls the scanner's OWN isUnmistakablePlaceholder and regenerates. Control CP7 exercises the scanner against one hundred independently generated sentinels and requires a finding on every one, so the rejection loop is proven to do something rather than to decorate the function."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "CP1",
+      "description": "PLATFORM_INDEPENDENT. THE INVOCATION CONTRACT CANNOT BE WEAKENED BY A CALLER. bridgeArgv() returns exactly -NoProfile, -NonInteractive, -ExecutionPolicy, Bypass, -EncodedCommand and one payload; its arity is zero, so no caller input can reach argv; and two calls return the same value. This is what makes WCM-C3 a property of every future invocation rather than of one observed run, per RC-4's structural note.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CP2",
+      "description": "PLATFORM_INDEPENDENT. THE ENCODED PAYLOAD IS THE BRIDGE SOURCE, BYTE FOR BYTE. Decoding argv's last element as UTF-16LE base64 must reproduce WCM_BRIDGE_POWERSHELL_SOURCE exactly. A payload that differed from the audited constant would mean the reviewed source is not the executed source.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CP3",
+      "description": "PLATFORM_INDEPENDENT. THE BRIDGE SOURCE SURVIVES EMBEDDING UNALTERED. It contains no backtick and no dollar-brace sequence, either of which would terminate or interpolate the TypeScript template literal holding it. Asserted rather than trusted to stay true.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CP4",
+      "description": "PLATFORM_INDEPENDENT. ONLY ERROR_NOT_FOUND IS READ AS AN ABSENCE. The constant is 1168, the bridge compares against it by name, and a probe that fails for any other reason returns a null presence which the store converts into a thrown CUSTODY_PROBE_FAILED. A failed check and a proven absence are the two facts RC-6 exists to keep apart, and conflating them is the false pass it calls the most dangerous available.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CP5",
+      "description": "PLATFORM_INDEPENDENT. THE BRIDGE ENVIRONMENT IS AN ALLOWLIST THAT CANNOT CARRY THE DELIVERY VARIABLE. No entry matches UELLIX, DATABASE, URL, SECRET, TOKEN, KEY or PASSWORD under any casing, and none equals the auditor variable name. TEMP is REQUIRED to be present, because Add-Type compiles through csc and a bridge started without it throws inside Add-Type — a measured past failure that surfaced as a CredWriteW error.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CP6",
+      "description": "PLATFORM_INDEPENDENT. ACQUISITION STRIPS EXACTLY ONE TRAILING NEWLINE AND NOTHING ELSE. A value with interior or trailing spaces survives intact; a value ending in a blank line keeps the blank line; an empty stream is refused rather than deposited; a value larger than a connection string could be is refused; and the return is a Buffer the caller can zero. Trimming generally would silently alter a value whose own bytes include padding.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CP7",
+      "description": "PLATFORM_INDEPENDENT. THE REPOSITORY SECRET SCANNER FIRES ON THE SENTINEL. scanText reports a PG_DSN_EMBEDDED_PASSWORD finding for a generated sentinel, and does so for one hundred independently generated ones. This is NN11's positive half, and without it ES-5 is an inference about a regular expression rather than a measured fact. The finding must also never contain the value itself — only a fingerprint and a shape.",
+      "test_file": "tests/custody/n05-sentinel.test.ts"
+    },
+    {
+      "id": "CP8",
+      "description": "PLATFORM_INDEPENDENT. THE EVIDENCE RECORD AND THE AUTHORITY AGREE IN BOTH DIRECTIONS. Every field the N05 readiness authority's EVIDENCE_CONTRACT names is present on the record type, AND the record carries no field the contract did not ask for. A one-way check would let the record grow fields the contract never authorized, which is how an evidence artifact quietly starts carrying something MUST_NEVER_CONTAIN forbids.",
+      "test_file": "tests/custody/n05-evidence-record.test.ts"
+    },
+    {
+      "id": "CP9",
+      "description": "PLATFORM_INDEPENDENT. THE DAG AMENDMENT DECLARES WHAT THE GRAPH ACTUALLY IS. Every numeral in v1.0.3's RECOMPUTED_GRAPH — node count, edge count, the HARD/CONDITIONAL split and its sum, acyclicity, topological order element by element, every emptiness claim, sinks, orphans, unreachability and every reachability property — is asserted against deriveGraphFacts(), which parses the authority artifacts. Editing a count in the JSON without changing the graph goes RED. This is the only version of 'never hand-author a derivable count' that survives a future lane in a hurry.",
+      "test_file": "tests/custody/d1-dag-amendment.test.ts"
+    },
+    {
+      "id": "CP10",
+      "description": "PLATFORM_DEPENDENT, WINDOWS-ONLY, WORKSTATION-RECORDED. THE ROUND TRIP RETURNS THE SAME BYTES. A deposited sentinel is retrieved by the built reader and compared byte for byte against what was deposited. Discharged by the demonstration, recorded in the evidence record, and NOT_RUN — never PASSED — anywhere the vault is unreachable.",
+      "test_file": "scripts/custody/n05-sentinel-demonstration.ts"
+    },
+    {
+      "id": "CP11",
+      "description": "PLATFORM_DEPENDENT, WINDOWS-ONLY, WORKSTATION-RECORDED. THE EXTERNAL OBSERVER SAW THE CONSUMING PROCESS. The command-line control and the topology control BOTH require a non-zero count of observed consuming processes. A clean sweep over an empty set is not a clean sweep, and this control exists because the demonstration produced exactly that: two green controls beside CONSUMING PROCESSES OBSERVED: 0, after the consumer got fast enough to finish between polls.",
+      "test_file": "scripts/custody/n05-sentinel-demonstration.ts"
+    },
+    {
+      "id": "CP12",
+      "description": "PLATFORM_DEPENDENT, WINDOWS-ONLY, WORKSTATION-RECORDED. SENTINEL CLEANUP IS VERIFIED BY SOMETHING OTHER THAN THE COMPONENT THAT CLEANED UP. The harness sweeps the reserved prefix after every run and refuses to report success while any entry remains; and the lane additionally verified zero survivors with cmdkey /list and with a CredEnumerateW call from a fresh PowerShell process unrelated to the harness, which returned ERROR_NOT_FOUND. A cleanup failure is a lane failure.",
+      "test_file": "scripts/custody/n05-sentinel-demonstration.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "CN1",
+      "description": "NO SECRET VALUE ANYWHERE IN THE TRACKED WRITE SET. pnpm secrets:scan runs clean over the whole tree, and the bridge constant is separately asserted to match no PostgreSQL scheme, no URL userinfo pair and no JWT, Google, Supabase or OpenAI token shape. Exercised POSITIVELY by CP7, so the grep is known to fire on a real planted value rather than passing because it never matches anything.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CN2",
+      "description": "NO PROHIBITED DELIVERY MECHANISM IS USED OR REACHABLE. The bridge source contains no setx, no cmdkey, and no SetEnvironmentVariable call targeting the User or Machine scope. These are N29's and N30's own named prohibitions: the first two write a persistent user-scope variable or place the value in argv, and the third is the registry surface MECHANISM_1 was ruled absolutely unacceptable for.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CN3",
+      "description": "THE SECRET IS NEVER READ FROM A PARAMETER. The bridge reads stdin and declares no param block; the store writes the value to an anonymous pipe and nowhere else; and process delivery REFUSES to launch a consumer whose own argv contains the retrieved value. The last of these closes the gap between 'this module does not put the value in argv' and 'the value is not in argv'.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CN4",
+      "description": "EVERY ECHOING ACQUISITION CHANNEL IS REFUSED. A TTY is refused outright rather than tamed, because a terminal scrollback is a history sink WCM-C3 would then have to reach. An argv already carrying a named secret flag or a bare connection string is refused too — which cannot un-breach WCM-C2, but reports the breach rather than accepting it silently.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CN5",
+      "description": "THE DELIVERY VARIABLE IS ABSENT FROM THE LAUNCHING PROCESS, ALWAYS. process.env is never written by the delivery path, and runWithDeliveredSecret REFUSES to run when the variable is already set ambiently — because a consumer that succeeded would then not prove which of the two values it read. If this control ever fails in the suite, every delivery observation in it is compromised.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CN6",
+      "description": "NOTHING OF THE DEMONSTRATION MAY LAND IN THE REPOSITORY TREE. The harness refuses an --out-dir inside the tree and the consumer build refuses to land inside it, both through one shared pure predicate so the two cannot drift. The predicate is exercised on a path inside, a path outside, the root itself, and a SIBLING directory sharing a name prefix — the case a naive leading-dot-dot check gets wrong.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    },
+    {
+      "id": "CN7",
+      "description": "THE EVIDENCE RECORD HAS NO FIELD THAT COULD HOLD A VALUE. No key matches value, secret, credential, dsn, userinfo, password, hash, handle, entry key, token or host, with ONE declared exception: vault_read_audit_records_handle, which the contract requires by that name and which is a claim ABOUT handles. It is exempted from the name check and constrained by TYPE to a boolean or the literal NOT_APPLICABLE, which is the stronger check.",
+      "test_file": "tests/custody/n05-evidence-record.test.ts"
+    },
+    {
+      "id": "CN8",
+      "description": "NO NEW FAIL-CLOSED TOKEN. Across every reachable summary state, the only token this write set can emit is STOP_SECRET_DELIVERY_NONCOMPLIANT, spelled byte-identically to the certified DAG's spelling and mapped only to N05. The DAG's own control DP5 asserts the token set is TOTAL, and a subordinate artifact inventing one would amend that set without anyone deciding to.",
+      "test_file": "tests/custody/n05-control-state.test.ts"
+    },
+    {
+      "id": "CN9",
+      "description": "NO CUSTODIAN IS NAMED AND NO NODE IS DECLARED CLOSED. The DAG amendment and the owner decision record are each grepped for an email address, a connection string, a userinfo pair, and any assertion that N05 through N09 is satisfied, closed or discharged. All must be empty.",
+      "test_file": "tests/custody/d1-dag-amendment.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "CM1",
+      "description": "MUTANT — REPORT A CONTROL THAT DID NOT RUN AS A PASS. This is NM1 of the N05 test manifest, its own most important mutant, and it is killed on the runner the mutant targets: ubuntu-latest, where the Windows controls cannot execute. A control is PASSED, FAILED or NOT_RUN; isSatisfied is total over all three and true for exactly one; and the aggregate is asserted NOT_SATISFIED for an all-NOT_RUN record, and for EACH of the nine controls individually set to NOT_RUN while every other one passes. There is no representation in which a skipped control contributes to a green aggregate, which is why the mutant cannot survive rather than merely being caught.",
+      "test_file": "tests/custody/n05-control-state.test.ts"
+    },
+    {
+      "id": "CM2",
+      "description": "MUTANT — RECORD SEVEN OF EIGHT AS A PARTIAL PASS. This is NM9. Each control in turn is set to FAILED while every other passes, and the aggregate must be NOT_SATISFIED every time. THE_CONJUNCTION_IS_TOTAL: a partial pass on a delivery contract is the shape in which a credential leaks while a report reads green.",
+      "test_file": "tests/custody/n05-control-state.test.ts"
+    },
+    {
+      "id": "CM3",
+      "description": "MUTANT — BUILD THE SENTINEL WITH A FIXTURE MARKER IN ITS PASSWORD. This is NM12, reproduced rather than only described. Each of the nine marker words the scanner suppresses on is planted in a password and the scanner is shown reporting NOTHING. The RED belongs to the SENTINEL, not to the scanner: the gate is working exactly as written and the sentinel has quietly stopped being a faithful stand-in. A password under six characters is shown suppressed for the same reason.",
+      "test_file": "tests/custody/n05-sentinel.test.ts"
+    },
+    {
+      "id": "CM4",
+      "description": "MUTANT — A CONFORMANCE PREDICATE THAT CANNOT RETURN FALSE. describeSentinelConformance is exercised on a non-DSN, on a DSN with a resolvable host, and on a DSN whose password carries a marker, and each of its five properties is observed returning false. This is RC-6's lesson applied to the CHECKER rather than to the check: a predicate exercised only where it is expected to pass has proven nothing about itself.",
+      "test_file": "tests/custody/n05-sentinel.test.ts"
+    },
+    {
+      "id": "CM5",
+      "description": "MUTANT — RUN THE FAILURE PATH BY INJECTING THE FAILURE AFTER REMOVAL. This is NM7, and the consumer is built so it cannot happen: its fail-after-resolve mode RESOLVES the value first, then exits non-zero, so the failure is a real failure of the consumer with the value live in its environment. The harness records resolved-before-failing as a separate boolean and requires it, so a run that failed before resolving would not count as the failure path.",
+      "test_file": "scripts/custody/n05-sentinel-consumer.ts"
+    },
+    {
+      "id": "CM6",
+      "description": "MUTANT — VERIFY THE FRESH-SHELL ABSENCE FROM INSIDE THE PROCESS TREE. This is NM5, and the harness cannot do it: the probe is created through Win32_Process.Create, which the OS re-parents onto WmiPrvSE, and the harness ASSERTS the probe's parent is not itself. The registry User and Machine environment blocks are read as well, so the claim does not rest on one observation.",
+      "test_file": "scripts/custody/n05-observers.ts"
+    },
+    {
+      "id": "CM7",
+      "description": "MUTANT — LET EACH PROCESS REPORT ITS OWN COMMAND LINE. This is NM6, and no process in the demonstration reports its own anything. A separate PowerShell process polls Win32_Process machine-wide every 100ms for the whole run and the harness searches that external capture. The observer is stopped by a FILE, not a kill, because a killed observer loses its buffer and an observation that loses its tail is the one that misses a short-lived process.",
+      "test_file": "scripts/custody/n05-observers.ts"
+    },
+    {
+      "id": "CM8",
+      "description": "MUTANT — PASS A SET-BASED CONTROL OVER AN EMPTY SET. Not in the N05 manifest; found by running this demonstration. With the consumer exiting in about fifty milliseconds the poller never saw it, and the command-line and topology controls both reported clean over zero observed consumers. Killed two ways: the consumer DWELLS 1500ms against a 100ms poll interval with the value live, and the harness refuses to pass either control when the observed-consumer count is zero. 'No violations found' and 'nothing was looked at' are the same sentence in most report formats.",
+      "test_file": "scripts/custody/n05-sentinel-demonstration.ts"
+    },
+    {
+      "id": "CM9",
+      "description": "MUTANT — DELIVER INTO A PROCESS RUNNING UNDER A DEVELOPMENT RUNTIME. Not in the N05 manifest; found by running this demonstration. Under tsx the consumer spawned an esbuild helper that INHERITED the delivered value, breaching WCM-C1's 'single command that consumes it'. It is exactly RC-7's stated case: a source reading cannot see children spawned by the runtime. Killed by transpiling the consumer's four-file closure to plain CommonJS ahead of any deposit and running it under bare node, and carried as control RC7_CONSUMER_SPAWNS_NO_ENV_INHERITING_CHILD, which can FAIL, so a future lane reintroducing tsx goes red rather than unnoticed.",
+      "test_file": "scripts/custody/build-sentinel-consumer.ts"
+    },
+    {
+      "id": "CM10",
+      "description": "MUTANT — ZERO THE SECRET BUFFER IMMEDIATELY AFTER write(). Not in the N05 manifest; found by running this mechanism. writable.write() is asynchronous and may only have queued the buffer, so the zeroing raced the flush and the bridge received base64 of NUL bytes — presenting as a CredWriteW failure, which is a data-loss bug wearing a Win32 error's clothes. Killed by deferring the zeroing to the flush callback of end(). The general lesson is recorded with it: a secret buffer may be zeroed only after its consumer has finished, and an asynchronous API has not finished when it returns.",
+      "test_file": "db/custody/wcm-credential-store.ts"
+    },
+    {
+      "id": "CM11",
+      "description": "MUTANT — DECLARE N05 SATISFIED ON THE STRENGTH OF A DEMONSTRATION EXISTING. This is NM13, and the harness cannot express it: summarizeN05Controls returns SATISFIED_CANDIDATE at best, the word SATISFIED is never constructed, and the harness prints an explicit refusal to certify. N29's THE_BUILDER_MUST_NOT_SELF_CERTIFY_N05 binds this lane, and the mutant is the most consequential misreading available because it would let an execution lane proceed to an irreversible mint on a builder's self-report.",
+      "test_file": "tests/custody/n05-control-state.test.ts"
+    },
+    {
+      "id": "CM12",
+      "description": "MUTANT — HAND-EDIT A COUNT IN THE DAG AMENDMENT. Changing any numeral in v1.0.3's RECOMPUTED_GRAPH without changing the graph makes CP9 go RED, because each is compared against a re-derivation from the artifacts. This mutant matters because three defects in this package's history were arithmetic: a count frozen against a tree that moved, a classification that dropped seven of eighteen files, and a reachability property computed from a position in a non-unique topological order.",
+      "test_file": "tests/custody/d1-dag-amendment.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}

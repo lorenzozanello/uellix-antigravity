@@ -1,0 +1,43 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_ROUTE_OWNER_DECISION_v1.0.0",
+  "authority_class": "OWNER_RATIFICATION_RECORD",
+  "document_class": "THREE_DECISION_RECORD__APPEND_ONLY__NO_EXECUTION__NO_SECRET__NO_CREDENTIAL__NO_AUTHORIZATION_OF_ANY_CREDENTIAL_ACT",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-POST-MINT-COMPLETENESS-AND-PREHC1-HARDENING-R1",
+  "lane": "CV1-D1-AUDITOR-POST-MINT-COMPLETENESS-AND-PREHC1-HARDENING-R1",
+  "role": "Record, verbatim and without reinterpretation, the three owner decisions that answer OWNER_DECISION_REQUIRED_MINT_ROUTE and NB-8.",
+  "mode": "DOCS_AND_IMPLEMENTATION__THIS_FILE_IS_THE_DOCS_HALF",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner.",
+  "repository": "uellix",
+  "materialized_at_base": "3def3c5b7b82747a3d4533aa6badccb0043cffff",
+  "WHY_THIS_IS_A_SEPARATE_RECORD": "OD-1..OD-6 and OD-N32-1 are append-only and are not reopened. These three decisions answer questions that arose after them: the post-mint path lane recorded MINT_ROUTE_DECISION_STATUS = OWNER_DECISION_REQUIRED_MINT_ROUTE (docs/ops/release/FIBDB053_D1_AUDITOR_POST_MINT_PATH_EXECUTION_RECORD_v1.0.0.json) and carried NB-8 of the PRE-HC1 certification unresolved.",
+  "DECISIONS_VERBATIM": {
+    "D1_MINT_ROUTE": "B_SQL_BOUND_PARAMETER",
+    "D1_MINT_OPERATOR_TOOL": "EPHEMERAL_NODE_PG_OUTSIDE_REPOSITORY",
+    "D1_PASSWORD_NULL_REQUIRES_SEPARATE_HUMAN_CONFIRMATION": "YES",
+    "SIGNED": "YES"
+  },
+  "SOURCE": "Supplied by the owner in the lane mandate of CV1-D1-AUDITOR-POST-MINT-COMPLETENESS-AND-PREHC1-HARDENING-R1, on 2026-09-23, as 'explicitly ratified' and 'binding owner decisions'. Transcribed; no field is inferred.",
+  "WHAT_EACH_DECISION_ANSWERS": {
+    "D1_MINT_ROUTE": "Selects MINT_ROUTE_B (SQL with the set_config bound-parameter pattern) over MINT_ROUTE_A (management plane), which the post-mint path record found NOT EVIDENCED for a custom role.",
+    "D1_MINT_OPERATOR_TOOL": "Names the operator-side vehicle MINT_ROUTE_B lacked: an ephemeral Node program using a PostgreSQL driver, living OUTSIDE the repository. It is consistent with the generation clause ('In the operator's own secure environment ... NOT by a repository script').",
+    "D1_PASSWORD_NULL_REQUIRES_SEPARATE_HUMAN_CONFIRMATION": "Answers NB-8 of the PRE-HC1 certification: ALTER ROLE uellix_auditor PASSWORD NULL, the withdrawal compensation MR-2 names, needs its OWN explicit human confirmation. It is never executed on the strength of the mint's HC-1 or of any other confirmation."
+  },
+  "WHAT_THESE_DECISIONS_DO_NOT_DECIDE": [
+    "No credential act is authorized. Selecting a route is not HC-1; the HC-1 at 87520a97 is SPENT and a fresh HC-1 chain is still required.",
+    "The exact SQL text is not chosen by the owner here; it is derived from the effective authority by the route contract (db/custody/mint-route-b-contract.ts) and its deltas from the precedent are declared for independent ruling.",
+    "The channel through which the operator's own privileged database connection material reaches the ephemeral tool is not decided; it belongs to the future execution authority.",
+    "ROTATE AGAIN is not covered by D1_PASSWORD_NULL_REQUIRES_SEPARATE_HUMAN_CONFIRMATION. It is an MR-2 credential set and needs a fresh HC-1 under HUMAN_CONFIRMATION.confirmations_are_not_transferable, independently of this record."
+  ],
+  "execution_not_authorized_by_this_ratification": "No credential is minted, rotated, deposited or delivered. No PostgreSQL connection is opened. No ALTER ROLE, GRANT or REVOKE occurs. No hosted resource is touched.",
+  "self_check": {
+    "no_secret_value": "No credential, DSN, userinfo, host string, password hash, vault handle, entry key or lookup token appears anywhere in this document.",
+    "verbatim": "The four decision fields are transcribed exactly as supplied."
+  },
+  "required_independent_review": "MANDATORY, as part of the post-mint completeness package this record belongs to.",
+  "final_state": "D1_MINT_ROUTE_B_RATIFIED__OPERATOR_TOOL_EPHEMERAL_NODE_PG_OUTSIDE_REPOSITORY__PASSWORD_NULL_REQUIRES_OWN_CONFIRMATION__NO_CREDENTIAL_ACT_AUTHORIZED",
+  "next_gate": "ONE independent certification of the complete post-mint / pre-HC1 package."
+}

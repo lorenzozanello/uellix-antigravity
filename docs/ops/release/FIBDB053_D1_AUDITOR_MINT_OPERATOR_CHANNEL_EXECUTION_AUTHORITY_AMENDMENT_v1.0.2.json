@@ -1,0 +1,207 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.2",
+  "artifact_id": "FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "EXECUTION_AUTHORITY_AMENDMENT",
+  "document_class": "OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT__APPEND_ONLY__AC8_SERVER_AUTHENTICATED__R3_RESIDUALS__NO_EXECUTION__NO_SECRET",
+  "append_only": true,
+  "supersedes": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "supersedes_note": "v1.0.0 and v1.0.1 are not edited; the sections below replace theirs through the chain reader (readEffectiveChannelAuthority).",
+  "REPLACES_SECTIONS": [
+    "CHANNEL_BINDING",
+    "CHANNEL_CONTRACT",
+    "OPERATOR_TOOL_CONTRACT_ADDITIONS",
+    "OEP1_PROBE_CONTRACT",
+    "OEP1_EVIDENCE_CONTRACT",
+    "HC1_SCOPE",
+    "TLS_TRUST_POLICY"
+  ],
+  "mission_id": "CV1-D1-TLS-TRUST-AND-FINAL-CHANNEL-HARDENING-R3",
+  "lane": "CV1-D1-TLS-TRUST-AND-FINAL-CHANNEL-HARDENING-R3",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "AS_OF_BASE_SHA": "fa43b39636de766f228b16c459b721fe80fcb109",
+  "owner_decision": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_TLS_TRUST_OWNER_DECISION_v1.0.0.json",
+  "dag_amendment": "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.9.json",
+  "companion_manifest": "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+  "WHY": "The recertification of fa43b396 (no verdict: its disposable-PostgreSQL sections were not run independently) measured TLS = B (ssl require: no server authentication, the operator password answers a cleartext request) and three surviving mutants (X08x PG* from the base, L1x a transient process.env write, P6x an untracked-blind CLI), and flagged the OEP-1 \"highest version wins\" rule and a tautological coherence sub-verdict. The owner decided AC-8 (verify-full against the pinned project certificate).",
+  "CHANNEL_BINDING": {
+    "launcher_build_digest": "5c0d973435a866d4b112380134407fe5a460ed647a53be90a22bb08bab263110",
+    "launcher_build_rule": "Unchanged (deterministic LF build of the launcher closure). Re-derived for this amendment: the launcher now carries the CA fields and OC-13.",
+    "tools": {
+      "probe": {
+        "file": "d1-oep1-probe-tool-v3.js",
+        "sha256": "86cbda481c72d2f2149468879e194e0031cfe3be2fa1c8cbb8b16c857171224d"
+      },
+      "mint": {
+        "file": "d1-mint-operator-tool-v3.js",
+        "sha256": "601f1f963042467433fe75a034d0466055a145ff06319fdd61d3b67dbd7b1b25"
+      }
+    },
+    "tools_directory": {
+      "base_env": "LOCALAPPDATA",
+      "relative": "uellix-d1-mint-operator-channel/tools"
+    },
+    "tls": {
+      "policy": "VERIFY_FULL_PINNED_CA",
+      "ca_file": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt",
+      "ca_raw_sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+      "ca_der_sha256": "807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa",
+      "ca_spki_sha256": "ba332649230ce9a764e4eaf70368f1a9de9ce64bd38424769e24c3fbf8e57acb"
+    },
+    "versioned_files": "The v3 tools have their own file names; v1 and v2 files are left in place, unchanged, so 979b1440 and fa43b396 stay reproducible.",
+    "invalidation": "TOOL_BINDING unchanged: any other byte of a tool, of the launcher build or of the CA file is another channel."
+  },
+  "CHANNEL_CONTRACT": {
+    "clause_ids": [
+      "OC-1",
+      "OC-2",
+      "OC-3",
+      "OC-4",
+      "OC-5",
+      "OC-6",
+      "OC-7",
+      "OC-8",
+      "OC-9",
+      "OC-10",
+      "OC-11",
+      "OC-12",
+      "OC-13",
+      "OC-14"
+    ],
+    "clauses_source": "db/custody/mint-operator-channel.ts OPERATOR_CHANNEL_CONTRACT; OC-13 (server authenticated against the pinned project certificate) and OC-14 (no ambient PG*/TLS variable reaches a tool) are new; OC-5, OC-6 and OC-10 gain the R3 controls R3-N-L1X, R3-N-X08X and R3-N-P6X."
+  },
+  "OPERATOR_TOOL_CONTRACT_ADDITIONS": {
+    "OT-1_at_run_time": "Unchanged: each tool refuses if its own directory has a .git ancestor (measured on the real tools).",
+    "OT-13": "Unchanged: driver version 3.4.9 before load.",
+    "OT-14": "Unchanged: the mint's operator principal is the OEP-1-observed one.",
+    "OT-15": "Only the SCRAM-SHA-256 verifier is sent; the plaintext derives it and goes to the depositor stdin only (harness VERIFIER_ONLY + PLAINTEXT_NEVER_SENT).",
+    "OT-16": "Startup closed and session bound: no query/fragment; exact host, port, database; driver from explicit options (harness STARTUP_CLOSED + refusal scenarios).",
+    "OT-17": "Driver bound by content: the digest of its files equals --driver-digest before load.",
+    "OT-18": "Server authenticated (owner AC-8): --ca-file must hash to --ca-sha256 and hold exactly one CA certificate; it is passed as the ONLY `ca` (the system store is not consulted), with rejectUnauthorized true, servername = the target host, minVersion TLSv1.2 and tls.checkServerIdentity; nothing is downloaded. Measured on real TLS with the real postgres.js (tests/custody/d1-tls-trust.test.ts) and on the pinned tools under both harnesses (TLS_VERIFY_FULL_PINNED, REFUSES_CA_MISSING, REFUSES_CA_MODIFIED).",
+    "OT-19": "Each tool refuses to work when a variable matching ^(PG[A-Z0-9_]*|NODE_OPTIONS|NODE_TLS_REJECT_UNAUTHORIZED|NODE_EXTRA_CA_CERTS|SSL_CERT_FILE|SSL_CERT_DIR|OPENSSL_CONF|OPENSSL_MODULES)$ (case-insensitive) is in its environment (harness REFUSES_AMBIENT_PG_ENV). NODE_OPTIONS acts before the tool runs: the launcher allowlist is what keeps it out; OT-19 is defence in depth."
+  },
+  "OEP1_PROBE_CONTRACT": {
+    "central_invariant": "PLAINTEXT_PASSWORD_SERVER_EXPOSURE = IMPOSSIBLE_BY_CONSTRUCTION. OEP-1 no longer asks a server whether it would log the plaintext: the plaintext never reaches it. The probe proves the SESSION the mint will use.",
+    "what_the_probe_proves": {
+      "TARGET_SESSION_BOUND": "current_user = session_user = the operator principal; current_database() = the route-B database; server_version_num >= 100000 (SCRAM verifiers accepted) — observed inside the session on the N04 host and route-B port the tool bound.",
+      "STARTUP_PARAMETERS_CLOSED": "the settings whose source is 'client' are EXACTLY the measured postgres.js 3.4.9 set (application_name=postgres.js, client_encoding=UTF8): no startup GUC rode in.",
+      "PROBE_MINT_CONFIGURATION_COHERENT": "R3: the connection the probe OBSERVED -- the host, port, database and user it bound, the TLS session its verification accepted (verified, the peer certificate fingerprint and the anchor its chain reached) and the digest of the driver files it loaded -- equals what the mint will use: the N04 host, route-B port and database, the principal the evidence records (= current_user = session_user), the pinned project certificate as anchor, the pinned driver digest. The session fingerprint is recomputed from the OBSERVED values. No term compares a repository constant with itself."
+    },
+    "what_it_no_longer_infers": "Whether any logging setting, extension, hook or lock wait would record the PLAINTEXT. That class is open (the recertification's finding) and is closed by construction instead.",
+    "expected_client_settings": [
+      [
+        "application_name",
+        "postgres.js"
+      ],
+      [
+        "client_encoding",
+        "UTF8"
+      ]
+    ],
+    "derived_settings_list": [
+      "auto_explain.log_min_duration",
+      "auto_explain.log_nested_statements",
+      "debug_print_parse",
+      "debug_print_plan",
+      "debug_print_rewritten",
+      "log_lock_waits",
+      "log_min_duration_statement",
+      "log_min_error_statement",
+      "log_parser_stats",
+      "log_planner_stats",
+      "log_statement",
+      "log_statement_stats",
+      "pg_stat_statements.track",
+      "pg_stat_statements.track_utility",
+      "pgaudit.log",
+      "pgaudit.role",
+      "pgtle.enable_password_check",
+      "shared_preload_libraries"
+    ],
+    "derived_material_exposure": "Informational classification of whether the VERIFIER could be logged (POSSIBLE / NOT_INDICATED / UNKNOWN; never 'absent'). It gates nothing about the plaintext and is never merged with PLAINTEXT_NOT_PRESENT.",
+    "statements": {
+      "IDENTITY": "SELECT current_user AS current_user_name, session_user AS session_user_name, current_database() AS database_name, current_setting('server_version_num') AS server_version_num",
+      "CLIENT_SETTINGS": "SELECT name, setting FROM pg_catalog.pg_settings WHERE source = 'client' ORDER BY name",
+      "DERIVED_MATERIAL_SETTINGS": "SELECT name, setting, source FROM pg_catalog.pg_settings WHERE name = ANY($1::text[]) ORDER BY name"
+    },
+    "transaction": "ONE, BEGIN READ ONLY; the derived list is the only bound parameter; nothing through unsafe().",
+    "probe_contract_clauses": "PC-1..PC-6 in scripts/custody/d1-oep1-probe-harness.ts (measured on the real probe tool v2).",
+    "output_line": "probe: OBSERVED, identity, client_settings, derived_settings, connection {host, port, database, user, tls {verified, peer_sha256, anchor_sha256}, driver_digest}"
+  },
+  "OEP1_EVIDENCE_CONTRACT": {
+    "path": "docs/ops/release/FIBDB053_D1_AUDITOR_OEP1_EVIDENCE_v<semver>.json (append-only; an explicit CHAIN, not \"the highest version wins\")",
+    "evidence_class": "D1_OEP1_EVIDENCE_V3",
+    "required_fields": [
+      "evidence_class",
+      "append_only",
+      "target_host",
+      "target_port",
+      "target_database",
+      "operator_principal",
+      "observation {identity, client_settings, derived_settings, connection}",
+      "sub_verdicts {PLAINTEXT_NOT_SERVER_VISIBLE, TARGET_SESSION_BOUND, STARTUP_PARAMETERS_CLOSED, TOOL_HASH_BOUND, PROBE_MINT_CONFIGURATION_COHERENT}",
+      "verdict (CLOSED only when every gating sub-verdict is PASS)",
+      "derived_material_exposure {classification, emitters}",
+      "derived_settings_list",
+      "probe_tool_sha256",
+      "mint_tool_sha256",
+      "launcher_build_digest",
+      "driver_digest",
+      "session_fingerprint",
+      "observed_at_utc",
+      "invalidation_predicates",
+      "channel_certification_event",
+      "predecessor (null for the first record, else the path of the record it follows)",
+      "acknowledged_non_closed [{path, resolution}] (exactly the earlier records whose verdict is not CLOSED)"
+    ],
+    "recomputation": "PMR-14 RECOMPUTES every sub-verdict and the derived classification from the observation and the repository (never trusts the record); a consistent non-PASS record does not close OEP-1 (recertification survivor E1).",
+    "invalidation_predicates": [
+      "IP-1: any CHANNEL_BINDING pin differs from the evidence's hashes.",
+      "IP-2: N04's host, the route-B port or database differ from the evidence's.",
+      "IP-3: the mint's operator URL names another principal (launcher OC-4 and mint OT-14 refuse).",
+      "IP-4: observed_at_utc is not before the effective N08.",
+      "IP-5: a later OEP-1 evidence record exists on the chain (it becomes the head and must itself close OEP-1 and acknowledge every earlier non-CLOSED record).",
+      "IP-6: the channel certification event is not a terminal PASS for an ancestor carrying the same effective CHANNEL_BINDING.",
+      "IP-7: the driver digest differs from the repository's.",
+      "IP-8: the pinned trust root (CHANNEL_BINDING.tls) differs from the anchor the evidence observed."
+    ],
+    "chain": {
+      "rule": "Every OEP-1 evidence file is one link of ONE linear chain: exactly one root (predecessor null); every other record names an existing record of a LOWER version; no two records name the same predecessor; every file is on the chain that ends at the head. The HEAD is evaluated, and it must acknowledge, each with a non-empty resolution, exactly the earlier records whose verdict is not CLOSED. A later PASS therefore never erases an earlier FAIL or INCONCLUSIVE: it has to name it.",
+      "measured_by": "R3-N-CHAIN (tests/custody/d1-oep1-evidence-chain.test.ts, tests/custody/d1-pre-hc1-post-mint.test.ts)",
+      "residual": "The rules read the files present in the tree. A record deleted from history before a later one is written is not seen by them; the independent certifier reads the history (git log of the evidence paths) as part of certifying a PHASE 2 candidate."
+    }
+  },
+  "HC1_SCOPE": {
+    "owner_decision": "Unchanged from v1.0.0 (HC1_SCOPE_DECISION, six items).",
+    "statements_to_present": {
+      "HC1-S1": "target: the exact project ref, selected by ref (N04)",
+      "HC1-S2": "role: uellix_auditor",
+      "HC1-S3": "MR-2 replaces any existing credential and breaks any unrecorded consumer (HU-4)",
+      "HC1-S4": "VALID UNTIL: the effective N09",
+      "HC1-S5": "custody and delivery: WCM under the custodian, N30 deposit, process-scoped delivery per the N06 inventory",
+      "HC1-S6": "retirement: the effective N31 removal, no later than N09",
+      "HC1-S7": "the ONE use of the operator's privileged credential for this MR-2, through the certified channel (launcher digest, mint tool v3 sha256, the pinned project certificate), with the OEP-1 v2 observation time and sub-verdicts, and the transport: only a SCRAM-SHA-256 verifier reaches PostgreSQL"
+    }
+  },
+  "TLS_TRUST_POLICY": {
+    "status": "DECIDED by the owner (AC-8), implemented here, subject to the final independent recertification",
+    "owner_decision": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_TLS_TRUST_OWNER_DECISION_v1.0.0.json",
+    "policy": "VERIFY_FULL_PINNED_CA",
+    "trust_root": "The exact project certificate downloaded from the Supabase dashboard for bvyzblhqymxruxdguaee: CN=Supabase Root 2021 CA (2021-04-28 .. 2031-04-26), raw sha256 7007235814..., DER sha256 807025ad50..., SPKI sha256 ba33264923...; byte-identical to the 2021 production root the official Supabase CLI embeds, NOT the same-DN 2025 root (different key) nor the staging root.",
+    "measured": "On real TLS with the real postgres.js 3.4.9: the pinned CA + the right host -> the server is reached and the password is sent once, after authentication; another CA, another host name, an expired or a self-signed certificate -> rejected before any startup message, zero passwords; ssl require -> an impostor with another CA receives the cleartext password (the recertification finding reproduced).",
+    "what_remains": "postgres.js 3.4.9 still offers no SCRAM channel binding and still answers a cleartext-password request; with the server authenticated only the real server can ask. The CA expires 2031-04-26; a rotation is a new owner decision and a new channel.",
+    "supersedes": "TLS_TRUST_BOUNDARY of amendment v1.0.1 (OPEN_OWNER_BOUNDARY)"
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "No hosted connection, no hosted OEP-1, no mint, no deposit, no delivery.",
+    "No certification event is written by this lane.",
+    "HC-1 is not requested; N11 is not authorized."
+  ],
+  "REAL_CREDENTIAL_ACTIONS_EXECUTED": 0,
+  "DB_CONNECTIONS_EXECUTED": "hosted: 0",
+  "PROVIDER_MUTATIONS_EXECUTED": "0 by this lane's acts; a git push creates a Vercel Preview deployment by platform behaviour",
+  "required_independent_review": "MANDATORY: the final independent recertification of the channel successor, including this amendment, DAG v1.0.9, the owner decision AC-8 and the test manifest amendment v1.0.2.",
+  "final_state": "CHANNEL_SERVER_AUTHENTICATED_AGAINST_PINNED_PROJECT_CA__TOOLS_V3__R3_RESIDUALS_CLOSED",
+  "next_gate": "Final independent recertification -> its event -> PHASE 2 OEP-1 v3 probe through the certified channel -> evidence (chain head) -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}

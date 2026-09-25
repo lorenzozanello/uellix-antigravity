@@ -1,0 +1,114 @@
+{
+  "manifest_id": "FIBDB053-D1-AUDITOR-CUSTODY-REALIZATION-AMENDMENT-v1.0.1",
+  "amends": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_TEST_MANIFEST_v1.0.0.json",
+  "amends_note": "v1.0.0 is not edited. Controls named here are ADDED or RE-POINTED; every other control of v1.0.0 stands.",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_CUSTODY_REALIZATION_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "RE_POINTED_CONTROLS": [
+    {
+      "id": "CN3",
+      "v1_0_0_test_file": "tests/custody/wcm-custody-mechanism.test.ts",
+      "fact_at_feb84915": "The refusal of a consumer argv carrying the value had NO test anywhere; mutant M07 survived the suite (NB-1).",
+      "test_file": "tests/custody/custody-delivery-isolation.test.ts"
+    },
+    {
+      "id": "CN5",
+      "v1_0_0_test_file": "tests/custody/wcm-custody-mechanism.test.ts",
+      "fact_at_feb84915": "Neither 'process.env is never written by the delivery path' nor the ambient-value refusal had a test; mutants M06 and M08 survived (NB-1).",
+      "test_file": "tests/custody/custody-delivery-isolation.test.ts"
+    },
+    {
+      "id": "CP11",
+      "v1_0_0_test_file": "scripts/custody/n05-sentinel-demonstration.ts",
+      "fact_at_feb84915": "Asserted a non-zero count of consumers only.",
+      "test_file": "tests/custody/n05-observation-controls.test.ts and scripts/custody/n05-sentinel-demonstration.ts"
+    }
+  ],
+  "positive_controls_added": [
+    {
+      "id": "CP13",
+      "description": "PLATFORM_INDEPENDENT. The byte codec agrees with Node's on every padding case and refuses malformed input.",
+      "test_file": "tests/custody/base64-bytes.test.ts"
+    },
+    {
+      "id": "CP14",
+      "description": "PLATFORM_INDEPENDENT. A clean, fully observed run derives OBS0, NP10, RC3 and RC7 PASSED; governedRepresentations returns exactly raw and base64.",
+      "test_file": "tests/custody/n05-observation-controls.test.ts"
+    },
+    {
+      "id": "CP15",
+      "description": "PLATFORM_DEPENDENT, WINDOWS. OBS0: the observer finds the injected fixture in both representations in both argv and environment block, every run.",
+      "test_file": "scripts/custody/n05-sentinel-demonstration.ts"
+    },
+    {
+      "id": "CP16",
+      "description": "PLATFORM_DEPENDENT, WINDOWS. B1: the launcher is attached to a console AND a real console-less process is reported unattached.",
+      "test_file": "scripts/custody/n05-sentinel-demonstration.ts"
+    },
+    {
+      "id": "CP17",
+      "description": "PLATFORM_DEPENDENT, WINDOWS. RC5: kill path leaves no live holder; a killed depositor's entry survives and is recovered by the bounded sweep.",
+      "test_file": "scripts/custody/n05-sentinel-demonstration.ts"
+    }
+  ],
+  "negative_controls_added": [
+    {
+      "id": "CN10",
+      "description": "The bridge argv is exactly bridgeArgv() and carries no representation of the value; its environment carries neither the delivery variable nor an unrelated process variable.",
+      "test_file": "tests/custody/custody-delivery-isolation.test.ts"
+    },
+    {
+      "id": "CN11",
+      "description": "The consumer is spawned with windowsHide false and not detached; its argv carries no representation of the value; process.env receives no write or delete during delivery, observed by a Proxy.",
+      "test_file": "tests/custody/custody-delivery-isolation.test.ts"
+    },
+    {
+      "id": "CN12",
+      "description": "A launcher with no console is refused before the vault is read; only the console op reaches the bridge.",
+      "test_file": "tests/custody/custody-delivery-isolation.test.ts"
+    },
+    {
+      "id": "CN13",
+      "description": "The recovery sweep refuses every prefix outside the sentinel namespace without starting a bridge.",
+      "test_file": "tests/custody/custody-delivery-isolation.test.ts"
+    },
+    {
+      "id": "CN14",
+      "description": "The bridge contains no Add-Type and binds its entry points with Reflection.Emit.",
+      "test_file": "tests/custody/wcm-custody-mechanism.test.ts"
+    }
+  ],
+  "mutation_controls_added": [
+    {
+      "id": "CM13",
+      "description": "B-1 REGRESSION — any process under a delivered consumer that carries the variable, INCLUDING conhost.exe, or whose block cannot be read, fails RC7; reintroducing a name exemption goes RED.",
+      "test_file": "tests/custody/n05-observation-controls.test.ts"
+    },
+    {
+      "id": "CM14",
+      "description": "ZERO SUBJECTS — no delivered consumer, too few bridges, or an unobserved tree yields NOT_RUN, never PASSED.",
+      "test_file": "tests/custody/n05-observation-controls.test.ts"
+    },
+    {
+      "id": "CM15",
+      "description": "BLIND OBSERVER — a missing or partial fixture detection makes RC3, NP10 and RC7 NOT_RUN.",
+      "test_file": "tests/custody/n05-observation-controls.test.ts"
+    },
+    {
+      "id": "CM16",
+      "description": "ZEROING RACE — the fake pipe copies bytes at flush time, so zeroing before the flush callback delivers zeros and goes RED.",
+      "test_file": "tests/custody/custody-delivery-isolation.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "lint",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "custody_dag_validate",
+    "targeted_tests",
+    "windows_sentinel_demonstration"
+  ],
+  "gate_run": "RECORDED IN THE COMMIT THAT CARRIES THIS FILE; see the lane report."
+}

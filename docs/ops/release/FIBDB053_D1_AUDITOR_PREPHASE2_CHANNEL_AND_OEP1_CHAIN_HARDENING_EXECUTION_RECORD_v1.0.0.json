@@ -1,0 +1,166 @@
+{
+  "package_id": "FIBDB-053",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_D1_AUDITOR_PREPHASE2_CHANNEL_AND_OEP1_CHAIN_HARDENING_EXECUTION_RECORD_v1.0.0",
+  "authority_class": "EXECUTION_RECORD_SUBORDINATE_TO_THE_CERTIFIED_PROVISIONING_DAG",
+  "document_class": "PREPHASE2_CHANNEL_AND_OEP1_CHAIN_HARDENING_RECORD__APPEND_ONLY__NO_CREDENTIAL__NO_HOSTED_CONNECTION",
+  "append_only": true,
+  "mission_id": "CV1-D1-PREPHASE2-CHANNEL-AND-OEP1-CHAIN-HARDENING-R4",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5, under HPO-ODS-01, as the authorized primary development executor. Not an owner, not a certifier.",
+  "LANE_BASE": {
+    "branch": "codex/cv1-d1-auditor-custody-realization-r1",
+    "base_commit": "b4ca05ac8cdc32c7cd8306028f3adc606d7db5ef",
+    "base_tree": "e4f84105a9dc6e837203e0752386636404dc196c"
+  },
+  "RECERT_CONSUMED": {
+    "candidate": "b4ca05ac",
+    "verdict": "PASS_WITH_NONBLOCKING_FINDINGS (final independent recertification)",
+    "findings_adopted": [
+      "NB-1: a NODE_OPTIONS preload runs before any launcher line and captured the credential",
+      "NB-2: the OEP-1 chain accepted a head observed before the FAIL it acknowledged and validated neither predecessor digests nor history",
+      "NB-3: test gaps O4/O5/O6, O14/O15, O11, O8"
+    ],
+    "certification_event": "NOT materialized for b4ca05ac (owner instruction)."
+  },
+  "OWNER_DECISIONS_CONSUMED": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0.json (ADOPT_D1_FINAL_RECERT_NB1 = YES, NB2 = YES, CLOSE_CHEAP_NB3_TEST_GAPS = YES; SIGNED YES)",
+  "AUTHORITY_WRITTEN": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.3.json (frozen before implementation)",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json (supersedes v1.0.2 by REPLACES_SECTIONS; adds OC-15 and PRE_NODE_BOUNDARY; OEP-1 V4 chain)",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.10.json (0 nodes / 0 edges; PMR-15 superseded by PMR-16 measured)"
+  ],
+  "WRITE_SET": {
+    "files": [
+      "db/custody/mint-operator-channel.ts (modified)",
+      "db/custody/pre-node-boundary.ts (new)",
+      "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_PREPHASE2_HARDENING_OWNER_DECISION_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_MINT_OPERATOR_CHANNEL_TEST_MANIFEST_AMENDMENT_v1.0.3.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PREPHASE2_CHANNEL_AND_OEP1_CHAIN_HARDENING_EXECUTION_RECORD_v1.0.0.json (new)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_AMENDMENT_v1.0.10.json (new)",
+      "scripts/custody/d1-dag-validate.ts (modified)",
+      "scripts/custody/d1-mint-operator-channel-demonstration.ts (modified)",
+      "scripts/custody/d1-mint-operator-channel-mutation.ts (modified)",
+      "scripts/custody/d1-mint-operator-evidence.ts (modified)",
+      "scripts/custody/d1-mint-operator-launcher.ts (modified)",
+      "scripts/custody/d1-mint-operator-plan.ts (modified)",
+      "scripts/custody/d1-pre-hc1-post-mint.ts (modified)",
+      "scripts/custody/d1-server-auth-measure.ts (new)",
+      "scripts/custody/d1-tls-trust-harness.ts (modified)",
+      "tests/custody/d1-dag-amendment-v1010.test.ts (new)",
+      "tests/custody/d1-dag-amendment-v109.test.ts (modified)",
+      "tests/custody/d1-mint-operator-channel.test.ts (modified)",
+      "tests/custody/d1-oep1-evidence-chain.test.ts (modified)",
+      "tests/custody/d1-pre-hc1-post-mint.test.ts (modified)",
+      "tests/custody/d1-pre-node-boundary.test.ts (new)",
+      "tests/custody/d1-tls-trust.test.ts (modified)",
+      "tests/custody/support/oep1-evidence-fixture.ts (modified)"
+    ],
+    "count": 24
+  },
+  "SCHEDULE_PRESERVED": {
+    "N08": "2026-09-28T14:00:00Z",
+    "N31": "2026-09-28T18:00:00Z",
+    "N09": "2026-09-29T14:00:00.000Z",
+    "measured_by": "tests/custody/d1-dag-amendment-v1010.test.ts, tests/custody/d1-dag-amendment-v109.test.ts"
+  },
+  "E_CERTIFIED_BLOBS": {
+    "byte_identical_to_b4ca05ac": [
+      {
+        "path": "tests/custody/support/tool-trust-snippet.ts",
+        "blob_at_b4ca05ac": "a2bc63e78684c2237beb1cbf9242fc066f0298a4",
+        "blob_now": "a2bc63e78684c2237beb1cbf9242fc066f0298a4",
+        "byte_identical": true
+      },
+      {
+        "path": "tests/custody/support/fake-only-mint-tool.ts",
+        "blob_at_b4ca05ac": "b49b09e7100e984d20629694427804baa85420bc",
+        "blob_now": "b49b09e7100e984d20629694427804baa85420bc",
+        "byte_identical": true
+      },
+      {
+        "path": "tests/custody/support/fake-only-oep1-probe-tool.ts",
+        "blob_at_b4ca05ac": "cf6496127ac7e6225338717e61d2d91d1c3e2c00",
+        "blob_now": "cf6496127ac7e6225338717e61d2d91d1c3e2c00",
+        "byte_identical": true
+      },
+      {
+        "path": "docs/ops/release/FIBDB053_D1_AUDITOR_TLS_TRUST_ROOT_bvyzblhqymxruxdguaee_v1.0.0.crt",
+        "blob_at_b4ca05ac": "3d693669b23c340c57a3457bdc8b6fefe1806cc5",
+        "blob_now": "3d693669b23c340c57a3457bdc8b6fefe1806cc5",
+        "byte_identical": true
+      }
+    ],
+    "pinned_tools_unchanged": {
+      "mint": {
+        "file": "d1-mint-operator-tool-v3.js",
+        "sha256": "601f1f963042467433fe75a034d0466055a145ff06319fdd61d3b67dbd7b1b25"
+      },
+      "probe": {
+        "file": "d1-oep1-probe-tool-v3.js",
+        "sha256": "86cbda481c72d2f2149468879e194e0031cfe3be2fa1c8cbb8b16c857171224d"
+      }
+    },
+    "eligible_for_certification_inheritance": "The mint tool, the probe tool, the shared trust text (OT-18/OT-19) and the project certificate are byte-identical to b4ca05ac: the real-TLS evidence (R3-P-TLS, the pinned tools on real TLS 10/10) and the disposable-PostgreSQL evidence of the tools are eligible for inheritance in the focused recertification.",
+    "changed_and_therefore_invalidated": "The LAUNCHER changed (OC-15 mark check; the OC-13 CA check extracted unchanged in behaviour into checkPlannedCa and called in every mode). Its build digest moved and every launcher-level evidence of b4ca05ac (PEB demonstrations, launcher pin) is invalidated and re-measured in this lane (R4 PEB below). d1-tls-trust-harness.ts gained two exported functions and changed no existing line (test infrastructure, not the trust text)."
+  },
+  "A_PRE_NODE_BOUNDARY": {
+    "design": "db/custody/pre-node-boundary.ts: a fixed PowerShell script (pinned by sha256 in the plan and in execution authority v1.0.3) that the operator's shell runs BEFORE any Node process exists. (1) Refuses, case-insensitively, every NODE_*, OPENSSL_*, SSL_CERT_FILE/DIR, LD_PRELOAD/LD_LIBRARY_PATH/LD_AUDIT, DYLD_*, the operator variable and a pre-set boundary mark (exit 64, PRE_NODE_AMBIENT_RUNTIME, names only). (2) Verifies the node binary against its planned sha256 (Get-FileHash) and the launcher next to it. (3) Starts node with NO flags, EnvironmentVariables.Clear() + the allowlist (SystemRoot, windir, PATH, TEMP, TMP) + the mark (the script's own sha256), UseShellExecute false (console inherited), and propagates the exit code.",
+    "not_claimed": "Checking NODE_OPTIONS from inside an already-started node does not solve NB-1 and is not claimed to: the launcher's OC-15 check (mark, empty execArgv, no NODE_* variable) is defence in depth only, and refuses a direct start AFTER any preload has already run.",
+    "direct_invocation": "The one authorized command is the boundary command printed by the gate (execution authority v1.0.3 the_only_authorized_command); a direct `node launcher.js` is refused by OC-15 (CHANNEL_NO_PRE_NODE_BOUNDARY) before any prompt.",
+    "measured": "tests/custody/d1-pre-node-boundary.test.ts 18/18 with the REAL powershell.exe and a preload that records its execution and tries to capture the synthetic operator string. Control WITHOUT the boundary: node -r preload executes and captures (the attack is real). THROUGH the boundary with NODE_OPTIONS=--require / --import (upper and lower case), NODE_PATH, NODE_EXTRA_CA_CERTS, NODE_TLS_REJECT_UNAUTHORIZED, NODE_USE_SYSTEM_CA, OPENSSL_CONF, SSL_CERT_FILE, SSL_CERT_DIR: refused before node starts, PRELOAD_EXECUTIONS_BEFORE_GOVERNED_SECRET = 0. A node binary that is not the pinned one: PRE_NODE_NODE_NOT_PINNED. Step (3) measured on the process the boundary starts (a stand-in at the launcher path reports its environment): only the allowlist and the mark reach node, an inherited non-hostile canary does not, execArgv is empty. Positive: clean console -> launcher READY, TOOL_SPAWNED, the tool runs, no preload ran.",
+    "plan_and_gate": "The plan carries nodeExecutable {path, sha256} and preNodeBoundarySha256; verifyPlan re-derives both; the gate writes the boundary script next to the plan and STOPs when the script or node binary are absent or differ."
+  },
+  "B_OEP1_CHAIN": {
+    "design": "OEP-1 evidence class V4 (execution authority v1.0.3 OEP1_EVIDENCE_CONTRACT): each record carries record_id, candidate {commit, package_closure_digest}, observed_at_utc, content_digest (sha256 of canonical JSON without itself), predecessor {record_id, content_digest} (null for the first), verdict, the facts and the derivation_context they were judged under, and acknowledges [{record_id, content_digest, resolution}].",
+    "closing_rules": "A closing PASS requires: every predecessor exists and its digest matches (recomputed); one root, acyclic, no fork, no gap, unique ids; strictly increasing UTC along the chain; the head observed after every record it acknowledges; each link's verdict RECOMPUTED from its facts and derivation context (a recorded string may only agree; a missing verdict agrees with nothing); every earlier link that does not recompute to CLOSED acknowledged exactly, with digest and resolution; the head bound to the channel certification event's candidate commit and package digest. Git history: a record deleted or modified after being committed fails closed (git log --full-history -m --diff-filter=DMRT); outside git the chain is UNVERIFIABLE, not PASS.",
+    "no_latest_wins": "No rule selects by filename or version: the head is the unique record no other record names as predecessor, and the whole chain is evaluated.",
+    "measured": "tests/custody/d1-oep1-evidence-chain.test.ts 21/21 (positive chains; N-1 head before the FAIL it acknowledges; strict order; deletion; substitution; alteration; fork; cycle; lying verdict; duplicate id; acknowledgement digest; O11; disk and git-history deletion/modification; non-git unverifiable) and the PMR-14 controls in tests/custody/d1-pre-hc1-post-mint.test.ts (another candidate, another package, other derivation facts)."
+  },
+  "C_NB3": {
+    "O4_O5_O6": "R4-N-O456 (tests/custody/d1-tls-trust.test.ts): each of 19 OT-19 names, upper and lower case, is refused ALONE by the evaluated trust text; plus a negative control that allowlisted and look-alike names are not refused. Kills R4-M-O4 (i flag lost, 19 RED), R4-M-O5 (PG narrowed, 4 RED), R4-M-O6 (NODE_EXTRA_CA_CERTS dropped, 2 RED). The certified snippet was mutated only temporarily and restored byte for byte.",
+    "O14_O15": "The recert found the host/driver coherence masked by the fingerprint check. New controls build a CONSISTENT record of the wrong session (fingerprint recomputed for the wrong host / driver), so only the comparison with what the mint will use can refuse it. Kill R4-M-O14 and R4-M-O15 (self-comparison).",
+    "O11": "A predecessor with no verdict and no facts recomputes to NOT_CLOSED and blocks unless acknowledged; a missing recorded verdict is refused. Kill R4-M-O11 and R4-M-O11-VERDICT.",
+    "O8": "The launcher's OC-13 CA check (checkPlannedCa) runs in every mode; R4-N-O8 covers MINT mode (missing, mismatch). Kill R4-M-O8 (probe-only).",
+    "no_digest_only_kills": "Kills are attributed only to tests outside the launcher pin block (P-2); every R4 kill names a behavioural test."
+  },
+  "D_PMR16": {
+    "result": "PMR-15 (partly declared) superseded by PMR-16_OPERATOR_CHANNEL_SERVER_AUTHENTICATION_MEASURED in DAG v1.0.10: the certificate's raw/DER/SPKI hashes (caFileReasons), what the trust text DOES with that file and pin (verify-full options whose only anchor is the pinned certificate, servername = host with checkServerIdentity, TLS >= 1.2; refuses another pin and an ambient PG* variable), and what the launcher's CA check DOES (accepts the pin, refuses other bytes and a missing file).",
+    "declared_not_measured": "The policy name in CHANNEL_BINDING, the authority's TLS_TRUST_POLICY statement and the clause ids OC-13/OC-14 are labelled DECLARED_NOT_MEASURED and NONBLOCKING for PMR-16; PMR-10 and PMR-11 still compare them under their own authority. The certificate being the project's dashboard download is an owner fact (AC-8 record), not measurable without a hosted handshake (not authorized). No authority expanded.",
+    "measured": "tests/custody/d1-dag-amendment-v1010.test.ts 11/11; the post-mint controls for PMR-16; R4-M-PMR16 and R4-M-PMR16-CA RED."
+  },
+  "MEASURED_HOST_FINDING": "NODE_USE_SYSTEM_CA is present in this host's tool environment (a Node runtime variable that adds the system store to TLS trust). The boundary refuses it by pattern (NODE_.*); the owner's console must not carry it when running the channel.",
+  "F_GATES": {
+    "targeted": "boundary 18/18; OEP-1 chain 21/21; TLS 56/56 real TLS; channel 68/68; post-mint; v1010 11/11; v109 updated to assert the supersession",
+    "custody_suite": "39 files / 978 tests passed (includes termination and package-closure)",
+    "typecheck": "tsc --noEmit clean",
+    "eslint": "changed and new TS files: 0 errors, 0 warnings",
+    "secrets_scan": "CURRENT_TREE: no credential material found",
+    "authority_seal_verify": "PASS",
+    "dag_validate": "PASS (N28 declared external segment)",
+    "pre_hc1": "NOT_READY by PMR-9 (this candidate is not certified) and PMR-14 (no hosted OEP-1 evidence) only; PMR-16 holds",
+    "lint_followup": "After the battery, oep1RecordDigest's destructuring-with-unused-binding was rewritten as copy-and-delete (same canonical input) and an unused constant was removed from the battery; no mutant anchor touches either line (anchors re-checked), and chain/post-mint/channel re-ran 189/189."
+  },
+  "MUTATION_BATTERY": {
+    "battery": "scripts/custody/d1-mint-operator-channel-mutation.ts, run in three chunks under the 10-minute cap, tar backup and hash snapshot first, byte-identical restoration verified after each chunk",
+    "r4": "20/20 RED (R4-M-BOUNDARY-AMBIENT, -ENV, -NODE-PIN, R4-M-LAUNCHER-MARK, R4-M-CHAIN-DIGEST, -TIME, -TIME-ACK, -RECOMPUTE, R4-M-O4, O5, O6, O14, O15, O11, O11-VERDICT, O8, R4-M-PMR16, R4-M-PMR16-CA, re-anchored R3-M-CHAIN-ACK, R3-M-CA-PIN-LAUNCHER)",
+    "inherited": "43/43 RED (M-*, R2-M-*, R3-M-*)",
+    "total": "63/63 RED, 0 survivors; comment-only self-test GREEN (survived) in both chunks where it ran",
+    "retired": "R3-M-PMR15: its target (the PMR-15 evaluator body) no longer exists after DAG v1.0.10; its guarantee is carried by R4-M-PMR16-CA.",
+    "re_anchored": "R3-M-CHAIN-ACK: the v4 chain compares acknowledged record ids, not paths; same guarantee, new anchor."
+  },
+  "PEB_DEMONSTRATION": {
+    "command": "pnpm custody:operator-channel:demonstrate -- --out-dir=<outside the repository>",
+    "launcher_build_digest": "a92b9baac33a529b506dabe29315ad0b67c63ad442faaaf847af94db702e9dea (= execution authority v1.0.3 CHANNEL_BINDING)",
+    "runs": "3/3 SATISFIED_CANDIDATE, failed [] (OBS0, CH-MINT, CH-PROBE, CH-NOCON, CH-HIDDEN, MUT-HIDE, MUT-PENV, FILES, HISTORY, OUTPUT)",
+    "note": "Author development confidence only; certifies nothing."
+  },
+  "EXPLICIT_NON_ACTIONS": [
+    "No certification event written (b4ca05ac nor this candidate).",
+    "No hosted OEP-1 executed; no hosted database connection; no network download by any tool.",
+    "HC-1 not requested; N11 not executed.",
+    "No earlier authority, record or amendment edited (append-only)."
+  ],
+  "final_state": "D1_PREPHASE2_CHANNEL_AND_OEP1_CHAIN_HARDENED__READY_FOR_FOCUSED_RECERT",
+  "next_gate": "Focused independent recertification of this candidate (inheriting the byte-identical tool/TLS evidence) -> its certification event -> PHASE 2 OEP-1 probe through the pre-node boundary -> evidence -> focused recertification -> event -> fresh PRE-HC1 -> UTC margin -> HC-1 -> N11."
+}
