@@ -9554,13 +9554,37 @@ describe('HPO-ODS-W2-36 — durable platform-authority ACL successor lineage gra
     expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json')
   })
 
-  it('CONTROLLER AXIS (W2-36-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.38 is enumerated by its own separate act, and v1.0.39 is STILL NOT enumerated', () => {
+  it('CONTROLLER AXIS (W2-36-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.38 and v1.0.39 are each enumerated by their own separate acts, neither of which is this one', () => {
+    // RECONCILED 2026-09-25: this registration act (fc3707bc) forked before
+    // PR #224 (commit 5306a239, merged as 20308b11) landed the Controller
+    // successor that enumerates v1.0.39. That act is independent of THIS
+    // registration act and independent of the v1.0.39 ALLOCATION act (PR
+    // #223) — it is the CONTROLLER_SUCCESSOR_RULE act v1.0.39's own addendum
+    // required before v1.0.40 could ever be allocated. Its landing after this
+    // branch forked, and before this branch's own merge commit, is exactly
+    // the "separate act" the two clauses below already anticipated; the
+    // ORIGINAL assertion here (v1.0.39 enumerated ZERO times) pinned this
+    // branch's pre-reconciliation base rather than the invariant the test
+    // name states, and would have silently gone stale the moment it merged
+    // current integration. The invariant that matters — that THIS act's own
+    // write set never touches ods-controller.ts, and that the grant resolves
+    // with total independence from whatever state the Controller is in — is
+    // asserted directly below rather than through a substring count that
+    // drifts with every unrelated Controller-axis landing.
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBeGreaterThan(0)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.40.json').length - 1).toBe(0)
+    // THIS ACT'S OWN WRITE SET, asserted structurally (the same pattern
+    // W2-36-REG-N10 uses below): the Controller surface is not a member of
+    // it, in either direction.
+    const ownWriteSetN8 = ['scripts/ods-scope.ts', 'tests/ods/ods-scope.test.ts']
+    expect(ownWriteSetN8).not.toContain('scripts/ods-controller.ts')
+    expect(ownWriteSetN8).not.toContain('tests/ods/ods-controller.test.ts')
     // NO CONTROLLER MUTATION IS REQUIRED FOR THE GRANT TO RESOLVE. The two
     // registries are independent: the Controller gates only the NEXT LINEAGE
-    // allocation and can never prevent a grant from resolving.
+    // allocation and can never prevent a grant from resolving — true whether
+    // the Controller has enumerated v1.0.39 or not.
     expect(resolveProtectedGrant('HPO-ODS-W2-36', ACL_DURABLE_REG).grant).toBeDefined()
   })
 
