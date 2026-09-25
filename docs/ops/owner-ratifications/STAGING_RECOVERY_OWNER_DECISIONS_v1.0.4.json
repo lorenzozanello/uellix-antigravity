@@ -1,0 +1,149 @@
+{
+  "package_id": "STAGING_RECOVERY_OWNER_DECISIONS",
+  "version": "1.0.4",
+  "artifact_id": "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__PACKAGE_SUBJECT_POLICY_V2_AND_INTRODUCING_VIEW_POLICY__NO_EXECUTION__NO_EVENT_A_POLICY",
+  "append_only": true,
+  "mission_id": "CV1-RECOVERY-CERT-CONTRACT-BOOTSTRAP-SUBJECT-FIX-R4",
+  "lane": "codex/cv1-recovery-integration-successor-r1",
+  "role": "COMMERCIAL_V1_STAGING_RECOVERY_OWNER_RATIFICATION_MATERIALIZER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_MATERIALIZATION",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "supersedes": {
+    "value": "NONE",
+    "scope": "Adds two decision domains. Owner v1.0.0..v1.0.3 decisions are unchanged."
+  },
+  "materialized_at_base": {
+    "BASE_SHA": "76a3d4c2f96444604434146e1e1d1a81ccf07aff",
+    "BASE_TREE": "a29369de6ef05ff39cd17e194fee7ec08e6624d0",
+    "branch": "codex/cv1-recovery-integration-successor-r1",
+    "pull_request": "https://github.com/lorenzozanello/uellix-antigravity/pull/221 (DRAFT, not merged)",
+    "worktree_state": "clean before mutation"
+  },
+  "companion_authority_amendment": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+  "authority_binding": {
+    "rule": "The companion amendment v1.0.6 is introduced in the SAME commit and cites this record by path; v1.0.6 pins this record by blob (this record cites v1.0.6 by path only).",
+    "question_answered": "The PACKAGE-subject bootstrap defect found by lane CV1-RECOVERY-RECERT-ATTEMPT-RESERVATION-R1 (STOP_ATTEMPT_SUBJECT_NOT_AUTHORIZED): v1.0.5 authorized the first package attempt only for the digest of the commit that introduced it (ae958aa0, d200bdfe...), so the protected tip 76a3d4c2 (a later covered test fix, digest c038b9c6...) could not be reserved; and the test helper introducingView read live worktree bytes."
+  },
+  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_AND_SUPPLIED_VERBATIM_TO_THIS_LANE in the lane brief of CV1-RECOVERY-CERT-CONTRACT-BOOTSTRAP-SUBJECT-FIX-R4 (OWNER DECISION block and sections A SUBJECT MODEL, B INTRODUCING VIEW, C v1.0.6 APPEND-ONLY AUTHORITY, E CONSUMER SEMANTICS, F PACKAGE CLOSURE). Transcribed line by line; not paraphrased, not extended.",
+  "owner_decision_verbatim": {
+    "OWNER_DECISION": [
+      "RECOVERY_PACKAGE_SUBJECT_POLICY_V2 =",
+      "CANONICAL_PROTECTED_CANDIDATE_BOUND",
+      "",
+      "INTRODUCING_VIEW_POLICY =",
+      "PIN_TO_ACTUAL_INTRODUCING_COMMIT",
+      "",
+      "SIGNED = YES"
+    ],
+    "A_SUBJECT_MODEL": [
+      "A PACKAGE certification subject is the immutable tuple:",
+      "",
+      "candidate_sha",
+      "candidate_tree",
+      "package_digest",
+      "",
+      "The candidate must be the protected canonical branch tip observed at the",
+      "reservation prestate.",
+      "",
+      "The package digest must be derived from THAT candidate tree.",
+      "",
+      "It must never be recomputed from whatever HEAD happens to read the",
+      "certification record later.",
+      "",
+      "A later change to any COVERED path creates a NEW subject.",
+      "",
+      "A prior PASS for subject A must never make subject B usable."
+    ],
+    "B_INTRODUCING_VIEW": [
+      "Fix `introducingView`.",
+      "",
+      "It must mean the actual git commit/tree that introduced the applicable",
+      "authority artifact.",
+      "",
+      "It must never read current worktree bytes or current HEAD and call those the",
+      "introducing view.",
+      "",
+      "Pin the authority lineage mechanically."
+    ],
+    "C_V1_0_6_APPEND_ONLY_AUTHORITY": [
+      "Author a v1.0.6 successor, append-only.",
+      "",
+      "Preserve v1.0.3/v1.0.4/v1.0.5 byte-identically.",
+      "",
+      "The successor must authorize reservation of a package subject when:",
+      "",
+      "1. candidate is the canonical protected branch tip;",
+      "2. protection predicate passes;",
+      "3. rewriteWitnessed = false;",
+      "4. candidate/tree/package_digest bind exactly;",
+      "5. subject is not already ambiguously represented;",
+      "6. reservation does not mutate package closure.",
+      "",
+      "The old introducing-commit bootstrap restriction must not prevent legitimate",
+      "later protected candidates from becoming distinct subjects."
+    ],
+    "E_CONSUMER_SEMANTICS": [
+      "Consumer evaluation must use the subject tuple recorded in the attempt/result.",
+      "",
+      "Do not derive subject identity from current HEAD.",
+      "",
+      "Required behaviors:",
+      "",
+      "PASS for digest A + later covered change producing digest B",
+      "=> B = NOT_CERTIFIED",
+      "",
+      "attempt for A + reservation-only commit changes HEAD",
+      "=> attempt remains about A",
+      "",
+      "result for A",
+      "=> resolves only A",
+      "",
+      "result claiming A but digest/tree mismatch",
+      "=> STOP",
+      "",
+      "attempt for noncanonical candidate",
+      "=> STOP",
+      "",
+      "attempt created after provider rewrite witness",
+      "=> STOP"
+    ],
+    "F_PACKAGE_CLOSURE": [
+      "Verify mechanically which reservation/result paths are excluded from package",
+      "closure.",
+      "",
+      "Do not assume.",
+      "",
+      "If writing a reservation changes the package digest of its own subject:",
+      "STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE."
+    ]
+  },
+  "structured_decision": {
+    "rule": "Structural restatement for machine consumption; the verbatim text controls.",
+    "RECOVERY_PACKAGE_SUBJECT_POLICY_V2": "CANONICAL_PROTECTED_CANDIDATE_BOUND",
+    "INTRODUCING_VIEW_POLICY": "PIN_TO_ACTUAL_INTRODUCING_COMMIT",
+    "PACKAGE_SUBJECT_TUPLE": [
+      "candidate_sha",
+      "candidate_tree",
+      "package_digest"
+    ],
+    "CANDIDATE": "the protected canonical branch tip observed at the reservation prestate",
+    "PACKAGE_DIGEST_DERIVED_FROM": "the candidate tree, never from the head that later reads the record",
+    "COVERED_CHANGE": "creates a NEW subject",
+    "PASS_FOR_SUBJECT_A_MAKES_SUBJECT_B_USABLE": false,
+    "EVENT_A_POLICY": "PENDING",
+    "SIGNED": "YES"
+  },
+  "explicit_non_authorizations": [
+    "NO attempt is reserved by this record or its companion lane; 76a3d4c2 is not reserved retroactively.",
+    "NO certification, adjudication or occurrence is created.",
+    "NO branch protection change; NO Event A policy option; NO merge of PR #220; NO hosted act."
+  ],
+  "precedence_note": "Canonical for product-owner intent on RECOVERY_PACKAGE_SUBJECT_POLICY_V2 and INTRODUCING_VIEW_POLICY only; made mechanical by v1.0.6.",
+  "required_independent_review": "Part of the independent recertification of the Recovery package at the v1.0.6 candidate (itself reserved first). The writing lane does not certify its own output.",
+  "final_state": "OWNER_PACKAGE_SUBJECT_AND_INTRODUCING_VIEW_RATIFICATION_MATERIALIZED",
+  "next_gate": "Reservation lane for the PACKAGE attempt of the canonical protected tip after v1.0.6 (the final v1.0.6 candidate), then the independent recertification under that attempt."
+}
