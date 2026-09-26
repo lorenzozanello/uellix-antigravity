@@ -1,0 +1,393 @@
+{
+  "package_id": "TENANCY_S4S_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "TENANCY_S4S_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "NODE_EXECUTION_AUTHORITY_CORRECTION",
+  "document_class": "APPEND_ONLY_AUTHORITY_AMENDMENT",
+  "append_only": true,
+  "mission_id": "CV1-S4S-REAL-INTEGRATION-AUTHORITY-DELTA-W",
+  "lane_id": "CV1-S4S-REAL-INTEGRATION-AUTHORITY-DELTA-W",
+  "role": "AUTHORITY_CORRECTION_WRITER",
+  "mode": "APPEND_ONLY_CORRECTION",
+  "node_id": "S4s",
+  "node_title": "Storage selected-organization boundary",
+  "materialization_date": "2026-09-20",
+  "materialized_by": "Claude Opus 5 under HPO-ODS-01, executing lane CV1-S4S-REAL-INTEGRATION-AUTHORITY-DELTA-W",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/tenancy/TENANCY_S4S_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+
+  "AS_OF_REF": "codex/tenancy-storage-selected-org-s4s-authority-r1",
+  "AS_OF_HEAD": "1b7c8741c0a3510605ea23529f2bba9c41cc9b31",
+  "AS_OF_TREE": "ad520e4ee18ce01c8f3531cb85e2b6f02b749daf",
+  "MEASUREMENT_BASE": "89022a9bf22a06276996a5a9214b344916be84aa",
+  "as_of_measurement_note": "Every literal quoted in this amendment as MEASURED was re-derived in this lane with git cat-file / git grep against MEASUREMENT_BASE 89022a9b - the SAME tree the superseded v1.0.0 claims were authored against - and not copied from the independent architecture audit that opened this lane. Where this amendment reports a count, that count was produced by a command in this lane, never carried forward as prose. This discharges the repository's own standing lesson that a frozen MEASURED-ABSENT claim must be re-verified literal by literal at the base it names.",
+
+  "FRESHNESS": {
+    "EXPECTED_START_HEAD": "1b7c8741c0a3510605ea23529f2bba9c41cc9b31",
+    "MEASURED_START_HEAD": "1b7c8741c0a3510605ea23529f2bba9c41cc9b31",
+    "worktree": "CLEAN at lane start, measured with git status --porcelain --untracked-files=all returning empty.",
+    "CURRENT_INTEGRATION": "41dc5be30755fbfbdf43829e436f64550c2b914a (origin/integration/commercial-v1, measured after git fetch origin --prune).",
+    "integration_delta_inspected": "89022a9b..41dc5be3 contains exactly TWO commits: 29912a1f (ods: allocate v1.0.38 lineage and declare HPO-ODS-W2-35 grant for FIBDB-053 Stage-A) and its merge 41dc5be3 (PR #196). Its diff is exactly TWO paths: docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json (added) and tests/ods/ods-scope.test.ts (modified).",
+    "does_the_movement_alter_S4s_facts": "NO. MEASURED: a case-insensitive search of ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json for tenancy, s4s, selected_organization and storage returns ZERO matches. Every path literal the addendum freezes is under db/prepared/**, db/migrations/** or docs/ops/ods/**, and its protected grant HPO-ODS-W2-35 binds branch codex/fibdb053-stage-a-implementation-r1 by exact branch equality - a branch that is not this one, so the grant can authorize nothing here and this lane consumes nothing from it. The scope-test change carries LINEAGE-axis sentinels for the 1.0.38 position only. No tenancy, auth or storage authority fact corrected by this amendment is touched.",
+    "AUTHORING_ON_PRE_SYNC_PR195": "SAFE_FOR_APPEND_ONLY_AUTHORITY_CORRECTION",
+    "sync_is_still_mandatory": "This disposition authorizes AUTHORING on the pre-sync tree. It does NOT waive the sync. PR #195 is behind current integration and MUST be synced onto integration/commercial-v1 before any certification of it. That sync is deliberately DEFERRED by this lane until the ODS chain closes, and a certifying lane that reads this amendment as permission to certify pre-sync has misread it."
+  },
+
+  "AMENDS": {
+    "parent_authority": "docs/ops/tenancy/TENANCY_S4S_EXECUTION_AUTHORITY_v1.0.0.json",
+    "parent_manifest": "docs/ops/tenancy/TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+    "parent_status": "OPEN AND UNCERTIFIED. PR #195 is DRAFT. v1.0.0 is PRESERVED AS HISTORICAL AUTHORED EVIDENCE and is NOT edited, rewritten, reformatted, re-sealed or re-versioned by this lane. Neither parent file appears in this lane's diff.",
+    "amendment_mode": "APPEND_ONLY.",
+    "why_append_only_rather_than_editing_v1_0_0": "Two reasons, and the second is the binding one. (a) PRECEDENT: docs/ops/tenancy/ already carries this exact correction shape - TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json together with its companion TENANCY_STORAGE_SELECTED_ORG_DAG_TEST_MANIFEST_AMENDMENT_v1.0.0.json, and the numbered succession MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1 through v1.0.8 - so the pair is repository-native and no shape adjudication is required. (b) EVIDENCE: v1.0.0 recorded a measurement and an inference drawn from it. The measurement was wrong. Editing the file in place would destroy the record of HOW a keyword search can be constructed so that it cannot find the capability it is searching for, which is the single most transferable lesson of this correction. The wrong claim is retained, visibly superseded, on purpose.",
+    "how_to_read_the_two_together": "EFFECTIVE DOCUMENT = TENANCY_S4S_EXECUTION_AUTHORITY_v1.0.0.json + TENANCY_S4S_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. Where this amendment is silent, v1.0.0 controls verbatim. Where this amendment names a v1.0.0 clause under SUPERSEDED_CLAUSES, that clause is superseded ONLY in the respect this amendment states, and every other sentence of the same clause continues to control. A reader or a control that asserts against v1.0.0 alone is reading a pre-amendment authority and is reading a false premise.",
+    "effective_composition_is_the_only_assertable_endpoint": "Any future control, certification or implementing lane MUST resolve the effective document as the composition above. No control may cite SECTION_1 L7, SECTION_1 L5, SECTION_5 NEW_HARNESS_CLASS, SECTION_7 TWO_LAYER_SPLIT or OPEN_FINDINGS F-S4S-3 from v1.0.0 without also resolving the superseding entry here."
+  },
+
+  "SECTION_A_ORIGINAL_FALSE_PREMISE_AND_REMEASURED_TRUTH": {
+    "ORIGINAL_FALSE_PREMISE": "v1.0.0 SECTION_1 L7_HARNESS_REALITY stated: 'A repository-wide search of scripts/**, tests/** and supabase/** for storage-api, gotrue, supabase/storage and kong returns ZERO files. No harness in this repository runs the Supabase Storage API or GoTrue. The disposable cluster is a PostgreSQL server and nothing else.' From this it derived that the S4s real-integration proof 'requires a HARNESS CLASS THIS REPOSITORY DOES NOT HAVE', and that premise was then consumed by SECTION_5, SECTION_7, OPEN_FINDINGS F-S4S-3 and the companion manifest.",
+
+    "REMEASURED_TRUTH": {
+      "defect_1_the_literal_claim_is_false_as_written": {
+        "method": "git grep -lIiF <literal> 89022a9b -- scripts tests supabase, counted by file, one command per literal.",
+        "storage-api": "0 files. The v1.0.0 claim is TRUE for this literal.",
+        "supabase/storage": "0 files. The v1.0.0 claim is TRUE for this literal.",
+        "kong": "0 files. The v1.0.0 claim is TRUE for this literal.",
+        "gotrue": "FIVE files, not zero: scripts/audit-capability-identity-dry-run.sh, tests/auth/email-verification-gate.test.ts, tests/auth/session.test.ts, tests/authenticated-database-context.test.ts, tests/supabase-project-coherence.test.ts.",
+        "verdict": "The sentence 'returns ZERO files' is FALSE at the very tree it was authored against. One of the four literals returns five files."
+      },
+      "defect_2_the_inference_is_false_independently_of_the_literal": {
+        "why_this_is_the_material_defect": "Even had all four literals genuinely returned zero, the inference drawn from them would still be false. The four literals are SERVICE NAMES. This repository reaches GoTrue and the Storage API through the @supabase/supabase-js SDK, which never spells any of them. A keyword search over service names in an SDK-based codebase is structurally incapable of finding the capability it is searching for. That - not the miscount - is the defect worth preserving.",
+        "MEASURED_real_GoTrue_user_creation": "tests/integration/rls.test.ts createTestUser() calls adminClient.auth.admin.createUser({ email, password, email_confirm: true, user_metadata }) against a running GoTrue, and throws on userError.",
+        "MEASURED_real_GoTrue_login_and_real_user_JWT": "tests/integration/rls.test.ts createTestUser() then creates an anon-key client and calls authClient.auth.signInWithPassword({ email, password }), throwing on signInError. Every downstream assertion in that suite is made with the resulting REAL user session, not a fabricated token.",
+        "MEASURED_real_Storage_API_calls": "tests/integration/rls.test.ts describe('Storage') drives .storage.from('uellix-evidence').upload(...) at line 320, .download(...) at lines 326, 336 and 373, and .remove([...]) in its DELETE control. These are HTTP calls to the Storage API object endpoints, not SQL against storage.objects.",
+        "MEASURED_upload_download_delete_symmetry": "PRESENT. The same suite exercises upload (positive, and cross-organization negative asserting 'row violates row-level security policy'), download (positive, and cross-organization negative asserting 'Object not found'), and remove (insufficient-role negative), and re-downloads after the refused remove to prove the object survived.",
+        "MEASURED_PostgREST_refusal_checks": "PRESENT. The same suite asserts error.code === '42501' on PostgREST .from('projects').insert(...) for insufficiently privileged roles.",
+        "MEASURED_CI_path_that_starts_a_full_Supabase_stack": ".github/workflows/p1a-validation.yml step 'Start Supabase Local' runs pnpm supabase start, exports the stack's api url, anon key, service role key and db url and validates them through scripts/ci-assert-local-targets.ts, runs pnpm test:integration and pnpm test:rls, and tears down with pnpm supabase stop --no-backup in an if: always() step.",
+        "MEASURED_the_stack_that_is_started": "supabase/config.toml declares api enabled on port 56321, db major_version 17 on 56322, storage enabled with private bucket uellix-evidence (25MiB, mime allowlist) and s3_protocol enabled, auth enabled with jwt_expiry 3600, realtime enabled, studio enabled, local_smtp enabled, edge_runtime enabled, analytics disabled. That is the canonical Supabase CLI developer stack, gateway included."
+      },
+      "EFFECTIVE_CORRECTED_MODEL": "This repository ALREADY CONTAINS a FULL_SUPABASE integration shape, built on the canonical Supabase CLI stack, that creates real GoTrue users, signs them in for real user JWTs, drives the real Storage API object endpoints for upload, download and delete, checks PostgREST refusals, and is wired to a CI job that stands the whole stack up and tears it down. The S4s real-integration proof is therefore NOT a capability this repository has never expressed. What S4s requires that this prior art does not supply is a DIFFERENT SUBSTRATE: a disposable, isolated, digest-pinned, integration-branch-capable layer-2 stack, because the canonical developer stack is NOT an acceptable certification substrate under the parent REAL_PG_CONTRACT.",
+      "what_this_changes_and_what_it_does_not": "It changes the COST and the EXISTING-CAPABILITY classification of the layer-2 work: from 'a harness class that must be invented' to 'a known harness shape that must be re-hosted on a governed substrate'. It changes NOTHING about the security bar. Every requirement listed at SECTION_D_PRESERVED_BINDING_REQUIREMENTS is carried forward unrelaxed."
+    }
+  },
+
+  "SUPERSEDED_CLAUSES": {
+    "supersession_is_narrow_and_enumerated": "Exactly EIGHT clauses are superseded, each in exactly one respect, each quoted verbatim so the supersession cannot later be read more broadly than written. Nothing else in v1.0.0 or its companion manifest is superseded, weakened, re-scoped or re-opened by this artifact.",
+    "count": 8,
+    "how_the_list_was_built": "NOT by accepting the audit's four. A programmatic walk over every string value and every key name in both v1.0.0 files, matching storage-api / gotrue / supabase-slash-storage / kong / 'harness class this repository does not have' / 'does not exist yet' / NEW_HARNESS case-insensitively, returned THIRTEEN candidate sites in the authority and TWO in the manifest. Each was then read and adjudicated. Seven authority sites (SECTION_1 L5 server_side_derivation, SECTION_2 M04, M05, M11, M19, SECTION_5 bounded_derivation_rule and SECTION_8 derivation_2) matched only on the word GoTrue inside statements of mechanism that remain TRUE, and are explicitly NOT superseded - see SECTION_E_NOT_SUPERSEDED. One manifest site (negative_controls RI-06) matched only on the phrase 'requires real GoTrue', which remains TRUE, and is explicitly NOT superseded. One further clause NOT flagged by the audit - SECTION_1 L5 the_claims_GUC_is_PROVEN_present_on_the_storage_connection - was found to rest on an over-strong inference and IS superseded, as AM-S4S-D7.",
+
+    "AM-S4S-D1": {
+      "target": "SECTION_1_REDERIVED_LIVE_CONTEXT.L7_HARNESS_REALITY.THE_HARNESS_IS_POSTGRESQL_ONLY",
+      "OLD_verbatim": "MEASURED AND DECISIVE FOR SECTION_7. A repository-wide search of scripts/**, tests/** and supabase/** for 'storage-api', 'gotrue', 'supabase/storage' and 'kong' returns ZERO files. No harness in this repository runs the Supabase Storage API or GoTrue. The disposable cluster is a PostgreSQL server and nothing else.",
+      "NEW": "RE-MEASURED AT THE SAME BASE 89022a9b AND CORRECTED. The literal search returns 0 files for 'storage-api', 0 for 'supabase/storage', 0 for 'kong' and FIVE for 'gotrue'. More decisively, the four literals are service names and this repository reaches those services through @supabase/supabase-js, which spells none of them, so the search could not have found the capability regardless of its result. TWO harnesses in this repository DO run GoTrue and the Supabase Storage API: tests/integration/rls.test.ts drives real user creation, real sign-in and real Storage API upload/download/remove, and .github/workflows/p1a-validation.yml stands up the full canonical Supabase stack with pnpm supabase start and runs that suite. What IS still true and is reaffirmed: the DISPOSABLE cluster reached by pnpm db:audit:disposable is a PostgreSQL server and nothing else, and no DISPOSABLE harness in this repository runs GoTrue or the Storage API.",
+      "the_respect_in_which_it_is_superseded": "ONLY the claim about what the repository CONTAINS. The claim about what the DISPOSABLE cluster contains is preserved verbatim and is the fact that still makes a new layer-2 substrate necessary. The sibling keys disposable_harness_image and there_is_no_pg_cron are untouched and remain controlling.",
+      "does_this_weaken_anything": "NO. It moves work from the INVENT column to the RE-HOST column and leaves every security requirement in place."
+    },
+
+    "AM-S4S-D2": {
+      "target": "SECTION_1_REDERIVED_LIVE_CONTEXT.L7_HARNESS_REALITY.consequence",
+      "OLD_verbatim": "The real-integration proof the DAG amendment and this artifact require is NOT satisfiable by extending an existing harness with a new probe manifest. It requires a HARNESS CLASS THIS REPOSITORY DOES NOT HAVE. SECTION_5 records it as a first-class implementation surface with its own cost, and SECTION_7 splits the contract into the part today's harness can prove and the part it provably cannot.",
+      "NEW": "The real-integration proof is NOT satisfiable by extending the DISPOSABLE PostgreSQL harness with a new probe manifest, because that harness runs no GoTrue and no Storage API. It is ALSO not satisfiable by reusing the existing full-Supabase harness AS IT STANDS, because that harness runs on the canonical Supabase CLI developer stack, which the parent REAL_PG_CONTRACT forbids as a certification substrate. The requirement is therefore a NEW DISPOSABLE LAYER-2 SUBSTRATE carrying a harness shape this repository has ALREADY EXPRESSED at tests/integration/rls.test.ts - not a harness class it has never had. SECTION_5 continues to record it as a first-class implementation surface with its own cost; SECTION_7 continues to split the contract into two layers. Only the novelty estimate changes.",
+      "the_respect_in_which_it_is_superseded": "ONLY the classification of the work as a capability the repository has never expressed. The existence of the two-layer split, the first-class cost, and the non-satisfiability by the disposable PostgreSQL harness alone are all preserved.",
+      "does_this_weaken_anything": "NO. The substrate requirement is stated MORE precisely than before: it now names both reasons a candidate substrate can fail, where v1.0.0 named only one."
+    },
+
+    "AM-S4S-D3": {
+      "target": "SECTION_5_FUTURE_IMPLEMENTATION_WRITE_SURFACE.NEW_HARNESS_CLASS_priced_separately.why_it_has_its_own_heading",
+      "OLD_verbatim": "Because it is the largest single cost in the node and the easiest to under-estimate. SECTION_1 L7 MEASURED that zero files in scripts/**, tests/** or supabase/** reference storage-api, gotrue, supabase/storage or kong. The real-integration contract of SECTION_7 is not an extension of an existing harness with a new probe manifest; it requires a harness class this repository does not have - one that stands up GoTrue and the Storage API alongside PostgreSQL, mints real tokens, and drives the real HTTP storage path.",
+      "NEW": "Because it remains a first-class cost that is easy to under-estimate, but it is a SUBSTRATE cost, not an invention cost. SECTION_1 L7 as corrected by AM-S4S-D1 measures that the repository ALREADY stands up GoTrue and the Storage API and already drives the real HTTP storage path with real tokens, at tests/integration/rls.test.ts under .github/workflows/p1a-validation.yml. The residual work is to re-host that known shape on a DISPOSABLE, ISOLATED, DIGEST-PINNED, INTEGRATION-BRANCH-CAPABLE stack, because the canonical developer stack is not an acceptable certification substrate. The heading is retained because the substrate work is still the largest single cost in the node; it is renamed in effect from NEW_HARNESS_CLASS to NEW DISPOSABLE LAYER-2 SUBSTRATE.",
+      "the_respect_in_which_it_is_superseded": "ONLY the premise sentence and the novelty classification. The sibling key paths - 'scripts/ and tests/ - ORDINARY. Exact paths are NOT frozen here, because freezing a path for a harness whose shape has never been built would be inventing detail this lane cannot ground.' - is UNCHANGED and still controls, and this amendment freezes no filename either. The sibling key bounded_derivation_rule is NOT superseded; it is EXTENDED at SECTION_D.",
+      "does_this_weaken_anything": "NO. The cost is still priced separately and still first-class."
+    },
+
+    "AM-S4S-D4": {
+      "target": "SECTION_7_REAL_INTEGRATION_TEST_CONTRACT.TWO_LAYER_SPLIT_stated_because_the_harness_does_not_exist_yet - the premise asserted by the KEY NAME itself, and the label of its member list requires_the_NEW_harness_class.",
+      "OLD_verbatim": "TWO_LAYER_SPLIT_stated_because_the_harness_does_not_exist_yet / requires_the_NEW_harness_class",
+      "NEW": "The two-layer split is RETAINED in full and its member lists are retained except as stated at AM-S4S-D5. Its stated REASON is corrected: the split exists because the DISPOSABLE substrate available today is PostgreSQL-only AND because the full-Supabase substrate available today is the canonical developer stack, which is forbidden as a certification substrate - NOT because the harness shape has never existed here. Read the key name as TWO_LAYER_SPLIT_stated_because_no_GOVERNED_full_stack_substrate_exists_yet, and the member list label as requires_the_NEW_DISPOSABLE_LAYER_2_SUBSTRATE.",
+      "the_respect_in_which_it_is_superseded": "ONLY the stated reason, carried in a key name and a list label. The honesty_rule is UNCHANGED and remains the most important sentence in SECTION_7: a certification accepting the layer-1 list alone would certify a policy-layer change whose policy layer was never exercised, and RI-08 remains the criterion the node exists for. The sibling why_the_split_is_published_rather_than_hidden is UNCHANGED, and its instruction that the implementing lane budget the substrate at the start is reaffirmed.",
+      "does_this_weaken_anything": "NO. No control moves from layer 2 to layer 1 by this entry. The only membership change in the whole amendment is AM-S4S-D5, which moves proof obligation in the direction of MORE real-integration evidence, never less."
+    },
+
+    "AM-S4S-D5": {
+      "target": "SECTION_7_REAL_INTEGRATION_TEST_CONTRACT.TWO_LAYER_SPLIT_stated_because_the_harness_does_not_exist_yet.provable_on_todays_disposable_PostgreSQL - the membership of RI-12 only.",
+      "OLD_verbatim": "RI-12 appears in provable_on_todays_disposable_PostgreSQL and does not appear in requires_the_NEW_harness_class.",
+      "NEW": "RI-12 SPLITS INTO TWO OBLIGATIONS AND BOTH ARE BINDING. (i) RI-12 REMAINS in the layer-1 list, unchanged and unweakened, as a PREDICATE control: on a connection whose claims are set by the harness, a live mirror row whose user_id differs from the claimed sub is refused. Mutation MU-04 stays armed against RI-12 in layer 1 exactly as v1.0.0 declared it. (ii) A NEW layer-2 obligation RI-D-N-03, declared in the companion manifest amendment, proves the same property with a REAL GoTrue-issued token for subject S2 against a real mirror row belonging to S1, reached through a real Storage API request.",
+      "why_a_split_and_not_a_move": "The effective RI-12 wording is 'CROSS-USER SESSION SPOOFING IS REFUSED. Subject S2 is refused any benefit from a live mirror row belonging to S1, using sentinel S4S-SENTINEL-FOREIGN-SESSION so that a real row is genuinely present.' That wording is predicate-shaped and never mentions a token, so it does not compel a wholesale move to layer 2. And a wholesale move WOULD weaken layer 1, because MU-04 exists precisely to catch removal of a REDUNDANT conjunct and RI-12 is the only control that breaks the implication; disarming RI-12 in layer 1 would leave MU-04 with nothing to turn red there. The governing instruction is that no layer-1 control may be weakened, so the honest disposition is to keep layer 1 intact and ADD the layer-2 twin.",
+      "what_the_layer_1_control_provably_does_NOT_establish": "In layer 1 the harness sets request.jwt.claims itself, so it sets sub=S2 together with session_id=S1's session - a pairing GoTrue would never issue. Layer 1 therefore proves the SQL predicate refuses that pairing. It does NOT prove that the real transport can never deliver that pairing, and it does not prove that the real token binds sub and session_id together. RI-D-N-03 is the control that closes that gap.",
+      "the_respect_in_which_it_is_superseded": "ONLY the COMPLETENESS of RI-12's layer-1 membership - layer-1 membership alone was presented as discharging the control, and it does not. The layer-1 membership itself is preserved. No other control's layer changes."
+    },
+
+    "AM-S4S-D6": {
+      "target": "OPEN_FINDINGS[id=F-S4S-3].finding and .consequence",
+      "OLD_verbatim_finding": "The real-integration contract requires a harness class this repository does not have. MEASURED: zero references to storage-api, gotrue, supabase/storage or kong anywhere in scripts/**, tests/** or supabase/**.",
+      "OLD_verbatim_consequence": "Five of the required falsifications - RI-06, RI-08, RI-09, RI-13, MU-07 - are not provable with any existing harness. RI-08 is the criterion the node exists for, so a certification accepting only the PostgreSQL-provable layer would certify a policy-layer change whose policy layer was never exercised.",
+      "NEW_finding": "The real-integration contract requires a GOVERNED DISPOSABLE FULL-STACK SUBSTRATE that this repository does not have. The HARNESS SHAPE it needs does exist here. RE-MEASURED at 89022a9b: the four service-name literals return 0, 5, 0 and 0 files respectively - not zero across the board - and the repository reaches those services through @supabase/supabase-js at tests/integration/rls.test.ts, driven by .github/workflows/p1a-validation.yml.",
+      "NEW_consequence": "The same five falsifications - RI-06, RI-08, RI-09, RI-13, MU-07 - plus the new layer-2 obligations declared in the companion manifest amendment, are not provable with any GOVERNED harness that exists today: the disposable cluster runs no GoTrue or Storage API, and the full-Supabase harness runs on the forbidden canonical stack. RI-08 remains the criterion the node exists for, and a certification accepting only the PostgreSQL-provable layer would still certify a policy-layer change whose policy layer was never exercised. That conclusion is UNCHANGED; only its stated cause is corrected.",
+      "NEW_disposition": "Still PUBLISHED AS A PRICED COST at SECTION_5 and as an explicit two-layer split at SECTION_7, still NOT deferred, still NOT downgraded to a documentation claim. Severity is UNCHANGED at BLOCKING ON IMPLEMENTATION, NOT ON THIS ARTIFACT.",
+      "the_respect_in_which_it_is_superseded": "ONLY the cause and the measurement. The severity, the five named falsifications, the RI-08 criterion and the disposition are all preserved."
+    },
+
+    "AM-S4S-D7": {
+      "target": "SECTION_1_REDERIVED_LIVE_CONTEXT.L5_SESSION_IDENTITY_ON_THE_EVALUATING_CONNECTION.the_claims_GUC_is_PROVEN_present_on_the_storage_connection",
+      "not_flagged_by_the_audit": "This clause was found by this lane's own mechanical sweep and adjudication, not by the architecture audit. It is superseded because it is the clause that would otherwise let an implementing lane skip the decisive pre-probe at SECTION_C.",
+      "OLD_verbatim": "DERIVED MECHANICALLY, not assumed. The three storage.objects policies call auth.uid(), auth.uid() reads ONLY the request.jwt.claim.sub / request.jwt.claims GUCs, and evidence upload, download and delete work in the product today. If the claims GUC were absent on the Storage API's connection, auth.uid() would be NULL, the helper would receive NULL as user_id, the membership EXISTS would match nothing, and EVERY storage operation would already be denied. It is not. Therefore the Storage API publishes the verified JWT claims onto the connection that evaluates the policy.",
+      "NEW": "THE DERIVATION IS VALID ONLY FOR THE SUBJECT CLAIM, AND ONLY DISJUNCTIVELY. MEASURED in this lane at db/baseline/stella_g2_schema.sql lines 486-492, auth.uid() is COALESCE(nullif(current_setting('request.jwt.claim.sub', true), ''), nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid. Because it is a COALESCE over TWO different GUCs, the fact that auth.uid() is non-NULL on the storage connection proves only that AT LEAST ONE of request.jwt.claim.sub or request.jwt.claims is populated. It does not identify WHICH. It therefore does not establish that the request.jwt.claims JSON object is present ON THAT CONNECTION AT ALL - the legacy request.jwt.claim.sub GUC alone would satisfy auth.uid() identically. The corrected statement is: the Storage API publishes the verified SUBJECT identity onto the evaluating connection, by one of two possible GUCs, and which one is not determined by this derivation. Whether it publishes the full claims object, and therefore whether session_id is readable there, is UNKNOWN and is NOT derivable from the fact that storage works today.",
+      "MINTING_IS_MEASURED_AND_IS_NOT_IN_DOUBT_PROPAGATION_IS": "STATED EXPLICITLY SO THIS SUPERSESSION IS NOT READ TOO BROADLY. The sibling clause SECTION_1 L5 session_id_is_a_STANDARD_REQUIRED_CLAIM_not_a_custom_one is NOT superseded and remains controlling: MEASURED at the pinned @supabase/auth-js 2.108.2, RequiredClaims declares session_id as NON-OPTIONAL, so GoTrue MINTS session_id into every access token and it is a standard claim rather than a custom one. That measurement stands, and with it the RAT-STG-01-C5 discharge that rests on it. The open question is strictly one of PROPAGATION: whether the Storage API copies the claims object - session_id included - onto the PostgreSQL connection that evaluates the storage.objects policies. MINTING and PROPAGATION are different facts about different components, and only the second is unmeasured. MEASURED that the second is genuinely unmeasured HERE: a walk of every string in v1.0.0 for the upstream storage scope-statement machinery (scope.ts, buildScopeStatement) returns only references to this repository's own scripts/ods-scope.ts - the authority contains no reading of the Storage API's claim-propagation source at all.",
+      "the_respect_in_which_it_is_superseded": "ONLY the scope of what the derivation proves - narrowed from 'the verified JWT claims' to 'the verified subject identity, by one of two possible GUCs'. The reasoning about fail-closed behaviour and about auth.uid() being the reader is preserved and is correct. No mechanism decision rests on the superseded breadth; M11 already requires deriving session_id server-side from verified claims rather than inferring it, and that requirement is untouched.",
+      "consequence": "This is the clause that makes SECTION_C a HARD PRECONDITION rather than a prudent extra check. With the derivation narrowed, the presence of session_id on the storage connection is an open question of fact that S4s cannot proceed without answering."
+    },
+
+    "AM-S4S-D8": {
+      "target": "COMPANION MANIFEST docs/ops/tenancy/TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0.json postgres_requirements.rationale",
+      "OLD_verbatim_fragment": "LAYER 2 cannot be carried by anything in this repository: MEASURED at BASE, zero files under scripts/**, tests/** or supabase/** reference storage-api, gotrue, supabase/storage or kong, so the real Storage API and real GoTrue proofs require a harness class that must be BUILT.",
+      "NEW": "LAYER 2 cannot be carried by any GOVERNED substrate in this repository. RE-MEASURED at BASE 89022a9b: the literals return 0, 5, 0 and 0 files respectively, and the repository drives real GoTrue and the real Storage API through @supabase/supabase-js at tests/integration/rls.test.ts under .github/workflows/p1a-validation.yml. The real Storage API and real GoTrue proofs therefore require a DISPOSABLE LAYER-2 SUBSTRATE that must be BUILT, carrying a harness shape that already exists.",
+      "the_respect_in_which_it_is_superseded": "ONLY the measurement sentence and the words 'harness class'. Everything else in that rationale is PRESERVED VERBATIM AND REAFFIRMED, specifically: setup_manifest and probe_manifest remain UNKNOWN because they do not exist yet; LAYER 1 remains today's disposable cluster via pnpm db:audit:disposable on the pinned image public.ecr.aws/supabase/postgres:17.6.1.143; RI-06, RI-08, RI-09, RI-13 and MU-07 remain layer 2; RI-08 remains the criterion the node exists for; and the closing sentence 'Disposable infrastructure only - never staging, never production, never the canonical local stack' is UNCHANGED and is restated as binding at SECTION_D R1."
+    }
+  },
+
+  "SECTION_B_MINIMUM_SERVICE_TOPOLOGY": {
+    "status": "FROZEN BY THIS AMENDMENT. This binds the TEST TOPOLOGY of the future disposable layer-2 substrate and nothing else. It is not an implementation instruction, names no filename, and prescribes no orchestrator.",
+    "consumption_note": "The architecture audit proposed a topology. It is consumed here ONLY where independently re-supported by measurement in this lane or by an already-frozen control in the effective manifest.",
+    "REQUIRED_count": 4,
+    "REQUIRED": [
+      "Supabase PostgreSQL image - the substrate the governed migration chain and the helpers run on. Already digest-pinnable and already pinned elsewhere in this repository at public.ecr.aws/supabase/postgres:17.6.1.143 (scripts/m2-disposable-pg-bootstrap.ts IMAGE_TAG, digest-pinned on the following line).",
+      "GoTrue - because a real session_id and the survive-the-session property of RI-06 cannot be reproduced by a fabricated token, and because SECTION_C requires the session under probe to have been issued by a real sign-in.",
+      "Storage API - because RI-08 is a proof about the Storage API's own connection to PostgreSQL, and nothing else evaluates the storage.objects policies on that connection.",
+      "PostgREST - because RI-09 is a proof that a client holding an authenticated JWT cannot write the mirror over the Data API, and that refusal must be observed on the Data API itself."
+    ],
+    "NOT_REQUIRED_count": 7,
+    "NOT_REQUIRED_for_this_security_proof": [
+      "Kong (the API gateway)",
+      "Realtime",
+      "imgproxy",
+      "Studio / pg_meta",
+      "Analytics",
+      "inbucket / SMTP",
+      "Edge runtime"
+    ],
+    "why_Kong_is_not_needed": "Two independent reasons, and the first is the load-bearing one. (a) THE PROOF IS STRONGER WITHOUT IT. RI-08 asserts that a subject calling the Supabase Storage API DIRECTLY with its own JWT, bypassing every server route, is still bound by the selected-organization boundary. Targeting storage-api directly makes that bypass literal: the test supplies the real user JWT itself, and no gateway sits in the path to normalize, inject or reject credentials. With a gateway present, a refusal is ambiguous between gateway routing, gateway auth and the storage policy - which is exactly the attribution failure F-S4S-1 already warns about, reintroduced one layer up at the transport. (b) IT IS NOT LOAD-BEARING FOR ANY REQUIRED PROOF. PostgREST may likewise be targeted directly for RI-09. No frozen control in the effective manifest asserts a property OF the gateway, so a topology without one omits nothing any control needs. MEASURED corroboration that the gateway is not the subject under test: the literal 'kong' returns ZERO files across scripts/**, tests/** and supabase/** at 89022a9b - the one part of the original L7 measurement that was both true and relevant.",
+    "why_the_other_six_are_not_needed": "None appears in any required or optional proof of the effective S4s contract. Realtime, imgproxy, Studio/pg_meta, Analytics, inbucket/SMTP and the edge runtime carry no part of the selected-organization storage boundary. MEASURED at supabase/config.toml, the canonical developer stack enables realtime, studio, local_smtp and edge_runtime and would start them - which is one concrete reason the canonical stack is a poor certification substrate as well as a forbidden one: it enlarges the flake and attack surface of the gate for zero proof value.",
+    "is_this_topology_a_ceiling_or_a_floor": "A FLOOR ON THE REQUIRED SET AND A CEILING ON THE JUSTIFIED SET. An implementing lane MUST stand up all four REQUIRED services. It MUST NOT add any of the seven listed services and call the addition necessary for THIS proof. If a future control genuinely needs one of them, that control needs its own authority, not an inference from this section.",
+    "scope_limit": "This section binds TEST TOPOLOGY only. It does not prescribe how the four services are started, in what order, by what tool, on what network driver, or in what file. Those are SECTION_E architectural properties or are deliberately left free."
+  },
+
+  "SECTION_C_F_AUD_2_DECISIVE_PRE_IMPLEMENTATION_PROBE": {
+    "status": "BINDING PRE-IMPLEMENTATION REQUIREMENT. This is a HARD GATE ON S4s IMPLEMENTATION, not a test to be written alongside it.",
+    "requirement": "BEFORE any S4s database or application implementation is written, the future disposable real-integration substrate MUST prove that a REAL Supabase Storage API request causes the evaluating PostgreSQL connection to expose current_setting('request.jwt.claims', true)::jsonb ->> 'session_id', or an equivalent exact presence proof of the session identifier on that connection.",
+    "where_the_probe_must_execute": "From inside a helper or policy evaluation that is REACHED BY AN ACTUAL storage-api REQUEST. The observation must be made on the connection the Storage API opened, during a request the Storage API drove. An observation made anywhere else is not this probe.",
+    "what_is_NOT_sufficient": [
+      "Manually executing SET or set_config on request.jwt.claims and then reading it back. This fabricates on one connection exactly the propagation the probe exists to measure - the identical defect v1.0.0 SECTION_7 RULE_1 already forbids, and the lesson the retired PG-2 recorded.",
+      "Injecting the GUC from the test harness by any other route, including a connection-level parameter, a session preamble, a pooler setting or a wrapper function.",
+      "Proving only auth.uid(), or only the sub claim. AM-S4S-D7 establishes that auth.uid() is a COALESCE over two distinct GUCs and that its non-NULL result identifies neither which GUC was populated nor any other member of the claims object.",
+      "Decoding the JWT in Node, or reading session_id off a supabase-js session object, and asserting the value exists. That proves GoTrue MINTS the claim. It proves nothing about whether the Storage API PROPAGATES it to PostgreSQL, which is the only question that matters here."
+    ],
+    "why_this_probe_is_decisive_rather_than_prudent": "The entire S4s mechanism keys the mirror on session_id (M03) and requires the storage policy path to read that session_id off the evaluating connection (M12). If the Storage API does not publish session_id onto that connection, the mechanism as frozen in SECTION_2 cannot be enforced at the storage transport at all - and no amount of implementation effort would discover that any earlier than the first real-integration run, after the database and application surfaces were already written and after the ODS lineage had been spent.",
+    "outcome_if_session_id_IS_present": "S4s implementation proceeds under the effective authority unchanged. The probe becomes a standing positive control - declared as RI-D-P-04 in the companion manifest amendment - and is NOT retired once it has passed, because it measures a managed service's behaviour that can change under upgrade.",
+    "outcome_if_session_id_is_NOT_present": "S4s IMPLEMENTATION MUST STOP. This is a fail-closed stop, not a workaround trigger. AUTHORITY RE-ADJUDICATION is required before any further S4s work, and specifically the SECTION_2 mechanism decisions M03, M11 and M12 would have to be reopened by an authorized lane. No implementing lane may, on its own authority, substitute an alternative carrier for session_id, fall back to auth.uid() alone, route the value through the application, or narrow the control to whatever the transport happens to supply.",
+    "no_prejudgement": "This amendment takes NO position on which outcome the probe will produce. It is a genuine open question of fact about a managed service's propagation behaviour. The whole point of making it a hard gate is that it be answered by MEASUREMENT rather than by inference - inference being exactly what produced the superseded clause AM-S4S-D7.",
+    "relationship_to_the_existing_prior_art": "The existing full-Supabase harness cannot answer this question as it stands, and never tried to. MEASURED: supabase/migrations/20260716000001_storage_policies.sql defines all three storage.objects policies (select_evidence, insert_evidence, delete_evidence) in terms of bucket_id plus public.can_read_evidence_object(name, auth.uid()) or public.can_write_evidence_object(name, auth.uid()), and contains NO reference to session_id or to request.jwt.claims. The prior art therefore proves the SUBJECT reaches the storage policy path and proves nothing about the SESSION."
+  },
+
+  "SECTION_D_PRESERVED_BINDING_REQUIREMENTS": {
+    "status": "NOT RELAXED BY THIS AMENDMENT. The corrected finding changes COST and EXISTING-CAPABILITY classification. It does NOT change the security bar. Every item below is carried forward with full force, and several are restated more strictly than v1.0.0 stated them.",
+    "count": 9,
+    "R1_never_the_canonical_local_stack": "The canonical Supabase CLI developer stack MUST NEVER be the certification substrate. Inherited verbatim from the parent REAL_PG_CONTRACT as reaffirmed by TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0 REAL_PG_CONTRACT_AMENDMENT.harness_reaffirmed - 'pnpm db:audit:disposable - a disposable cluster only. NEVER staging, NEVER production, NEVER the canonical local stack' - and from v1.0.0 SECTION_5 bounded_derivation_rule clause (a). The measurement in this amendment that the canonical stack ALREADY CARRIES a working full-Supabase harness is precisely why this prohibition must be restated: the corrected finding makes reusing that stack tempting, and it remains forbidden.",
+    "R2_digest_pinned_service_images": "Every service image in the layer-2 substrate MUST be pinned by digest - for all FOUR REQUIRED services and not only for PostgreSQL. v1.0.0 SECTION_5 bounded_derivation_rule clause (b) is preserved verbatim and EXTENDED IN COVERAGE: pinning only the database while pulling GoTrue, storage-api and PostgREST by floating tag would leave the certification substrate mutable in exactly the components the new proofs depend on.",
+    "R3_real_GoTrue_issued_session": "The session under test MUST be issued by the layer-2 GoTrue through a real sign-in. v1.0.0 SECTION_5 bounded_derivation_rule clause (c) is preserved verbatim: a harness that fabricates the claim proves nothing about the transport, which is the exact lesson the retired PG-2 recorded.",
+    "R4_real_session_id": "The session_id under test MUST be a REAL GoTrue session identifier and not a fixture uuid. Preserved from clause (c) and made the subject of SECTION_C.",
+    "R5_direct_Storage_API_bypass_proof": "RI-08 remains binding and remains the criterion the node exists for. Under SECTION_B it is now additionally bound to target storage-api DIRECTLY, with no gateway in the path.",
+    "R6_real_PostgREST_proof_where_required": "RI-09 remains binding and is bound to target PostgREST directly. It remains non-negotiable for the reason v1.0.0 gave.",
+    "R7_positive_twins_for_refusal_attribution": "v1.0.0 SECTION_7 RULE_2 is preserved verbatim and is the parent of SECTION_F below. Every negative control MUST additionally establish that the intended predicate is what refused - by asserting the SETUP succeeded, by showing the positive twin of the same fixture PERMITS, or by discriminating the SQLSTATE where one is reachable. A negative control that asserts only 'false' is vacuous under the EXCEPTION WHEN OTHERS helper shape recorded at F-S4S-1 and does not discharge its obligation.",
+    "R8_disposable_teardown": "The substrate MUST be torn down, and the teardown MUST be VERIFIED rather than assumed.",
+    "R9_no_developer_global_supabase_state": "The gate MUST NOT depend on any developer-global Supabase state - no shared project ref, no shared Docker volume, no already-running stack on the host, and no supabase start against the repository's own supabase/config.toml project_id. MEASURED corroboration that this hazard is real and already known here: supabase/config.toml project_id is 'uellix-stella-g2-local-rehearsal' and carries an explicit comment that it had to be made unique per-worktree so Docker container, volume and network names would never collide with other stacks already running on this host.",
+    "v1_0_0_RULE_1_is_also_preserved": "THE HARNESS MUST REPRODUCE THE CONNECTION BOUNDARY. A probe that opens one session, sets the claims itself, and calls the helper FABRICATES on one connection exactly the propagation production lacks. Every control that claims to prove a transport property must use the real transport or at minimum two distinct connections. A single-session harness silently passes a fabricated propagation. This is the rule SECTION_C operationalizes as a hard gate.",
+    "nothing_here_is_new_security": "Every item above already bound S4s before this amendment. They are restated because a correction that REDUCES estimated novelty is exactly the kind of correction under which a security bar quietly erodes, and an explicit non-relaxation list is the cheapest defence against that."
+  },
+
+  "SECTION_E_FUTURE_HARNESS_SHAPE": {
+    "status": "MINIMUM ARCHITECTURAL CONTRACT ONLY. Deliberately does not name a filename, an orchestrator, a container runtime or a directory, because no repository precedent makes any of those necessary and v1.0.0 SECTION_5 already refused to freeze a path for a harness whose shape has not been built. That refusal is preserved.",
+    "count": 9,
+    "C1_repository_native_orchestrator": "The layer-2 stack MUST be brought up and torn down by an orchestrator that lives in this repository and is versioned with it, not by an out-of-band developer procedure or a manually maintained host setup.",
+    "C2_one_disposable_stack_at_a_time": "At most ONE disposable layer-2 stack per run. Concurrency across stacks is not authorized by this amendment. This is consistent with the measured hazard that Real-PG suites in this repository interfere when run in parallel.",
+    "C3_isolated_network": "The stack MUST run on its own isolated network, so that no service is reachable from, and none reaches, any other stack on the host.",
+    "C4_ephemeral_host_ports": "Host ports MUST be ephemeral or otherwise collision-free. Fixed ports are the known collision hazard already recorded in supabase/config.toml for the canonical stack and must not be reproduced here.",
+    "C5_service_health_checks": "Every REQUIRED service MUST pass an explicit health check before any control runs. A control that races startup produces an unattributable failure, which R7 forbids.",
+    "C6_verified_teardown": "Teardown MUST be verified - containers, volumes and network confirmed gone - and the verification MUST itself be observable. An if: always() stop step whose result is never checked does not discharge R8.",
+    "C7_runtime_generated_JWT_signing_material": "The JWT signing secret or key set MUST be generated at runtime for each stack. No signing material may be committed to the repository, shared between runs, or taken from the canonical stack's well-known development keys.",
+    "C8_no_persistent_global_local_stack_dependency": "Restates R9 as an architectural property: the gate must be runnable on a host that has never run pnpm supabase start.",
+    "C9_CI_gate_capable_of_running_against_integration_commercial_v1": "The gate MUST be capable of running against integration/commercial-v1. This is stated explicitly because the existing full-Supabase CI path is NOT - see SECTION_H N-1 - and a new gate that copied its trigger would be unreachable on the branch that matters.",
+    "what_is_deliberately_NOT_frozen": "Filenames, directory layout, orchestrator technology, container runtime, image registry, port numbers, and the division of the harness between scripts/ and tests/. v1.0.0 SECTION_5 paths - 'scripts/ and tests/ - ORDINARY. Exact paths are NOT frozen here' - controls, unchanged."
+  },
+
+  "SECTION_E_NOT_SUPERSEDED": {
+    "purpose": "The mechanical sweep that built SUPERSEDED_CLAUSES flagged more sites than it superseded. This key records the adjudication, so that a later reader cannot mistake an unsuperseded match for an oversight.",
+    "count": 8,
+    "authority_sites_matched_but_NOT_superseded": [
+      "SECTION_1_REDERIVED_LIVE_CONTEXT.L5_SESSION_IDENTITY_ON_THE_EVALUATING_CONNECTION.server_side_derivation - matched on GoTrueClient.d.ts. Its statement that @supabase/auth-js 2.108.2 declares getClaims and that the User interface carries no session_id field is TRUE and is the basis of M11. UNTOUCHED.",
+      "SECTION_2_FROZEN_MECHANISM.M04_is_session_id_globally_unique.what_the_design_takes_from_it - matched on GoTrue. Statement of mechanism. UNTOUCHED.",
+      "SECTION_2_FROZEN_MECHANISM.M05_foreign_key_topology.three_further_reasons_the_auth_FK_is_refused - matched on GoTrue. Its clause (b), that the governed migration chain must apply on a disposable PostgreSQL cluster with no GoTrue, is TRUE and is reinforced rather than weakened by this amendment. UNTOUCHED.",
+      "SECTION_2_FROZEN_MECHANISM.M11_anti_spoofing_derivation.why_getClaims_and_not_getUser - matched on GoTrue. Statement of mechanism. UNTOUCHED.",
+      "SECTION_2_FROZEN_MECHANISM.M19_restore_reset_and_deletion_behaviour.summary_of_the_reason - matched on GoTrue. Statement of mechanism. UNTOUCHED.",
+      "SECTION_5_FUTURE_IMPLEMENTATION_WRITE_SURFACE.NEW_HARNESS_CLASS_priced_separately.bounded_derivation_rule - matched on GoTrue and on the canonical local stack. Its clauses (a), (b) and (c) are the SECURITY BAR and are preserved verbatim at SECTION_D R1, R2, R3 and R4. NOT superseded; EXTENDED.",
+      "SECTION_8_RESTORE_RECOVERY.derivation_2_the_key_is_meaningless_after_a_restore - matched on GoTrue. Statement of mechanism. UNTOUCHED."
+    ],
+    "manifest_site_matched_but_NOT_superseded": [
+      "negative_controls[id=RI-06].description - matched on the phrase 'requires real GoTrue, because a fabricated token cannot reproduce the survive-the-session property that makes this control meaningful.' That sentence is TRUE and remains binding. RI-06 stays a layer-2 control with its rationale intact. UNTOUCHED."
+    ]
+  },
+
+  "SECTION_F_POSITIVE_TWIN_AND_404_NON_VACUITY": {
+    "status": "FROZEN. A strengthening of v1.0.0 SECTION_7 RULE_2 for the specific observable the Storage API produces.",
+    "rule": "ANY negative Storage read or download assertion that observes a 404 or an 'Object not found' response MUST have a SUCCESSFUL POSITIVE TWIN in the SAME run, on the SAME stack, against the SAME bucket, through the SAME endpoint shape. A negative read without such a twin is VACUOUS and does not discharge its control.",
+    "what_it_prevents": "The Storage API returns 'Object not found' for an unauthorized read rather than a distinguishable authorization error. That single observable is therefore produced identically by: an honest policy denial; a wrong base URL; a wrong bucket name; a wrong or missing path prefix; a bucket that was never created; and a stack that is not yet up. Without a positive twin, any of those five configuration failures masquerades as proof that the selected-organization boundary held - and the gate goes green while proving nothing.",
+    "why_this_is_not_already_covered_by_RULE_2": "RULE_2 offers THREE alternative discharges - assert the setup succeeded, show a positive twin, or discriminate the SQLSTATE. For a Storage 404 the third is UNAVAILABLE (there is no SQLSTATE on the HTTP path) and the first is INSUFFICIENT (a correct fixture setup says nothing about whether the REQUEST was correctly addressed). For this observable the positive twin is not one option among three; it is the only sufficient one, and this section makes it mandatory rather than elective.",
+    "MEASURED_prior_art_and_why_it_is_not_enough": "tests/integration/rls.test.ts already exhibits the shape: 'Analyst A puede subir archivo (INSERT) y leerlo (SELECT)' uploads and downloads successfully and asserts the body text, and the immediately following 'Admin B NO puede leer archivo de Org A (SELECT cruzado fallido)' asserts error.message contains 'Object not found' for the SAME fileName, in the same file, same run, same bucket, same endpoint shape. That is a correct positive twin. But it is INCIDENTAL - a consequence of test ordering, not an enforced property - and nothing in that suite would fail if a future edit removed, reordered, renamed or skipped the positive case. This section converts the incidental into the required, and the companion manifest amendment arms it with a mutation control.",
+    "scope": "Applies to every negative Storage read and download in the effective S4s contract, including RI-02 and RI-03 on their read surfaces, and to any successor control that observes a 404 or a not-found message from the Storage API.",
+    "relationship_to_RI_P_05": "RI-D-P-05 in the companion manifest amendment is the control that asserts this rule holds over the suite; RI-D-M-02 is the mutation that proves the assertion is armed rather than decorative."
+  },
+
+  "SECTION_G_EXISTING_RLS_TEST_SUITE_RELATIONSHIP": {
+    "tests_integration_rls_test_ts_is": "EXISTING PRIOR ART AND SHAPE EVIDENCE. It is the artifact that disproves the superseded L7 claim, and it demonstrates the harness shape the layer-2 substrate must carry.",
+    "tests_integration_rls_test_ts_is_NOT": "The S4s certification suite. Nothing in this amendment adopts it, extends it, or makes it answerable for any S4s control.",
+    "migration_is_a_SUCCESSOR_act": "Migrating the existing RLS suite and the existing p1a-validation workflow onto the new disposable substrate is a SUCCESSOR MAINTENANCE ACT with its own authority, UNLESS the S4s implementation demonstrably requires it. It is not authorized here and it is not a precondition of S4s.",
+    "no_scope_expansion": "S4s MUST NOT be expanded to clean unrelated legacy workflow debt. An implementing lane that finds itself repairing tests/integration/rls.test.ts or .github/workflows/p1a-validation.yml has left the S4s write surface frozen at v1.0.0 SECTION_5 and must stop.",
+    "the_one_thing_the_new_gate_must_take_from_it": "Its SHAPE - real user creation, real sign-in, real Storage API object calls, real PostgREST refusal checks, upload/download/delete symmetry. Not its file, not its fixtures, not its workflow, and explicitly not its substrate."
+  },
+
+  "SECTION_H_LEGACY_WORKFLOW_FINDINGS_N1_N2": {
+    "status": "NON-BLOCKING SUCCESSOR FINDINGS. Carried, not acted on. This lane edits no workflow, and .github/** is not in this lane's write set.",
+    "N-1_trigger_does_not_cover_the_current_integration_branch": {
+      "MEASURED": ".github/workflows/p1a-validation.yml is triggered by 'on: pull_request: branches: [main]' plus workflow_dispatch. The branch refs/heads/main exists on origin at 067e8c2f3ac9b5e843de3a35575182907b4365d4, but the active integration branch for this programme is integration/commercial-v1 at 41dc5be3. A pull request targeting integration/commercial-v1 therefore does NOT fire this workflow.",
+      "consequence": "The only CI path in this repository that stands up a full Supabase stack and runs the RLS suite is unreachable on the branch every current PR targets. The full-Supabase capability exists but is not exercised by the integration pipeline.",
+      "disposition": "NON-BLOCKING for S4s. It does not prevent S4s certification, because S4s will not use this workflow. Recorded so that a successor lane can repair it deliberately rather than as a side effect."
+    },
+    "N-2_runtime_DB_env_wiring_is_stale_post_cutover": {
+      "MEASURED": "p1a-validation.yml exports exactly four variables - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY and DATABASE_URL - and then runs pnpm test:rls. But tests/integration/rls.test.ts imports tests/integration/_owner.ts, whose ownerClient() loads .env.migration.local if present and calls createMigratorClient() to authenticate as uellix_migrator and SET LOCAL ROLE uellix_owner. MEASURED: .env.migration.local is referenced by .github/workflows/p1a-bootstrap-gate.yml, a DIFFERENT workflow that p1a-validation.yml neither calls nor depends on. MEASURED additionally: an earlier step in the same workflow FAILS the job if process.env.DATABASE_URL is read by anything under scripts/ or the drizzle configs, while the same workflow exports DATABASE_URL - an internally inconsistent posture.",
+      "consequence": "The fixture path the post-cutover suite requires is not provisioned by the workflow that runs it. The workflow's env wiring predates the runtime cutover recorded in docs/ops/DATABASE_RUNTIME_CUTOVER.md.",
+      "disposition": "NON-BLOCKING for S4s, for the same reason as N-1.",
+      "verification_note": "THIS FINDING IS A STATIC READING of the workflow and the module it loads. It was NOT confirmed by executing the workflow, and this lane makes NO claim about whether the job currently passes or fails in CI. A successor lane must re-derive it from an actual run, not from this prose."
+    },
+    "binding_instruction_to_the_S4s_implementing_lane": "The new S4s real-integration gate MUST NOT COPY EITHER FLAW. Its trigger must cover integration/commercial-v1 per SECTION_E C9, and it must provision every credential and every environment variable its own suite loads - including any owner or migrator path - rather than inheriting them from a sibling workflow."
+  },
+
+  "SECTION_I_CORE_MECHANISM_UNCHANGED": {
+    "CORE_S4S_MECHANISM_CHANGED": "NO",
+    "statement": "This amendment changes NO S4s mechanism decision. Every item below is preserved exactly as v1.0.0 froze it, and no sentence of this amendment may be read as altering any of them.",
+    "count": 12,
+    "preserved": [
+      "selected_organization_sessions design - SECTION_2, untouched.",
+      "PK and session semantics - M03, untouched. RI-12 keeps its layer-1 membership precisely so MU-04 stays armed against the user_id conjunct.",
+      "user binding - M03 and M11, untouched.",
+      "membership as an independent live conjunct - PG-S4s-4, RI-01 and RI-07, untouched and reaffirmed.",
+      "helper signatures - the frozen literals public.can_read_evidence_object(text,uuid) and public.can_write_evidence_object(text,uuid), untouched. RI-P-06 and stella_0021 section 12 remain armed.",
+      "GUC-read design - M12, untouched. AM-S4S-D7 narrows what an EXISTING MEASUREMENT PROVED about the claims GUC; it does not change what the design READS or how it reads it.",
+      "expiry semantics - M03, M12, RI-04 and MU-03, untouched.",
+      "cleanup independence - untouched; expiry remains enforced by predicate rather than by a reaper, so a cleanup outage still costs disk instead of correctness.",
+      "signout ordering - M10, RI-06 and MU-07, untouched.",
+      "ACL successor topology - SECTION_4, untouched. No ACL authority is authored, adjudicated or amended here.",
+      "ODS classification - SECTION_6, untouched. No ODS lineage is allocated and no grant is declared or consumed by this lane.",
+      "restore RESET_ON_RESTORE - SECTION_8, M19 and RI-13, untouched."
+    ],
+    "the_one_place_a_mechanism_could_have_been_touched_and_was_not": "SECTION_C could have been written as a design change - for instance by pre-authorizing an alternative carrier for session_id should the probe fail. It deliberately is NOT. It authorizes a STOP and a re-adjudication, because choosing an alternative carrier would be reopening M03, M11 and M12, and this lane holds no authority to do that. Had the corrected finding required any of the twelve items above to move, the correct action would have been STOP_FOR_MECHANISM_REOPEN rather than a silent edit."
+  },
+
+  "NON_AUTHORIZATIONS": [
+    "NO S4s implementation. No database, application, helper, policy or migration surface is written, or authorized to be written, by this lane.",
+    "NO disposable harness implementation. SECTION_B and SECTION_E bind topology and architecture; they build nothing and name no file.",
+    "NO Docker execution. Nothing in this lane started, stopped or probed any container.",
+    "NO ACL successor authority. The ACL successor remains the separate act recorded at v1.0.0 SECTION_4, unauthored.",
+    "NO ODS allocation. No lineage position is reserved, no addendum is authored, and no GRANT_ID is declared or consumed.",
+    "NO sync or rebase of PR #195 onto current integration. Deliberately deferred until the ODS chain closes.",
+    "NO merge.",
+    "NO self-certification. This amendment certifies nothing, including itself. Independent certification remains required, AFTER the sync.",
+    "NO edit to any unrelated S4s mechanism decision - see SECTION_I.",
+    "NO edit to v1.0.0 or to its companion manifest. Both are preserved as historical authored evidence.",
+    "NO edit to .github/workflows/**, tests/**, scripts/**, db/** or supabase/**. See WRITE_SET."
+  ],
+
+  "WRITE_SET": {
+    "count": 2,
+    "paths": [
+      "docs/ops/tenancy/TENANCY_S4S_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/tenancy/TENANCY_S4S_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+    ],
+    "both_are_ADDED_not_modified": true,
+    "protected_surfaces_touched": "NONE. MEASURED: docs/ops/tenancy/** does not appear in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, whose seven entries are docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json.",
+    "PROTECTED_AUTHORITY": "NONE",
+    "if_a_third_path_were_needed": "STOP_FOR_WRITE_SET_EXPANSION. No third path was needed."
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "note": "Gate RESULTS are recorded in the lane report and in the commit, not frozen as PASS claims inside this artifact - an artifact that asserts its own gate results is unfalsifiable. This key records WHICH gates the lane is obliged to run, so a later reader can check the report against the obligation.",
+    "obliged_gates": [
+      "effective manifest schema validation against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+      "pnpm authority:seal:verify",
+      "pnpm secrets:scan",
+      "pnpm ods:scope",
+      "pnpm ods:poststate",
+      "pnpm typecheck",
+      "DB-free authority/ODS tests relevant to docs/ops/**",
+      "git diff --check"
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-DELTA-1",
+      "severity": "NON-BLOCKING ON THIS ARTIFACT, BLOCKING ON CERTIFICATION",
+      "finding": "PR #195 is authored on a tree that is behind current integration 41dc5be3 by two commits (PR #196, the FIBDB-053 Stage-A ODS allocation).",
+      "disposition": "Deliberately deferred. The delta was inspected and proven not to touch any S4s tenancy, auth or storage fact. Sync is MANDATORY before certification and is not performed by this lane."
+    },
+    {
+      "id": "F-DELTA-2",
+      "severity": "BLOCKING ON S4s IMPLEMENTATION",
+      "finding": "Whether the Supabase Storage API propagates session_id onto the evaluating PostgreSQL connection is UNKNOWN and, per AM-S4S-D7, is not derivable from the fact that storage works today.",
+      "disposition": "Frozen as the hard pre-implementation gate at SECTION_C. Not prejudged in either direction."
+    },
+    {
+      "id": "F-DELTA-3",
+      "severity": "NON-BLOCKING",
+      "finding": "The existing full-Supabase CI path (.github/workflows/p1a-validation.yml) does not trigger on the current integration branch and does not provision the owner/migrator fixture path its own suite loads.",
+      "disposition": "Carried as successor findings N-1 and N-2 at SECTION_H. Not acted on by this lane. N-2 is a static reading and must be re-derived from an actual run by whoever acts on it."
+    },
+    {
+      "id": "F-DELTA-4",
+      "severity": "NON-BLOCKING, PROCESS",
+      "finding": "The defect corrected here was produced by a keyword search over SERVICE NAMES in a codebase that reaches those services through an SDK. The search could not have found the capability regardless of its result, and its ZERO result was then treated as a positive measurement of absence.",
+      "disposition": "Recorded as a transferable lesson rather than a repository defect. A future authority asserting MEASURED ABSENCE of a CAPABILITY must state the search it ran AND justify why that search would have found the capability had it been present. v1.0.0 is preserved unedited specifically so this lesson stays legible."
+    },
+    {
+      "id": "F-DELTA-5",
+      "severity": "NON-BLOCKING, SCOPE NOTE",
+      "finding": "This amendment corrects the harness baseline and the claims-GUC inference. It did NOT re-audit every other MEASURED claim in v1.0.0.",
+      "disposition": "Stated so that certification does not read this amendment as a clean bill of health for v1.0.0's remaining measurements. The certifying lane should re-derive any v1.0.0 MEASURED literal it intends to rely on."
+    }
+  ],
+
+  "self_check": {
+    "note": "Every figure below was derived by a command in this lane against the artifacts as written, not asserted from prose.",
+    "SC-1_superseded_clauses": "8 - AM-S4S-D1 through AM-S4S-D8. Countable as the SUPERSEDED_CLAUSES keys matching the AM-S4S-D prefix.",
+    "SC-2_candidate_sites_found_then_adjudicated": "15 candidate sites found mechanically (13 in the authority, 2 in the manifest). 7 authority sites and 1 manifest site adjudicated NOT superseded and enumerated at SECTION_E_NOT_SUPERSEDED, because they matched only on the word GoTrue or the phrase 'requires real GoTrue' inside statements that remain true. 1 further clause not flagged by the audit was found and IS superseded (AM-S4S-D7).",
+    "SC-3_audit_named_four_this_lane_supersedes_eight": "The independent audit named SECTION_1 L7, OPEN_FINDINGS F-S4S-3, SECTION_5 NEW_HARNESS_CLASS and the manifest postgres_requirements rationale. All four are superseded here, split across AM-S4S-D1, AM-S4S-D2, AM-S4S-D3, AM-S4S-D6 and AM-S4S-D8. THREE MORE were located by this lane's own sweep and adjudication: AM-S4S-D4 (SECTION_7 TWO_LAYER_SPLIT key-name premise and list label), AM-S4S-D5 (SECTION_7 RI-12 layer membership) and AM-S4S-D7 (SECTION_1 L5 claims-GUC inference). No stale false premise remains effective.",
+    "SC-4_new_controls_declared_in_the_companion_manifest": "12 - 6 positive, 4 negative, 2 mutation.",
+    "SC-5_layer_split_of_the_new_controls": "LAYER 1 (DB-free corpus, provable today): 1 - RI-D-P-01. LAYER 2 (requires the new disposable full-stack substrate): 11 - RI-D-P-02, RI-D-P-03, RI-D-P-04, RI-D-P-05, RI-D-P-06, RI-D-N-01, RI-D-N-02, RI-D-N-03, RI-D-N-04, RI-D-M-01, RI-D-M-02.",
+    "SC-6_service_topology": "4 REQUIRED (Supabase PostgreSQL, GoTrue, Storage API, PostgREST); 7 NOT REQUIRED (Kong, Realtime, imgproxy, Studio/pg_meta, Analytics, inbucket/SMTP, edge runtime). Sum 11 named services.",
+    "SC-7_preserved_binding_requirements": "9 enumerated at SECTION_D (R1-R9), plus v1.0.0 SECTION_7 RULE_1 restated. NONE relaxed.",
+    "SC-8_future_harness_contract_items": "9 enumerated at SECTION_E (C1-C9).",
+    "SC-9_write_set": "2 files, both ADDED, zero protected paths, PROTECTED_AUTHORITY NONE.",
+    "SC-10_core_mechanism_changed": "NO. 12 mechanism items enumerated at SECTION_I, all preserved.",
+    "SC-11_every_corrected_premise_has_an_explicit_replacement": "TRUE. Each of the 8 SUPERSEDED_CLAUSES entries carries a NEW field, or a NEW_finding plus NEW_consequence plus NEW_disposition triple in the case of AM-S4S-D6. There is no entry that retires a claim without replacing it.",
+    "SC-12_no_prose_count_is_carried_forward_from_v1_0_0": "TRUE. The only figures quoted from v1.0.0 are control identifiers (RI-06, RI-08, RI-09, RI-12, RI-13, MU-04, MU-07) and the pinned image tag, which are identifiers rather than counts, and are reproduced unchanged."
+  },
+
+  "final_state": {
+    "artifact": "AUTHORED, UNCERTIFIED.",
+    "pr": "PR #195 remains OPEN and DRAFT.",
+    "parent": "v1.0.0 PRESERVED UNEDITED as historical authored evidence.",
+    "effective_document": "TENANCY_S4S_EXECUTION_AUTHORITY_v1.0.0.json + TENANCY_S4S_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json.",
+    "effective_manifest": "TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0.json + TENANCY_S4S_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json.",
+    "implementation_authorized": false,
+    "implementation_authorized_note": "S4s implementation remains UNAUTHORIZED and now carries an additional HARD PRECONDITION at SECTION_C that did not exist before this amendment."
+  },
+
+  "next_gate": "SYNC PR #195 ONTO integration/commercial-v1 AFTER THE ODS CHAIN CLOSES, THEN INDEPENDENT CERTIFICATION OF THE EFFECTIVE DOCUMENT (v1.0.0 + v1.0.1). Neither is performed by this lane."
+}

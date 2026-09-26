@@ -1,0 +1,212 @@
+{
+  "manifest_id": "S4s",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/tenancy/TENANCY_S4S_EXECUTION_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "docs/ops/tenancy/TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json",
+    "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+    "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json",
+    "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.2_NOT_YET_AUTHORED"
+  ],
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/**"
+  ],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "REAL PostgreSQL is REQUIRED and the manifests are UNKNOWN because they do not exist yet - this manifest is a pre-implementation commitment, and the schema admits UNKNOWN for exactly this state. Two distinct harness classes are needed and the distinction is the single most important fact in this manifest. LAYER 1, today's disposable cluster via pnpm db:audit:disposable on the pinned image public.ecr.aws/supabase/postgres:17.6.1.143, can carry the helper-predicate controls. LAYER 2 cannot be carried by anything in this repository: MEASURED at BASE, zero files under scripts/**, tests/** or supabase/** reference storage-api, gotrue, supabase/storage or kong, so the real Storage API and real GoTrue proofs require a harness class that must be BUILT. Controls RI-06, RI-08, RI-09, RI-13 and MU-07 belong to layer 2. RI-08 is the criterion the node exists for, so a certification accepting layer 1 alone would certify a policy-layer change whose policy layer was never exercised. Disposable infrastructure only - never staging, never production, never the canonical local stack."
+  },
+  "sentinels": [
+    {
+      "id": "S4S-SENTINEL-ORG-B",
+      "purpose": "A second organization, in which the dual-member subject IS an active member, used as the denied target while the mirror names organization A. Its presence is what makes RI-02 a cross-organization proof rather than a membership proof: if the subject were not a member of B, the membership conjunct alone would refuse and the mirror conjunct would never be exercised."
+    },
+    {
+      "id": "S4S-SENTINEL-FOREIGN-SESSION",
+      "purpose": "A live, unexpired mirror row belonging to a DIFFERENT subject, planted so that RI-12 proves the user_id conjunct refuses a real row rather than passing because no row existed. Without it RI-12 would be indistinguishable from RI-15."
+    },
+    {
+      "id": "S4S-SENTINEL-EXPIRED-ROW",
+      "purpose": "A mirror row that is PRESENT in the table with expires_at in the past. It proves RI-04 tests the liveness PREDICATE rather than the cleanup: a control that deleted the row would prove the weaker property and would stay green under mutation MU-03."
+    },
+    {
+      "id": "S4S-SENTINEL-ORPHAN-GUC",
+      "purpose": "A value for app.organization_id set transaction-locally on a separate connection, used by RI-14 to prove NON-propagation across the connection boundary. It is the sentinel whose ABSENCE on the evaluating connection is the observable, which is why it must be genuinely set somewhere for the control to mean anything."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "RI-P-01",
+      "description": "HAPPY PATH. A subject that is an active member of organization A, presenting a valid token whose session_id matches a live unexpired mirror row naming A, is PERMITTED insert, select/download and delete on evidence objects under a project owned by A. Every negative control in this manifest depends on this passing: a suite in which nothing is permitted would satisfy every refusal obligation vacuously.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-P-02",
+      "description": "ROLE FILTER PRESERVED ON THE WRITE SIDE. With the mirror satisfied, an active member whose role is NOT organization_admin or analyst is still REFUSED write while PERMITTED read. Proves the mirror conjunct was ANDed to the existing predicate and did not replace it, and pins the measured asymmetry that the read helper imposes no role filter.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-P-03",
+      "description": "OWNER REACHES THE MIRROR WITHOUT A GRANT. The SECURITY DEFINER helpers read public.selected_organization_sessions with zero privilege granted to any non-owner role, proving the owner-exemption path of SECTION_3 Q3 is the live mechanism and that no GRANT is required or present.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-05",
+      "description": "ORGANIZATION SWITCH IS VISIBLE ON THE NEXT OPERATION WITH NO TOKEN REFRESH. After switching one session from A to B, the next evidence-object operation is permitted for B and refused for A, using the SAME access token throughout. Discharges the second half of RAT-STG-01-C5 - that the mechanism inherits no stale-claim window.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-11",
+      "description": "LIVE READ, NOT A CAPTURED VALUE. On a single held connection, changing the mirror row mid-connection changes the helper's answer on the next invocation. Discharges RAT-STG-01-C2 and PG-S4s-2. A value memoised or captured at connection start cannot satisfy this, which is the point.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-14",
+      "description": "NON-PROPAGATION ACROSS THE CONNECTION BOUNDARY. With app.organization_id set transaction-locally on connection A, the helper invoked on connection B observes NO value for it. PG-S4s-1. MUST use two distinct connections: a single-session harness fabricates the propagation production lacks and would pass while proving the opposite of the truth.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-P-04",
+      "description": "CLOSED WORLD REMAINS CLOSED. After the mirror exists and the ACL successor classifies it, tests/database-runtime-acl-closed-world.test.ts passes with U=65, classified=59, exclusions=6, migration-created=58, chain-created=7; and the Real-PG twin's PG-01 and PG-04 report 59. Proves the S4s relation entered the closed world rather than evading it.",
+      "test_file": "tests/database-runtime-acl-closed-world.test.ts"
+    },
+    {
+      "id": "RI-P-05",
+      "description": "NO POLICY ON storage.objects WAS RECREATED. The S4s prepared package measures the storage.objects policies in its section 0 and again after applying, and ABORTS if they differ - so RAT-STG-01-C7 and the stella_0019 invariant are machine facts of the S4s apply rather than inherited claims about a different package's apply.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-P-06",
+      "description": "HELPER SIGNATURES ARE UNCHANGED AND stella_0021 SECTION 12 REMAINS ARMED. to_regprocedure resolves both frozen literals public.can_read_evidence_object(text,uuid) and public.can_write_evidence_object(text,uuid) after the S4s package applies, so the ACL negative list still filters those rows IN rather than silently out. This is the control that would catch a successor which changed a signature and thereby vacuated a live postcondition.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "RI-01",
+      "description": "MIRROR WITHOUT MEMBERSHIP IS REFUSED. A server-written, live, unexpired mirror row naming organization A, for a subject with NO active membership in A, refuses every evidence-object operation. Discharges RAT-STG-01-C3 and PG-S4s-4. ATTRIBUTION REQUIRED: the positive twin - same subject, same row, membership restored to active - must PERMIT, or the refusal is not attributable to the membership conjunct.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-02",
+      "description": "SYMMETRIC CROSS-ORGANIZATION DENIAL. A dual-member subject whose mirror names A is refused for B across insert, select/download, delete AND the evidence erasure path, and permitted for A. SYMMETRY IS MANDATORY: the read helper imposes no role filter, so the read surface is measurably broader and a control exercising writes alone understates the exposure. PG-S4s-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-03",
+      "description": "WRONG SESSION IS REFUSED. A subject presenting session X while the only mirror row is keyed to session Y of the SAME subject is refused. Proves the session_id conjunct is load-bearing; without it the mechanism would degrade to a per-user preference, which SESSION_SCOPE forbids.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-04",
+      "description": "EXPIRED-BUT-PRESENT ROW IS REFUSED. A mirror row whose expires_at is in the past refuses while STILL PRESENT in the table, using sentinel S4S-SENTINEL-EXPIRED-ROW. This proves expiry is enforced by the liveness predicate and not by cleanup. A variant that deleted the row first would prove the weaker property and would not turn red under MU-03.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-06",
+      "description": "POST-SIGN-OUT TOKEN IS REFUSED. An access token that remains cryptographically valid after sign-out - MEASURED as up to 3600 seconds per supabase/config.toml jwt_expiry - is refused because the mirror row was deleted BEFORE supabase.auth.signOut(). LAYER 2: requires real GoTrue, because a fabricated token cannot reproduce the survive-the-session property that makes this control meaningful.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-07",
+      "description": "REVOKED MEMBERSHIP IS REFUSED IMMEDIATELY, WITH THE MIRROR UNTOUCHED. Flipping the membership status away from active refuses on the next operation without any write to the mirror. Proves the M18 decision that revocation needs no mirror propagation path.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-08",
+      "description": "DIRECT STORAGE API BYPASS IS BOUND BY THE BOUNDARY. A subject calling the Supabase Storage API DIRECTLY with the anon key and its own JWT, bypassing every server route, is subject to the same selected-organization boundary. LAYER 2 and the single most important control in this manifest: the server already enforces selection today, so until a real direct Storage API call is bound, S4s has not been proven to add anything at all.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-09",
+      "description": "CLIENT CANNOT WRITE THE MIRROR. A client holding an authenticated JWT is refused INSERT, UPDATE and DELETE on public.selected_organization_sessions over PostgREST. Non-negotiable because schema public IS exposed - MEASURED at supabase/config.toml schemas = [public, graphql_public]. BOTH denial layers must be shown to refuse INDEPENDENTLY - zero privilege, and RLS - since either alone would mask the other's removal.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-10",
+      "description": "NO service_role AND NO ADMIN CLIENT ON THE S4s PATH. A corpus control over the S4s write set proving no writer, helper or cleanup path uses service_role or an admin client. Discharges RAT-STG-01-C4. DB-free and dischargeable without any harness.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-12",
+      "description": "CROSS-USER SESSION SPOOFING IS REFUSED. Subject S2 is refused any benefit from a live mirror row belonging to S1, using sentinel S4S-SENTINEL-FOREIGN-SESSION so that a real row is genuinely present. Proves the user_id conjunct of M03 is not vacuous and distinguishes this control from RI-15.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-13",
+      "description": "NO MIRROR ROW SURVIVES A RESTORE. After the SECTION_8 restore procedure, no row remains to narrow any session's authorization. LAYER 2: requires a restore to be actually performed, not simulated by a TRUNCATE the test itself issues, which would assert the postcondition of a procedure nobody ran.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-15",
+      "description": "FAIL-CLOSED ON ABSENT MIRROR. With NO row for the session - never written, cleared at sign-out, or expired and swept - every evidence-object operation is refused and NONE is silently defaulted to any membership. PG-S4s-5. This is the control that catches an implementation falling back to membership-alone and thereby re-creating defect SI-2 on the storage transport.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-16",
+      "description": "MALFORMED session_id CLAIM IS REFUSED AND IS DISTINGUISHABLE. A token whose session_id claim is absent or not a uuid refuses, AND the control establishes that the refusal came from the claim rather than from an unrelated failure - because both helpers end in EXCEPTION WHEN OTHERS THEN RETURN false, so a bare false assertion here would be vacuous. This control exists specifically to discharge open finding F-S4S-1 rather than to describe it.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MU-01",
+      "description": "Remove the mirror conjunct from ONE helper body. RI-02 must turn RED for that helper's surface, and the OTHER helper's controls must stay green - proving the controls are per-helper and that the conjunct, not some other predicate, enforces the boundary.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-02",
+      "description": "Remove the membership conjunct, leaving the mirror conjunct in place. RI-01 and RI-07 must turn RED. This is RAT-STG-01-C3 made falsifiable: it proves the mirror NARROWS and never SUPPLIES authorization. Note the measured trap it guards - the helpers run as uellix_owner, which owns both registries and is exempt from their RLS absent FORCE, so membership must be proven and can never be inferred from a policy the helper reads past.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-03",
+      "description": "Remove expires_at > now() from the helper predicate. RI-04 must turn RED. Proves expiry is enforced by predicate rather than by cleanup, which is what makes a cleanup outage cost disk instead of reach.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-04",
+      "description": "Remove the user_id conjunct from the helper predicate. RI-12 must turn RED. REQUIRED PRECISELY BECAUSE THE CONJUNCT IS REDUNDANT under a correct writer: a redundant conjunct that no control distinguishes is a known masking shape in this repository, where a mutation appears to pass because a surviving clause already implies the removed one. RI-12's foreign-session sentinel is what breaks that implication.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-05",
+      "description": "Set FORCE ROW LEVEL SECURITY on public.selected_organization_sessions. EVERY positive control must turn RED. Proves the SECTION_3 Q3 condition is live - that owner exemption, not privilege, carries the DEFINER read - and, critically, that losing it is DETECTABLE rather than silently converting the product into deny-everything through the EXCEPTION WHEN OTHERS arm.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-06",
+      "description": "Replace the fail-closed absent-row branch with a fallback to membership-alone. RI-15 must turn RED. THE MOST IMPORTANT MUTATION IN THIS MANIFEST: the mutant reproduces the PRE-S4s behaviour exactly, so a suite that stays green under it has proven nothing whatsoever about this node, no matter how many other controls pass.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-07",
+      "description": "Reverse the M10 ordering so sign-out precedes the mirror delete. RI-06 must turn RED. Proves the ordering is load-bearing rather than stylistic, and that the delete genuinely depends on a session the server still holds. LAYER 2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-08",
+      "description": "Grant SELECT on the mirror to a runtime role. RI-09 or the ACL closed-world controls must turn RED. Proves the zero-privilege posture of M14 is asserted against the live catalog rather than merely intended, and that a widening would be caught by the contract rather than by review.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MU-09",
+      "description": "Remove the mirror from the ACL successor's class array. The closed-world guard must report it as UNCLASSIFIED - by name - on both the DB-free side and the live package side. Proves the new class array is a real member of the closed world and not a decorative addition that the guard never actually checks.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests",
+    "postgres_disposable_probe",
+    "baseline_verify"
+  ]
+}

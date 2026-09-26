@@ -1,0 +1,113 @@
+{
+  "manifest_id": "TENANCY-S4S-REAL-INTEGRATION-DELTA-AMENDMENT-v1.0.1",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/tenancy/TENANCY_S4S_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. APPEND-ONLY COMPANION. EFFECTIVE MANIFEST = TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0.json + THIS FILE. The parent manifest is NOT edited by this lane and remains the controlling record of every control it declares, with exactly two exceptions stated in the companion authority amendment: postgres_requirements.rationale is superseded by AM-S4S-D8 and re-expressed below, and RI-12 is SPLIT by AM-S4S-D5 so that its layer-1 membership is preserved unchanged while a new layer-2 twin RI-D-N-03 is added here. Every control declared in this file is a FUTURE implementation and certification obligation. NONE of them is a claim that anything passes today, and nothing in this file may be read as evidence that the S4s node has been implemented, probed or certified. EXIT_GATES BELOW ARE THE S4s NODE'S GATES, NOT THIS AUTHORITY-DELTA LANE'S COMMIT GATES. postgres_disposable_probe is declared because eleven of the twelve controls below are real-substrate probes; it is unioned with the parent manifest's own exit_gates, which additionally carry baseline_verify. The authority-delta lane that authored this file is docs-only, touches no db/** or scripts/** path, and ran the DB-free subset - typecheck, secrets_scan, authority_seal_verify, ods_scope, ods_poststate, targeted_tests - as recorded in the companion authority amendment VALIDATION_PERFORMED_BY_THIS_MISSION.",
+  "dependencies": [
+    "TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0 - the parent NODE manifest this artifact amends. APPEND-ONLY: the parent file is not edited by this lane.",
+    "TENANCY_S4S_EXECUTION_AUTHORITY_v1.0.0 + TENANCY_S4S_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 - the effective authority. A control that resolves only v1.0.0 is reading the superseded harness baseline corrected at AM-S4S-D1, AM-S4S-D2 and AM-S4S-D7.",
+    "TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0 - the parent DAG amendment whose REAL_PG_CONTRACT_AMENDMENT froze probes PG-S4s-1 through PG-S4s-5 and whose harness_reaffirmed clause forbids the canonical local stack as a certification substrate. NOT amended by this lane, and the prohibition is restated unrelaxed at SECTION_D R1 of the companion authority amendment.",
+    "NEW DISPOSABLE LAYER-2 SUBSTRATE - NOT YET BUILT. Eleven of the twelve controls below require it. Its minimum service topology is frozen at SECTION_B of the companion authority amendment (Supabase PostgreSQL, GoTrue, Storage API, PostgREST - and NOT Kong, Realtime, imgproxy, Studio/pg_meta, Analytics, inbucket/SMTP or the edge runtime) and its minimum architectural contract at SECTION_E. No filename is frozen for it, here or there.",
+    "ODS LINEAGE ALLOCATION - NOT APPLICABLE TO THIS LANE, which allocates nothing. It IS blocking for S4s implementation, and the allocator must re-derive both the ODS ordinal and the HPO grant at its own head rather than cite any figure from this file, the companion authority amendment, or the parent pair.",
+    "PR #195 SYNC ONTO integration/commercial-v1 - DEFERRED by this lane, MANDATORY before certification. Current integration measured at 41dc5be30755fbfbdf43829e436f64550c2b914a; this manifest amendment is authored at HEAD 1b7c8741c0a3510605ea23529f2bba9c41cc9b31, TREE ad520e4ee18ce01c8f3531cb85e2b6f02b749daf."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "SUPERSEDES AND REPLACES the parent manifest postgres_requirements.rationale, per AM-S4S-D8 of the companion authority amendment. REAL PostgreSQL is REQUIRED and both manifests are UNKNOWN because they do not exist yet - this is a pre-implementation commitment and the schema admits UNKNOWN for exactly this state. TWO DISTINCT SUBSTRATES are needed and the distinction is the single most important fact here. LAYER 1 is today's disposable cluster via pnpm db:audit:disposable on the pinned image public.ecr.aws/supabase/postgres:17.6.1.143; it can carry the helper-predicate controls, and it carries exactly ONE control declared in this file, RI-D-P-01, which is DB-free corpus work. LAYER 2 cannot be carried by any GOVERNED substrate that exists in this repository today, and the reason stated by the parent was WRONG. RE-MEASURED at BASE 89022a9bf22a06276996a5a9214b344916be84aa: the four service-name literals return 0 files for storage-api, FIVE for gotrue, 0 for supabase/storage and 0 for kong - not zero across the board - and more decisively those literals are service names while this repository reaches the services through @supabase/supabase-js, which spells none of them. A FULL-SUPABASE harness shape ALREADY EXISTS here: tests/integration/rls.test.ts creates real GoTrue users with auth.admin.createUser, signs them in with signInWithPassword for real user JWTs, drives real Storage API upload/download/remove against bucket uellix-evidence, and checks PostgREST 42501 refusals; .github/workflows/p1a-validation.yml stands the whole canonical stack up with pnpm supabase start, runs pnpm test:rls, and tears it down. LAYER 2 is therefore a SUBSTRATE that must be built, not a harness class that must be invented - and it must be built because the canonical Supabase CLI developer stack is FORBIDDEN as a certification substrate, not because the shape is unknown. Controls RI-06, RI-08, RI-09, RI-13 and MU-07 of the parent remain layer 2, and the eleven layer-2 controls declared in this file join them. RI-08 remains the criterion the node exists for, so a certification accepting layer 1 alone would certify a policy-layer change whose policy layer was never exercised. Disposable infrastructure only - never staging, never production, never the canonical local stack. ADDITIONALLY BINDING AND NEW: RI-D-P-04 is a HARD PRE-IMPLEMENTATION GATE per SECTION_C of the companion authority amendment - no S4s database or application implementation may be written until a real Storage API request has been shown to expose session_id on the evaluating connection, and if it does not, implementation STOPS for authority re-adjudication."
+  },
+  "sentinels": [
+    {
+      "id": "S4S-D-SENTINEL-REAL-SESSION-ID",
+      "purpose": "The session_id of a session actually issued by the LAYER-2 GoTrue through a real sign-in, captured server-side from the verified claims. It is the value RI-D-P-04 must observe arriving on the evaluating PostgreSQL connection during a real Storage API request. It must NEVER be a fixture uuid: a fabricated value would make RI-D-P-04 a test of the harness rather than of the transport, which is the exact defect the retired PG-2 recorded and which v1.0.0 RULE_1 forbids."
+    },
+    {
+      "id": "S4S-D-SENTINEL-FOREIGN-REAL-SESSION",
+      "purpose": "A live, unexpired mirror row keyed to a REAL GoTrue session belonging to subject S1, planted so that RI-D-N-03 proves the user_id conjunct refuses a real row presented by a real token for subject S2. Distinct from the parent's S4S-SENTINEL-FOREIGN-SESSION, which is planted on a manually-claimed layer-1 connection. Both are required: the parent sentinel keeps MU-04 armed in layer 1, this one closes the transport gap AM-S4S-D5 identified."
+    },
+    {
+      "id": "S4S-D-SENTINEL-TWIN-OBJECT",
+      "purpose": "An evidence object that a PERMITTED subject successfully uploads and downloads in the same run, on the same stack, in the same bucket, through the same endpoint shape as every negative read under test. Its successful round-trip is the positive twin that makes an 'Object not found' refusal attributable to policy rather than to a wrong base URL, a wrong bucket, a missing prefix, an uncreated bucket or a stack that is not up. Its ABSENCE is what RI-D-M-02 mutates to prove the non-vacuity assertion is armed."
+    },
+    {
+      "id": "S4S-D-SENTINEL-MANUAL-CLAIMS-TOKENLESS",
+      "purpose": "A manually set request.jwt.claims value carrying a well-formed session_id that no GoTrue ever issued, used ONLY by RI-D-M-01 as the mutant substitute for the real-token path. The gate must REFUSE to accept it as discharging any layer-2 obligation. It is a sentinel whose acceptance is the failure, which is the inverse of the usual shape and is stated explicitly so no implementer mistakes a green result for success."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "RI-D-P-01",
+      "description": "FULL-SUPABASE PRIOR ART IS MEASURED, NOT DENIED. LAYER 1, DB-FREE CORPUS CONTROL, provable today. Re-derive at the certification head, and ASSERT ALL SIX SEPARATELY rather than as one composite: (1) tests/integration/rls.test.ts calls auth.admin.createUser; (2) the same file calls signInWithPassword and uses the resulting session for its assertions; (3) the same file calls .storage.from(...).upload, .download and .remove against bucket uellix-evidence; (4) the same file asserts a PostgREST refusal by SQLSTATE 42501; (5) .github/workflows/p1a-validation.yml contains a step running pnpm supabase start and a step running pnpm test:rls; (6) the four service-name literals storage-api, gotrue, supabase/storage and kong return 0, non-zero, 0 and 0 files respectively under scripts/, tests/ and supabase/. A composite assertion would stay GREEN if five of the six facts were removed, and fact (6) is the one that makes the SDK-versus-service-name lesson falsifiable rather than decorative. This control exists so that the superseded claim of AM-S4S-D1 can never be silently re-derived by a future lane running the same keyword search.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-P-02",
+      "description": "DISPOSABLE SUBSTRATE IDENTITY. LAYER 2. The substrate that carries the layer-2 controls is a DISPOSABLE, ISOLATED, DIGEST-PINNED stack and is provably NOT the canonical Supabase CLI developer stack. Assert separately: all FOUR required services (Supabase PostgreSQL, GoTrue, Storage API, PostgREST) are present and healthy; each of the four is pinned by DIGEST, not by floating tag - per SECTION_D R2, which extends the parent's pin requirement from PostgreSQL alone to all four; the stack runs on its own isolated network with ephemeral or otherwise collision-free host ports; and its project/container/volume/network identity is distinct from the project_id declared in supabase/config.toml. Authority SECTION_B, SECTION_D R1 and R2, SECTION_E C3 and C4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-P-03",
+      "description": "REAL GOTRUE SESSION AND REAL session_id. LAYER 2. The token used by every layer-2 control is minted by the LAYER-2 GoTrue through a real sign-in, and its session_id is sentinel S4S-D-SENTINEL-REAL-SESSION-ID, corresponding to a row that genuinely exists in that stack's auth.sessions. Assert separately that the sign-in succeeded, that session_id was derived SERVER-SIDE from the verified claims rather than from a user object or a client-supplied value per M11, and that the value is not any fixture uuid the harness generated. Authority SECTION_D R3 and R4. A control that skips the last assertion cannot tell a real session from a fabricated one, which is the whole property under test.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-P-04",
+      "description": "DECISIVE PRE-IMPLEMENTATION PROBE - session_id REACHES THE EVALUATING CONNECTION. LAYER 2. HARD GATE: this control must pass BEFORE any S4s database or application implementation is written, per SECTION_C of the effective authority. A REAL Supabase Storage API request, driven with the RI-D-P-03 token, must cause the connection that evaluates the policy to expose current_setting('request.jwt.claims', true)::jsonb ->> 'session_id' equal to S4S-D-SENTINEL-REAL-SESSION-ID - or an equivalent exact presence proof of the session identifier on that connection. The observation MUST be made from inside a helper or policy evaluation REACHED BY THE storage-api REQUEST. It is NOT discharged by manually setting request.jwt.claims, by injecting the GUC from the harness through any route, by proving only auth.uid() or the sub claim, or by decoding the JWT in Node. AM-S4S-D7 is why: auth.uid() is a COALESCE over request.jwt.claim.sub and request.jwt.claims, so a non-NULL auth.uid() does not even establish that the claims OBJECT is present on that connection - the legacy scalar GUC alone satisfies it identically - and the existing storage policies at supabase/migrations/20260716000001_storage_policies.sql reference auth.uid() alone with no mention of session_id. NOTE THE EXACT SUBJECT OF THIS CONTROL: that GoTrue MINTS session_id is already MEASURED and is not in doubt (@supabase/auth-js 2.108.2 RequiredClaims declares it non-optional). What this control measures is PROPAGATION - whether the Storage API copies the claims object onto the evaluating PostgreSQL connection. A control that re-proves minting has proved the wrong fact. IF session_id IS NOT PRESENT, S4s IMPLEMENTATION STOPS and authority re-adjudication of M03, M11 and M12 is required; no implementing lane may substitute an alternative carrier on its own authority. This control is NOT retired once green, because it measures a managed service's propagation behaviour that can change under upgrade.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-P-05",
+      "description": "EVERY NEGATIVE STORAGE READ HAS A POSITIVE TWIN. LAYER 2. For each negative Storage read or download in the effective contract that observes a 404 or an 'Object not found' response, a SUCCESSFUL positive twin exists in the SAME run, on the SAME stack, against the SAME bucket, through the SAME endpoint shape, using sentinel S4S-D-SENTINEL-TWIN-OBJECT. Authority SECTION_F. This is not elective: for a Storage 404 the SQLSTATE discrimination offered by RULE_2 is unavailable and a successful fixture setup is insufficient, because setup says nothing about whether the REQUEST was correctly addressed. Assert the rule OVER THE SUITE, not once: a control that checks a single pairing would stay green while a later-added negative read went untwinned. MEASURED prior art that shows the shape and also shows why it must be enforced: tests/integration/rls.test.ts already pairs 'Analyst A puede subir archivo (INSERT) y leerlo (SELECT)' with 'Admin B NO puede leer archivo de Org A' on the same fileName - but that pairing is INCIDENTAL test ordering, and nothing in that suite would fail if the positive case were removed, renamed, reordered or skipped.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-P-06",
+      "description": "VERIFIED TEARDOWN AND NO GLOBAL-STACK RESIDUE. LAYER 2. After the gate completes - on success AND on failure - the disposable stack is gone and its removal is OBSERVED, not assumed: containers, volumes and the isolated network are each confirmed absent. Additionally assert that the run depended on NO developer-global Supabase state: no shared project ref, no shared Docker volume, no already-running host stack, and no supabase start against the repository's own supabase/config.toml project_id - so that the gate is runnable on a host that has never run pnpm supabase start. Authority SECTION_D R8 and R9, SECTION_E C6 and C8. An if: always() stop step whose result is never checked does NOT discharge this control. MEASURED corroboration that the collision hazard is real: supabase/config.toml project_id 'uellix-stella-g2-local-rehearsal' carries an explicit comment that it had to be made unique per-worktree so Docker names would not collide with other stacks already running on this host.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "RI-D-N-01",
+      "description": "DIRECT STORAGE API BYPASS, WITH NO GATEWAY IN THE PATH. LAYER 2. Binds the parent's RI-08 to the topology frozen at SECTION_B. A subject calling storage-api DIRECTLY - the test supplying the real RI-D-P-03 JWT itself, no Kong, no server route, no application code - is subject to the same selected-organization boundary: refused for an organization the mirror does not name, permitted for the one it does. TARGETING storage-api DIRECTLY IS PART OF THE CONTROL, not an implementation convenience: with a gateway in the path a refusal is ambiguous between gateway routing, gateway auth and the storage policy, which reintroduces the F-S4S-1 attribution failure one layer up at the transport. Its negative read arm MUST carry the RI-D-P-05 positive twin. RI-08 remains the criterion the node exists for.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-N-02",
+      "description": "DIRECT POSTGREST MUTATION OF THE MIRROR IS REFUSED. LAYER 2. Binds the parent's RI-09 to the topology frozen at SECTION_B. A client holding the authenticated RI-D-P-03 JWT is refused INSERT, UPDATE and DELETE on public.selected_organization_sessions when targeting PostgREST DIRECTLY. ASSERT ALL THREE VERBS SEPARATELY. Note the measured asymmetry this repository has already recorded: on an RLS table, a GRANT INSERT with no INSERT policy refuses with SQLSTATE 42501, whereas GRANT UPDATE or DELETE with no matching policy returns SUCCESS affecting ZERO ROWS. A control that asserted only 'an error was returned' would therefore be VACUOUS for the UPDATE and DELETE arms, and each of those two arms must instead establish that the row is UNCHANGED and STILL PRESENT afterwards. Non-negotiable, for the reason the parent gave.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-N-03",
+      "description": "RI-12 LAYER-2 TWIN - CROSS-USER SESSION SPOOFING IS REFUSED WITH A REAL TOKEN. LAYER 2. Declared by AM-S4S-D5. Subject S2, presenting a token REALLY ISSUED BY THE LAYER-2 GoTrue to S2, obtains NO benefit from the live unexpired mirror row S4S-D-SENTINEL-FOREIGN-REAL-SESSION that belongs to subject S1, when the request is driven through the real Storage API. WHY THIS EXISTS ALONGSIDE THE PARENT RI-12 RATHER THAN REPLACING IT: in layer 1 the harness sets request.jwt.claims itself, so it sets sub=S2 together with session_id=S1's session - a pairing GoTrue would never issue. Layer 1 therefore proves the SQL predicate refuses that pairing, and MU-04 must stay armed against it there, which is why RI-12 KEEPS its layer-1 membership unweakened. What layer 1 cannot prove is that the real transport never delivers such a pairing and that the real token binds sub and session_id together. This control closes exactly that gap and nothing else. Its read arm MUST carry the RI-D-P-05 positive twin.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-N-04",
+      "description": "THE CANONICAL LOCAL STACK IS REFUSED AS A SUBSTRATE. LAYER 2. Pointed at the canonical Supabase CLI developer stack - or at staging, or at production - the layer-2 gate REFUSES TO RUN and fails closed, rather than running and reporting a pass. Assert that the refusal is the gate's own guard and that it names the reason, and assert that NO probe executed. Authority SECTION_D R1, inherited from the parent REAL_PG_CONTRACT harness_reaffirmed clause 'a disposable cluster only. NEVER staging, NEVER production, NEVER the canonical local stack.' THIS CONTROL IS DECLARED BECAUSE OF THE CORRECTION, NOT IN SPITE OF IT: the measurement that the canonical stack already carries a working full-Supabase harness (RI-D-P-01) makes reusing it the single most likely shortcut an implementing lane will reach for, and a prohibition that no control enforces is a prohibition in prose only.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "RI-D-M-01",
+      "description": "MANUALLY SETTING THE CLAIMS DOES NOT DISCHARGE A LAYER-2 OBLIGATION. LAYER 2 - it mutates RI-D-P-04 and cannot be expressed without the real transport it denies the mutant. Replace the real-token path of RI-D-P-04 with sentinel S4S-D-SENTINEL-MANUAL-CLAIMS-TOKENLESS - a manually set request.jwt.claims carrying a well-formed session_id that no GoTrue ever issued - and the gate MUST REFUSE to record the layer-2 obligation as discharged. THE FAILURE MODE IS A GREEN RESULT: if the mutant PASSES, the gate is measuring the harness instead of the transport, which is precisely the defect the retired PG-2 recorded and which v1.0.0 RULE_1 forbids. Assert the refusal, and assert that it names the missing real-transport property rather than failing for an incidental reason. This is the most important mutation in this amendment: without it, every layer-2 control above can be satisfied by a harness that fabricates exactly the propagation the controls exist to measure, and the correction this amendment makes to the cost estimate would become a licence to fabricate.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "RI-D-M-02",
+      "description": "REMOVING A POSITIVE TWIN TURNS THE NON-VACUITY ASSERTION RED. LAYER 2 - it mutates RI-D-P-05, whose subject is a real Storage API 404. Delete, skip or misname the S4S-D-SENTINEL-TWIN-OBJECT positive twin backing one negative Storage read, and RI-D-P-05 MUST turn RED - by name, identifying WHICH negative read lost its twin. REQUIRED BECAUSE THE TWIN IS EASY TO PROVIDE ACCIDENTALLY AND EASY TO LOSE SILENTLY: MEASURED at tests/integration/rls.test.ts, a correct positive twin already exists there purely as a consequence of test ordering, and nothing in that suite would fail if it were removed. A non-vacuity assertion that no mutation can turn red is itself vacuous, and would leave every 404-shaped refusal in the S4s contract indistinguishable from a wrong base URL, a wrong bucket, a missing prefix or a stack that never came up.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests",
+    "postgres_disposable_probe"
+  ]
+}

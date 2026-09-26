@@ -1,0 +1,1018 @@
+{
+  "package_id": "TENANCY_S4S_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "TENANCY_S4S_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "TENANCY_NODE_EXECUTION_AUTHORITY__MECHANISM_FROZEN__NOT_IMPLEMENTED",
+  "document_class": "S4S_STORAGE_SELECTED_ORGANIZATION_EXECUTION_AUTHORITY__DOCS_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DATABASE_MUTATION__NO_POLICY_CHANGE__NO_ACL_LINEAGE_EDIT",
+  "append_only": true,
+  "mission_id": "CV1-S4S-EXEC-AUTHORITY-ACL-TOPOLOGY-W",
+  "lane_id": "CV1-S4S-EXEC-AUTHORITY-ACL-TOPOLOGY-W",
+  "role": "S4S_EXECUTION_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_EXECUTION_AUTHORITY",
+  "node_id": "S4s",
+  "node_title": "Storage selected-organization boundary",
+  "delivers_capability": "STORAGE_V1_BOUNDARY",
+  "materialization_date": "2026-09-20",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/tenancy/TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+  "NODE_ID_NOT_CHOSEN_HERE": "S4s, its title and its delivers_capability are taken VERBATIM from TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json NEW_STORAGE_NODE_ID. This artifact does not re-derive, rename or renumber the node. The FILENAME uppercases the node letter to S4S because every file under docs/ops/** is UPPER_SNAKE_CASE; the node_id field preserves the frozen lowercase 'S4s'. MEASURED: no letter-suffixed node has a filename precedent - S3c was never executed and no docs/ops file carries its id - so the filename derives from the S4 precedent TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json and from nothing else.",
+  "SECTION_0_FRESHNESS": {
+    "BASE_REF": "origin/integration/commercial-v1",
+    "BASE_SHA": "89022a9bf22a06276996a5a9214b344916be84aa",
+    "BASE_TREE": "b94d5c1d69080b13670ff1d69becd47fdc402113",
+    "BRANCH": "codex/tenancy-storage-selected-org-s4s-authority-r1",
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-storage-selected-org-s4s-authority",
+    "worktree_clean_before_mutation": true,
+    "integration_at_open": "git fetch origin; git rev-parse origin/integration/commercial-v1 => 89022a9bf22a06276996a5a9214b344916be84aa, byte-identical to BASE_SHA and to HEAD. git merge-base --is-ancestor BASE origin/integration/commercial-v1 => true.",
+    "drift_rule": "If origin/integration/commercial-v1 is not 89022a9bf22a06276996a5a9214b344916be84aa immediately before commit, this mission STOPS with BASE_DRIFT and this artifact is not committed.",
+    "node_modules_provisioning": "node_modules was ABSENT at lane start, which fails every subprocess gate. Provisioned with pnpm install --frozen-lockfile (pnpm 9.15.9, exit 0) BEFORE any gate was run, so no gate result reported for this lane was produced against a missing dependency tree.",
+    "IMPLEMENTATION_PERFORMED": "NONE. This artifact is not executable. No SQL, no migration, no prepared package, no application code, no test, no registry entry, no ODS lineage identifier and no HPO id is created by it.",
+    "predecessor_steps_discharged": "TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json NEXT_AUTHORITY_TOPOLOGY steps 1-3 are CLOSED at BASE: step 1 materialized as PR #190, step 2 independently certified, step 3 merged - commit c2a9390e 'Merge pull request #190 from lorenzozanello/codex/tenancy-storage-selected-org-dag-amendment-r1' is an ancestor of BASE_SHA. This lane is STEP 4 and no other step."
+  },
+  "CONTROLLING_AUTHORITY_CONSUMED": {
+    "primary": "docs/ops/tenancy/TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json - the parent DAG amendment that creates node S4s, carries the owner ratification RAT-STG-01, and DELEGATES nine mechanism items to this artifact.",
+    "handoff_source": "docs/ops/tenancy/TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF - the connection-boundary re-derivation, the two-helper measurement, the eight evaluation criteria and the inherited measured context.",
+    "acl_authority": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and its companion amendment CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json - consumed for SECTION_3 (ACL re-adjudication) and SECTION_4 (successor topology). NEITHER IS EDITED BY THIS ACT.",
+    "live_code_consulted": [
+      "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql",
+      "db/prepared/stella_0019_storage_write_roles.sql",
+      "tests/database-runtime-acl-closed-world.test.ts",
+      "tests/postgres/current-schema-runtime-acl.pg.test.ts",
+      "db/baseline/stella_g2_schema.sql",
+      "supabase/migrations/20260716000001_storage_policies.sql",
+      "lib/auth/selected-organization.ts",
+      "lib/auth/session.ts",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "app/auth/signout/route.ts",
+      "scripts/ods-scope.ts",
+      "supabase/config.toml"
+    ],
+    "RAT_STG_01_IS_BINDING": "The owner ratification RAT-STG-01 and its nine binding constraints C1..C9 are BINDING ON THIS ARTIFACT and are discharged item by item at RAT_STG_01_DISCHARGE. This artifact does not reopen, reinterpret or soften any of them, and does not decide anything the owner reserved."
+  },
+  "SECTION_1_REDERIVED_LIVE_CONTEXT": {
+    "method": "Every fact in this section was MEASURED at BASE_TREE b94d5c1d in this worktree, by reading the named file at the named line range or by running the named command. Nothing is inherited from TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0, from the DAG amendment, or from any prior lane report. Where a prior artifact asserts the same fact, this section says it AGREES - a second independent observation, not a citation.",
+    "L1_ACL_CLOSED_WORLD": {
+      "universe_U": 64,
+      "classified_C": 58,
+      "exclusions": 6,
+      "migration_created": 57,
+      "chain_created": 7,
+      "where_measured": "tests/database-runtime-acl-closed-world.test.ts. The arithmetic is FROZEN AS LITERALS inside the test itself: new Set(universe).size === 64, classified.length === 58, exclusions.length === 6, migrationUniverse.created.size === 57, CHAIN_CREATED_PUBLIC_TABLES.size === 7, and the per-class sizes 8/6/4/1 summing to 19, 33/3/1/1 summing to 38, and 1 for the SECTION_3 member.",
+      "the_guard_is_LIVE_not_prose": "MEASURED AND MATERIAL. CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json SECTION_10 test_file_is_authority_chosen_not_created records that the guard file did NOT exist at that authority's AS_OF_HEAD. At BASE_TREE it EXISTS and runs DB-free on every CI push. A lane that read only the ACL authority would conclude the closed world is still aspirational. It is not.",
+      "the_package_carries_its_own_sweep": "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql:393-412. TWO sweeps, both scoped WHERE n.nspname = 'public': the first over relkind IN ('r','p') raising 'UNCLASSIFIED public relation(s) %', the second over relkind NOT IN ('r','p','i','I','c','t') so that a VIEW or a SEQUENCE in public also aborts. The abort is a RAISE EXCEPTION, so an unclassified public relation does not degrade the package - it stops it applying at all.",
+      "the_abort_message_names_its_own_remedy": "MEASURED AT stella_0021:398. The exception text instructs: 'Classify it in docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and publish a successor; do not widen this file.' The remedy is therefore named by the running artifact itself, and is not an inference of this lane.",
+      "both_halves_are_driven_not_described": "PG-05 (tests/postgres/current-schema-runtime-acl.pg.test.ts:504) CREATEs public.zz_acl_unknown_fixture and asserts the package REFUSES, names the fixture, and leaves the ACL snapshot unchanged. N-08 does the same for a VIEW and a SEQUENCE. M-SQL-01 deletes the sweep and asserts PG-05 then STOPS refusing. The closed world is falsifiable and is not vacuous.",
+      "MEASURED_CONTROL_HOLE_recorded_as_F_S4S_5": "The DB-free twin derives U from db/migrations/** plus a HAND-MAINTAINED map CHAIN_CREATED_PUBLIC_TABLES of 7 entries. NOTHING in the repository scans db/prepared/** to prove that map complete. A public table created by a NEW prepared package and not hand-added to the map is INVISIBLE to the DB-free guard. It is NOT invisible to the live catalog sweep, which is why this is a control-coverage finding rather than an exploitable gap. Its consequence for S4s is concrete: the DB-free guard alone may not be relied on to turn red for a prepared-chain-created mirror, so SECTION_2 places the mirror in db/migrations/** where BOTH halves see it."
+    },
+    "L2_STORAGE_HELPERS": {
+      "can_read_evidence_object": "db/baseline/stella_g2_schema.sql:850-884. public.can_read_evidence_object(object_name text, user_id uuid) RETURNS boolean, LANGUAGE plpgsql, SECURITY DEFINER, SET search_path TO '', OWNER uellix_owner. Authorizes on ACTIVE MEMBERSHIP ALONE, with NO role filter.",
+      "can_write_evidence_object": "db/baseline/stella_g2_schema.sql:892-928. Same signature shape, same DEFINER, same empty search_path, same owner. Identical to the read helper EXCEPT that it additionally requires om.role IN ('organization_admin','analyst').",
+      "read_surface_is_BROADER": "CONFIRMED INDEPENDENTLY at BASE_TREE by reading both bodies. The read helper imposes no role filter, so the read/download surface is strictly broader than the write surface. A probe exercising writes alone would understate the exposure. AGREES with the S4 R2 measurement.",
+      "neither_consults_any_selected_organization_signal": "MEASURED. Neither body contains current_setting, app.organization_id, request.jwt.claims, or any reference to a selected organization. The selected-organization boundary is absent from the policy layer entirely - which is the gap S4s closes.",
+      "EXCEPTION_WHEN_OTHERS_HAZARD": "MEASURED AND MATERIAL, recorded as F-S4S-1. Both bodies end with EXCEPTION WHEN OTHERS THEN RETURN false. That is fail-closed for the RETURN VALUE, which is correct and is preserved. But it also means that once the mirror conjunct is added, a permission error on the mirror, an absent mirror relation, a malformed claim and an honest policy denial ALL produce the same observable: false. A probe asserting only 'denied' therefore proves nothing about WHY it was denied. SECTION_7 requires positive discrimination of the denial cause for exactly this reason.",
+      "to_regclass_existence_guard": "Both bodies open with IF to_regclass('public.projects') IS NULL OR to_regclass('public.organization_members') IS NULL THEN RETURN false. A successor that adds the mirror to the read path MUST extend this existence guard to the mirror, or a substrate on which the mirror is absent answers false for every caller - fail-closed, but an outage, and precisely the shape F-S4S-1 makes undiagnosable."
+    },
+    "L3_POLICIES_AND_EXECUTE": {
+      "three_policies": "supabase/migrations/20260716000001_storage_policies.sql:100-123. select_evidence, insert_evidence and delete_evidence on storage.objects, each TO authenticated, each delegating to public.can_read_evidence_object(name, auth.uid()) or public.can_write_evidence_object(name, auth.uid()).",
+      "the_policies_pass_auth_uid_AND_NOTHING_ELSE": "MEASURED AND DECISIVE FOR THE MECHANISM. The policy expressions pass exactly two arguments: the object name and auth.uid(). They do NOT pass a session id, and there is no argument position in which one could be supplied without changing the helper signature. It follows MECHANICALLY that the session identity must be read from INSIDE the helper body, off the evaluating connection. This is the derivation that forces SECTION_2 item 12, and it is not a preference.",
+      "execute_posture_on_the_helpers": "Same file lines 81-85: REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC, anon; GRANT EXECUTE ON FUNCTION ... TO authenticated. Measured for both helpers.",
+      "helpers_are_created_only_in_the_supabase_lineage": "MEASURED. db/hosted/baseline-manifest.ts:19-21 records, and the corpus confirms, that both helpers are created ONLY in supabase/migrations/20260716000001_storage_policies.sql and not in db/migrations/**. The governed amendment path is therefore a prepared package that REPUBLISHES the bodies in place - which is exactly what db/prepared/stella_0019_storage_write_roles.sql already does for the write helper."
+    },
+    "L4_OWNERSHIP_AND_RLS_REACH": {
+      "projects_owner": "db/baseline/stella_g2_schema.sql:4307 - ALTER TABLE public.projects OWNER TO uellix_owner.",
+      "organization_members_owner": "db/baseline/stella_g2_schema.sql:4104 - ALTER TABLE public.organization_members OWNER TO uellix_owner.",
+      "FORCE_RLS_census": "MEASURED by sweeping db/migrations/**, db/prepared/** and db/baseline/** for FORCE ROW LEVEL SECURITY: EXACTLY FOUR relations carry it - commercial_accounts (db/migrations/0068:45), account_legal_acceptances (0070:138), organization_commercial_acceptances (0072:66), entitlement_grants (0073:96). Neither projects nor organization_members is among them.",
+      "consequence": "A relation OWNER is exempt from its own relation's row-level security unless FORCE is set. The helpers run as uellix_owner, which OWNS both relations, neither of which is FORCEd - so the helpers read past ANY policy a database weld adds to them. Reasoning from NOBYPASSRLS alone reaches the opposite and wrong conclusion. This is why the membership conjunct must be PROVEN at runtime and may never be inferred from a policy the helper reads past.",
+      "this_governs_the_mirror_read_path_too": "The same rule decides the mirror. If the mirror is owned by uellix_owner and is NOT FORCEd, the helpers reach it BY OWNERSHIP and need no GRANT at all. If it were FORCEd, ownership would stop being sufficient, the read would fail into the EXCEPTION WHEN OTHERS arm, and every storage operation would be denied silently. SECTION_2 freezes ENABLE-without-FORCE for exactly this reason, and SECTION_7 requires a mutation proving FORCE is detectable."
+    },
+    "L5_SESSION_IDENTITY_ON_THE_EVALUATING_CONNECTION": {
+      "auth_uid_definition": "db/baseline/stella_g2_schema.sql:487-494. auth.uid() is coalesce(nullif(current_setting('request.jwt.claim.sub', true),''), (nullif(current_setting('request.jwt.claims', true),'')::jsonb ->> 'sub'))::uuid. OWNER supabase_auth_admin, LANGUAGE sql STABLE.",
+      "the_claims_GUC_is_PROVEN_present_on_the_storage_connection": "DERIVED MECHANICALLY, not assumed. The three storage.objects policies call auth.uid(), auth.uid() reads ONLY the request.jwt.claim.sub / request.jwt.claims GUCs, and evidence upload, download and delete work in the product today. If the claims GUC were absent on the Storage API's connection, auth.uid() would be NULL, the helper would receive NULL as user_id, the membership EXISTS would match nothing, and EVERY storage operation would already be denied. It is not. Therefore the Storage API publishes the verified JWT claims onto the connection that evaluates the policy.",
+      "session_id_is_a_STANDARD_REQUIRED_CLAIM_not_a_custom_one": "MEASURED at the version this repository pins. pnpm-lock.yaml pins @supabase/auth-js 2.108.2; node_modules/.pnpm/@supabase+auth-js@2.108.2/node_modules/@supabase/auth-js/dist/main/lib/types.d.ts:1622-1631 declares export type RequiredClaims = { iss, sub, aud, exp, iat, role, aal, session_id: string }. session_id is NON-OPTIONAL in RequiredClaims, and line 1635 states the required claims are inherited by JwtPayload while 'All other claims are optional as they can be customized via Custom Access Token Hooks'. So session_id is a STANDARD claim of every Supabase access token and is NOT a custom claim.",
+      "why_that_discharges_C5_rather_than_violating_it": "RAT-STG-01-C5 forbids a JWT CUSTOM-CLAIM dependency and the stale-claim window a claim-based design carries. session_id is not a custom claim - it requires no Custom Access Token Hook and no Supabase Auth custom-claims configuration. Nor does it carry the stale-claim window: the claim identifies WHICH SESSION is asking, it does not assert which organization is selected. The organization is read LIVE from the mirror at evaluation time, so an organization switch is visible on the very next operation without any token refresh. The mechanism depends on the claim for IDENTITY only, never for AUTHORIZATION.",
+      "auth_sessions_id_is_a_PRIMARY_KEY": "MEASURED. db/baseline/stella_g2_schema.sql:3574 CREATE TABLE auth.sessions (id uuid NOT NULL, user_id uuid NOT NULL, ...) and :5512 ADD CONSTRAINT sessions_pkey PRIMARY KEY (id). session_id is therefore GLOBALLY UNIQUE across all users, which is the fact SECTION_2 item 4 turns into a key decision.",
+      "server_side_derivation": "MEASURED. GoTrueClient.d.ts:2492 declares getClaims(jwt?, options?). The User interface (types.d.ts:349+) has NO session_id field, so getUser() CANNOT supply it. The governed server writers must therefore derive session_id from the verified claims, never from a user object and never from a client-supplied value.",
+      "jwt_lifetime": "MEASURED. supabase/config.toml:186 jwt_expiry = 3600. This is the bound SECTION_2 item 6 uses for the mirror expiry horizon."
+    },
+    "L6_WRITER_CALL_SITES_AS_THEY_EXIST_TODAY": {
+      "carrier": "lib/auth/selected-organization.ts. SELECTED_ORGANIZATION_COOKIE_NAME = 'uellix_selected_organization_id' (:88), SELECTED_ORGANIZATION_COOKIE_PATH = '/app' (:94). setSelectedOrganization (:138), getSelectedOrganizationId (:159), clearSelectedOrganization (:171).",
+      "the_only_select_writer": "app/(authenticated)/app/organizations/select/actions.ts:119 - await setSelectedOrganization(requestedOrganizationId), reached ONLY after the isSelectableMember check at :103 refuses a non-member via recordRefusedSelection and redirect.",
+      "the_only_explicit_clear_writer": "app/(authenticated)/app/organizations/select/actions.ts:130 - clearOrganizationSelectionAction, after requireAuth().",
+      "the_stale_carrier_clear": "lib/auth/session.ts:297 - await clearSelectedOrganization() on the R3 branch, when the carrier names an organization the subject is not a member of.",
+      "SIGN_OUT_DOES_NOT_CLEAR_ANYTHING_TODAY": "MEASURED AND MATERIAL, and the reason app/auth/signout/route.ts is a mandatory write-set member. The entire route is: createClient(), await supabase.auth.signOut(), redirect to /login. It does NOT call clearSelectedOrganization and does not delete the carrier cookie. Today that is harmless because the carrier is an assertion re-checked against live membership on every request. It is NOT harmless for the mirror: RAT-STG-01-C1 requires sign-out to REMOVE the row, and no existing line in this route would do so.",
+      "there_is_a_LIVE_GUARD_on_the_writer_topology": "MEASURED. tests/auth/route-authorization-boundary.test.ts:593-595 asserts that lib/auth/session.ts contains NO setSelectedOrganization - only clearSelectedOrganization is imported. tests/auth/organization-commercial-acceptance-topology.test.ts:550 enumerates every file outside the carrier module that calls setSelectedOrganization. Both are corpus-scanning guards, so ADDING a mirror writer to a new call site is visible to them and they are write-set members whenever the writer topology moves."
+    },
+    "L7_HARNESS_REALITY": {
+      "disposable_harness_image": "MEASURED. scripts/m2-disposable-pg-bootstrap.ts:89 IMAGE_TAG = 'public.ecr.aws/supabase/postgres:17.6.1.143', pinned by digest at :91. scripts/baseline-rehearsal-local.ts:84 REHEARSAL_IMAGE is the same tag.",
+      "THE_HARNESS_IS_POSTGRESQL_ONLY": "MEASURED AND DECISIVE FOR SECTION_7. A repository-wide search of scripts/**, tests/** and supabase/** for 'storage-api', 'gotrue', 'supabase/storage' and 'kong' returns ZERO files. No harness in this repository runs the Supabase Storage API or GoTrue. The disposable cluster is a PostgreSQL server and nothing else.",
+      "consequence": "The real-integration proof the DAG amendment and this artifact require is NOT satisfiable by extending an existing harness with a new probe manifest. It requires a HARNESS CLASS THIS REPOSITORY DOES NOT HAVE. SECTION_5 records it as a first-class implementation surface with its own cost, and SECTION_7 splits the contract into the part today's harness can prove and the part it provably cannot.",
+      "there_is_no_pg_cron": "MEASURED, and asserted twice by an existing package. db/prepared/hosted/stella_0014_operation_tickets.hosted.sql:1276 states 'THERE IS NO pg_cron IN THIS PROJECT, and this function does not pretend' and :122 describes expiry taking effect 'with NO reaper involved'. extensions.grant_pg_cron_access() exists in the baseline (stella_g2_schema.sql:507-519) only because the Supabase image ships it as an event trigger; the project does not use pg_cron. SECTION_2 item 7 is decided by this measurement and not by preference."
+    },
+    "L8_TENANT_UNIVERSE_AND_PROTECTED_SURFACE": {
+      "S4_closed_world_census": "MEASURED from TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json S4_CLOSED_WORLD_CENSUS and its self_check SC-7: 34 WELDED + 5 nullable + 2 excluded identity substrate + 1 excluded owner-only = 42 relations carrying organization_id, 'no remainder'. Its stated rule is that a relation carrying organization_id absent from the welded set is a defect.",
+      "consequence_for_S4s": "The mirror CARRIES organization_id. It is therefore a 43rd such relation and S4's partition arithmetic stops being complete the moment it exists. This is the concrete form of the sequencing finding F-STG-1 the DAG amendment left open, and SECTION_5 makes the disposition a required write-set item rather than an accident of merge order.",
+      "ods_default_protected_patterns": "MEASURED VERBATIM from scripts/ods-scope.ts:82-90 DEFAULT_PROTECTED_PATTERNS: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. The comment at :79-81 states these are unconditional: no --allow pattern in this version of the gate can authorize a change there.",
+      "this_lane_touches_none_of_them": "This artifact and its companion manifest are both under docs/ops/tenancy/**, which is NOT a protected pattern. This lane therefore needs an ordinary --allow and no --protected-authority, and allocates nothing.",
+      "postgrest_exposes_public": "MEASURED. supabase/config.toml:20 schemas = ['public','graphql_public']. A table in schema public is reachable over HTTP by anon and authenticated unless privileges and RLS close it. SECTION_2 item 14 and the SECTION_7 negative controls exist because of this measurement, not in spite of it."
+    }
+  },
+  "SECTION_2_FROZEN_MECHANISM": {
+    "status": "NORMATIVE. Every item the DAG amendment DELEGATED is resolved here to an exact decision. A delegated item left open would make this artifact fail its own purpose, so each of the twenty carries a DECISION and the MEASUREMENT that forced it. Where the mission packet supplied a prior candidate shape, that shape was CHALLENGED against the corpus and the result - confirmed, corrected or rejected - is recorded under challenge.",
+    "coverage_proof": "The DAG amendment STORAGE_V1_MECHANISM_DELEGATION.delegated_items names NINE items: relation, uniqueness, expiry, writer path, helper read path, grants, cleanup, anti-spoofing, cross-org behavior. The mission packet expands them to TWENTY. Every one of the nine maps onto at least one of the twenty and the map is stated at delegated_item_coverage, so 'all nine are discharged' is checkable rather than asserted.",
+    "M01_relation_name_and_schema": {
+      "DECISION": "public.selected_organization_sessions - an ordinary TABLE (relkind 'r') in schema public.",
+      "schema_rationale_is_the_load_bearing_half": "Schema public is chosen DELIBERATELY AND AT A COST. The stella_0021 closed-world sweep is scoped WHERE n.nspname = 'public' (measured at :393 and :411). A mirror placed in any other schema would be INVISIBLE to it: it would hold organization_id, narrow a storage authorization decision, and carry NO ACL class and NO guard - reproducing exactly the defect stella_0021 exists to prevent, whose own header records that twenty tables reached that state before anybody counted them. Placing the relation in public is choosing to be governed, and the ACL successor act SECTION_4 requires is the price of that choice, not an obstacle to it.",
+      "why_a_table_and_not_a_view_or_unlogged_relation": "A VIEW cannot hold state. An UNLOGGED table would lose its rows on crash recovery, which is a silent, unobservable widening-to-deny rather than a governed reset, and the second stella_0021 sweep aborts on any relkind outside ('r','p','i','I','c','t') anyway, so a non-table relation in public is refused by the package.",
+      "naming_rationale": "Plural snake_case, matching the measured corpus convention (organization_members, account_legal_acceptances, entitlement_grants, legal_instrument_versions). The name says what a ROW IS - a session that has a selected organization - rather than what it is FOR. A name like selected_organizations would read as a durable user preference and would invite exactly the reuse SESSION_SCOPE_RECONCILIATION.prohibited_uses_that_remain_prohibited forbids.",
+      "challenge": "The mission packet's candidate did not name the relation. Derived here from the corpus convention."
+    },
+    "M02_columns_and_types": {
+      "DECISION": "user_id uuid NOT NULL; session_id uuid NOT NULL; organization_id uuid NOT NULL; selected_at timestamptz NOT NULL DEFAULT now(); expires_at timestamptz NOT NULL. FIVE columns, no more.",
+      "session_id_is_uuid_not_text": "MEASURED: auth.sessions.id is uuid (db/baseline/stella_g2_schema.sql:3574). The JWT claim arrives as a JSON string, so the helper casts it. Typing the column uuid makes a malformed claim fail the CAST rather than silently match nothing - the difference between a diagnosable error and an invisible deny. The helper must perform that cast inside its existing EXCEPTION WHEN OTHERS arm, which is why F-S4S-1 requires the denial cause to be discriminated by the probes.",
+      "timestamptz_not_timestamp": "Corpus convention and correctness: expiry compared against now() across a deployment whose database and application need not share a zone. MEASURED: auth.sessions mixes both (not_after is timestamptz, refreshed_at is timestamp without time zone); the governed public corpus uses timestamptz, and the governed convention controls here.",
+      "NO_payload_and_NO_free_text": "No JSON column, no note, no user agent, no IP. The relation answers exactly one question and carrying anything else would make it a session store, which SESSION_SCOPE_RECONCILIATION forbids. Precedent: stella_0014's operation_tickets is described in its own verification notice as having 'no payload column'.",
+      "challenge": "The candidate shape proposed exactly these five columns. CONFIRMED against the corpus, with the uuid and timestamptz choices derived rather than inherited."
+    },
+    "M03_primary_key_and_uniqueness": {
+      "DECISION": "PRIMARY KEY (session_id). NO composite primary key and NO separate UNIQUE constraint.",
+      "challenge": "THE CANDIDATE SHAPE IS CORRECTED HERE. The mission packet offered 'possible PK(user_id, session_id)' with 'possible UNIQUE(session_id)'. Both together are accepted as a pair only if session_id is NOT globally unique. It IS globally unique - MEASURED: auth.sessions_pkey is PRIMARY KEY (id) at db/baseline/stella_g2_schema.sql:5512. Given that, UNIQUE(session_id) already forbids two rows for one session, so the composite PK constrains NOTHING that the UNIQUE does not, while costing a second index and, far worse, IMPLYING that a session may legitimately appear under more than one user. It may not.",
+      "why_single_key_uniqueness_IS_the_security_property": "At most one selected organization per session is not a tidiness rule; it is what makes 'read the mirror live' well defined. If two rows could exist for one session, the helper's EXISTS would be satisfied by EITHER, and RAT-STG-01-C2's live read would be a live read of a non-deterministic value. A key that admits the ambiguity cannot be repaired by the read path.",
+      "user_id_remains_NOT_NULL_and_is_CONJOINED_not_keyed": "user_id is not part of the key but IS part of the helper predicate: the helper requires session_id = <claim> AND user_id = <auth.uid()>. That conjunct is defence in depth against a WRITER defect - a governed writer that recorded a row under the wrong subject produces a row that matches no caller and therefore grants nothing, instead of narrowing some other subject's storage access. SECTION_7 requires a control proving the conjunct is not vacuous."
+    },
+    "M04_is_session_id_globally_unique": {
+      "DECISION": "YES. Globally unique across all users, by measurement, and the design depends on it.",
+      "evidence": "db/baseline/stella_g2_schema.sql:5508-5512 - CONSTRAINT sessions_pkey PRIMARY KEY (id) on auth.sessions, whose id is uuid NOT NULL (:3574-3575). auth.refresh_tokens.session_id and auth.mfa_amr_claims.session_id are both FKs onto that single-column primary key (:7522, :7586).",
+      "what_the_design_takes_from_it": "M03's single-column key is sound only because of this. It also means a session_id is meaningless without its owning user: the anti-spoofing conjunct in M11 is checking a pairing that GoTrue already guarantees, so a mismatch is evidence of a defect on our side rather than of a hostile client.",
+      "what_the_design_deliberately_does_NOT_take_from_it": "Global uniqueness does NOT license an FK. See M05."
+    },
+    "M05_foreign_key_topology": {
+      "DECISION": "TWO foreign keys, both into the governed public corpus: user_id REFERENCES public.users(id) ON DELETE CASCADE, and organization_id REFERENCES public.organizations(id) ON DELETE CASCADE. NO foreign key to auth.sessions, and none to any relation in schema auth.",
+      "NO_auth_FK_is_MEASURED_not_assumed": "A sweep of db/migrations/** and db/prepared/** for 'REFERENCES auth.' returns ZERO occurrences across the entire governed corpus. The repository holds schema auth at arm's length on purpose: stella_0013 and stella_0014 each assert that USAGE on schema auth 'exists so that auth.uid() resolves, not to expose the identity store' and each RAISE EXCEPTION if their capability role can read auth.users. db/migrations/0033:53 records that no DB trigger syncs auth.users to public.users. An FK into auth.sessions would be the first of its kind and would invert a posture three packages actively verify.",
+      "three_further_reasons_the_auth_FK_is_refused": "(a) PRIVILEGE - auth.sessions is OWNED BY supabase_auth_admin; creating an FK onto it requires REFERENCES on that table, which the governed owner does not hold and which is not ours to grant on a managed project. (b) SUBSTRATE - the governed migration chain must apply on a disposable PostgreSQL cluster with no GoTrue; an FK onto auth.sessions would make db/migrations/** unappliable wherever that schema is absent, which is the substrate every Real-PG gate in this repository uses. (c) DRIFT - auth.sessions is a managed, moving target; the baseline already shows it carrying oauth_client_id, refresh_token_hmac_key, refresh_token_counter and scopes, columns added by GoTrue upgrades nobody here controls.",
+      "the_cascade_is_an_EXPLICIT_DEVIATION_and_is_flagged": "MEASURED: 'ON DELETE CASCADE' appears ZERO times in db/migrations/**. All 68 FKs to public.users and all 41 to public.organizations are written ON DELETE no action ON UPDATE no action. This decision DEVIATES from a one-hundred-percent consistent convention and says so rather than hiding it.",
+      "why_the_deviation_is_justified_rather_than_convenient": "The convention's rationale is preservation: every existing FK protects DURABLE business or audit data, where silently deleting dependent rows would destroy history. The mirror is the repository's FIRST TRANSIENT ENFORCEMENT relation, where preserving history is not merely unnecessary but is the thing SESSION_SCOPE forbids. Under NO ACTION, a stale enforcement row would BLOCK deletion of a user or an organization - an unrelated governed path failing because a storage artifact outlived its session. The convention's reason does not transfer, so the convention does not either.",
+      "SECURITY_DOES_NOT_DEPEND_ON_THE_CASCADE": "Stated so that a certifier can bound the deviation's blast radius. Because the mirror only NARROWS and membership is a separate live conjunct (RAT-STG-01-C3), an orphan row whose organization was deleted narrows toward an organization in which no active membership can exist, so the helper REFUSES. An orphan is a hygiene defect, never an authorization defect. The cascade is therefore chosen for operational correctness, and the fail-closed property does not rest on it. F-S4S-4 records that a certifier may reasonably prefer NO ACTION, and names what would have to change if the owner or the certifier so decides."
+    },
+    "M06_expiry_representation_and_enforcement": {
+      "DECISION": "expires_at timestamptz NOT NULL, written by the governed writer as now() plus a bounded horizon, and ENFORCED AS PART OF THE HELPER'S LIVENESS PREDICATE - the helper requires expires_at > now(). Enforcement is by predicate FIRST; cleanup (M07) is hygiene only and correctness never depends on it.",
+      "this_is_a_MEASURED_repository_precedent_not_an_invention": "db/prepared/hosted/stella_0014_operation_tickets.hosted.sql solved the identical problem. Its :122 describes a ticket ceasing to count 'the moment it expires, with NO reaper involved'; its :1384 COMMENT states the hygiene function is 'hygiene only' and that 'The guarantee that an orphaned reservation stops consuming quota does NOT depend on this being called - expires_at is part of the liveness predicate itself.' S4s adopts that structure verbatim in shape.",
+      "why_predicate_enforcement_is_strictly_stronger_than_cleanup": "A design where expiry is enforced only by deletion is a design where a cleanup outage silently EXTENDS authorization. Under predicate enforcement an expired row is already dead to every reader at the instant it expires, and a cleanup outage costs disk, never reach. That is the difference between a fail-closed and a fail-open expiry, and it is why RAT-STG-01-C8 is satisfied here by the predicate and not by the schedule.",
+      "the_horizon": "Bounded by the access-token lifetime, MEASURED at supabase/config.toml:186 jwt_expiry = 3600 seconds. The horizon MUST NOT exceed it: a mirror row outliving every token that could present its session_id is unreachable state, and a horizon longer than the token is an expiry that never binds. The exact interval is an implementation constant the implementing lane sets at or below 3600 seconds and pins in a test; this artifact freezes the CEILING and the rule, and deliberately does not invent a number below it.",
+      "challenge": "The candidate shape proposed expires_at without saying how it is enforced. The enforcement half - predicate first, cleanup never load-bearing - is the substance of this decision and is derived from stella_0014."
+    },
+    "M07_cleanup_mechanism": {
+      "DECISION": "OPPORTUNISTIC HYGIENE, performed by the governed writers on the paths that already write. NO scheduler, NO pg_cron, NO background worker, NO external cron. Nothing in the security argument may depend on cleanup having run.",
+      "pg_cron_is_refused_by_MEASUREMENT": "db/prepared/hosted/stella_0014_operation_tickets.hosted.sql:1276 states 'THERE IS NO pg_cron IN THIS PROJECT, and this function does not pretend' - an assertion an installed package makes about the project, twice (see also :122). extensions.grant_pg_cron_access() appears in the baseline (db/baseline/stella_g2_schema.sql:507-519) only because the Supabase image ships it as an event trigger. Introducing a scheduler at S4s would contradict a standing, package-level assertion and would add an unowned runtime actor to a node whose whole purpose is to narrow authorization.",
+      "what_proves_it_ran": "NOTHING NEEDS TO, and that is the point of M06. The DAG amendment's delegated item asks for 'cleanup - schedule, owner, and what proves it ran'; the honest discharge is that this design REMOVES the obligation rather than satisfying it, because an unproven cleanup cannot extend anybody's reach. What IS proven instead, and is required by SECTION_7, is the stronger property: that an EXPIRED-BUT-PRESENT row is refused. A control asserting 'the row was deleted' would be weaker than a control asserting 'the row, still present and expired, grants nothing'.",
+      "bounded_growth_is_still_required": "RAT-STG-01-C8 forbids an unbounded-growth mirror. Growth is bounded by construction: at most one row per live session by M03, deleted on clear and on sign-out by M09/M10, cascaded away with its user or organization by M05, and swept opportunistically by the writers. The bound is structural, not scheduled."
+    },
+    "M08_exact_select_writer": {
+      "DECISION": "app/(authenticated)/app/organizations/select/actions.ts, inside the existing selectOrganizationAction, AFTER the isSelectableMember refusal at :103-118 and BEFORE the existing setSelectedOrganization(requestedOrganizationId) at :119. The write is an UPSERT keyed on session_id (see M16).",
+      "why_this_exact_position": "The membership check at :101-118 is deliberately independent of any prior selection - its own comment records that a caller therefore 'has no way to bootstrap a wrong write from a stale carrier'. Writing the mirror BEFORE that check would persist a server-blessed row for an organization the subject may not belong to, which is precisely the authenticity-mistaken-for-authorization failure RAT-STG-01-C3 and probe PG-S4s-4 exist to catch. Writing it BEFORE the cookie keeps the enforcement state at least as narrow as the carrier at every instant: a failure between the two leaves a mirror row with no carrier, which denies, rather than a carrier with no mirror row, which under M12 also denies but by a path that reads as an outage.",
+      "ordering_rule_frozen": "mirror write, THEN carrier write. Never the reverse.",
+      "the_membership_check_is_NOT_the_authorization": "Stated explicitly so the implementing lane does not treat it as such. This check is a product-level refusal that keeps bad rows out of the table. It is NOT the authorization for the storage operation, which is re-established LIVE inside the helper on every operation by the membership conjunct (M12). A future edit that removed this check would degrade diagnosis and hygiene; it would NOT open cross-organization storage access, because the helper never trusts the row."
+    },
+    "M09_exact_clear_writer": {
+      "DECISION": "TWO clear sites, both DELETE of the row for the current session. (a) app/(authenticated)/app/organizations/select/actions.ts clearOrganizationSelectionAction at :128-131, alongside the existing clearSelectedOrganization(). (b) lib/auth/session.ts:297, on the R3 stale/non-member-carrier branch that already calls clearSelectedOrganization().",
+      "why_site_b_is_mandatory_and_is_easy_to_miss": "lib/auth/session.ts:294-299 handles TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER by clearing the carrier and redirecting to the selector. If the mirror were left behind on that branch, the repository would hold a server-written row naming an organization the subject has just been measured NOT to be a member of. The helper would still refuse it - membership is a live conjunct - but the row would be exactly the artifact PG-S4s-4 is designed to find, sitting in production as normal operation. Clearing it there keeps the mirror's own content honest rather than relying on the conjunct to compensate.",
+      "a_LIVE_GUARD_constrains_how_site_b_is_written": "tests/auth/route-authorization-boundary.test.ts:593-595 asserts that lib/auth/session.ts source contains NO setSelectedOrganization. A mirror CLEAR at :297 does not violate it. A mirror WRITE at that site would have to be refused on the same principle, and the implementing lane must not add one."
+    },
+    "M10_exact_signout_writer": {
+      "DECISION": "app/auth/signout/route.ts, a DELETE of the row for the current session, issued STRICTLY BEFORE await supabase.auth.signOut().",
+      "the_ordering_is_the_whole_decision": "MEASURED: the route today is createClient(); await supabase.auth.signOut(); redirect. After signOut the server no longer holds a verified session from which session_id can be derived, so a delete attempted afterwards has no key to delete BY. The row would survive until expiry with no governed path left to remove it. Delete first, then sign out.",
+      "the_residual_window_is_stated_not_hidden": "A Supabase sign-out revokes the session server-side, but an already-issued access token remains cryptographically valid until its exp - MEASURED as up to 3600 seconds (supabase/config.toml:186). A holder of that token could still present a valid session_id after sign-out. Deleting the row BEFORE signOut closes the window from our side: the mirror is gone, so M12's fail-closed rule refuses every storage operation for that session regardless of the token's remaining life. This is the concrete reason RAT-STG-01-C1 names sign-out at all, and PG-S4s-5 is the probe that proves it.",
+      "this_route_is_a_NEW_write_surface": "Recorded plainly because it changes the route's character: app/auth/signout/route.ts performs no database work today. S4s gives it its first. SECTION_5 lists it as ORDINARY, and SECTION_7 requires a control proving the delete precedes the sign-out rather than merely accompanying it."
+    },
+    "M11_anti_spoofing_derivation": {
+      "DECISION": "TWO derivations, one per side, and neither ever accepts a client-supplied value. SERVER SIDE: the governed writers derive session_id from the VERIFIED claims of the request's access token via the Supabase auth client's getClaims(), never from a request body, query parameter, header, cookie or form field. HELPER SIDE: the helper derives session_id on the EVALUATING connection from nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'session_id', cast to uuid.",
+      "why_getClaims_and_not_getUser": "MEASURED at the pinned version. @supabase/auth-js 2.108.2 declares getClaims(jwt?, options?) (GoTrueClient.d.ts:2492), while the User interface (types.d.ts:349+) carries NO session_id field - so getUser() CANNOT return it. An implementation reaching for getUser() would find nothing and would be tempted to take the value from somewhere untrusted. Naming the correct call here forecloses that.",
+      "what_makes_the_helper_side_UNFORGEABLE_on_the_evaluating_connection": "The claims GUC is published by the Storage API from a JWT it has already verified, on the very connection that evaluates the policy. A client cannot set a GUC on that connection - it never holds it. Forging session_id therefore requires forging the token signature, which is the same bar that already protects sub, and therefore the same bar that already protects every existing membership decision in this schema. The mechanism adds no new trust assumption; it reuses the one the product already depends on.",
+      "the_SAME_GUC_that_auth_uid_already_reads": "Deliberate and load-bearing. auth.uid() reads sub from request.jwt.claims (db/baseline/stella_g2_schema.sql:487-494). Reading session_id from the same object means the subject identity and the session identity arrive by ONE transport with ONE verification. A design taking them from two places could be made to disagree; this one cannot.",
+      "cross_user_spoofing_is_refused_by_the_conjunct_as_well_as_by_the_token": "Even granting a forged session_id for the sake of argument, the helper additionally requires user_id = auth.uid() (M03). An attacker would have to forge BOTH claims in one signed token, at which point the compromise is total and predates S4s. SECTION_7 requires this to be probed rather than argued."
+    },
+    "M12_helper_read_path": {
+      "DECISION": "Both helpers gain ONE additional conjunct, read LIVE on every invocation, inline in the body. No new callable, no cached value, no connection-start capture. The conjunct requires that a row exist in public.selected_organization_sessions whose session_id equals the claim, whose user_id equals the passed user_id, whose expires_at > now(), and whose organization_id equals the organization that owns the path's project.",
+      "the_mirror_NARROWS_and_the_membership_conjunct_is_UNTOUCHED": "The existing EXISTS over public.projects joined to public.organization_members - including the write helper's om.role IN ('organization_admin','analyst') and om.status = 'active' - is preserved EXACTLY. The mirror conjunct is ANDed to it, never substituted for any part of it. This is RAT-STG-01-C3 expressed as code shape: a mirror row naming an organization in which the subject is not an active member fails the membership conjunct and REFUSES.",
+      "FAIL_CLOSED_ON_ABSENCE_is_explicit": "No row, an expired row, an unparseable claim, or an absent claim ALL deny. There is NO fallback to membership-alone. This is the single most important prohibition in this section: a fallback would re-create defect SI-2 on the storage transport and would make the entire node decorative, since the pre-S4s behaviour IS membership-alone. PG-S4s-5 is the probe that catches it.",
+      "live_per_operation": "The read is inside the function body, so it is re-executed on every policy evaluation - which is once per object per operation. Nothing is captured at connection start, and a value that changes mid-connection is observed to change. That is RAT-STG-01-C2 discharged by construction, and PG-S4s-2 is the probe that proves the read is live rather than captured.",
+      "the_existence_guard_must_be_extended": "The helpers' opening to_regclass guard covers public.projects and public.organization_members. It MUST be extended to public.selected_organization_sessions, so that a substrate lacking the mirror denies by the SAME diagnosable path as a substrate lacking projects, rather than by an unhandled exception swallowed into the EXCEPTION WHEN OTHERS arm."
+    },
+    "M13_helper_body_and_signature_changes": {
+      "DECISION": "BODIES CHANGE. SIGNATURES DO NOT. Both helpers are republished IN PLACE as public.can_read_evidence_object(object_name text, user_id uuid) and public.can_write_evidence_object(object_name text, user_id uuid), preserving argument names, argument types, return type, LANGUAGE plpgsql, SECURITY DEFINER, SET search_path TO '' and OWNER uellix_owner.",
+      "THE_SIGNATURE_PROHIBITION_IS_MECHANICAL_AND_IS_THE_SHARPEST_FINDING_IN_THIS_ARTIFACT": "MEASURED at db/prepared/stella_0021_current_schema_runtime_acl_contract.sql:1141-1159. The section 12 postcondition asserts that NO runtime role holds EXECUTE on an excluded function, and its VALUES list names the two storage helpers by EXACT SIGNATURE - 'public.can_read_evidence_object(text,uuid)' and 'public.can_write_evidence_object(text,uuid)'. The sweep is guarded by WHERE to_regprocedure(t.sig) IS NOT NULL. If a successor CHANGED either signature - by adding a session_id parameter, for instance - to_regprocedure would return NULL for the frozen literal, the row would be filtered out, and the postcondition would PASS WHILE PROVING NOTHING. The guard does not go red; it goes VACUOUS. A signature change would silently disarm a live, currently-load-bearing ACL postcondition, and would do so in the same commit that claimed to strengthen the storage boundary.",
+      "this_is_also_why_the_session_id_is_read_from_the_GUC": "The two facts compose into a single forced outcome. L3 measured that the policies pass only (name, auth.uid()) and offer no argument position for a session id; M13 measures that creating one would vacuate stella_0021 section 12. Reading the claim from inside the body is therefore not the most convenient option - it is the ONLY option that leaves every existing guard both armed and honest.",
+      "republish_in_place_is_a_precedent_not_a_novelty": "db/prepared/stella_0019_storage_write_roles.sql already republishes can_write_evidence_object in place, and its own verification notice records that owner, ACL, SECURITY DEFINER, search_path and argument names were unchanged and that can_read_evidence_object was left byte-identical. S4s follows that pattern for BOTH helpers.",
+      "what_stella_0019_asserts_that_the_successor_must_re_establish": "stella_0019's verification (at :657-700) measures the storage.objects policies before and after and ABORTS if they changed, and asserts the insert_evidence and delete_evidence policies still call can_write_evidence_object. The S4s successor package must preserve both properties: it changes function BODIES only, and it must recreate NO policy on storage.objects - which is RAT-STG-01-C7 and the stella_0019 invariant in one."
+    },
+    "M14_grant_and_revoke_posture": {
+      "DECISION": "ZERO privileges on public.selected_organization_sessions for EVERY non-owner principal. Explicitly: no privilege to uellix_app, uellix_writer or uellix_auditor; none to authenticated, anon or PUBLIC; none to service_role. The relation is reached by OWNERSHIP alone, and by nothing else.",
+      "the_helpers_need_no_GRANT_and_that_is_the_point": "Measured at L4: uellix_owner owns public.projects and public.organization_members, neither is FORCEd, and the helpers reach both by owner exemption. The mirror is owned by the same role under the same conditions, so the SECURITY DEFINER bodies reach it with no grant at all. Every grant that is not issued is a grant that cannot be mis-scoped.",
+      "RLS_ENABLE_WITHOUT_FORCE_and_why_both_halves_matter": "ENABLE ROW LEVEL SECURITY is required because schema public is exposed by PostgREST (MEASURED: supabase/config.toml:20 schemas = ['public','graphql_public']), so the relation is addressable over HTTP and must deny by default at the row layer as well as at the privilege layer. FORCE is NOT set, because FORCE would bind the OWNER to the policies too, the DEFINER helpers would stop reaching the relation, and every storage operation would deny - silently, through the EXCEPTION WHEN OTHERS arm. Both halves are load-bearing and SECTION_7 requires a mutation proving each is detectable.",
+      "defence_in_depth_is_deliberate": "Zero privilege alone already refuses anon and authenticated; RLS alone would too. Both are present because they fail independently: a future ALTER DEFAULT PRIVILEGES or a hand grant could restore a privilege, and RLS would still deny.",
+      "no_new_callable_so_SECTION_5_of_the_ACL_authority_is_UNTOUCHED": "See M20. The ACL authority's EXECUTE posture of exactly three granted signatures is preserved verbatim.",
+      "service_role_is_refused_at_the_design_level": "RAT-STG-01-C4. No writer, no helper and no cleanup path in this design uses service_role or an admin client. There is no code path in the frozen mechanism on which one could be introduced without changing this section."
+    },
+    "M15_owner_of_the_mirror_relation": {
+      "DECISION": "OWNER uellix_owner - the same role that owns the two storage helpers, public.projects and public.organization_members.",
+      "why_it_MUST_be_uellix_owner_specifically": "A SECURITY DEFINER function executes as its OWNER. The helpers are owned by uellix_owner (MEASURED at db/baseline/stella_g2_schema.sql:884 and :928). For the inline read of M12 to resolve without any grant, uellix_owner must reach the mirror - which ownership provides. Any other owner would force either a GRANT to uellix_owner, widening the surface M14 exists to keep at zero, or a failure into the EXCEPTION WHEN OTHERS arm.",
+      "a_RUNTIME_role_may_NOT_own_it_and_the_package_enforces_that": "MEASURED at db/prepared/stella_0021_current_schema_runtime_acl_contract.sql:471-478. Section 0(b) sweeps pg_class for relations in public whose relowner is uellix_writer, uellix_auditor or uellix_app and RAISES 'a runtime role OWNS relation(s) % in schema public. An owner is not constrained by the grants this package issues, so the contract it would certify would not be the contract in force.' uellix_owner is NOT one of the three runtime roles, so this decision satisfies that abort rather than tripping it - checked, not assumed."
+    },
+    "M16_cross_organization_switch_behaviour": {
+      "DECISION": "A switch is an ATOMIC REPLACE: a single INSERT ... ON CONFLICT (session_id) DO UPDATE SET organization_id = EXCLUDED.organization_id, selected_at = now(), expires_at = <new horizon>, with a WHERE guard requiring the existing row's user_id to equal the writing subject. One statement, no delete-then-insert.",
+      "why_not_DELETE_then_INSERT": "A two-statement switch has an interval - however short - in which the session has NO row. Under M12 that interval denies every storage operation, so a switch would produce sporadic, unreproducible refusals on an unrelated path. The single-statement upsert has no such interval: the session moves from organization A to organization B with no state in between, and M03's key makes 'no state in between' expressible at all.",
+      "the_user_id_guard_on_the_UPDATE_arm": "Without it, a conflict on session_id would overwrite whatever row was there, including - if a writer defect ever produced one - a row belonging to another subject. With it, such a write affects zero rows and the defect surfaces as a failure rather than as a silent cross-subject overwrite.",
+      "the_switch_is_visible_on_the_NEXT_operation_with_no_token_refresh": "This is the property that discharges RAT-STG-01-C5's second half. A claim-based design carries a stale window until the token is reissued; here the organization is not in the token at all, so the next helper evaluation reads the new row. The session_id claim does not change across a switch, which is exactly why it is the right key."
+    },
+    "M17_in_flight_operation_behaviour": {
+      "DECISION": "STATED, BOUNDED, AND NOT PAPERED OVER. A storage operation already in flight across the Storage API boundary when a switch occurs is NOT retroactively re-evaluated. Policy evaluation happens once, at the moment the Storage API evaluates the row; an operation whose evaluation completed under organization A completes under organization A.",
+      "why_this_cannot_be_fixed_at_S4s_and_must_not_be_claimed_to_be": "The application transaction that performs the switch and the Storage API connection that evaluates the policy are DIFFERENT CONNECTIONS ON DIFFERENT TRANSPORTS - the finding TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 B1_REDERIVATION established and this lane re-derived at L5. There is no shared transaction in which both could be made atomic. Any design claiming to re-evaluate an in-flight operation would be asserting a coupling that measurably does not exist.",
+      "the_bound_that_makes_it_acceptable": "The exposure is one already-authorized operation, for an organization the subject was an active member of at evaluation time, for the duration of that single operation. It is not a window in which NEW operations can be started against the old organization: the very next evaluation reads the new row. Membership remains a live conjunct throughout, so this is never a path to an organization the subject does not belong to.",
+      "recorded_as_an_OPEN_FINDING_rather_than_resolved": "F-S4S-2. Resolving it would require the storage write path to hold a transaction across the upload, which lib/pipeline/evidence.ts:316-339 documents as deliberately rejected because holding a pooled connection for a 25 MB upload is unacceptable. S4s does not reopen that decision."
+    },
+    "M18_membership_revocation_behaviour": {
+      "DECISION": "MEMBERSHIP REVOCATION DOES NOT WRITE THE MIRROR. No revocation path is added to the write set, and no mirror row is deleted when a membership is revoked or deactivated.",
+      "why_that_is_correct_rather_than_an_omission": "This is the single clearest demonstration that RAT-STG-01-C3 is doing real work. Because membership is re-established LIVE inside the helper on every operation, a revoked member's surviving mirror row grants NOTHING the instant the membership row's status leaves 'active' - with no write to the mirror, no cache to invalidate, and no propagation delay. Revocation takes effect at the speed of the next operation.",
+      "the_alternative_would_be_STRICTLY_WORSE": "A design that deleted mirror rows on revocation would be a design in which revocation DEPENDED on that delete succeeding - introducing a propagation path that can fail, be missed on a new revocation site, or race. It would convert an invariant into a procedure. PG-S4s-4 exists to prove the invariant holds without the procedure.",
+      "hygiene_is_still_served": "The revoked member's row expires within the M06 horizon and is cascaded away if the user or organization is deleted. No new path is needed."
+    },
+    "M19_restore_reset_and_deletion_behaviour": {
+      "DECISION": "RESET ON RESTORE. See SECTION_8 for the full derivation. On any database restore or point-in-time recovery, public.selected_organization_sessions is TRUNCATED as part of bringing the system up, before it serves traffic. Deletion of individual rows is covered by M07/M09/M10 and by the M05 cascades.",
+      "summary_of_the_reason": "The mirror is transient enforcement state derived from a carrier, not durable business data. A restore re-materializes rows for sessions that no longer exist, keyed by session_ids GoTrue may since have reissued, and restores our table and GoTrue's session store to points that need not agree. Truncating costs every live session one re-selection - a product inconvenience already contemplated by SESSION_SCOPE - and removes the entire class of restore-induced mis-narrowing."
+    },
+    "M20_whether_a_new_callable_is_required": {
+      "DECISION": "NO NEW CALLABLE. The mirror is read INLINE inside the two existing helper bodies. No function, no view and no procedure is created by S4s.",
+      "this_is_PROVEN_mechanically_supported_not_merely_preferred": "The mission requires preferring no new callable ONLY if mechanically supported, so the support is stated: the helper is SECURITY DEFINER with SET search_path TO '', so an inline read written as a fully schema-qualified public.selected_organization_sessions resolves without any search_path dependency; and the executing role is the owner uellix_owner, which reaches the relation by ownership (M15). Nothing about the inline read requires a privilege, a grant or a resolution step the current design does not already have.",
+      "why_a_NEW_CALLABLE_WOULD_BE_ACTIVELY_HARMFUL_here": "MEASURED. A newly created function receives acldefault('f'), which is EXECUTE TO PUBLIC - a fact stella_0021 itself relies on and states at :1122, which is why it asserts the EXECUTE posture against the live catalog rather than against proacl IS NULL. A new mirror-reading callable would therefore be EXECUTE-able by PUBLIC, by anon, by authenticated and by all three runtime roles the moment it is created, unless explicitly revoked. Worse, stella_0021 section 12's negative list is a FIXED LITERAL VALUES list naming five functions; a sixth, new function is not in it and would be invisible to that postcondition. The result would be an EXECUTE surface that is both open by default and unguarded by the contract that exists to guard exactly this.",
+      "consequence_for_the_ACL_authority": "Because no callable is added, the ACL authority's SECTION_5 posture - EXECUTE on exactly three signatures, public.current_user_org_ids(), public.current_user_is_super_admin() and public.current_user_role_in_org(uuid), to uellix_writer and uellix_auditor (MEASURED at stella_0021:975-979) - is UNCHANGED by S4s. The required ACL act of SECTION_4 is therefore a TABLE-CLASS classification only, and touches no EXECUTE clause. That is what keeps it small and is why SECTION_A6's escalation rule is not triggered."
+    },
+    "delegated_item_coverage": {
+      "relation": [
+        "M01",
+        "M02"
+      ],
+      "uniqueness": [
+        "M03",
+        "M04"
+      ],
+      "expiry": [
+        "M06"
+      ],
+      "writer path": [
+        "M08",
+        "M09",
+        "M10"
+      ],
+      "helper read path": [
+        "M12",
+        "M13"
+      ],
+      "grants": [
+        "M14",
+        "M15",
+        "M20"
+      ],
+      "cleanup": [
+        "M07",
+        "M19"
+      ],
+      "anti-spoofing": [
+        "M11"
+      ],
+      "cross-org behavior": [
+        "M16",
+        "M17",
+        "M18"
+      ],
+      "additional_items_resolved_beyond_the_nine": [
+        "M05 foreign key topology",
+        "M19 restore/reset"
+      ],
+      "count_check": "Twenty items M01..M20, nine delegated categories, every category mapped to at least one item and every item mapped from at least one category or listed as additional."
+    }
+  },
+  "SECTION_3_ACL_READJUDICATION": {
+    "status": "NORMATIVE AND MANDATORY. TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json NEXT_AUTHORITY_TOPOLOGY step 4 assigns the ACL re-adjudication to THIS artifact, and ACL_CONSEQUENCE_SYMBOLIC.specific_re_adjudication_required_at_S4s enumerates four questions. All four are answered here, each against a measured predicate rather than against the ACL authority's prose.",
+    "the_defect_this_section_exists_to_prevent": "Stated as the mission packet states it: the future implementation must not first create a relation and only then discover that tests/database-runtime-acl-closed-world.test.ts is red. SECTION_3 and SECTION_5 together make the red-ness PREDICTED, ENUMERATED and PRICED before a single line of SQL is written.",
+    "Q1_does_the_relation_enter_the_closed_world_universe_U": {
+      "ANSWER": "YES. Unavoidably, and by deliberate choice of schema (M01).",
+      "mechanism_on_the_DB_free_side": "public.selected_organization_sessions is created by a migration under db/migrations/** (SECTION_5), so universeFromMigrations() in tests/database-runtime-acl-closed-world.test.ts matches its CREATE TABLE and admits it to U. U becomes 65.",
+      "mechanism_on_the_live_side": "stella_0021's section 0 sweep over WHERE n.nspname='public' AND c.relkind IN ('r','p') finds it. If it is not classified, the package RAISES and does not apply.",
+      "EXACT_LITERALS_THAT_GO_RED_enumerated_rather_than_summarised": [
+        "expect(new Set(universe).size).toBe(64) -> becomes 65",
+        "expect(migrationUniverse.created.size).toBe(57) -> becomes 58",
+        "expect(classified.length + exclusions.length).toBe(64) -> becomes 65 only after the package classifies it; until then U != C and the unclassified arm fires",
+        "expect(classified.length).toBe(58) -> becomes 59 once classified",
+        "the class-size literal of whichever class array receives the name (see Q2)",
+        "the class-group arithmetic assertion containing that class - either the 19 group, the 38 group, or the SECTION_3 single-member group",
+        "CW-P-01's cross-check expect([...fromMigrations].sort()).toEqual([...schemaUniverse].sort()) unless db/schema.ts also declares the table via pgTable()",
+        "tests/postgres/current-schema-runtime-acl.pg.test.ts PG-01 expect(tables).toBe('58') -> becomes 59",
+        "tests/postgres/current-schema-runtime-acl.pg.test.ts PG-04 expect(CONTRACT.size).toBe(58) -> becomes 59"
+      ],
+      "db_schema_ts_is_NOT_optional": "MEASURED and easy to miss. CW-P-01 asserts that db/migrations/** and db/schema.ts AGREE on the migration-created set. A migration that creates the table without a matching pgTable('selected_organization_sessions', ...) declaration in db/schema.ts turns that arm red INDEPENDENTLY of classification, and the failure reads as a universe disagreement rather than as a missing declaration. db/schema.ts is therefore a mandatory write-set member."
+    },
+    "Q2_exact_ACL_class_and_the_per_role_posture": {
+      "ANSWER": "A NEW CLASS. public.selected_organization_sessions is NO_RUNTIME_ACCESS for every governed runtime role, and it belongs in a NEW class array rather than in any existing one.",
+      "per_role_posture": {
+        "uellix_app": "NO privilege of any kind.",
+        "uellix_writer": "NO privilege of any kind.",
+        "uellix_auditor": "NO privilege of any kind - and this is the deliberate part. See auditor_note.",
+        "authenticated": "NO privilege. Reachable over PostgREST (supabase/config.toml:20) and refused by both the empty privilege set and RLS.",
+        "anon": "NO privilege.",
+        "PUBLIC": "NO privilege.",
+        "service_role": "NO privilege. RAT-STG-01-C4.",
+        "uellix_owner": "OWNER. Reaches the relation by ownership; holds no GRANT because none is needed."
+      },
+      "auditor_note_stated_because_it_is_the_one_a_reviewer_will_question": "Every other NO_RUNTIME_ACCESS-style decision in this schema still tends to leave uellix_auditor a SELECT - the ACL authority records SELECT for the auditor on all 38 legacy tables. S4s withholds it. The reason is that the mirror is a live authorization input, not a record of anything: reading it tells an auditor which organization a session had selected at the instant of the read, which is transient, not reproducible, and not evidence of any decision. audit_logs is where storage decisions are evidenced. Granting the auditor SELECT would widen a table whose entire value is that nothing but the DEFINER owner reads it, in exchange for a view that is stale the moment it is taken.",
+      "why_a_NEW_class_rather_than_reusing_no_runtime_access": "MEASURED at tests/database-runtime-acl-closed-world.test.ts: the existing arrays are pinned by exact content, not only by size - expect(classArray(packageSql,'no_runtime_access')).toEqual(['commercial_accounts']) and expect(classArray(packageSql,'no_runtime_access_ce3')).toEqual(['entitlement_grants']). Both are single-member equality assertions. Appending the mirror to either would break an toEqual pin AND would merge a transient enforcement relation into a class whose members are durable commercial records, losing the provenance the class arrays exist to carry. The existing precedent for a new arrival is itself a new array: migration 0073's entitlement_grants received its own no_runtime_access_ce3 rather than joining no_runtime_access. S4s follows that precedent exactly.",
+      "the_classification_is_ADJUDICATED_here_and_ENACTED_elsewhere": "Stated so this artifact is not misread as having performed the ACL act. SECTION_3 determines what the class must be. SECTION_4 names the separate act that must record it in the ACL lineage and publish the successor package. Nothing here edits, amends or supersedes any ACL artifact."
+    },
+    "Q3_does_uellix_owner_require_an_explicit_SELECT_or_does_owner_access_suffice": {
+      "ANSWER": "OWNER ACCESS SUFFICES, and NO explicit SELECT is granted - but the sufficiency is CONDITIONAL and the condition is frozen at M14.",
+      "the_condition": "Owner access suffices IF AND ONLY IF the relation does not carry FORCE ROW LEVEL SECURITY. A relation owner is exempt from its own relation's RLS unless FORCE is set. M14 freezes ENABLE WITHOUT FORCE, and SECTION_7 requires a mutation that sets FORCE and observes the helpers begin to deny - so the condition is proven live rather than assumed from the standard.",
+      "why_the_S4_owner_exemption_argument_does_NOT_carry_over_for_free": "This is the precise hazard ACL_CONSEQUENCE_SYMBOLIC named: an owner-exemption argument that holds for public.projects does not automatically hold for a relation created later under different ownership. It holds here ONLY because M15 makes the owner uellix_owner - the same role - and M14 withholds FORCE. Change either and the answer inverts, silently, into deny-everything via the EXCEPTION WHEN OTHERS arm.",
+      "SELECT_privilege_would_not_even_be_the_right_instrument": "Recorded because the question invites the wrong answer. Granting uellix_owner SELECT would confer column-level reach, not ROW visibility; under RLS, row visibility for a non-owner is decided by policy, not by SELECT. A design that 'fixed' a FORCE-induced denial by granting SELECT would still deny, and would have widened the surface for nothing."
+    },
+    "Q4_does_the_helper_EXECUTE_topology_change_and_must_the_three_signature_posture_move": {
+      "ANSWER_execute_topology": "NO CHANGE. The helpers keep REVOKE ... FROM PUBLIC, anon and GRANT ... TO authenticated exactly as measured at supabase/migrations/20260716000001_storage_policies.sql:81-85. No role gains or loses EXECUTE on either helper.",
+      "ANSWER_three_signature_posture": "IT DOES NOT MOVE. The ACL authority's SECTION_5 posture - EXECUTE on exactly three signatures to uellix_writer and uellix_auditor, MEASURED at stella_0021:975-979 - is UNCHANGED by S4s, because M20 introduces no callable.",
+      "and_the_NEGATIVE_list_must_remain_ARMED": "The corollary that matters more than the posture itself. stella_0021 section 12's exclusion list names the two storage helpers by exact signature and is filtered by to_regprocedure(t.sig) IS NOT NULL. M13's signature prohibition is what keeps those two rows in the sweep. The S4s successor package must not merely avoid granting EXECUTE - it must leave the literals resolvable, which is a property of the SIGNATURE, not of the grant.",
+      "consequence_for_SECTION_A6_of_the_ACL_amendment": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json SECTION_A6 requires an implementation lane that needs to EXTEND the runtime EXECUTE posture to STOP and escalate for a SECTION_5 successor, and forbids self-authorization. S4s does NOT need to extend it. That escalation is therefore NOT triggered, and the required ACL act of SECTION_4 is a table-class classification that touches no EXECUTE clause."
+    },
+    "Q5_does_the_TO_authenticated_grant_on_storage_objects_change": {
+      "ANSWER": "NO. Not the grants, and not the policy text.",
+      "RAT_STG_01_C7_preserved": "No policy on storage.objects is created, dropped, altered or recreated by S4s. The three policies keep their names, their TO authenticated clause and their expressions calling can_read_evidence_object(name, auth.uid()) and can_write_evidence_object(name, auth.uid()). Only the FUNCTION BODIES behind those unchanged calls change.",
+      "why_the_whole_mechanism_was_shaped_to_make_this_possible": "This is the payoff of reading the session id inside the body. Any design that needed the policy to supply a session id would have had to REWRITE the policy expression - widening storage policy TEXT, which RAT-STG-01-C7 forbids without separate authorization, and colliding with the stella_0019 invariant that it recreates NO policy on storage.objects. The mechanism is fail-closed against that collision by construction rather than by discipline.",
+      "stella_0019_invariant_re_established_by_the_successor": "stella_0019 measures the storage.objects policies in its section 0 and ABORTS if they changed while it ran (:657-667). The S4s successor package must carry the same before/after measurement and the same abort, so that 'no policy was recreated' is a machine fact of the S4s apply, not an inherited claim about a different package's apply."
+    },
+    "Q6_does_the_relation_disturb_the_S4_tenant_census": {
+      "ANSWER": "YES, and it is recorded here rather than left to merge order.",
+      "measurement": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json S4_CLOSED_WORLD_CENSUS partitions the tenant universe as 34 WELDED + 5 nullable + 2 excluded identity substrate + 1 excluded owner-only = 42 relations carrying organization_id, with self_check SC-7 recording 'no remainder'. The mirror carries organization_id and is a 43rd.",
+      "required_disposition": "EXCLUDED_WITH_REASON, NOT WELDABLE. A tenant weld on the mirror would be fail-closed nonsense: the relation is READ ONLY by a SECURITY DEFINER owner that is exempt from its RLS, so a weld predicate would never be evaluated for the one reader that matters, while a weld that DID bind would deny the helper and break every storage operation. The relation is also not tenant DATA - it is an input to a tenancy decision, in the same family as the identity substrate the census already excludes.",
+      "this_is_finding_F_STG_1_made_concrete": "The DAG amendment left the S4/S4s integration order as an open sequencing decision and declined to impose one. This section does not impose one either. It states the obligation symmetrically: whichever of S4 and S4s integrates SECOND must carry the other's addition into its own census, and for S4s that obligation is this disposition, pre-written so the second integrator has nothing to invent."
+    }
+  },
+  "SECTION_4_ACL_SUCCESSOR_TOPOLOGY": {
+    "status": "NORMATIVE. This section answers the Phase 4 question the mission poses: whether current ACL governance requires a SEPARATE append-only ACL successor or amendment artifact, and if so whether authoring it in THIS act is governance-valid.",
+    "FINDING_1_a_separate_ACL_artifact_IS_required": {
+      "verdict": "REQUIRED. Not optional, not satisfiable by SECTION_3 alone.",
+      "binding_clause_measured_verbatim": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json SECTION_10_FUTURE_COVERAGE_GUARD.new_migration_created_public_table_turns_the_guard_RED reads in full: 'BINDING. Until the table is explicitly classified by an authority amendment AND a successor package (or an amendment to stella_0021 authorised by lineage), the guard fails. There is no auto-classification, no default class, no assume READ_ONLY.'",
+      "and_the_running_package_says_the_same_thing": "stella_0021:398 instructs 'Classify it in docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and publish a successor; do not widen this file.' Two independent sources - a frozen authority clause and a live exception message - require the same two artifacts.",
+      "so_SECTION_3_is_necessary_but_NOT_sufficient": "SECTION_3 ADJUDICATES the class. The binding clause requires the class to be RECORDED IN THE ACL LINEAGE and ENACTED BY A SUCCESSOR PACKAGE. An adjudication living only in a tenancy artifact satisfies neither half."
+    },
+    "FINDING_2_it_is_NOT_a_mandatory_PREDECESSOR": {
+      "verdict": "REFUTED, mechanically. The ACL act CANNOT precede this artifact, so S4S_BLOCKED__ACL_SUCCESSOR_AUTHORITY_MUST_PRECEDE is not the correct disposition of this lane.",
+      "the_dependency_direction_is_measurable": "An ACL classification names a RELATION: its schema, its name, its owner and its per-role posture. Every one of those is DELEGATED to this artifact by TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json STORAGE_V1_MECHANISM_DELEGATION, whose rule states that the delegated items are 'REQUIRED OF THE S4s EXECUTION AUTHORITY' and that 'a successor that cites this artifact as having defined one has misread it'. An ACL amendment authored BEFORE S4s would therefore have to INVENT the relation shape - which is precisely the act the DAG amendment forbids.",
+      "the_frozen_sequence_agrees": "NEXT_AUTHORITY_TOPOLOGY is declared a FROZEN SEQUENCE in which 'Each step is a precondition of the next; none may be skipped or run in parallel with its predecessor.' Step 4 is 'Author the S4s STORAGE SELECTED-ORG EXECUTION AUTHORITY and its test manifest, defining every item delegated at STORAGE_V1_MECHANISM_DELEGATION and re-adjudicating ACL per ACL_CONSEQUENCE_SYMBOLIC.' There is no ACL step between step 3 and step 4. The re-adjudication is assigned INTO step 4, which is this lane.",
+      "conclusion": "The ACL act is a required SUCCESSOR of this artifact, not a required predecessor of it."
+    },
+    "FINDING_3_authoring_it_in_THIS_act_is_NOT_governance_valid": {
+      "verdict": "REFUSED. The paired ACL artifacts are NOT authored by this lane. The mission permits authoring them here ONLY if governance-valid; measured against the lineage they would amend, they are not.",
+      "evidence_A_the_ACL_lineage_is_authored_in_single_domain_acts_three_times_out_of_three": "MEASURED at BASE by walking git history for docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_*. Exactly three commits touch that lineage - d68c9d81 (freeze the successor authority), 4a81403d (R2 legacy end-state correction), 4f875730 (the PG-17 amendment) - and for each, the set of docs/ops/<domain>/ directories touched is exactly {staging}. No commit in the ACL lineage has ever touched a second authority domain.",
+      "evidence_B_the_one_cross_domain_pattern_that_DOES_exist_is_the_one_this_lane_is_forbidden": "The claim that cross-domain authority commits never happen would be FALSE and is not made here. MEASURED: commits pairing docs/ops/ods/** with docs/ops/tenancy/** are common - 7350f543, 2b2f4dff, 25ac5d18, 0aaa94cc, 88b2c3b5, 3261c154 and others. But every one of those is the ODS ALLOCATION pattern, in which an allocator issues a lineage identifier for a tenancy node. This lane is explicitly forbidden to allocate ODS. The existing cross-domain precedent is therefore not available to it.",
+      "evidence_C_the_amendment_form_itself_is_single_purpose": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json declares document_class SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_SUPERSEDES_EXACTLY_ONE_DEFECTIVE_CLAUSE_OF_ITS_FROZEN_PARENT, carries its own mission_id CV1-RUNTIME-ACL-PG17-AW, its own branch, its own BASE and its own companion manifest amendment. The precedent is one amendment, one purpose, one lane - authored by a lane OTHER than the original ACL writer, which establishes that a foreign lane MAY amend it, and equally that when one does, it does so as a dedicated act.",
+      "evidence_D_the_immediate_predecessor_refused_the_identical_temptation": "TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json ACL_CONSEQUENCE_SYMBOLIC.explicitly_not_authored_here states that authoring an ACL successor 'in this lane would be the unauthorized successor act', and its NON_AUTHORIZATIONS list includes 'NO ACL adjudication and no ACL successor authority.' That lane was not authorized to adjudicate; this one is. But nothing in the grant this lane received extends from ADJUDICATING the class to AMENDING the staging lineage that records it, and the DAG amendment pre-authorized no such extension.",
+      "evidence_E_the_ACL_amendment_is_paired_with_the_PACKAGE_not_with_this_artifact": "The binding clause pairs 'an authority amendment AND a successor package'. The successor package is implementation, which NEXT_AUTHORITY_TOPOLOGY places at step 7, after ODS allocation at step 6. An ACL amendment bundled into step 4 would be separated from the package it authorizes by three intervening steps including an independent certification of THIS artifact - during which the relation shape it classifies may legitimately be corrected. It would be a classification of a shape that is not yet certified.",
+      "the_honest_consequence_stated_plainly": "This artifact ADJUDICATES the ACL outcome in full at SECTION_3, and FREEZES the exact write set of the act that must record it below. It does NOT embed an ACL grant decision as though authorized, which is the failure mode the mission names. The adjudication is binding as an input to that act; it is not itself that act."
+    },
+    "THE_REQUIRED_ACL_ACT_exact_write_set": {
+      "status": "FROZEN AS A REQUIREMENT ON A FUTURE LANE. Nothing here is created by this artifact. Paths are exact; content is constrained by SECTION_3 and by nothing this lane invents beyond it.",
+      "act_name_suggested_not_allocated": "An ACL-lineage amendment lane in the CV1-RUNTIME-ACL-* family. This artifact does not name its mission_id, does not reserve one, and does not allocate anything.",
+      "write_set": [
+        {
+          "path": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "class": "ORDINARY (docs/ops/staging/** is not in DEFAULT_PROTECTED_PATTERNS)",
+          "version_derivation": "v1.0.2 is the next free ordinal after the measured v1.0.1. MEASURED: docs/ops/staging/ contains v1.0.0 and v1.0.1 of this artifact family and no v1.0.2. The amending lane MUST RE-DERIVE this at its own head rather than copying it from here - an intervening ACL amendment would make v1.0.2 taken, and deriving a next ordinal from a stale observation is a known defect class in this repository.",
+          "must_contain": [
+            "The classification of public.selected_organization_sessions as a NEW class array, per SECTION_3 Q2, with its per-role posture.",
+            "The amended closed-world arithmetic: U 64 -> 65, classified 58 -> 59, exclusions unchanged at 6, migration-created 57 -> 58, chain-created unchanged at 7.",
+            "An explicit statement that SECTION_5's three-signature EXECUTE posture is UNCHANGED, per SECTION_3 Q4, so the amendment cannot later be read as having widened it.",
+            "The append-only form of v1.0.1: the parent is not edited, its blob sha at that lane's base is recorded, and the supersession is narrow and enumerated."
+          ]
+        },
+        {
+          "path": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+          "class": "ORDINARY",
+          "must_contain": "The controls for the amended closed world, including the amended PG-01 and PG-04 cardinalities (58 -> 59) and a mutation proving the new class array is not vacuous - i.e. that removing the mirror from it reports the mirror as unclassified rather than reporting nothing."
+        }
+      ],
+      "what_this_act_must_NOT_do": [
+        "It must NOT widen db/prepared/stella_0021_current_schema_runtime_acl_contract.sql in place. The package's own abort message forbids it: 'publish a successor; do not widen this file.'",
+        "It must NOT grant any privilege on the mirror to any runtime role, to authenticated, to anon, to PUBLIC or to service_role.",
+        "It must NOT touch the EXECUTE half or the three granted signatures.",
+        "It must NOT create the relation. The relation is created by the S4s implementation migration, not by an ACL act."
+      ],
+      "sequencing_of_this_act_relative_to_S4s": "It follows the independent certification of THIS artifact (NEXT_AUTHORITY_TOPOLOGY step 5) and precedes or accompanies the S4s implementation (step 7). It is NOT a blocker on this lane, and this lane's final token does not depend on it."
+    },
+    "AMENDED_NEXT_AUTHORITY_TOPOLOGY": {
+      "status": "The parent's seven-step sequence with the ACL act located in it. The parent sequence is NOT edited; this is the composed reading, in the same spirit as the parent's own EFFECTIVE_DAG.",
+      "steps": [
+        {
+          "step": 1,
+          "act": "Parent DAG amendment + companion manifest amendment.",
+          "state": "CLOSED - PR #190."
+        },
+        {
+          "step": 2,
+          "act": "Independent certification of that amendment.",
+          "state": "CLOSED - CERTIFIED_PASS."
+        },
+        {
+          "step": 3,
+          "act": "Controlled merge to integration/commercial-v1.",
+          "state": "CLOSED - c2a9390e, an ancestor of BASE."
+        },
+        {
+          "step": 4,
+          "act": "Author the S4s execution authority and its test manifest, defining every delegated item and re-adjudicating ACL.",
+          "state": "PERFORMED BY THIS LANE."
+        },
+        {
+          "step": 5,
+          "act": "Independent certification of the S4s execution authority.",
+          "state": "REQUIRED. NOT performed by this lane."
+        },
+        {
+          "step": "5b",
+          "act": "The ACL lineage amendment act frozen above - authority amendment v1.0.2 plus its manifest amendment, docs-only, in the ACL lineage.",
+          "state": "REQUIRED. Located after step 5 because it classifies a relation shape that step 5 may still correct. NEW - located by this artifact, not by the parent."
+        },
+        {
+          "step": 6,
+          "act": "ODS allocation as required for S4s implementation, by an allocator re-deriving the identifiers at its own head.",
+          "state": "BLOCKED on step 5 and on the E16 lineage-sequencing gate."
+        },
+        {
+          "step": 7,
+          "act": "S4s implementation, including the stella_0021 successor package that enacts the ACL classification.",
+          "state": "BLOCKED on step 6 and on step 5b."
+        }
+      ],
+      "why_5b_rather_than_renumbering": "The parent's sequence is frozen and append-only discipline forbids renumbering it. 5b is inserted in the same way the parent inserted S4s into a frozen DAG rather than renumbering S5..S8."
+    }
+  },
+  "SECTION_5_FUTURE_IMPLEMENTATION_WRITE_SURFACE": {
+    "status": "NORMATIVE AS A BOUND. Nothing in this section is written by this lane. Paths are frozen where the repository already fixes them, and stated as a bounded derivation rule where it does not. A path absent from this section and from its derivation rules is OUT OF SCOPE for S4s and requires its own authority.",
+    "classification_source": "PROTECTED vs ORDINARY is decided by scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS as MEASURED at BASE (SECTION_1 L8), never by intuition about which files feel risky.",
+    "PROTECTED": [
+      {
+        "path": "db/migrations/<next>_tenancy_s4s_selected_organization_sessions.sql",
+        "pattern": "db/migrations/**",
+        "content": "CREATE TABLE public.selected_organization_sessions per M01/M02, PK per M03, FKs per M05, ALTER TABLE ... OWNER TO uellix_owner per M15, ENABLE ROW LEVEL SECURITY without FORCE per M14, and no GRANT to any role.",
+        "ordinal_rule": "The next free four-digit ordinal AFTER 0073 as measured at the implementing lane's own head. MEASURED here only as: 0073 is the highest at BASE. The implementing lane MUST re-derive it - deriving a next ordinal from a stale observation is a known defect class in this repository, and an intervening migration would silently collide."
+      },
+      {
+        "path": "db/prepared/stella_<next>_storage_selected_org_boundary.sql",
+        "pattern": "db/prepared/**",
+        "content": "Republishes BOTH helper bodies in place per M12/M13, preserving signature, owner, DEFINER, search_path and argument names; carries a section 0 that measures the storage.objects policies and ABORTS if they changed, per SECTION_3 Q5.",
+        "ordinal_rule": "Next free stella_ ordinal after stella_0021 as measured at the implementing lane's head. MEASURED here only as: stella_0021 is the highest non-hosted ordinal at BASE.",
+        "forward_only_note": "db/prepared carries two parallel numbered lineages (stella_ and stella_hosted_). The implementing lane must not conflate them."
+      },
+      {
+        "path": "db/prepared/stella_<next>_current_schema_runtime_acl_contract_successor.sql",
+        "pattern": "db/prepared/**",
+        "content": "The stella_0021 SUCCESSOR that classifies the mirror per SECTION_3 Q2. REQUIRED, and explicitly NOT an in-place widening of stella_0021 - its own abort message forbids that.",
+        "authorized_by": "The ACL amendment v1.0.2 of SECTION_4, NOT by this artifact."
+      },
+      {
+        "path": "db/prepared/hosted/... and db/prepared/hosted/governed/... twins",
+        "pattern": "db/prepared/**",
+        "content": "Hosted and governed twins of the two packages above, IF AND ONLY IF the hosted chain requires them.",
+        "derivation_rule": "MECHANICALLY DETERMINED, NOT ASSUMED. stella_0019 has both a .hosted.sql and a .governed.sql twin; stella_0021 has neither at BASE. The implementing lane derives the requirement from db/hosted/hosted-package-manifest.ts and db/hosted/forward-only-packages.ts at its own head, and records the derivation. This artifact does not presume the answer."
+      },
+      {
+        "path": "db/baseline/** - NOT EXPECTED TO CHANGE",
+        "pattern": "db/baseline/**",
+        "content": "S4s does not regenerate the baseline dump. Recorded as an EXPECTED-EMPTY protected surface so that a diff touching it is a signal rather than a surprise. If baseline regeneration proves necessary, that is a scope change requiring its own adjudication - not a quiet addition."
+      }
+    ],
+    "ORDINARY": [
+      {
+        "path": "db/schema.ts",
+        "content": "pgTable('selected_organization_sessions', ...). MANDATORY - SECTION_3 Q1 measures that CW-P-01 turns red without it, independently of classification."
+      },
+      {
+        "path": "app/(authenticated)/app/organizations/select/actions.ts",
+        "content": "The select writer per M08 and the explicit clear writer per M09(a)."
+      },
+      {
+        "path": "lib/auth/session.ts",
+        "content": "The stale-carrier clear per M09(b), at the existing :297 branch. CLEAR ONLY - a mirror WRITE here is forbidden by M09 and is guarded by a live test."
+      },
+      {
+        "path": "app/auth/signout/route.ts",
+        "content": "The sign-out delete per M10, strictly BEFORE supabase.auth.signOut()."
+      },
+      {
+        "path": "lib/auth/selected-organization.ts OR a new sibling module",
+        "content": "The server-side session_id derivation per M11 and the mirror write/delete primitives. Placement is an implementation choice bounded by one rule: the primitives must not be importable by a client component, and the existing writer-topology guards must continue to pass."
+      },
+      {
+        "path": "tests/database-runtime-acl-closed-world.test.ts",
+        "content": "The frozen literals enumerated in SECTION_3 Q1. MANDATORY and easy to under-estimate: this is a TEST file and therefore ORDINARY, but it carries the closed-world arithmetic and cannot be left stale."
+      },
+      {
+        "path": "tests/postgres/current-schema-runtime-acl.pg.test.ts",
+        "content": "PG-01 and PG-04 cardinalities 58 -> 59."
+      },
+      {
+        "path": "db/hosted/authority/certification/storage-functional-probe.ts",
+        "content": "MEASURED AND MATERIAL. The probe today sets only the sub claim (its header at :41-46 records claim-unset -> false, claim-set -> true). Once the mirror conjunct exists, that probe DENIES FOR ALL CALLERS unless it also publishes a session_id claim and plants a matching live mirror row. Without this edit the probe does not merely fail - it fails in a way that looks like the helper is broken."
+      },
+      {
+        "path": "tests/hosted/authority/storage-functional-probe.test.ts",
+        "content": "The probe's own test, following the probe."
+      },
+      {
+        "path": "db/hosted/prechain-ownership.ts, db/hosted/baseline-manifest.ts, db/hosted/package-witnesses.ts, db/hosted/hosted-package-manifest.ts, db/hosted/forward-only-packages.ts and their tests",
+        "content": "DIGEST AND WITNESS PINS. Derivation rule: any of these that names a file whose bytes change, or that pins a sourceSha256 of a changed package, is a write-set member. MEASURED: 80 files reference the two helper names, and several of these modules pin sha256 digests. The implementing lane must ENUMERATE the affected pins by running the suites, never by grepping the helper name - a digest pin does not mention what it pins."
+      },
+      {
+        "path": "artifacts/baseline-rehearsal/latest.json and sibling tracked artifacts",
+        "content": "CONDITIONAL. A tracked artifact that embeds a digest which this node repins becomes a hidden write-set member and goes stale silently. The implementing lane must check the tracked artifacts/** tree after any digest repin."
+      },
+      {
+        "path": "tests/tenancy/** - new S4s suites",
+        "content": "The DB-free controls of the companion manifest."
+      },
+      {
+        "path": "tests/auth/route-authorization-boundary.test.ts, tests/auth/organization-commercial-acceptance-topology.test.ts",
+        "content": "CONDITIONAL. Both are corpus-scanning writer-topology guards (SECTION_1 L6). They are write-set members if and only if the writer topology moves in a way they enumerate. Listed so the implementing lane checks rather than discovers."
+      }
+    ],
+    "NEW_HARNESS_CLASS_priced_separately": {
+      "why_it_has_its_own_heading": "Because it is the largest single cost in the node and the easiest to under-estimate. SECTION_1 L7 MEASURED that zero files in scripts/**, tests/** or supabase/** reference storage-api, gotrue, supabase/storage or kong. The real-integration contract of SECTION_7 is not an extension of an existing harness with a new probe manifest; it requires a harness class this repository does not have - one that stands up GoTrue and the Storage API alongside PostgreSQL, mints real tokens, and drives the real HTTP storage path.",
+      "paths": "scripts/ and tests/ - ORDINARY. Exact paths are NOT frozen here, because freezing a path for a harness whose shape has never been built would be inventing detail this lane cannot ground.",
+      "bounded_derivation_rule": "The harness must (a) run against disposable, throwaway infrastructure only - never staging, never production, never the canonical local stack, per the parent REAL_PG_CONTRACT reaffirmed by the DAG amendment; (b) pin its images by digest as scripts/m2-disposable-pg-bootstrap.ts already does; (c) expose a token-minting path so that session_id is a REAL GoTrue session id and not a fixture uuid - a harness that fabricates the claim proves nothing about the transport, which is the exact lesson the retired PG-2 recorded."
+    }
+  },
+  "SECTION_6_ODS_NEED": {
+    "classifier_run": "The CURRENT classifier at BASE - scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS, read at :82-90 - applied to the SECTION_5 future write surface.",
+    "protected_paths_present": true,
+    "which_patterns_are_hit": [
+      "db/migrations/**",
+      "db/prepared/**"
+    ],
+    "NEW_ODS_REQUIRED": "YES",
+    "why_this_is_a_measurement_and_not_an_expectation": "The mission says S4s is EXPECTED to need ODS but instructs not to assume it. The expectation is not what decides it. The decision is that the future write surface contains at least one path matching an unconditional protected pattern - concretely, the mirror migration under db/migrations/** and the helper-republishing package under db/prepared/** - and scripts/ods-scope.ts:79-81 records that no --allow pattern in this version of the gate can authorize a change to those. A protected path therefore requires a resolved --protected-authority grant, which requires an ODS allocation.",
+    "would_the_answer_have_been_NO_under_any_reachable_variant": "Considered rather than skipped. A design placing the mirror outside db/migrations/** - for instance created by a prepared package - would still hit db/prepared/**, which is equally protected. A design with no database object at all would not be the ratified mechanism. There is no reachable S4s shape with an empty protected surface, so NEW_ODS_REQUIRED=YES is robust to the design choices still open at implementation.",
+    "NOTHING_IS_ALLOCATED_HERE": "This artifact allocates NO ODS maintenance addendum ordinal, NO HPO-ODS grant, and reserves neither. It does not name a future lineage identifier or grant id, and it does not carry one forward from any prior lane note. NEXT_AUTHORITY_TOPOLOGY places allocation at step 6, by an allocator that re-derives the identifiers at its own head under the E16 lineage-sequencing gate. Naming one here would be the unauthorized allocation act, and would also be a stale identifier by the time it is used.",
+    "protected_authority_for_THIS_lane": null,
+    "protected_surfaces_touched_by_THIS_lane": []
+  },
+  "SECTION_7_REAL_INTEGRATION_TEST_CONTRACT": {
+    "status": "NORMATIVE. The companion manifest TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0.json carries the machine-readable controls. This section states the obligations the manifest must discharge and the two design rules that make them non-vacuous.",
+    "RULE_1_the_harness_must_reproduce_the_CONNECTION_BOUNDARY": "Inherited from the retired PG-2's lesson and restated as binding. A probe that opens one session, sets the claims itself, and calls the helper FABRICATES on one connection exactly the propagation production lacks. Every control below that claims to prove a transport property must use the real transport or at minimum two distinct connections. A single-session harness silently passes a fabricated propagation.",
+    "RULE_2_a_DENIAL_must_be_ATTRIBUTED_not_merely_observed": "This is the discriminator F-S4S-1 forces. Both helpers end in EXCEPTION WHEN OTHERS THEN RETURN false, so a permission error, an absent relation, a malformed claim and an honest policy denial are all observationally false. Every negative control MUST additionally establish that the intended predicate is what refused - by asserting the SETUP succeeded, by showing the positive twin of the same fixture PERMITS, or by discriminating the SQLSTATE where one is reachable. A negative control that asserts only 'false' is vacuous under this helper shape and does not discharge its obligation.",
+    "REQUIRED_FALSIFICATIONS": [
+      {
+        "id": "RI-01",
+        "falsifies": "mirror without membership",
+        "obligation": "A server-written, live, unexpired mirror row naming organization A, for a subject with NO active membership in A, REFUSES every evidence-object operation. Discharges RAT-STG-01-C3 and PG-S4s-4. The positive twin - same subject, same row, membership restored - must PERMIT, or the refusal is unattributed."
+      },
+      {
+        "id": "RI-02",
+        "falsifies": "membership without selected-org match",
+        "obligation": "A dual-member subject with a live mirror row naming A is REFUSED for B across insert, select/download, delete and the erasure path, and PERMITTED for A. SYMMETRY IS MANDATORY: the read surface is measurably broader than the write surface, so a control exercising writes alone understates the exposure. PG-S4s-3."
+      },
+      {
+        "id": "RI-03",
+        "falsifies": "wrong session",
+        "obligation": "Subject S1 presenting session X, with a mirror row keyed to session Y of the same subject, is REFUSED. Proves the session_id conjunct is load-bearing and not decorative."
+      },
+      {
+        "id": "RI-04",
+        "falsifies": "stale session",
+        "obligation": "A mirror row whose expires_at is in the past REFUSES while STILL PRESENT in the table. This is the control that proves M06's predicate enforcement rather than M07's cleanup. Deleting the row first would prove the weaker property and must not be substituted."
+      },
+      {
+        "id": "RI-05",
+        "falsifies": "org switch",
+        "obligation": "After a switch from A to B on one session, the NEXT operation is permitted for B and refused for A, with NO token refresh. Proves M16 and the C5 stale-window discharge."
+      },
+      {
+        "id": "RI-06",
+        "falsifies": "logout",
+        "obligation": "After sign-out, an operation presenting the still-cryptographically-valid pre-sign-out token is REFUSED, because the row is gone. Proves M10's ordering. Requires a real token that outlives the session, so it is REAL-INTEGRATION-ONLY."
+      },
+      {
+        "id": "RI-07",
+        "falsifies": "revoked membership",
+        "obligation": "With the mirror row untouched, flipping the membership status away from active REFUSES immediately. Proves M18 - that revocation needs no mirror write."
+      },
+      {
+        "id": "RI-08",
+        "falsifies": "direct Storage API bypass",
+        "obligation": "A subject calling the Storage API DIRECTLY with its own anon key and JWT, bypassing every server route, is bound by the same boundary. This is the criterion the whole node exists for: the server already enforces selection today, so a control that only exercises server routes proves nothing S4s adds. REAL-INTEGRATION-ONLY, and the single most important control in this manifest."
+      },
+      {
+        "id": "RI-09",
+        "falsifies": "client attempt to write the mirror",
+        "obligation": "A client with an authenticated JWT attempting INSERT, UPDATE or DELETE on public.selected_organization_sessions over PostgREST is REFUSED. Non-negotiable because schema public IS exposed (supabase/config.toml:20). Both denial layers - zero privilege and RLS - must be shown to refuse INDEPENDENTLY, since either alone would mask the other's removal."
+      },
+      {
+        "id": "RI-10",
+        "falsifies": "service_role shortcut",
+        "obligation": "No path in the S4s write set uses service_role or an admin client. Discharges RAT-STG-01-C4. Dischargeable statically as a corpus control and need not wait for the harness."
+      },
+      {
+        "id": "RI-11",
+        "falsifies": "stale cached selected org",
+        "obligation": "A value captured at connection start does not satisfy the helper: the mirror changed mid-connection must be OBSERVED to change on the next operation over the SAME connection. Discharges RAT-STG-01-C2 and PG-S4s-2. Requires a connection held across the change."
+      },
+      {
+        "id": "RI-12",
+        "falsifies": "cross-user session spoofing",
+        "obligation": "Subject S2 presenting a token whose sub is S2 but attempting to benefit from a mirror row belonging to S1 is REFUSED. Proves the user_id conjunct of M03 is not vacuous. The fixture must ensure S1's row is genuinely present and live, or the control passes for the wrong reason."
+      },
+      {
+        "id": "RI-13",
+        "falsifies": "restore/reset stale mirror",
+        "obligation": "After the restore procedure of SECTION_8, no mirror row survives to narrow any session's authorization. Proves M19/SECTION_8."
+      },
+      {
+        "id": "RI-14",
+        "falsifies": "non-propagation across the connection boundary",
+        "obligation": "With app.organization_id set transaction-locally on connection A, the helper invoked on connection B observes NO value for it. PG-S4s-1. MUST use two distinct connections - a single-session harness cannot express it and would silently pass a fabricated propagation."
+      },
+      {
+        "id": "RI-15",
+        "falsifies": "fail-closed on absent mirror",
+        "obligation": "With NO row for the session - never written, cleared, or expired - every operation is refused and NONE is silently defaulted to any membership. PG-S4s-5. This is the control that catches a fallback re-creating SI-2 on the storage transport, and it is the control a well-meaning implementation is most likely to break."
+      },
+      {
+        "id": "RI-16",
+        "falsifies": "malformed or absent session_id claim",
+        "obligation": "A token whose session_id claim is absent or is not a uuid REFUSES, AND the control establishes that the claim is what refused rather than some unrelated failure. This control exists specifically to DISCHARGE open finding F-S4S-1 rather than merely to describe it: under the helper shape a bare assertion of false here is vacuous, so the control must show the positive twin of the same fixture permitting."
+      }
+    ],
+    "REQUIRED_MUTATIONS": [
+      {
+        "id": "MU-01",
+        "mutation": "Remove the mirror conjunct from ONE helper body.",
+        "must_turn_red": "RI-02 for that helper's surface. Proves the conjunct is what enforces the boundary and not some other predicate."
+      },
+      {
+        "id": "MU-02",
+        "mutation": "Remove the membership conjunct, leaving the mirror conjunct.",
+        "must_turn_red": "RI-01 and RI-07. Proves the mirror NARROWS and does not SUPPLY authorization - RAT-STG-01-C3 made falsifiable."
+      },
+      {
+        "id": "MU-03",
+        "mutation": "Remove expires_at > now() from the helper predicate.",
+        "must_turn_red": "RI-04. Proves expiry is enforced by predicate, not by cleanup."
+      },
+      {
+        "id": "MU-04",
+        "mutation": "Remove the user_id conjunct.",
+        "must_turn_red": "RI-12. This mutation is REQUIRED because the conjunct is redundant under a correct writer, and a redundant conjunct that no control distinguishes is exactly the shape this repository has previously found masking its own mutation."
+      },
+      {
+        "id": "MU-05",
+        "mutation": "Set FORCE ROW LEVEL SECURITY on the mirror.",
+        "must_turn_red": "Every positive control. Proves SECTION_3 Q3's condition is live - that owner exemption, not privilege, is what carries the DEFINER read - and that its loss is DETECTABLE rather than silent."
+      },
+      {
+        "id": "MU-06",
+        "mutation": "Replace the fail-closed absent-row branch with a fallback to membership-alone.",
+        "must_turn_red": "RI-15. The single most important mutation in the manifest: it reproduces the pre-S4s behaviour exactly, so a suite that stays green under it is proving nothing about the node at all."
+      },
+      {
+        "id": "MU-07",
+        "mutation": "Reverse M10's ordering - sign out first, then attempt the delete.",
+        "must_turn_red": "RI-06. Proves the ordering is load-bearing rather than stylistic."
+      },
+      {
+        "id": "MU-08",
+        "mutation": "Grant SELECT on the mirror to a runtime role.",
+        "must_turn_red": "RI-09 or the ACL closed-world controls. Proves the zero-privilege posture of M14 is asserted against the LIVE CATALOG rather than merely intended, so a widening is caught by the contract instead of by review."
+      },
+      {
+        "id": "MU-09",
+        "mutation": "Remove the mirror from the ACL successor class array.",
+        "must_turn_red": "The closed-world guard must report it UNCLASSIFIED BY NAME on both the DB-free side and the live package side. Proves the new class array is a real member of the closed world and not a decorative addition the guard never checks."
+      }
+    ],
+    "TWO_LAYER_SPLIT_stated_because_the_harness_does_not_exist_yet": {
+      "provable_on_todays_disposable_PostgreSQL": [
+        "RI-01",
+        "RI-02",
+        "RI-03",
+        "RI-04",
+        "RI-07",
+        "RI-11",
+        "RI-12",
+        "RI-14",
+        "RI-15",
+        "MU-01",
+        "MU-02",
+        "MU-03",
+        "MU-04",
+        "MU-05",
+        "MU-06"
+      ],
+      "requires_the_NEW_harness_class": [
+        "RI-06",
+        "RI-08",
+        "RI-09",
+        "RI-13",
+        "MU-07"
+      ],
+      "honesty_rule": "The second list is NOT deferred indefinitely and NOT downgraded to a documentation claim. RI-08 in particular is the criterion the node exists to satisfy - the server already enforces selection today, so until a real Storage API call by a real client is bound by the boundary, S4s has not been proven to add anything. A certification that accepted the first list alone would be certifying a policy-layer change whose policy layer was never exercised.",
+      "why_the_split_is_published_rather_than_hidden": "So that the implementing lane budgets the harness at the start rather than discovering at the end that the node's central claim is unprovable with what it has."
+    },
+    "REQUIRED_POSITIVES": {
+      "rule": "A contract of refusals alone is satisfiable by a system that refuses everything. These positives are therefore obligations, not conveniences, and the companion manifest carries them as positive_controls.",
+      "ids": [
+        "RI-P-01 happy path",
+        "RI-P-02 write-side role filter preserved and read/write asymmetry pinned",
+        "RI-P-03 owner reaches the mirror with no grant",
+        "RI-P-04 closed world remains closed at U=65 / classified=59",
+        "RI-P-05 no policy on storage.objects was recreated",
+        "RI-P-06 helper signatures unchanged and stella_0021 section 12 still armed"
+      ],
+      "note": "RI-05, RI-11 and RI-14 are stated above as falsifications but are carried in the manifest as POSITIVE controls, because each is discharged by OBSERVING a required behaviour (a switch taking effect, a live read changing, a GUC failing to propagate) rather than by observing a refusal. The manifest placement follows the observation, not the wording."
+    },
+    "RELATIONSHIP_TO_THE_COMPANION_MANIFEST": "The manifest is a SUPERSET of this section and may never be a subset. MEASURED at materialization: every id in REQUIRED_FALSIFICATIONS and REQUIRED_MUTATIONS appears in the manifest, and the manifest additionally carries the six RI-P positives. A certifier checking this artifact against its manifest should assert containment in that direction."
+  },
+  "SECTION_8_RESTORE_RECOVERY": {
+    "CLASSIFICATION": "RESET_ON_RESTORE. public.selected_organization_sessions is TRUNCATED as part of any database restore or point-in-time recovery, before the restored system serves traffic. It is NOT durable business state and is NOT restored.",
+    "the_expected_principle_was_RE_DERIVED_not_adopted": "The mission names RESET_ON_RESTORE as the expected principle and requires the exact rule to be re-derived. The derivation follows, and it does not rest on the expectation.",
+    "derivation_1_the_frozen_SESSION_SCOPE_doctrine_already_decides_it": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 SESSION_SCOPE, as narrowly amended by AM-STG-S5, holds that the selection is not restored across sessions and that the mirror is enforcement state DERIVED FROM the carrier rather than a carrier itself. State derived from a carrier cannot outlive it: restoring the derived state while the carrier is gone inverts the direction of the derivation.",
+    "derivation_2_the_key_is_meaningless_after_a_restore": "A row is addressable only by a session_id that GoTrue issued. A restore returns OUR table to one point in time; GoTrue's auth.sessions is a separate store that need not be restored to the same point, and may since have reissued ids. A restored row is therefore keyed by a session that may not exist, or - worse - by an id that now belongs to a DIFFERENT session. There is no restore procedure available to us that makes the two stores agree.",
+    "derivation_3_the_failure_mode_is_MIS_NARROWING_not_escalation": "Bounded honestly rather than overstated. Because membership remains a live conjunct, a stale row can never grant access to an organization the subject does not belong to. What it CAN do is narrow a session to an organization the subject did not currently select - permitting A when the user had since chosen B. That is a correctness and least-surprise defect, not a tenancy breach. The classification does not depend on inflating it.",
+    "derivation_4_the_cost_of_resetting_is_already_contemplated": "Truncation costs every live session one re-selection. SESSION_SCOPE already holds that a session begins with NO selection and that the selector is the normal entry point, and NO_AUTO_SELECTION already forbids inferring one. So the post-restore state - every session unselected, every subject routed to the selector - is a state the product already implements and already handles. Resetting costs nothing that is not already a supported path.",
+    "derivation_5_fail_closed_is_the_tie_breaker": "Per CLAUDE.md section 5, where the correct state is unknown the posture is preserve-or-stop, never guess. An empty mirror DENIES until a governed writer re-populates it. A restored mirror PERMITS on the basis of a selection nobody can confirm was current. Only one of those two is fail-closed, and it is the empty one.",
+    "the_exact_rule": "On restore or PITR, and before the restored system serves traffic, TRUNCATE public.selected_organization_sessions. The truncation is part of the restore procedure, not a background job, and not a consequence of expiry - relying on expiry would leave a window of up to the M06 horizon in which restored rows are live.",
+    "what_this_does_NOT_authorize": "It does not authorize any change to backup, restore or PITR tooling in this act, and it does not create a restore runbook. It states the classification and the rule that a restore procedure must carry, which is the obligation RI-13 proves."
+  },
+  "RAT_STG_01_DISCHARGE": {
+    "rule": "Each of the owner's nine binding constraints is discharged by a NAMED decision of SECTION_2 and a NAMED control of SECTION_7. A constraint discharged only by prose would be undischarged.",
+    "items": [
+      {
+        "id": "RAT-STG-01-C1",
+        "constraint_summary": "Only governed server-side select, clear and sign-out flows may write the mirror; no client-writable path and no write-as-a-side-effect-of-read.",
+        "discharged_by": [
+          "M08",
+          "M09",
+          "M10",
+          "M14"
+        ],
+        "proven_by": [
+          "RI-09"
+        ],
+        "note": "Three writers, all enumerated by exact file and position. The read path M12 is a pure SELECT inside a helper body and writes nothing, so no read can create a row."
+      },
+      {
+        "id": "RAT-STG-01-C2",
+        "constraint_summary": "Helpers read the mirror LIVE, per operation; a cached or connection-start value is not a live read.",
+        "discharged_by": [
+          "M12"
+        ],
+        "proven_by": [
+          "RI-11"
+        ],
+        "note": "The read is inline in the body, re-executed per policy evaluation. RI-11 requires a change to be OBSERVED mid-connection, which a captured value cannot satisfy."
+      },
+      {
+        "id": "RAT-STG-01-C3",
+        "constraint_summary": "Membership remains a SEPARATE LIVE CONJUNCT; the mirror narrows and never supplies authorization; a row naming a non-member organization must REFUSE.",
+        "discharged_by": [
+          "M12",
+          "M18"
+        ],
+        "proven_by": [
+          "RI-01",
+          "RI-07",
+          "MU-02"
+        ],
+        "note": "MU-02 is what makes this falsifiable rather than asserted: removing the membership conjunct must turn RI-01 red."
+      },
+      {
+        "id": "RAT-STG-01-C4",
+        "constraint_summary": "NO service_role; the existing prohibition on service_role and admin clients on the evidence ingest path is preserved without exception.",
+        "discharged_by": [
+          "M14"
+        ],
+        "proven_by": [
+          "RI-10"
+        ],
+        "note": "No decision in SECTION_2 introduces a code path on which service_role could be used."
+      },
+      {
+        "id": "RAT-STG-01-C5",
+        "constraint_summary": "NO JWT custom-claim dependency, and no inheritance of the stale-claim window on organization switch.",
+        "discharged_by": [
+          "M11",
+          "M16"
+        ],
+        "proven_by": [
+          "RI-05"
+        ],
+        "note": "Discharged in BOTH halves, and the second half is the one a reader may overlook. session_id is a STANDARD RequiredClaim measured at the pinned auth-js version, not a custom claim requiring a Custom Access Token Hook. And no organization is carried in the token at all, so there is no stale window: RI-05 requires the switch to be visible on the next operation with no token refresh."
+      },
+      {
+        "id": "RAT-STG-01-C6",
+        "constraint_summary": "NO signed-capability shared secret.",
+        "discharged_by": [
+          "M11"
+        ],
+        "proven_by": [],
+        "note": "Discharged by ABSENCE and stated as such. The mechanism introduces no secret, no signature and no capability token of its own; it reuses the JWT verification the Storage API already performs. There is no control here because there is nothing to falsify - a control asserting 'no secret exists' over the whole corpus would be a corpus scan, which SECTION_5 already implies via RI-10's static form."
+      },
+      {
+        "id": "RAT-STG-01-C7",
+        "constraint_summary": "NO widening of storage policy TEXT unless separately authorized; the stella_0019 invariant that it recreates NO policy on storage.objects is preserved.",
+        "discharged_by": [
+          "M13"
+        ],
+        "proven_by": [],
+        "control_note": "Proven by the successor package's own section 0 abort, per SECTION_3 Q5 - a machine fact of the S4s apply, not an inherited claim. The manifest carries it as an exit condition of the package rather than as a test control.",
+        "note": "The entire read-from-GUC design exists so this constraint is satisfied by CONSTRUCTION: no policy expression needs to change, because no policy needs to supply the session id."
+      },
+      {
+        "id": "RAT-STG-01-C8",
+        "constraint_summary": "Stale session rows require BOUNDED cleanup or expiry; an unbounded-growth mirror with no expiry is not the approved mechanism.",
+        "discharged_by": [
+          "M06",
+          "M07",
+          "M05",
+          "M03"
+        ],
+        "proven_by": [
+          "RI-04",
+          "MU-03"
+        ],
+        "note": "Satisfied by the PREDICATE, which is strictly stronger than by the schedule: an expired row is dead to every reader at the instant it expires, so a cleanup outage costs disk and never reach. Growth is bounded structurally - one row per live session, deleted on clear and sign-out, cascaded with user or organization."
+      },
+      {
+        "id": "RAT-STG-01-C9",
+        "constraint_summary": "S7 remains BLOCKED until the separate storage selected-organization node closes.",
+        "discharged_by": [],
+        "proven_by": [],
+        "note": "NOT THIS ARTIFACT'S TO DISCHARGE, and recorded rather than silently omitted. C9 is a statement about the DAG, already enacted by the parent amendment adding S4s to S7.depends_on. This artifact does not shorten, weaken or reinterpret the S7 gate, and closing S4s is what makes it satisfiable - which is exactly what the owner said."
+      }
+    ],
+    "what_the_owner_did_NOT_decide_and_this_artifact_therefore_DID": "The DAG amendment records that the owner did not decide the relation name, its uniqueness or primary key, the expiry horizon or its enforcement mechanism, the writer call sites, or the helper read path. All of those are decided in SECTION_2 by this artifact, each against a measured predicate. That is the delegation being exercised, not exceeded."
+  },
+  "NON_AUTHORIZATIONS": {
+    "rule": "The following are NOT authorized by this artifact. This list is as binding as anything it grants, and nothing above may be read to imply any item on it.",
+    "items": [
+      "NO implementation of any kind. This lane wrote no application code, no SQL, no migration, no prepared package, no test and no script.",
+      "NO ODS allocation, no HPO grant allocation, and no reservation or naming of either.",
+      "NO ACL LINEAGE EDIT. docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and its v1.0.1 amendment are NOT edited, amended, superseded or re-versioned by this act. SECTION_3 adjudicates; SECTION_4 names the separate act that must record it.",
+      "NO authoring of the ACL amendment v1.0.2 or its manifest amendment. SECTION_4 FINDING_3 refuses it on measured grounds.",
+      "NO creation of the mirror relation, and no database mutation of any kind.",
+      "NO modification of any storage policy, of storage.objects, or of either storage helper.",
+      "NO modification of S4, its execution authority or its test manifest. S4s is a distinct node, not a revision of S4.",
+      "NO edit to the frozen parent authority, the parent test manifest, or the DAG amendment.",
+      "NO weakening of any S7 prerequisite, and no shortening of the DROP_LAST_RULE conjunction.",
+      "NO relaxation of NO_AUTO_SELECTION and no exception to SESSION_SCOPE.no_selection_behavior.",
+      "NO amendment of SELECTED_ORG_CARRIER in any respect, including its prohibited_carriers list. The mirror is not a carrier.",
+      "NO authorization for service_role or an admin client on the evidence ingest path.",
+      "NO pre-authorization of a JWT custom claim, a signed capability, or a server-mediated-only architecture as a fallback if the mirror proves difficult.",
+      "NO hosted, staging or production mutation, and no deployment.",
+      "NO imposition of an S4/S4s integration order. SECTION_3 Q6 states the obligation symmetrically and leaves the order open, as the parent did.",
+      "NO certification. This artifact is written by the authoring lane and certifies nothing, least of all itself."
+    ]
+  },
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-S4S-1",
+      "severity": "NON-BLOCKING, CONTROL-DESIGN",
+      "finding": "Both helpers end in EXCEPTION WHEN OTHERS THEN RETURN false. After the mirror conjunct is added, a permission error on the mirror, an absent mirror relation, a malformed or absent session_id claim and an honest policy denial are ALL observationally identical: false.",
+      "consequence": "A negative control asserting only 'denied' cannot distinguish the boundary working from the boundary being broken. An implementation whose mirror read fails outright would present as a maximally strict, perfectly passing security control while denying every legitimate storage operation in the product.",
+      "disposition": "MITIGATED BY CONTRACT, NOT RESOLVED. SECTION_7 RULE_2 requires every negative control to attribute its denial. The underlying handler is NOT changed by S4s - narrowing it is a change to a frozen helper shape with its own blast radius, and would belong to its own act."
+    },
+    {
+      "id": "F-S4S-2",
+      "severity": "NON-BLOCKING, ACCEPTED LIMITATION",
+      "finding": "An in-flight storage operation is not re-evaluated across an organization switch (M17).",
+      "consequence": "One already-authorized operation may complete against the previously selected organization, for an organization the subject was an active member of at evaluation time.",
+      "disposition": "ACCEPTED AND BOUNDED. Unfixable at S4s without holding a transaction across the upload, which lib/pipeline/evidence.ts:316-339 documents as deliberately rejected. Never a path to an organization the subject does not belong to, because membership remains a live conjunct."
+    },
+    {
+      "id": "F-S4S-3",
+      "severity": "BLOCKING ON IMPLEMENTATION, NOT ON THIS ARTIFACT",
+      "finding": "The real-integration contract requires a harness class this repository does not have. MEASURED: zero references to storage-api, gotrue, supabase/storage or kong anywhere in scripts/**, tests/** or supabase/**.",
+      "consequence": "Five of the required falsifications - RI-06, RI-08, RI-09, RI-13, MU-07 - are not provable with any existing harness. RI-08 is the criterion the node exists for, so a certification accepting only the PostgreSQL-provable layer would certify a policy-layer change whose policy layer was never exercised.",
+      "disposition": "PUBLISHED AS A PRICED COST at SECTION_5 and as an explicit two-layer split at SECTION_7, so the implementing lane budgets it at the start. NOT deferred, and NOT downgraded to a documentation claim."
+    },
+    {
+      "id": "F-S4S-4",
+      "severity": "NON-BLOCKING, FOR CERTIFIER ATTENTION",
+      "finding": "M05 adopts ON DELETE CASCADE on both foreign keys, deviating from a measured one-hundred-percent convention: ON DELETE CASCADE appears ZERO times in db/migrations/**, where all 68 FKs to public.users and all 41 to public.organizations are ON DELETE no action.",
+      "consequence": "A reviewer applying the convention mechanically would read this as a defect. It is a deliberate deviation whose justification is that the convention's rationale - preserving durable history - does not transfer to the repository's first transient enforcement relation, where NO ACTION would let a stale row block an unrelated user or organization deletion.",
+      "disposition": "RECORDED FOR ADJUDICATION, NOT PRESENTED AS SETTLED. If a certifier or the owner prefers the convention, the change is narrow and local: the FKs become ON DELETE no action and M07's opportunistic hygiene absorbs the orphans. SECURITY DOES NOT MOVE EITHER WAY - an orphan row fails closed through the membership conjunct - so this is adjudicable on operational grounds alone and is not a security decision requiring the owner."
+    },
+    {
+      "id": "F-S4S-5",
+      "severity": "NON-BLOCKING, PRE-EXISTING CONTROL COVERAGE GAP",
+      "finding": "The DB-free closed-world guard derives U from db/migrations/** plus a HAND-MAINTAINED seven-entry map CHAIN_CREATED_PUBLIC_TABLES. Nothing scans db/prepared/** to prove that map complete, so a public table created by a NEW prepared package and not hand-added is invisible to the DB-free guard.",
+      "consequence": "Pre-existing and NOT introduced by S4s. It is recorded because it shaped an S4s decision: it is part of why M01 places the mirror in db/migrations/**, where both the DB-free guard and the live catalog sweep see it. Had the mirror been created by a prepared package, the DB-free guard could have stayed green while the live package aborted.",
+      "disposition": "OUT OF SCOPE FOR S4s AND DELIBERATELY NOT REPAIRED HERE. Repairing it means extending a guard the ACL lineage owns, which is that lineage's act. Recorded so a future ACL lane inherits the observation rather than rediscovering it."
+    },
+    {
+      "id": "F-S4S-6",
+      "severity": "NON-BLOCKING, SEQUENCING",
+      "finding": "The mirror carries organization_id and therefore becomes a 43rd relation in S4's 42-relation tenant census, whose self_check SC-7 records 'no remainder'.",
+      "consequence": "Whichever of S4 and S4s integrates second must carry the other's addition into its own census. If S4s integrates second, the mirror sits outside S4's certified census; if S4s integrates first, S4's census must account for it.",
+      "disposition": "PRE-WRITTEN, NOT RESOLVED. SECTION_3 Q6 freezes the required disposition - EXCLUDED_WITH_REASON, NOT WELDABLE - with its reason, so the second integrator has nothing to invent. The ORDER is deliberately not imposed: imposing one would fabricate a DAG edge the parent declined to create."
+    }
+  ],
+  "self_check": {
+    "did_this_lane_edit_frozen_authority": "NO. The expected diff is exactly TWO ADDED files and ZERO modified files. The parent authority, the parent test manifest, the DAG amendment, the S4 authority, the S4 manifest, the ACL authority and its v1.0.1 amendment are all byte-unchanged.",
+    "did_this_lane_allocate_anything": "NO. S4s is a LOCAL tenancy-authority node id frozen by the parent amendment. M-ids, RI-ids, MU-ids and F-S4S-ids are LOCAL identifiers of this artifact. No ODS ordinal, no HPO grant, no migration ordinal and no stella_ ordinal is allocated, reserved or named as allocated - SECTION_5 states ordinals only as derivation RULES to be re-run at the implementing lane's head.",
+    "did_this_lane_author_an_ACL_successor": "NO, and the refusal is argued from measurement rather than from caution. SECTION_4 FINDING_3 gives five independent grounds, the strongest being that all three commits in the ACL lineage are single-domain and that the one cross-domain precedent that exists is the ODS allocation pattern this lane is forbidden.",
+    "was_every_delegated_item_resolved": "YES. All nine delegated items map onto the twenty decisions M01..M20, and the map is published at delegated_item_coverage so the claim is checkable rather than asserted.",
+    "was_the_candidate_shape_CHALLENGED_rather_than_assumed": "YES, and it did not survive intact. CONFIRMED: the five columns, NO FK to auth.sessions. CORRECTED: the primary key - PK(user_id, session_id) plus UNIQUE(session_id) is reduced to PK(session_id) alone, because auth.sessions_pkey makes session_id globally unique and the composite key therefore constrains nothing while implying a session may span users. DERIVED BEYOND THE CANDIDATE: the cascade posture and its deviation, the expiry ENFORCEMENT half, and the signature prohibition.",
+    "is_there_a_decision_here_the_owner_reserved": "NO. The owner reserved the transport, which RAT-STG-01 decided. Everything in SECTION_2 falls inside what the DAG amendment records the owner did NOT decide and explicitly delegated.",
+    "were_two_materially_different_security_choices_left_undecided": "NO, and this was tested rather than assumed. The one candidate for STOP_OWNER_SECURITY_DECISION_REQUIRED was the FK cascade posture (F-S4S-4). It was examined and found NOT to be a security choice: because the mirror only narrows and membership is a separate live conjunct, an orphan row fails closed either way. It is an operational choice, decided here and flagged for adjudication. No other item came close.",
+    "could_a_control_written_against_this_artifact_be_vacuous": "Addressed structurally rather than denied. SECTION_7 RULE_2 exists because the helper's EXCEPTION WHEN OTHERS arm makes bare denial assertions vacuous, and MU-04 exists because the user_id conjunct is redundant under a correct writer and a redundant conjunct that no control distinguishes is a known masking shape in this repository. MU-06 exists because the most likely implementation defect - falling back to membership-alone - reproduces the pre-S4s behaviour exactly, so a suite that stays green under it proves nothing about the node.",
+    "the_temptation_this_lane_had_to_refuse": "To author the ACL amendment v1.0.2 here. It would have been ONE more docs-only file, it would have made the node look closed, and the mission explicitly permitted it if governance-valid. It was refused because the measurement did not support it: three of three commits in the ACL lineage are single-domain, the only cross-domain precedent is the allocation pattern this lane is forbidden, and the amendment would have classified a relation shape that step 5 has not yet certified. Bundling it would have converted a certifiable adjudication into an unauthorized act that looked like progress.",
+    "the_second_temptation": "To read the session id by adding a parameter to the helpers, which is the obvious design and reads as cleaner. It would have silently vacuated stella_0021 section 12's negative list via its to_regprocedure guard - a live postcondition passing while proving nothing, in the same commit that claimed to strengthen the storage boundary. The measurement at M13 is what caught it.",
+    "expected_write_set_size": 2,
+    "expected_write_set": [
+      "docs/ops/tenancy/TENANCY_S4S_EXECUTION_AUTHORITY_v1.0.0.json",
+      "docs/ops/tenancy/TENANCY_S4S_EXECUTION_TEST_MANIFEST_v1.0.0.json"
+    ],
+    "expected_decision_count": 20,
+    "expected_decision_ids": [
+      "M01",
+      "M02",
+      "M03",
+      "M04",
+      "M05",
+      "M06",
+      "M07",
+      "M08",
+      "M09",
+      "M10",
+      "M11",
+      "M12",
+      "M13",
+      "M14",
+      "M15",
+      "M16",
+      "M17",
+      "M18",
+      "M19",
+      "M20"
+    ],
+    "expected_acl_question_count": 6,
+    "expected_acl_question_ids": [
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q5",
+      "Q6"
+    ],
+    "expected_falsification_count": 16,
+    "expected_mutation_count": 9,
+    "expected_open_finding_count": 6,
+    "expected_open_finding_ids": [
+      "F-S4S-1",
+      "F-S4S-2",
+      "F-S4S-3",
+      "F-S4S-4",
+      "F-S4S-5",
+      "F-S4S-6"
+    ],
+    "expected_rat_constraint_count": 9,
+    "NEW_ODS_REQUIRED": "YES",
+    "expected_falsification_ids": [
+      "RI-01",
+      "RI-02",
+      "RI-03",
+      "RI-04",
+      "RI-05",
+      "RI-06",
+      "RI-07",
+      "RI-08",
+      "RI-09",
+      "RI-10",
+      "RI-11",
+      "RI-12",
+      "RI-13",
+      "RI-14",
+      "RI-15",
+      "RI-16"
+    ],
+    "expected_mutation_ids": [
+      "MU-01",
+      "MU-02",
+      "MU-03",
+      "MU-04",
+      "MU-05",
+      "MU-06",
+      "MU-07",
+      "MU-08",
+      "MU-09"
+    ],
+    "expected_required_positive_count": 6,
+    "counts_are_rederived_not_restated": "Every count in this self_check is computed FROM the array it counts at materialization time, never transcribed from prose elsewhere in the artifact. A count restated by hand is covered by no control and is a known defect class in this repository."
+  },
+  "final_state": "S4S_EXECUTION_AUTHORITY_MATERIALIZED_DOCS_ONLY_AWAITING_INDEPENDENT_CERTIFICATION",
+  "next_gate": "S4S_EXECUTION_AUTHORITY_INDEPENDENT_CERTIFICATION"
+}
