@@ -22,7 +22,9 @@
  "companion_authority": "docs/ops/commercial/PILOT_BILLING_EXECUTION_AUTHORITY_v1.0.0.json",
  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_PRIOR_TO_THIS_MATERIALIZATION_LANE. The decision below was approved by the Product Owner and supplied to this lane as its binding directing text (OWNER DECISION — BINDING INPUT, identifier PILOT-BILLING-01, title 'ACTIVE_WITHOUT_STRIPE'). THIS FILE IS NOT A VERBATIM CHAT TRANSCRIPT and is not a new adjudication. It is the canonical normalized record so that successor lanes cite a stable repository artifact instead of re-deriving the decision. The precedent for doing so is COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json#OPEN_FINDINGS[OF-1], which recorded that HPO-B had NO repository source and that its first materialization was therefore its own only corroboration. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout.",
  "precedence_note": "This record is canonical for product-owner intent on PILOT-BILLING-01 only. It does NOT override executable FIB/ODS/database/security authority and it does NOT itself make anything implementable. The frozen Tier-A parents (docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json and its amendments) and the tenancy, legal-acceptance and release authorities they reference remain controlling. The companion execution authority is the artifact that makes this decision execution-effective, and it does so by STAGE-SCOPING existing authority, never by weakening it. Where the companion requires an amendment of a frozen parent, that amendment is an append-only act (PB-A00) whose content the companion freezes; this record does not perform it. The lesson of docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json#precedence_note applies: a bare owner record cannot by itself make a sequencing exception effective.",
- "revision": "R2",
+ "revision": "SS-R1",
+ "ss_mission_id": "CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-WRITER-R1",
+ "ss_note": "SS-R1 APPENDS ratifications[0].epr_steady_state_decisions (OD-EPR-SS-1..OD-EPR-SS-9 and the open-question dispositions ODR-1..ODR-3) supplied by the Product Owner after the IC-R3-FINAL circuit breaker. This candidate record has never been pushed or integrated, so it is revised in place; no new record version is created. The ten clauses PILOT-BILLING-01.1..10 and release_scope_confirmation RSC-1..RSC-8 are unchanged.",
  "r2_note": "R1 (commit 6cc32fc1) stated that PILOT-BILLING-01 conflicts with none of HPO-A..HPO-G. Independent certification CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R1 measured that statement FALSE for HPO-G (blocking finding B-1): HPO-G.6 is materialized by the release stage FEATURE_COMPLETE_STAGING, where the release gate ledger placed PV3 (payment provider in test mode) and SEC7 (billing webhook integrity), and both were inherited by PILOT_READY. R2 corrects the statement (reopening_rule below) and records the owner's release-scope confirmation (release_scope_confirmation). The ten R1 clauses are unchanged.",
  "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen HPO-A..HPO-G, CA-01..CA-08, MO-01..MO-12, SS-01..SS-03, RAT-AO-01..03, RAT-OP-01 or OD-1..OD-9. PILOT-BILLING-01 is a STAGE decision about PILOT_READY; it deletes and weakens none of them. It DID conflict with one of them as materialized: HPO-G.6 ('Then browser/provider gates') was materialized as FEATURE_COMPLETE_STAGING carrying PV3 and SEC7, which PILOT_READY inherited (IC-R1 B-1). That conflict is resolved by the owner's release-scope confirmation below, which reads HPO-G.6/G.7 scope-aware without changing their text, and by the append-only release successor docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json; it is not resolved by this record alone. Absence of implementation is not a contradiction. A conflict between this record and active executable authority that the companion does not resolve fails closed (STOP_FOR_AUTHORITY_CONFLICT).",
  "definitional_intent": {
@@ -104,6 +106,66 @@
      {"id": "RSC-8", "text": "Payment, Activation, Entitlement and Authorization remain separate."}
     ],
     "repository_binding": "Materialized as release authority by docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json (GATE_RESTAGING RS-1/RS-2 to PRODUCTION_READY, PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE, HPO_G_DISPOSITION) and consumed by the companion authority SECTION_8.MC-P7. RSC-8 restates PILOT-BILLING-01.6; RSC-7 restates PILOT-BILLING-01.8."
+   },
+   "epr_steady_state_decisions": {
+    "provenance": "OWNER_CONFIRMED_OUTSIDE_THE_REPOSITORY. After the circuit breaker of CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R3-FINAL (FAIL, one blocking finding: residual post-enablement circularity of EPR), the Product Owner adjudicated the EPR steady-state semantic in CV1-PILOT-BILLING-EPR-STEADY-STATE-OWNER-ADJUDICATION-R1 and supplied it as BINDING input to CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-WRITER-R1 (2026-09-26). Normalized, not a verbatim transcript. It fixes the reading of RSC-5 at the payment-provider enablement boundary; it is not a new HPO, changes no HPO text, and leaves RSC-1..RSC-8 unchanged.",
+    "scope": "Payment-provider enablement precedence (EPR) of the release successor, for every candidate release SHA.",
+    "decisions": [
+     {
+      "id": "OD-EPR-SS-1",
+      "text": "PV3/SEC7 evidence is bound to a candidate release SHA."
+     },
+     {
+      "id": "OD-EPR-SS-2",
+      "text": "A new candidate SHA may generate evidence in an isolated Preview/test-mode evidence deployment while an older SHA remains live."
+     },
+     {
+      "id": "OD-EPR-SS-3",
+      "text": "Operational enablement is evaluated per candidate SHA, not globally by hosted target."
+     },
+     {
+      "id": "OD-EPR-SS-4",
+      "text": "Before a candidate SHA is promoted/wired to operational payment traffic: PV3 == PASS and SEC7 == PASS for that exact SHA with current evidence."
+     },
+     {
+      "id": "OD-EPR-SS-5",
+      "text": "No PASS carry-forward between SHAs by default."
+     },
+     {
+      "id": "OD-EPR-SS-6",
+      "text": "No global payment outage is required to certify the next SHA."
+     },
+     {
+      "id": "OD-EPR-SS-7",
+      "text": "Payment-relevant configuration changes invalidate affected evidence according to freshness/identity rules."
+     },
+     {
+      "id": "OD-EPR-SS-8",
+      "text": "ACTIVE_WITHOUT_STRIPE remains operationally dark through PILOT_READY."
+     },
+     {
+      "id": "OD-EPR-SS-9",
+      "text": "PV3/SEC7 remain mandatory for PRODUCTION_READY/full Commercial Core."
+     }
+    ],
+    "open_question_dispositions": [
+     {
+      "id": "ODR-1",
+      "disposition": "OPEN_FAIL_CLOSED",
+      "text": "GO_LIVE re-evidence of PV3 against PRODUCTION remains OPEN and FAIL-CLOSED. It is not solved by this record, and no claim is made that the GO_LIVE payment path is ready. It does not block PILOT_READY or PRODUCTION_READY when their own conditions are satisfied."
+     },
+     {
+      "id": "ODR-2",
+      "disposition": "DEFAULT_DARK_ROLLBACK",
+      "text": "Rollback to a SHA whose required payment evidence is stale defaults to DARK ROLLBACK: payment capability remains off until that SHA has valid evidence."
+     },
+     {
+      "id": "ODR-3",
+      "disposition": "DEFAULT_ACT_BOUND_REEVIDENCE",
+      "text": "A retest_after on a currently live SHA does NOT by itself force an outage. EPR remains act-bound. Fresh evidence is regenerated in an isolated evidence deployment before any later governed act that requires that evidence. No indefinite continuous-PASS semantic is created."
+     }
+    ],
+    "repository_binding": "Materialized by docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json#PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE (scope PER_CANDIDATE_SHA; rule EPR-1..EPR-3; operational_enablement OE(S); governed_enablement_acts; evidence_deployment d_E; preparatory_activity; evidence_binding; provider_configuration_identity; evidence_freshness; payment_provider_dark_proof; promotion; rollback; retest; go_live; steady_state_controls C-SS-1..C-SS-18) and consumed by the companion authority SECTION_8.MC-P7 and its manifest (PB-P-23, PB-N-41..PB-N-57)."
    }
   }
  ],
@@ -134,6 +196,8 @@
    "PRO_BONO"
   ],
   "expected_release_scope_confirmation_items": 8,
+  "expected_epr_steady_state_decisions": ["OD-EPR-SS-1", "OD-EPR-SS-2", "OD-EPR-SS-3", "OD-EPR-SS-4", "OD-EPR-SS-5", "OD-EPR-SS-6", "OD-EPR-SS-7", "OD-EPR-SS-8", "OD-EPR-SS-9"],
+  "expected_open_question_dispositions": {"ODR-1": "OPEN_FAIL_CLOSED", "ODR-2": "DEFAULT_DARK_ROLLBACK", "ODR-3": "DEFAULT_ACT_BOUND_REEVIDENCE"},
   "checks": [
    "ratifications.length == 1 and ratifications[0].id == 'PILOT-BILLING-01'",
    "ratifications[0].clauses.length == 10 with ids PILOT-BILLING-01.1 .. PILOT-BILLING-01.10, unique",
@@ -144,10 +208,11 @@
    "no clause statement authorizes an apply, a deployment, an allocation or a Stripe action",
    "clause PILOT-BILLING-01.8 is present: a stage record that states what it removes from the critical path and never what it preserves is incomplete by construction",
    "ratifications[0].release_scope_confirmation.items has ids RSC-1 .. RSC-8, unique, and its repository_binding names a path that exists in the same commit",
-   "reopening_rule does not state that PILOT-BILLING-01 conflicts with none of HPO-A..HPO-G"
+   "reopening_rule does not state that PILOT-BILLING-01 conflicts with none of HPO-A..HPO-G",
+   "ratifications[0].epr_steady_state_decisions.decisions has ids OD-EPR-SS-1 .. OD-EPR-SS-9, unique; open_question_dispositions equal expected_open_question_dispositions; its repository_binding names a path that exists in the same commit; release_scope_confirmation RSC-1 .. RSC-8 is byte-identical to its R2 text"
   ]
  },
  "required_independent_review": "This record and its companion authority require INDEPENDENT certification before any implementation act opens. The writing lane does not certify its own output.",
- "final_state": "PILOT_BILLING_OWNER_DECISIONS_v1_0_0_R2_FROZEN__RELEASE_SCOPE_CONFIRMATION_RSC_1_8_RECORDED",
- "next_gate": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R2"
+ "final_state": "PILOT_BILLING_OWNER_DECISIONS_v1_0_0_SS_R1_FROZEN__RELEASE_SCOPE_CONFIRMATION_RSC_1_8_RECORDED__EPR_STEADY_STATE_OD_EPR_SS_1_9_AND_ODR_1_3_RECORDED",
+ "next_gate": "CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-IC-R1"
 }

@@ -7,6 +7,8 @@
  "append_only": true,
  "status": "FROZEN_PENDING_INDEPENDENT_CERTIFICATION. Effective only once this file is integrated together with its consuming authority after an independent certification PASS. Until then it binds nothing and no stage declaration may cite it.",
  "mission_id": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R2",
+ "ss_mission_id": "CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-WRITER-R1",
+ "ss_materialization_date": "2026-09-26",
  "lane": "codex/cv1-pilot-billing-minimum-authority-r1",
  "role": "PILOT_BILLING_MINIMUM_AUTHORITY_WRITER (bounded release successor for independent-certification finding B-1)",
  "mode": "DOCS_ONLY_TIER_A_RELEASE_LEDGER_AMENDMENT",
@@ -17,9 +19,9 @@
  "companion_authority": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
  "companion_authority_amendments": ["docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json"],
  "supersedes": null,
- "binding_owner_ratification": "docs/ops/owner-ratifications/PILOT_BILLING_OWNER_DECISIONS_v1.0.0.json#ratifications[id=PILOT-BILLING-01].release_scope_confirmation (RSC-1..RSC-8)",
+ "binding_owner_ratification": "docs/ops/owner-ratifications/PILOT_BILLING_OWNER_DECISIONS_v1.0.0.json#ratifications[id=PILOT-BILLING-01].release_scope_confirmation (RSC-1..RSC-8); and #ratifications[id=PILOT-BILLING-01].epr_steady_state_decisions (OD-EPR-SS-1..OD-EPR-SS-9, ODR-1..ODR-3)",
  "consuming_authority": "docs/ops/commercial/PILOT_BILLING_EXECUTION_AUTHORITY_v1.0.0.json (SECTION_8.MC-P7; act of record PB-A00)",
- "companion_manifest": "docs/ops/commercial/PILOT_BILLING_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json (controls PB-P-21, PB-P-22, PB-N-31..PB-N-40)",
+ "companion_manifest": "docs/ops/commercial/PILOT_BILLING_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json (controls PB-P-21, PB-P-22, PB-P-23, PB-N-31..PB-N-57; C-SS-1..C-SS-18 map to PB-P-23 and PB-N-41..PB-N-57)",
  "companion_ods_addendum": null,
  "GRANT_ID": null,
  "AS_OF": {
@@ -41,7 +43,7 @@
   "how_to_read_the_four_together": "Where this amendment is silent, the ledger, the companion authority and its v1.0.1 amendment control verbatim. Where this amendment names a clause under SUPERSEDED_CLAUSES, that clause is superseded ONLY in the respect stated and every other word of it continues to control. Where it names a clause under QUALIFIED_CLAUSES_NOT_SUPERSEDED, the clause controls in full and this amendment records only how it is read alongside the re-staging.",
   "what_this_amendment_does": [
    "RE-STAGES PV3 and SEC7: first_required_at_stage FEATURE_COMPLETE_STAGING -> PRODUCTION_READY (GATE_RESTAGING RS-1, RS-2).",
-   "Adds the PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE rule (EPR): the payment provider may never be operationally enabled at a SHA and target while PV3 or SEC7 is not PASS there, and the first act or declaration enabling it must cite both PASS; bounded test-mode preparation producing their evidence is not enablement; every stage declaration earlier than PRODUCTION_READY carries a payment-provider-dark attestation.",
+   "Adds the PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE rule (EPR), act-bound and per candidate SHA: operational enablement OE(S) of a candidate release SHA S becomes true only through a governed enablement act that cites PV3 == PASS @ S and SEC7 == PASS @ S, current at the act; the evidence for S is produced by bounded test-mode preparation in an isolated evidence deployment d_E, which is not enablement and does not require any other SHA to be dark; no PASS is carried between SHAs; every stage declaration earlier than PRODUCTION_READY at S cites PAYMENT_PROVIDER_DARK_PROOF(S) or that PASS.",
    "Records the owner's scope-aware reading of HPO-G.6 and HPO-G.7 (RSC-5) and the disposition of HPO-G.5 and HPO-G.8.",
    "Proves that the stage ladder, every other gate, and the cumulative gate sets of PRODUCTION_READY and GO_LIVE are unchanged."
   ],
@@ -67,7 +69,7 @@
    "from": "FEATURE_COMPLETE_STAGING",
    "to": "PRODUCTION_READY",
    "unchanged_fields": ["id", "name", "category", "enforcement", "owner", "current_state", "pass_criteria", "evidence_class", "dependencies", "cross_reference_not_a_dependency", "retest_after", "source_of_truth", "measured_at_base"],
-   "reason": "PV3 is the payment-provider configuration gate. Under PILOT-BILLING-01 the payment provider is deliberately OFF through PILOT_READY (RSC-1, RSC-5), so no Pilot-stage SHA has a payment provider to configure, and its criterion ('the capability packages are applied to the target, and a replay and duplicate-delivery test passes in Preview') is satisfiable only after CB-5, which the Pilot defers. Placed at the earliest EXISTING stage after PILOT_READY; mandatory earlier only at a first operational enablement of the payment provider (EPR-1), never by test-mode preparation."
+   "reason": "PV3 is the payment-provider configuration gate. Under PILOT-BILLING-01 the payment provider is deliberately OFF through PILOT_READY (RSC-1, RSC-5), so no Pilot-stage SHA has a payment provider to configure, and its criterion ('the capability packages are applied to the target, and a replay and duplicate-delivery test passes in Preview') is satisfiable only after CB-5, which the Pilot defers. Placed at the earliest EXISTING stage after PILOT_READY; required earlier, per candidate SHA S, by every governed act that makes the payment provider operationally enabled for S (EPR-1), never by test-mode preparation in an isolated evidence deployment."
   },
   {
    "id": "RS-2",
@@ -90,7 +92,8 @@
  },
  "PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE": {
   "id": "EPR",
-  "owner_source": "RSC-5 ('Stripe-specific provider gates are deferred WHEN Stripe is deliberately OFF'), whose EPR semantic the Product Owner adjudicated in the directing text of CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R3 (2026-09-26, items 1-12, transcribed in substance in owner_adjudication_r3 below). No new owner artifact and no RSC id is created: the adjudication fixes the reading of RSC-5 that this block already materializes.",
+  "semantic": "STEADY_STATE_ACT_BOUND_PER_CANDIDATE_SHA",
+  "owner_source": "docs/ops/owner-ratifications/PILOT_BILLING_OWNER_DECISIONS_v1.0.0.json#ratifications[id=PILOT-BILLING-01].epr_steady_state_decisions (OD-EPR-SS-1..OD-EPR-SS-9; open-question dispositions ODR-1..ODR-3), adjudicated by the Product Owner in CV1-PILOT-BILLING-EPR-STEADY-STATE-OWNER-ADJUDICATION-R1 after the IC-R3-FINAL circuit breaker and supplied as binding direction to CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-WRITER-R1 (2026-09-26). It fixes the reading of RSC-5 that this block materializes; RSC-1..RSC-8 are unchanged.",
   "owner_adjudication_r3": [
    "EPR is an ACTIVATION/EXPOSURE invariant, not a prohibition on preparatory evidence-generation activity.",
    "A payment provider is not operationally enabled merely because bounded test-mode preparation is performed to obtain PV3/SEC7 evidence; preparation includes only the minimum actions the frozen PV3/SEC7 criteria require, while the payment path stays unavailable to product, runtime and customer use.",
@@ -100,40 +103,511 @@
    "Through PILOT_READY under ACTIVE_WITHOUT_STRIPE, PAYMENT_PROVIDER_DARK remains required; PV3 and SEC7 stay first_required_at_stage PRODUCTION_READY while the provider stays dark, and become mandatory at an earlier operational-enablement boundary if there is one.",
    "Nothing here waives PV3 or SEC7, marks either PASS, creates a stage or a gate, weakens Commercial Core or permits CAP-03 in the no-Stripe Pilot."
   ],
-  "single_semantic": "EPR has exactly ONE semantic, stated in rule and defined by preparatory_activity and operational_enablement_means_any_of. Every restatement in this file, in the consuming authority and in the companion manifest paraphrases it and neither adds nor removes a condition; a restatement that does is a defect of the restatement.",
-  "rule": "EPR-1 OPERATIONAL ENABLEMENT REQUIRES PASS: at no SHA and target may the payment provider be operationally enabled (any member of operational_enablement_means_any_of) while PV3 or SEC7 is not PASS for that SHA and target, and the first governed act or declaration that makes or represents the provider operationally enabled MUST cite, in that same act or declaration, PASS evidence for PV3 and for SEC7 bound to that SHA and target. If that boundary precedes PRODUCTION_READY, PV3 and SEC7 are mandatory from it onward. EPR-2 DARK BELOW PRODUCTION_READY DOES NOT BLOCK: while the provider remains operationally dark, a declaration below PRODUCTION_READY does not require PV3 or SEC7, which keep their recorded non-PASS states without blocking the no-Stripe Pilot. EPR-3 PRODUCTION_READY: PV3 and SEC7 are mandatory at PRODUCTION_READY regardless (RS-1, RS-2). Preparatory activity is NOT operational enablement. Neither gate may be regressed after it has been required. PASS means the ledger STATE_VOCABULARY value PASS ('Evidence was executed and is current under RULE_OBSERVATION_FRESHNESS'); PASS_OVER_STALE_INPUT, PARTIAL, ABSENT, UNKNOWN or any other value is not PASS.",
-  "preparatory_activity": {
-   "definition": "The actions strictly necessary to produce the evidence named by the FROZEN pass_criteria of PV3 and SEC7, performed in the payment provider's TEST MODE (PV3 is 'payment provider in test mode') while every member of operational_enablement_means_any_of is false. Bounded to PREP-1..PREP-4 and to nothing else. Preparatory activity is neither required nor forbidden by EPR; it is merely not enablement.",
-   "bounded_to": [
-    {"id": "PREP-1", "criterion_conjunct": "PV3: 'Test-mode key NAMES are present'", "admitted_as": "test-mode payment-provider credential NAMES in the Preview scope of the target (names only, SSL-08). A live-mode credential is never preparation (OE-1)."},
-    {"id": "PREP-2", "criterion_conjunct": "PV3: 'the webhook endpoint and signing secret are configured'", "admitted_as": "a test-mode webhook endpoint and its test-mode signing secret configured for the Preview scope."},
-    {"id": "PREP-3", "criterion_conjunct": "PV3 and SEC7: 'the capability packages are applied to the target'", "admitted_as": "the billing capability database packages applied to the target, with no product-serving runtime path wired to them (wiring is OE-5)."},
-    {"id": "PREP-4", "criterion_conjunct": "PV3: 'a replay and duplicate-delivery test passes in Preview'; SEC7: 'Signature verification, claim and lease semantics and duplicate handling are green, an out-of-order delivery is either guarded or explicitly accepted'", "admitted_as": "the replay, duplicate-delivery, signature, claim/lease and ordering tests executed in the Preview scope with test-mode events only, in a deployment that serves no product or runtime traffic."}
+  "owner_adjudication_r3_reading": "Historical R3 direction. It controls only as read through OD-EPR-SS-1..OD-EPR-SS-9: every statement in it that the provider is operationally dark, or that CAP-03 is unavailable, during preparation is read per candidate SHA (operational_enablement, OE(S)) and per evidence deployment (evidence_deployment, d_E), never target-wide. Where its wording is target-global, OD-EPR-SS controls.",
+  "single_semantic": "EPR has exactly ONE semantic: the act-bound, per-candidate-SHA semantic stated in rule (EPR-1..EPR-3) and defined by operational_enablement, governed_enablement_acts, evidence_deployment, preparatory_activity, evidence_binding, provider_configuration_identity, evidence_freshness, payment_provider_dark_proof, promotion, rollback, retest and go_live. Every restatement in this file, in the consuming authority and in the companion manifest paraphrases it and neither adds nor removes a condition; a restatement that does is a defect of the restatement.",
+  "scope": "PER_CANDIDATE_SHA",
+  "rule": "EPR-1 ACT-BOUND ENABLEMENT (INV-1): OE(S) may become true for a candidate release SHA S only through a governed enablement act (governed_enablement_acts: first enablement, promotion, re-enable, or a rollback that restores payment capability) that cites, in that same act, PV3 == PASS @ S and SEC7 == PASS @ S, each evidence record bound to exactly S (evidence_binding) and current at the time of the act (evidence_freshness). OE(S') for any S' != S neither implies OE(S) nor satisfies, carries or defeats any condition for S. EPR-2 DARK BELOW PRODUCTION_READY DOES NOT BLOCK: a declaration below PRODUCTION_READY at SHA S for which OE(S) is false cites PAYMENT_PROVIDER_DARK_PROOF(S) and does not require PV3 or SEC7, which keep their recorded non-PASS states without blocking the no-Stripe Pilot. EPR-3 PRODUCTION_READY: every PRODUCTION_READY declaration at SHA S cites PV3 == PASS @ S and SEC7 == PASS @ S, current at the declaration, regardless of OE(S) (RS-1, RS-2). EPR is evaluated at governed acts and declarations; it asserts no condition over the interval between two acts, and evidence that becomes stale after an act does not by itself make the enablement established by that act unlawful (retest, ODR-3). Preparatory activity in an admissible evidence deployment is NOT operational enablement. No PASS is carried from one SHA to another. NON_REGRESSION_RULE continues to govern stage declarations unchanged. PASS means the ledger STATE_VOCABULARY value PASS ('Evidence was executed and is current under RULE_OBSERVATION_FRESHNESS'); PASS_OVER_STALE_INPUT, STALE, PARTIAL, ABSENT, UNKNOWN or any other value is not PASS.",
+  "operational_enablement": {
+   "predicate": "OE(S)",
+   "definition": "OE(S) is true for a candidate release SHA S when any member of means_any_of holds for S. It is evaluated per candidate SHA, never globally by hosted target.",
+   "means_any_of": [
+    "OE-1 a LIVE-MODE (non-test) payment-provider credential NAME present in the environment scope of any deployment built from S (names only; SSL-08).",
+    "OE-2 the billing webhook capability CAP-03 switched on in any product-serving deployment built from S, including app/api/webhooks/stripe/route.ts WEBHOOK_DATABASE_IDENTITY_AVAILABLE true in a product-serving deployment built from S.",
+    "OE-3 any customer-facing payment journey, or any path that creates a payment-provider customer, checkout session or subscription, reachable from a product-serving deployment built from S.",
+    "OE-4 any live-mode payment event accepted by any deployment built from S, or any real payment traffic served by a deployment built from S.",
+    "OE-5 any Stripe-dependent node of the commercial authorities (CB-3, CB-4, CB-5, CB-6, CB-9, CE-6) wired into a runtime path of a product-serving deployment built from S. Applying such a node's database package to an evidence target is PREP-3, not OE-5."
    ],
-   "conditions_while_preparing": ["CAP-03 remains unavailable to every product-serving deployment.", "No customer-facing payment journey is reachable.", "No live-mode payment event is accepted and no real payment traffic flows.", "The provider remains operationally dark: a PAYMENT_PROVIDER_DARK attestation over operational_enablement_means_any_of stays true throughout."],
-   "anti_loophole": "Anything beyond PREP-1..PREP-4, any PREP item performed while a member of operational_enablement_means_any_of holds, any use of a live-mode credential or live-mode event, and any PREP item reachable from a product-serving deployment, is NOT preparatory activity: it is operational enablement, whatever it is called."
+   "other_sha_rule": "OE(S') for S' != S does not imply OE(S). A live S' neither makes S enabled, nor forbids preparing, evidencing or promoting S, nor lends S any evidence; traffic served by S' is never enablement evidence for S.",
+   "product_serving_scope": "Any environment scope or deployment from which pilot participants, customers or any other real user are served, the Production scope included. An admissible evidence deployment is never product-serving."
   },
-  "operational_enablement_means_any_of": [
-   "OE-1 a LIVE-MODE (non-test) payment-provider credential NAME present in any environment scope of the target (names only; SSL-08).",
-   "OE-2 the billing webhook capability CAP-03 switched on in any deployment that serves product or runtime traffic of the target, including app/api/webhooks/stripe/route.ts WEBHOOK_DATABASE_IDENTITY_AVAILABLE true at a SHA deployed to a product-serving scope.",
-   "OE-3 any customer-facing payment journey, or any path that creates a payment-provider customer, checkout session or subscription, reachable from a product-serving deployment.",
-   "OE-4 any live-mode payment event accepted by any deployment of the target, or any real payment traffic.",
-   "OE-5 any Stripe-dependent node of the commercial authorities (CB-3, CB-4, CB-5, CB-6, CB-9, CE-6) wired into a runtime path of a product-serving deployment. Applying such a node's database package is PREP-3, not OE-5."
+  "governed_enablement_acts": {
+   "definition": "Every governed act that makes OE(S) true for a candidate SHA S, whatever it is called. Each satisfies promotion.act_checks for S.",
+   "members": [
+    "GEA-1 first enablement: OE(S) becomes true while no SHA has previously been operationally enabled.",
+    "GEA-2 promotion/cutover: S is promoted or wired to operational payment traffic, replacing or joining a live S'.",
+    "GEA-3 re-enable: OE(S) becomes true again after S was taken dark.",
+    "GEA-4 restoring rollback: a rollback to S that restores payment capability (rollback)."
+   ],
+   "no_exemption": "No hotfix, emergency, incident, rollback, time-pressure or small-change exemption exists. A hotfix SHA is a candidate SHA like any other and reaches OE only through a governed enablement act citing PASS @ its own SHA.",
+   "premature_enablement": "OE(S) true without a governed enablement act for S that satisfied promotion.act_checks is PREMATURE_OPERATIONAL_ENABLEMENT: it is refused, it is never cured or ratified retroactively by later evidence, and a later governed enablement act for S first requires OE(S) false (ACT-7)."
+  },
+  "evidence_deployment": {
+   "symbol": "d_E",
+   "definition": "An isolated Preview/test-mode deployment built from candidate SHA S and used only to produce PV3 and SEC7 evidence for S. Existing vocabulary only: a deployment, its environment scope (the companion authority's Preview scope), the target identifier of EVIDENCE_IDENTITY_RULE, and the production denylist KNOWN_PRODUCTION_IDENTIFIERS of db/hosted/target-identity.ts.",
+   "binds": [
+    "candidate_sha",
+    "deployment_id",
+    "environment_scope",
+    "evidence_target_id"
+   ],
+   "evidence_target": "T_E = evidence_target_id: the target against which PV3's and SEC7's criterion 'the capability packages are applied to the target' is evaluated for evidence purposes.",
+   "admissible_only_when": [
+    "ISO-1 d_E serves no product, runtime or customer traffic: it is not product-serving and no real user is routed to it.",
+    "ISO-2 no LIVE-MODE payment-provider credential NAME is present in the environment_scope of d_E.",
+    "ISO-3 d_E receives only TEST-MODE payment-provider events.",
+    "ISO-4 evidence_target_id is NOT a member of KNOWN_PRODUCTION_IDENTIFIERS (projectRefs and hosts) of db/hosted/target-identity.ts.",
+    "ISO-5 evidence_target_id is NOT the promotion target of any governed enablement act that cites the evidence."
+   ],
+   "isolation_proof": "Each of ISO-1..ISO-5 is established by a FRESH OBSERVATION of the live environment scope, deployment routing and evidence target of d_E, taken within the evidence window and bound to candidate_sha, deployment_id, environment_scope and evidence_target_id. A repository default, a committed configuration or a documented value is not an observation. Missing, UNKNOWN or contradictory isolation proof makes d_E INADMISSIBLE.",
+   "independence": "Admissibility of d_E depends only on ISO-1..ISO-5. It does NOT depend on OE(S') for any other SHA S', nor on OE(S) of a product-serving deployment of the same S: an older SHA may remain live, and S itself may already be live (retest, ODR-3), while d_E produces evidence for S.",
+   "inadmissible_consequence": "Evidence produced in an inadmissible d_E is not PV3 or SEC7 evidence for any SHA, and the activity is not preparatory activity."
+  },
+  "preparatory_activity": {
+   "definition": "The actions strictly necessary to produce, for candidate SHA S, the evidence named by the FROZEN pass_criteria of PV3 and SEC7, performed in the payment provider's TEST MODE (PV3 is 'payment provider in test mode') inside an admissible evidence deployment d_E for S. Bounded to PREP-1..PREP-4 and to nothing else. Preparatory activity is neither required nor forbidden by EPR; it is merely not enablement.",
+   "precondition": "d_E ADMISSIBLE (evidence_deployment.admissible_only_when ISO-1..ISO-5, established by its isolation_proof) throughout the activity.",
+   "precondition_independence": "PREP-1..PREP-4 depend on the isolation of d_E and on nothing else in the enablement state: they do NOT depend on every other SHA being dark, and they remain available while an older SHA is live.",
+   "bounded_to": [
+    {
+     "id": "PREP-1",
+     "criterion_conjunct": "PV3: 'Test-mode key NAMES are present'",
+     "admitted_as": "test-mode payment-provider credential NAMES in the environment_scope of d_E (names only, SSL-08). A live-mode credential is never preparation (OE-1, ISO-2)."
+    },
+    {
+     "id": "PREP-2",
+     "criterion_conjunct": "PV3: 'the webhook endpoint and signing secret are configured'",
+     "admitted_as": "a test-mode webhook endpoint and its test-mode signing secret configured for d_E."
+    },
+    {
+     "id": "PREP-3",
+     "criterion_conjunct": "PV3 and SEC7: 'the capability packages are applied to the target'",
+     "admitted_as": "the billing capability database packages applied to evidence_target_id (T_E), with no product-serving runtime path wired to them (wiring is OE-5)."
+    },
+    {
+     "id": "PREP-4",
+     "criterion_conjunct": "PV3: 'a replay and duplicate-delivery test passes in Preview'; SEC7: 'Signature verification, claim and lease semantics and duplicate handling are green, an out-of-order delivery is either guarded or explicitly accepted'",
+     "admitted_as": "the replay, duplicate-delivery, signature, claim/lease and ordering tests executed against d_E with test-mode events only; d_E serves no product or runtime traffic."
+    }
+   ],
+   "conditions_while_preparing": [
+    "d_E remains admissible (ISO-1..ISO-5) for the whole evidence window.",
+    "The preparation switches CAP-03 on in no product-serving deployment built from S.",
+    "The preparation makes no customer-facing payment journey built from S reachable.",
+    "No live-mode payment event is accepted by d_E and no real payment traffic reaches d_E."
+   ],
+   "anti_loophole": "Anything beyond PREP-1..PREP-4, any PREP item performed outside an admissible d_E, any use of a live-mode credential or live-mode event, and any PREP item reachable from a product-serving deployment, is NOT preparatory activity: where it makes a member of operational_enablement.means_any_of hold for some SHA, it is operational enablement of that SHA, whatever it is called, and lawful only as a governed enablement act."
+  },
+  "evidence_binding": {
+   "rule": "A PV3 or SEC7 evidence record is admissible for EPR only when it binds ALL of fields; a record missing any field is not evidence for any SHA (EVIDENCE_IDENTITY_RULE, fail_closed).",
+   "fields": [
+    "candidate_sha",
+    "deployment_id",
+    "environment_scope",
+    "evidence_target_id",
+    "provider_configuration_identity",
+    "isolation_proof_reference",
+    "observation_timestamp",
+    "evidence_window"
+   ],
+   "sha_equality": "The candidate_sha of every cited PV3 and SEC7 evidence record equals the SHA of the governed act or declaration citing it. Equality is exact: no ancestor, descendant, merge base, tag, branch head or equivalent SHA qualifies.",
+   "no_carry_forward": "No PASS is carried forward between SHAs by default, and no rule in this amendment creates an exception. Evidence for S' is never PASS for S, whatever the relation of S' to S (predecessor, successor, hotfix parent or rollback target); a retest_after event never extends, renews or transfers a PASS."
+  },
+  "provider_configuration_identity": {
+   "purpose": "The minimum evidence identity needed to detect a material payment-provider configuration change. NAMES, IDENTIFIERS AND NON-SECRET MARKERS ONLY: no secret, key value, signing-secret material or token is ever recorded (SSL-08).",
+   "fields": {
+    "provider": "payment provider identifier.",
+    "mode": "'test' or 'live'.",
+    "credential_names": "sorted list of payment-provider credential NAMES or key identifiers present in the scope; never values.",
+    "webhook_endpoint_id": "the provider's webhook endpoint identifier.",
+    "subscribed_event_types": "sorted list of the event type names subscribed on that endpoint.",
+    "api_version": "the provider API version pinned by the endpoint or the client.",
+    "signing_secret_rotation_marker": "a non-secret marker of the current signing secret (the provider's secret identifier or its rotation date); never the secret."
+   },
+   "dimensions": {
+    "mode_dimensions": [
+     "mode",
+     "credential_names",
+     "webhook_endpoint_id",
+     "signing_secret_rotation_marker"
+    ],
+    "non_mode_dimensions": [
+     "provider",
+     "api_version",
+     "subscribed_event_types"
+    ]
+   },
+   "canonical_representation": "UTF-8 JSON object with exactly the seven fields, keys in lexicographic order, list values sorted lexicographically and de-duplicated, no insignificant whitespace; provider_configuration_identity_digest = lowercase hex SHA-256 of that byte string. The digest and the field values (names only) are recorded; two identities are equal if and only if their digests are equal.",
+   "material_change": "Any change of any field is material. A material change of the identity bound by an evidence record makes that record stale (evidence_freshness FR-3).",
+   "congruence_at_the_act": "At a governed enablement act for S, for every cited record: (a) CURRENT: a fresh observation at the act of the test-mode configuration named by the bound identity yields the same digest; (b) its mode is 'test'; (c) its non_mode_dimensions (provider, api_version, subscribed_event_types) equal those currently observed for the live configuration of the promotion target. Any inequality, or an identity that cannot be observed, is INCONGRUENT and the act fails.",
+   "bounded": "An evidence-identity field of EPR only. It is not payment-provider configuration management and authorizes no configuration change."
+  },
+  "evidence_freshness": {
+   "rule": "Evidence is CURRENT at a governed act or declaration only when every FR item holds at that act; otherwise it is STALE, and stale evidence is not PASS.",
+   "items": [
+    "FR-1 SHA: the record's candidate_sha equals the SHA of the act (evidence_binding.sha_equality).",
+    "FR-2 TARGET: the record satisfies RULE_OBSERVATION_FRESHNESS for evidence_target_id: no mutation of evidence_target_id has completed after the record's observation. Where one evidence target T_E is shared by several candidate SHAs or evidence deployments, ANY mutation of T_E (including PREP-3 or PREP-4 performed for another SHA) makes every earlier record bound to T_E stale.",
+    "FR-3 CONFIGURATION: the record's provider_configuration_identity is unchanged at the act (provider_configuration_identity.congruence_at_the_act (a)).",
+    "FR-4 RETEST: no retest_after event of the gate (ledger PV3: 'credential rotation or provider change'; SEC7: 'change to the billing surface') affecting the record has occurred after it. A retest_after event affects every record whose bound SHA, identity or evidence target it touches; where the affected set cannot be established, it affects every record of that gate (fail-closed).",
+    "FR-5 ISOLATION: the record's isolation proof established ISO-1..ISO-5 for its whole evidence window.",
+    "FR-6 NO REVIVAL: a stale record never becomes current again by computation, by reversal of the change, by re-citation or under a new identifier; only a fresh execution in an admissible d_E produces current evidence."
+   ]
+  },
+  "payment_provider_dark_proof": {
+   "name": "PAYMENT_PROVIDER_DARK_PROOF",
+   "notation": "PAYMENT_PROVIDER_DARK_PROOF(S)",
+   "classification": "EPR-local evidence used by EPR only. It is NOT a release gate, NOT an entry of the ledger GATES[] (whose count stays 78), and NOT a new class of the companion authority's EVIDENCE_PACKETS.",
+   "not_the_model_provider_class": "The ledger evidence class PROVIDER_DARK_PROOF (S7, S10) and the companion packet of that name keep their frozen, model-provider-specific meaning. PROVIDER_DARK_PROOF neither is, satisfies, substitutes nor is substituted by PAYMENT_PROVIDER_DARK_PROOF.",
+   "scope": "SHA- and deployment-scoped: it speaks for exactly one candidate SHA S and for the deployments built from S; never for an environment, a target or another SHA as a whole.",
+   "binds": [
+    "candidate_sha",
+    "deployment_id and environment_scope of every deployment built from S",
+    "target identifier (EVIDENCE_IDENTITY_RULE)",
+    "observation that every member of operational_enablement.means_any_of is false for S",
+    "observation timestamp and evidence window",
+    "provider_configuration_identity observed for each of those scopes, or the observed absence of any payment-provider configuration"
+   ],
+   "observation": "A FRESH observation of the live environment scopes and deployments; a repository default, a committed configuration or a documented value is not an observation. Retest after every environment change and every deploy of S.",
+   "use": "Below PRODUCTION_READY, a declaration at S on the no-Stripe path cites either PAYMENT_PROVIDER_DARK_PROOF(S) or applicable PASS evidence under EPR-1 (PV3 == PASS @ S and SEC7 == PASS @ S, current). Missing, stale, UNKNOWN or contradictory proof fails closed.",
+   "preparation_does_not_defeat_it": "Preparatory activity in an admissible d_E makes no member of operational_enablement.means_any_of hold for S, so it does not defeat the proof; it may be listed."
+  },
+  "promotion": {
+   "definition": "The promotion/cutover act for candidate SHA S is the governed enablement act that wires S to operational payment traffic on the promotion target.",
+   "act_checks": [
+    "ACT-1 PV3 == PASS @ S, current (evidence_freshness).",
+    "ACT-2 SEC7 == PASS @ S, current (evidence_freshness).",
+    "ACT-3 EXACT SHA: the candidate_sha of every cited record == S (evidence_binding.sha_equality).",
+    "ACT-4 ISOLATION: every cited record was produced in an admissible d_E (ISO-1..ISO-5 proven by its isolation_proof), and its evidence_target_id is neither a KNOWN_PRODUCTION_IDENTIFIERS member nor the promotion target.",
+    "ACT-5 CONFIGURATION: provider_configuration_identity of every cited record is current and congruent (provider_configuration_identity.congruence_at_the_act), including api_version and subscribed_event_types against the promotion target.",
+    "ACT-6 CAPABILITY PACKAGES: a fresh observation of the promotion target shows the billing capability packages required by S applied (PREP-3 applied them to the evidence target only).",
+    "ACT-7 NO PREMATURE ENABLEMENT: OE(S) was false immediately before the act; OE(S) found true before the act without a lawful governed enablement act for S is PREMATURE_OPERATIONAL_ENABLEMENT, refused and never ratified by this act.",
+    "ACT-8 CITATION: the act record cites the evidence of ACT-1..ACT-7 by identifier and digest in that same act."
+   ],
+   "outcome": "Then and only then may OE(S) become true. Promotion of S does not require taking any other SHA dark first: the act itself replaces or joins the live S' on the promotion target, and no global payment outage is required."
+  },
+  "rollback": {
+   "rule": "A rollback to SHA S_R that restores payment capability is a governed enablement act (GEA-4) and satisfies promotion.act_checks for S_R. If PV3 and SEC7 PASS @ S_R are current, the rollback proceeds under EPR-1 exactly like a promotion.",
+   "stale_default": "DARK ROLLBACK (ODR-2): if evidence @ S_R is missing, stale, UNKNOWN or insufficient, the rollback may proceed only with payment capability OFF for S_R (OE(S_R) false, PAYMENT_PROVIDER_DARK_PROOF(S_R)), and payment capability stays off until PV3 and SEC7 PASS @ S_R are regenerated in an admissible d_E and a governed enablement act for S_R cites them.",
+   "no_bypass": "No emergency, incident or time-pressure bypass exists. A rollback that restores payment capability on stale or insufficient evidence is refused."
+  },
+  "retest": {
+   "rule": "A retest_after event makes affected evidence STALE under evidence_freshness FR-4 (and FR-2 or FR-3 where it mutates a target or a configuration). ODR-3 DEFAULT_ACT_BOUND_REEVIDENCE: it does NOT by itself declare the current live payment path unlawful and does NOT by itself force an outage, because EPR is act-bound. Before the next governed act or declaration that requires that evidence, fresh evidence is regenerated in an admissible d_E. No PASS is carried forward, renewed or extended by the event, and no continuous-PASS obligation over live operation is created."
+  },
+  "go_live": {
+   "disposition": "ODR-1 OPEN_FAIL_CLOSED.",
+   "statement": "The companion authority's GO_LIVE stage requires 'Re-evidence, against the PRODUCTION target, of every gate whose evidence was previously produced against staging or Preview.' PV3 and SEC7 evidence under EPR is produced only in an admissible d_E whose evidence target is never a KNOWN_PRODUCTION_IDENTIFIERS member (ISO-4). The two requirements are incompatible for PV3 and SEC7, and neither is weakened here. GO_LIVE payment-path re-evidence therefore remains OPEN and FAIL-CLOSED: no GO_LIVE declaration may cite PV3 or SEC7 as re-evidenced against production on the strength of d_E or Preview evidence, no claim is made that the GO_LIVE payment path is ready, and its resolution requires a successor owner adjudication.",
+   "does_not_block": "ODR-1 does not block PILOT_READY or PRODUCTION_READY when their own conditions are satisfied. It does not change the GO_LIVE cumulative set (78) and does not move PV3 or SEC7."
+  },
+  "declaration_requirement": "Every declaration of FEATURE_COMPLETE_STAGING, RELEASE_CANDIDATE or PILOT_READY at SHA S cites, alongside its gate evidence, either PAYMENT_PROVIDER_DARK_PROOF(S) (OE(S) false) or, where OE(S) holds, PV3 == PASS @ S and SEC7 == PASS @ S current at the declaration together with the governed enablement act that made OE(S) true (EPR-1); with neither, it is not a declaration (declaration_rule of the companion authority). Under ACTIVE_WITHOUT_STRIPE every such declaration through PILOT_READY cites PAYMENT_PROVIDER_DARK_PROOF(S). Every PRODUCTION_READY declaration at S cites PV3 == PASS @ S and SEC7 == PASS @ S current regardless (EPR-3); GO_LIVE is additionally governed by go_live (ODR-1). This is an additional requirement, never a substitute for any gate.",
+  "fail_closed": "Missing, UNKNOWN, stale (any FR item failing, or recorded PASS_OVER_STALE_INPUT or STALE), incompletely bound (any evidence_binding field absent), inadmissible (d_E not proven isolated) or contradictory evidence counts as NOT PASS for PV3 and SEC7, and as no PAYMENT_PROVIDER_DARK_PROOF. A SHA whose OE state cannot be established is treated as operationally enabled without PASS, and the act or declaration fails.",
+  "why_not_a_gate": "No gate id is allocated. EPR attaches act- and declaration-content conditions to existing rules, so the ledger's closed gate list and its 78-gate count are unchanged; PAYMENT_PROVIDER_DARK_PROOF is EPR-local evidence, not a gate.",
+  "vocabulary": {
+   "existing": "'test mode' (PV3 name), 'Preview scope' (companion CANONICAL_STAGES ordinal 3 required_environment_evidence), STATE_VOCABULARY PASS and RULE_OBSERVATION_FRESHNESS, EVIDENCE_IDENTITY_RULE, retest_after (ledger gate field), KNOWN_PRODUCTION_IDENTIFIERS (db/hosted/target-identity.ts), CAP-03 and SSL-08.",
+   "minimum_new": "provider_configuration_identity (the one new evidence identity field), the EPR-local evidence name PAYMENT_PROVIDER_DARK_PROOF, the notations OE(S) and d_E, and the item ids GEA, ISO, FR, ACT and C-SS. No enum, state machine, stage, gate or companion EVIDENCE_PACKETS class is created."
+  },
+  "steady_state_reachability": {
+   "safe_reachable": [
+    "SR-1 FIRST ENABLEMENT: no SHA enabled -> PREP-1..PREP-4 for S1 in an admissible d_E(S1) -> PV3 PASS @ S1 -> SEC7 PASS @ S1 -> GEA-1 for S1 citing both (ACT-1..ACT-8) -> OE(S1).",
+    "SR-2 STEADY-STATE RELEASE: OE(S1) live -> PREP for S2 in an admissible d_E(S2) while S1 stays live -> PV3 and SEC7 PASS @ S2 -> GEA-2 promotion of S2 citing both -> OE(S2); S1 is replaced without any global payment outage.",
+    "SR-3 HOTFIX: OE(S2) live -> PREP for hotfix S3 in an admissible d_E(S3) -> PV3 and SEC7 PASS @ S3 -> GEA-2 promotion of S3 -> OE(S3); no hotfix exemption is used.",
+    "SR-4 PILOT: ACTIVE_WITHOUT_STRIPE through PILOT_READY with OE(S) false and PAYMENT_PROVIDER_DARK_PROOF(S) at every declared SHA."
+   ],
+   "safe_refused": [
+    "RF-1 promotion of S2 citing evidence @ S1 (ACT-3, FR-1).",
+    "RF-2 OE(S2) before PV3 and SEC7 PASS @ S2 (ACT-1, ACT-2, ACT-7).",
+    "RF-3 a d_E with a live-mode credential NAME in its scope (ISO-2).",
+    "RF-4 a d_E serving customers or product traffic (ISO-1).",
+    "RF-5 promotion citing stale evidence (FR-2..FR-6).",
+    "RF-6 a rollback restoring payments on stale evidence (rollback.no_bypass; DARK ROLLBACK instead).",
+    "RF-7 CAP-03 during the Pilot (consuming authority SECTION_4: FORBIDDEN IN PILOT).",
+    "RF-8 a d_E whose evidence target is a production identifier or the promotion target (ISO-4, ISO-5)."
+   ],
+   "global_payment_outage_required": false,
+   "first_enablement_reachable": true,
+   "steady_state_release_reachable": true
+  },
+  "consequence_for_the_pilot": "Under ACTIVE_WITHOUT_STRIPE, OE(S) is false for every SHA S declared through PILOT_READY by construction of the consuming authority (PBR-9, PB-N-22; CAP-03 FORBIDDEN IN PILOT; OD-EPR-SS-8). Every such declaration cites PAYMENT_PROVIDER_DARK_PROOF(S), and the Pilot path requires neither PV3 nor SEC7 (EPR-2). Preparatory activity for the later commercial route is never a Pilot act (the consuming authority's anti_pull_in_rule) and never makes OE(S) true.",
+  "consequence_for_the_full_commercial_route": "Full Stripe automation (COMMERCIAL_CORE_USABLE of the commercial authorities) eventually makes the payment provider operationally enabled for some SHA. For every candidate SHA S, PV3 and SEC7 evidence is produced through PREP-1..PREP-4 in an admissible d_E for S, whether or not an older SHA is live; every governed enablement act for S (first enablement, promotion, re-enable, payment-restoring rollback) cites PV3 == PASS @ S and SEC7 == PASS @ S, current, in that same act (EPR-1); PRODUCTION_READY cites both regardless (EPR-3, OD-EPR-SS-9). Billing OF-4 (CAP-03 MUST NOT be enabled before CB-5) is untouched and composes with EPR: CB-5's database packages are PREP-3 on an evidence target, its runtime enablement is OE-2 and OE-5 for the SHA that carries it.",
+  "steady_state_controls": [
+   {
+    "id": "C-SS-1",
+    "title": "OE takes a candidate SHA",
+    "requirement": "OE takes a candidate SHA: operational enablement is the predicate OE(S), every member of operational_enablement.means_any_of is scoped to deployments built from S, and OE(S') for S' != S does not imply OE(S).",
+    "manifest_control": "PB-N-41"
+   },
+   {
+    "id": "C-SS-2",
+    "title": "PREP depends on d_E isolation, not global OE",
+    "requirement": "PREP-1..PREP-4 are conditioned on the admissibility (isolation) of d_E only, never on global darkness or on any other SHA being dark.",
+    "manifest_control": "PB-N-42"
+   },
+   {
+    "id": "C-SS-3",
+    "title": "no continuous effective EPR invariant",
+    "requirement": "No continuous effective EPR invariant: EPR is evaluated at governed acts and declarations with evidence current at the act; PASS_OVER_STALE_INPUT, STALE and every non-PASS value are not PASS.",
+    "manifest_control": "PB-N-43"
+   },
+   {
+    "id": "C-SS-4",
+    "title": "complete evidence binding",
+    "requirement": "Complete evidence binding: every PV3/SEC7 evidence record binds candidate_sha, deployment_id, environment_scope, evidence_target_id, provider_configuration_identity, isolation_proof_reference, observation_timestamp and evidence_window; a record missing any is not evidence.",
+    "manifest_control": "PB-N-44"
+   },
+   {
+    "id": "C-SS-5",
+    "title": "evidence SHA == governed act SHA",
+    "requirement": "Evidence SHA == governed act SHA, exactly, for every governed enablement act and declaration, with no hotfix, emergency or rollback exemption.",
+    "manifest_control": "PB-N-45"
+   },
+   {
+    "id": "C-SS-6",
+    "title": "no automatic PASS carry-forward",
+    "requirement": "No automatic PASS carry-forward between SHAs; a retest_after event never extends, renews or transfers a PASS.",
+    "manifest_control": "PB-N-46"
+   },
+   {
+    "id": "C-SS-7",
+    "title": "T_E not production and != promotion target",
+    "requirement": "The evidence target T_E is not a KNOWN_PRODUCTION_IDENTIFIERS member and is not the promotion target.",
+    "manifest_control": "PB-N-47"
+   },
+   {
+    "id": "C-SS-8",
+    "title": "isolation proof observed",
+    "requirement": "Isolation proof observed: ISO-1..ISO-5 (no product traffic, no live-mode credential names, test-mode events only, T_E not production, T_E != promotion target) are established by a fresh observation, never by a default or documented value.",
+    "manifest_control": "PB-N-48"
+   },
+   {
+    "id": "C-SS-9",
+    "title": "provider configuration identity congruent",
+    "requirement": "provider_configuration_identity is bound, canonically represented, current and congruent at the act, including api_version and subscribed_event_types against the promotion target.",
+    "manifest_control": "PB-N-49"
+   },
+   {
+    "id": "C-SS-10",
+    "title": "shared T_E mutation invalidates affected evidence",
+    "requirement": "Any mutation of a shared evidence target T_E, including PREP for another SHA, makes every earlier record bound to T_E stale.",
+    "manifest_control": "PB-N-50"
+   },
+   {
+    "id": "C-SS-11",
+    "title": "old model-provider PROVIDER_DARK_PROOF is not payment proof",
+    "requirement": "The model-provider evidence class PROVIDER_DARK_PROOF is not payment proof and never substitutes PAYMENT_PROVIDER_DARK_PROOF.",
+    "manifest_control": "PB-N-51"
+   },
+   {
+    "id": "C-SS-12",
+    "title": "rollback restoring payments is an enablement act",
+    "requirement": "A rollback that restores payment capability is a governed enablement act; with stale evidence it is refused and only a DARK ROLLBACK is admitted.",
+    "manifest_control": "PB-N-52"
+   },
+   {
+    "id": "C-SS-13",
+    "title": "Pilot darkness is SHA-scoped and fail-closed",
+    "requirement": "Pilot darkness is SHA-scoped and fail-closed: every declaration through PILOT_READY at SHA S under ACTIVE_WITHOUT_STRIPE cites PAYMENT_PROVIDER_DARK_PROOF(S), scoped to S and its deployments, and CAP-03 stays FORBIDDEN IN PILOT.",
+    "manifest_control": "PB-N-53"
+   },
+   {
+    "id": "C-SS-14",
+    "title": "cumulative 76/78 preserved",
+    "requirement": "Cumulative PRODUCTION_READY (76) and GO_LIVE (78) sets are preserved; PV3 and SEC7 stay at PRODUCTION_READY and are the only gates moved relative to the ledger.",
+    "manifest_control": "PB-N-54"
+   },
+   {
+    "id": "C-SS-15",
+    "title": "steady-state SHA1-live -> SHA2-PREP -> SHA2-PASS -> SHA2-promote is reachable",
+    "requirement": "The steady-state chain SHA1-live -> SHA2-PREP -> SHA2-PASS -> SHA2-promote is reachable (and so are first enablement and hotfix) without any global payment outage.",
+    "manifest_control": "PB-P-23"
+   },
+   {
+    "id": "C-SS-16",
+    "title": "GO_LIVE issue is explicitly open/fail-closed",
+    "requirement": "The GO_LIVE payment-path re-evidence question is explicitly OPEN and FAIL-CLOSED (ODR-1): no Preview or d_E evidence is treated as production evidence.",
+    "manifest_control": "PB-N-55"
+   },
+   {
+    "id": "C-SS-17",
+    "title": "OD-EPR-SS present while RSC-1..8 unchanged",
+    "requirement": "OD-EPR-SS-1..OD-EPR-SS-9 and ODR-1..ODR-3 are present in the owner record exactly, while RSC-1..RSC-8 are unchanged.",
+    "manifest_control": "PB-N-56"
+   },
+   {
+    "id": "C-SS-18",
+    "title": "premature OE(S) before PASS is refused",
+    "requirement": "Premature OE(S) before PV3 == PASS @ S and SEC7 == PASS @ S is refused and never ratified by a later act.",
+    "manifest_control": "PB-N-57"
+   }
   ],
-  "product_serving_scope": "Any environment scope or deployment from which pilot participants, customers or any other real user are served, the Production scope included. A Preview deployment used only for PREP-4 with test-mode events and reached by no real user is not product-serving.",
-  "declaration_requirement": "Every declaration of FEATURE_COMPLETE_STAGING, RELEASE_CANDIDATE or PILOT_READY cites, alongside its gate evidence, a PAYMENT_PROVIDER_DARK attestation of the ledger's existing evidence class PROVIDER_DARK_PROOF (a fresh observation of the live environment scope; a repository default, a committed configuration or a documented value is not an observation) bound to the declared SHA and target under EVIDENCE_IDENTITY_RULE: no member of operational_enablement_means_any_of holds. Preparatory activity already performed may be listed and does not defeat the attestation. A declaration below PRODUCTION_READY that cannot attest the provider dark MUST instead cite PASS evidence for PV3 and SEC7 bound to the same SHA and target (EPR-1); with neither, it is not a declaration (declaration_rule of the companion authority). Every PRODUCTION_READY and GO_LIVE declaration cites PV3 and SEC7 PASS regardless (EPR-3). This is an additional requirement, never a substitute for any gate.",
-  "fail_closed": "Missing, UNKNOWN, stale (not current under RULE_OBSERVATION_FRESHNESS, not bound to the declared SHA and target under EVIDENCE_IDENTITY_RULE, or recorded PASS_OVER_STALE_INPUT) or contradictory evidence counts as NOT DARK for the attestation and NOT PASS for PV3 and SEC7. A provider whose state cannot be established is treated as operationally enabled without PASS, and the act or declaration fails.",
-  "why_not_a_gate": "No gate id is allocated. The attestation is a declaration-content condition attached to an existing rule, so the ledger's closed gate list and its 78-gate count are unchanged.",
-  "why_no_new_vocabulary": "Every term is existing authority: 'test mode' (PV3 name), 'Preview scope' (companion CANONICAL_STAGES ordinal 3 required_environment_evidence), PROVIDER_DARK_PROOF (ledger evidence class of S7 and S10), STATE_VOCABULARY PASS and RULE_OBSERVATION_FRESHNESS, EVIDENCE_IDENTITY_RULE, CAP-03 and SSL-08. No enum, state machine, stage or gate is created.",
-  "reachability_proof": "No circularity: every conjunct of the PV3 and SEC7 pass_criteria is one of PREP-1..PREP-4, and no PREP item is a member of operational_enablement_means_any_of, so PV3 and then SEC7 (which depends on PV3) can reach PASS on a target that is still operationally dark. The full commercial route is therefore: dark target -> PREP-1..PREP-4 -> PV3 PASS -> SEC7 PASS -> the first operational-enablement act cites both PASS in that same act (EPR-1) -> PRODUCTION_READY cites both PASS (EPR-3). The provider may equally stay dark through PRODUCTION_READY. Both routes reach PRODUCTION_READY.",
-  "consequence_for_the_pilot": "Under ACTIVE_WITHOUT_STRIPE no member of operational_enablement_means_any_of holds by construction of the consuming authority (PBR-9, PB-N-22; CAP-03 FORBIDDEN IN PILOT). Every declaration through PILOT_READY carries the PAYMENT_PROVIDER_DARK attestation, and the Pilot path requires neither PV3 nor SEC7 (EPR-2). Preparatory activity for the later commercial route is never a Pilot act (the consuming authority's anti_pull_in_rule) and never makes the provider operationally enabled.",
-  "consequence_for_the_full_commercial_route": "Full Stripe automation (COMMERCIAL_CORE_USABLE of the commercial authorities) eventually enables the provider operationally. PV3 and SEC7 evidence is produced while the target is still dark through PREP-1..PREP-4; the first act or declaration that makes the provider operationally enabled, such as CAP-03 enablement, cites PV3 PASS and SEC7 PASS in that same act or declaration (EPR-1); PRODUCTION_READY cites both regardless (EPR-3). Billing OF-4 (CAP-03 MUST NOT be enabled before CB-5) is untouched and composes with EPR: CB-5's database packages are PREP-3, its runtime enablement is OE-2 and OE-5."
+  "mutation_contract": {
+   "rule": "Each mutant below, applied to this block, its restatements or the owner record, MUST turn at least one of the named steady-state controls RED; at least one harmless rewording MUST survive. The writer's validator and battery are out of repository (docs-only lane) and are re-derivable from this contract.",
+   "mutants": [
+    {
+     "id": "M1",
+     "mutation": "OE target-wide instead of SHA-scoped",
+     "killed_by": [
+      "C-SS-1"
+     ]
+    },
+    {
+     "id": "M2",
+     "mutation": "PREP conditioned on global darkness",
+     "killed_by": [
+      "C-SS-2",
+      "C-SS-15"
+     ]
+    },
+    {
+     "id": "M3",
+     "mutation": "continuous EPR instead of act-bound",
+     "killed_by": [
+      "C-SS-3"
+     ]
+    },
+    {
+     "id": "M4",
+     "mutation": "SHA1 evidence accepted for SHA2",
+     "killed_by": [
+      "C-SS-5"
+     ]
+    },
+    {
+     "id": "M5",
+     "mutation": "PASS carry-forward via retest_after",
+     "killed_by": [
+      "C-SS-6"
+     ]
+    },
+    {
+     "id": "M6",
+     "mutation": "provider configuration identity removed",
+     "killed_by": [
+      "C-SS-4",
+      "C-SS-9"
+     ]
+    },
+    {
+     "id": "M7",
+     "mutation": "evidence target omitted",
+     "killed_by": [
+      "C-SS-4"
+     ]
+    },
+    {
+     "id": "M8",
+     "mutation": "production target used as d_E",
+     "killed_by": [
+      "C-SS-7"
+     ]
+    },
+    {
+     "id": "M9",
+     "mutation": "live credential accepted in PREP",
+     "killed_by": [
+      "C-SS-8"
+     ]
+    },
+    {
+     "id": "M10",
+     "mutation": "product-serving Preview accepted as isolated",
+     "killed_by": [
+      "C-SS-8"
+     ]
+    },
+    {
+     "id": "M11",
+     "mutation": "CAP-03 enabled without PASS",
+     "killed_by": [
+      "C-SS-18"
+     ]
+    },
+    {
+     "id": "M12",
+     "mutation": "rollback payment enablement bypasses EPR",
+     "killed_by": [
+      "C-SS-12"
+     ]
+    },
+    {
+     "id": "M13",
+     "mutation": "hotfix exemption",
+     "killed_by": [
+      "C-SS-5"
+     ]
+    },
+    {
+     "id": "M14",
+     "mutation": "old PROVIDER_DARK_PROOF reused",
+     "killed_by": [
+      "C-SS-11"
+     ]
+    },
+    {
+     "id": "M15",
+     "mutation": "dark proof environment-global rather than SHA/deployment scoped",
+     "killed_by": [
+      "C-SS-13"
+     ]
+    },
+    {
+     "id": "M16",
+     "mutation": "global darkness required while SHA1 remains live",
+     "killed_by": [
+      "C-SS-2",
+      "C-SS-15"
+     ]
+    },
+    {
+     "id": "M17",
+     "mutation": "PV3/SEC7 moved to GO_LIVE",
+     "killed_by": [
+      "C-SS-14"
+     ]
+    },
+    {
+     "id": "M18",
+     "mutation": "PASS_OVER_STALE_INPUT accepted",
+     "killed_by": [
+      "C-SS-3"
+     ]
+    },
+    {
+     "id": "M19",
+     "mutation": "shared evidence target changed without invalidation",
+     "killed_by": [
+      "C-SS-10"
+     ]
+    },
+    {
+     "id": "M20",
+     "mutation": "Pilot payment path enabled",
+     "killed_by": [
+      "C-SS-13"
+     ]
+    },
+    {
+     "id": "M21",
+     "mutation": "Preview evidence treated as production evidence",
+     "killed_by": [
+      "C-SS-16"
+     ]
+    },
+    {
+     "id": "M22",
+     "mutation": "owner steady-state decisions missing/altered",
+     "killed_by": [
+      "C-SS-17"
+     ]
+    },
+    {
+     "id": "M23",
+     "mutation": "ODR-1 silently treated as closed",
+     "killed_by": [
+      "C-SS-16"
+     ]
+    },
+    {
+     "id": "M24",
+     "mutation": "stale rollback allowed with active payments",
+     "killed_by": [
+      "C-SS-12"
+     ]
+    }
+   ]
+  }
  },
  "HPO_G_DISPOSITION": {
   "source": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json#HPO-G; materialized by docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json#BINDING_HPO_RATIFICATIONS",
   "rule": "HPO-G text is NOT amended and NOT reopened. The owner's own reading of HPO-G.6 and HPO-G.7 (RSC-5, recorded in the binding owner ratification) is materialized here.",
   "HPO-G.5": "UNCHANGED. STAGING_ALIGNED still requires parity with provider capabilities dark (S7, S10). The payment provider stays dark for longer, which is compatible with and stricter than G.5.",
-  "HPO-G.6": "SCOPE-AWARE. 'Then browser/provider gates' is read as: every browser journey gate (M9, J1, J2, J3, J4, G13) and every provider gate APPLICABLE TO THE RELEASE CONFIGURATION (PV1, PV2, PV5, PV6; PV4 stays at RELEASE_CANDIDATE as before) is required at FEATURE_COMPLETE_STAGING, before RELEASE_CANDIDATE. The payment-provider gates PV3 and SEC7 are applicable only to a configuration in which the payment provider is enabled; with the provider deliberately OFF they are deferred to PRODUCTION_READY; under EPR they become mandatory earlier only at the first OPERATIONAL enablement of the provider, and bounded test-mode preparation for their evidence does not pull them forward.",
+  "HPO-G.6": "SCOPE-AWARE. 'Then browser/provider gates' is read as: every browser journey gate (M9, J1, J2, J3, J4, G13) and every provider gate APPLICABLE TO THE RELEASE CONFIGURATION (PV1, PV2, PV5, PV6; PV4 stays at RELEASE_CANDIDATE as before) is required at FEATURE_COMPLETE_STAGING, before RELEASE_CANDIDATE. The payment-provider gates PV3 and SEC7 are applicable only to a configuration in which the payment provider is enabled; with the provider deliberately OFF they are deferred to PRODUCTION_READY; under EPR they become mandatory earlier, per candidate SHA S, at every governed act that makes OE(S) true, and bounded test-mode preparation in an isolated evidence deployment does not pull them forward.",
   "HPO-G.7": "UNCHANGED. RELEASE_CANDIDATE may not be entered before FEATURE_COMPLETE_STAGING is declared at the same SHA; no RELEASE_CANDIDATE gate is added, removed or moved.",
   "HPO-G.8": "UNCHANGED AND CARRIED. Production still requires recovery evidence, observability, security and legal signoff and normal lineage; the PRODUCTION_READY new-gate list gains PV3 and SEC7, and its cumulative set is unchanged."
  },
@@ -157,22 +631,22 @@
    {"id": "SC-1", "artifact": "ledger", "location": "GATES[id=PV3].first_required_at_stage", "verbatim_text": "FEATURE_COMPLETE_STAGING", "respect_in_which_superseded": "Reads PRODUCTION_READY (RS-1), subject to EPR.", "everything_else_continues": "Every other field of PV3."},
    {"id": "SC-2", "artifact": "ledger", "location": "GATES[id=SEC7].first_required_at_stage", "verbatim_text": "FEATURE_COMPLETE_STAGING", "respect_in_which_superseded": "Reads PRODUCTION_READY (RS-2), subject to EPR.", "everything_else_continues": "Every other field of SEC7."},
    {"id": "SC-3", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3 FEATURE_COMPLETE_STAGING].new_machine_gates and .new_human_gates", "verbatim_text": "new_machine_gates [M9, PV1, J1, J2, J3, J4, SEC1, SEC4, SEC5, SEC7, G13]; new_human_gates [PV1, PV2, PV3, PV5, PV6, SEC1, SEC4, SEC5, SEC7, G13]", "respect_in_which_superseded": "SEC7 is removed from new_machine_gates and PV3 and SEC7 from new_human_gates.", "everything_else_continues": "Every other member of both lists."},
-   {"id": "SC-4", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].required_environment_evidence", "verbatim_text": "PV1, PV2, PV3, PV5 and PV6 each configured by NAME in the Preview scope and exercised at least once. The real model provider is explicitly NOT included: it remains dark until PV4 at RELEASE_CANDIDATE.", "respect_in_which_superseded": "PV3 is not in the list. The payment provider, like the real model provider, is not included and remains operationally dark (EPR); bounded test-mode preparation (EPR PREP-1..PREP-4) is permitted but not required at this stage.", "everything_else_continues": "PV1, PV2, PV5, PV6 configured by NAME and exercised; the real model provider sentence."},
+   {"id": "SC-4", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].required_environment_evidence", "verbatim_text": "PV1, PV2, PV3, PV5 and PV6 each configured by NAME in the Preview scope and exercised at least once. The real model provider is explicitly NOT included: it remains dark until PV4 at RELEASE_CANDIDATE.", "respect_in_which_superseded": "PV3 is not in the list. The payment provider, like the real model provider, is not included: no SHA declared at this stage is operationally enabled for payments under ACTIVE_WITHOUT_STRIPE (EPR, PAYMENT_PROVIDER_DARK_PROOF(S)); bounded test-mode preparation in an isolated evidence deployment (EPR PREP-1..PREP-4) is permitted but not required at this stage.", "everything_else_continues": "PV1, PV2, PV5, PV6 configured by NAME and exercised; the real model provider sentence."},
    {"id": "SC-5", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].required_security_review", "verbatim_text": "SEC1 tenant isolation, including a read-only closed-world census of the live catalog; SEC4 public disclosure surface; SEC5 secret custody; SEC7 billing webhook integrity.", "respect_in_which_superseded": "SEC7 is not part of this stage's security review.", "everything_else_continues": "SEC1 (with its census), SEC4, SEC5."},
-   {"id": "SC-6", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].exit_declaration", "verbatim_text": "FEATURE_COMPLETE_STAGING at SHA <sha> against target <target id>, citing three green browser journeys with negative controls plus one configuration proof per provider.", "respect_in_which_superseded": "'one configuration proof per provider' means per provider whose gate is required at this stage (PV1, PV2, PV5, PV6), plus the EPR payment-provider-dark attestation.", "everything_else_continues": "SHA, target, three green browser journeys with negative controls."},
-   {"id": "SC-7", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=6 PRODUCTION_READY].new_machine_gates, .new_human_gates, .required_environment_evidence, .required_security_review", "verbatim_text": "new_machine_gates [D3, P1, P2, P6, P7]; new_human_gates [D2, D3, D4, D5, LC0-PP, G9, G10B, P1, P2, P3, P5, P7, P8]; required_environment_evidence 'P3 as the production environment-name inventory. Names only.'; required_security_review 'P8, which closes ...'", "respect_in_which_superseded": "SEC7 joins new_machine_gates; PV3 and SEC7 join new_human_gates; required_environment_evidence additionally requires PV3 configured by NAME in the Preview scope and its replay test passed; required_security_review additionally requires SEC7.", "everything_else_continues": "Every existing member and sentence."}
+   {"id": "SC-6", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].exit_declaration", "verbatim_text": "FEATURE_COMPLETE_STAGING at SHA <sha> against target <target id>, citing three green browser journeys with negative controls plus one configuration proof per provider.", "respect_in_which_superseded": "'one configuration proof per provider' means per provider whose gate is required at this stage (PV1, PV2, PV5, PV6), plus PAYMENT_PROVIDER_DARK_PROOF(S) at the declared SHA S, or PV3 and SEC7 PASS @ S where OE(S) holds (EPR declaration_requirement).", "everything_else_continues": "SHA, target, three green browser journeys with negative controls."},
+   {"id": "SC-7", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=6 PRODUCTION_READY].new_machine_gates, .new_human_gates, .required_environment_evidence, .required_security_review", "verbatim_text": "new_machine_gates [D3, P1, P2, P6, P7]; new_human_gates [D2, D3, D4, D5, LC0-PP, G9, G10B, P1, P2, P3, P5, P7, P8]; required_environment_evidence 'P3 as the production environment-name inventory. Names only.'; required_security_review 'P8, which closes ...'", "respect_in_which_superseded": "SEC7 joins new_machine_gates; PV3 and SEC7 join new_human_gates; required_environment_evidence additionally requires PV3 configured by NAME in the Preview scope and its replay test passed, in an admissible evidence deployment d_E for the declared SHA (EPR); required_security_review additionally requires SEC7.", "everything_else_continues": "Every existing member and sentence."}
   ]
  },
  "QUALIFIED_CLAUSES_NOT_SUPERSEDED": {
   "rule": "These continue to control in full; each entry records only how it is read alongside this amendment.",
   "entries": [
-   {"id": "QC-1", "artifact": "companion authority", "location": "PRODUCTION_PATH.ordered_path[step=7].gates and [step=8].gates", "reading": "Narrative ordering aids (step 8 normative_source: the ledger governs). PV3 (step 7) and SEC7 (step 8) are read at step 11 (PRODUCTION_READY), or earlier at the first operational enablement of the payment provider (EPR-1)."},
+   {"id": "QC-1", "artifact": "companion authority", "location": "PRODUCTION_PATH.ordered_path[step=7].gates and [step=8].gates", "reading": "Narrative ordering aids (step 8 normative_source: the ledger governs). PV3 (step 7) and SEC7 (step 8) are read at step 11 (PRODUCTION_READY), or earlier, per candidate SHA S, at any governed act that makes OE(S) true (EPR-1)."},
    {"id": "QC-2", "artifact": "companion authority", "location": "BINDING_HPO_RATIFICATIONS.HPO-G.bindings[id=HPO-G-06].materialized_by ('stage FEATURE_COMPLETE_STAGING')", "reading": "Still materialized by FEATURE_COMPLETE_STAGING, read scope-aware per HPO_G_DISPOSITION.HPO-G.6."},
    {"id": "QC-3", "artifact": "ledger", "location": "GATES[id=PV3].cross_reference_not_a_dependency", "reading": "Still true: SEC7 depends on PV3, both now at PRODUCTION_READY."},
    {"id": "QC-4", "artifact": "companion authority amendment v1.0.1", "location": "LEDGER_REDERIVATION_REQUIREMENT", "reading": "This amendment is NOT that re-derivation. Any successor ledger revision produced for ENV-13 MUST carry RS-1, RS-2 and EPR forward verbatim in substance, or supersede them by its own reasoned successor under RULE_NO_GATE_WEAKENING; silently restoring the v1.0.0 placement, or silently dropping EPR, is a defect of that successor."},
    {"id": "QC-5", "artifact": "ledger", "location": "self_check.no_gate_depends_on_a_gate_first_required_at_a_later_stage", "reading": "Still true after RS-1 and RS-2 (PLACEMENT_DERIVATION.dependency_consistency)."},
    {"id": "QC-6", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=5 PILOT_READY].required_legal_review ('commercial-activation condition')", "reading": "Unchanged. The consuming authority's PILOT_BILLING_READY is a necessary, never sufficient, input to it."},
-   {"id": "QC-7", "artifact": "companion authority", "location": "FROZEN_RULES.RULE_NO_GATE_WEAKENING", "reading": "Controls this amendment. The re-staging is a correction through a successor with its reason recorded; no criterion is relaxed or narrowed; the placement is unconditional (PRODUCTION_READY) and EPR only ADDS an earlier requirement, so no gate is made conditional in order to obtain a pass."}
+   {"id": "QC-7", "artifact": "companion authority", "location": "FROZEN_RULES.RULE_NO_GATE_WEAKENING", "reading": "Controls this amendment. The re-staging is a correction through a successor with its reason recorded; no criterion is relaxed or narrowed; the placement is unconditional (PRODUCTION_READY) and EPR only ADDS act-bound, per-candidate-SHA requirements, so no gate is made conditional in order to obtain a pass."}
   ]
  },
  "NON_WEAKENING_PROOF": {
@@ -186,7 +660,7 @@
   "gates_retired": 0,
   "gate_ids_allocated": 0,
   "gates_with_first_required_at_stage_changed": ["PV3", "SEC7"],
-  "direction_of_every_change": "LATER (ordinal 3 -> 6), bounded above by PRODUCTION_READY and made mandatory earlier only at a first operational enablement of the payment provider (EPR-1)",
+  "direction_of_every_change": "LATER (ordinal 3 -> 6), bounded above by PRODUCTION_READY and additionally required, per candidate SHA S, at every governed act that makes the payment provider operationally enabled for S (EPR-1)",
   "gates_with_any_other_field_changed": [],
   "gate_states_changed": 0,
   "pv3_or_sec7_recorded_as_PASS_waived_accepted_or_satisfied": false,
@@ -212,6 +686,8 @@
   "expected_canonical_stage_count": 7,
   "expected_superseded_clauses": 7,
   "expected_qualified_clauses": 7,
+  "expected_steady_state_controls": 18,
+  "expected_mutation_contract_mutants": 24,
   "expected_cumulative_after": {"DEVELOPMENT_COMPLETE": 11, "STAGING_ALIGNED": 26, "FEATURE_COMPLETE_STAGING": 39, "RELEASE_CANDIDATE": 56, "PILOT_READY": 60, "PRODUCTION_READY": 76, "GO_LIVE": 78},
   "checks": [
    "stages_in_order equals the companion authority's CANONICAL_STAGES.stages[].stage in ordinal order",
@@ -222,14 +698,15 @@
    "the cumulative sets of PRODUCTION_READY and GO_LIVE equal the pre-amendment sets",
    "no gate id in this file is absent from the ledger; no stage id in this file is absent from the ladder",
    "no occurrence of PASS, WAIVED or ACCEPTED is asserted as a state of PV3 or SEC7",
-   "PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE.rule names both PV3 and SEC7, PRODUCTION_READY and operational enablement; every PV3 and SEC7 pass_criteria conjunct is covered by exactly one PREP item and no PREP item is a member of operational_enablement_means_any_of",
+   "PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE.scope is PER_CANDIDATE_SHA; rule names PV3, SEC7, PRODUCTION_READY, OE(S) and the governed enablement act; every PV3 and SEC7 pass_criteria conjunct is covered by exactly one PREP item; no PREP item is a member of operational_enablement.means_any_of; PREP is conditioned on d_E admissibility only; steady_state_controls are exactly C-SS-1..C-SS-18, each mapped to a distinct companion manifest control; steady_state_reachability reports first and steady-state enablement reachable with global_payment_outage_required false",
    "the parent ledger and both companion authority files are byte-unchanged relative to BASE_SHA"
   ],
   "no_secret_value_present": true,
   "no_hosted_access_performed": true,
   "protected_surfaces_touched": 0
  },
- "final_state": "RELEASE_GATE_LEDGER_AMENDED_v1_0_1__PV3_SEC7_RESTAGED_TO_PRODUCTION_READY__EPR_ADDED__HPO_G6_G7_SCOPE_AWARE__NO_STAGE_ADDED_REMOVED_OR_SKIPPED__NO_OTHER_GATE_CHANGED__PRODUCTION_AND_GO_LIVE_SETS_UNCHANGED__FROZEN_PENDING_INDEPENDENT_CERTIFICATION",
+ "final_state": "RELEASE_GATE_LEDGER_AMENDED_v1_0_1__PV3_SEC7_RESTAGED_TO_PRODUCTION_READY__EPR_STEADY_STATE_ACT_BOUND_PER_CANDIDATE_SHA__HPO_G6_G7_SCOPE_AWARE__NO_STAGE_ADDED_REMOVED_OR_SKIPPED__NO_OTHER_GATE_CHANGED__PRODUCTION_AND_GO_LIVE_SETS_UNCHANGED__GO_LIVE_PAYMENT_PATH_OPEN_FAIL_CLOSED__FROZEN_PENDING_INDEPENDENT_CERTIFICATION",
  "R3_REVISION": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R3 (2026-09-26) resolves IC-R2 B-1 (two incompatible EPR semantics: 'required at the earlier of PRODUCTION_READY and first enablement' versus 'PV3 and SEC7 must PASS BEFORE enablement', where PV3's own criterion counted as enablement). EPR now has ONE semantic under the owner's R3 adjudication: preparation is not enablement; operational enablement requires PV3 and SEC7 PASS in the same act or declaration. No other field of this file changes in meaning; RS-1, RS-2, the derived stage sets, HPO_G_DISPOSITION and NON_WEAKENING_PROOF are unchanged.",
- "next_gate": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R3-FINAL: independent, read-only certification of this amendment together with its consuming authority, owner record and manifest, bounded to IC-R2 B-1 and to non-regression of R2."
+ "SS_REVISION": "CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-WRITER-R1 (2026-09-26) resolves the IC-R3-FINAL blocking finding (residual post-enablement circularity: preparation was defined only while every target-wide enablement member was false, so after the first enablement no later SHA could obtain PV3/SEC7 evidence without a global payment outage). Under the owner steady-state decisions OD-EPR-SS-1..OD-EPR-SS-9 (ODR-1..ODR-3), EPR is act-bound and per candidate SHA: OE(S), governed enablement acts, isolated evidence deployment d_E, provider_configuration_identity, evidence freshness, SHA-scoped PAYMENT_PROVIDER_DARK_PROOF, promotion, rollback, retest and GO_LIVE (OPEN_FAIL_CLOSED). RS-1, RS-2, the derived stage sets, HPO_G_DISPOSITION (G.6 scope-aware, G.7 unchanged), EPR-2, EPR-3 and NON_WEAKENING_PROOF are unchanged in effect.",
+ "next_gate": "CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-IC-R1: independent, read-only certification of this amendment together with its consuming authority, owner record and manifest, bounded to the IC-R3-FINAL blocking finding (residual post-enablement circularity), the owner steady-state decisions OD-EPR-SS-1..OD-EPR-SS-9 and ODR-1..ODR-3, and non-regression of R3."
 }
