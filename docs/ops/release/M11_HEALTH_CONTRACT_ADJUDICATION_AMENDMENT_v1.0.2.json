@@ -1,0 +1,310 @@
+{
+  "package_id": "M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_CONTRACT_ADJUDICATION_ERRATA_AMENDMENT_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "HEALTH_CONTRACT_ADJUDICATION_ERRATA_AMENDMENT__NO_IMPLEMENTATION__NO_DEPLOYMENT__NO_HOSTED_EXECUTION__NO_DATABASE_MUTATION__NO_GATE_STATE_CHANGE__NO_OWNER_RATIFICATION__NO_REOPENING_OF_B1_OR_B2",
+  "append_only": true,
+  "mission_id": "CV1-M11-HEALTH-CONTRACT-ERRATA-AMENDMENT-R3",
+  "lane": "codex/cv1-m11-health-contract-adjudication-r1",
+  "role": "COMMERCIAL_V1_M11_HEALTH_CONTRACT_ADJUDICATOR__ERRATA_AUTHOR",
+  "mode": "DOCS_ONLY_APPEND_ONLY_ERRATA_AMENDMENT",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "amends": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+  "predecessor_amendment": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+  "companion_ledger": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+  "AS_OF_BRANCH": "codex/cv1-m11-health-contract-adjudication-r1",
+  "AS_OF_HEAD": "55afa269eba8330cd7f209c24c505d555519e565",
+  "AS_OF_TREE": "b908e7dbea804b7c12d7c9fd2072b7c6dd936861",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_PRESTATE": "Branch, HEAD and tree measured and worktree CLEAN at prestate; origin/integration/commercial-v1 re-fetched and measured EQUAL to AS_OF_BASE before any work. Gate output recorded in the pull request.",
+  "as_of_measurement_note": "Every correction in this errata amendment was re-derived directly from the live content of the parent and the predecessor amendment at AS_OF_TREE - by reading their JSON, not by re-quoting the focused-recertification report from memory. This lane wrote no runtime code, ran no migration, opened no PostgreSQL connection and performed no hosted access. External hosted mutations: NONE.",
+  "NAMING_DERIVATION": "Follows the repository's own three-generation precedent exactly: docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json amends the ORIGINAL parent docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json (not its own v1.0.1 predecessor) while carrying a distinct predecessor_amendment field naming docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json, and states plainly that BOTH prior artifacts are byte-unchanged. This errata amendment follows the identical shape: amends names the v1.0.0 grandparent, predecessor_amendment names the v1.0.1 amendment this errata corrects, and both are pinned byte-unchanged below. No ODS or W2 lineage identifier is invented, because this lane was allocated none.",
+  "CONSUMED_FOCUSED_RECERTIFICATION": {
+    "result": "FOCUSED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+    "subject": "the effective package (docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json + docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json) at the predecessor amendment's AS_OF_HEAD",
+    "what_this_means": "The effective contract is ALREADY SAFE FOR OWNER RATIFICATION. B-1 and B-2 are independently re-certified as CLOSED and are NOT reopened by this errata amendment. This is a narrow pre-ratification cleanup of four referential and arithmetic findings the focused recertifier flagged as nonblocking, so a reader of the effective package encounters no internal contradiction on the way to ratification.",
+    "b1_b2_status": "CLOSED. Not revisited. Not reopened. No new measurement was taken of either.",
+    "findings_this_amendment_closes": [
+      {
+        "mission_label": "ERRATA 1",
+        "subject": "AF-M11-14 arithmetic",
+        "targets": "predecessor amendment (v1.0.1)"
+      },
+      {
+        "mission_label": "ERRATA 2",
+        "subject": "OD-3 -> OD-5 residual references to a durable staging test principal",
+        "targets": "parent (v1.0.0), left untouched by v1.0.1"
+      },
+      {
+        "mission_label": "ERRATA 3",
+        "subject": "S-7 supersession scope too narrow",
+        "targets": "predecessor amendment (v1.0.1)"
+      },
+      {
+        "mission_label": "ERRATA 4",
+        "subject": "how_to_read_a_cell still calls every value a FROZEN FACT",
+        "targets": "parent (v1.0.0), left untouched by v1.0.1"
+      },
+      {
+        "mission_label": "OPTIONAL MICRO-ERRATA",
+        "subject": "F-M11-17 line reference and matcher-exclusion wording",
+        "targets": "both parent (v1.0.0) and predecessor amendment (v1.0.1)"
+      }
+    ]
+  },
+  "what_is_unchanged": {
+    "parent": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+      "expected_blob_sha1": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+      "expected_size_bytes": 86815,
+      "status": "BYTE-UNCHANGED. Not edited, superseded as a whole, read down, or reinterpreted beyond the specific clauses named below."
+    },
+    "predecessor_amendment": {
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+      "expected_blob_sha1": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+      "expected_size_bytes": 58625,
+      "status": "BYTE-UNCHANGED. Not edited, superseded as a whole, read down, or reinterpreted beyond the specific clauses named below."
+    },
+    "B1_and_B2_corrections": "UNCHANGED and NOT reopened. See CONSUMED_FOCUSED_RECERTIFICATION.b1_b2_status.",
+    "OD_1_through_OD_5_substance": "UNCHANGED. This errata amendment corrects REFERENCES to OD-3 and OD-5, and one arithmetic claim about test coverage. It does not alter any owner decision's question, options, costs, or the RECOMMENDATION_REEVALUATED text."
+  },
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. Neither the parent nor the predecessor amendment is edited; both are byte-pinned above. This errata amendment supersedes only the clauses named in ERRATA_2_..., ERRATA_4_... and ERRATA_5_... (targeting the parent) and SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES (targeting the predecessor amendment), each in exactly the respect stated.",
+    "how_to_read_the_three_together": "The EFFECTIVE CONTRACT is the parent, as modified by v1.0.1, as further modified by this v1.0.2 errata amendment. Where this document is silent, v1.0.1 and the parent control as v1.0.1 already established. Where this document names a clause of either, this document controls for that clause alone.",
+    "what_this_amendment_does": "Corrects one arithmetic claim, sweeps eight residual textual references that attributed a durable-staging-principal dependency to OD-3 instead of OD-5, widens one supersession entry's scope to the cells it was always meant to cover, replaces one reading instruction that no longer matches the corrected cell-provenance classification, and fixes two mechanical citation errors.",
+    "what_this_amendment_is_not": [
+      "It is NOT a ratification. OD-1 through OD-5 remain open and unanswered.",
+      "It does NOT reopen B-1 or B-2. Both remain CLOSED as independently re-certified.",
+      "It is NOT an implementation, and authorizes none.",
+      "It does NOT enlarge M11 and does NOT change any owner decision's substance.",
+      "It does NOT edit the parent or the predecessor amendment. Both are byte-pinned.",
+      "It does NOT claim any hosted observation. Every correction is a re-reading of already-committed text or a re-verification of an already-cited source line."
+    ]
+  },
+  "SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES": {
+    "rule": "Each entry names ONE clause of the PREDECESSOR AMENDMENT (v1.0.1, not the v1.0.0 parent) by its path inside that document, quotes it VERBATIM, and states the single respect in which it no longer controls. The predecessor amendment's bytes are unchanged; only these named clauses are read down.",
+    "entries": [
+      {
+        "id": "P-1",
+        "predecessor_path": "NEW_OPEN_FINDINGS[AF-M11-14].finding",
+        "verbatim": "Six of the twenty-one matrix cells are DERIVED_FROM_SOURCE rather than measured or test-frozen, and all six belong to EP-3, which has no test at all.",
+        "superseded_in_this_respect": "The count is wrong and the qualifier is wrong. The predecessor amendment's OWN MATRIX_PROVENANCE_CORRECTION.assignments table classifies exactly THREE cells - EP-3 x CC-3, CC-4, CC-6 - as DERIVED_FROM_SOURCE; the other four EP-3 cells (CC-1, CC-2, CC-5, CC-7) are classified EXECUTED in that same table. Re-tallying the table's own five rows gives 9 + 3 + 3 + 3 + 3 = 21 cells: 12 EXECUTED, 6 TEST_FROZEN, 3 DERIVED_FROM_SOURCE - not six DERIVED_FROM_SOURCE. Separately, 'no test at all' overstates EP-3's coverage gap: tests/database-runtime-entrypoints.test.ts:718 DOES reference app/api/health/stella-preconditions/route.ts, in its entry-point inventory, and structurally confirms the route opens no database connection. What has NO test is the route's RESPONSE - its auth branch, its ready-to-status mapping and its body shape - which the inventory test does not exercise.",
+        "replaced_by": "CORRECTED_CELL_PROVENANCE_ARITHMETIC"
+      },
+      {
+        "id": "P-2",
+        "predecessor_path": "SUPERSEDED_PARENT_CLAUSES.entries[S-7].parent_path",
+        "verbatim": "ENDPOINT_BY_CALLER_MATRIX.cells[EP-3 x anonymous].measured_body_at_BASE",
+        "superseded_in_this_respect": "The path names only one cell, but the exact false citation S-7 corrects - 'frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052' - appears VERBATIM in FOUR parent cells: EP-3 x CC-1, EP-3 x CC-2, EP-3 x CC-5 and EP-3 x CC-7 (every cookie-less EP-3 caller class). A reader who takes S-7's parent_path literally would conclude only the CC-1 cell is corrected, leaving the identical false citation apparently still controlling on the other three - which directly contradicts the predecessor amendment's own MATRIX_PROVENANCE_CORRECTION.assignments table, which already (and correctly) classifies all four as EXECUTED with no test-freeze citation. S-7's superseded_in_this_respect text and replaced_by pointer are UNCHANGED and remain correct; only the parent_path's cell enumeration was too narrow. No EP-2 cell is touched by this correction - EP-2's citation of the same test is genuine and stands.",
+        "replaced_by": "CORRECTED_EP3_FREEZE_SCOPE"
+      },
+      {
+        "id": "P-3",
+        "predecessor_path": "NEW_MEASURED_FACTS[F-M11-17].measured",
+        "verbatim": "lib/supabase/proxy.ts:38 calls it as the FIRST statement of updateSession, before the Supabase client is constructed, and proxy.ts:10 calls updateSession as the first statement of the proxy. proxy.ts:48-51 matches every path except Next internals and static image extensions, so all three health paths are matched.",
+        "superseded_in_this_respect": "MECHANICAL, no substantive change. (1) assertSupabaseProjectCoherence is called at lib/supabase/proxy.ts:39, not :38 - line 38 is the last line of the comment immediately above the call. (2) 'proxy.ts:10' and 'proxy.ts:48-51' correctly name the ROOT proxy.ts (the exported middleware entry that imports updateSession from '@/lib/supabase/proxy'), a DIFFERENT file from the 'lib/supabase/proxy.ts' named two clauses earlier in the same sentence - re-verified here at both line numbers. The sentence is corrected to spell out each file's full relative path at first use, so the two are never read as the same file. (3) 'static image extensions' undercounts what the matcher regex excludes: '/((?!_next/static|_next/image|favicon.ico|.*\\\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)' excludes favicon.ico BY NAME, separately from the six listed image extensions - and .ico is notably NOT one of those six, so favicon.ico is excluded by name alone, not by the extension pattern.",
+        "replaced_by": "CORRECTED_F_M11_17_MEASURED_TEXT"
+      }
+    ]
+  },
+  "SUPERSEDED_PARENT_CLAUSES": {
+    "rule": "Continues the numbering v1.0.1 established (S-1..S-7). Each entry names ONE parent (v1.0.0) clause by its path, quotes it VERBATIM, and states the single respect in which it no longer controls. These are clauses v1.0.1 left untouched because they were out of scope for B-1/B-2; the focused recertification found them stale in the specific respect named.",
+    "entries": [
+      {
+        "id": "S-8",
+        "parent_path": "ENDPOINT_BY_CALLER_MATRIX.cells[EP-2 x CC-3], [EP-2 x CC-4], [EP-2 x CC-6], [EP-3 x CC-3], [EP-3 x CC-4], [EP-3 x CC-6].reachable_by_M11_only_if",
+        "verbatim": "OD-3 provides a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable.",
+        "occurrence_count": 6,
+        "superseded_in_this_respect": "The predecessor amendment SPLIT the parent's overloaded OD-3 into OD-3 (status semantics of a deliberately disabled subsystem) and OD-5 (authorization to provision a durable staging test principal) - see v1.0.1 OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-5]. These six identical parent clauses still attribute the provisioning dependency to OD-3, which after the split governs only the semantic question and confers no provisioning authority. Reachability of these six cells now depends on OD-5, not OD-3.",
+        "replaced_by": "CORRECTED_MATRIX_CELL_REACHABILITY"
+      },
+      {
+        "id": "S-9",
+        "parent_path": "OWNER_DECISIONS_REQUIRED[OD-1].options[C].release_consequence",
+        "verbatim": "M11 becomes dependent on a durable staging test principal - see OD-3.",
+        "superseded_in_this_respect": "Same defect as S-8, one occurrence: 'see OD-3' must read 'see OD-5' after the split. The substantive claim - that option C's remaining unauthenticated-liveness gap forces M11 into the authenticated path and inherits the MG-4 circularity - is UNCHANGED and not disturbed.",
+        "replaced_by": "CORRECTED_OD1_OPTION_C_RELEASE_CONSEQUENCE"
+      },
+      {
+        "id": "S-10",
+        "parent_path": "RECOMMENDATION.recommended_contract.OD-3",
+        "verbatim": "Introduce an explicit third state so that intentional-off is reported as healthy-and-disabled rather than unmet; authorize a durable staging test principal under a separate authority.",
+        "superseded_in_this_respect": "This single value bundles the status-semantics recommendation with the provisioning-authorization recommendation under the one key OD-3, which is exactly the overload the predecessor amendment split. The predecessor amendment's own RECOMMENDATION_REEVALUATED.recommended_contract already carries the split correctly - a status-only OD-3 entry and a deliberately unrecommended OD-5 entry - and is the controlling recommendation for both keys. This parent clause is superseded in full by that pair so no reader can treat the bundled parent text as still authoritative for either key.",
+        "replaced_by": "RECOMMENDATION_REEVALUATED.recommended_contract (predecessor amendment, unchanged, already correct)",
+        "note": "This clause was found while sweeping for the same defect class as S-8 and S-9, in addition to the seven literal 'OD-3 provides/see OD-3' occurrences the focused recertifier counted (S-8's six plus S-9's one). It is included because it is the same referential error, not because it was separately tallied."
+      },
+      {
+        "id": "S-11",
+        "parent_path": "ENDPOINT_BY_CALLER_MATRIX.how_to_read_a_cell",
+        "verbatim": "measured_status_at_BASE is a FROZEN FACT, established without hosted execution. required_* is the CONTRACT. Where a cell carries required_status it is settled and an implementation lane has no discretion. Where it carries required_status_if_* it is NOT settled, and the named OD must be ratified before any implementation lane may choose among the branches.",
+        "superseded_in_this_respect": "Only the first sentence. It calls EVERY cell's status value a 'FROZEN FACT, established without hosted execution' - true only for the 12 EXECUTED cells. The predecessor amendment's S-6 already renamed the per-cell KEY (measured_status_at_BASE) to acknowledge three provenance classes, but never corrected this TOP-LEVEL READING INSTRUCTION, which still tells a reader to treat a DERIVED_FROM_SOURCE value - a contract derivation established by reading the handler, never executed or test-pinned - with the same evidentiary confidence as an EXECUTED one. The second, third and fourth sentences (required_status / required_status_if_* semantics) are UNCHANGED and not disturbed.",
+        "replaced_by": "CORRECTED_HOW_TO_READ_A_CELL"
+      },
+      {
+        "id": "S-12",
+        "parent_path": "MEASURED_FACTS[F-M11-10].measured",
+        "verbatim": "proxy.ts:48-51 declares a matcher that excludes only Next.js internals and static image extensions, so /api/health/* is matched. proxy.ts:12-39 applies a global sliding-window limit of 60 requests per minute keyed on the client IP to every path beginning with /api/, whenever the KV REST url and token are both present, and returns 429 on refusal. lib/supabase/proxy.ts:78-94 redirects only the /app and /admin prefixes, so health requests pass through to their handlers.",
+        "superseded_in_this_respect": "MECHANICAL, matching P-3's correction of the same wording restated in the predecessor amendment. 'static image extensions' is imprecise: the matcher '/((?!_next/static|_next/image|favicon.ico|.*\\\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)' excludes favicon.ico BY NAME, separately from six listed extensions that do NOT include .ico. All other clauses of F-M11-10, including the proxy.ts:12-39 and lib/supabase/proxy.ts:78-94 line references, are UNCHANGED and were re-verified accurate.",
+        "replaced_by": "CORRECTED_F_M11_17_MEASURED_TEXT (states the shared corrected wording once for both sites)"
+      }
+    ]
+  },
+  "CORRECTED_CELL_PROVENANCE_ARITHMETIC": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes P-1.",
+    "re_tally_of_the_predecessor_amendments_own_table": {
+      "source": "predecessor amendment MATRIX_PROVENANCE_CORRECTION.assignments, five rows, re-summed here",
+      "EXECUTED": 12,
+      "TEST_FROZEN": 6,
+      "DERIVED_FROM_SOURCE": 3,
+      "total": 21,
+      "arithmetic": "9 (cookie-less x 3 endpoints) + 3 (CC-2 x 3 endpoints) + 3 (EP-1 x CC-3/4/6) + 3 (EP-2 x CC-3/4/6) + 3 (EP-3 x CC-3/4/6) = 21"
+    },
+    "the_three_DERIVED_FROM_SOURCE_cells": [
+      "EP-3 x CC-3",
+      "EP-3 x CC-4",
+      "EP-3 x CC-6"
+    ],
+    "substantive_conclusion_preserved": "EP-3's response - its auth branch, its ready-to-status mapping and its body shape - is NOT test-frozen for any authenticated caller class. This is the finding that matters for an implementation lane and it is UNCHANGED. What is corrected is the count (three cells, not six) and the coverage claim (EP-3 IS referenced by an existing test, just not one that exercises its response).",
+    "EP3_test_reference_corrected": "tests/database-runtime-entrypoints.test.ts:718 references app/api/health/stella-preconditions/route.ts by name inside its entry-point inventory, and the surrounding assertion structurally confirms the route reaches no database connection (STRUCTURAL, via static analysis of the route's source, not by invoking the handler). It does NOT assert anything about the route's HTTP status, response body, or auth branch. 'EP-3 has no test at all' is therefore false; the accurate statement is that no test exercises the HEALTH CONTRACT this document adjudicates for EP-3's authenticated cells.",
+    "corrected_open_finding": {
+      "id": "AF-M11-14",
+      "finding": "Three of the twenty-one matrix cells - EP-3 x CC-3, CC-4 and CC-6 - are DERIVED_FROM_SOURCE: established by reading the handler, pinned by no test. EP-3 IS referenced by the entry-point inventory test, which confirms it reaches no database, but no test exercises its response contract for any authenticated caller.",
+      "evidence": [
+        "MATRIX_PROVENANCE_CORRECTION (predecessor amendment)",
+        "P-1"
+      ],
+      "disposition": "MUST_BE_CONVERTED_TO_CONTROLS_BY_THE_IMPLEMENTATION_LANE"
+    }
+  },
+  "CORRECTED_EP3_FREEZE_SCOPE": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes P-2. Extends S-7's effect; does not change S-7's stated reasoning or replaced_by pointer.",
+    "affected_parent_cells": [
+      "EP-3 x CC-1",
+      "EP-3 x CC-2",
+      "EP-3 x CC-5",
+      "EP-3 x CC-7"
+    ],
+    "rule": "The false citation 'frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052' is superseded for ALL FOUR of these cells, not only EP-3 x CC-1. None of the four is frozen by that test, or by any test. Their body contract stands - exactly one field, error, no role name, no boolean, no failure code - and their provenance is EXECUTED per the predecessor amendment's own MATRIX_PROVENANCE_CORRECTION.assignments, which already classified all four correctly; only S-7's supersession-scope TEXT undercounted which parent cells it swept.",
+    "explicitly_unaffected": "EP-2's cells retain their genuine citation of tests/runtime-identity-observability.test.ts:1050-1052. EP-3 x CC-3, CC-4 and CC-6 are unaffected by this entry - they are DERIVED_FROM_SOURCE and carry no test citation to begin with, correct per CORRECTED_CELL_PROVENANCE_ARITHMETIC."
+  },
+  "CORRECTED_MATRIX_CELL_REACHABILITY": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes S-8.",
+    "affected_parent_cells": [
+      "EP-2 x CC-3",
+      "EP-2 x CC-4",
+      "EP-2 x CC-6",
+      "EP-3 x CC-3",
+      "EP-3 x CC-4",
+      "EP-3 x CC-6"
+    ],
+    "corrected_text": "OD-5 authorizes a durable staging test principal; otherwise MG-4 leaves this cell unmeasurable. OD-3 governs only the status semantics of this cell where applicable (EP-3's intentional-off collapse) and confers no provisioning authority.",
+    "no_value_changes": "No cell's measured status, semantic, or blocking disposition changes. Only the OWNER DECISION each cell's reachability depends on changes, from OD-3 to OD-5."
+  },
+  "CORRECTED_OD1_OPTION_C_RELEASE_CONSEQUENCE": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes S-9.",
+    "corrected_text": "M11 becomes dependent on a durable staging test principal - see OD-5."
+  },
+  "CORRECTED_HOW_TO_READ_A_CELL": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes S-11.",
+    "corrected_text": "A cell's status value carries a PROVENANCE CLASS, not a single uniform confidence - see MATRIX_PROVENANCE_CORRECTION (predecessor amendment) for the class of every cell. EXECUTED means the value is MEASURED EVIDENCE: the real handler was invoked in process and the response recorded, without hosted execution. TEST_FROZEN means the value is pinned by a real, committed, currently-passing test, though not executed by the authoring lane itself. DERIVED_FROM_SOURCE means the value is a CONTRACT DERIVATION - established by reading the handler's source only - and is NOT measured evidence of any kind; an implementation lane must convert it into a test before it can be relied on as evidence. required_* is the CONTRACT regardless of a cell's provenance class. Where a cell carries required_status it is settled and an implementation lane has no discretion. Where it carries required_status_if_* it is NOT settled, and the named OD must be ratified before any implementation lane may choose among the branches."
+  },
+  "CORRECTED_F_M11_17_MEASURED_TEXT": {
+    "status": "NORMATIVE. Closes P-3 (predecessor amendment F-M11-17.measured) and S-12 (parent F-M11-10.measured) with one shared corrected wording.",
+    "corrected_text": "assertSupabaseProjectCoherence THROWS SupabaseProjectCoherenceError when the environment is incoherent - executed in process. lib/supabase/proxy.ts:39 calls it as the FIRST statement of updateSession, before the Supabase client is constructed. The root proxy.ts:10 calls updateSession as the first statement of its exported proxy function - a DIFFERENT file from lib/supabase/proxy.ts, which only exports the helpers that root proxy.ts imports. Root proxy.ts:48-51 declares a matcher, '/((?!_next/static|_next/image|favicon.ico|.*\\\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)', that excludes Next.js internals, favicon.ico BY NAME, and six listed static image extensions (svg, png, jpg, jpeg, gif, webp - notably NOT .ico, which is why favicon.ico needs its own by-name exclusion). All three health paths fall outside every exclusion and are matched.",
+    "wire_status_unchanged": "The wire-status caveat of F-M11-17 is UNCHANGED and not disturbed: the exact HTTP status served for a middleware throw remains DERIVED, NOT MEASURED BY ANY LANE. This errata amendment corrects only line numbers and file/exclusion-wording precision, never the wire-status claim."
+  },
+  "OD3_OD5_REFERENCE_SWEEP_SUMMARY": {
+    "certifier_measured_count": 7,
+    "certifier_measured_references": [
+      "S-8 (6 occurrences: EP-2 x CC-3/CC-4/CC-6, EP-3 x CC-3/CC-4/CC-6, reachable_by_M11_only_if)",
+      "S-9 (1 occurrence: OWNER_DECISIONS_REQUIRED[OD-1].options[C].release_consequence)"
+    ],
+    "additional_found_during_this_sweep": [
+      "S-10 (RECOMMENDATION.recommended_contract.OD-3 - same defect class, bundles the provisioning dependency under OD-3; not literally 'OD-3 provides...' or 'see OD-3' text, so distinct from the certifier's literal-string count, but the identical referential error)"
+    ],
+    "total_corrected_in_this_errata_amendment": 8,
+    "method": "Full-text search of the parent for every literal occurrence of 'OD-3 provides a durable staging test principal' and 'see OD-3', cross-checked against a structural walk of every string value in the parent mentioning 'staging test principal', 'durable', or 'MG-4'. No occurrence outside these eight was found in either the parent or the predecessor amendment.",
+    "what_this_does_not_do": "Does NOT authorize provisioning a staging test principal. OD-5 remains open, unranked among the owner decisions this lane does not choose, and MG-4's prohibition on lowering the endpoint boundary is inherited unchanged from the predecessor amendment."
+  },
+  "explicit_non_authorizations": [
+    "This errata amendment does NOT satisfy M11. GATES[M11].current_state remains ABSENT.",
+    "This errata amendment does NOT ratify anything. OD-1 through OD-5 remain open and unanswered.",
+    "This errata amendment does NOT reopen B-1 or B-2. Both remain CLOSED as independently re-certified.",
+    "This errata amendment does NOT change any owner decision's question, options, or recommended contract.",
+    "This errata amendment does NOT enlarge M11. No endpoint, caller class, gate or blocking semantic is added.",
+    "This errata amendment does NOT deploy, and performed no deployment.",
+    "This errata amendment does NOT execute hosted smoke, and performed none.",
+    "This errata amendment does NOT change any endpoint's behaviour. No route, middleware, test or runtime file is modified.",
+    "This errata amendment does NOT change auth policy and lowers no boundary. MG-4 is inherited unchanged.",
+    "This errata amendment does NOT authorize a staging principal, a bypass credential, or any credential provisioning.",
+    "This errata amendment does NOT change release state and edits no gate field. RELEASE_GATE_LEDGER is read only.",
+    "This errata amendment does NOT edit the parent or the predecessor amendment. Both bytes are unchanged.",
+    "This errata amendment does NOT authorize Stage-A, G2, or production.",
+    "This errata amendment does NOT modify Vercel, Supabase, environment variables or any hosted state. External hosted mutations: NONE.",
+    "This errata amendment does NOT open a PostgreSQL connection.",
+    "This errata amendment does NOT modify or weaken any test.",
+    "This errata amendment does NOT invent an ODS or W2 lineage identifier."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check, verifiable by inspection of this file plus two git object reads. Not a script.",
+    "parent_byte_unchanged": {
+      "parent": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+      "expected_blob_sha1": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+      "expected_size_bytes": 86815
+    },
+    "predecessor_amendment_byte_unchanged": {
+      "predecessor": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+      "expected_blob_sha1": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+      "expected_size_bytes": 58625
+    },
+    "expected_predecessor_amendment_clause_count": 3,
+    "expected_predecessor_amendment_clause_ids": [
+      "P-1",
+      "P-2",
+      "P-3"
+    ],
+    "expected_parent_clause_count": 5,
+    "expected_parent_clause_ids": [
+      "S-8",
+      "S-9",
+      "S-10",
+      "S-11",
+      "S-12"
+    ],
+    "expected_od3_od5_sweep_total": 8,
+    "expected_od3_od5_certifier_count": 7,
+    "expected_ep3_freeze_scope_cell_count": 4,
+    "expected_ep3_freeze_scope_cells": [
+      "EP-3 x CC-1",
+      "EP-3 x CC-2",
+      "EP-3 x CC-5",
+      "EP-3 x CC-7"
+    ],
+    "expected_provenance_arithmetic": {
+      "EXECUTED": 12,
+      "TEST_FROZEN": 6,
+      "DERIVED_FROM_SOURCE": 3,
+      "total": 21
+    },
+    "checks": [
+      "Every SUPERSEDED_PREDECESSOR_AMENDMENT_CLAUSES entry carries a predecessor_path, a verbatim quotation, and exactly one superseded_in_this_respect statement.",
+      "Every SUPERSEDED_PARENT_CLAUSES entry (S-8..S-12) carries a parent_path, a verbatim quotation and exactly one superseded_in_this_respect statement, and continues the numbering v1.0.1 established without reusing S-1..S-7.",
+      "CORRECTED_CELL_PROVENANCE_ARITHMETIC's three totals sum to 21.",
+      "CORRECTED_EP3_FREEZE_SCOPE names exactly the four cookie-less EP-3 cells and explicitly excludes EP-2 and the three DERIVED_FROM_SOURCE EP-3 cells.",
+      "CORRECTED_MATRIX_CELL_REACHABILITY names exactly the six cells S-8 supersedes, and asserts no value changes.",
+      "OD3_OD5_REFERENCE_SWEEP_SUMMARY's certifier_measured_count (7) plus additional_found_during_this_sweep (1) equals total_corrected_in_this_errata_amendment (8).",
+      "No new owner decision is created and no existing owner decision's question or options text is altered - only references TO OD-3 and OD-5 are corrected.",
+      "B-1 and B-2 are stated CLOSED and not reopened, with no new measured fact reopening either.",
+      "No secret, credential, token, connection string, project reference, email address or user identifier appears anywhere in this artifact.",
+      "No gate identifier is created, and no gate field is asserted to change.",
+      "final_state is ADJUDICATED_AWAITING_OWNER_RATIFICATION, consistent with five unanswered owner decisions (unchanged count from the predecessor amendment)."
+    ],
+    "validation_method": "JSON parse, structural self-check executed against this document, byte-identity verification of both prior artifacts via git object reads, referential integrity of every cited repository path and line number re-verified against AS_OF_TREE source, secret scan, repository-native authority gates."
+  },
+  "required_independent_review": "The EFFECTIVE PACKAGE - parent v1.0.0, amended by v1.0.1, amended by this errata v1.0.2 - is ready for a SHORT delta review bounded to the corrections named here, followed by owner ratification of OD-1 through OD-5. The author of the parent and v1.0.1 authored this errata amendment too and must not certify any of the three.",
+  "final_state": "ADJUDICATED_AWAITING_OWNER_RATIFICATION__V1_0_0_AMENDED_BY_V1_0_1_AND_ERRATA_V1_0_2",
+  "next_gate": "M11_HEALTH_CONTRACT_PACKAGE_READY_FOR_SHORT_DELTA_REVIEW: a short review of the effective v1.0.0 + v1.0.1 + v1.0.2 package, bounded to the eight OD-3/OD-5 reference corrections, the cell-provenance arithmetic correction, the widened S-7 scope, the corrected reading instruction, and the two mechanical citation fixes. Already-certified facts (B-1, B-2, and everything the focused recertification passed) are not to be recomputed. Owner ratification of OD-1..OD-5 follows. No implementation lane, no smoke automation and no gate-state change may open before both."
+}

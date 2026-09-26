@@ -1,0 +1,747 @@
+{
+  "package_id": "M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_CONTRACT_ADJUDICATION_AMENDMENT_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "HEALTH_CONTRACT_ADJUDICATION_AMENDMENT__NO_IMPLEMENTATION__NO_DEPLOYMENT__NO_HOSTED_EXECUTION__NO_DATABASE_MUTATION__NO_GATE_STATE_CHANGE__NO_OWNER_RATIFICATION",
+  "append_only": true,
+  "mission_id": "CV1-M11-HEALTH-CONTRACT-ADJUDICATION-AMENDMENT-R2",
+  "lane": "codex/cv1-m11-health-contract-adjudication-r1",
+  "role": "COMMERCIAL_V1_M11_HEALTH_CONTRACT_ADJUDICATOR__AMENDMENT_AUTHOR",
+  "mode": "DOCS_ONLY_APPEND_ONLY_AMENDMENT",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "amends": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+  "companion_ledger": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+  "AS_OF_BRANCH": "codex/cv1-m11-health-contract-adjudication-r1",
+  "AS_OF_HEAD": "159428de639cf7c12828ce08ab5083e038b3a638",
+  "AS_OF_TREE": "8b99aff11b4eac1dd01ee95a21cff8044504df8a",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_PRESTATE": "Branch, HEAD and tree measured and worktree CLEAN at prestate; origin/integration/commercial-v1 re-fetched and measured EQUAL to AS_OF_BASE before any work. Gate output recorded in the pull request.",
+  "as_of_measurement_note": "Every repository fact asserted here was measured at AS_OF_TREE. This lane wrote no runtime code, ran no migration, opened no PostgreSQL connection and performed no hosted access. External hosted mutations: NONE.",
+  "NAMING_DERIVATION": "The parent carries append_only true, and the repository has an established convention of a sibling amendment named <PARENT_STEM>_AMENDMENT_v<X.Y.Z>.json placed in the PARENT'S OWN directory - for example docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json beside its parent in docs/ops/release/, and the same pattern in docs/ops/wave3/, docs/ops/tenancy/ and docs/ops/commercial/. This artifact follows that convention exactly. No ODS or W2 lineage identifier is invented, because this lane was allocated none.",
+  "COMPANION_MANIFEST_DISPOSITION": {
+    "decision": "NO_COMPANION_TEST_MANIFEST_AMENDMENT",
+    "reason": "The repository pairs a TEST_MANIFEST_AMENDMENT with an authority amendment only where the parent itself has a companion test manifest - for example FIBDB053_RUNTIME_COMPANION_* and CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_*. The parent of this amendment has NO companion manifest, by its own reasoned disposition, so there is nothing to amend. Authoring one now would still be premature for the same reason the parent gave: OD-1 has not chosen the route shape a manifest would declare controls for."
+  },
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. The parent is NOT edited and its bytes are unchanged - see self_check.parent_byte_unchanged. This amendment supersedes named parent clauses only, and only in the single respect each entry states.",
+    "how_to_read_the_two_together": "Where this amendment is silent, the parent controls verbatim. Where this amendment names a parent clause under SUPERSEDED_PARENT_CLAUSES, this amendment controls for that clause and the parent's text remains readable as history. The EFFECTIVE CONTRACT is the parent as modified by this amendment, and it is that pair which must be certified and ratified, never either file alone.",
+    "what_this_amendment_does": "It closes the two blocking findings of the independent certification of the parent, incorporates the nonblocking findings that materially improve the owner decision, adds seven measured facts, defines the four-state auth failure taxonomy the corrected contract needs, replaces the false platform-divergence rule with a pre-handler platform rule, corrects per-cell evidence provenance, splits one overloaded owner decision, and re-derives the OD-1 recommendation from the corrected facts rather than preserving it.",
+    "what_this_amendment_is_not": [
+      "It is NOT a ratification. OD-1 through OD-5 remain open and unanswered.",
+      "It is NOT an implementation, and authorizes none.",
+      "It does NOT enlarge M11. No endpoint, caller class or gate is added to M11's scope by this amendment.",
+      "It does NOT amend RELEASE_GATE_LEDGER, PACKET_B or any FIBDB053 authority.",
+      "It does NOT rewrite the parent, and does not restate parent clauses that still control.",
+      "It does NOT claim any hosted observation. Every new fact is measured locally and in process."
+    ]
+  },
+  "CONSUMED_CERTIFICATION": {
+    "result": "CERTIFICATION_FAIL",
+    "subject": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json at AS_OF_HEAD",
+    "corroborated_by_the_certifier": "Eleven of the parent's thirteen measured facts were independently re-measured and corroborated, together with the endpoint inventory, the dependency pins, the single SMK-02 occurrence, the 305/305 suite result and the parent's structural self_check. The failure is narrow and factual, not methodological in general - the parent's in-process method was correct for the anonymous caller and was over-extrapolated to callers holding a cookie and to what an HTTP runner observes.",
+    "blocking": [
+      {
+        "id": "B-1",
+        "certifier_finding": "The parent claims lib/auth/identity.ts already distinguishes a provider transport or 5xx failure from a rejected session. For auth-js 2.108.2 getUser with a cookie and an unreachable provider RETURNS AuthRetryableFetchError rather than throwing, so identity.ts classifies it SESSION_REJECTED and EP-2 and EP-3 answer 401 rather than 503.",
+        "author_re_measurement": "INDEPENDENTLY REPRODUCED. See F-M11-14 and F-M11-15.",
+        "disposition": "ACCEPTED_AND_CLOSED_BY_THIS_AMENDMENT",
+        "closed_by": [
+          "S-1",
+          "S-2",
+          "AUTH_FAILURE_TAXONOMY",
+          "RECOMMENDATION_REEVALUATED"
+        ]
+      },
+      {
+        "id": "B-2",
+        "certifier_finding": "Over real HTTP the middleware executes the project-coherence assertion before any health handler, so project incoherence is one platform-level pre-handler failure across all matched health paths. The 500/503 divergence the parent froze exists only under direct in-process handler invocation.",
+        "author_re_measurement": "INDEPENDENTLY REPRODUCED. See F-M11-17.",
+        "disposition": "ACCEPTED_AND_CLOSED_BY_THIS_AMENDMENT",
+        "closed_by": [
+          "S-3",
+          "S-4",
+          "PLATFORM_PRE_HANDLER_FAILURE_RULE"
+        ]
+      }
+    ],
+    "nonblocking": [
+      {
+        "id": "NB-1",
+        "finding": "CC-2 may contact the provider; the anonymous zero-fetch behaviour must not be cited for it.",
+        "disposition": "INCORPORATED",
+        "closed_by": [
+          "S-5",
+          "F-M11-18"
+        ]
+      },
+      {
+        "id": "NB-2",
+        "finding": "Derived or unexecuted cells must not be labelled measured_status_at_BASE.",
+        "disposition": "INCORPORATED",
+        "closed_by": [
+          "S-6",
+          "MATRIX_PROVENANCE_CORRECTION"
+        ]
+      },
+      {
+        "id": "NB-3",
+        "finding": "Rejected-session semantics are undefined under the public-liveness options.",
+        "disposition": "INCORPORATED",
+        "closed_by": [
+          "OWNER_DECISIONS_AFTER_AMENDMENT OD-1 rejected_session_semantics"
+        ]
+      },
+      {
+        "id": "NB-4",
+        "finding": "Observability-only is in tension with the inherited criterion that each named endpoint answers in conformance.",
+        "disposition": "INCORPORATED",
+        "closed_by": [
+          "OWNER_DECISIONS_AFTER_AMENDMENT OD-2"
+        ]
+      },
+      {
+        "id": "NB-5",
+        "finding": "OD-3 mixes a semantic question with a provisioning authorization.",
+        "disposition": "INCORPORATED_BY_SPLIT",
+        "closed_by": [
+          "OD-3 restated",
+          "OD-5 new"
+        ]
+      },
+      {
+        "id": "NB-6",
+        "finding": "Stella intentional-off is already distinguishable in the body; only the HTTP status collapses.",
+        "disposition": "INCORPORATED",
+        "closed_by": [
+          "F-M11-19",
+          "OD-3 restated"
+        ]
+      },
+      {
+        "id": "NB-7",
+        "finding": "Rate limiting is KV-conditional, and a real anonymous upstream touch can self-throttle through shared egress.",
+        "disposition": "INCORPORATED",
+        "closed_by": [
+          "F-M11-20",
+          "OD-4 extended"
+        ]
+      },
+      {
+        "id": "NB-8",
+        "finding": "EP-3 must not be described as test-frozen; it has no test.",
+        "disposition": "INCORPORATED",
+        "closed_by": [
+          "S-7",
+          "MATRIX_PROVENANCE_CORRECTION"
+        ]
+      },
+      {
+        "id": "NB-9",
+        "finding": "Record the platform automation-bypass mechanism as a future hosted-smoke access dependency.",
+        "disposition": "INCORPORATED_AS_A_DEPENDENCY_NOT_AN_AUTHORIZATION",
+        "closed_by": [
+          "FUTURE_IMPLEMENTATION_SURFACE FIS-M11-05"
+        ]
+      }
+    ]
+  },
+  "NEW_MEASURED_FACTS": [
+    {
+      "id": "F-M11-14",
+      "claim": "With a session cookie PRESENT and the provider unreachable, getUser RETURNS AuthRetryableFetchError rather than throwing, and the deployment answers a logged-in caller 401 on both session-gated endpoints.",
+      "measured_getUser": {
+        "threw": false,
+        "user": null,
+        "error_name": "AuthRetryableFetchError",
+        "error_message": "fetch failed",
+        "error_status": 0
+      },
+      "measured_identity_failure": "SESSION_REJECTED",
+      "measured_responses": {
+        "/api/health/auth": {
+          "status": 503,
+          "body_status_field": "degraded"
+        },
+        "/api/health/runtime-identity": {
+          "status": 401,
+          "body": {
+            "error": "Unauthorized"
+          }
+        },
+        "/api/health/stella-preconditions": {
+          "status": 401,
+          "body": {
+            "error": "Unauthorized"
+          }
+        }
+      },
+      "method": "Real route handlers and the real getVerifiedAuthIdentityResult invoked in process over a real @supabase/ssr client holding a well-formed session cookie, with every outbound fetch failing. Only the @/lib/supabase/server seam was substituted. Transient probe, deleted; worktree re-measured clean.",
+      "consequence": "The AUTH_UNAVAILABLE branch does NOT represent the ordinary upstream outage path. The stated purpose of that branch at lib/auth/identity.ts:92-94 - that conflating an outage with a logged-out state turns an outage into a logout storm - is DEFEATED by its own implementation: during a real outage a logged-in caller is told Unauthorized.",
+      "scope_note": "This is a PRE-EXISTING defect of the auth seam, not a cost introduced by any OD-1 option. It is recorded here because the ratified contract must state what the endpoints answer during an outage. It does NOT enlarge M11."
+    },
+    {
+      "id": "F-M11-15",
+      "claim": "All four auth failure states are distinguishable TODAY, but only by inspecting the returned error's name and status - an inspection no production module performs.",
+      "measured_discriminators": [
+        {
+          "state": "NO_SESSION",
+          "error_name": "AuthSessionMissingError",
+          "error_status": 400,
+          "outbound_attempts": 0,
+          "throws": false
+        },
+        {
+          "state": "REJECTED_SESSION",
+          "error_name": "AuthApiError",
+          "error_status": "the provider's own 4xx, 401 as measured",
+          "outbound_attempts": 1,
+          "throws": false
+        },
+        {
+          "state": "PROVIDER_TRANSPORT_FAILURE",
+          "error_name": "AuthRetryableFetchError",
+          "error_status": 0,
+          "outbound_attempts": 1,
+          "throws": false
+        },
+        {
+          "state": "PROVIDER_5XX",
+          "error_name": "AuthRetryableFetchError",
+          "error_status": 500,
+          "outbound_attempts": 1,
+          "throws": false
+        },
+        {
+          "state": "LOCAL_CONFIG_FAILURE",
+          "error_name": "SupabaseProjectCoherenceError",
+          "error_status": null,
+          "outbound_attempts": 0,
+          "throws": true
+        }
+      ],
+      "method": "Five scenarios driven through the real client and the real coherence guard in one in-process run.",
+      "what_the_code_does_with_them": "lib/auth/identity.ts:124 branches ONLY on whether an error object is present. It therefore maps the first four states onto exactly two outcomes - SESSION_REJECTED for all of them when the user is null - and reaches AUTH_UNAVAILABLE only from a THROW, which among these five states only the local-config guard produces.",
+      "consequence": "A discriminator is IMPLEMENTABLE without new infrastructure, because the information is already present on the returned error. But it does NOT EXIST today. Any option that depends on telling these states apart requires NEW explicit error inspection - a named, tested discriminator - and must be costed as such.",
+      "correction_of_an_author_reading": "An earlier reading of the B-1 probe counted five outbound attempts and could have been mistaken for in-call retries. Measured per call here: ONE outbound attempt per getUser invocation. The five attempts were five separate getUser calls, because React cache degrades to calling through outside a request scope. No retry behaviour is asserted by this amendment."
+    },
+    {
+      "id": "F-M11-16",
+      "claim": "AUTH_UNAVAILABLE, and therefore the auth-caused 503 of EP-2 and EP-3, is UNREACHABLE over real HTTP.",
+      "derivation": "lib/auth/identity.ts reaches AUTH_UNAVAILABLE from exactly two throw sites: createClient at :103-109 and getUser at :113-116. By F-M11-15 getUser does not throw for any of the four auth failure states. The createClient throw has two causes: the coherence guard, which by F-M11-17 the middleware has already raised before the handler runs, and cookies() called outside a request scope, which cannot occur during a real request.",
+      "consequence": "The 503 branch of EP-2 and EP-3 is reachable over HTTP ONLY through the runtime-identity divergence and observation-failure paths, and through the Stella precondition path. It is NOT reachable for an auth reason. The existing control at tests/runtime-identity-observability.test.ts, which pins AUTH_UNAVAILABLE to 503, therefore freezes a state that no HTTP caller can produce.",
+      "status": "DERIVED_FROM_MEASURED_FACTS__NOT_ITSELF_EXECUTED_OVER_HTTP"
+    },
+    {
+      "id": "F-M11-17",
+      "claim": "Project incoherence is a PRE-HANDLER PLATFORM failure affecting every matched path identically, not three endpoint verdicts.",
+      "measured": "assertSupabaseProjectCoherence THROWS SupabaseProjectCoherenceError when the environment is incoherent - executed in process. lib/supabase/proxy.ts:38 calls it as the FIRST statement of updateSession, before the Supabase client is constructed, and proxy.ts:10 calls updateSession as the first statement of the proxy. proxy.ts:48-51 matches every path except Next internals and static image extensions, so all three health paths are matched.",
+      "the_repository_states_the_same_thing": "lib/supabase/proxy.ts:29-38 records in its own words that this runs on every matched request, that it is the earliest common boundary in the request path, that a refusal is a thrown error rather than a redirect, and that a 500 which says so is the honest outcome.",
+      "wire_status": "DERIVED, NOT MEASURED BY THIS LANE. An uncaught throw in middleware is served as a 500 by the framework, and the repository's own comment asserts 500. This amendment does not execute an HTTP request and does not freeze the numeral as measured.",
+      "consequence": "The parent's claim that a smoke runner sees 500 on one endpoint and 503 on two others is FALSE for any HTTP caller. The divergence is an artefact of direct in-process handler invocation, which is a testing technique and not a caller class."
+    },
+    {
+      "id": "F-M11-18",
+      "claim": "CC-2 DOES contact the provider, and its error is distinguishable from CC-1's.",
+      "measured": "A caller holding a cookie the provider rejects produces one outbound attempt and an AuthApiError carrying the provider's own status, versus zero attempts and AuthSessionMissingError for a cookie-less caller.",
+      "consequence": "CC-1 and CC-2 collapse ONLY at the identity.ts classification seam, where both become SESSION_REJECTED and therefore 401. They do NOT collapse at the transport level or at the error level. The parent's zero-fetch justification is valid for CC-1 alone and must not be cited for CC-2."
+    },
+    {
+      "id": "F-M11-19",
+      "claim": "A deliberately disabled Stella subsystem is ALREADY distinguishable in the EP-3 body; only the HTTP status collapses.",
+      "measured": "app/api/health/stella-preconditions/route.ts:86 publishes master.stellaEnabled, and :88 and :89 publish the key-presence and canUseStella booleans. A deployment with Stella switched off on purpose reports stellaEnabled false with those fields intact, while a misconfigured one reports stellaEnabled true with a failing precondition. Both nevertheless yield ready false at :117 and therefore 503 at :123.",
+      "consequence": "The remedy is narrower than the parent implied. No new body field is required to tell the two apart - a consumer reading the body can already do it. What the owner must decide is whether the STATUS should continue to collapse them, which is what a status-only smoke runner sees."
+    },
+    {
+      "id": "F-M11-20",
+      "claim": "The global API rate limit is KV-conditional, and both variables are required.",
+      "measured": "proxy.ts:12-16 applies the limit only when the path begins with /api/ AND both KV_REST_API_URL and KV_REST_API_TOKEN are present. With either absent no limiter is constructed and no 429 can be produced. proxy.ts:40-42 swallows a limiter failure and continues, so a broken limiter fails OPEN for this check.",
+      "consequence": "Whether 429 is reachable at all is a property of the deployment's environment, not of the code alone. Two deployments of the same SHA can differ. A smoke contract that treats 429 as impossible would be correct on one and wrong on the other, which is why M11-SC-6's INCONCLUSIVE rule must hold unconditionally.",
+      "self_throttling_note": "Under an OD-1 option that makes a real upstream touch on an anonymous path, a monitor and a smoke runner sharing platform egress addresses can consume each other's per-IP budget, so the endpoint could throttle the very probe that measures it. This is an argument about OD-4, not a measured event."
+    }
+  ],
+  "SUPERSEDED_PARENT_CLAUSES": {
+    "rule": "Each entry names ONE parent clause by its path inside the parent document, quotes it VERBATIM, and states the single respect in which it no longer controls. Nothing else in the parent is disturbed.",
+    "entries": [
+      {
+        "id": "S-1",
+        "parent_path": "RECOMMENDATION.evidence_supporting_it[2]",
+        "verbatim": "Option A2 reuses a distinction the codebase already makes and tests - SESSION_REJECTED versus AUTH_UNAVAILABLE at lib/auth/identity.ts:66-74 - so it adds a semantic the repository already owns rather than a new mechanism.",
+        "superseded_in_this_respect": "The premise that the codebase already MAKES this distinction is FALSE. By F-M11-14 and F-M11-15 the enumeration at :66-74 declares four failure names, but the implementation at :124 selects between only two of them on the mere presence of an error, and reaches AUTH_UNAVAILABLE only from a throw that the auth failure states do not produce. Declaring a name is not drawing a distinction.",
+        "replaced_by": "RECOMMENDATION_REEVALUATED.corrected_evidence",
+        "blocking_finding": "B-1"
+      },
+      {
+        "id": "S-2",
+        "parent_path": "OWNER_DECISIONS_REQUIRED[OD-1].options[A].what_must_change",
+        "verbatim": "The handler must distinguish AuthSessionMissingError from a transport or 5xx failure - exactly the distinction lib/auth/identity.ts already draws between SESSION_REJECTED and AUTH_UNAVAILABLE. The same module is the natural source for it, so no new auth machinery is required.",
+        "superseded_in_this_respect": "Only the final two propositions: that identity.ts ALREADY DRAWS the distinction, and that NO NEW AUTH MACHINERY IS REQUIRED. Both are false. The first sentence stands: the handler must indeed distinguish those states, and F-M11-15 shows the information to do so is present on the returned error.",
+        "replaced_by": "AUTH_FAILURE_TAXONOMY and OWNER_DECISIONS_AFTER_AMENDMENT.OD-1.options",
+        "blocking_finding": "B-1"
+      },
+      {
+        "id": "S-3",
+        "parent_path": "MEASURED_FACTS[F-M11-11].consequence",
+        "verbatim": "For a single root cause a smoke runner sees 500 on one endpoint and 503 on two others. Any ratified contract must say which code means what, or the smoke log will be read as three unrelated incidents.",
+        "superseded_in_this_respect": "The consequence is FALSE for every HTTP caller, because by F-M11-17 the middleware raises the coherence failure before any health handler runs. The MEASUREMENT in F-M11-11 stands and is not disturbed: the in-process divergence between the EP-1 catch and the identity.ts mapping is real. What is withdrawn is the inference that an external runner observes it.",
+        "replaced_by": "PLATFORM_PRE_HANDLER_FAILURE_RULE",
+        "blocking_finding": "B-2"
+      },
+      {
+        "id": "S-4",
+        "parent_path": "ENDPOINT_BY_CALLER_MATRIX.cross_cutting_pre_handler_conditions[SUPABASE_PROJECT_INCOHERENCE] and OPEN_FINDINGS[AF-M11-08]",
+        "verbatim": "status: 500 on EP-1, 503 on EP-2 and EP-3 ... A smoke runner MUST treat the 500/503 divergence as ONE incident. Any ratified contract must state this, or three endpoints will be read as three unrelated faults. / AF-M11-08 finding: A single project-coherence misconfiguration yields 500 on one endpoint and 503 on the other two.",
+        "superseded_in_this_respect": "The divergence is not externally observable, so a rule instructing a runner how to reconcile it would make the runner reconcile something it can never see. The correct rule is stronger and simpler: the failure is identical on every matched path and is not an endpoint verdict at all.",
+        "replaced_by": "PLATFORM_PRE_HANDLER_FAILURE_RULE",
+        "blocking_finding": "B-2"
+      },
+      {
+        "id": "S-5",
+        "parent_path": "CALLER_TAXONOMY.classes[CC-2].collapses_with",
+        "verbatim": "CC-1, MEASURED. By F-M11-07 a cookie-less caller is ALSO classified SESSION_REJECTED, so the code cannot distinguish CC-1 from CC-2 at this seam. They are listed separately because they differ in what an operator should conclude, not because the deployment can tell them apart.",
+        "superseded_in_this_respect": "Only the scope of the collapse. The conclusion - both become SESSION_REJECTED and therefore 401 - stands and was re-measured. What is withdrawn is the implication that CC-2 shares CC-1's zero-fetch behaviour: by F-M11-18 CC-2 contacts the provider once and produces a DIFFERENT error class.",
+        "replaced_by": "CALLER_TAXONOMY_CORRECTION",
+        "nonblocking_finding": "NB-1"
+      },
+      {
+        "id": "S-6",
+        "parent_path": "ENDPOINT_BY_CALLER_MATRIX.cells[*].measured_status_at_BASE",
+        "verbatim": "measured_status_at_BASE",
+        "superseded_in_this_respect": "The key name asserts execution for all 21 cells, but only a subset was executed by the authoring lane. The values are not withdrawn; the PROVENANCE CLAIM attached to them is. Each cell is re-classified as EXECUTED, TEST_FROZEN or DERIVED_FROM_SOURCE by MATRIX_PROVENANCE_CORRECTION.",
+        "replaced_by": "MATRIX_PROVENANCE_CORRECTION",
+        "nonblocking_finding": "NB-2"
+      },
+      {
+        "id": "S-7",
+        "parent_path": "ENDPOINT_BY_CALLER_MATRIX.cells[EP-3 x anonymous].measured_body_at_BASE",
+        "verbatim": "Exactly one field: error. No role name, no boolean, no failure code - frozen for EP-2 by tests/runtime-identity-observability.test.ts:1050-1052.",
+        "superseded_in_this_respect": "The body contract for EP-3 is correct, but the citation carries EP-2's freeze into EP-3's cells. EP-3 has NO test at all, as the parent's own F-M11-09 records. The clause is superseded only as to provenance: for EP-3 the contract is DERIVED_FROM_SOURCE and is frozen by nothing.",
+        "replaced_by": "MATRIX_PROVENANCE_CORRECTION.EP-3_freeze_correction",
+        "nonblocking_finding": "NB-8"
+      }
+    ]
+  },
+  "QUALIFIED_CLAUSES_NOT_SUPERSEDED": {
+    "rule": "These parent clauses continue to control in full. Each entry records only how to read it alongside this amendment.",
+    "entries": [
+      {
+        "parent_path": "MEASURED_FACTS[F-M11-01..F-M11-06], [F-M11-08..F-M11-10], [F-M11-12..F-M11-13]",
+        "how_to_read": "Unchanged and independently corroborated by the certifier. F-M11-02's zero-fetch measurement is specifically a statement about a COOKIE-LESS caller and must not be generalised - see S-5."
+      },
+      {
+        "parent_path": "MEASURED_FACTS[F-M11-07]",
+        "how_to_read": "Stands. This amendment strengthens it: the parent showed NO_SESSION is unreachable for the cookie-less case; F-M11-15 shows it is unreachable for every auth failure state, because :124 requires the error to be absent and no state produces an absent error with a null user."
+      },
+      {
+        "parent_path": "M11_SUCCESS_CONTRACT, all eight conditions M11-SC-1..M11-SC-8",
+        "how_to_read": "Unchanged. M11-SC-6's INCONCLUSIVE rule now additionally carries the platform pre-handler failure of PLATFORM_PRE_HANDLER_FAILURE_RULE, and F-M11-20 makes its unconditional form load-bearing. M11-SC-8 is reinforced rather than weakened by B-1: one more constant-answer path has been found."
+      },
+      {
+        "parent_path": "ENDPOINT_BY_CALLER_MATRIX.cross_cutting_pre_handler_conditions[PLATFORM_DEPLOYMENT_PROTECTION] and [GLOBAL_API_RATE_LIMIT]",
+        "how_to_read": "Both stand. The rate-limit entry is qualified by F-M11-20: its reachability is environment-conditional, which makes the INCONCLUSIVE rule more necessary, not less."
+      },
+      {
+        "parent_path": "OWNERSHIP_MAP, CONFLICT_RE_DERIVATION, ENDPOINT_INVENTORY, explicit_non_authorizations",
+        "how_to_read": "Unchanged. No ownership boundary is moved and no non-authorization is relaxed by this amendment."
+      }
+    ]
+  },
+  "AUTH_FAILURE_TAXONOMY": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes B-1.",
+    "rule": "The ratified contract MUST distinguish these four states. They are listed with the discriminator measured in F-M11-15 and with what the deployment does with them TODAY, so that no implementation lane can mistake the second for the first.",
+    "states": [
+      {
+        "id": "AS-1",
+        "name": "NO_SESSION",
+        "meaning": "The caller presented no session at all.",
+        "discriminator_available_today": "error.name is AuthSessionMissingError, error.status 400, zero outbound attempts.",
+        "classified_today_as": "SESSION_REJECTED",
+        "answered_today": "EP-1 503; EP-2 and EP-3 401.",
+        "correct_semantic": "Not an error condition of the deployment. It is a statement about the CALLER."
+      },
+      {
+        "id": "AS-2",
+        "name": "REJECTED_SESSION",
+        "meaning": "A session was presented and the provider refused it - expired, revoked, or from another project.",
+        "discriminator_available_today": "error.name is AuthApiError carrying the provider's own 4xx status; one outbound attempt.",
+        "classified_today_as": "SESSION_REJECTED",
+        "answered_today": "EP-1 503; EP-2 and EP-3 401.",
+        "correct_semantic": "Also a statement about the caller, but it PROVES the provider answered - which is positive evidence of provider reachability that the deployment currently discards."
+      },
+      {
+        "id": "AS-3",
+        "name": "AUTH_TRANSPORT_OR_PROVIDER_FAILURE",
+        "meaning": "The provider could not be reached, or answered 5xx.",
+        "discriminator_available_today": "error.name is AuthRetryableFetchError; status 0 for transport, the provider's 5xx otherwise.",
+        "classified_today_as": "SESSION_REJECTED - THE DEFECT NAMED BY B-1",
+        "answered_today": "EP-1 503 (right code, reached for the wrong reason); EP-2 and EP-3 401 (wrong: a logged-in caller is told Unauthorized during an outage).",
+        "correct_semantic": "A statement about the DEPLOYMENT'S DEPENDENCY. This is the only one of the four that is a health fact."
+      },
+      {
+        "id": "AS-4",
+        "name": "CREATE_CLIENT_OR_LOCAL_CONFIG_FAILURE",
+        "meaning": "The client could not be constructed - incoherent or absent project configuration.",
+        "discriminator_available_today": "A THROW of SupabaseProjectCoherenceError, not a returned error.",
+        "classified_today_as": "AUTH_UNAVAILABLE",
+        "answered_today": "Over HTTP: nothing, because by F-M11-17 the middleware raised it first. In process: EP-1 500 and EP-2/EP-3 503.",
+        "correct_semantic": "A platform-level deployment fault - see PLATFORM_PRE_HANDLER_FAILURE_RULE."
+      }
+    ],
+    "implementation_consequence_stated_plainly": "Telling AS-1, AS-2 and AS-3 apart requires NEW EXPLICIT ERROR INSPECTION that does not exist in this repository today. The natural site is lib/auth/identity.ts, whose failure enumeration already names the states it does not actually derive. Any implementation lane must add a named, tested discriminator and must NOT assume the existing AUTH_UNAVAILABLE branch already provides one.",
+    "provider_health_touch_consequence": "For an ANONYMOUS caller none of AS-2, AS-3 or AS-4 can arise from getUser, because by the parent's F-M11-02 no outbound call is made. A discriminator alone therefore cannot give an anonymous caller provider-health information. An option that promises anonymous auth-dependency health REQUIRES a dedicated provider-health touch in addition to the discriminator. These are two separate pieces of work and the owner must be costed for both."
+  },
+  "PLATFORM_PRE_HANDLER_FAILURE_RULE": {
+    "status": "NORMATIVE FOR THE EFFECTIVE CONTRACT. Closes B-2. Replaces S-3 and S-4.",
+    "rule": "A project-coherence failure is a PRE-HANDLER PLATFORM FAILURE. It affects every matched health path identically, it is raised before any health handler executes, and it is NOT three endpoint verdicts.",
+    "basis": "F-M11-17.",
+    "how_M11_must_record_it": {
+      "classification": "PLATFORM_FAILURE, recorded ONCE per deployment observation - never once per endpoint.",
+      "outcome": "The run is recorded INCONCLUSIVE for every endpoint under M11-SC-6, and the platform failure is recorded as its own finding bound to the deployment identifier and SHA. It is NOT a PASS, and it is NOT three FAILs.",
+      "why_not_a_FAIL": "A FAIL asserts that an endpoint answered non-conformantly. No endpoint answered at all. Recording three FAILs would attribute to the health contract a fault that belongs to the deployment's configuration, and would make the smoke log misidentify the incident.",
+      "detection_rule": "If every matched health path returns the same platform-level failure in one run, the runner MUST treat it as one platform incident rather than as correlated endpoint failures.",
+      "wire_status_caveat": "The exact status served for a middleware throw is a framework property this lane did not execute over HTTP (F-M11-17.wire_status). The rule above is therefore written on the SHAPE of the failure - identical across all matched paths, before any handler - and not on a numeral. An implementation lane must measure the numeral against a real deployment before encoding it."
+    },
+    "generalisation": "Any future invariant placed in middleware has this same property for every matched path. A contract written per-endpoint cannot express it, which is why it is stated here as a platform rule rather than as 21 cell edits."
+  },
+  "CALLER_TAXONOMY_CORRECTION": {
+    "status": "Replaces S-5. Closes NB-1.",
+    "CC-2_corrected": {
+      "collapses_with_CC-1": "ONLY at the lib/auth/identity.ts classification seam, where both yield SESSION_REJECTED and therefore 401.",
+      "does_NOT_collapse_at": [
+        "the transport level - CC-2 makes one outbound attempt, CC-1 makes none (F-M11-18);",
+        "the error level - AuthApiError versus AuthSessionMissingError, distinguishable by name and status;",
+        "the evidentiary level - a CC-2 response PROVES the provider answered, which a CC-1 response cannot."
+      ],
+      "zero_fetch_citation_rule": "The parent's F-M11-02 zero-fetch measurement may be cited for CC-1, CC-5 and CC-7, which hold no cookie. It MUST NOT be cited for CC-2.",
+      "consequence_for_the_matrix": "The measured status of the EP-1 x CC-2, EP-2 x CC-2 and EP-3 x CC-2 cells is unchanged. Their PROVENANCE and their reasoning change, and under OD-1 they acquire a semantic question of their own - see NB-3 in OD-1."
+    }
+  },
+  "MATRIX_PROVENANCE_CORRECTION": {
+    "status": "Replaces S-6 and S-7. Closes NB-2 and NB-8.",
+    "rule": "Every cell value in the parent matrix retains its VALUE and is re-labelled with how it was established. The key measured_status_at_BASE in the parent is to be read as status_at_BASE, qualified by the class below.",
+    "classes": {
+      "EXECUTED": "The authoring lane invoked the real handler in process and recorded the response.",
+      "TEST_FROZEN": "Not executed by the authoring lane, but pinned by a committed test that runs in the repository suite.",
+      "DERIVED_FROM_SOURCE": "Neither executed nor test-pinned. Established by reading the handler. A DERIVATION, not a measurement."
+    },
+    "assignments": [
+      {
+        "cells": "EP-1, EP-2, EP-3 x CC-1, CC-5, CC-7 (the cookie-less classes)",
+        "class": "EXECUTED",
+        "evidence": "Parent F-M11-01 and F-M11-06."
+      },
+      {
+        "cells": "EP-1, EP-2, EP-3 x CC-2",
+        "class": "EXECUTED",
+        "evidence": "This amendment F-M11-14 and F-M11-18. In the parent these were DERIVED; they are now executed."
+      },
+      {
+        "cells": "EP-1 x CC-3, CC-4, CC-6",
+        "class": "TEST_FROZEN",
+        "evidence": "tests/health-auth-route.test.ts:18-28 pins 200 for a present user."
+      },
+      {
+        "cells": "EP-2 x CC-3, CC-4, CC-6",
+        "class": "TEST_FROZEN",
+        "evidence": "tests/runtime-identity-observability.test.ts pins the 200 shape and the 503 divergence paths."
+      },
+      {
+        "cells": "EP-3 x CC-3, CC-4, CC-6",
+        "class": "DERIVED_FROM_SOURCE",
+        "evidence": "NONE. Parent F-M11-09 records zero coverage. Established by reading route.ts:117 and :123 only."
+      }
+    ],
+    "EP-3_freeze_correction": "No EP-3 cell may cite tests/runtime-identity-observability.test.ts as its freeze. That test pins EP-2. EP-3's body contract and status mapping are frozen by NOTHING at AS_OF_TREE, and an implementation lane must add the controls before EP-3 can be consumed by M11.",
+    "consequence_for_ratification": "A DERIVED_FROM_SOURCE cell is still a contract, but it is not evidence. The owner is ratifying a reading of the code for those cells, and the implementation lane must convert each into a test."
+  },
+  "OWNER_DECISIONS_AFTER_AMENDMENT": {
+    "rule": "OD-1 through OD-4 retain their identifiers and their questions. Where this amendment changes what an option COSTS or ADDS, the change is stated here and supersedes the parent's option text only in that respect. OD-5 is NEW, created by splitting the parent's overloaded OD-3. Nothing is ratified.",
+    "decisions": [
+      {
+        "id": "OD-1",
+        "question": "UNCHANGED. Is /api/health/auth a PUBLIC liveness surface or a PRIVATE diagnostic?",
+        "what_changed": "The COST of options A and A2 was misstated in the parent and is corrected here. The question, the invariants and option B and option C are unchanged.",
+        "corrected_option_costs": [
+          {
+            "option": "A. PUBLIC_LIVENESS",
+            "corrected_cost": "Requires a NEW discriminator that inspects the returned error - it does NOT exist today (AUTH_FAILURE_TAXONOMY). Without it the handler cannot tell AS-1 from AS-3 and would answer 200 during a genuine outage for a caller who happens to hold no cookie.",
+            "honest_limit": "Even WITH the discriminator, an anonymous caller triggers no outbound call, so a 200 here proves the runtime executed and the client constructed. It does NOT prove the provider is reachable. The endpoint's name overstates option A unless A2 is taken."
+          },
+          {
+            "option": "A2. PUBLIC_LIVENESS_WITH_A_REAL_UPSTREAM_TOUCH",
+            "corrected_cost": "TWO pieces of work, not one: the discriminator of AUTH_FAILURE_TAXONOMY, AND a dedicated provider-health touch that reaches the provider without a session. The parent asserted this was free. It is not.",
+            "interaction_with_OD-4": "A real anonymous upstream touch is the option most exposed to F-M11-20: it can be throttled, and it can be used to induce upstream load. OD-1 option A2 and OD-4 must be decided together."
+          },
+          {
+            "option": "B. PRIVATE_DIAGNOSTIC",
+            "corrected_cost": "UNCHANGED and now comparatively cheaper: mapping AS-1 to 401 needs no discriminator, because it does not need to tell AS-1 from AS-3 to refuse both. The parent's costing of B stands.",
+            "new_consideration": "B leaves the platform with no unauthenticated liveness signal, which by the parent's F-M11-13 is already the situation today. It therefore preserves the status quo's central weakness while removing the false outage claim."
+          },
+          {
+            "option": "C. RATIFY_THE_STATUS_QUO",
+            "corrected_cost": "UNCHANGED - no code change. But the case against it is STRONGER after B-1: the status quo does not merely fail to detect an outage for an anonymous caller, it MISCLASSIFIES a real outage for an authenticated one (F-M11-14)."
+          }
+        ],
+        "NB-3_rejected_session_semantics": {
+          "question_added_to_OD-1": "Under a PUBLIC option, what does the endpoint answer to AS-2, a caller presenting a session the provider REJECTS? The parent left this undefined.",
+          "why_it_is_not_obvious": "AS-2 is simultaneously a caller-state fact and positive evidence that the provider answered (F-M11-18). A public liveness surface could legitimately answer 200 with an unauthenticated body - treating rejection as simply not-authenticated - or 401 - treating a presented-and-refused credential as a caller error. The two choices produce different smoke contracts for the same deployment state.",
+          "constraint": "Whatever is chosen must NOT be 503, because AS-2 proves the provider is reachable. A 503 would be the same category error B-1 identified, in the opposite direction.",
+          "this_lane_does_not_choose": true
+        },
+        "this_lane_does_not_choose": true
+      },
+      {
+        "id": "OD-2",
+        "question": "UNCHANGED. Which health observations BLOCK a deployment, and which are observability only?",
+        "what_changed": "NB-4 is answered as a CONSTRAINT on the available answers, not as a decision.",
+        "NB-4_constraint": {
+          "the_tension": "The inherited pass criterion requires that EACH health endpoint answers in conformance with the adjudicated contract. If observability only meant an endpoint is not observed, M11 could not pass while that endpoint is named in GATES[M11].source_of_truth.",
+          "resolution_of_the_vocabulary": "OBSERVABILITY_ONLY must mean OBSERVED AND RECORDED BUT NON-BLOCKING. It may never mean NOT OBSERVED. Every endpoint named in source_of_truth is observed on every run under M11-SC-3; what OD-2 chooses is only whether a non-conformant answer STOPS the release.",
+          "residual_owner_choice": "Given that constraint, OD-2 still chooses per endpoint between BLOCKING and NON_BLOCKING_RECORDED. A third option - removing an endpoint from M11's source_of_truth - is NOT available to OD-2, because that list is owned by RELEASE_GATE_LEDGER and changing it is a ledger act."
+        },
+        "this_lane_does_not_choose": true
+      },
+      {
+        "id": "OD-3",
+        "question": "RESTATED AND NARROWED. Is a deliberately disabled subsystem UNHEALTHY - that is, should the HTTP STATUS of /api/health/stella-preconditions continue to collapse intentional-off with misconfigured?",
+        "what_changed": "The parent's OD-3 carried two unrelated decisions in one identifier. Its half_b - the staging principal - is SPLIT OUT to OD-5. This entry now carries only the semantic half, and NB-6 narrows even that.",
+        "NB-6_narrowing": "By F-M11-19 the BODY already distinguishes the two states through master.stellaEnabled. The collapse is at the HTTP status only. So the owner is not being asked to invent a new observable - only to decide whether a status-reading runner should see them as the same.",
+        "options_recorded_not_chosen": [
+          "Keep the collapse: 503 whenever ready is false. Simple, and safe for a status-only runner, but blocks every deployment that has Stella off on purpose if OD-2 makes EP-3 blocking.",
+          "Split the status: 200 for intentional-off with a distinguishing body field already present, 503 only for a subsystem that is meant to be on and is not.",
+          "Keep the collapse but make EP-3 NON_BLOCKING_RECORDED under OD-2, so the ambiguity never stops a release."
+        ],
+        "precedence": [
+          "OD-3 and OD-2 interact: if OD-2 makes EP-3 non-blocking, OD-3's practical urgency falls but the semantic question remains, because the smoke log still records a verdict. OD-3 does not depend on OD-5."
+        ],
+        "this_lane_does_not_choose": true
+      },
+      {
+        "id": "OD-4",
+        "question": "UNCHANGED. Are /api/health/* paths exempt from the global API rate limit?",
+        "what_changed": "Extended by F-M11-20 with two facts the parent did not carry.",
+        "added_considerations": [
+          "The limit is KV-CONDITIONAL: it exists only where both KV variables are bound, so two deployments of the same SHA can differ in whether 429 is reachable at all. The contract cannot assume either way.",
+          "A broken limiter fails OPEN at proxy.ts:40-42, so the limit is not a dependable control either - which weakens the argument for relying on it as abuse protection under OD-1 option A2.",
+          "Under a real anonymous upstream touch, a monitor and a smoke runner sharing platform egress addresses can consume each other's per-IP budget, so the endpoint may throttle the probe that measures it."
+        ],
+        "this_lane_does_not_choose": true
+      },
+      {
+        "id": "OD-5",
+        "question": "NEW, SPLIT FROM THE PARENT'S OD-3 half_b. Will the owner authorize a DURABLE staging test principal so that M11 can observe the session-gated endpoints, or must M11's scope be limited to what an unauthenticated runner can observe?",
+        "why_it_had_to_be_split": "The parent's OD-3 was OVERLOADED: it bundled a product semantic question about a disabled subsystem with an authorization to provision a credential. This amendment SPLITS that identifier cleanly - the semantic half stays as OD-3, the provisioning half becomes OD-5 - because the two have different owners, different risk and different artifacts. The first is settled inside this contract; the second requires a SEPARATE AUTHORITY, because MG-4 records that creating, promoting or elevating a principal is not authorized by any current grant. A single ratification of the parent's OD-3 would have silently conferred, or silently withheld, a credential authorization that was never stated as such.",
+        "precedence_rule": "OD-5 is a PRECONDITION for any M11 scope that includes EP-2 or EP-3 authenticated cells. If OD-5 is answered NO, then OD-2 may only assign blocking semantics to cells an unauthenticated runner can observe, and M11's declared scope must say so explicitly. OD-3 is independent of OD-5.",
+        "constraint_inherited_not_reopened": "MG-4 also records that the endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5, and this amendment does not make it one.",
+        "what_this_amendment_does_NOT_do": "It does not authorize creating a principal, does not specify one, and does not open the separate authority that would. It only records that the decision exists and what depends on it.",
+        "this_lane_does_not_choose": true
+      }
+    ]
+  },
+  "RECOMMENDATION_REEVALUATED": {
+    "status": "RECOMMENDATION_NOT_RATIFICATION",
+    "binding_force": "NONE. Engineering and security input only. Not owner approval, and never to be cited as one.",
+    "method": "The parent's recommendation was NOT preserved by default. It was re-derived from the corrected facts, and the one piece of evidence the certification falsified was removed rather than rewritten.",
+    "withdrawn_evidence": "The parent's third supporting bullet (S-1) is WITHDRAWN in full. It claimed A2 reused an existing distinction. No replacement bullet claims anything about reuse.",
+    "corrected_evidence": [
+      "F-M11-03 still stands and is still decisive: the anonymous 503 is identical in a healthy and an unreachable world, so it cannot serve a gate meant to detect a broken deployment.",
+      "F-M11-13 still stands: there is no unauthenticated liveness signal capable of failing.",
+      "NEW, and it strengthens the case: by F-M11-14 the deployment MISCLASSIFIES a real provider outage as a rejected session, so an authenticated caller is told Unauthorized during an outage. The discriminator that option A2 needs is therefore required ANYWAY to fix a defect that exists independently of OD-1.",
+      "F-M11-15 shows the discriminator is implementable with no new infrastructure - the information is already on the returned error - so the corrected cost is real but bounded."
+    ],
+    "recommended_contract": {
+      "OD-1": "Option A2 REMAINS the recommendation, now on corrected costs: a discriminator plus a provider-health touch. For AS-2 under NB-3, 200 with an unauthenticated body, never 503.",
+      "OD-2": "UNCHANGED from the parent: EP-2 divergence BLOCKS; EP-1 liveness failure BLOCKS; EP-3 NON_BLOCKING_RECORDED until OD-3 is settled - which is now expressible in the NB-4 vocabulary.",
+      "OD-3": "Split the status rather than the body: 200 for intentional-off, since F-M11-19 shows the body already carries the distinction and only the status collapses.",
+      "OD-4": "UNCHANGED: keep health paths subject to the limit and give the runner a fixed low-frequency budget.",
+      "OD-5": "NO RECOMMENDATION. This is a credential-provisioning authorization with security consequences outside this lane's competence, and MG-4 already forbids the tempting shortcut. Recorded as owner-only."
+    },
+    "how_the_correction_changed_the_balance": "Stated plainly, because it would be dishonest to present the recommendation as untouched: option A2 became more expensive, and option B became comparatively cheaper. A reviewer who weighted A2 largely on the parent's free-reuse claim SHOULD revisit it. The recommendation survives on a different basis than it was first made - that the discriminator is owed regardless because of F-M11-14 - and a reviewer who rejects that reasoning has a sound case for B.",
+    "arguments_against_recorded_honestly": [
+      "A2 now carries two implementation units and the highest exposure to OD-4. An owner optimising for the smallest safe change should prefer B.",
+      "Option C remains the only zero-code option, and F-M11-20 shows even the mitigation story for A2 is environment-conditional.",
+      "This amendment's author also authored the parent. The re-derivation was performed against an independent certification, but it is not itself independent, which is why the next gate is a focused re-certification of the pair."
+    ]
+  },
+  "NEW_OPEN_FINDINGS": [
+    {
+      "id": "AF-M11-11",
+      "finding": "The deployment misclassifies a real provider outage as a rejected session, so an authenticated caller receives 401 from both session-gated endpoints during an outage - defeating the stated anti-logout-storm rationale of the very branch written to prevent it.",
+      "evidence": [
+        "F-M11-14",
+        "F-M11-15"
+      ],
+      "disposition": "PRE_EXISTING_DEFECT__CARRIED_TO_THE_IMPLEMENTATION_LANE__DOES_NOT_ENLARGE_M11",
+      "note": "Recorded because the ratified contract must state what the endpoints answer during an outage."
+    },
+    {
+      "id": "AF-M11-12",
+      "finding": "AUTH_UNAVAILABLE and the auth-caused 503 of EP-2 and EP-3 are unreachable over real HTTP.",
+      "evidence": [
+        "F-M11-16",
+        "F-M11-17"
+      ],
+      "disposition": "RECORDED__THE_EXISTING_TEST_PINS_AN_HTTP_UNREACHABLE_STATE",
+      "note": "tests/runtime-identity-observability.test.ts pins AUTH_UNAVAILABLE to 503. The control is not wrong about the handler, but it does not constrain any reachable HTTP behaviour. An implementation lane should not read it as evidence that outages are handled."
+    },
+    {
+      "id": "AF-M11-13",
+      "finding": "Whether 429 is reachable is environment-conditional, and a failing limiter fails open.",
+      "evidence": [
+        "F-M11-20"
+      ],
+      "disposition": "FEEDS_OD-4__MAKES_M11-SC-6_UNCONDITIONAL_FORM_LOAD_BEARING"
+    },
+    {
+      "id": "AF-M11-14",
+      "finding": "Six of the twenty-one matrix cells are DERIVED_FROM_SOURCE rather than measured or test-frozen, and all six belong to EP-3, which has no test at all.",
+      "evidence": [
+        "MATRIX_PROVENANCE_CORRECTION"
+      ],
+      "disposition": "MUST_BE_CONVERTED_TO_CONTROLS_BY_THE_IMPLEMENTATION_LANE"
+    }
+  ],
+  "FUTURE_IMPLEMENTATION_SURFACE": {
+    "rule": "Named so successor lanes can be opened against a stable identifier. Each is a governed lane of its own. NONE is authorized by this amendment, and naming a surface is not scheduling it.",
+    "items": [
+      {
+        "id": "FIS-M11-01",
+        "surface": "A named, tested auth-failure discriminator distinguishing AS-1..AS-4, sited in lib/auth/identity.ts.",
+        "required_by": "OD-1 options A and A2; independently owed because of AF-M11-11."
+      },
+      {
+        "id": "FIS-M11-02",
+        "surface": "A dedicated provider-health touch reachable without a session.",
+        "required_by": "OD-1 option A2 only. Not required by A, B or C."
+      },
+      {
+        "id": "FIS-M11-03",
+        "surface": "Controls for /api/health/stella-preconditions - its auth branch and its ready-to-status mapping.",
+        "required_by": "M11 consumption of EP-3 under any option. Closes AF-M11-14 and the parent's AF-M11-05."
+      },
+      {
+        "id": "FIS-M11-04",
+        "surface": "The M11 smoke runner itself, with the INCONCLUSIVE classification of M11-SC-6 and the one-incident rule of PLATFORM_PRE_HANDLER_FAILURE_RULE.",
+        "required_by": "M11-SC-2."
+      },
+      {
+        "id": "FIS-M11-05",
+        "surface": "Hosted-smoke ACCESS to a protected deployment. Where Deployment Protection is enabled, an automated runner cannot reach the endpoints anonymously, and the platform's automation-bypass mechanism - Protection Bypass for Automation, or whatever the platform then provides - becomes a dependency of M11 automation.",
+        "required_by": "Any hosted M11 run against a protected deployment.",
+        "status": "RECORDED AS A DEPENDENCY, NOT AN AUTHORIZATION. Whether such a bypass exists, is enabled, or may be provisioned was NOT measured by this lane - MG-5 records the underlying protection behaviour as UNKNOWN. A bypass credential is a secret and its provisioning is a separate authority, adjacent to OD-5."
+      },
+      {
+        "id": "FIS-M11-06",
+        "surface": "A durable staging test principal, under a separate authority.",
+        "required_by": "OD-5, if answered YES. MG-4's prohibition on lowering the endpoint boundary is inherited unchanged."
+      }
+    ]
+  },
+  "explicit_non_authorizations": [
+    "This amendment does NOT satisfy M11. GATES[M11].current_state remains ABSENT.",
+    "This amendment does NOT ratify anything. OD-1 through OD-5 remain open and unanswered.",
+    "This amendment does NOT enlarge M11. No endpoint, caller class, gate or blocking semantic is added to M11's scope.",
+    "This amendment does NOT deploy, and performed no deployment.",
+    "This amendment does NOT execute hosted smoke, and performed none.",
+    "This amendment does NOT change any endpoint's behaviour. No route, middleware, test or runtime file is modified.",
+    "This amendment does NOT change auth policy and lowers no boundary. MG-4 is inherited unchanged.",
+    "This amendment does NOT authorize a staging principal, a bypass credential, or any credential provisioning.",
+    "This amendment does NOT change release state and edits no gate field. RELEASE_GATE_LEDGER is read only.",
+    "This amendment does NOT close DGR-07 or AT-F-01.",
+    "This amendment does NOT edit its parent. The parent's bytes are unchanged.",
+    "This amendment does NOT authorize Stage-A, G2, or production.",
+    "This amendment does NOT modify Vercel, Supabase, environment variables or any hosted state. External hosted mutations: NONE.",
+    "This amendment does NOT open a PostgreSQL connection.",
+    "This amendment does NOT modify or weaken any test. Its probes were transient and deleted.",
+    "This amendment does NOT invent an ODS or W2 lineage identifier."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check, verifiable by inspection of this file and one git object read. Not a script.",
+    "parent_byte_unchanged": {
+      "parent": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+      "expected_blob_sha1": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+      "expected_size_bytes": 86815,
+      "check": "git rev-parse HEAD:<parent> must equal expected_blob_sha1. This amendment adds a file and edits none."
+    },
+    "expected_new_measured_fact_count": 7,
+    "expected_new_measured_fact_ids": [
+      "F-M11-14",
+      "F-M11-15",
+      "F-M11-16",
+      "F-M11-17",
+      "F-M11-18",
+      "F-M11-19",
+      "F-M11-20"
+    ],
+    "expected_superseded_clause_count": 7,
+    "expected_superseded_clause_ids": [
+      "S-1",
+      "S-2",
+      "S-3",
+      "S-4",
+      "S-5",
+      "S-6",
+      "S-7"
+    ],
+    "expected_blocking_findings_closed": [
+      "B-1",
+      "B-2"
+    ],
+    "expected_nonblocking_findings_consumed": 9,
+    "expected_nonblocking_finding_ids": [
+      "NB-1",
+      "NB-2",
+      "NB-3",
+      "NB-4",
+      "NB-5",
+      "NB-6",
+      "NB-7",
+      "NB-8",
+      "NB-9"
+    ],
+    "expected_auth_state_count": 4,
+    "expected_auth_state_ids": [
+      "AS-1",
+      "AS-2",
+      "AS-3",
+      "AS-4"
+    ],
+    "expected_owner_decision_count": 5,
+    "expected_owner_decision_ids": [
+      "OD-1",
+      "OD-2",
+      "OD-3",
+      "OD-4",
+      "OD-5"
+    ],
+    "expected_new_open_finding_count": 4,
+    "expected_new_open_finding_ids": [
+      "AF-M11-11",
+      "AF-M11-12",
+      "AF-M11-13",
+      "AF-M11-14"
+    ],
+    "expected_future_surface_count": 6,
+    "expected_non_authorization_count": 16,
+    "checks": [
+      "Every SUPERSEDED_PARENT_CLAUSES entry carries a parent_path, a verbatim quotation and exactly one superseded_in_this_respect statement.",
+      "Every superseded entry cites the blocking or nonblocking finding that caused it.",
+      "Both blocking findings B-1 and B-2 carry disposition ACCEPTED_AND_CLOSED_BY_THIS_AMENDMENT and name the clauses that close them.",
+      "All nine nonblocking findings NB-1..NB-9 are listed with a disposition; none is silently dropped.",
+      "Every OWNER_DECISIONS_AFTER_AMENDMENT entry carries this_lane_does_not_choose true, including the new OD-5.",
+      "OD-5 states its precedence relationship to OD-2 and its independence from OD-3.",
+      "RECOMMENDATION_REEVALUATED.status is exactly RECOMMENDATION_NOT_RATIFICATION and binding_force is NONE.",
+      "RECOMMENDATION_REEVALUATED explicitly withdraws the falsified evidence bullet rather than rewriting it, and states how the balance between options changed.",
+      "No new fact claims a hosted observation. F-M11-16 and the wire status of F-M11-17 are labelled DERIVED, not measured.",
+      "No secret, credential, token, connection string, project reference, email address or user identifier appears anywhere in this artifact.",
+      "No gate identifier is created, and no gate field is asserted to change.",
+      "final_state is ADJUDICATED_AWAITING_OWNER_RATIFICATION, consistent with five unanswered owner decisions."
+    ],
+    "validation_method": "JSON parse, structural self-check executed against this document, referential integrity of every cited repository path, secret scan, repository-native authority gates, and the decisive local probes re-run by the amending lane rather than accepted from the certification report."
+  },
+  "required_independent_review": "The EFFECTIVE PACKAGE - parent v1.0.0 as modified by this amendment v1.0.1 - requires focused independent re-certification before any implementation lane opens, and owner ratification of OD-1 through OD-5 before any contract is frozen into code or into a smoke runner. The author of the parent authored this amendment and must not certify either.",
+  "final_state": "ADJUDICATED_AWAITING_OWNER_RATIFICATION__V1_0_0_AMENDED_BY_V1_0_1",
+  "next_gate": "M11_HEALTH_CONTRACT_PACKAGE_READY_FOR_FOCUSED_INDEPENDENT_RECERTIFICATION: a focused re-certification of the EFFECTIVE v1.0.0 plus v1.0.1 package, bounded to the two blocking corrections, the seven superseded clauses, the seven new measured facts and the split of OD-3 into OD-3 and OD-5. Deterministic facts already corroborated at the first certification are not to be recomputed. Owner ratification of OD-1..OD-5 follows certification. No implementation lane, no smoke automation and no gate-state change may open before both."
+}

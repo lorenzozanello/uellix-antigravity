@@ -1,0 +1,425 @@
+{
+  "package_id": "M11_HEALTH_CONTRACT_OWNER_DECISIONS",
+  "version": "1.0.0",
+  "artifact_id": "M11_HEALTH_CONTRACT_OWNER_DECISIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION__NO_DESTRUCTIVE_AUTHORIZATION__NO_CREDENTIAL_PROVISIONING__NO_HOSTED_ACCESS",
+  "append_only": true,
+  "mission_id": "CV1-M11-HEALTH-CONTRACT-OWNER-RATIFICATION-AW-R1",
+  "lane": "codex/cv1-m11-health-contract-adjudication-r1",
+  "role": "COMMERCIAL_V1_M11_HEALTH_CONTRACT_ADJUDICATOR__OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_RECORD",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_authorities": [
+    {
+      "role": "ORIGINAL_ADJUDICATION",
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+      "blob": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+      "size": 86815
+    },
+    {
+      "role": "AMENDMENT_1_CLOSES_CERTIFICATION_FAIL_B1_B2",
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+      "blob": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+      "size": 58625
+    },
+    {
+      "role": "AMENDMENT_2_ERRATA_CLOSES_FOCUSED_RECERT_NONBLOCKING",
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+      "blob": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b",
+      "size": 32009
+    },
+    {
+      "role": "AMENDMENT_3_ERRATA_CLOSES_DELTA_REVIEW_BD1_BD2",
+      "path": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3.json",
+      "blob": "8f340096615dbaecaa790af8c926bfeceb3c61cf",
+      "size": 36057
+    }
+  ],
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty)."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "This record ratifies owner decisions AGAINST ONE EXACT EFFECTIVE PACKAGE, identified by the lane HEAD commit SHA and, independently, by the git blob SHA of each of the four M11 artifacts it comprises. Both must be re-derivable by inspection at any later time. If either check fails, the correct response is STOP_RATIFICATION_BINDING_MISMATCH - this record does not apply to a different candidate and must not be read as ratifying one.",
+    "candidate_commit_sha": "c9f42a33d922c7dfe2b10f07ad43ba07db9852c5",
+    "candidate_commit_verification": "git rev-parse HEAD, on branch codex/cv1-m11-health-contract-adjudication-r1, at materialization.",
+    "package_blob_pins": [
+      {
+        "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json",
+        "expected_blob_sha1": "1b267e4a6cc76cc643dc868baec24a506ee25a30",
+        "expected_size_bytes": 86815
+      },
+      {
+        "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json",
+        "expected_blob_sha1": "b23b9bf530d8dd56a4f6478b522bacd7106c93f7",
+        "expected_size_bytes": 58625
+      },
+      {
+        "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json",
+        "expected_blob_sha1": "ff55407d10ba0ad9f003a8c9b09c5e16197a8d6b",
+        "expected_size_bytes": 32009
+      },
+      {
+        "artifact": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.3.json",
+        "expected_blob_sha1": "8f340096615dbaecaa790af8c926bfeceb3c61cf",
+        "expected_size_bytes": 36057
+      }
+    ],
+    "verification_method": "git rev-parse <candidate_commit_sha>:<artifact path>, compared against expected_blob_sha1, for each of the four artifacts.",
+    "on_mismatch": "STOP_RATIFICATION_BINDING_MISMATCH. Any later amendment to any of the four artifacts (v1.0.4 or beyond) requires a SUCCESSOR ratification record binding to the new candidate; it does not retroactively apply to this one."
+  },
+  "OWNER_AUTHORITY_SOURCE": {
+    "statement": "The selections recorded under `ratifications` below and the M11_SC7_OWNER_RIDER were made by the human product owner (Lorenzo Zanello), explicitly, in the conversation that authorized this record. They are NOT selections Claude made, inferred, or defaulted to.",
+    "what_claude_authored": "The prior four artifacts' authority_recommendation and technical_recommendation content (adjudication, corrections, and RECOMMENDATION_REEVALUATED), and this record's transcription, cross-referencing, and independent verification of the owner's selections against that prior content. Claude's own recommendations are recorded as RECOMMENDATION_NOT_RATIFICATION throughout the prior chain and remain non-binding; only the owner_selected_decision fields below carry ratifying force.",
+    "three_distinct_concepts": {
+      "authority_recommendation": "What the ORIGINAL v1.0.0 adjudication offered as its own recommendation, before B-1/B-2 correction. Superseded in part by later amendments - cited here with its supersession status, never as if still live on its own.",
+      "technical_recommendation": "What v1.0.1's RECOMMENDATION_REEVALUATED concluded after B-1/B-2 correction - the CONTROLLING recommendation of the effective package, itself marked RECOMMENDATION_NOT_RATIFICATION and binding_force NONE at authorship.",
+      "owner_selected_decision": "The human owner's binding choice, recorded below. This is the ONLY one of the three that ratifies anything. Where the owner's selection matches the technical recommendation, both are stated so the agreement is visible rather than assumed. Where it diverges or extends beyond what was recommended (OD-5), that is stated explicitly too."
+    }
+  },
+  "provenance_classification": "OWNER_RATIFIED_IN_THE_AUTHORING_CONVERSATION. The selections below were given verbatim by the product owner as explicit conversational input to this lane, not sourced from any external ticket or prior written ratification.",
+  "purpose": "Freeze the product owner's binding answers to OD-1 through OD-5 of the M11 health contract, and record the owner's gate-ownership assignment for GATES[M11] (M11-SC-7), against the exact effective package identified by CANDIDATE_BINDING. This record is a PRECONDITION for opening the M11 implementation DAG and the separate staging-principal authority lane; it does not itself open either.",
+  "precedence_note": "This record is canonical for the product owner's intent on OD-1 through OD-5 and the M11-SC-7 gate-ownership assignment only. It does NOT override, weaken, or reinterpret any FIB/PC-01B/IM-01B frozen authority, any ODS HPO decision, RELEASE_GATE_LEDGER's gate definitions, or MG-4's prohibition on lowering the endpoints' authentication boundary. Where this record is silent, the four M11 artifacts and RELEASE_GATE_LEDGER control.",
+  "reopening_rule": "THIS IS NOT A RE-ADJUDICATION. It does not reopen DGR-07, AT-F-01, B-1, B-2, B-D1, B-D2, or any measured fact F-M11-01 through F-M11-20 in the four M11 artifacts. It does not reopen the AS-1/AS-2/AS-3/AS-4 auth-failure taxonomy, the endpoint-by-caller matrix's cell classifications, or the corrected provenance arithmetic. It answers the five owner decisions those artifacts left open, and assigns one previously-unassigned gate-ownership field. Nothing else about the effective package is reconsidered.",
+  "ratifications": [
+    {
+      "id": "OD-1",
+      "domain": "AUTH_HEALTH_ENDPOINT_LIVENESS_SEMANTICS",
+      "question_ratified": "v1.0.1 OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-1].question: Is /api/health/auth a PUBLIC liveness surface or a PRIVATE diagnostic?",
+      "authority_recommendation": {
+        "source": "v1.0.0 RECOMMENDATION.recommended_contract.OD-1 (v1.0.0's own first-pass recommendation)",
+        "text": "Option A2 - PUBLIC_LIVENESS_WITH_A_REAL_UPSTREAM_TOUCH, with option A as the acceptable lesser form.",
+        "status": "SUPERSEDED IN PART by v1.0.2 S-1 (its supporting evidence[2] was falsified by B-1) and RE-DERIVED by v1.0.1's RECOMMENDATION_REEVALUATED. Cited here for provenance only, not as controlling text."
+      },
+      "technical_recommendation": {
+        "source": "v1.0.1 RECOMMENDATION_REEVALUATED.recommended_contract.OD-1 (the controlling, corrected recommendation)",
+        "text": "Option A2 REMAINS the recommendation, now on corrected costs: a discriminator plus a provider-health touch. For AS-2 under NB-3, 200 with an unauthenticated body, never 503.",
+        "status": "RECOMMENDATION_NOT_RATIFICATION at authorship. binding_force NONE until an owner selection ratifies it."
+      },
+      "owner_selected_decision": {
+        "option_selected": "A2. PUBLIC_LIVENESS_WITH_A_REAL_UPSTREAM_TOUCH",
+        "concurs_with_technical_recommendation": true,
+        "AS-2_disposition": "200_UNAUTHENTICATED_BODY",
+        "AS-2_disposition_basis": "Answers v1.0.1 OD-1.NB-3_rejected_session_semantics, which the authority explicitly left open ('This lane does not choose'): for a caller presenting a session the provider REJECTS (AS-2), the public option answers 200 with an unauthenticated body - treating rejection as simply not-authenticated - rather than 401.",
+        "AS-2_503_prohibition_preserved": "The owner's selection does NOT touch the one constraint the authority stated as non-negotiable: v1.0.1 OD-1.NB-3_rejected_session_semantics.constraint - 'Whatever is chosen must NOT be 503, because AS-2 proves the provider is reachable. A 503 would be the same category error B-1 identified, in the opposite direction.' 503 for AS-2 remains PROHIBITED by the effective authority; this ratification does not relax that.",
+        "owner_approved_implementation_rider": {
+          "status": "AN IMPLEMENTATION CONSTRAINT SELECTED BY THE OWNER. Binding on any future implementation lane. Does NOT itself authorize implementation in this lane.",
+          "constraints": [
+            "The provider-health touch MUST use a short TTL/cache.",
+            "The provider-health touch MUST operate under its own bounded request budget, distinct from and not assumed to be covered by the existing global rate limit (OD-4).",
+            "No implementation may make every single anonymous health request necessarily cause a fresh upstream provider call."
+          ],
+          "relationship_to_FIS-M11-02": "v1.0.1 FUTURE_IMPLEMENTATION_SURFACE.FIS-M11-02 already names 'a dedicated provider-health touch reachable without a session' as a future implementation surface required by option A2. This rider adds the owner's binding shape constraints to that named surface; it does not create a new surface."
+        }
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json OWNER_DECISIONS_REQUIRED[OD-1] (question and options A/A2/B/C, unchanged); docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json AUTH_FAILURE_TAXONOMY.states[AS-2] (the state this ratification disposes of), OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-1] (corrected option costs and the NB-3 sub-question), RECOMMENDATION_REEVALUATED.recommended_contract.OD-1, and FUTURE_IMPLEMENTATION_SURFACE.FIS-M11-01/FIS-M11-02 (the discriminator and provider-health touch this selection requires)."
+    },
+    {
+      "id": "OD-2",
+      "domain": "M11_BLOCKING_VS_NONBLOCKING_SEMANTICS",
+      "question_ratified": "v1.0.1 OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-2].question: Which health observations BLOCK a deployment, and which are observability only?",
+      "authority_recommendation": {
+        "source": "v1.0.0 RECOMMENDATION.recommended_contract.OD-2",
+        "text": "EP-2 divergence BLOCKS. EP-1 liveness failure BLOCKS. EP-3 records but does not block until OD-3 half A is settled.",
+        "status": "Not superseded as text, but its 'OD-3 half A' phrasing predates the OD-3/OD-5 split; read as OD-3 (semantic), which the split confirms is the correct referent."
+      },
+      "technical_recommendation": {
+        "source": "v1.0.1 RECOMMENDATION_REEVALUATED.recommended_contract.OD-2",
+        "text": "UNCHANGED from the parent: EP-2 divergence BLOCKS; EP-1 liveness failure BLOCKS; EP-3 NON_BLOCKING_RECORDED until OD-3 is settled - which is now expressible in the NB-4 vocabulary.",
+        "status": "RECOMMENDATION_NOT_RATIFICATION at authorship. binding_force NONE until an owner selection ratifies it."
+      },
+      "owner_selected_decision": {
+        "EP-1": "BLOCKING",
+        "EP-2": "BLOCKING",
+        "EP-3": "NON_BLOCKING_RECORDED",
+        "concurs_with_technical_recommendation": true,
+        "OBSERVABILITY_ONLY_vocabulary_ratified": "Adopts v1.0.1 OD-2.NB-4_constraint.resolution_of_the_vocabulary verbatim as the effective meaning: 'OBSERVABILITY_ONLY must mean OBSERVED AND RECORDED BUT NON-BLOCKING. It may never mean NOT OBSERVED. Every endpoint named in source_of_truth is observed on every run under M11-SC-3; what OD-2 chooses is only whether a non-conformant answer STOPS the release.' NON_BLOCKING_RECORDED for EP-3 means EP-3 is observed and logged on every M11 run; a non-conformant EP-3 answer never stops a deployment on its own.",
+        "EP-2_conditional_executability": {
+          "final_target_semantics": "BLOCKING. This is the owner's selected FINAL contract for EP-2, not a placeholder.",
+          "sequencing_constraint": "EP-2's blocking evaluation becomes EXECUTABLE only once OD-5's separately authorized durable authenticated staging principal exists, because EP-2 is only observable by CC-6 (v1.0.0 OWNER_DECISIONS_REQUIRED[OD-3].two_halves.half_b; v1.0.1 MG-4 circularity). Until that principal exists:",
+          "interim_recording_rule": [
+            "Do NOT silently treat the authenticated EP-2 cell as PASS in its absence.",
+            "Do NOT represent authenticated evidence as existing when it does not.",
+            "Record the authenticated EP-2 cell's status as UNAVAILABLE/PENDING under the effective contract - specifically, as a cell whose reachable_by_M11_only_if precondition (OD-5, per v1.0.2 CORRECTED_MATRIX_CELL_REACHABILITY) is unmet - never as a passing or a failing observation.",
+            "Preserve BLOCKING as the target semantics for when the precondition IS met. This interim recording rule is SEQUENCING, not a change to the owner's EP-2 = BLOCKING selection."
+          ]
+        },
+        "sufficiency_and_readiness_context": {
+          "note": "NB-6 (bounded v1.0.3 review): F-M11-13 (the 'no unauthenticated liveness signal capable of failing' fact) also bears on M11-SC-8 ('At least ONE observed cell must be capable of FAILING for a genuine deployment fault'), which is part of M11's overall sufficiency/readiness contract, not a matter this ratification routes back into provisioning. OD-2's BLOCKING assignments for EP-1 and EP-2 are what give M11-SC-8 a non-vacuous cell BEFORE OD-5's principal exists (via EP-1, once OD-1's discriminator and provider-health touch are implemented) and a SECOND one once it does (via EP-2). This relationship is recorded here as OD-2's role in M11 sufficiency; it does NOT reopen or reroute OD-5's provisioning question through OD-2.",
+          "repository_binding": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json M11_SUCCESS_CONTRACT.conditions_that_must_ALL_hold_for_a_future_M11_PASS[M11-SC-8]."
+        }
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json OWNER_DECISIONS_REQUIRED[OD-2] and M11_SUCCESS_CONTRACT.conditions[M11-SC-3]/[M11-SC-8]; docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-2] (NB-4_constraint vocabulary) and RECOMMENDATION_REEVALUATED.recommended_contract.OD-2; docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json CORRECTED_MATRIX_CELL_REACHABILITY (the OD-5 reachability precondition for EP-2's authenticated cells)."
+    },
+    {
+      "id": "OD-3",
+      "domain": "STELLA_INTENTIONAL_OFF_STATUS_SEMANTICS",
+      "question_ratified": "v1.0.1 OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-3].question (RESTATED AND NARROWED): Is a deliberately disabled subsystem UNHEALTHY - should the HTTP STATUS of /api/health/stella-preconditions continue to collapse intentional-off with misconfigured?",
+      "authority_recommendation": {
+        "source": "v1.0.0 RECOMMENDATION.recommended_contract.OD-3",
+        "text": "Introduce an explicit third state so that intentional-off is reported as healthy-and-disabled rather than unmet; authorize a durable staging test principal under a separate authority.",
+        "status": "SUPERSEDED by v1.0.2 S-10: this text bundles the status-semantics recommendation with the provisioning-authorization recommendation under the single key OD-3, the exact overload v1.0.1 split into OD-3/OD-5. Cited here for provenance only; the corrected, split recommendation is v1.0.1's RECOMMENDATION_REEVALUATED."
+      },
+      "technical_recommendation": {
+        "source": "v1.0.1 RECOMMENDATION_REEVALUATED.recommended_contract.OD-3 (the controlling, split recommendation)",
+        "text": "Split the status rather than the body: 200 for intentional-off, since F-M11-19 shows the body already carries the distinction and only the status collapses.",
+        "status": "RECOMMENDATION_NOT_RATIFICATION at authorship. Contains no provisioning cost - OD-5 carries that separately."
+      },
+      "owner_selected_decision": {
+        "option_selected": "SPLIT_STATUS_200_FOR_INTENTIONAL_OFF",
+        "concurs_with_technical_recommendation": true,
+        "corresponds_to_authority_option": "v1.0.1 OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-3].options_recorded_not_chosen[1]: 'Split the status: 200 for intentional-off with a distinguishing body field already present, 503 only for a subsystem that is meant to be on and is not.'",
+        "effective_meaning": {
+          "intentional_off": "A deployment with Stella deliberately disabled (master.stellaEnabled: false) answers HTTP 200.",
+          "expected_on_but_not_ready": "A deployment where Stella is expected to be enabled but a precondition is unmet answers HTTP 503, as today.",
+          "body_distinction_preserved": "No new body field is required. Per v1.0.1 F-M11-19, app/api/health/stella-preconditions/route.ts already publishes master.stellaEnabled and the key-presence/canUseStella booleans, which already distinguish the two cases in the body. Only the STATUS mapping changes."
+        },
+        "provisioning_cost": "NONE. This decision carries no credential, principal, or authentication-boundary cost. It is independent of OD-5, per v1.0.1 OD-3.precedence: 'OD-3 does not depend on OD-5.'",
+        "sequencing_note": "Ratified as a semantic contract now. Implementation of the status split (an EP-3 route change) is NOT made a prerequisite for authoring or accepting this ratification record - that implementation belongs to Track A of the future M11 implementation DAG, not to this record."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json OWNER_DECISIONS_REQUIRED[OD-3] (original, overloaded) and ENDPOINT_INVENTORY.endpoints[EP-3].deliberately_dark_subsystem; docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-3] (restated, narrowed, NB-6, options_recorded_not_chosen) and RECOMMENDATION_REEVALUATED.recommended_contract.OD-3."
+    },
+    {
+      "id": "OD-4",
+      "domain": "HEALTH_PATH_RATE_LIMIT_EXEMPTION",
+      "question_ratified": "v1.0.1 OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-4].question: Are /api/health/* paths exempt from the global API rate limit?",
+      "authority_recommendation": {
+        "source": "v1.0.0 RECOMMENDATION.recommended_contract.OD-4",
+        "text": "Keep health paths subject to the limit, and give the smoke runner a fixed low-frequency budget rather than exempting the path.",
+        "status": "Not superseded."
+      },
+      "technical_recommendation": {
+        "source": "v1.0.1 RECOMMENDATION_REEVALUATED.recommended_contract.OD-4",
+        "text": "UNCHANGED: keep health paths subject to the limit and give the runner a fixed low-frequency budget.",
+        "status": "RECOMMENDATION_NOT_RATIFICATION at authorship, extended by F-M11-20's added_considerations (KV-conditional reachability; fail-open on limiter failure; self-throttling risk under OD-1 option A2)."
+      },
+      "owner_selected_decision": {
+        "option_selected": "NOT_EXEMPT",
+        "concurs_with_technical_recommendation": true,
+        "effective_meaning": "/api/health/* paths remain subject to the existing global sliding-window API rate limit (proxy.ts) exactly as today. No code change to proxy.ts is authorized or required by this ratification.",
+        "M11-SC-6_disposition": {
+          "selection": "INCONCLUSIVE_UNCONDITIONAL",
+          "effective_meaning": "HTTP 429 from the global rate limit is ALWAYS recorded as INCONCLUSIVE under M11-SC-6. It is NEVER a PASS and NEVER a health FAIL, without exception - unconditionally, regardless of environment, deployment, or caller class.",
+          "basis": "This is a direct application of v1.0.0 M11_SUCCESS_CONTRACT.conditions[M11-SC-6], which already names '429 from the global rate limit' among the INCONCLUSIVE outcomes 'at minimum'. The owner's selection here CONFIRMS this applies unconditionally rather than leaving it a residual open question for the implementation lane, given OD-4's NOT_EXEMPT selection makes 429 a live, reachable outcome on every health path."
+        },
+        "rate_limiter_security_posture": "The owner records, as part of this decision, that the global rate limiter is NOT a security control M11 may rely upon: per v1.0.1 F-M11-20, its presence is ENVIRONMENT-DEPENDENT (both KV_REST_API_URL and KV_REST_API_TOKEN must be bound, or no limiter is constructed at all) and its failure mode is FAIL-OPEN (proxy.ts:40-42 swallows a limiter construction/call failure and continues). NOT_EXEMPT keeps health paths under whatever protection the limiter happens to provide in a given deployment; it does not make that protection dependable, and no future M11 implementation may treat the rate limit as a substitute for the authentication boundary OD-1/OD-5 govern.",
+        "no_code_change_in_this_lane": "This ratification does not modify proxy.ts. Any future change to the limiter's scope or behaviour is Track A implementation work, not authorized here."
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json OWNER_DECISIONS_REQUIRED[OD-4] and M11_SUCCESS_CONTRACT.conditions[M11-SC-6]; docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-4] (F-M11-20 additions) and RECOMMENDATION_REEVALUATED.recommended_contract.OD-4; proxy.ts (read-only citation, not modified)."
+    },
+    {
+      "id": "OD-5",
+      "domain": "AUTHENTICATED_OBSERVATION_PRINCIPAL_PROVISIONING_AUTHORIZATION",
+      "question_ratified": "v1.0.1 OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-5].question (NEW, split from the parent's OD-3 half_b): Will the owner authorize a DURABLE staging test principal so that M11 can observe the session-gated endpoints, or must M11's scope be limited to what an unauthenticated runner can observe?",
+      "authority_recommendation": {
+        "source": "N/A - OD-5 did not exist as an identifier in v1.0.0. Its substance was the provisioning half of v1.0.0's overloaded OD-3, recommended in RECOMMENDATION.recommended_contract.OD-3 (superseded, see OD-3 above).",
+        "status": "NOT_APPLICABLE_AS_A_SEPARATE_RECOMMENDATION_AT_V1_0_0"
+      },
+      "technical_recommendation": {
+        "source": "v1.0.1 RECOMMENDATION_REEVALUATED.recommended_contract.OD-5 (the controlling recommendation)",
+        "text": "NO RECOMMENDATION. This is a credential-provisioning authorization with security consequences outside this lane's competence, and MG-4 already forbids the tempting shortcut. Recorded as owner-only.",
+        "status": "RECOMMENDATION_NOT_RATIFICATION at authorship - and explicitly a DECLINED recommendation, not merely an unweighted one."
+      },
+      "owner_selected_decision": {
+        "option_selected": "YES_AUTHORIZE_UNDER_SEPARATE_AUTHORITY",
+        "concurs_with_technical_recommendation": false,
+        "divergence_note": "The technical recommendation offered NO position; the owner made an affirmative decision where none was recommended. This is recorded as a genuine owner decision, not as agreement or disagreement with a recommendation that did not exist.",
+        "effective_meaning": "The owner authorizes OPENING a SEPARATE, subsequent governance lane to establish a durable staging test principal sufficient for observing M11's authenticated cells (EP-2 and EP-3 under CC-6). This ratification record does NOT itself create, specify, or provision that principal.",
+        "required_scope_of_the_separate_authority": [
+          "STAGING-ONLY target - the principal must never be usable against, or confused with, a production identity.",
+          "MINIMUM PRIVILEGE - scoped to exactly what an authenticated M11 observation requires and no more.",
+          "CUSTODY - a named, accountable holder of the credential material.",
+          "ROTATION - a defined rotation cadence or trigger.",
+          "CREDENTIAL DELIVERY - a governed mechanism for how the credential reaches whatever runs the observation, without transiting insecure channels.",
+          "EVIDENCE - how the principal's creation, use, and state are evidenced for audit.",
+          "REVOCATION/EXPIRY - as appropriate to a staging test credential, so it does not become a standing, unmonitored access path."
+        ],
+        "hard_constraint_preserved": "The principal must NEVER be used as justification to lower or bypass the existing authentication boundary. This inherits MG-4 verbatim (v1.0.1 OD-5.constraint_inherited_not_reopened: 'the endpoints' auth requirement must NOT be relaxed to make measurement convenient. Lowering the boundary is not an option under OD-5'), and this ratification does not weaken, waive, or create an exception to it.",
+        "sequencing": {
+          "principal_creation_not_a_prerequisite_for_initial_M11": "The separate principal authority MAY be opened, but creating the principal itself must NOT be made a prerequisite for landing the initial OD-1-A2-based M11 implementation (Track A). OD-1's A2 selection already makes M11 non-vacuous - by giving EP-1 a genuinely failable anonymous cell - before OD-5's principal exists. Authenticated EP-2/EP-3 coverage (Track B) is completed separately and later."
+        }
+      },
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "what_this_ratification_does_NOT_do": [
+        "Does NOT authorize CREATING the staging test principal.",
+        "Does NOT specify who the principal is, what role it holds, or how it authenticates.",
+        "Does NOT open the separate authority lane itself - it authorizes that lane to be opened as a NEXT step.",
+        "Does NOT relax MG-4 or any existing authentication boundary in any respect."
+      ],
+      "repository_binding": "docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_v1.0.0.json OWNER_DECISIONS_REQUIRED[OD-3].two_halves.half_b (the provisioning question's origin, before the split) and MEASUREMENT_GAPS_RECORDED-equivalent MG-4 as cited throughout; docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.1.json OWNER_DECISIONS_AFTER_AMENDMENT.decisions[OD-5] (the split identifier, its precedence rule, and the inherited MG-4 constraint) and RECOMMENDATION_REEVALUATED.recommended_contract.OD-5; docs/ops/release/M11_HEALTH_CONTRACT_ADJUDICATION_AMENDMENT_v1.0.2.json CORRECTED_MATRIX_CELL_REACHABILITY and CORRECTED_OD1_OPTION_C_RELEASE_CONSEQUENCE (six matrix cells and one option-C consequence redirected to OD-5)."
+    }
+  ],
+  "M11_SC7_OWNER_RIDER": {
+    "status": "GATE-OWNERSHIP RIDER, NOT AN OWNER DECISION. Recorded here rather than as OD-6, because M11-SC-7 was never framed with options for the owner to choose among - it was an unassigned field.",
+    "anchor": "v1.0.0 M11_SUCCESS_CONTRACT.conditions_that_must_ALL_hold_for_a_future_M11_PASS[M11-SC-7]: 'GATES[M11].owner is assigned to a named owner.' state_at_BASE: 'unassigned.'",
+    "ledger_field_read_only_confirmation": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES[M11].owner is measured, read-only, as 'unassigned' at this base - re-verified by this record, not assumed.",
+    "owner_assignment": {
+      "assigned_owner": "Lorenzo Zanello",
+      "gate": "GATES[M11] (deployment smoke)",
+      "effective_meaning": "M11-SC-7 is satisfied in substance by this record: a named owner now exists for the gate. The field GATES[M11].owner in RELEASE_GATE_LEDGER_v1.0.0.json itself remains 'unassigned' in that file's own text, because this record does not edit RELEASE_GATE_LEDGER (out of scope for this docs-only lane; the ledger is a separate governed artifact)."
+    },
+    "what_this_rider_does_NOT_do": [
+      "Does NOT edit RELEASE_GATE_LEDGER_v1.0.0.json. That file's GATES[M11].owner field is not modified by this record and remains textually 'unassigned' until a governed ledger-update act applies this rider.",
+      "Does NOT itself close M11-SC-7 as a ledger-verifiable fact - it records the owner assignment that a future ledger-update act should apply.",
+      "Does NOT create a new gate, a new success condition, or a new owner-decision identifier."
+    ]
+  },
+  "CROSS_DECISION_COHERENCE": {
+    "rule": "These bindings are recorded explicitly so no reader has to re-derive how the five ratified decisions interact.",
+    "bindings": [
+      {
+        "id": "XD-1",
+        "statement": "OD-1's A2 selection makes M11 non-vacuous EVEN BEFORE OD-5's principal exists. Once implemented, an anonymous caller of /api/health/auth gets a genuinely failable cell (F-M11-13/M11-SC-8), which is the single thing the effective package's AF-M11-03 finding identified as missing."
+      },
+      {
+        "id": "XD-2",
+        "statement": "OD-2's EP-2 = BLOCKING is the SELECTED FINAL contract, but its authenticated execution is CONTINGENT on OD-5's capability becoming real. Until then, the authenticated EP-2 cell is recorded as unavailable/pending, never as a silent pass. This is sequencing, not a weaker selection."
+      },
+      {
+        "id": "XD-3",
+        "statement": "OD-3 is INDEPENDENT of OD-5 and contains NO principal authorization. The status-split decision can be implemented, tested, and deployed on its own schedule, entirely unblocked by whether or when OD-5's separate authority lane produces a principal."
+      },
+      {
+        "id": "XD-4",
+        "statement": "OD-4's NOT_EXEMPT selection does NOT permit any future lane to treat the global rate limiter as a dependable abuse control. Its KV-conditional presence and fail-open failure mode (F-M11-20) mean OD-1's provider-health touch (option A2) must carry its own bounded budget regardless of what the shared limiter does or does not do in a given deployment - see OD-1's owner_approved_implementation_rider."
+      },
+      {
+        "id": "XD-5",
+        "statement": "OD-5 authorizes ONLY the opening of a separate authority PROCESS for a durable staging principal - never the hosted act of creating, promoting, elevating, or using one. That act requires its own future authority, its own independent review, and its own owner confirmation, all downstream of this record."
+      }
+    ]
+  },
+  "NONBLOCKING_FINDING_CARRYOVER": {
+    "source": "The bounded v1.0.3 delta review, reported as BOUNDED_REVIEW_PASS_WITH_NONBLOCKING_FINDINGS with seven nonblocking findings. No committed review artifact exists in this branch; each finding was independently re-verified against the live four-artifact package before being consumed here, consistent with this lane's practice throughout.",
+    "rule": "None of these seven findings changes any owner selection above. They are consumed as WRITING DISCIPLINE for this record.",
+    "findings_consumed": [
+      {
+        "id": "NB-1",
+        "disposition": "Historical CONSUMED_CERTIFICATION / CONSUMED_DELTA_REVIEW quotations inside v1.0.1/v1.0.2/v1.0.3 (including quoted overstatements like 'no test at all') are HISTORICAL EVIDENCE of what a prior review said, not current effective semantics. This record does not rewrite or re-quote them as if correcting history; it cites only the CORRECTED, controlling text (e.g. CORRECTED_CELL_PROVENANCE_ARITHMETIC) where it needs EP-3's test-coverage status."
+      },
+      {
+        "id": "NB-2",
+        "disposition": "Avoided absolute completeness language about the nine OD-3->OD-5 provisioning references. This record states them as 'the nine references identified as of v1.0.3's measurement' rather than as a claim that no further such reference could ever be found."
+      },
+      {
+        "id": "NB-3",
+        "disposition": "Every citation in this record anchors to an exact JSON path plus, where a verbatim matters, the exact quoted text - never to a human-readable option label alone (e.g. 'option B') as the sole identifier. Independently re-verified: v1.0.0 OWNER_DECISIONS_REQUIRED[0].options[2] IS 'B. PRIVATE_DIAGNOSTIC' and its honest_consequence field IS the liveness-surface/MG-4 text v1.0.3's S-14 cites - no mislabeling was found in the live content on re-check, and this record's own OD-1 citations follow the path-plus-verbatim discipline regardless."
+      },
+      {
+        "id": "NB-4",
+        "disposition": "The '305/305' test claim in this record is grounded by an ACTUAL re-run of tests/health-auth-route.test.ts, tests/runtime-identity-observability.test.ts and tests/database-runtime-entrypoints.test.ts performed in THIS authoring turn (see VALIDATION), not cited from v1.0.3's commit message or any prior turn's attestation. ATTESTED != PROVEN."
+      },
+      {
+        "id": "NB-5",
+        "disposition": "Same as NB-4 - no test-execution claim in this record rests on a prior lane's say-so alone."
+      },
+      {
+        "id": "NB-6",
+        "disposition": "OD-2's ratification entry carries an explicit sufficiency_and_readiness_context citing F-M11-13's role in M11-SC-8, preserving OD-2's place in M11's overall sufficiency contract, and explicitly states this does NOT reroute provisioning back into OD-2 - OD-5 remains the sole provisioning decision."
+      },
+      {
+        "id": "NB-7",
+        "disposition": "Every reference in this record to EP-3's structural test relationship cites the actual mechanism - tests/database-runtime-entrypoints.test.ts:221 (ENTRY_POINTS = walk(APP).filter(isEntryPoint)...), :655 (the databaseReaching static-analysis filter), and :707-712 (the inventoried/reaching/contextualized/allowlisted count assertion) - with :718 named only as the comment annotating EP-3's specific addition to that assertion, never as the sole citation."
+      }
+    ]
+  },
+  "IMPLEMENTATION_DAG_EFFECT": {
+    "status": "DERIVABLE AFTER INDEPENDENT VERIFICATION OF THIS RECORD. Neither track is opened, scheduled, or executed by this record.",
+    "TRACK_A_M11_core_implementation": {
+      "items": [
+        "OD-1 A2 discriminator (FIS-M11-01): distinguish AS-1/AS-2/AS-3/AS-4 in lib/auth/identity.ts or the auth route.",
+        "A bounded, cacheable provider-health touch (FIS-M11-02), honoring the owner_approved_implementation_rider (short TTL/cache, own bounded budget, not unconditionally triggered per anonymous request).",
+        "AS-2 response semantics: 200 with an unauthenticated body, never 503.",
+        "OD-2 runner semantics: EP-1 and EP-2 BLOCKING, EP-3 NON_BLOCKING_RECORDED, with EP-2's authenticated evaluation gated on OD-5 capability per the interim recording rule.",
+        "OD-3 status split on /api/health/stella-preconditions: 200 for intentional-off, 503 otherwise.",
+        "OD-4 / M11-SC-6 semantics: health paths remain rate-limited; 429 always recorded INCONCLUSIVE.",
+        "Tests freezing every one of the above as committed controls (FIS-M11-03 and successors), including EP-3 controls the effective package records as currently absent."
+      ]
+    },
+    "TRACK_B_authenticated_observation_capability": {
+      "items": [
+        "A separate, dedicated authority governing a durable staging test principal (FIS-M11-06), scoped per OD-5's required_scope_of_the_separate_authority.",
+        "Independent review of that separate authority.",
+        "Owner confirmation of that separate authority's specifics.",
+        "Later provisioning of the principal under that authority - a hosted act, not a docs-only one.",
+        "Authenticated EP-2/EP-3 evidence collection once the principal exists, completing OD-2's EP-2 = BLOCKING target."
+      ]
+    },
+    "explicit_non_execution": "Neither track is executed, scheduled, or authorized to begin by this record. Both are named as an implementation DAG a FUTURE lane may open, contingent on independent verification of this ratification."
+  },
+  "explicit_non_authorizations": [
+    "This record does NOT authorize route.ts modification for any of the three health endpoints.",
+    "This record does NOT authorize proxy.ts modification, including any change to the rate limit's scope or behaviour.",
+    "This record does NOT authorize implementation of the AS-1..AS-4 error discriminator.",
+    "This record does NOT authorize implementation of the provider-health touch.",
+    "This record does NOT authorize implementation of any cache or TTL mechanism.",
+    "This record does NOT authorize any rate-limit change.",
+    "This record does NOT authorize any Vercel environment change.",
+    "This record does NOT authorize any deployment.",
+    "This record does NOT authorize any hosted smoke execution.",
+    "This record does NOT authorize creating a staging test principal.",
+    "This record does NOT authorize generating any credential.",
+    "This record does NOT authorize rotating any credential.",
+    "This record does NOT authorize any Supabase mutation.",
+    "This record does NOT edit RELEASE_GATE_LEDGER_v1.0.0.json, including its GATES[M11].owner field.",
+    "This record does NOT edit any of the four M11 artifacts (v1.0.0, v1.0.1, v1.0.2, v1.0.3). All four blobs are pinned and unchanged.",
+    "This record does NOT reopen B-1, B-2, B-D1, or B-D2.",
+    "This record does NOT authorize Stage-A, G2, or production.",
+    "OD-5 authorizes opening a separate governance lane only - it does NOT authorize that lane's hosted act.",
+    "External hosted mutations performed by this lane: NONE. Secrets exposed: NONE."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 5,
+    "expected_id_set": [
+      "OD-1",
+      "OD-2",
+      "OD-3",
+      "OD-4",
+      "OD-5"
+    ],
+    "expected_option_selections": {
+      "OD-1": "A2. PUBLIC_LIVENESS_WITH_A_REAL_UPSTREAM_TOUCH",
+      "OD-2": {
+        "EP-1": "BLOCKING",
+        "EP-2": "BLOCKING",
+        "EP-3": "NON_BLOCKING_RECORDED"
+      },
+      "OD-3": "SPLIT_STATUS_200_FOR_INTENTIONAL_OFF",
+      "OD-4": "NOT_EXEMPT",
+      "OD-5": "YES_AUTHORIZE_UNDER_SEPARATE_AUTHORITY"
+    },
+    "candidate_sha": "c9f42a33d922c7dfe2b10f07ad43ba07db9852c5",
+    "checks": [
+      "ratifications.length == 5",
+      "every id in ratifications is unique and equals expected_id_set exactly",
+      "no ratification invents an owner-decision identifier outside OD-1..OD-5",
+      "every ratification carries authority_recommendation, technical_recommendation, owner_selected_decision, status, repository_binding",
+      "every ratification.status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "OD-1.owner_selected_decision.AS-2_disposition == '200_UNAUTHENTICATED_BODY' AND the record states 503 remains PROHIBITED for AS-2",
+      "OD-2.owner_selected_decision.EP-2_conditional_executability names OD-5 as the precondition and forbids treating an unmet precondition as PASS",
+      "OD-3.owner_selected_decision.provisioning_cost == 'NONE' and states independence from OD-5",
+      "OD-4.owner_selected_decision.M11-SC-6_disposition.selection == 'INCONCLUSIVE_UNCONDITIONAL'",
+      "OD-5.owner_selected_decision does NOT authorize principal creation - see what_this_ratification_does_NOT_do",
+      "M11_SC7_OWNER_RIDER exists, is not one of the five ratifications, and does not edit RELEASE_GATE_LEDGER",
+      "CANDIDATE_BINDING.package_blob_pins has exactly 4 entries, one per M11 artifact",
+      "every companion_authorities entry's blob field matches CANDIDATE_BINDING.package_blob_pins for the same path",
+      "no secret, credential, token, connection string, project reference, email address or user identifier appears anywhere in this artifact",
+      "no gate identifier is created; M11_SC7_OWNER_RIDER references an existing condition (M11-SC-7), not a new one",
+      "final_state names implementation as NOT AUTHORIZED"
+    ],
+    "validation_method": "JSON parse, structural self-check executed against this document, byte-identity verification of all four M11 artifacts via git object reads at the candidate commit, referential integrity of every cited JSON path against live content, secret scan, repository-native authority gates, and a fresh re-run of the three health-related test suites in the authoring turn (not cited from an earlier one)."
+  },
+  "required_independent_review": "This record requires INDEPENDENT BOUNDED VERIFICATION before the M11 implementation DAG (Track A) or the separate staging-principal authority lane (Track B) may open. The verification is bounded to: the candidate and blob bindings, the five ratifications' fidelity to the owner's stated selections, the AS-2/M11-SC-6/OD-5 constraints stated as preserved, and the explicit_non_authorizations list. It is not a re-adjudication of the four M11 artifacts, which remain independently certified/reviewed as recorded in their own chains.",
+  "final_state": "OWNER_RATIFICATION_RECORDED__IMPLEMENTATION_NOT_AUTHORIZED",
+  "next_gate": "INDEPENDENT_BOUNDED_VERIFICATION_OF_M11_OWNER_RATIFICATION: verify this record's candidate/blob bindings and its fidelity to the owner's stated OD-1..OD-5 selections and the M11-SC-7 rider. Only after that verification may TRACK_A (M11 core implementation) and, separately, TRACK_B (the staging-principal authority lane) be opened. Neither track is opened by this record."
+}
