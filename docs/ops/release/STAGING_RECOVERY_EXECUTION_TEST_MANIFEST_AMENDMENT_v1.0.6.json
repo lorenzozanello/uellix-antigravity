@@ -1,0 +1,152 @@
+{
+  "manifest_id": "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.6",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json with docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4.json -- the package-subject bootstrap fix authored by mission CV1-RECOVERY-CERT-CONTRACT-BOOTSTRAP-SUBJECT-FIX-R4. Governs the delta of v1.0.6; the v1.0.5 manifest, test and battery remain as history.",
+  "dependencies": [
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5 -- blob 1ab223ac31ec76a7541ea6c49385eed491a6cc9e. NOT edited (immutable); SECTION_F3 is the base of SECTION_G3.",
+    "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.5 -- blob 5c64b82313e693b58bf94489fb88cb5106ddc844. NOT edited.",
+    "tests/release/staging-recovery-cert-store-durability.test.ts -- blob 3fe737e179bb799eba0b6fa726c58f1736aa8c26. NOT edited.",
+    "tests/release/staging-recovery-cert-store-durability.mutation-battery.mjs -- blob 230e7193c75e702fc460af17333560312d2977ec. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3 -- blob 111ed99dbd10cb108238aca37fedc7a5d6e64020. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4 -- added by the same act (blob pinned in v1.0.6 SECTION_G2).",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6 -- this manifest's controlling authority, added by the same act."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "SENT-NO-RECORD-FILE",
+      "purpose": "No path under the adjudication root or the retired occurrence root in the introducing tree; fixture records live only in private temporary git repositories."
+    },
+    {
+      "id": "SENT-NO-RESERVATION",
+      "purpose": "No attempt is reserved by this act, in particular not for 76a3d4c2 (SECTION_G4)."
+    },
+    {
+      "id": "SENT-INTRODUCING-VIEW-IS-GIT",
+      "purpose": "The introducing view of v1.0.6 is the git commit that adds it; tests that need it fail if v1.0.6 is not committed, instead of reading worktree bytes."
+    },
+    {
+      "id": "SENT-EVENT-A-POLICY-PENDING",
+      "purpose": "EVENT_A_POLICY PENDING in owner v1.0.4 and v1.0.5 SECTION_F10."
+    },
+    {
+      "id": "SENT-NO-SECRET-VALUE",
+      "purpose": "No password, token, DSN or connection string in the write set; verified by the secrets_scan exit gate."
+    }
+  ],
+  "known_conditions": [
+    "KC-V105-TEST-HEAD-STORE: the immutable v1.0.5 companion test asserts an empty store at HEAD; the first reservation commit turns it red; owner decision required before any reservation (v1.0.6 OF-PS-4, next_gate step 0).",
+    "KC-NEXT-SUBJECT: the next reservation subject is the protected canonical tip after this act is pushed; its package digest is derived and reported by the writing lane, never written inside the authority (the authority is COVERED by the package).",
+    "KC-GATES-OUTSIDE-THE-ENUM: eslint over the write set and the mutation battery run are executed and reported by the lane; the manifest schema exit-gate enum has no value for them."
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-PS-1",
+      "description": "Owner v1.0.4 verbatim and structured forms agree; blob pinned in SECTION_G2.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "PC-PS-2",
+      "description": "SECTION_G3 equals v1.0.5 SECTION_F3 except under exactly the SECTION_G3_DELTA paths (every difference declared, every declared path different).",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "PC-PS-3",
+      "description": "Every introducing-commit pin is the unique adding commit with its tree; the v1.0.6 introducing view is the git commit adding the whole write set, child of 76a3d4c2.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "PC-PS-4",
+      "description": "A package attempt for the protected tip is reservable (C1..C6); attempt then PASS is USABLE; reservation and outcome commits move the head without moving the subject.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "PC-PS-5",
+      "description": "The real repository: empty store at the v1.0.6 introducing commit; at HEAD a live guard (controlled environment, git fsck, valid store, clean history, every kind in a non-invalid state); with the 2026-09-24 provider state every kind needs provider protection.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "PC-PS-6",
+      "description": "All v1.0.5 controls of the shared interpreter (V3 derivation, controlled reads and git-rewrite attacks, ever-added history, attempts and states, provider evaluator, store integrity, kill matrix) re-run against SECTION_G3.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-PS-1",
+      "description": "H1 introducing amendment commit vs later covered test fix: the introducing commit is not reservable once it is not the tip.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-2",
+      "description": "H2 a PASS for digest A is not reused after a covered change produces digest B (NO_ATTEMPT).",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-3",
+      "description": "H3/H5/H6 a subject whose tree or digest was computed from another head, a wrong tree, a wrong digest (write time and read time).",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-4",
+      "description": "H4 stale or noncanonical candidate: not the provider tip, tip_observed mismatch (A11), side-branch candidate outside the canonical history.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-5",
+      "description": "H7 a result resolving the attempt of another subject.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-6",
+      "description": "H10 a live-disk mutation of an authority file does not change the introducing view; the v1.0.5 live-bytes construction would.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-7",
+      "description": "H11 rewrite witness and missing protection stop the reservation; a rewrite witness and a force-pushed canonical history stop consumption.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-8",
+      "description": "H12 a deleted historical outcome; H13 an open attempt suspends an earlier PASS.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-9",
+      "description": "F the store is outside every package prefix; adding a record leaves the digest unchanged; a covered file naming an existing record path is STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE at derivation and at consumption; the C6 closure comparison is tested directly (C6 itself is unreachable for well-formed records).",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-11",
+      "description": "B-2 a path containing TAB, LF or another control character (which git accepts) fails the derivation, so the S8 encoding cannot be forged into a digest collision; N-4 a shallow clone or a path added twice makes the introducing commit a STOP; C1 rejects a provider observation of another ref.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "NC-PS-10",
+      "description": "A record citing v1.0.4 SECTION_E3 or v1.0.5 SECTION_F3 is rejected; an ambiguously represented subject (A12) and a noncanonical package attempt (A11) stop in the kill matrix.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MUT-PS-1",
+      "description": "Kill matrix: disabling ANY single record check (W1..W13, A1..A12, R1, R2) lets at least one negative case through; a NOOP check survives.",
+      "test_file": "tests/release/staging-recovery-package-subject.test.ts"
+    },
+    {
+      "id": "MUT-PS-2",
+      "description": "Independent textual mutation battery: 99 semantic mutants (the v1.0.5 interpreter mutants re-run against this copy, plus PS1..PS13 and PS15..PS19 for the self-referential closure, A11, A12, the introducing commit and view (shallow, uniqueness), derivation at the candidate, path encoding, and reservation C1 (tip and ref), C2, C3 and the C6 closure comparison) must all be KILLED; the HARMLESS comment mutant must SURVIVE; original byte-identical; no residue.",
+      "test_file": "tests/release/staging-recovery-package-subject.mutation-battery.mjs"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}

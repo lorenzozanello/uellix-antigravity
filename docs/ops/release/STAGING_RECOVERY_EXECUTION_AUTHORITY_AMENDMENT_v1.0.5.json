@@ -1,0 +1,3806 @@
+{
+  "package_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.5",
+  "artifact_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5",
+  "authority_class": "APPEND_ONLY_RECOVERY_CERTIFICATION_STORE_DURABILITY_REMEDIATION__NOT_EXECUTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT__RECERT_ATTEMPT_RESERVATION__EVER_ADDED_STORE_INTEGRITY__CONTROLLED_GIT_READS__PROVIDER_ENFORCED_CANONICAL_REF__PACKAGE_SUBJECT_KIND__NO_GATE_WEAKENED__NO_OPERATION_ADDED__EVENT_A_POLICY_PENDING",
+  "append_only": true,
+  "mission_id": "CV1-RECOVERY-CERT-STORE-DURABILITY-REMEDIATION-R3",
+  "lane": "codex/cv1-recovery-integration-successor-r1",
+  "role": "RECOVERY_CERTIFICATION_STORE_DURABILITY_REMEDIATION_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "GRANT_ID": null,
+  "SECTION_F0_FRESHNESS": {
+    "BASE_SHA": "c057ff71415f0545e95003321c88ea224f6c26f8",
+    "BASE_TREE": "e8c9df0cae4289d91200bc81fa507fb85801fd21",
+    "branch": "codex/cv1-recovery-integration-successor-r1",
+    "pull_request": "https://github.com/lorenzozanello/uellix-antigravity/pull/221 (DRAFT, not merged)",
+    "measured": "2026-09-24: branch == HEAD == provider tip c057ff71 (gh api git/ref), worktree clean except the owner record of this lane, no file under the adjudication root or the retired occurrence root in any reachable commit (git log --all -- docs/ops/release/rca: empty).",
+    "immutable_predecessors": "v1.0.0..v1.0.4, their manifests, owner v1.0.0..v1.0.2 and every test of the chain are byte-identical (companion test)."
+  },
+  "SECTION_F1_RECERTIFICATION_CONSUMED": {
+    "source": "Independent recertification of c057ff71 (v1.0.4 + owner v1.0.2), lane CV1-RECOVERY-CERT-CONTRACT-REVOCATION-RECERT-R1, 2026-09-24, verdict RECOVERY_CERT_CONTRACT_REVOCATION_RECERT_FAIL (supplied second-hand by the owner; not materialized: no attempt existed, no contract could hold it).",
+    "blocking": [
+      {
+        "id": "RB-1",
+        "finding": "A materialized non-positive record can disappear: write_once_history inspected only paths PRESENT at H plus explicit deletes, so a FAIL dropped by a merge (-s ours, or a normal merge that resolves it away) leaves no delete and no combined entry and the PASS stays USABLE; replace refs still rewrite non-log reads (ls-tree, cat-file); a forged commit-graph hides a delete; a force-push of the canonical ref removes the FAIL from every reachable history.",
+        "closed_by": [
+          "SECTION_F3.ever_added_history",
+          "SECTION_F3.git_read_environment",
+          "SECTION_F3.canonical_store",
+          "SECTION_F18"
+        ]
+      },
+      {
+        "id": "RB-2",
+        "finding": "No obligation to materialize a non-positive outcome: a known FAIL reported outside the repository leaves a PASS usable; M-1 (v1.0.3 D12[0], v1.0.4 E8[0]), next_gate and E7 were outside the consumer registry (the patterns missed \"recertified PASS-class\", plurals and underscores).",
+        "closed_by": [
+          "SECTION_F2",
+          "SECTION_F3.attempt_contract",
+          "SECTION_F3.state",
+          "SECTION_F4",
+          "SECTION_F7",
+          "SECTION_F8",
+          "SECTION_F9"
+        ]
+      }
+    ],
+    "non_blocking": [
+      {
+        "id": "RNB-S4",
+        "finding": "S4/S5 wording \"those files\" and quoting ambiguous.",
+        "disposition": "CLOSED: SECTION_F3.subject_identity_derivation states every file set by role and quotes every grammar as a normative regular expression."
+      },
+      {
+        "id": "RNB-LIT",
+        "finding": "LITERAL_RE admitted \"./\" or \"../\" once only, so \"../../x.sql\" was not a runtime literal.",
+        "disposition": "CLOSED: runtime_literal grammar V3 admits one or more \"./\" / \"../\" segments; KS-A and KS-B digests are unchanged under V3 (companion test recomputes both)."
+      },
+      {
+        "id": "RNB-TOPICS",
+        "finding": "v1.0.4 OF-RV-8 said 22 RECOVERY topics; the allocation has 17 (17 RECOVERY, 7 CENSUS, 4 QUIESCE = 28).",
+        "disposition": "CORRECTED in SECTION_F6 and OF-SD-8; the companion test counts them."
+      },
+      {
+        "id": "RNB-ANCHOR",
+        "finding": "Topic anchors 21/25 were existence-only.",
+        "disposition": "Carried as disclosed (OF-SD-8); unchanged scope."
+      },
+      {
+        "id": "RNB-ENV",
+        "finding": "SECTION_E12 omitted core.autocrlf, .gitignore, UELLIX_PG_TESTS and the Node version.",
+        "disposition": "CLOSED as declarations in SECTION_F12.environment."
+      },
+      {
+        "id": "RNB-MUT",
+        "finding": "Recertifier mutants X1, X6, X10 survived; X14 (canonical containment) was declared EQUIVALENT and is not.",
+        "disposition": "X14: containment is now implied by the ever-added rule, which the battery proves load-bearing on its own merge-drop fixture, and the direct containment diagnostic is kept with its own control. X1/X6/X10: their definitions were not materialized to this lane (UNCONFIRMED); the new battery mutates every conjunct of the new interpreter instead."
+      },
+      {
+        "id": "RNB-GRAFT",
+        "finding": "GIT_GRAFT_FILE was a fixed, predictable path in the temporary directory, not checked for absence.",
+        "disposition": "CLOSED: a fresh private directory per process; the target path is checked absent before every controlled read (SECTION_F3.git_read_environment)."
+      }
+    ]
+  },
+  "SECTION_F1B_PRE_COMMIT_ADVERSARIAL_REVIEW": {
+    "source": "Independent adversarial review subagent of this lane, before commit (not a certification).",
+    "blocking": [
+      {
+        "id": "B1",
+        "finding": "Tampered git objects (a loose object rewritten under its id; forged pack index, multi-pack-index or alternates) hide a FAIL from every ordinary read; the draft relied on collision resistance.",
+        "closed_by": [
+          "SECTION_F3.git_read_environment.object_integrity",
+          "consumer_rule step (1)"
+        ]
+      },
+      {
+        "id": "B2",
+        "finding": "The history command walked the checkout HEAD, not the evaluated head H.",
+        "closed_by": [
+          "SECTION_F3.ever_added_history.command",
+          "SECTION_F3.ever_added_history.revision"
+        ]
+      },
+      {
+        "id": "B3",
+        "finding": "Discovery missed v1.0.0 next_gate (\"until that certification returns PASS\"), v1.0.3 SECTION_D13.HX-1 and the owner-record gates.",
+        "closed_by": [
+          "SECTION_F4.discovery_rule_3 (widened pattern, owner records scanned)"
+        ]
+      }
+    ],
+    "non_blocking": [
+      {
+        "id": "N1",
+        "finding": "A known PASS can be reserved after the fact.",
+        "disposition": "W12 date ordering and the briefing rule; residual process risk OF-SD-2."
+      },
+      {
+        "id": "N2",
+        "finding": "Activity witness without pagination; delete-and-recreate by rename not flagged.",
+        "disposition": "Every page required; more than one branch_creation is a rewrite."
+      },
+      {
+        "id": "N3",
+        "finding": "Call-form imports (require/import()) still match inside strings; an import after a comment or \";\" on one line is missed.",
+        "disposition": "Disclosed OF-SD-11 (fails closed for the first; the second is a parser limit like OF-RV-2)."
+      },
+      {
+        "id": "N4",
+        "finding": "Two same-kind lanes merged with one predecessor fork the chain and STOP the kind for ever.",
+        "disposition": "Disclosed OF-SD-12 (fail closed; liveness)."
+      },
+      {
+        "id": "N5",
+        "finding": "Catch-all shape code for attempts; A7 wording; git errors throw; landing of adjudications.",
+        "disposition": "Fixed in the interpreter and SECTION_F3."
+      },
+      {
+        "id": "N6",
+        "finding": "The package bootstrap was stated as exactly once.",
+        "disposition": "SECTION_F7.bootstrap restated."
+      }
+    ]
+  },
+  "SECTION_F2_OWNER_DECISION_BINDING": {
+    "owner_record": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json",
+    "owner_record_blob": "111ed99dbd10cb108238aca37fedc7a5d6e64020",
+    "decisions": {
+      "RECERT_ATTEMPT_RESERVATION_REQUIRED": "YES (SIGNED)",
+      "CANONICAL_CERT_STORE_FORCE_PUSH_POLICY": "PROVIDER_ENFORCED_NO_FORCE_PUSH_REQUIRED (SIGNED)",
+      "RECOVERY_CERT_REVOCATION_BINDING": "PACKAGE_DIGEST (owner v1.0.2, carried)",
+      "EVENT_A_POLICY": "PENDING"
+    },
+    "made_mechanical_by": [
+      "SECTION_F3.attempt_contract",
+      "SECTION_F3.state",
+      "SECTION_F3.canonical_store",
+      "SECTION_F3.consumer_rule"
+    ],
+    "not_decided_here": "EVENT_A_POLICY remains PENDING. No branch protection or ruleset is created, changed or deleted by this lane."
+  },
+  "SECTION_F3_CERTIFICATION_STORE_CONTRACT": {
+    "contract_id": "STAGING_RECOVERY_CERTIFICATION_ADJUDICATION_CONTRACT_V2",
+    "supersedes": "v1.0.4 SECTION_E3_ADJUDICATION_CONTRACT (STAGING_RECOVERY_CERTIFICATION_ADJUDICATION_CONTRACT_V1) as a whole. No record was ever written under V1 (SECTION_F0.measured); a record citing SECTION_E3 is rejected by W3/A3. The clauses of SECTION_E3 not changed here are restated below, so this section is complete on its own.",
+    "meaning": "The cited package closure was independently adjudicated with the recorded verdict under its cited governing authority. Nothing else.",
+    "attempt_meaning": "An independent recertification of the cited package closure was reserved before its review began and must be resolved by exactly one materialized adjudication. Nothing else.",
+    "not_executable_authority": "A record of either type authorizes NO act. Its authorizes field is the empty list, always.",
+    "record_types": {
+      "rule": "CLOSED ENUM. Every record carries record_type.",
+      "ADJUDICATION": "The materialized outcome of one reserved attempt, of any verdict class.",
+      "RECERT_ATTEMPT": "A write-once reservation of one independent recertification, materialized BEFORE the review begins (owner v1.0.3)."
+    },
+    "subject_kinds": {
+      "rule": "CLOSED ENUM of three kinds. RECOVERY_AUTHORITY_PACKAGE_RECERT is added (v1.0.4 OF-RV-1): the Recovery authority package itself, so that M-1, PS-2, HX-1, the next_gate sequence and the materializer-lane opening (SECTION_F7) are mechanical and obey attempts, revocation and contradiction like the other kinds. No OTHER.",
+      "kinds": {
+        "READONLY_CENSUS_AUTHORITY_RECERT": {
+          "covered_path_prefixes": [
+            "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_",
+            "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_"
+          ],
+          "toolchain_roots": [],
+          "absent_reference_policy": "STOP"
+        },
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": {
+          "covered_path_prefixes": [
+            "scripts/recovery/",
+            "tests/recovery/",
+            "tests/postgres/recovery-",
+            "docs/ops/release/STAGING_RECOVERY_OFFLINE_"
+          ],
+          "toolchain_roots": [
+            ".gitattributes",
+            "package.json",
+            "pnpm-lock.yaml",
+            "pnpm-workspace.yaml",
+            "tsconfig.json",
+            "vitest.config.ts"
+          ],
+          "absent_reference_policy": "STOP"
+        },
+        "RECOVERY_AUTHORITY_PACKAGE_RECERT": {
+          "covered_path_prefixes": [
+            "docs/ops/release/STAGING_RECOVERY_EXECUTION_",
+            "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_",
+            "tests/release/staging-recovery-"
+          ],
+          "toolchain_roots": [
+            ".gitattributes",
+            "package.json",
+            "pnpm-lock.yaml",
+            "pnpm-workspace.yaml",
+            "tsconfig.json",
+            "vitest.config.ts"
+          ],
+          "absent_reference_policy": "EXCLUDE"
+        }
+      },
+      "package_kind_note": "The package kind covers every Recovery authority layer, its manifests, the owner records and the Recovery release tests. Its records live under the adjudication root, which none of its prefixes covers, so materializing a record never changes the package digest. The digest of the tree that introduces this artifact cannot be written inside it (it covers this artifact): the reservation lane derives it (SECTION_F7.bootstrap).",
+      "absent_reference_policy": "STOP: a GOVERNING reference to a path absent at C fails the derivation (v1.0.4 behaviour). EXCLUDE: such a reference is not an input and is omitted; the Recovery tests name absent paths on purpose as negative fixtures. Excluding is fail-closed: if the path ever appears, it enters the closure and the package digest changes."
+    },
+    "subject_identity_derivation": {
+      "algorithm": "RCO_CLOSURE_DIGEST_V3",
+      "supersedes": "RCO_CLOSURE_DIGEST_V2 (v1.0.4). Differences, and nothing else: (1) the import grammar is anchored to import/export STATEMENTS, so an import-shaped string inside a test fixture is not an import (the v1.0.4 test holds such a string, which made the package kind underivable); (2) the runtime literal grammar admits one or more \"./\" or \"../\" segments (RNB-LIT); (3) absent_reference_policy per kind; (4) every file set is named by role (RNB-S4). KS-A and KS-B recompute to their v1.0.4 package digests.",
+      "steps": [
+        "S1 C must name a COMMIT object; tree_sha = C^{tree}; tree_sha never equals candidate_sha.",
+        "S2 COVERED = every path of the tree of C starting with a covered_path_prefix of the kind, byte-sorted, non-empty.",
+        "S3 IMPORTED = transitive closure over repository imports. Scanned files: the COVERED paths matching grammars.code_file, then every newly IMPORTED path matching grammars.code_file. In each scanned file (comments NOT removed) every match of grammars.import_specifier (flags g and m) yields the first non-empty capture group as the specifier. A specifier starting with \".\" resolves against the directory of the scanned file, one starting with \"@/\" against the repository root; others (packages, node: builtins) are not followed. Resolution tries import_resolution_suffixes in order; the first existing path wins; none existing fails the derivation.",
+        "S4 TOOLCHAIN = the kind's toolchain_roots (each must exist at C), plus every quoted string inside the brackets of each grammars.setup_files match in a toolchain root matching grammars.code_file (resolved against that root's directory; must exist), plus the S3 closure seeded with exactly those toolchain paths, labelled TOOLCHAIN. A path already assigned a role keeps it.",
+        "S5 RUNTIME_INPUT = for each COVERED path matching grammars.code_file (and ONLY those: not TOOLCHAIN, not IMPORTED), its text with grammars.block_comment matches removed and then grammars.line_comment matches replaced by their first group, scanned with grammars.runtime_literal (flag g); a capture starting with \".\" resolves against the file directory, any other against the repository root; the result is RUNTIME_INPUT if it exists at C, is not already assigned and does not match docs/ops/**.json. Captures that name no existing path are ignored (output paths, globs, identifiers). RUNTIME_INPUT files are never scanned further.",
+        "S6 GOVERNING = every distinct match of grammars.governing_reference in the full text (comments included) of every COVERED, TOOLCHAIN and IMPORTED path (not RUNTIME_INPUT), in byte order, not already assigned. An absent path follows the kind's absent_reference_policy.",
+        "S7 entries = COVERED, TOOLCHAIN, IMPORTED, RUNTIME_INPUT, GOVERNING, each byte-sorted by path, as {role, path, blob}.",
+        "S8 package_digest = lowercase hex sha256 over the UTF-8 concatenation of role TAB path TAB blob LF for each entry in order.",
+        "S9 governing_families = distinct prefixes of the GOVERNING paths up to and including the character before the first \"_v<digit>\" (the whole path when absent), byte-sorted; governing_family_members_at_candidate = every path of the tree of C starting with a family, byte-sorted, with its blob."
+      ],
+      "grammars": {
+        "import_specifier": "^[ \\t]*(?:import|export)\\b[^'\"`;]*?\\bfrom[ \\t]*['\"]([^'\"\\n]+)['\"]|^[ \\t]*import[ \\t]*['\"]([^'\"\\n]+)['\"]|\\b(?:require|import)[ \\t]*\\([ \\t]*['\"]([^'\"\\n]+)['\"][ \\t]*\\)",
+        "runtime_literal": "['\"`]((?:(?:\\.{1,2}\\/)+[A-Za-z0-9_@-][A-Za-z0-9_.@-]*(?:\\/[A-Za-z0-9_.@-]+)*|[A-Za-z0-9_@-][A-Za-z0-9_.@-]*(?:\\/[A-Za-z0-9_.@-]+)+)\\.[A-Za-z0-9]+)['\"`]",
+        "block_comment": "\\/\\*[\\s\\S]*?\\*\\/",
+        "line_comment": "(^|[^:\\\\])\\/\\/.*$",
+        "setup_files": "setupFiles\\s*:\\s*\\[([^\\]]*)\\]",
+        "governing_reference": "docs\\/ops\\/[A-Za-z0-9_./-]+\\.json",
+        "code_file": "\\.(ts|tsx|js|mjs|cjs)$"
+      },
+      "import_resolution_suffixes": [
+        "",
+        ".ts",
+        ".tsx",
+        ".js",
+        ".mjs",
+        ".cjs",
+        "/index.ts",
+        "/index.js"
+      ],
+      "v2_equivalence": "For KS-A and KS-B, V3 produces exactly the V2 entries, families, members and package_digest (companion test, from git)."
+    },
+    "verdict": {
+      "verdict_classes": [
+        "PASS",
+        "PASS_WITH_NONBLOCKING_FINDINGS",
+        "FAIL",
+        "BLOCKED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "positive_classes": [
+        "PASS",
+        "PASS_WITH_NONBLOCKING_FINDINGS"
+      ],
+      "non_positive_classes": [
+        "FAIL",
+        "BLOCKED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "non_positive_rule": "NON_POSITIVE = every verdict_class not in positive_classes (owner v1.0.2). PASS_WITH_NONBLOCKING_FINDINGS is POSITIVE (v1.0.3 SECTION_D9.verdict.PASS_CLASS, carried). The two lists partition verdict_classes exactly.",
+      "required_qualifier_tokens": [
+        "RECERT",
+        "RECERTIFICATION",
+        "CERT",
+        "CERTIFICATION",
+        "IC"
+      ],
+      "prefix_token_vocabulary": [
+        "STAGING",
+        "RECOVERY",
+        "OFFLINE",
+        "IMPLEMENTATION",
+        "FOCUSED",
+        "BOUNDED",
+        "SHORT",
+        "FULL",
+        "CENSUS",
+        "READONLY",
+        "QUIESCE",
+        "AUTHORITY",
+        "EVENT",
+        "CLASS",
+        "PACKAGE",
+        "INTEGRATION",
+        "SUCCESSOR",
+        "CONFORMANCE",
+        "CLEANROOM",
+        "INDEPENDENT",
+        "CONTRACT",
+        "REMEDIATION",
+        "REVOCATION",
+        "STORE",
+        "DURABILITY",
+        "RECERT",
+        "RECERTIFICATION",
+        "CERT",
+        "CERTIFICATION",
+        "IC"
+      ],
+      "vocabulary_delta": "REVOCATION, STORE and DURABILITY are added so that the literals of this chain's own package recertifications (for example RECOVERY_CERT_STORE_DURABILITY_RECERT_PASS) parse strictly. Nothing is removed.",
+      "version_token_pattern": "^V[0-9]+$",
+      "literal_rule": {
+        "positive": "A record whose verdict_class is POSITIVE must carry a literal that parses STRICTLY to that class: split on \"_\", the class is the longest verdict_class forming a proper suffix of the tokens, the prefix is non-empty, its LAST token is one of required_qualifier_tokens and EVERY prefix token is in the CLOSED prefix_token_vocabulary or matches version_token_pattern. Anything else STOPS (STOP_VERDICT_LITERAL_MISMATCH).",
+        "non_positive": "A record whose verdict_class is NON-POSITIVE carries the adjudicator literal VERBATIM as opaque evidence: a non-empty ASCII [A-Z0-9_]+ string whose tokens do NOT END with the tokens of any positive class. A positive-parsing literal on a non-positive record STOPS (STOP_VERDICT_LITERAL_MISMATCH). A literal outside the closed classes is mapped by the materializer to the non-positive class the adjudicator report states; never to a positive class."
+      },
+      "class_consistency": {
+        "PASS": "blocking_findings_count = 0, blocking_findings empty, nonblocking count 0",
+        "PASS_WITH_NONBLOCKING_FINDINGS": "blocking_findings_count = 0, blocking_findings empty, nonblocking count >= 1",
+        "FAIL": "blocking_findings_count >= 1 and equals the length of blocking_findings",
+        "BLOCKED": "blocking_findings_count equals the length of blocking_findings (may be 0)",
+        "INSUFFICIENT_EVIDENCE": "blocking_findings_count equals the length of blocking_findings (may be 0)",
+        "stop": "STOP_VERDICT_CLASS_INCONSISTENT"
+      }
+    },
+    "findings": {
+      "rule": "Every nonblocking finding reported is recorded OPEN (exact count, unique non-empty ids and summaries). Every blocking finding reported is recorded as {id, summary} (unique non-empty ids).",
+      "closure": "Only a later ADJUDICATION of the SAME kind may list, in closes_predecessor_findings, ids of nonblocking findings carried by the most recent earlier ADJUDICATION of that kind in chain order (attempts carry no findings)."
+    },
+    "provenance": {
+      "roles": [
+        "candidate_author",
+        "independent_adjudicator",
+        "materializer"
+      ],
+      "lane_id_grammar": "^[A-Z0-9]+(-[A-Z0-9]+)*$ (ASCII upper-case letters, digits and single hyphens). Anything else STOPS (STOP_PROVENANCE_IDENTITY_MALFORMED). The same grammar applies to attempt_id, reservation.reserved_by.lane_id and reservation.adjudicator_lane_id.",
+      "identity_key": "lane_id with every \"-\" removed. The three adjudication identity keys must be pairwise distinct (STOP_PROVENANCE_NOT_INDEPENDENT). It does not and cannot prove that distinct ids are distinct actors.",
+      "independence_basis": "PROCESS_GOVERNED (exactly this value).",
+      "recert_scope": {
+        "values": [
+          "FULL_SUBJECT",
+          "BOUNDED_DELTA_OVER_PRIOR_CERTIFIED_LAYERS",
+          "FOCUSED_REMEDIATION"
+        ],
+        "scope_basis_rule": "FULL_SUBJECT has an empty scope_basis; every other scope a non-empty list of non-empty strings (STOP_RECERT_SCOPE_UNDECLARED)."
+      },
+      "evidence_basis": {
+        "identity_facts_basis": "MATERIALIZER_REDERIVED",
+        "verdict_and_findings_basis": "ADJUDICATOR_REPORTED_SECOND_HAND",
+        "materializer_reproduced_adjudication_evidence": false
+      },
+      "adjudicator_subject_binding": "independent_adjudicator.examined_candidate_sha and examined_tree_sha equal subject.candidate_sha and subject.tree_sha (STOP_RECERT_SUBJECT_MISMATCH)."
+    },
+    "path_and_identity": {
+      "adjudication_root": "docs/ops/release/rca/",
+      "kind_path_codes": {
+        "READONLY_CENSUS_AUTHORITY_RECERT": "CENSUS",
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": "OFFLINE",
+        "RECOVERY_AUTHORITY_PACKAGE_RECERT": "PACKAGE"
+      },
+      "adjudication_path": "docs/ops/release/rca/<KIND_CODE>/<package_digest>/<record_digest>.json",
+      "attempt_path": "docs/ops/release/rca/<KIND_CODE>/<package_digest>/a-<record_digest>.json",
+      "record_digest": "lowercase hex sha256 over the canonical COMPACT JSON of the parsed record (object keys sorted recursively by code point, no insignificant whitespace, UTF-8). Content-addressed: the file name names the digest of its own content.",
+      "path_length_rule": "At most 170 characters repository-relative (Windows MAX_PATH, CLAUDE.md section 9): the longest form, an attempt of kind PACKAGE or OFFLINE, is 165.",
+      "stop": "STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH"
+    },
+    "store_integrity": {
+      "rule": "EVERY git entry under adjudication_root at H is a candidate record, whatever it claims to be. The store is VALID only if every entry: (1) is a regular file (mode 100644); (2) has the path shape adjudication_root/KIND_CODE/<64 hex>/<64 hex>.json (an ADJUDICATION) or adjudication_root/KIND_CODE/<64 hex>/a-<64 hex>.json (a RECERT_ATTEMPT) with KIND_CODE in kind_path_codes; (3) parses as JSON and its bytes are EXACTLY the canonical pretty serialization of the parsed value (keys sorted recursively by code point, two-space indentation, LF, one trailing LF); (4) has record_type equal to the type its file-name form names; (5) has a subject_kind whose kind_path_codes entry equals the KIND_CODE directory; (6) has subject.package_digest equal to its directory digest and record_digest equal to the 64 hex of its file name.",
+      "stop": "STOP_ADJUDICATION_STORE_INVALID for EVERY kind (root-wide).",
+      "repair": "None by this contract: entries are write-once. Only a later independently certified amendment with an owner record may define a repair."
+    },
+    "canonical_serialization": "File bytes = canonical pretty serialization; record_digest = sha256 of the canonical COMPACT serialization of the same parsed value.",
+    "chain": {
+      "rule": "All records of one subject_kind, of BOTH record types and every verdict class, form ONE chain. chain.predecessor is null for the first record of the kind, otherwise {path, record_digest} of the chain TIP at write time.",
+      "read_time_integrity": "For each kind: exactly one root; every predecessor names a record that EXISTS at H under the root whose recomputed record_digest equals the reference; exactly one tip; every record reachable from the tip (no orphan, fork or cycle). Otherwise STOP_CHAIN_INTEGRITY_VIOLATED.",
+      "order": "Chain position is the ONLY ordering of records. No timestamp, filename, author assertion or date orders them."
+    },
+    "git_read_environment": {
+      "rule": "EVERY git read whose result a consumer or materializer relies on (history, tree listing, blob bytes, ancestry, shallow and object-format checks) runs in the controlled environment below. A mechanism that cannot be neutralized is a STOP, never a warning (owner brief R3-2).",
+      "environment": {
+        "construction": "Built from NOTHING, never by copying and filtering the parent environment (a case-sensitive deny-list is bypassable on Windows). Copied from the parent: PATH, SystemRoot, TEMP, TMP (only what the platform needs to start git). Set: HOME, USERPROFILE and XDG_CONFIG_HOME to a fresh private directory; GIT_CONFIG_NOSYSTEM=1; GIT_CONFIG_GLOBAL=an empty file in that directory; GIT_NO_REPLACE_OBJECTS=1; GIT_GRAFT_FILE=a path inside a fresh private directory, checked ABSENT before every read; GIT_NO_LAZY_FETCH=1; GIT_TERMINAL_PROMPT=0; GIT_PAGER=cat; GIT_OPTIONAL_LOCKS=0. Nothing else: in particular no inherited GIT_DIR, GIT_WORK_TREE, GIT_OBJECT_DIRECTORY, GIT_ALTERNATE_OBJECT_DIRECTORIES, GIT_NAMESPACE, GIT_REPLACE_REF_BASE, GIT_SHALLOW_FILE, GIT_CONFIG_PARAMETERS, GIT_CONFIG_COUNT/KEY/VALUE or GIT_INDEX_FILE.",
+        "per_command_flags": [
+          "--no-replace-objects",
+          "-c core.commitGraph=false",
+          "-c core.useReplaceRefs=false",
+          "-c log.showRoot=true",
+          "-c log.follow=false",
+          "-c diff.renames=false",
+          "-c diff.relative=false",
+          "-c log.showSignature=false",
+          "-c core.quotePath=false",
+          "-c color.ui=false",
+          "-c core.fsmonitor=false"
+        ],
+        "output": "NUL-separated (-z) machine output only, parsed as bytes; --format with explicit fields; --no-abbrev."
+      },
+      "self_check": "Before relying on any read: (a) git config --list --show-scope under the environment lists no system or global scope entry; (b) for every pinned key, the effective value is the pinned value (command-line scope wins over repository and included configuration); (c) no fsck.* key is effective (defence in depth for object_integrity); (d) git rev-parse --show-object-format prints sha1; (e) the graft path is absent. Any failure: STOP_GIT_READ_ENVIRONMENT_UNCONTROLLED. A git read that errors at any step is a STOP of the consumer, never a skipped check.",
+      "object_integrity": {
+        "rule": "Pre-commit review B1. git does NOT re-hash an object on ordinary reads (parent walk, ls-tree, cat-file --batch): a loose object rewritten in place under its original id, a forged pack index or multi-pack-index, or an alternate object store can change what a commit, tree or blob says while every id stays the same. Therefore, before any other read, git fsck --full --no-dangling --no-progress runs under the controlled environment and must exit 0 (it re-hashes every loose and packed object, including alternates, and verifies pack indexes). Any error: STOP_GIT_OBJECT_STORE_CORRUPT.",
+        "measured": "A merge -s ours commit rewritten in place (same id, second parent removed) hides the side-branch add of a FAIL from the controlled log and from merge-base --is-ancestor; fsck reports \"hash mismatch\" (exit 3); an fsck.skipList naming the forged id does not suppress it, and an fsck.<id>=ignore naming hashMismatch is rejected by git (fatal). Cost on this repository (about 21 600 packed objects): 77 s, exit 0 (2026-09-24)."
+      },
+      "neutralized_mechanisms_measured": {
+        "replace_refs": "refs/replace/* rewrites log AND ls-tree/cat-file in a default read; neutralized by --no-replace-objects + GIT_NO_REPLACE_OBJECTS + core.useReplaceRefs=false (companion test: log and ls-tree).",
+        "grafts": "GIT_DIR/info/grafts hides parents in a default read; neutralized by GIT_GRAFT_FILE pointing at an absent path (companion test).",
+        "commit_graph": "A forged commit-graph (parent pointer patched in CDAT) hides a delete and re-add from default log; neutralized by core.commitGraph=false, which makes git read parents from the commit objects (companion test forges the file).",
+        "log_showRoot": "A repository log.showRoot=false hides the root commit add; neutralized by -c log.showRoot=true (companion test).",
+        "aliases": "An alias cannot shadow a built-in command (git ignores alias.log); the controlled reads call built-ins only (companion test).",
+        "repository_and_included_config": "Every semantics-affecting key the reads use is pinned with -c, which takes precedence over repository config and include/includeIf files (companion test: diff.renames, core.useReplaceRefs, log.showRoot via include.path).",
+        "inherited_environment": "GIT_CONFIG_PARAMETERS, GIT_CONFIG_COUNT/KEY/VALUE, GIT_DIR and GIT_NAMESPACE in the parent environment do not reach the controlled reads (companion test).",
+        "shallow": "A shallow repository hides history: git rev-parse --is-shallow-repository must print false (STOP_ADJUDICATION_HISTORY_UNVERIFIABLE).",
+        "partial_clone": "A missing object is an error, never fetched (GIT_NO_LAZY_FETCH=1): fail closed.",
+        "tampered_objects_and_alternates": "A loose object rewritten under its id, a forged pack index or multi-pack-index, and objects supplied through objects/info/alternates are NOT verified by ordinary reads (the v1.0.5 draft wrongly relied on collision resistance here); they are neutralized by object_integrity (git fsck --full), measured on a forged loose merge object (companion test)."
+      },
+      "not_neutralizable_found": "None among the mechanisms above once object_integrity is included. A future mechanism found not neutralizable is a STOP of every consumer until a certified amendment handles it."
+    },
+    "ever_added_history": {
+      "rule": "R3-1: let U be the union of every path under the adjudication root that was ever ADDED in the FULL reachable history of the consumer head H (which contains the canonical tip and the store genesis). EVERY path in U: (1) is present at H; (2) has at H the blob that its single ADD introduced; (3) has exactly ONE add entry, in a non-merge commit, with mode 100644; (4) has ZERO modify, delete, type-change, rename or copy entries; (5) has ZERO merge (combined) entries; and (6) passes store_integrity at H. Conversely every path under the root at H is in U. Violations are root-wide.",
+      "command": "git <controlled flags> log -z --full-history --no-renames --cc --raw --no-abbrev --format=%x01%H%x20%P <H> -- :(top,literal)<adjudication_root>",
+      "revision": "Pre-commit review B2: the walk names H explicitly (the draft walked the checkout HEAD, so a consumer evaluating H while its checkout stood on an older commit could miss a merge drop in H). The file listing is git ls-tree -r -z --full-tree <H> -- <adjudication_root>. History and listing therefore describe the same commit, independently of the checkout and of the working directory.",
+      "parse": "Records start with \\x01 followed by the commit and its parents; a non-merge entry is \":<src mode> <dst mode> <src oid> <dst oid> <status>\" NUL <path> NUL; a merge (combined) entry starts with \"::\" (one mode and oid per parent plus the result) NUL <path> NUL.",
+      "why": "v1.0.4 checked only paths PRESENT at H: a record dropped by a merge (-s ours, or a normal merge resolving it away) leaves no delete and no combined entry, so it vanished silently (RB-1). A path that was ever added is never allowed to be absent or different at H, whatever the merge did. --full-history walks every parent of every merge, so the side commit that added the dropped record is always listed.",
+      "proven_against": "companion test, real DAGs: merge -s ours drop, normal merge then git rm, evil merge, add/add on two branches, delete and restart, rename, modify, legitimate side-branch add merged normally, root-commit add, forged commit-graph, replace (log and ls-tree), info/grafts, shallow clone, local log.showRoot=false.",
+      "stop": "STOP_ADJUDICATION_HISTORY_VIOLATED (root-wide); shallow: STOP_ADJUDICATION_HISTORY_UNVERIFIABLE."
+    },
+    "canonical_store": {
+      "CANONICAL_ADJUDICATION_REF": "refs/heads/codex/cv1-recovery-integration-successor-r1",
+      "transitional": "Unchanged from v1.0.4: the ref is moved only by a later independently certified amendment; a deleted or renamed ref STOPS every consumer.",
+      "STORE_GENESIS": {
+        "commit": "c057ff71415f0545e95003321c88ea224f6c26f8",
+        "rule": "The pinned last governed tip: the adjudication root is empty at this commit (no record was ever written before this amendment)."
+      },
+      "monotonicity_rule": "R3-3. Immediately before evaluation the consumer obtains, from the PROVIDER (GitHub REST, read-only), the tip of CANONICAL_ADJUDICATION_REF (never from a local ref, which local history rewrites can move) and the protection facts of provider_protection. It then requires, with controlled reads: (a) the provider-observed ref name equals CANONICAL_ADJUDICATION_REF; (b) STORE_GENESIS is an ancestor of (or equal to) the provider tip; (c) for EVERY RECERT_ATTEMPT at H, its canonical_store.tip_observed_at_reservation is an ancestor of (or equal to) the provider tip, so the canonical history never moved backwards past a reservation; (d) the provider tip is an ancestor of (or equal to) H, so the canonical history, including any record ever added on it, is inside the history ever_added_history inspects; (e) provider_protection evaluates PASS; (f) the provider activity witness shows no force_push and no branch_deletion of the ref. (b) or (c) failing: STOP_CANONICAL_STORE_NOT_MONOTONIC. (d): STOP_ADJUDICATION_STORE_STALE. (e): STOP_PROVIDER_PROTECTION_REQUIRED. (f): STOP_CANONICAL_STORE_REWRITTEN. (a): STOP_CANONICAL_STORE_REF_MISMATCH.",
+      "containment_diagnostic": "Every entry under the root at the provider tip is present at H with the same blob (implied by (d) and ever_added_history; kept as a direct diagnostic with its own control; STOP_ADJUDICATION_STORE_STALE).",
+      "provider_protection": {
+        "rule": "PASS iff at least one form holds; anything else (including a provider read error) is STOP_PROVIDER_PROTECTION_REQUIRED.",
+        "form_ruleset": "GET repos/{o}/{r}/rules/branches/{branch} contains a rule of type non_fast_forward AND a rule of type deletion carrying the SAME ruleset_id, and GET repos/{o}/{r}/rulesets/{ruleset_id} has enforcement \"active\", target \"branch\", bypass_actors an empty array, and conditions.ref_name.include containing CANONICAL_ADJUDICATION_REF or \"~ALL\".",
+        "form_classic": "GET repos/{o}/{r}/branches/{branch}/protection returns allow_force_pushes.enabled false, allow_deletions.enabled false and enforce_admins.enabled true.",
+        "activity_witness": "GET repos/{o}/{r}/activity?ref=<CANONICAL_ADJUDICATION_REF>, read through EVERY page, lists no entry with activity_type force_push or branch_deletion and at most ONE branch_creation (a second creation means the ref was deleted or renamed away and recreated). A supplementary witness only: it is NOT sufficient without protection (its retention is the provider's), and it is necessary so that a rewrite that happened while protection was off is not ignored when it is still visible.",
+        "measured_2026_09_24": {
+          "classic_protection": "HTTP 404 \"Branch not protected\"",
+          "rules_for_branch": "[] (HTTP 200)",
+          "repository_rulesets": "[] (HTTP 200, includes_parents=true)",
+          "branch_protected_flag": false,
+          "provider_tip": "c057ff71415f0545e95003321c88ea224f6c26f8",
+          "activity": [
+            {
+              "activity_type": "push",
+              "before": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+              "after": "c057ff71415f0545e95003321c88ea224f6c26f8"
+            },
+            {
+              "activity_type": "branch_creation",
+              "before": "0000000000000000000000000000000000000000",
+              "after": "a9ddc4d2c217921b015d0895ad008659afa4d418"
+            }
+          ],
+          "repository": "public, owned by a User account; the viewer has admin (NOT used)",
+          "evaluation": "STOP_PROVIDER_PROTECTION_REQUIRED"
+        }
+      },
+      "why_no_repository_only_substitute": [
+        "A pin of the \"last governed tip\" written into the repository lives inside the very ref it is meant to protect: a force-push replaces the pin together with the history it pins.",
+        "A FAIL materialized and then removed by a force-push between two observations leaves no reachable object: git content cannot prove that an unreachable commit never existed (owner v1.0.3), and no clone is obliged to have fetched it.",
+        "Attempt records carry tip_observed_at_reservation, but they are themselves in the rewritable ref; they detect a rewrite only when they survive it.",
+        "Local reflogs, other clones and CI caches are not governed, not complete and not shared; treating them as the store would make the result depend on which machine evaluates.",
+        "Therefore the only sound guarantee is the provider refusing the rewrite: a ruleset (or classic protection) on the canonical ref, read back read-only by every consumer."
+      ]
+    },
+    "attempt_contract": {
+      "rule": "Owner v1.0.3. Every governed independent recertification of any subject kind has exactly one RECERT_ATTEMPT, materialized on the canonical ref by a reservation lane BEFORE the review begins, and resolved by exactly one ADJUDICATION of any verdict class, materialized by a separate lane. An adjudication without an attempt is invalid. An independent report outside the repository is not consumable; while its attempt is unresolved every positive certification of that package_digest is suspended (STOP_RECERT_ATTEMPT_OPEN).",
+      "binding": "attempt_id; subject_kind; subject.{candidate_sha, tree_sha, package_digest, digest_algorithm}; prior_state.{state, disposition_status} (the state of that package_digest computed over the chain prefix before the attempt); chain.predecessor (the chain tip at reservation); canonical_store.{ref, tip_observed_at_reservation}; reservation.{reserved_by, adjudicator_lane_id, reservation_date}.",
+      "validation_order": [
+        "A1 subject_kind in the closed enum (STOP_UNKNOWN_SUBJECT_KIND).",
+        "A2 keys exactly record_schema.RECERT_ATTEMPT at every level, record_type RECERT_ATTEMPT, reservation_date YYYY-MM-DD (STOP_RECERT_ATTEMPT_SHAPE).",
+        "A3 contract names this artifact, record_schema.section and its blob (STOP_ADJUDICATION_CONTRACT_MISMATCH).",
+        "A4 authority_class, empty authorizes, exact attempt_meaning (STOP_ADJUDICATION_CLAIMS_AUTHORITY).",
+        "A5 candidate_sha 40 lowercase hex (STOP_CANDIDATE_SHA_MALFORMED); path is the attempt_path of its content (STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH); WRITE-TIME: the path is free (STOP_ADJUDICATION_PATH_EXISTS).",
+        "A6 subject equals the V3 re-derivation at the candidate (candidate and a distinct tree: STOP_CANDIDATE_SHA_MISMATCH; tree: STOP_TREE_SHA_MISMATCH; digest algorithm and package_digest: STOP_PACKAGE_DIGEST_MISMATCH) and, for a known subject, SECTION_F5.",
+        "A7 attempt_id, reserved_by.lane_id and adjudicator_lane_id match the lane-id grammar (STOP_PROVENANCE_IDENTITY_MALFORMED); the identity key of attempt_id (hyphens removed) is unique among the attempts of the store (STOP_RECERT_ATTEMPT_ID_DUPLICATE).",
+        "A8 canonical_store.ref equals CANONICAL_ADJUDICATION_REF and tip_observed_at_reservation is 40 lowercase hex (STOP_CANONICAL_STORE_REF_MISMATCH).",
+        "R1 READ-TIME ONLY: ever_added_history (STOP_ADJUDICATION_HISTORY_VIOLATED). R2 READ-TIME ONLY: chain.read_time_integrity of the kind (STOP_CHAIN_INTEGRITY_VIOLATED). Both run before A9, which reads the chain.",
+        "A9 prior_state equals the state and disposition_status of subject.package_digest computed over the records of the kind that PRECEDE the attempt in chain order (STOP_RECERT_ATTEMPT_PRIOR_STATE_MISMATCH), and that state is not OPEN_ATTEMPT: one open attempt per package_digest at a time (STOP_RECERT_ATTEMPT_ALREADY_OPEN).",
+        "A10 WRITE-TIME ONLY: predecessor is the chain tip with its digest, or null when the kind has none (STOP_CHAIN_PREDECESSOR_MISMATCH); tip_observed_at_reservation equals the provider tip read at reservation and the reservation lane records that read."
+      ],
+      "resolution": "W12 (both times; a later attempt cannot be named: its record digest would depend on the adjudication that names it): an ADJUDICATION names resolves_attempt {path, record_digest, attempt_id} of a RECERT_ATTEMPT that exists at H, of the same kind, whose recomputed record_digest and attempt_id match, that PRECEDES the adjudication in chain order, whose subject candidate_sha, tree_sha and package_digest equal the adjudication subject, and whose adjudicator_lane_id has the same identity key as provenance.independent_adjudicator.lane_id, and whose reservation_date (YYYY-MM-DD) is not later than independent_adjudicator.adjudication_date (STOP_RECERT_ATTEMPT_RESOLUTION_INVALID). W13 (both times): no other ADJUDICATION at H resolves the same attempt (STOP_RECERT_ATTEMPT_DOUBLY_RESOLVED). One adjudication names one attempt by construction, so no outcome resolves two attempts and no attempt has two outcomes.",
+      "landing": "Attempts AND adjudications are added to the canonical ref (SECTION_F7); a record on any other ref is not in the store the consumer reads.",
+      "briefing": "Process rule (pre-commit review N1): the reservation lane hands the adjudicator the attempt_id before the review starts, and the adjudicator report cites it; W12 checks that the reservation date does not follow the adjudication date. Reservation after a known outcome remains a process breach that the record format cannot exclude (OF-SD-2).",
+      "materialization_obligation": "R3-5. The adjudicator may stay read-only; the outcome it reports is materialized by a separate lane, whatever its class. Until then the attempt is OPEN and every consumer of that package_digest STOPS (STOP_RECERT_ATTEMPT_OPEN): lack of materialization is a STOP, not an absence of evidence. A reservation lane may not reserve a second attempt for the same package_digest while one is open (A9). A recertification run without a reserved attempt is ungoverned: it cannot produce a record (W12), and its outcome, if known, is reported to the owner."
+    },
+    "state": {
+      "rule": "For kind K and package_digest P, over the records of K whose subject.package_digest = P in chain order: attempts A(P), adjudications D(P); disposition_status(P) over D(P) as below. Then state(P) is the FIRST that applies: CONTRADICTED (disposition CONTRADICTED); RESOLVED_NON_POSITIVE (disposition REVOKED or NEGATIVELY_ADJUDICATED); OPEN_ATTEMPT (some attempt of A(P) is resolved by no adjudication); NO_ATTEMPT (A(P) empty); RESOLVED_PASS (otherwise: every attempt resolved and disposition CERTIFIED).",
+      "stops": {
+        "CONTRADICTED": "STOP_CONTRADICTORY_CERTIFICATION",
+        "RESOLVED_NON_POSITIVE": "STOP_CERTIFICATION_REVOKED when REVOKED, STOP_NOT_CERTIFIED when NEGATIVELY_ADJUDICATED",
+        "OPEN_ATTEMPT": "STOP_RECERT_ATTEMPT_OPEN",
+        "NO_ATTEMPT": "STOP_NOT_CERTIFIED",
+        "RESOLVED_PASS": "none (currency follows)"
+      },
+      "suspension": "OPEN_ATTEMPT suspends EVERY earlier positive adjudication of P, whatever its candidate SHA: PASS, then an attempt, then no result is STOP_RECERT_ATTEMPT_OPEN; PASS, attempt, FAIL / BLOCKED / INSUFFICIENT_EVIDENCE is REVOKED; PASS, attempt, PASS is usable only once the second attempt is resolved.",
+      "disposition_status": {
+        "NOT_ADJUDICATED": "D(P) empty.",
+        "NEGATIVELY_ADJUDICATED": "D(P) has only non-positive adjudications.",
+        "REVOKED": "D(P) has a positive adjudication and a LATER non-positive one, and no positive adjudication follows the first non-positive one (owner v1.0.2: every positive for P, any candidate SHA).",
+        "CONTRADICTED": "D(P) has a positive adjudication that FOLLOWS a non-positive one. No latest-wins.",
+        "CERTIFIED": "D(P) has positive adjudications only."
+      },
+      "recovery_from_revoked_or_contradicted": "Only a materially new package_digest independently adjudicated positive, or a future owner adjudication made mechanical by a later certified amendment (owner v1.0.2). Neither is performed here."
+    },
+    "currency": {
+      "rule": "A RESOLVED_PASS closure P is CURRENT at H when the V3 closure derived at H has package_digest P and the governing-family rule holds against the LATEST positive adjudication for P: every path at H in a recorded governing family either has its recorded blob, or is a declared layer of the kind with its declared blob (blob null: only this artifact itself), and every recorded member still exists. Otherwise STALE (STOP_NOT_CURRENT); SUBJECT_NOT_PRESENT when COVERED at H is empty.",
+      "declared_non_invalidating_governing_layers": {
+        "rule": "Mechanical: exactly the governing-family members present in the tree that introduces this artifact and not recorded at the known candidate, each with its blob and a reason. RECOVERY_AUTHORITY_PACKAGE_RECERT has none: its own layers are COVERED, so any new layer changes its package digest.",
+        "READONLY_CENSUS_AUTHORITY_RECERT": [
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+            "blob": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+            "reason": "Owner OD-3 event-class narrowing; OD-5/OD-6 unchanged (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+            "blob": "e4030e734b96ca8b0e68372a4e98111782e8f76e",
+            "reason": "Owner revocation-binding decision; governs adjudication consumption, not the subjects (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json",
+            "blob": "111ed99dbd10cb108238aca37fedc7a5d6e64020",
+            "reason": "Owner attempt-reservation and canonical-store decisions, co-introduced with this artifact; it cites this artifact by path only, so its blob is pinned here without circularity. It governs record consumption, not the subjects."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+            "blob": "40c5cbba0f9e485cb022ffa0a733e1905e0aa88c",
+            "reason": "Recovery event-class posture; changes no census rule and no offline-primitive requirement (carried from v1.0.3/v1.0.4)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "blob": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0",
+            "reason": "The superseded occurrence contract; its surviving clauses change no census rule and no offline-primitive requirement (carried)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+            "blob": "85c76024aa1c52058a6f36953c4da743ba247293",
+            "reason": "The superseded adjudication contract SECTION_E3; its surviving clauses change no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+            "blob": null,
+            "reason": "This artifact; integrity by read-time W3/A3 (contract.blob)."
+          }
+        ],
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": [
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+            "blob": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+            "reason": "Owner OD-3 event-class narrowing; OD-5/OD-6 unchanged (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+            "blob": "e4030e734b96ca8b0e68372a4e98111782e8f76e",
+            "reason": "Owner revocation-binding decision; governs adjudication consumption, not the subjects (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json",
+            "blob": "111ed99dbd10cb108238aca37fedc7a5d6e64020",
+            "reason": "Owner attempt-reservation and canonical-store decisions, co-introduced with this artifact; it cites this artifact by path only, so its blob is pinned here without circularity. It governs record consumption, not the subjects."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+            "blob": "40c5cbba0f9e485cb022ffa0a733e1905e0aa88c",
+            "reason": "Recovery event-class posture; changes no census rule and no offline-primitive requirement (carried from v1.0.3/v1.0.4)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "blob": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0",
+            "reason": "The superseded occurrence contract; its surviving clauses change no census rule and no offline-primitive requirement (carried)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+            "blob": "85c76024aa1c52058a6f36953c4da743ba247293",
+            "reason": "The superseded adjudication contract SECTION_E3; its surviving clauses change no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+            "blob": null,
+            "reason": "This artifact; integrity by read-time W3/A3 (contract.blob)."
+          }
+        ],
+        "RECOVERY_AUTHORITY_PACKAGE_RECERT": []
+      }
+    },
+    "consumer_rule": {
+      "rule": "A positive certification of kind K is USABLE at head H only when, in order: (0) provider_protection PASS (STOP_PROVIDER_PROTECTION_REQUIRED) and the activity witness is clean (STOP_CANONICAL_STORE_REWRITTEN); (1) git_read_environment self_check holds (STOP_GIT_READ_ENVIRONMENT_UNCONTROLLED) and object_integrity holds (STOP_GIT_OBJECT_STORE_CORRUPT); (2) H is not shallow (STOP_ADJUDICATION_HISTORY_UNVERIFIABLE); (3) canonical monotonicity (a), (b), (d) (STOP_CANONICAL_STORE_REF_MISMATCH, STOP_CANONICAL_STORE_NOT_MONOTONIC, STOP_ADJUDICATION_STORE_STALE); (4) no file under the retired occurrence root (STOP_RETIRED_OCCURRENCE_ROOT_USED); (5) store_integrity for the WHOLE root (STOP_ADJUDICATION_STORE_INVALID); (6) ever_added_history for the whole root (STOP_ADJUDICATION_HISTORY_VIOLATED); (7) chain.read_time_integrity for K (STOP_CHAIN_INTEGRITY_VIOLATED); (8) every record of EVERY kind passes read-time validation, including W12/W13 and A1..A9 (STOP_ADJUDICATION_INVALID_AT_READ); (9) canonical monotonicity (c) for every attempt (STOP_CANONICAL_STORE_NOT_MONOTONIC) and the containment diagnostic (STOP_ADJUDICATION_STORE_STALE); (10) the V3 closure of K at H exists (STOP_SUBJECT_NOT_PRESENT; a derivation failure is STOP_NOT_CURRENT) with digest P; (11) state(K, P) is RESOLVED_PASS (else its stop); (12) currency is CURRENT against the LATEST positive adjudication for P (STOP_NOT_CURRENT). The result carries {usable, state, disposition_status, package_digest, scopes, scope_basis, provider_tip}.",
+      "consumer_results": [
+        "USABLE",
+        "STOP_PROVIDER_PROTECTION_REQUIRED",
+        "STOP_CANONICAL_STORE_REWRITTEN",
+        "STOP_GIT_READ_ENVIRONMENT_UNCONTROLLED",
+        "STOP_GIT_OBJECT_STORE_CORRUPT",
+        "STOP_ADJUDICATION_HISTORY_UNVERIFIABLE",
+        "STOP_CANONICAL_STORE_REF_MISMATCH",
+        "STOP_CANONICAL_STORE_NOT_MONOTONIC",
+        "STOP_ADJUDICATION_STORE_STALE",
+        "STOP_RETIRED_OCCURRENCE_ROOT_USED",
+        "STOP_ADJUDICATION_STORE_INVALID",
+        "STOP_ADJUDICATION_HISTORY_VIOLATED",
+        "STOP_CHAIN_INTEGRITY_VIOLATED",
+        "STOP_ADJUDICATION_INVALID_AT_READ",
+        "STOP_SUBJECT_NOT_PRESENT",
+        "STOP_NOT_CURRENT",
+        "STOP_CONTRADICTORY_CERTIFICATION",
+        "STOP_CERTIFICATION_REVOKED",
+        "STOP_NOT_CERTIFIED",
+        "STOP_RECERT_ATTEMPT_OPEN"
+      ],
+      "scope": "As v1.0.4: the result reports every positive adjudication's scope and scope_basis for P."
+    },
+    "record_schema": {
+      "section": "SECTION_F3_CERTIFICATION_STORE_CONTRACT",
+      "ADJUDICATION": {
+        "top_level_keys_exact": [
+          "record_type",
+          "contract",
+          "subject_kind",
+          "subject",
+          "verdict",
+          "blocking_findings",
+          "nonblocking_findings",
+          "closes_predecessor_findings",
+          "provenance",
+          "resolves_attempt",
+          "chain",
+          "authority_class",
+          "authorizes",
+          "meaning"
+        ],
+        "nested_keys_exact": {
+          "contract": [
+            "blob",
+            "path",
+            "section"
+          ],
+          "subject": [
+            "candidate_sha",
+            "digest_algorithm",
+            "entries",
+            "governing_families",
+            "governing_family_members_at_candidate",
+            "package_digest",
+            "tree_sha"
+          ],
+          "subject.entries[]": [
+            "blob",
+            "path",
+            "role"
+          ],
+          "subject.governing_family_members_at_candidate[]": [
+            "blob",
+            "path"
+          ],
+          "verdict": [
+            "blocking_findings_count",
+            "nonblocking_findings_reported_count",
+            "verdict_class",
+            "verdict_literal"
+          ],
+          "blocking_findings[]": [
+            "id",
+            "summary"
+          ],
+          "nonblocking_findings[]": [
+            "id",
+            "status",
+            "summary"
+          ],
+          "provenance": [
+            "candidate_author",
+            "identity_facts_basis",
+            "independence_basis",
+            "independent_adjudicator",
+            "materializer",
+            "materializer_reproduced_adjudication_evidence",
+            "verdict_and_findings_basis"
+          ],
+          "provenance.candidate_author": [
+            "executor",
+            "lane_id"
+          ],
+          "provenance.independent_adjudicator": [
+            "adjudication_date",
+            "examined_candidate_sha",
+            "examined_tree_sha",
+            "executor",
+            "lane_id",
+            "report_reference",
+            "scope",
+            "scope_basis"
+          ],
+          "provenance.materializer": [
+            "executor",
+            "lane_id",
+            "materialization_date"
+          ],
+          "resolves_attempt": [
+            "attempt_id",
+            "path",
+            "record_digest"
+          ],
+          "chain": [
+            "predecessor"
+          ],
+          "chain.predecessor (when not null)": [
+            "path",
+            "record_digest"
+          ]
+        },
+        "record_type": "ADJUDICATION",
+        "authority_class": "CERTIFICATION_ADJUDICATION_RECORD__NOT_EXECUTABLE_AUTHORITY"
+      },
+      "RECERT_ATTEMPT": {
+        "top_level_keys_exact": [
+          "record_type",
+          "contract",
+          "attempt_id",
+          "subject_kind",
+          "subject",
+          "prior_state",
+          "canonical_store",
+          "reservation",
+          "chain",
+          "authority_class",
+          "authorizes",
+          "meaning"
+        ],
+        "nested_keys_exact": {
+          "contract": [
+            "blob",
+            "path",
+            "section"
+          ],
+          "subject": [
+            "candidate_sha",
+            "digest_algorithm",
+            "package_digest",
+            "tree_sha"
+          ],
+          "prior_state": [
+            "disposition_status",
+            "state"
+          ],
+          "canonical_store": [
+            "ref",
+            "tip_observed_at_reservation"
+          ],
+          "reservation": [
+            "adjudicator_lane_id",
+            "reservation_date",
+            "reserved_by"
+          ],
+          "reservation.reserved_by": [
+            "executor",
+            "lane_id"
+          ],
+          "chain": [
+            "predecessor"
+          ],
+          "chain.predecessor (when not null)": [
+            "path",
+            "record_digest"
+          ]
+        },
+        "record_type": "RECERT_ATTEMPT",
+        "authority_class": "RECERT_ATTEMPT_RESERVATION_RECORD__NOT_EXECUTABLE_AUTHORITY",
+        "states": [
+          "NO_ATTEMPT",
+          "OPEN_ATTEMPT",
+          "RESOLVED_PASS",
+          "RESOLVED_NON_POSITIVE",
+          "CONTRADICTED"
+        ],
+        "disposition_statuses": [
+          "NOT_ADJUDICATED",
+          "NEGATIVELY_ADJUDICATED",
+          "REVOKED",
+          "CONTRADICTED",
+          "CERTIFIED"
+        ]
+      },
+      "entry_roles": [
+        "COVERED",
+        "TOOLCHAIN",
+        "IMPORTED",
+        "RUNTIME_INPUT",
+        "GOVERNING"
+      ]
+    },
+    "validation_order": [
+      "W1 subject_kind in the closed enum (STOP_UNKNOWN_SUBJECT_KIND).",
+      "W2 keys exactly record_schema.ADJUDICATION at every level, record_type ADJUDICATION, roles in entry_roles (STOP_ADJUDICATION_SHAPE).",
+      "W3 contract names this artifact, record_schema.section and its blob (STOP_ADJUDICATION_CONTRACT_MISMATCH).",
+      "W4 authority_class, empty authorizes, exact meaning (STOP_ADJUDICATION_CLAIMS_AUTHORITY).",
+      "W5 candidate_sha 40 lowercase hex (STOP_CANDIDATE_SHA_MALFORMED); path is the adjudication_path of its content (STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH).",
+      "W6 COVERED entries non-empty and inside the kind prefixes (STOP_SUBJECT_KIND_MISMATCH).",
+      "W7 identity equals the V3 re-derivation at the candidate and, for a known subject, SECTION_F5 (STOP_CANDIDATE_SHA_MISMATCH, STOP_TREE_SHA_MISMATCH, STOP_COVERED_SET_MISMATCH, STOP_GOVERNING_PIN_MISMATCH, STOP_PACKAGE_DIGEST_MISMATCH).",
+      "W8 literal_rule (STOP_VERDICT_LITERAL_MISMATCH); class consistency (STOP_VERDICT_CLASS_INCONSISTENT).",
+      "W9 findings complete (STOP_NONBLOCKING_FINDINGS_INCOMPLETE) and nonblocking OPEN (STOP_FINDING_NOT_OPEN).",
+      "W10 lane-id grammar (STOP_PROVENANCE_IDENTITY_MALFORMED), independence (STOP_PROVENANCE_NOT_INDEPENDENT), adjudicator binding (STOP_RECERT_SUBJECT_MISMATCH), scope and basis (STOP_RECERT_SCOPE_UNDECLARED), bases and PROCESS_GOVERNED (STOP_MATERIALIZER_REPRODUCTION_CLAIM).",
+      "W11 WRITE-TIME ONLY: path free (STOP_ADJUDICATION_PATH_EXISTS); predecessor is the chain tip with its digest, or null (STOP_CHAIN_PREDECESSOR_MISMATCH); closes_predecessor_findings valid (STOP_FINDING_CLOSURE_INVALID).",
+      "R1 READ-TIME ONLY: ever_added_history (STOP_ADJUDICATION_HISTORY_VIOLATED). R2 READ-TIME ONLY: chain.read_time_integrity of the kind (STOP_CHAIN_INTEGRITY_VIOLATED). Both run before W12, which reads the chain.",
+      "W12 resolves exactly one earlier attempt of the same subject and adjudicator (STOP_RECERT_ATTEMPT_RESOLUTION_INVALID).",
+      "W13 the attempt is resolved by no other adjudication (STOP_RECERT_ATTEMPT_DOUBLY_RESOLVED)."
+    ],
+    "stop_codes": [
+      "STOP_UNKNOWN_SUBJECT_KIND",
+      "STOP_ADJUDICATION_SHAPE",
+      "STOP_RECERT_ATTEMPT_SHAPE",
+      "STOP_ADJUDICATION_CONTRACT_MISMATCH",
+      "STOP_ADJUDICATION_CLAIMS_AUTHORITY",
+      "STOP_CANDIDATE_SHA_MALFORMED",
+      "STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH",
+      "STOP_SUBJECT_KIND_MISMATCH",
+      "STOP_CANDIDATE_SHA_MISMATCH",
+      "STOP_TREE_SHA_MISMATCH",
+      "STOP_COVERED_SET_MISMATCH",
+      "STOP_GOVERNING_PIN_MISMATCH",
+      "STOP_PACKAGE_DIGEST_MISMATCH",
+      "STOP_VERDICT_LITERAL_MISMATCH",
+      "STOP_VERDICT_CLASS_INCONSISTENT",
+      "STOP_NONBLOCKING_FINDINGS_INCOMPLETE",
+      "STOP_FINDING_NOT_OPEN",
+      "STOP_PROVENANCE_IDENTITY_MALFORMED",
+      "STOP_PROVENANCE_NOT_INDEPENDENT",
+      "STOP_RECERT_SUBJECT_MISMATCH",
+      "STOP_RECERT_SCOPE_UNDECLARED",
+      "STOP_MATERIALIZER_REPRODUCTION_CLAIM",
+      "STOP_ADJUDICATION_PATH_EXISTS",
+      "STOP_CHAIN_PREDECESSOR_MISMATCH",
+      "STOP_FINDING_CLOSURE_INVALID",
+      "STOP_RECERT_ATTEMPT_RESOLUTION_INVALID",
+      "STOP_RECERT_ATTEMPT_DOUBLY_RESOLVED",
+      "STOP_RECERT_ATTEMPT_ID_DUPLICATE",
+      "STOP_CANONICAL_STORE_REF_MISMATCH",
+      "STOP_RECERT_ATTEMPT_PRIOR_STATE_MISMATCH",
+      "STOP_RECERT_ATTEMPT_ALREADY_OPEN",
+      "STOP_ADJUDICATION_HISTORY_VIOLATED",
+      "STOP_CHAIN_INTEGRITY_VIOLATED"
+    ]
+  },
+  "SECTION_F4_CONSUMER_REGISTRY": {
+    "rule": "Derived MECHANICALLY as the UNION of three discovery rules; every discovered locus is classified exactly once, either by an exact entry (registry) or by a whole-section rule (section_rules); an exact entry or section rule that matches no discovered locus is a defect. The companion test re-derives the union and fails on any locus added, removed, unclassified or doubly classified. Supersedes SECTION_E4 as a whole.",
+    "discovery_rule_1": "v1.0.3 string leaves matching /occurrence|\\bKS-[AB]\\b/i AND /\\bCURRENT\\b|\\bvalid\\b|\\bcurrency\\b/ (v1.0.4 rule, carried).",
+    "discovery_rule_2": "v1.0.0, v1.0.1, v1.0.2 string leaves matching /\\bcertif(ied|ication)\\b/i AND /\\b(census|offline|HX-[0-9]|authority)\\b/i (v1.0.4 rule, carried).",
+    "discovery_rule_3": {
+      "rule": "RB-2. Over v1.0.0, v1.0.1, v1.0.2, v1.0.3, v1.0.4 AND the owner records v1.0.0, v1.0.1, v1.0.2, every string leaf AND every object KEY (locus suffixed #key), after normalization (every \"_\" and \"-\" replaced by a space, runs of whitespace collapsed, lower-cased), matching the pattern below. It catches every certif* word (certified, certification, recertification, certifier), \"PASS\" in any form (\"returns PASS\", \"PASS-class\", \"On PASS\"), \"positive\", \"usable\", the key first_authorized_directories_after_recert_of_this_artifact (E7) and every spelling of CERTIFIED_CENSUS_EXECUTION(S). The two artifacts of THIS act (this amendment and owner v1.0.3) are not scanned: every requirement they state is written against consumer_rule. Review finding (pre-commit): the first form of this rule missed v1.0.0 next_gate (\"until that certification returns PASS\"), v1.0.3 SECTION_D13.HX-1 and the owner-record gates; the widened pattern and file list discover them.",
+      "pattern": "\\b(re)?certif\\w*|\\bpass class\\b|\\bon pass\\b|\\breturns? pass\\b|\\bpass(es)?\\b|\\bafter (re)?cert\\w*|\\bpositive\\b|\\busable\\b",
+      "normalization": "[_-] -> space; \\s+ -> single space; lower case"
+    },
+    "classes": {
+      "CONSUMER": "Relies on a certification of READONLY_CENSUS_AUTHORITY_RECERT or OFFLINE_RECOVERY_IMPLEMENTATION_RECERT. Satisfied ONLY by SECTION_F3.consumer_rule returning USABLE for that kind at the consumer head (provider-protected, not OPEN, not REVOKED, not CONTRADICTED, CURRENT).",
+      "PACKAGE_CONSUMER": "Relies on a certification of the Recovery authority package itself. Satisfied ONLY by SECTION_F3.consumer_rule returning USABLE for RECOVERY_AUTHORITY_PACKAGE_RECERT at the consumer head. Now mechanical (v1.0.4 treated it by judgement).",
+      "SUPERSEDED_RULE": "A contract, registry or known-subject rule of an earlier layer replaced by SECTION_F3, F4, F5 or F7.",
+      "NON_CONSUMER": "Mentions certification (or a positive signal) without relying on a Recovery certification for any gate."
+    },
+    "section_rules": [
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus_prefix": "$.SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT.",
+        "class": "SUPERSEDED_RULE",
+        "reason": "The whole v1.0.3 occurrence contract was superseded by v1.0.4 SECTION_E3, itself superseded by SECTION_F3."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus_prefix": "$.SECTION_D10_KNOWN_SUBJECTS.",
+        "class": "SUPERSEDED_RULE",
+        "reason": "Superseded by v1.0.4 SECTION_E5 and now SECTION_F5."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus_prefix": "$.SECTION_D11_MATERIALIZATION_WRITE_SET.",
+        "class": "SUPERSEDED_RULE",
+        "reason": "Superseded by v1.0.4 SECTION_E7 and now SECTION_F7 (whose gate is a PACKAGE_CONSUMER); the occurrence root stays retired."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus_prefix": "$.SECTION_E3_ADJUDICATION_CONTRACT.",
+        "class": "SUPERSEDED_RULE",
+        "reason": "The whole v1.0.4 adjudication contract is superseded by SECTION_F3."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus_prefix": "$.SECTION_E4_CONSUMER_REGISTRY.",
+        "class": "SUPERSEDED_RULE",
+        "reason": "The v1.0.4 registry is superseded by SECTION_F4, which re-discovers and re-classifies every locus it held."
+      }
+    ],
+    "registry": [
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D4_POST_CENSUS_OWNER_BRIEF.POST_CENSUS_OWNER_REPORT.trigger",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Triggers the report whether or not a certification exists."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.EA_F1_BINDING.certified_census_authority_means",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.freshness.certification_currency_is_not_observation_freshness",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "States that certification currency never refreshes an observation; still true of the SECTION_F3 records."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D12_PR220_DISPOSITION.merge_prerequisites_conjunctive[1]",
+        "discovered_by": [
+          "R1"
+        ],
+        "class": "CONSUMER",
+        "consumer": "M-2"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D12_PR220_DISPOSITION.merge_prerequisites_conjunctive[2]",
+        "discovered_by": [
+          "R1"
+        ],
+        "class": "CONSUMER",
+        "consumer": "M-3"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D13_HOSTED_PREREQUISITE_READING.HX-2",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-2"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D13_HOSTED_PREREQUISITE_READING.HX-5_event_A",
+        "discovered_by": [
+          "R1"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-5A"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D16_SUPERSEDED_LOCI[7].extent",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-2 reading (its HX-1 half is the PACKAGE_CONSUMER of v1.0.2 HX-1)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D16_SUPERSEDED_LOCI[8].extent",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-5A reading"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[6].finding",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure OF-IS-10; carried as OF-RV-4 and OF-SD-6."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.required_independent_review",
+        "discovered_by": [
+          "R1",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction for v1.0.3."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.PRESTATE.assertions[1].assertion",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "PS-2 (authority package merged and certified)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.PRODUCTION_BOUNDARY.explicit_non_extension",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Concerns a future production authority."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C4_EVENT_CLASS_REGISTRY.classes.EVENT_A_INITIAL_CORPUS.required_facts[0].basis",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C5_EVENT_A_C3_CONTRACT.required_predicates_conjunctive[0]",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (EA-P1 governed census)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C5_EVENT_A_C3_CONTRACT.MEASURED_CURRENT_REACHABILITY.consequence",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Reachability disclosure, superseded in part by v1.0.3 SECTION_D8."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C6_EVENT_B_OPERATING_POSTURE.PILOT_SESSION_PREDICATE.how_established",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Owner attestation and a separately certified FOREIGN observation mechanism; not a Recovery certification consumer."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION.QUIESCE_CHAIN_DISPOSITION.items[5].detail",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (census certification blocks Event A)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION.QUIESCE_CHAIN_DISPOSITION.items[12].detail",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (census certification gate preserved for Event A)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C12_SEQUENCING.EVENT_A_INITIAL_CORPUS[0]",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (A-0 certified census authority)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.offline_implementation_lineage.status",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Status statement: not certified by that artifact."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.hosted_execution_prerequisites_conjunctive[0]",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "HX-1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.hosted_execution_prerequisites_conjunctive[1]",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-2"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.hosted_execution_prerequisites_conjunctive[4]",
+        "discovered_by": [
+          "R2",
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-5A"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.NAMING_DERIVATION.name_is_subject_form_not_node_prefix_form.flagged_for_the_certifier#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Naming analysis flagged for a certifier; no gate relies on it."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.NAMING_DERIVATION.name_is_subject_form_not_node_prefix_form.flagged_for_the_certifier",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Naming analysis flagged for a certifier; no gate relies on it."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.CONTROLLING_AUTHORITY.parents[0].binding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Describes the parent ledger gates and their pass criteria; not a certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.TARGET.TARGET_IDENTITY_ESTABLISHMENT.veto_runs_first",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "\"positive signal\" of target identity; no certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.ADJUDICATIONS.A_valid_pre_DDL_recovery_point.class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.ADJUDICATIONS.C_what_VERIFIED_RESTORABLE_means.answer",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.ADJUDICATIONS.D_is_a_logical_backup_sufficient.answer",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.ADJUDICATIONS.D_is_a_logical_backup_sufficient.class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.ADJUDICATIONS.M_is_an_isolated_temporary_supabase_project_necessary.grounds[3]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.ADJUDICATIONS.W_RPO_RTO_measurable_now.measurable_only_by_executing[1]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.EVIDENCE.independent_verifiability_contract.negative_evidence_requirement",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.POST_RESTORE_INVARIANTS.invariants[1].and_this_is_why_the_negative_check_matters",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.POST_RESTORE_INVARIANTS.invariants[2].why",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.SUCCESS_CONDITIONS.rehearsal_execution.conjunctive_criteria[2]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.SUCCESS_CONDITIONS.rehearsal_execution.conjunctive_criteria[3]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.FAILURE_CONDITIONS.a_failed_rehearsal_is_a_result",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.MEASUREMENT_GAPS_RECORDED.gaps[3].consequence",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Measurement-gap disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.OPEN_FINDINGS[0].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Open-finding disclosure flagged for a certifier."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.OPEN_FINDINGS[1].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Open-finding disclosure flagged for a certifier."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.OPEN_FINDINGS[2].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Open-finding disclosure flagged for a certifier."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.authored_not_executed",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.production_untouched",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.no_secret_values",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.no_invented_identifiers",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.no_gate_mutation",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.no_gate_weakening",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.no_business_objectives_invented",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.unknowns_are_explicit",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.fact_classes_stated",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.stage_A_not_authorized",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.self_check.append_only",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check result text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.required_independent_review.requirement",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction; the gate it feeds is the same file's next_gate (PACKAGE_CONSUMER)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.required_independent_review.the_certifier_should_specifically_test#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction; the gate it feeds is the same file's next_gate (PACKAGE_CONSUMER)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.next_gate",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (v1.0.0): no backup, restore, rehearsal, connection or evidence materialization before the package certification"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.BASE_AUTHORITY.why_no_parent_edit",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Why the parent is not edited; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.COMPANION_MANIFEST_AMENDMENT.base_manifest_disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Counts positive test controls; no certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A1_DEFECT_ADJUDICATION.SOURCE",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Historical record of a past certification round; no gate relies on it."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A1_DEFECT_ADJUDICATION.DEFECTIVE_CLAUSES[3].OLD_verbatim",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A2_CORRECTED_COMMANDS_ANNOTATION.MEASURED_RESTORE_SURFACE.class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A4_CORRECTED_MG_4.NEW_MG_4.consequence",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A5_CORRECTED_OF_2.NEW_OF_2.disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A6_OF_3_CLARIFICATION.OLD_verbatim.disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A6_OF_3_CLARIFICATION.NEW_OF_3.disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A8_F_IC_2_EFFECTIVE_PACKAGE_CLARIFICATION.terminology_fixed_going_forward",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A9_NO_OTHER_SEMANTIC_CHANGE.disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A11_ODS_DISPOSITION.basis",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.SECTION_A11_ODS_DISPOSITION.what_this_amendment_does_not_do[4]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Correction record of v1.0.1: history, measurements and disclosures."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.required_independent_review",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (v1.0.1): certification before any implementation or execution lane"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "locus": "$.final_state",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Status string."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C1_EFFECTIVE_PREDECESSOR_MAP.cross_lineage_artifacts_consumed_by_reference_not_present_in_this_tree.artifacts[4].final_state_at_blob",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Status of cross-lineage artifacts at their blobs."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C1_EFFECTIVE_PREDECESSOR_MAP.cross_lineage_artifacts_consumed_by_reference_not_present_in_this_tree.artifacts[6].final_state_at_blob",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Status of cross-lineage artifacts at their blobs."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C3_BLOCKER_CLOSED.source",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "History of a past recertification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C4_EVENT_CLASS_REGISTRY.classification.unit_membership_values.FIBDB053_STAGE_A_UNIT",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "\"certified SHA\" of the FIBDB-053 / S1 lineage: a foreign authority, not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C4_EVENT_CLASS_REGISTRY.classification.unit_membership_values.S1_EXACT_CORPUS_UNIT",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "\"certified SHA\" of gate S1: a foreign authority, not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C4_EVENT_CLASS_REGISTRY.evaluation_order[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "\"positive signal\" of target identity; no certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C4_EVENT_CLASS_REGISTRY.fact_semantics",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Fact-value semantics (\"passes\"); the certification fact is EA-F1, classified separately."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C4_EVENT_CLASS_REGISTRY.classes.EVENT_A_INITIAL_CORPUS.required_facts[0].required",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (CERTIFIED_CENSUS_EXECUTION)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C7_EVENT_B_BOUNDED_EXPOSURE_CONTRACT.window_semantics.end",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "\"positive health observation\" (OD-6); no certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C7_EVENT_B_BOUNDED_EXPOSURE_CONTRACT.required_fields[6].rule",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "\"positive finite integer\"; no certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C9_S8_AND_D1.D1_RELATIONSHIP.D1_is",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C9_S8_AND_D1.S8_INTERPRETATION.requirements[2].requirement",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C9_S8_AND_D1.S8_INTERPRETATION.why_S8_3_is_read_strictly.grounds[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C9_S8_AND_D1.S8_INTERPRETATION.why_S8_3_is_read_strictly.contradiction_check",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C9_S8_AND_D1.S8_INTERPRETATION.common_required_facts[1].required",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restore-evidence and gate pass criteria (\"pass\" of invariants, S8/D1 criteria, checks); not a Recovery certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION.QUIESCE_CHAIN_DISPOSITION.items[5].item",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Names a quiesce gap (IG-2); no certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION.QUIESCE_CHAIN_DISPOSITION.items[10].detail",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "HX-1 (Stage-A stays blocked by the SECTION_C14 certifications, HX-1 and HX-2)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C11_SELF_CHECK_DEFECT_REPAIR.reproduced.measurement",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check repair text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C11_SELF_CHECK_DEFECT_REPAIR.reproduced.why_it_is_not_merely_cosmetic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check repair text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.offline_implementation_lineage.no_hosted_readiness_is_inferred",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "States that offline passes are not hosted readiness."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.hosted_execution_prerequisites_conjunctive[6]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "HX-7: S8 predicates evaluated PASS; not a certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[1].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.required_independent_review",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction; the gate is next_gate (PACKAGE_CONSUMER)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.next_gate",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (v1.0.2)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.authority_class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Classification string."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.document_class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Classification string."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.provenance_of_this_authority",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Authoring provenance of v1.0.3."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D2_CROSS_LINEAGE_PRECEDENCE.topic_allocation.RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic allocation text and topic names."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D2_CROSS_LINEAGE_PRECEDENCE.topic_allocation.CENSUS_EXECUTION_GATE_CERTIFICATION_AND_HCC_1#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic allocation text and topic names."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D2_CROSS_LINEAGE_PRECEDENCE.census_side_anchor",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic allocation text and topic names."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D2_CROSS_LINEAGE_PRECEDENCE.consequences[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic allocation text and topic names."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D5_CENSUS_PINS.census_certification_state_second_hand#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Key of a disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D5_CENSUS_PINS.census_certification_state_second_hand",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure of a second-hand, unmaterialized result; binds nothing."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.EA_F1_BINDING.rule",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.EA_F1_BINDING.certified_census_authority_means#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.freshness.certification_currency_is_not_observation_freshness#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Freshness statement (key); certification currency never refreshes an observation."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D7_EVENT_A_WINDOW_SEMANTICS.end",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "\"positive health observation\" (OD-6); no certification."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY.FIRST_RUNTIME_BLOCKER.statement",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Reachability analysis and unratified policy options; the gate itself is EA-F1."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY.FIRST_STRUCTURAL_BLOCKER.statement",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Reachability analysis (G-N3); no certification gate."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY.supersedes_in_part.extent",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Reachability analysis: census certification necessary, not sufficient; the gate itself is EA-F1."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY.EVENT_A_POLICY.options_surfaced_not_ratified[1].summary",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Reachability analysis and unratified policy options; the gate itself is EA-F1."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "SUPERSEDED_RULE",
+        "reason": "The key of the superseded occurrence contract."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D12_PR220_DISPOSITION.merge_prerequisites_conjunctive[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "M-1 (v1.0.3)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D13_HOSTED_PREREQUISITE_READING.HX-1",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "HX-1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D16_SUPERSEDED_LOCI[2].extent",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Reachability restatement; the gate is EA-F1."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D16_SUPERSEDED_LOCI[7].topic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic name."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.SECTION_D19_SELF_CHECK.checks[5]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[2].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[2].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure (closed enum); extended by SECTION_F3."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[3].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[5].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[6].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[7].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure of the PASS-class reading; carried by SECTION_F3.verdict."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[7].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[8].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[8].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure closed by v1.0.4 revocation and SECTION_F3 attempts."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.EXPLICIT_NON_AUTHORIZATIONS[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Non-authorization."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "locus": "$.next_gate",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (v1.0.3): materializer lanes after a package recertification"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.authority_class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Classification string."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.document_class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Document classification string."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.role",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Role string."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.provenance",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.blocking[0].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Historical finding text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.nonblocking[0].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.nonblocking[3].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.nonblocking[5].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.nonblocking[6].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.nonblocking[7].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E1_RECERTIFICATION_CONSUMED.nonblocking[7].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Findings of a past recertification; history."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E2_OWNER_DECISION_BINDING.not_decided_here",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Restates the contradiction STOP; carried by SECTION_F3."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E6_PRECEDENCE_ANCHORS.anchors.RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic names and anchor section names."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E6_PRECEDENCE_ANCHORS.anchors.CENSUS_EXECUTION_GATE_CERTIFICATION_AND_HCC_1#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic names and anchor section names."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E6_PRECEDENCE_ANCHORS.anchors.CENSUS_DEP_C1_OD_C1_OD_C2_OD_C3[1].section",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Topic names and anchor section names."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E7_MATERIALIZATION_WRITE_SET.first_authorized_directories_after_recert_of_this_artifact#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "E7 (v1.0.4): materializer lanes after a package recertification"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E7_MATERIALIZATION_WRITE_SET.retired_occurrence_root",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "SUPERSEDED_RULE",
+        "reason": "Superseded by SECTION_F7 (the root stays retired)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E8_PR220_DISPOSITION.merge_prerequisites_conjunctive[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "M-1 (v1.0.4)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E8_PR220_DISPOSITION.merge_prerequisites_conjunctive[1]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "M-2"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E8_PR220_DISPOSITION.merge_prerequisites_conjunctive[2]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "M-3"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E9_CONSUMERS_RESTATED.EA-F1",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "EA-F1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E9_CONSUMERS_RESTATED.HX-2",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-2"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E9_CONSUMERS_RESTATED.HX-5A",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "CONSUMER",
+        "consumer": "HX-5A"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E9_CONSUMERS_RESTATED.HX-1 and PS-2",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "HX-1 and PS-2 (v1.0.4 judgement reading, superseded by SECTION_F9)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E9_CONSUMERS_RESTATED.restores",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Explanation of the v1.0.4 effect."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[0].topic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Supersession entries naming loci and topics."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[0].locus",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Supersession entries naming loci and topics."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[1].topic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Supersession entries naming loci and topics."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[2].topic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Supersession entries naming loci and topics."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[3].locus",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "A supersession entry naming a locus."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[4].topic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Supersession entries naming loci and topics."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[5].topic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Supersession entries naming loci and topics."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E11_SUPERSEDED_LOCI[6].topic",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Supersession entries naming loci and topics."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E12_CLOSURE_LIMITATIONS.revocation_scope",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure (exact-closure revocation)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E17_SELF_CHECK.checks[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.SECTION_E17_SELF_CHECK.checks[1]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Self-check text."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[0].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[0].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure (closed enum); extended by SECTION_F3."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[5].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[10].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure (no in-contract repair)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[12].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure (canonical ref move)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[13].finding",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[13].disposition",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure (STALE after toolchain change)."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.required_independent_review",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction for v1.0.4."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "locus": "$.next_gate",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (v1.0.4): materializer lanes after a package recertification"
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+        "locus": "$.why_this_record_exists.what_this_does_not_do",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Explains the record; the gate is next_gate."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+        "locus": "$.recorded_implementation_gaps.gaps[1].gap",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Gap disclosure (\"positive evidence\" of quiesce)."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+        "locus": "$.explicit_non_authorizations[2]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Non-authorization."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+        "locus": "$.required_independent_review",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (owner v1.0.0): package certification before any execution lane opens"
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+        "locus": "$.next_gate",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (owner v1.0.0)"
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+        "locus": "$.OD_3_NARROW_REOPENING.why_the_reopening_was_necessary",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "History of the OD-3 reopening."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+        "locus": "$.required_independent_review",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction; the gate is next_gate."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+        "locus": "$.next_gate",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (owner v1.0.1)"
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.document_class",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Classification string."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.authority_binding.question_answered",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Question the record answers; history."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[4]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[7]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[8]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[11]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[17]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[19]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[22]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[23]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.owner_decision_verbatim[29]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.structured_decision.NON_POSITIVE_CLASSES_AT_LEAST#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.structured_decision.NON_POSITIVE_INCLUDES_EVERY_OTHER_NON_PASS_CLASS_OF_THE_CLOSED_VOCABULARY#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.structured_decision.LATER_NON_POSITIVE_ON_SAME_DIGEST#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.structured_decision.LATER_NON_POSITIVE_ON_SAME_DIGEST",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.structured_decision.CANDIDATE_SHA_CANNOT_PRESERVE_A_PASS_OVER_A_REVOKING_ADJUDICATION#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.structured_decision.LATER_PASS_ON_SAME_DIGEST_AFTER_NON_POSITIVE#key",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.structured_decision.RECOVERY_FROM_CONTRADICTION[0]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "The owner revocation rule itself; made mechanical by SECTION_F3.state and consumer_rule."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.explicit_non_authorizations[1]",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Non-authorization."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.required_independent_review",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction for v1.0.4 with this record."
+      },
+      {
+        "file": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "locus": "$.next_gate",
+        "discovered_by": [
+          "R3"
+        ],
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "NEXT_GATE (owner v1.0.2)"
+      }
+    ],
+    "classification_note": "Every discovered locus that is not under a section rule has its OWN registry entry with class and reason (loci of the same section sharing one reason were assigned it mechanically by prefix at authoring time and are listed individually here).",
+    "counts": {
+      "discovered": 322,
+      "exact": 206,
+      "by_section_rule": 116
+    },
+    "no_bypass": "Every CONSUMER and PACKAGE_CONSUMER is satisfiable only through consumer_rule, whose step (11) returns a STOP for OPEN_ATTEMPT, REVOKED, CONTRADICTED and NO_ATTEMPT; no registry entry has another satisfaction path."
+  },
+  "SECTION_F5_KNOWN_SUBJECTS_V3": {
+    "rule": "KS-A and KS-B re-derived under RCO_CLOSURE_DIGEST_V3: same entries, families, members and package digests as v1.0.4 SECTION_E5 (companion test). A reservation or materializer lane re-derives and must obtain exactly these values (A6/W7).",
+    "materialization_status": "NO RECORD EXISTS. This artifact writes none and claims none.",
+    "subjects": [
+      {
+        "id": "KS-A",
+        "subject_kind": "READONLY_CENSUS_AUTHORITY_RECERT",
+        "candidate_sha": "ab7fb64b62d12e986f7b0d53b6f3e6de5c38fda6",
+        "tree_sha": "ad499f3b8f083874e99a3dca27a2baf7bd98d996",
+        "digest_algorithm": "RCO_CLOSURE_DIGEST_V3",
+        "package_digest": "6989dd26af4c0257335bd013d355432d8121778acd0494f6bdd23f765c1bb307",
+        "entries": [
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json",
+            "blob": "0dec3d2a8abdd15efad470f091c3bcb469756b0f"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.2.json",
+            "blob": "92a0558fe5b4d03fb3dfb814de8f8beb7ae7ea63"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+            "blob": "524188090a88d9b2b06890678348b6749564fdfe"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.1.json",
+            "blob": "4bcaf4882083578b04428e3773592cf127b98191"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.2.json",
+            "blob": "5acde6cd7454f84b3f51f8a43d49cca098233edf"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+            "blob": "3aa75f5f0fef8e24c723e01342622b2c07af48d2"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+            "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+            "blob": "f69e2e8141495e8715aba1a503cfa07f30e8dc08"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+            "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "1abcefc499172874433052db8a75f03ca35f3eba"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+            "blob": "633d4d68173e590d7980d9317cf47c8757d7e8fb"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+            "blob": "805b30c3c993b5a34bf0e140236c4edb683d4fa8"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+            "blob": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "governing_families": [
+          "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_",
+          "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_",
+          "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_",
+          "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_",
+          "docs/ops/release/RELEASE_GATE_LEDGER_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_",
+          "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_"
+        ],
+        "governing_family_members_at_candidate": [
+          {
+            "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+            "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50"
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "path": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+            "blob": "f69e2e8141495e8715aba1a503cfa07f30e8dc08"
+          },
+          {
+            "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817"
+          },
+          {
+            "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+            "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "1abcefc499172874433052db8a75f03ca35f3eba"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+            "blob": "633d4d68173e590d7980d9317cf47c8757d7e8fb"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+            "blob": "805b30c3c993b5a34bf0e140236c4edb683d4fa8"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+            "blob": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "2df79a571dfe1ad9a24b4c1ad2cf9724b02b4030"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "adjudication_directory": "docs/ops/release/rca/CENSUS/6989dd26af4c0257335bd013d355432d8121778acd0494f6bdd23f765c1bb307/",
+        "pr": 209,
+        "supersedes_identity": "v1.0.4 SECTION_E5 KS-A (same package_digest under V2)"
+      },
+      {
+        "id": "KS-B",
+        "subject_kind": "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT",
+        "candidate_sha": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+        "tree_sha": "29ed409689aff5ecd92c72c3ef001ebc6d15718a",
+        "digest_algorithm": "RCO_CLOSURE_DIGEST_V3",
+        "package_digest": "2fb5db7dc11e368bade96466e374b7de7798c2076cfa4555802abb20166228f5",
+        "entries": [
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST_v1.0.0.json",
+            "blob": "1aeae4fe2e033e3277111bcc21b603884b129a16"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+            "blob": "ac0022c513b14fc972cf0989bdb43547308906e6"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/artifact-integrity.ts",
+            "blob": "baad9e84b034cedd3825292cb74904bc66abbdb9"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/artifact-packet.ts",
+            "blob": "f0569e250e6191b8746c026a4b445eab19f384ac"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/capture.ts",
+            "blob": "216c5264ce86d9bb8b55a95e3db60e7c5f260f94"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/catalog-census.ts",
+            "blob": "68679126efef37c07a911f4c7351b1ad2963264b"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/evidence-privacy.ts",
+            "blob": "3068718f6085d0acff24be7a8a5059335b2d6a2d"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/mutation-battery.ts",
+            "blob": "e8f53edf7427f558d0e8aff3e0948ca90a69a391"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/mutation-verdict.ts",
+            "blob": "75322789ed859c5db24fa3509633e125d5959109"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/offline-rehearsal.ts",
+            "blob": "dbc4f514b72796be714b392d36e76a33c7b32768"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/post-restore-invariants.ts",
+            "blob": "6c1e79fe558551cf44689649027293ae4a58e90a"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/process.ts",
+            "blob": "466799d7a8748258e62154d2cc8a4059d604d85d"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/recovery-target.ts",
+            "blob": "c5fefe81916f0ea4936bb8d981b1525aaeaccb41"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/restore-proof.ts",
+            "blob": "96eb9505238d829c1b58f353d6715902489a96b8"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/restore-runner.ts",
+            "blob": "0c03b78018bdf0e4d693f682717495269505f944"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/substrate.ts",
+            "blob": "11c7f3040e21d9ba34569b61afd06be78961de92"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/tool-pin.ts",
+            "blob": "8aac589c657be4bfb38bd72e6577ee16baf203e4"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/postgres/recovery-offline.pg.test.ts",
+            "blob": "faaeaca879ee5a7e196f82ae2786dcb68da7ef33"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/artifact-integrity.test.ts",
+            "blob": "73baa531c66c49440787c5878391deaeb7924a85"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/artifact-packet.test.ts",
+            "blob": "d15b6bc2175963ca723600726db17ba3973b3973"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/authority-packet-shape.test.ts",
+            "blob": "2f74488a77021c0f9b8c5ad4335888c6c74eb06f"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/capture.test.ts",
+            "blob": "357e0ba99d67932a12dc6825682e4ec7399047e3"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/event-class-neutrality.test.ts",
+            "blob": "cd995b1c5ee250d16d1933e108c2b4b18c9c7b3d"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/evidence-privacy.test.ts",
+            "blob": "f2a41b040b4fc456850d2f5f77b799700f95ae8d"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/fake-docker.ts",
+            "blob": "f0311b62dcae4282ee64c8866a8f104b6d3f0d1e"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/fixtures/recovery-fixture-roles.sql",
+            "blob": "7fd3d16d70013ac93417d3f4a2089c50efcc9cd5"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/fixtures/recovery-fixture-source.sql",
+            "blob": "6ba4fee38e4d967e52996c104eb818727b115874"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/mutation-verdict.test.ts",
+            "blob": "632cfcdd7e8f6c410c523f26918b10bae2cfb689"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/post-restore-invariants.test.ts",
+            "blob": "a81866fe5c228b4519110945f6682a756eb062d6"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/principal-reachability.pg.test.ts",
+            "blob": "09ce31e18f9a8f428743e46f65d9c39b64be20fa"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/recovery-target.test.ts",
+            "blob": "32be4c048ecc35c5a21220f32f11338e694f3ae5"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/restore-proof.test.ts",
+            "blob": "735e9f7be7aaee800fa3d71792de173ad1cd8359"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/restore-runner.test.ts",
+            "blob": "fed6822eee328d99d772e76f7e3f32192e7c89ff"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/sample-evidence.ts",
+            "blob": "b9cfc03e6ff2ede110d6c4502dd2432a50f4e9ca"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/scripted-world.ts",
+            "blob": "d0bdbc612d36ff08c11286a04414a4af54f78bf0"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/skipped-e2e-residue.test.ts",
+            "blob": "b1c2740c2bd64cd74e91dd0d0b366d55fdec8d55"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/streaming.test.ts",
+            "blob": "6a950870105aa1caf00ca0fbb505da844f26b05f"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/substrate.test.ts",
+            "blob": "3a043c7687ce3f39a0ebf05d5b714767d1700763"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/tool-pin.test.ts",
+            "blob": "835928e8e2c12965746e5a3cc30f6ea44313b510"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": ".gitattributes",
+            "blob": "394519ee59c5e571d3e3f8c759c22c11e065e660"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "package.json",
+            "blob": "fe4004ed093e062f02bcb05d0c00ff4d02a06f36"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "pnpm-lock.yaml",
+            "blob": "7ae04b486f6e212fd4c6db19fcba69e920cdf2d4"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "pnpm-workspace.yaml",
+            "blob": "f58b1ae26caff61f741b4d69e7683539ccca40ed"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "tsconfig.json",
+            "blob": "3a13f90a773b0facb675bf5b1a8239c8f33d36f5"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.config.ts",
+            "blob": "9d36f32d8b55b2b65828aeaf505e9dc7a2b78758"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.setup.network-guard.ts",
+            "blob": "e28eee5f095857dd85543298df8bf6baba308cbe"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.setup.ts",
+            "blob": "a9d0dd31aa6eae87f8689e99b802b92a020b30d9"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.shared.ts",
+            "blob": "d41654ce6cf9d925062b3e9f2867bd10ed39afdf"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/hosted/target-identity.ts",
+            "blob": "4b3e704b3ad93e21b6e6e048bac894458b927d19"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/database-access.ts",
+            "blob": "5d7597a0342a71683cf58121addbcc4e3cb00d95"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/database-target.ts",
+            "blob": "fea5ceaa56c9edbbbf3c70cdae51a0acc18da56c"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/disposable-audit-target.ts",
+            "blob": "9c4095698a199dfb1d4e4d619027ae89b55b4ace"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/local-stack.ts",
+            "blob": "0eaf084ea8d7c6a91bd3113fbfb4a5136cf4c145"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/runtime-project-pins.ts",
+            "blob": "07ebb1290d701d1d970c8783c51658aeb0852923"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "scripts/db-audit-disposable.ts",
+            "blob": "96d0b97ef9b61598a159f3344dee316ebbf671f6"
+          },
+          {
+            "role": "RUNTIME_INPUT",
+            "path": "db/baseline/stella_g2_post_restore.sql",
+            "blob": "1e9d3c05e23de5644b7f9f1bffa747819a90acc2"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "governing_families": [
+          "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_",
+          "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_"
+        ],
+        "governing_family_members_at_candidate": [
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "2df79a571dfe1ad9a24b4c1ad2cf9724b02b4030"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "adjudication_directory": "docs/ops/release/rca/OFFLINE/2fb5db7dc11e368bade96466e374b7de7798c2076cfa4555802abb20166228f5/",
+        "pr": 220,
+        "supersedes_identity": "v1.0.4 SECTION_E5 KS-B (same package_digest under V2)"
+      }
+    ],
+    "package_subject": "RECOVERY_AUTHORITY_PACKAGE_RECERT has no known subject: its first candidate is the commit that introduces this artifact, whose digest this artifact cannot contain."
+  },
+  "SECTION_F6_PRECEDENCE_ANCHORS": {
+    "rule": "As v1.0.4 SECTION_E6 (domain of an anchor determined by its FILE; allocated domain must equal the anchor domain; anchored section must exist), with the anchors that pointed at v1.0.4 moved to this artifact where it now holds the controlling text.",
+    "recovery_topic_count": 17,
+    "topic_count_note": "RNB-TOPICS: v1.0.3 SECTION_D2.topic_allocation has 28 topics: 17 RECOVERY, 7 CENSUS, 4 QUIESCE. v1.0.4 OF-RV-8 said 22 RECOVERY: wrong; corrected here.",
+    "anchors": {
+      "RECOVERY_EFFECTIVE_PACKAGE_MAP_AND_NEXT_GATE": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C1_EFFECTIVE_PREDECESSOR_MAP"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D1_LINEAGE_INTEGRATION"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+          "section": "next_gate"
+        }
+      ],
+      "RECOVERY_POSTURE_AND_OD_3": [
+        {
+          "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+          "section": "OD_3_NARROW_REOPENING"
+        }
+      ],
+      "OD_Q5_AND_ANY_OWNER_READJUDICATION_OF_OD_3": [
+        {
+          "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+          "section": "OD_Q5_ANSWER"
+        }
+      ],
+      "OWNER_BRIEF_OBLIGATIONS_ABOUT_RECOVERY_DECISIONS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D4_POST_CENSUS_OWNER_BRIEF"
+        }
+      ],
+      "CENSUS_CF_1_DISPOSITION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D3_CENSUS_CF_1_DISPOSITION"
+        }
+      ],
+      "EVENT_CLASS_REGISTRY": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C4_EVENT_CLASS_REGISTRY"
+        }
+      ],
+      "EVENT_A_PREDICATES_AND_CONSUMPTION_OF_CENSUS_OUTPUT": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C5_EVENT_A_C3_CONTRACT"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+          "section": "SECTION_F9_CONSUMERS_RESTATED"
+        }
+      ],
+      "EVENT_A_INVALIDATORS_AND_WINDOW_SEMANTICS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D7_EVENT_A_WINDOW_SEMANTICS"
+        }
+      ],
+      "EVENT_A_POLICY_OPEN_DECISION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY"
+        }
+      ],
+      "EVENT_B_POSTURE_AND_EXPOSURE_CONTRACT": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C7_EVENT_B_BOUNDED_EXPOSURE_CONTRACT"
+        }
+      ],
+      "S8_AND_D1_INTERPRETATION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C9_S8_AND_D1"
+        }
+      ],
+      "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+          "section": "SECTION_F3_CERTIFICATION_STORE_CONTRACT"
+        }
+      ],
+      "CENSUS_READ_SET_AND_OBSERVATION_CONTRACTS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_E_AUTHORIZED_READ_SET"
+        }
+      ],
+      "CENSUS_CLASSIFICATION_PROCEDURE_G_N_A_G_U": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_G_C3_AVAILABILITY_DECISION_PROCEDURE"
+        }
+      ],
+      "CENSUS_EVIDENCE_CONTRACT_AND_FRESHNESS_OF_OBSERVATIONS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_H_EVIDENCE_CONTRACT"
+        }
+      ],
+      "CENSUS_EXECUTION_GATE_CERTIFICATION_AND_HCC_1": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_I_HUMAN_CONFIRMATION"
+        }
+      ],
+      "CENSUS_NON_AUTHORIZATIONS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_F_EXPLICIT_NON_AUTHORIZATIONS"
+        }
+      ],
+      "CENSUS_DEP_C1_OD_C1_OD_C2_OD_C3": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_D_CREDENTIAL_AND_CAPABILITY_ANALYSIS"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_M_OWNER_AND_CERTIFIER_DECISIONS_OPENED"
+        }
+      ],
+      "QUIESCE_WRITER_INVENTORY_W_1_TO_W_16": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_A_WRITER_INVENTORY"
+        }
+      ],
+      "QUIESCE_MECHANISM_CANDIDATES_AND_CAPABILITY_GAP_CG_Q4": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_C_CANDIDATE_MECHANISMS"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "section": "SECTION_B3_PREVENTION_MECHANISM_MATRIX"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "section": "SECTION_B7_CAPABILITY_GAP"
+        }
+      ],
+      "QUIESCE_IMPLEMENTATION_GAPS_IG_1_TO_IG_3_AS_FACTS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS"
+        }
+      ],
+      "QUIESCE_MEASUREMENT_GAPS_MG_Q1_MG_Q2_DEFINITION": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS"
+        }
+      ],
+      "MG_Q1_MG_Q2_CLOSURE_BY_OBSERVATION": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_B_MGQ1_DECOMPOSITION"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_C_MGQ2_DECOMPOSITION"
+        }
+      ],
+      "OD_Q1_OD_Q4_DEP_1_SCOPE_AND_ORDERING_DISPOSITION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION"
+        }
+      ],
+      "QUIESCE_SECTION_G_RECOVERY_RELATIONSHIP_READING": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION"
+        }
+      ],
+      "RECOVERY_WINDOW_ANCHORS_W0_W1": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D7_EVENT_A_WINDOW_SEMANTICS"
+        }
+      ],
+      "STAGE_A_AND_S8_BLOCKING_STATUS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS"
+        }
+      ],
+      "RECOVERY_READING_OF_QUIESCE_GAPS_PER_EVENT_CLASS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION"
+        }
+      ]
+    },
+    "c10_semantic_identifiers": "Unchanged: v1.0.4 SECTION_E6.c10_semantic_identifiers."
+  },
+  "SECTION_F7_MATERIALIZATION_AND_RESERVATION_WRITE_SET": {
+    "rule": "A reservation lane writes EXACTLY ONE RECERT_ATTEMPT file; a materializer lane writes EXACTLY ONE ADJUDICATION file; each ADDED on the canonical ref (through a pull request fast-forwarded or merged into it), nothing else; its ods:scope/ods:poststate --allow is exactly that literal path. Lanes of one kind run one at a time and re-evaluate A10/W11 against the provider tip immediately before merge. Every such lane first proves provider_protection PASS read-only; without it the lane STOPS (STOP_PROVIDER_PROTECTION_REQUIRED) and writes nothing.",
+    "authorized_path_patterns": [
+      "docs/ops/release/rca/<KIND_CODE>/<package_digest>/a-<record_digest>.json",
+      "docs/ops/release/rca/<KIND_CODE>/<package_digest>/<record_digest>.json"
+    ],
+    "bootstrap": "A RECOVERY_AUTHORITY_PACKAGE_RECERT attempt needs no prior package certification: once provider protection holds, an attempt may be reserved for the package digest of the tree that introduces THIS amendment (and, later, for the digest of any later amendment of the chain), followed by its independent recertification and the materialization of its outcome of ANY class. A9 keeps one open attempt per digest. After a non-positive outcome the digest is REVOKED or NEGATIVELY_ADJUDICATED for ever; a remediation is a new amendment, i.e. a new package digest with its own first attempt. This is not a certification.",
+    "after_package_usable": "Only while consumer_rule(RECOVERY_AUTHORITY_PACKAGE_RECERT) = USABLE at the lane head: reservation and materializer lanes for KS-A and KS-B (directories below), then the governed #220 merge lane (SECTION_F8).",
+    "first_authorized_directories": [
+      "docs/ops/release/rca/PACKAGE/<package digest of the introducing commit>/",
+      "docs/ops/release/rca/CENSUS/6989dd26af4c0257335bd013d355432d8121778acd0494f6bdd23f765c1bb307/",
+      "docs/ops/release/rca/OFFLINE/2fb5db7dc11e368bade96466e374b7de7798c2076cfa4555802abb20166228f5/"
+    ],
+    "retired_occurrence_root": "docs/ops/release/recovery-certification-occurrences/",
+    "retired_rule": "Unchanged: no file may ever be written under the retired occurrence root; a file there STOPS every consumer.",
+    "supersedes": "v1.0.4 SECTION_E7 (and through it v1.0.3 SECTION_D11): the materializer gate \"after recert of this artifact\" is now PACKAGE_CONSUMER USABLE.",
+    "protected_status": "No path here is a DEFAULT_PROTECTED_PATTERN of scripts/ods-scope.ts."
+  },
+  "SECTION_F8_PR220_DISPOSITION": {
+    "status": "NOT_MERGED_BY_THIS_LANE",
+    "merge_prerequisites_conjunctive": [
+      "M-1 SECTION_F3.consumer_rule for RECOVERY_AUTHORITY_PACKAGE_RECERT = USABLE at the head the merge lane opens on AND at the merged head.",
+      "M-2 At the head the merge lane opens on: state(OFFLINE_RECOVERY_IMPLEMENTATION_RECERT, KS-B package_digest) = RESOLVED_PASS with every step of consumer_rule up to (11) passing (KS-B is not yet present there, so currency is not evaluated).",
+      "M-3 SECTION_F3.consumer_rule for OFFLINE_RECOVERY_IMPLEMENTATION_RECERT = USABLE at the merged head."
+    ],
+    "supersedes": "v1.0.3 SECTION_D12.merge_prerequisites_conjunctive[0], [1], [2] and v1.0.4 SECTION_E8 as a whole."
+  },
+  "SECTION_F9_CONSUMERS_RESTATED": {
+    "EA-F1": "census_governance = CERTIFIED_CENSUS_EXECUTION (any spelling) requires SECTION_F3.consumer_rule for READONLY_CENSUS_AUTHORITY_RECERT = USABLE at the census execution lane head at lane open AND at the head of the Recovery lane that consumes the census output, plus the v1.0.3 census_execution_binding. Anything else is census_governance = UNKNOWN (STOP_EVENT_A_CENSUS_UNKNOWN).",
+    "HX-2": "SECTION_F3.consumer_rule for OFFLINE_RECOVERY_IMPLEMENTATION_RECERT = USABLE at the execution lane head.",
+    "HX-5A": "A certified census authority means SECTION_F3.consumer_rule for READONLY_CENSUS_AUTHORITY_RECERT = USABLE (as EA-F1), DEP-C1 resolved, and a fresh C3_AVAILABLE -- still structurally unreachable (v1.0.3 SECTION_D8).",
+    "HX-1": "SECTION_F3.consumer_rule for RECOVERY_AUTHORITY_PACKAGE_RECERT = USABLE at the execution lane head.",
+    "PS-2": "The authority package is certified iff SECTION_F3.consumer_rule for RECOVERY_AUTHORITY_PACKAGE_RECERT = USABLE at the lane head; \"merged\" is unchanged.",
+    "M-1/M-2/M-3": "SECTION_F8.",
+    "NEXT_GATE/E7": "SECTION_F7 and this artifact's next_gate.",
+    "no_bypass": "Every consumer above is satisfied through consumer_rule only: an OPEN attempt, a REVOKED or CONTRADICTED digest, a missing record, a rewritten or unprotected canonical ref, or an uncontrolled git environment is a STOP for every one of them."
+  },
+  "SECTION_F10_EVENT_A_PRESERVATION": {
+    "CURRENT_EVENT_A_REACHABLE": "NO",
+    "EVENT_A_POLICY": "PENDING",
+    "unchanged": "v1.0.3 SECTION_D6..D8 unchanged except the EA-F1 basis restated in SECTION_F9. No option selected; G-N3/G-N4 untouched."
+  },
+  "SECTION_F11_SUPERSEDED_LOCI_RULE": "Each entry names the chain and the v1.0.3 SECTION_D2 topic; this Recovery amendment supersedes only loci on RECOVERY topics.",
+  "SECTION_F11_SUPERSEDED_LOCI": [
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.4 SECTION_E3_ADJUDICATION_CONTRACT",
+      "extent": "SUPERSEDED as a whole by SECTION_F3."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.4 SECTION_E4_CONSUMER_REGISTRY",
+      "extent": "SUPERSEDED by SECTION_F4."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.4 SECTION_E5_KNOWN_SUBJECTS_V2",
+      "extent": "SUPERSEDED by SECTION_F5 (same digests under V3)."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.4 SECTION_E7_MATERIALIZATION_WRITE_SET",
+      "extent": "SUPERSEDED by SECTION_F7."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.4 SECTION_E8_PR220_DISPOSITION; v1.0.3 SECTION_D12_PR220_DISPOSITION.merge_prerequisites_conjunctive[0]",
+      "extent": "SUPERSEDED by SECTION_F8 (M-1 is now mechanical)."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "EVENT_A_PREDICATES_AND_CONSUMPTION_OF_CENSUS_OUTPUT",
+      "locus": "v1.0.4 SECTION_E9_CONSUMERS_RESTATED",
+      "extent": "SUPERSEDED by SECTION_F9."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_EFFECTIVE_PACKAGE_MAP_AND_NEXT_GATE",
+      "locus": "v1.0.4 next_gate",
+      "extent": "SUPERSEDED by this artifact's next_gate."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.4 RISKS_AND_OPEN_FINDINGS OF-RV-1, OF-RV-3b, OF-RV-8",
+      "extent": "OF-RV-1 and OF-RV-3b CLOSED by the package kind; OF-RV-8 CORRECTED (17 RECOVERY topics)."
+    }
+  ],
+  "SECTION_F12_CLOSURE_AND_ENVIRONMENT_LIMITATIONS": {
+    "represented": "COVERED, TOOLCHAIN, IMPORTED, RUNTIME_INPUT and GOVERNING by SECTION_F3 V3 rules.",
+    "parser_limits": "Computed module paths, template-literal paths and files reached only through a computed path are not in the closure (carried OF-RV-2).",
+    "package_manager": "As v1.0.4: pnpm-lock.yaml pins the declared graph; installed node_modules bytes, the operating system and the Docker daemon are not represented.",
+    "environment": {
+      "node": "No engines field and no .nvmrc; packageManager pins pnpm@9.15.9; CI pins node-version \"22\" in .github/workflows/ci.yml (fetch-depth 0, so CI is never shallow). Measured here: Node v24.16.0. A different Node version is not a different package digest.",
+      "git": "Measured here: git 2.54.0.windows.1. The controlled reads use options present since git 2.x; an older git that rejects an option fails the read, which STOPS.",
+      "core_autocrlf": "Measured: core.autocrlf=false in this repository configuration (.git/config). Irrelevant to the store: records are read as git BLOB bytes (ls-tree + cat-file), never from the working tree, and docs/** is pinned eol=lf by .gitattributes (a TOOLCHAIN root of OFFLINE and PACKAGE).",
+      "gitignore": "Measured: no .gitignore rule matches the adjudication root (git check-ignore exit 1), so a record cannot be silently left out of a commit by an ignore rule.",
+      "UELLIX_PG_TESTS": "tests/postgres/recovery-offline.pg.test.ts (KS-B COVERED) runs only with UELLIX_PG_TESTS=1 and Docker; otherwise it is SKIPPED, never silently passed. An adjudication records which suites the adjudicator ran in its report reference; the closure digest does not depend on the flag.",
+      "windows_path_length": "Record paths are at most 165 characters (limit 170); a checkout root longer than about 90 characters can exceed MAX_PATH (OF-RV-10 carried)."
+    },
+    "revocation_scope": "Exact closure digest (owner v1.0.2), carried (OF-RV-9)."
+  },
+  "SECTION_F13_PRECEDENCE": {
+    "rule": "For the loci of SECTION_F11 THIS AMENDMENT CONTROLS to the stated extent. Everything else: v1.0.4, v1.0.3, v1.0.2, v1.0.1, v1.0.0 as their own precedence rules state; owner v1.0.3 controls RECERT_ATTEMPT_RESERVATION and CANONICAL_CERT_STORE_FORCE_PUSH_POLICY; owner v1.0.2 RECOVERY_CERT_REVOCATION_BINDING; owner v1.0.1 OD-3; owner v1.0.0 OD-5/OD-6.",
+    "conflict_rule": "A conflict on a locus not named in SECTION_F11 is a defect of this amendment: STOP."
+  },
+  "SECTION_F14_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "basis": "Write set under docs/ops/release/**, docs/ops/owner-ratifications/** and tests/release/**; none protected by scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS."
+  },
+  "SECTION_F15_WRITE_SET": [
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json (ADDED)",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.5.json (ADDED)",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json (ADDED)",
+    "tests/release/staging-recovery-cert-store-durability.test.ts (ADDED)",
+    "tests/release/staging-recovery-cert-store-durability.mutation-battery.mjs (ADDED)"
+  ],
+  "SECTION_F16_PRESERVATION": {
+    "unchanged": [
+      "Every historical artifact including v1.0.3 and v1.0.4, their manifests and tests (byte-identical; immutable).",
+      "The v1.0.2 event-class registry, Event A and Event B postures, C2 NOT_AUTHORIZED, OD-5/OD-6.",
+      "Every census G-N, A and G-U rule; G-N3 and G-N4.",
+      "v1.0.0 AUTHORIZED_OPERATIONS AO-1..AO-9.",
+      "Verdict classes, the PASS-class reading, revocation by package_digest and the contradiction STOP."
+    ],
+    "AUTHORIZED_OPERATIONS_DELTA": {
+      "added": [],
+      "removed": [],
+      "modified": []
+    },
+    "no_gate_weakened": "Every v1.0.4 STOP is kept; the new STOPs (provider protection, rewritten store, uncontrolled environment, non-monotonic store, open attempt, attempt pairing) only remove usability."
+  },
+  "SECTION_F17_SELF_CHECK": {
+    "note": "Structural, executed by the companion test and mutation battery.",
+    "checks": [
+      "Owner v1.0.3 verbatim and structured forms agree; its blob is pinned in SECTION_F2.",
+      "V3 grammars in this artifact equal the ones the test executes; KS-A and KS-B recompute from git with their v1.0.4 digests; the package kind derives at the introducing tree.",
+      "The consumer registry equals the union of the three discovery rules over the five layers; every locus is classified exactly once.",
+      "Every git-rewrite mechanism of SECTION_F3.git_read_environment is attacked on a real repository and neutralized, including a loose object forged under its own id (object_integrity).",
+      "ever_added_history is proven on real DAGs including merge -s ours drop, normal merge + git rm, evil merge, add/add and delete/restart.",
+      "Attempt states on real git fixtures: PASS -> attempt -> none = STOP_RECERT_ATTEMPT_OPEN; -> FAIL/BLOCKED/INSUFFICIENT_EVIDENCE = REVOKED; -> PASS = usable only after resolution.",
+      "The provider-protection evaluator on the measured 2026-09-24 state returns STOP_PROVIDER_PROTECTION_REQUIRED.",
+      "No file exists under the adjudication root or the retired occurrence root in the introducing tree."
+    ]
+  },
+  "SECTION_F18_PROVIDER_BOUNDARY_REPORT": {
+    "ref": "refs/heads/codex/cv1-recovery-integration-successor-r1",
+    "current_protection": "NONE (measured read-only 2026-09-24: classic protection 404, rules for branch [], repository rulesets []; branch protected=false; activity: branch_creation then one fast-forward push, no force_push).",
+    "required_change": {
+      "kind": "CREATE_REPOSITORY_RULESET (owner act; NOT executed by this lane)",
+      "command": "gh api -X POST repos/lorenzozanello/uellix-antigravity/rulesets --input ruleset.json",
+      "ruleset_json": {
+        "name": "recovery-cert-store-no-force-push",
+        "target": "branch",
+        "enforcement": "active",
+        "bypass_actors": [],
+        "conditions": {
+          "ref_name": {
+            "include": [
+              "refs/heads/codex/cv1-recovery-integration-successor-r1"
+            ],
+            "exclude": []
+          }
+        },
+        "rules": [
+          {
+            "type": "non_fast_forward"
+          },
+          {
+            "type": "deletion"
+          }
+        ]
+      },
+      "read_back_verification": [
+        "gh api repos/lorenzozanello/uellix-antigravity/rules/branches/codex/cv1-recovery-integration-successor-r1  -> contains {type: non_fast_forward} and {type: deletion} with the same ruleset_id",
+        "gh api repos/lorenzozanello/uellix-antigravity/rulesets/<ruleset_id>  -> enforcement \"active\", target \"branch\", bypass_actors [], conditions.ref_name.include contains the canonical ref"
+      ],
+      "why_minimal": "Two rules on one ref: non_fast_forward (no force-push / history rewrite) and deletion (no delete-and-recreate). No required reviews, status checks or signatures are added, so ordinary fast-forward pushes and pull-request merges of materializer lanes keep working. bypass_actors is empty so the repository admin cannot push through it without first editing the ruleset (see OF-SD-1).",
+      "alternative_accepted": "Classic branch protection with allow_force_pushes=false, allow_deletions=false and enforce_admins=true is accepted by the evaluator as well; it adds a protection object the lane does not need, so the ruleset is the minimal form."
+    },
+    "mutation_by_this_lane": "NONE. Owner v1.0.3: \"Do NOT mutate branch protection in this lane.\" The viewer's admin permission was not used.",
+    "why_no_repository_only_substitute": "SECTION_F3.canonical_store.why_no_repository_only_substitute.",
+    "consequence": "Until the owner applies the change and a consumer reads it back PASS, every consumer of every kind STOPS at step (0) with STOP_PROVIDER_PROTECTION_REQUIRED, and no reservation or materializer lane may write."
+  },
+  "RISKS_AND_OPEN_FINDINGS": {
+    "blocking": [],
+    "provider_boundary": "STOP_PROVIDER_PROTECTION_REQUIRED (SECTION_F18) is the terminal state of this lane, by owner v1.0.3; it is not a defect of this artifact.",
+    "non_blocking": [
+      {
+        "id": "OF-SD-1",
+        "finding": "A repository admin can edit or delete the ruleset, force-push, and restore it. Protection proves monotonicity while in force; the activity witness catches a rewrite only while the provider retains it.",
+        "disposition": "Disclosed; residual trust in the repository owner is inherent to a user-owned repository. An organization-level ruleset or audit log would narrow it and needs an owner decision."
+      },
+      {
+        "id": "OF-SD-2",
+        "finding": "Attempt reservation is PROCESS_GOVERNED: a recertification run without reserving an attempt produces no record, and its outcome can only be reported to the owner (reviewer shopping is not mechanically excluded).",
+        "disposition": "Owner v1.0.3 binds governed recertifications; the attempt makes every GOVERNED one visible and blocking."
+      },
+      {
+        "id": "OF-SD-3",
+        "finding": "Pre-contract outcomes (recertification FAIL of a9ddc4d2 and of c057ff71) are not records: no attempt existed and their package digests are superseded by any package that includes this artifact.",
+        "disposition": "History only; they bind nothing mechanically. Known to the owner."
+      },
+      {
+        "id": "OF-SD-4",
+        "finding": "The PACKAGE kind covers every Recovery release test; any later Recovery amendment or test change creates a new package digest that needs a new attempt and recertification.",
+        "disposition": "Intended (fail closed)."
+      },
+      {
+        "id": "OF-SD-5",
+        "finding": "absent_reference_policy EXCLUDE for the package kind.",
+        "disposition": "Fail closed: an excluded path that appears changes the digest."
+      },
+      {
+        "id": "OF-SD-6",
+        "finding": "Any later Recovery amendment falls in the KS-A and KS-B governing families and makes them STALE unless it declares itself (OF-RV-4 carried).",
+        "disposition": "Deliberate fail-closed coupling."
+      },
+      {
+        "id": "OF-SD-7",
+        "finding": "The provider tip must be fetched into the local object store before evaluation; a consumer without network access STOPS.",
+        "disposition": "Fail closed."
+      },
+      {
+        "id": "OF-SD-8",
+        "finding": "SECTION_F6 anchors prove domain and section existence, not semantic fit, among the 17 RECOVERY topics (v1.0.4 OF-RV-8, count corrected).",
+        "disposition": "Disclosed."
+      },
+      {
+        "id": "OF-SD-9",
+        "finding": "Object integrity is checked by git fsck --full (hash re-computation); ids themselves remain SHA-1 (object format checked).",
+        "disposition": "Disclosed; a SHA-1 collision is out of scope."
+      },
+      {
+        "id": "OF-SD-11",
+        "finding": "Import grammar: call forms match inside strings (fails closed); a static import following a comment or \";\" on the same line is not read.",
+        "disposition": "Disclosed parser limit (as OF-RV-2)."
+      },
+      {
+        "id": "OF-SD-12",
+        "finding": "Two lanes of one kind merged with the same predecessor fork the chain; the kind then STOPS with no in-contract repair.",
+        "disposition": "Fail closed; SECTION_F7 serializes lanes and requires A10/W11 against the provider tip before merge; a required status check would enforce it and needs an owner decision."
+      },
+      {
+        "id": "OF-SD-13",
+        "finding": "The fsck gate costs about 77 s on this repository per evaluation.",
+        "disposition": "Accepted: it runs once per consumer evaluation."
+      },
+      {
+        "id": "OF-SD-10",
+        "finding": "Recertifier mutant ids X1, X6, X10 were not materialized to this lane.",
+        "disposition": "UNCONFIRMED; the new battery covers every conjunct of the new interpreter."
+      },
+      {
+        "id": "OF-RV-2",
+        "finding": "Closure parser limits (computed paths).",
+        "disposition": "Carried."
+      },
+      {
+        "id": "OF-RV-3",
+        "finding": "Scope semantics (BOUNDED/FOCUSED accepted with a basis).",
+        "disposition": "Carried."
+      },
+      {
+        "id": "OF-RV-6",
+        "finding": "Independence is PROCESS_GOVERNED only.",
+        "disposition": "Carried."
+      },
+      {
+        "id": "OF-RV-9",
+        "finding": "Revocation is exact-closure.",
+        "disposition": "Carried."
+      },
+      {
+        "id": "OF-RV-12",
+        "finding": "Lane-id grammar does not fold ASCII look-alikes.",
+        "disposition": "Carried."
+      }
+    ]
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO attempt, adjudication or occurrence file is created; KS-A, KS-B and the package are not claimed certified.",
+    "NO branch protection, ruleset or repository setting is created, changed or deleted.",
+    "NO merge of PR #220.",
+    "NO Event A policy option selected.",
+    "NO hosted Recovery act, database connection, DDL or DML. Provider reads are read-only GitHub REST GETs.",
+    "NO operation added to AUTHORIZED_OPERATIONS.",
+    "NO historical artifact edited; v1.0.3 and v1.0.4 are immutable.",
+    "NO self-certification."
+  ],
+  "required_independent_review": "SHORT independent recertification of v1.0.5 with owner v1.0.3, manifest v1.0.5, the new test and its mutation battery, read with v1.0.4 SECTION_E3 as superseded. Under this artifact that recertification is itself a RECOVERY_AUTHORITY_PACKAGE_RECERT and needs its reserved attempt (SECTION_F7.bootstrap), which needs provider protection first. The certifier should attack: ever-added integrity on its own DAGs; every git-rewrite mechanism; the attempt states and pairing; the provider evaluator; the registry union; the V3 derivation and the package kind.",
+  "final_state": "RECOVERY_CERT_STORE_DURABILITY_CODE_READY__PROVIDER_PROTECTION_REQUIRED",
+  "next_gate": "(1) The owner applies SECTION_F18.required_change on the provider (read back PASS). (2) A reservation lane writes the RECOVERY_AUTHORITY_PACKAGE_RECERT attempt for the commit that introduces this artifact. (3) SHORT independent recertification of v1.0.5 with owner v1.0.3 under that attempt. (4) A separate lane materializes its outcome of ANY class. On RESOLVED_PASS (consumer_rule USABLE for the package kind): serialized reservation and materializer lanes for KS-A and KS-B, then the governed #220 merge lane under SECTION_F8. EVENT_A_POLICY remains PENDING. No hosted Recovery execution is authorized."
+}

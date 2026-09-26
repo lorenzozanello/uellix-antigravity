@@ -1,0 +1,38 @@
+{
+  "attempt_id": "CV1-RECOVERY-CENSUS-RECERT-ATTEMPT-6989DD26-1",
+  "authority_class": "RECERT_ATTEMPT_RESERVATION_RECORD__NOT_EXECUTABLE_AUTHORITY",
+  "authorizes": [],
+  "canonical_store": {
+    "ref": "refs/heads/codex/cv1-recovery-integration-successor-r1",
+    "tip_observed_at_reservation": "3d4efd78b686a175e9674a9b117204b56280bd88"
+  },
+  "chain": {
+    "predecessor": null
+  },
+  "contract": {
+    "blob": "bb8bcebc9203778304d65ed139dc88bf4e77ea21",
+    "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+    "section": "SECTION_G3_PACKAGE_SUBJECT_CONTRACT"
+  },
+  "meaning": "An independent recertification of the cited census authority was reserved before its review began and must be resolved by exactly one materialized adjudication. Nothing else.",
+  "prior_state": {
+    "disposition_status": "NOT_ADJUDICATED",
+    "state": "NO_ATTEMPT"
+  },
+  "record_type": "RECERT_ATTEMPT",
+  "reservation": {
+    "adjudicator_lane_id": "CV1-RECOVERY-KS-A-INDEPENDENT-RECERT-R1",
+    "reservation_date": "2026-09-26",
+    "reserved_by": {
+      "executor": "Claude Code (claude-sonnet-5)",
+      "lane_id": "CV1-RECOVERY-KS-A-RECERT-ATTEMPT-RESERVATION-R1"
+    }
+  },
+  "subject": {
+    "candidate_sha": "ab7fb64b62d12e986f7b0d53b6f3e6de5c38fda6",
+    "digest_algorithm": "RCO_CLOSURE_DIGEST_V3",
+    "package_digest": "6989dd26af4c0257335bd013d355432d8121778acd0494f6bdd23f765c1bb307",
+    "tree_sha": "ad499f3b8f083874e99a3dca27a2baf7bd98d996"
+  },
+  "subject_kind": "READONLY_CENSUS_AUTHORITY_RECERT"
+}

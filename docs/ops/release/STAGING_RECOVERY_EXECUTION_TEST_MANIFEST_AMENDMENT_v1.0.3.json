@@ -1,0 +1,260 @@
+{
+  "manifest_id": "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.3",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json -- the Recovery integration successor and certification-occurrence contract authored by mission CV1-STAGING-RECOVERY-INTEGRATION-SUCCESSOR-AND-CERT-CONTRACT-R1. This manifest governs only the delta of v1.0.3; the v1.0.0, v1.0.1 and v1.0.2 manifests remain controlling for their own controls.",
+  "dependencies": [
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0 -- blob 154c3d1d396784ae7189b8088669b0ef8231de67. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 -- blob 25749aee095b56e01b7a1aaa0ad2d5d37d5961fc. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2 -- blob 40c5cbba0f9e485cb022ffa0a733e1905e0aa88c. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.2 -- blob c15ea3560b2a7694f0a9263679b40fed394f9c6c. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0 -- blob 876fc76cedc3e83f44b7c76221f0bc812d35ee5d; STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1 -- blob 4eea1f1e160771eebb77855c3d7f9d5bb8703086. NOT edited.",
+    "STAGING_QUIESCE_MECHANISM_AUTHORITY v1.0.0 (633d4d68) and AMENDMENT v1.0.1 (1abcefc4), integrated by merge be6bdf18. NOT edited.",
+    "STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY v1.0.0 (52418809), ERRATA v1.0.1 (0dec3d2a), ERRATA v1.0.2 (92a0558f), integrated by merge be6bdf18. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3 -- this manifest's controlling authority, added by the same act."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "SENT-NO-OCCURRENCE-FILE",
+      "purpose": "No path under docs/ops/release/recovery-certification-occurrences/ exists in the write set or the tree; every occurrence in the test is an in-memory fixture with fixture lane ids."
+    },
+    {
+      "id": "SENT-NO-PR220-MERGE",
+      "purpose": "8cf94dca is not an ancestor of the successor head and no scripts/recovery path exists in the tree."
+    },
+    {
+      "id": "SENT-EVENT-A-POLICY-PENDING",
+      "purpose": "EVENT_A_POLICY.status is PENDING and no option is selected or authorized; evaluated structurally, never by string absence."
+    },
+    {
+      "id": "SENT-NO-SECRET-VALUE",
+      "purpose": "No password, token, DSN or connection string value appears in the write set."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "PC-IS-1",
+      "description": "Both known subjects' package_digest recompute from their recorded entries; occurrence_path and package_id are the derived ones.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-2",
+      "description": "KS-A (6 COVERED, 0 IMPORTED, 12 GOVERNING) recomputes exactly from git at ab7fb64b, an ancestor of this lineage (tree, entries, digest, families, members with blobs); absence of the commit is a failure, not a skip.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-3",
+      "description": "KS-B recomputes exactly from git at 8cf94dca (39 COVERED, 7 IMPORTED including scripts/db-audit-disposable.ts, 4 GOVERNING). Runs where the candidate commit object is present (CI checks out with fetch-depth 0; 8cf94dca lives on the PR #220 branch); KS-A is an ancestor of this lineage.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-4",
+      "description": "KS-A and KS-B fixture occurrences validate VALID at write time and at read time; a PASS with zero nonblocking findings validates VALID; the two literals reported for KS-A and KS-B parse to PASS_WITH_NONBLOCKING_FINDINGS.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-5",
+      "description": "A later candidate naming the chain tip as predecessor validates and may close the predecessor's findings; occurrences of another kind do not form the chain.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-6",
+      "description": "Against the fixed introducing tree (be6bdf18 plus the write set): KS-A is CURRENT; KS-B is SUBJECT_NOT_PRESENT; a change outside the subject (including census execution evidence) leaves KS-A CURRENT; KS-B is CURRENT at a head that merges #220 unchanged; an earlier non-tip occurrence is valid at read time.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-7",
+      "description": "The real precedence allocation has no violation and every topic resolves to one domain.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-8",
+      "description": "EVENT_A_POLICY is PENDING with no selection; CURRENT_EVENT_A_REACHABLE = NO; the first runtime blocker is the first Event A fact of the v1.0.2 registry; the first structural blocker is G-N3 with G-N4 and DEP-C1 behind it.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "PC-IS-9",
+      "description": "Every integrated and carried historical artifact recomputes to its pinned blob; no Recovery/quiesce/census file is missing from the pinned lists; the write set is exactly three added paths; the operations delta is empty.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-IS-20",
+      "description": "An IMPORTED repository module omitted from the subject STOPS (STOP_COVERED_SET_MISMATCH); an unresolvable repository import fails the derivation; a changed imported module makes the occurrence STALE_COVERED_PATH_CHANGED.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-21",
+      "description": "An undeclared recert scope or empty report reference STOPS (STOP_RECERT_SCOPE_UNDECLARED).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-22",
+      "description": "Read time: an in-place edit of the contract (STOP_OCCURRENCE_CONTRACT_MISMATCH) or of the occurrence file, compared with its FIRST add and with no deletion in history (STOP_OCCURRENCE_EDITED_AFTER_WRITE), is INVALID_AT_READ; a forked chain (two tips) is STOP_CHAIN_PREDECESSOR_MISMATCH; a declared layer edited in place or a changed non-governing family member is STALE_GOVERNING_AUTHORITY_CHANGED.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-23",
+      "description": "Verdict literals outside the CLOSED prefix vocabulary, or negated/qualified (CENSUS_RECERT_NOT_PASS, CENSUS_WITHDRAWN_RECERT_PASS, CENSUS_REJECTED_IC_PASS, CENSUS_DID_NOT_PASS_WITH_NONBLOCKING_FINDINGS, a bare PASS, ...) STOP (STOP_VERDICT_LITERAL_MISMATCH); a chain.predecessor with extra keys STOPS; a tree id offered as the candidate STOPS; nested extra keys and unknown entry roles STOP (STOP_OCCURRENCE_SHAPE).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-24",
+      "description": "Precedence: a v1.0.2 SECTION_C10 item whose text does not match its mapped prefix or whose topic is unallocated, a topic written twice in the raw artifact, the census execution gate claimed by Recovery, and a restated G-N rule under any key name are RED.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-1",
+      "description": "Wrong subject SHA STOPS (STOP_CANDIDATE_SHA_MISMATCH) against the known subject and against the derivation.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-2",
+      "description": "Same tree / wrong commit STOPS: against the known subject (STOP_CANDIDATE_SHA_MISMATCH) and, for an identical derivation, by the recert binding (STOP_RECERT_SUBJECT_MISMATCH).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-3",
+      "description": "Wrong tree STOPS (STOP_TREE_SHA_MISMATCH).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-4",
+      "description": "Wrong package digest STOPS (STOP_PACKAGE_DIGEST_MISMATCH).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-5",
+      "description": "Wrong authority pin STOPS even with a consistent digest (STOP_GOVERNING_PIN_MISMATCH).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-6",
+      "description": "blocking_findings > 0, by count or list, STOPS (STOP_BLOCKING_FINDINGS_PRESENT).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-7",
+      "description": "FAIL, BLOCKED and INSUFFICIENT_EVIDENCE are never promotable (STOP_VERDICT_NOT_PROMOTABLE); FAIL presented as PASS, an ambiguous literal, or a class/literal disagreement STOPS (STOP_VERDICT_LITERAL_MISMATCH).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-8",
+      "description": "A missing nonblocking finding, a duplicate id, PASS_WITH_NONBLOCKING_FINDINGS with none or PASS with some STOPS (STOP_NONBLOCKING_FINDINGS_INCOMPLETE); a finding not OPEN STOPS (STOP_FINDING_NOT_OPEN).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-9",
+      "description": "materializer == author, recertifier == author, materializer == recertifier STOP, case and whitespace folded (STOP_PROVENANCE_NOT_INDEPENDENT); a reproduction claim STOPS (STOP_MATERIALIZER_REPRODUCTION_CLAIM).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-10",
+      "description": "An event path or package_id reused for a new candidate STOPS (STOP_OCCURRENCE_PATH_IDENTITY_MISMATCH); a second write to an existing path STOPS (STOP_OCCURRENCE_PATH_EXISTS).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-11",
+      "description": "Stale occurrence: covered-path change (STALE_COVERED_PATH_CHANGED), new census layer (STALE_COVERED_SET_CHANGED), governing change (STALE_GOVERNING_AUTHORITY_CHANGED), undeclared governing layer (STALE_GOVERNING_LAYER_ADDED), new recovery test after merge (STALE_COVERED_SET_CHANGED).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-12",
+      "description": "Unknown subject kind, including OTHER, STOPS (STOP_UNKNOWN_SUBJECT_KIND).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-13",
+      "description": "A census occurrence bound to the offline subject, an offline occurrence bound to the census subject, or a lane recording the other known subject STOPS (STOP_SUBJECT_KIND_MISMATCH).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-14",
+      "description": "Chain: ignoring an existing chain, naming a non-tip predecessor, a first occurrence naming a predecessor STOP (STOP_CHAIN_PREDECESSOR_MISMATCH); closing a foreign or predecessor-less finding STOPS (STOP_FINDING_CLOSURE_INVALID).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-15",
+      "description": "Shape and binding: extra or missing key (STOP_OCCURRENCE_SHAPE), wrong contract blob (STOP_OCCURRENCE_CONTRACT_MISMATCH), malformed SHA (STOP_CANDIDATE_SHA_MALFORMED), an occurrence claiming authority (STOP_OCCURRENCE_CLAIMS_AUTHORITY).",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-16",
+      "description": "Precedence contradiction: Recovery claiming the census classification rules, superseding a CENSUS-topic locus, a shared/unknown domain, or a restated G-N condition is RED; an unallocated topic STOPS.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-17",
+      "description": "Historical-artifact mutation: one appended byte in any integrated or carried artifact is RED.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-18",
+      "description": "Event A policy silently selected (selected_option, status, decided_by, an option selected or authorized, bounded write loss authorized) is RED.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "NC-IS-19",
+      "description": "A dangling governing reference fails the derivation.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MUT-IS-7",
+      "description": "Artifact-driven: dropping NOT from forbidden_prefix_tokens and admitting it to the vocabulary and qualifiers lets CENSUS_RECERT_NOT_PASS parse as PASS.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "LIVE-IS-1",
+      "description": "Live guard at every later head: every occurrence file under the occurrence root is at its derived path, valid at read time, unchanged since written, one chain tip per kind.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "LIVE-IS-2",
+      "description": "Live guard at every later head: a KS-B occurrence is never INVALID_AT_READ; STALE is legitimate (a shared imported module may change); CURRENT at the merged head is the #220 merge lane own check (SECTION_D12 M-3). KS-B candidate availability is required in CI.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "MUT-IS-1",
+      "description": "Kill matrix: disabling any single validation check (V1..V11, R1, R2) lets at least one negative case through; zero survivors.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "MUT-IS-2",
+      "description": "Self-test: a check that guards nothing is reported as a survivor, so the matrix can fail.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "MUT-IS-3",
+      "description": "Artifact-driven: adding FAIL to positive_classes in the contract makes a FAIL occurrence pass V8_PROMOTABLE.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "MUT-IS-4",
+      "description": "Artifact-driven: adding a kind OTHER to the enum makes an OTHER occurrence pass V1.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "MUT-IS-5",
+      "description": "Artifact-driven: removing a declared non-invalidating layer turns KS-A from CURRENT to STALE_GOVERNING_LAYER_ADDED.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    },
+    {
+      "id": "MUT-IS-6",
+      "description": "Artifact-driven: widening a covered prefix changes the derived identity.",
+      "test_file": "tests/release/staging-recovery-integration-successor.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}

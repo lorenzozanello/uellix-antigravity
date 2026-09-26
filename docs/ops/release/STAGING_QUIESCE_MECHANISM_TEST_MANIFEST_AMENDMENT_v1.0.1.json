@@ -1,0 +1,234 @@
+{
+  "manifest_id": "CV1-STAGING-QUIESCE-MECHANISM-AMENDMENT",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "dependencies": [
+    "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "db/baseline/stella_g2_roles.sql",
+    "db/client.ts",
+    "db/safety/local-stack.ts"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "SENT-A-NO-DETECTION-AS-QUIESCE",
+      "purpose": "Proves that no clause of the amendment offers detection as, in place of, or under the name of QUIESCE. The marker is the absence of any clause asserting that establishing the predicate by observation satisfies the parent's 'made non-writing' limb. This sentinel exists because that exact substitution is what independent certification rejected in v1.0.0."
+    },
+    {
+      "id": "SENT-A-NO-SCALAR-XID-FRONTIER",
+      "purpose": "Proves that no scalar transaction-id frontier survives anywhere in the effective package as a PASS contract, a verdict input, or evidence of absence of writes. The marker is that every occurrence of a frontier-like primitive sits in a PROHIBITED, SUPERSEDED or CANDIDATE-ONLY context and never in an accepted one."
+    },
+    {
+      "id": "SENT-A-NO-SECRET-VALUE",
+      "purpose": "Proves that no password, DSN, connection string, access token, anon key, service-role key or environment-variable value appears anywhere in the amendment pair. SSL-08 conformance."
+    },
+    {
+      "id": "SENT-A-PRODUCTION-REF-IS-VETO-ONLY",
+      "purpose": "Proves that every occurrence of the production project ref ctaxtgujyyprgynmnvtq in the amendment pair sits in a veto or finding context and never in a target, source or authorized-operation context."
+    },
+    {
+      "id": "SENT-A-VENDOR-EVIDENCE-IS-LABELLED",
+      "purpose": "Proves that every fact drawn from public vendor documentation is carried with its URL and is classified as DOCUMENTATION rather than as a measurement of the governed project. This lane performed zero live control-plane reads, and a vendor sentence quoted without that label would read as a hosted measurement it is not."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "PC-A1",
+      "description": "Both amendment artifacts parse as valid JSON, and this manifest amendment validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json with ZERO violations under an independent validator run directly over the schema. No repository gate validates a TEST_MANIFEST against its schema, so a claim of conformance resting on a gate PASS is vacuous and is not accepted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A2",
+      "description": "The parent QUIESCE definition quoted at SECTION_B1.the_parent_definition_verbatim.quoted_in_full is byte-identical to ADJUDICATIONS.I_maximum_permitted_age.THE_LIVE_RUNTIME_COMPLICATION.consequence in STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json at blob 154c3d1d396784ae7189b8088669b0ef8231de67. An amendment that turns on a quotation must have the quotation exact.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A3",
+      "description": "v1.0.0's authority and manifest are byte-unchanged: their blob SHAs at this branch HEAD equal 633d4d68173e590d7980d9317cf47c8757d7e8fb and 0478c7fa30c5344ecb228e69f5d56596c5c8d89f respectively, and the four blobs pinned in v1.0.0's CONTROLLING_AUTHORITY are likewise unchanged.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A4",
+      "description": "SECTION_B3 assesses exactly thirteen prevention candidates P-1..P-13 with no gap and no duplicate, and every candidate carries a verdict plus the brief-mandated axes: exact privilege needed, exact hosted mutation, whether current authority holds it, whether existing sessions escape it, whether privileged or service roles override it, whether it prevents auth/storage/API writes, whether backup remains possible, rollback, and evidence contract. A candidate missing an axis is an incomplete assessment, not a shorter one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A5",
+      "description": "The residual sweep is reproducible. Re-running a SEMANTIC walk of every string leaf of the v1.0.0 pair against the four published defect patterns — detection-as-QUIESCE, transaction-id-frontier PASS contract, everything-that-writes-moves-it, and inside-QUIESCE — returns 24 hits across 18 distinct loci, and every one of those 18 loci appears in SECTION_B9 either as superseded_in_full or as superseded_in_part. A certifier should hunt for a nineteenth locus that the four patterns do not match.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A6",
+      "description": "Every corrected count at CL-1 and CL-2 is re-derivable by the stated method: a machine tally of the verdict field of v1.0.0's SECTION_C mechanisms returns assessed 11, rejected 9, accepted 2; and the three 'use server' definitions over .ts/.tsx files under app/, lib/ and components/ return 28, 69 and 91 respectively, with 69 as the operative count for W-2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A7",
+      "description": "Every vendor quotation is verifiable at the URL the amendment cites: the PostgreSQL 17 SET TRANSACTION sentence 'This is a high-level notion of read-only that does not prevent all writes to disk'; the PREPARE TRANSACTION statements on disk-stored state, commit from any session, and retained locks; the Supabase database-size page's session override 'set session characteristics as transaction read write'; and the Management API surface exposing readonly status and POST /v1/projects/{ref}/readonly/temporary-disable with no enable counterpart.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A8",
+      "description": "The repository evidence for P-2 and PQ-7 is exact: db/baseline/stella_g2_roles.sql at blob 1867395de452084012e555ad39885669bc3b76ba sets default_transaction_read_only to 'on' for supabase_read_only_user at line 161 and uellix_auditor at line 182, and sets uellix_app's search_path, statement_timeout 30s and idle_in_transaction_session_timeout 60s at lines 174-176 with no read-only default.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A9",
+      "description": "OD-Q5 carries both named options KEEP QUIESCE and CHANGE RECOVERY POSTURE, each with measured consequences, and the CHANGE branch enumerates sub-options C-1, C-2 and C-3 each with its own consequence, what it unblocks, and any ordering dependency. The recommendation names a read-only census as the first step and expressly does not recommend any detection-only posture.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A10",
+      "description": "All five in-flight classes IF-1..IF-5 are present with a disposition, and all three special-state findings SS-1..SS-3 are present, with SS-2 explicitly labelled illustrative rather than exhaustive.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A11",
+      "description": "All six lane-brief cleanup items are discharged at CL-1 through CL-6, each by a re-derivation or a quoted source rather than by assertion, and CL-6 states in terms why the v1.0.0 witness validation test could not have detected the unsoundness.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PC-A12",
+      "description": "The write set of this amendment lane is exactly two new files under docs/ops/release/ and zero modified files, verified with git diff --name-status against HEAD c34b92ad6ea8772dfaa979b0f09d292ea6534a2c and with an untracked-files=all status.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NC-A1",
+      "description": "NO hosted mutation occurred: no Vercel act, no Supabase act, no database connection, no deployment, no backup, no restore, no DDL, no environment-variable act, no scale change, no write lock, no credential generation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A2",
+      "description": "NO live management-plane read occurred. The amendment's new external evidence is public vendor documentation only, and every such fact is carried with its URL and labelled as documentation. A certifier finding a hosted property asserted as MEASURED has found a defect.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A3",
+      "description": "NO clause anywhere in the effective package, after applying SECTION_B12 precedence, offers detection as QUIESCE or asserts that establishing the predicate by observation satisfies the parent's 'made non-writing' limb.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A4",
+      "description": "NO scalar transaction-id frontier survives as a PASS contract, a verdict input, or evidence of absence anywhere in the effective package. SW-1 is PROHIBITED, not merely rejected, so a future lane cannot re-adopt it by citing v1.0.0.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A5",
+      "description": "NO witness is ADOPTED. SW-2 full pg_current_snapshot() and SW-3 WAL LSN appear only as CANDIDATE ONLY and are expressly not endorsed for a future lane without their own measurement and certification.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A6",
+      "description": "NO third interpretation of Recovery OD-3 is invented. The amendment reaches exactly one of the two permitted outcomes, and the C-1/C-2/C-3 sub-options are enumerations of what CHANGE RECOVERY POSTURE could mean, offered to the owner, never adopted by the author.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A7",
+      "description": "The re-adjudication is NOT disguised as a cost preference. v1.0.0's OD-Q3 cost framing is superseded in full, and OD-Q5 states in terms that the question is whether a ratified posture can stand given that it has been measured unexecutable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A8",
+      "description": "The all-writer scope of v1.0.0 SECTION_B is NOT narrowed by this amendment. Sub-option C-2 is offered only as an owner decision, is labelled a partial ACCEPT with an unquantified residual, and is expressly not recommended.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A9",
+      "description": "The amendment does NOT authorize any backup, restore, PITR, branch clone with data, DDL, DML, Stage-A application, Vercel act, Supabase configuration act or production operation. AQ-1 and AQ-3..AQ-5 survive as descriptions but are explicitly NOT EXECUTABLE, and AQ-2 is withdrawn.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A10",
+      "description": "The amendment does NOT edit, reinterpret or narrow the Recovery authority, its amendment, the owner-ratification record, or PR #201, and does not edit v1.0.0 of its own pair.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A11",
+      "description": "IG-1 is NOT declared closed anywhere, and is downgraded to NOT_CLOSED_AND_NOT_CURRENTLY_CLOSABLE. IG-2's claimed closure in v1.0.0 is WITHDRAWN to PARTIALLY_ADDRESSED. An amendment that quietly retained either closure claim would be asserting a permission it has just measured to be unavailable.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A12",
+      "description": "NO capability is asserted to be absent as a MEASURED fact on the strength of a documentation search. P-12's null result and P-3's no-enable-endpoint observation are both classified as absence of evidence in public documentation and recorded as MG-Q4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A13",
+      "description": "NO allocated ODS ordinal, HPO-ODS grant id, W2 identifier, migration ordinal or Controller entry appears. Any such token present must be verified to pre-exist in the tree at HEAD c34b92ad, in which case it is a citation and not an allocation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NC-A14",
+      "description": "The SECTION_B11 preserved list is NOT a blanket reaffirmation: every item carries a checked_against_the_findings note or an explicit correction, and two items appear under corrected_rather_than_preserved instead. A bulk UNCHANGED_AND_STILL_CONTROLLING list that re-blessed a defect is a measured failure mode in this programme.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MC-A1",
+      "description": "Deleting SECTION_B1.the_correction must be CAUGHT. Without its binding rule that detection may serve only limb 2, nothing in the effective package stops a future lane from re-reading v1.0.0's SECTION_D as live authority, since v1.0.0 itself remains byte-intact on disk.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A2",
+      "description": "Weakening SW-1's disposition from PROHIBITED to REJECTED must be CAUGHT. REJECTED invites re-proposal with better evidence; the scalar frontier has a proven false negative and no evidence can rehabilitate it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A3",
+      "description": "Deleting SECTION_B4.IF-2 or its quoted PREPARE TRANSACTION sentences must be CAUGHT. Without it, P-4's termination sweep reads as a complete drain, and ground G-3 of the capability gap disappears.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A4",
+      "description": "Deleting SECTION_B5.SS-1 or the quoted sentence 'This is a high-level notion of read-only that does not prevent all writes to disk' must be CAUGHT. Without it, P-1 and P-2 read as total write barriers and sequence advancement silently reappears as covered.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A5",
+      "description": "Deleting P-3's control-plane observation that the Management API exposes a readonly DISABLE and no ENABLE must be CAUGHT. Without it, an operator-initiable provider read-only mode reads as available and the capability gap's ground G-2 collapses.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A6",
+      "description": "Deleting P-10's the_honest_consequence must be CAUGHT. It is the clause stating that the capability gap is a consequence of the all-writer scope; removing it would make the gap look scope-independent and would hide from the owner the fact that sub-option C-2 exists.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A7",
+      "description": "Deleting the not-recommended label or the partial-ACCEPT characterisation from sub-option C-2 must be CAUGHT. Stripped of them, C-2 reads as a narrower QUIESCE rather than as an unquantified acceptance of loss, which is the misreading OF-A3 flags.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A8",
+      "description": "Deleting CL-6 must be CAUGHT. It is the only record that the v1.0.0 validation test could pass for both a sound and an unsound witness, and without it a future lane may re-adopt an idle-interval equality check as sufficient validation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A9",
+      "description": "Changing final_state away from a CAPABILITY GAP, or restoring an executable authority framing, must be CAUGHT. The lane brief forbids forcing a fake executable authority, and a final_state that implies executability would do exactly that.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MC-A10",
+      "description": "Deleting the SECTION_B9 completeness_statement must be CAUGHT. It is the clause conceding that a sweep proves only what its patterns match, and its removal would present the 18-locus list as exhaustive by construction.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

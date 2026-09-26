@@ -1,0 +1,106 @@
+{
+  "package_id": "STAGING_RECOVERY_OWNER_DECISIONS",
+  "version": "1.0.2",
+  "artifact_id": "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__RECOVERY_CERTIFICATION_REVOCATION_BINDING__NO_EXECUTION__NO_EVENT_A_POLICY",
+  "append_only": true,
+  "mission_id": "CV1-RECOVERY-CERT-CONTRACT-REVOCATION-REMEDIATION-R2",
+  "lane": "codex/cv1-recovery-integration-successor-r1",
+  "role": "COMMERCIAL_V1_STAGING_RECOVERY_OWNER_RATIFICATION_MATERIALIZER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_MATERIALIZATION",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "supersedes": {
+    "value": "NONE",
+    "scope": "This record adds one decision domain (RECOVERY_CERT_REVOCATION_BINDING). It does not narrow, widen or restate OD-3 (owner v1.0.1) or OD-5/OD-6 (owner v1.0.0), which remain controlling for their domains."
+  },
+  "materialized_at_base": {
+    "BASE_SHA": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+    "BASE_TREE": "be69aece52565256f997e06f5812af36432f1d83",
+    "branch": "codex/cv1-recovery-integration-successor-r1",
+    "pull_request": "https://github.com/lorenzozanello/uellix-antigravity/pull/221 (DRAFT, not merged)",
+    "worktree_state": "clean before mutation"
+  },
+  "companion_authority_amendment": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+  "authority_binding": {
+    "rule": "The companion amendment v1.0.4 is introduced in the SAME commit as this record and is bound by path, not by blob (mutual citation; same precedent as owner v1.0.1 and amendment v1.0.2).",
+    "historical_blobs": {
+      "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+      "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+      "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0"
+    },
+    "question_answered": "How a later independent non-positive adjudication affects an existing positive Recovery certification, raised as blocking finding RB-1 by the independent recertification of a9ddc4d2 (RECOVERY_INTEGRATION_SUCCESSOR_CERT_CONTRACT_RECERT_FAIL)."
+  },
+  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_AND_SUPPLIED_VERBATIM_TO_THIS_LANE in the lane brief of CV1-RECOVERY-CERT-CONTRACT-REVOCATION-REMEDIATION-R2. Transcribed line by line below; not paraphrased, not extended.",
+  "owner_decision_verbatim": [
+    "RECOVERY_CERT_REVOCATION_BINDING = PACKAGE_DIGEST",
+    "",
+    "SIGNED = YES",
+    "",
+    "A certification adjudication applies to the exact governed package closure,",
+    "identified by package_digest.",
+    "",
+    "A later independent non-positive adjudication on the SAME package_digest",
+    "revokes every positive certification occurrence for that closure, regardless",
+    "of candidate SHA.",
+    "",
+    "NON_POSITIVE means at least:",
+    "",
+    "FAIL",
+    "BLOCKED",
+    "INSUFFICIENT_EVIDENCE",
+    "",
+    "and any other non-PASS class defined by the closed verdict vocabulary.",
+    "",
+    "A candidate SHA cannot preserve a PASS when the package closure it represents",
+    "has a revoking adjudication.",
+    "",
+    "A later PASS on the SAME unchanged package_digest does NOT silently erase or",
+    "override an existing contradictory non-positive adjudication.",
+    "",
+    "Such a contradiction fails closed.",
+    "",
+    "Recovery from that state requires either:",
+    "",
+    "1. a materially new package_digest subjected to independent certification; or",
+    "2. an explicit future owner adjudication that resolves the contradictory",
+    "   independent dispositions.",
+    "",
+    "No Event-A policy decision is made here.",
+    "",
+    "EVENT_A_POLICY = PENDING"
+  ],
+  "structured_decision": {
+    "rule": "A structural restatement of owner_decision_verbatim for machine consumption. Where the two differ, the verbatim text controls and the difference is a defect of this record.",
+    "RECOVERY_CERT_REVOCATION_BINDING": "PACKAGE_DIGEST",
+    "ADJUDICATION_APPLIES_TO": "the exact governed package closure identified by package_digest",
+    "NON_POSITIVE_CLASSES_AT_LEAST": [
+      "FAIL",
+      "BLOCKED",
+      "INSUFFICIENT_EVIDENCE"
+    ],
+    "NON_POSITIVE_INCLUDES_EVERY_OTHER_NON_PASS_CLASS_OF_THE_CLOSED_VOCABULARY": true,
+    "LATER_NON_POSITIVE_ON_SAME_DIGEST": "REVOKES every positive certification for that closure, regardless of candidate SHA",
+    "CANDIDATE_SHA_CANNOT_PRESERVE_A_PASS_OVER_A_REVOKING_ADJUDICATION": true,
+    "LATER_PASS_ON_SAME_DIGEST_AFTER_NON_POSITIVE": "does NOT erase or override it; the contradiction FAILS CLOSED",
+    "RECOVERY_FROM_CONTRADICTION": [
+      "a materially new package_digest subjected to independent certification",
+      "an explicit future owner adjudication that resolves the contradictory independent dispositions"
+    ],
+    "EVENT_A_POLICY": "PENDING",
+    "SIGNED": "YES"
+  },
+  "explicit_non_authorizations": [
+    "NO Event A policy option is selected; EVENT_A_POLICY remains PENDING.",
+    "NO certification adjudication or occurrence is created by this record.",
+    "NO merge of PR #220.",
+    "NO hosted Recovery act, DDL, DML, provider read or provider mutation.",
+    "NO change to OD-3, OD-5 or OD-6."
+  ],
+  "precedence_note": "Canonical for product-owner intent on RECOVERY_CERT_REVOCATION_BINDING only. It is made mechanical by the companion amendment v1.0.4; it does not by itself make any act execution-effective.",
+  "required_independent_review": "Part of the short independent recertification of the v1.0.4 remediation. The writing lane does not certify its own output.",
+  "final_state": "OWNER_REVOCATION_BINDING_RATIFICATION_MATERIALIZED",
+  "next_gate": "Short independent recertification of v1.0.4 together with this record."
+}

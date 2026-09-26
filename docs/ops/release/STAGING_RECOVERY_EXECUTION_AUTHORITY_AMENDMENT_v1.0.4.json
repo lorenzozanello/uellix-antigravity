@@ -1,0 +1,1673 @@
+{
+  "package_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.4",
+  "artifact_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4",
+  "authority_class": "APPEND_ONLY_RECOVERY_CERTIFICATION_ADJUDICATION_AND_REVOCATION_REMEDIATION__NOT_EXECUTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_REPLACES_THE_POSITIVE_ONLY_OCCURRENCE_RECORD_WITH_A_CLOSURE_BOUND_ADJUDICATION_RECORD__REVOCATION_BY_PACKAGE_DIGEST__FULL_HISTORY_WRITE_ONCE__CLOSURE_V2__NO_GATE_WEAKENED__NO_OPERATION_ADDED__EVENT_A_POLICY_PENDING",
+  "append_only": true,
+  "mission_id": "CV1-RECOVERY-CERT-CONTRACT-REVOCATION-REMEDIATION-R2",
+  "lane": "codex/cv1-recovery-integration-successor-r1",
+  "role": "RECOVERY_CERTIFICATION_CONTRACT_REMEDIATION_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-24",
+  "materialized_by": "Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "GRANT_ID": null,
+  "SECTION_E0_FRESHNESS": {
+    "BRANCH": "codex/cv1-recovery-integration-successor-r1",
+    "BASE_SHA": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+    "BASE_TREE": "be69aece52565256f997e06f5812af36432f1d83",
+    "PULL_REQUEST": "https://github.com/lorenzozanello/uellix-antigravity/pull/221 (DRAFT, not merged)",
+    "drift_rule": "If origin/codex/cv1-recovery-integration-successor-r1 is not a9ddc4d2 immediately before the commit that introduces this artifact, or any input ref of v1.0.3 SECTION_D0 moved, the lane STOPS with REF_DRIFT.",
+    "IMPLEMENTATION_PERFORMED": "NONE beyond this write set. No adjudication or occurrence file, no database connection, no provider act, no PR #220 merge. The lane push triggers the automatic Vercel Preview deployment (v1.0.3 SECTION_D6.EA_INV_2_PUSH_INSTANCE); no window is open."
+  },
+  "SECTION_E1_RECERTIFICATION_CONSUMED": {
+    "verdict": "RECOVERY_INTEGRATION_SUCCESSOR_CERT_CONTRACT_RECERT_FAIL",
+    "subject": "a9ddc4d2c217921b015d0895ad008659afa4d418 (tree be69aece)",
+    "provenance": "Independent recertification lane CV1-RECOVERY-INTEGRATION-SUCCESSOR-CERT-CONTRACT-RECERT-R1 (detached HEAD, read only), reported to this lane second-hand through its run-state record and the owner brief. Not re-performed here.",
+    "blocking": [
+      {
+        "id": "RB-1",
+        "finding": "Negative re-adjudication unrepresentable: v1.0.3 made a CURRENT positive occurrence SUFFICIENT for EA-F1, HX-2, HX-5A and M-2, while FAIL-class results could not be written and a second record for the same candidate hit STOP_OCCURRENCE_PATH_EXISTS; a later FAIL (same candidate or same closure) left the PASS CURRENT, removing the fail-closed STOP that v1.0.2 (a judgement) gave, and falsifying v1.0.3 SECTION_D14.no_gate_weakened.",
+        "closed_by": [
+          "SECTION_E2",
+          "SECTION_E3.disposition_status",
+          "SECTION_E3.consumer_rule",
+          "SECTION_E4",
+          "SECTION_E9"
+        ]
+      },
+      {
+        "id": "RB-2",
+        "finding": "Single-write R1 evaded by an add/add merge under git log default history simplification; \"FIRST commit that added it\" is ambiguous in a DAG; the R1 implementation had no test.",
+        "closed_by": [
+          "SECTION_E3.write_once_history"
+        ]
+      }
+    ],
+    "nonblocking": [
+      {
+        "id": "RNB-1",
+        "finding": "Bootstrap not circular but the occurrence contract cannot represent its own successor; the recertifier literal does not parse under the contract vocabulary.",
+        "disposition": "OPEN_DISCLOSED as OF-RV-1: the Recovery authority package still has no subject kind; extending the closed enum is not required by the owner brief."
+      },
+      {
+        "id": "RNB-2",
+        "finding": "Runtime input db/baseline/stella_g2_post_restore.sql, vitest configuration and package/lock outside the KS-B closure.",
+        "disposition": "CLOSED by RCO_CLOSURE_DIGEST_V2 (TOOLCHAIN and RUNTIME_INPUT roles); package-manager limits recorded in SECTION_E12."
+      },
+      {
+        "id": "RNB-3",
+        "finding": "Provenance independence declarative only; homoglyph lane ids validate as distinct.",
+        "disposition": "CLOSED as far as practical: ASCII lane-id grammar and separator-insensitive identity key; independence classified PROCESS_GOVERNED, never cryptographic (SECTION_E3.provenance)."
+      },
+      {
+        "id": "RNB-4",
+        "finding": "An authority outside the recorded governing families does not make an occurrence stale; a later self-declaration is only certifiable non-mechanically.",
+        "disposition": "OPEN_DISCLOSED as OF-RV-4."
+      },
+      {
+        "id": "RNB-5",
+        "finding": "Chain truncation (deleted predecessor, restart) validates at read time.",
+        "disposition": "CLOSED by SECTION_E3.write_once_history (zero DELETE anywhere under the adjudication root) and SECTION_E3.chain (predecessor must exist with its digest; single root; single tip; all reachable)."
+      },
+      {
+        "id": "RNB-6",
+        "finding": "Consumers ignore recertification scope.",
+        "disposition": "CLOSED: a non-FULL scope requires a non-empty scope_basis and the consumer result carries scope and basis (SECTION_E3.consumer_rule)."
+      },
+      {
+        "id": "RNB-7",
+        "finding": "Tests: 8 non-equivalent mutation survivors of 21; precedence check pinned 4 topics.",
+        "disposition": "ADDRESSED: the recertifier survivor list was not materialized to this lane, so an independent mutation battery over the new interpreter is shipped (tests/release/staging-recovery-cert-adjudication.mutation-battery.mjs) with a harmless-survivor self-test, targeting the named survivor classes (R1 history implementation, precedence coverage, closed predecessor semantics, C10 mapping); precedence now covers EVERY topic through SECTION_E6 anchors. A pre-commit independent review then ran its own conjunct-level mutants; every non-equivalent survivor it reported now has a dedicated control and a battery mutant."
+      },
+      {
+        "id": "RNB-8",
+        "finding": "REVIEW and IC qualifiers admit a non-recertification PASS.",
+        "disposition": "PARTIALLY CLOSED: REVIEW is removed from the qualifier set and the vocabulary. IC is retained deliberately: under this adjudication contract an initial independent certification IS an adjudication of the closure (project usage: IC = independent certification). Recorded as OF-RV-5 for the certifier to reject."
+      }
+    ]
+  },
+  "SECTION_E2_OWNER_DECISION_BINDING": {
+    "owner_record": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+    "decision": "RECOVERY_CERT_REVOCATION_BINDING = PACKAGE_DIGEST (SIGNED = YES)",
+    "made_mechanical_by": [
+      "SECTION_E3.disposition_status",
+      "SECTION_E3.consumer_rule"
+    ],
+    "not_decided_here": "EVENT_A_POLICY remains PENDING. No explicit owner adjudication resolving a contradiction exists; none is representable by this contract, so a contradicted closure STOPS until a materially new package_digest is independently certified or a future owner record and certified amendment resolve it."
+  },
+  "SECTION_E3_ADJUDICATION_CONTRACT": {
+    "contract_id": "STAGING_RECOVERY_CERTIFICATION_ADJUDICATION_CONTRACT_V1",
+    "supersedes": "v1.0.3 SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT as the unit of record. A positive-only \"occurrence\" is replaced by an ADJUDICATION of any closed verdict class; a positive certification is a positive adjudication. v1.0.3 SECTION_D9 remains history and its contract_id is retired (SECTION_E7).",
+    "meaning": "The cited package closure was independently adjudicated with the recorded verdict under its cited governing authority. Nothing else.",
+    "not_executable_authority": "An adjudication authorizes NO act. Its authorizes field is the empty list, always.",
+    "subject_kinds": {
+      "rule": "CLOSED ENUM, same two kinds as v1.0.3. No OTHER.",
+      "kinds": {
+        "READONLY_CENSUS_AUTHORITY_RECERT": {
+          "covered_path_prefixes": [
+            "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_",
+            "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_"
+          ],
+          "toolchain_roots": []
+        },
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": {
+          "covered_path_prefixes": [
+            "scripts/recovery/",
+            "tests/recovery/",
+            "tests/postgres/recovery-",
+            "docs/ops/release/STAGING_RECOVERY_OFFLINE_"
+          ],
+          "toolchain_roots": [
+            ".gitattributes",
+            "package.json",
+            "pnpm-lock.yaml",
+            "pnpm-workspace.yaml",
+            "tsconfig.json",
+            "vitest.config.ts"
+          ]
+        }
+      }
+    },
+    "subject_identity_derivation": {
+      "algorithm": "RCO_CLOSURE_DIGEST_V2",
+      "supersedes": "RCO_CLOSURE_DIGEST_V1 (v1.0.3 SECTION_D9.subject_identity_derivation).",
+      "why": "RNB-2: the V1 closure missed a runtime-loaded corpus and the test toolchain that executes the certified tests. V2 adds exactly those two classes, derived by fixed rules, and nothing else: it is not the whole repository.",
+      "steps": [
+        "S1 C must name a COMMIT object; tree_sha = C^{tree}; tree_sha never equals candidate_sha.",
+        "S2 COVERED = every path of the tree of C starting with a covered_path_prefix of the kind, byte-sorted, non-empty.",
+        "S3 IMPORTED = transitive closure of repository imports from COVERED code files (.ts .tsx .js .mjs .cjs): import_specifier_grammar matches whose specifier starts with \".\" (relative to the importing file) or \"@/\" (repository root), resolved with import_resolution_suffixes in order; an unresolvable specifier of either form fails the derivation; package specifiers are not followed.",
+        "S4 TOOLCHAIN = the kind's toolchain_roots (each must exist at C), plus every path listed in a setupFiles array literal of a toolchain root code file (resolved relative to that root; must exist), plus the transitive repository-import closure (S3 grammar) of those files, minus paths already assigned.",
+        "S5 RUNTIME_INPUT = every string literal of runtime_literal_grammar found in a COVERED code file with comments removed (block comments and line comments not preceded by \":\" or \"\\\\\"), resolved relative to the file when it starts with \"./\" or \"../\" and to the repository root otherwise, that names an existing file at C not already assigned and not matching docs/ops/**.json. Literals that name no file are ignored (they are output paths, globs or identifiers). RUNTIME_INPUT files are not scanned further.",
+        "S6 GOVERNING = every distinct match of docs/ops/[A-Za-z0-9_./-]+\\.json in the text of any COVERED, TOOLCHAIN or IMPORTED path, not already assigned; every GOVERNING path must exist at C.",
+        "S7 entries = COVERED, TOOLCHAIN, IMPORTED, RUNTIME_INPUT, GOVERNING, each byte-sorted by path, as {role, path, blob}.",
+        "S8 package_digest = lowercase hex sha256 over the UTF-8 concatenation of role TAB path TAB blob LF for each entry in order.",
+        "S9 governing_families and governing_family_members_at_candidate ({path, blob}) as v1.0.3 S7/S8."
+      ],
+      "import_specifier_grammar": [
+        "from '<spec>'",
+        "import('<spec>')",
+        "require('<spec>')",
+        "line-leading import '<spec>'"
+      ],
+      "import_resolution_suffixes": [
+        "",
+        ".ts",
+        ".tsx",
+        ".js",
+        ".mjs",
+        ".cjs",
+        "/index.ts",
+        "/index.js"
+      ],
+      "runtime_literal_grammar": "a single-, double- or back-quoted literal of the form (./|../)?SEG(/SEG)+.EXT where SEG is [A-Za-z0-9_.@-]+ (the first segment not starting with \".\" unless it is \".\" or \"..\") and EXT is [A-Za-z0-9]+; no \"*\", no whitespace, no scheme.",
+      "v1_equivalence": "For a kind with no code files and no toolchain roots (READONLY_CENSUS_AUTHORITY_RECERT) V2 produces the same entries and the same package_digest as V1."
+    },
+    "verdict": {
+      "verdict_classes": [
+        "PASS",
+        "PASS_WITH_NONBLOCKING_FINDINGS",
+        "FAIL",
+        "BLOCKED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "positive_classes": [
+        "PASS",
+        "PASS_WITH_NONBLOCKING_FINDINGS"
+      ],
+      "non_positive_classes": [
+        "FAIL",
+        "BLOCKED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "non_positive_rule": "NON_POSITIVE = every verdict_class not in positive_classes (owner v1.0.2: FAIL, BLOCKED, INSUFFICIENT_EVIDENCE and any other non-PASS class). PASS_WITH_NONBLOCKING_FINDINGS is POSITIVE by v1.0.3 SECTION_D9.verdict.PASS_CLASS, which this artifact carries; the owner text does not reach it. The two lists partition verdict_classes exactly.",
+      "required_qualifier_tokens": [
+        "RECERT",
+        "RECERTIFICATION",
+        "CERT",
+        "CERTIFICATION",
+        "IC"
+      ],
+      "prefix_token_vocabulary": [
+        "STAGING",
+        "RECOVERY",
+        "OFFLINE",
+        "IMPLEMENTATION",
+        "FOCUSED",
+        "BOUNDED",
+        "SHORT",
+        "FULL",
+        "CENSUS",
+        "READONLY",
+        "QUIESCE",
+        "AUTHORITY",
+        "EVENT",
+        "CLASS",
+        "PACKAGE",
+        "INTEGRATION",
+        "SUCCESSOR",
+        "CONFORMANCE",
+        "CLEANROOM",
+        "INDEPENDENT",
+        "CONTRACT",
+        "REMEDIATION",
+        "RECERT",
+        "RECERTIFICATION",
+        "CERT",
+        "CERTIFICATION",
+        "IC"
+      ],
+      "version_token_pattern": "^V[0-9]+$",
+      "literal_rule": {
+        "positive": "A record whose verdict_class is POSITIVE must carry a literal that parses STRICTLY to that class: split on \"_\", the class is the longest verdict_class forming a proper suffix of the tokens, the prefix is non-empty, its LAST token is one of required_qualifier_tokens and EVERY prefix token is in the CLOSED prefix_token_vocabulary or matches version_token_pattern. Anything else STOPS (STOP_VERDICT_LITERAL_MISMATCH). A negation, qualifier or unknown word can therefore never produce a positive record.",
+        "non_positive": "A record whose verdict_class is NON-POSITIVE carries the adjudicator literal VERBATIM as opaque evidence: a non-empty ASCII [A-Z0-9_]+ string whose tokens do NOT END with the tokens of any positive class (strictly parseable or not), so a genuine PASS verdict can never be recorded as non-positive. The vocabulary does NOT restrict non-positive literals (review finding B2: restricting them made real FAIL verdicts unrecordable, which kept a PASS usable). A positive-parsing literal on a non-positive record STOPS (STOP_VERDICT_LITERAL_MISMATCH). The materializer maps a literal outside the closed classes (for example ..._PASS_WITH_PROGRAM_BLOCKERS) to the non-positive class the adjudicator report states; never to a positive class.",
+        "removed": "v1.0.3 forbidden_prefix_tokens is not carried: with a closed vocabulary disjoint from it, it was dead code. REVIEW is not a qualifier and not in the vocabulary."
+      },
+      "class_consistency": {
+        "PASS": "blocking_findings_count = 0, blocking_findings empty, nonblocking count 0",
+        "PASS_WITH_NONBLOCKING_FINDINGS": "blocking_findings_count = 0, blocking_findings empty, nonblocking count >= 1",
+        "FAIL": "blocking_findings_count >= 1 and equals the length of blocking_findings",
+        "BLOCKED": "blocking_findings_count equals the length of blocking_findings (may be 0)",
+        "INSUFFICIENT_EVIDENCE": "blocking_findings_count equals the length of blocking_findings (may be 0)",
+        "stop": "STOP_VERDICT_CLASS_INCONSISTENT"
+      }
+    },
+    "findings": {
+      "rule": "Every nonblocking finding reported is recorded OPEN (exact count, unique non-empty ids and summaries). Every blocking finding reported is recorded as {id, summary} (unique non-empty ids).",
+      "closure": "As v1.0.3: only a later adjudication of the SAME kind whose chain predecessor carries the finding may list it in closes_predecessor_findings."
+    },
+    "provenance": {
+      "roles": [
+        "candidate_author",
+        "independent_adjudicator",
+        "materializer"
+      ],
+      "lane_id_grammar": "^[A-Z0-9]+(-[A-Z0-9]+)*$ (ASCII upper-case letters, digits and single hyphens; no Unicode, no whitespace, no other separator). Anything else STOPS (STOP_PROVENANCE_IDENTITY_MALFORMED).",
+      "identity_key": "lane_id with every \"-\" removed. The three identity keys must be pairwise distinct (STOP_PROVENANCE_NOT_INDEPENDENT). This defeats case, whitespace, separator and Unicode-confusable variants of one lane id; it does not and cannot prove that three distinct ids are three distinct actors.",
+      "independence_basis": "PROCESS_GOVERNED: independence is established by the governed lane process (separate lane briefs, separate sessions, recorded in the report reference), not by cryptographic identity. The field is required with exactly this value; no identity or authentication infrastructure is authorized or implied.",
+      "recert_scope": {
+        "values": [
+          "FULL_SUBJECT",
+          "BOUNDED_DELTA_OVER_PRIOR_CERTIFIED_LAYERS",
+          "FOCUSED_REMEDIATION"
+        ],
+        "scope_basis_rule": "FULL_SUBJECT has an empty scope_basis. Every other scope has a non-empty scope_basis: a list of non-empty strings naming the prior independent adjudication rounds (report references) whose coverage the bounded or focused adjudication relies on. Anything else STOPS (STOP_RECERT_SCOPE_UNDECLARED)."
+      },
+      "evidence_basis": {
+        "identity_facts_basis": "MATERIALIZER_REDERIVED",
+        "verdict_and_findings_basis": "ADJUDICATOR_REPORTED_SECOND_HAND",
+        "materializer_reproduced_adjudication_evidence": false
+      },
+      "adjudicator_subject_binding": "independent_adjudicator.examined_candidate_sha and examined_tree_sha equal subject.candidate_sha and subject.tree_sha (STOP_RECERT_SUBJECT_MISMATCH). Candidate and tree are EVIDENCE of what was examined; revocation and currency are bound to package_digest."
+    },
+    "path_and_identity": {
+      "adjudication_root": "docs/ops/release/rca/",
+      "kind_path_codes": {
+        "READONLY_CENSUS_AUTHORITY_RECERT": "CENSUS",
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": "OFFLINE"
+      },
+      "adjudication_path": "docs/ops/release/rca/<KIND_CODE>/<package_digest>/<adjudication_digest>.json",
+      "path_length_rule": "KIND_CODE is the closed per-kind code of kind_path_codes, used instead of the kind name so that the repository-relative path stays at most 170 characters (Windows MAX_PATH hazard, CLAUDE.md section 9); the full kind is inside the record. Both digests stay full-length sha256.",
+      "adjudication_digest": "lowercase hex sha256 over the canonical JSON of the parsed record (object keys sorted recursively by code point, no insignificant whitespace, UTF-8). The file is content-addressed: its path names the digest of its own content, so two different adjudications never share a path and any edit breaks the path identity.",
+      "stop": "STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH"
+    },
+    "store_integrity": {
+      "rule": "EVERY git entry under adjudication_root at H is a candidate record, whatever it claims to be. The store is VALID only if every entry: (1) is a regular file (mode 100644; no symlink, gitlink/submodule or executable); (2) has the path shape adjudication_root/KIND_CODE/<64 hex>/<64 hex>.json with KIND_CODE in kind_path_codes; (3) parses as JSON and its bytes are EXACTLY the canonical pretty serialization of the parsed value (object keys sorted recursively by code point, two-space indentation, LF line ends, one trailing LF), so duplicate keys, reordered keys or reformatting are rejected; (4) has a subject_kind in the closed enum whose kind_path_codes entry equals the KIND_CODE directory; (5) has subject.package_digest equal to its directory digest and adjudication_digest equal to its filename. Membership of a kind is decided by the DIRECTORY and must agree with the record.",
+      "stop": "STOP_ADJUDICATION_STORE_INVALID for EVERY kind (root-wide): a record that cannot be attributed can never be silently ignored (review finding B1: a FAIL with a mistyped or foreign subject_kind was skipped and the PASS stayed usable).",
+      "repair": "None by this contract: entries are write-once. Only a later independently certified amendment with an owner record may define a repair (for example a quarantine list); until then the store STOPS."
+    },
+    "canonical_serialization": "File bytes = canonical pretty serialization (store_integrity (3)); adjudication_digest = sha256 of the canonical COMPACT serialization of the same parsed value.",
+    "chain": {
+      "rule": "All adjudications of one subject_kind, of every verdict class, form ONE chain. chain.predecessor is null for the first adjudication of the kind, otherwise {path, adjudication_digest} of the chain TIP at write time.",
+      "read_time_integrity": "At read time, for each kind: exactly one record has predecessor null (single root); every predecessor reference names a record that EXISTS at H under the adjudication root whose recomputed adjudication_digest equals the reference; exactly one tip; every record reachable from the tip by predecessor links (no orphan, no fork, no cycle). Any violation makes every adjudication of that kind unusable (STOP_CHAIN_INTEGRITY_VIOLATED).",
+      "order": "Chain position (distance from the root) is the ONLY ordering of adjudications. No timestamp, filename, author assertion or date field orders them."
+    },
+    "write_once_history": {
+      "rule": "Every path under the adjudication root is write-once in the FULL git DAG history of the consumer head H.",
+      "preconditions": "git rev-parse --is-shallow-repository prints false (a shallow clone hides history: STOP_ADJUDICATION_HISTORY_UNVERIFIABLE). The command runs with GIT_NO_REPLACE_OBJECTS=1, --no-replace-objects, GIT_GRAFT_FILE pointing to a non-existent file, and -c log.showRoot=true, so replace refs, grafts and a local log.showRoot=false cannot rewrite or hide history.",
+      "command": "git --no-replace-objects -c log.showRoot=true log --full-history --no-renames --cc --format=%x01%H%x20%P --name-status -- <adjudication_root>",
+      "why_full_history": "Default history simplification follows one TREESAME parent through a merge and hides a competing add on the other side (RB-2, add/add merge). --full-history lists every commit that touched the path on every branch; --no-renames reports a rename as a DELETE plus an ADD; --cc reports a merge entry only where the merge result differs from ALL parents (an evil merge).",
+      "per_path": "EVERY path present under the root at H has exactly ONE ADD entry in a non-merge commit (zero or one parent; a root commit counts as non-merge); ZERO modify, delete, type-change or copy entries; ZERO merge (combined) entries. A path present at H with zero ADD entries is a violation.",
+      "root_wide": "ZERO delete entries anywhere under the root (so a deleted predecessor or a deleted tip, i.e. a truncation or restart, is visible even when every surviving path looks clean).",
+      "stop": "STOP_ADJUDICATION_HISTORY_VIOLATED ROOT-WIDE: a violation anywhere under the adjudication root makes every kind unusable (the safe direction; v1.0.4 draft text said per kind).",
+      "proven_against": "real git DAG fixtures in the companion test: plain add, add/add merge, delete, delete and re-add, modify, rename, evil merge, legitimate side-branch add merged normally, shallow clone, replace-graft evasion, log.showRoot=false evasion, gitlink entry."
+    },
+    "canonical_store": {
+      "CANONICAL_ADJUDICATION_REF": "refs/heads/codex/cv1-recovery-integration-successor-r1",
+      "transitional": "The branch that carries this contract. A materializer lane opens its pull request against this ref. The ref is moved only by a later independently certified amendment (for example when the Recovery chain is merged into integration/commercial-v1); a deleted or renamed canonical ref makes every consumer STOP until then.",
+      "freshness_rule": "A consumer at head H fetches CANONICAL_ADJUDICATION_REF immediately before evaluation and requires BOTH (a) the fetched tip is an ANCESTOR of H (git merge-base --is-ancestor <tip> H), so that the canonical history, including any deletion on it, is inside the history write_once_history inspects at H; and (b) every entry under adjudication_root at the fetched tip is present at H with the same blob (implied by (a) together with write_once_history at H; kept as a direct diagnostic). Otherwise STOP_ADJUDICATION_STORE_STALE. (a) closes the gap a pre-commit review found in containment alone: a FAIL added and then deleted on the canonical ref leaves a tip that an older head still contains.",
+      "evidence": "The consumer records the fetched tip SHA and the containment result."
+    },
+    "validation": {
+      "write_time": "W1..W11 of validation_order at the materializer head.",
+      "read_time": "W1..W10 at the consumer head H (W3 compares adjudication_contract.blob with the blob of this artifact at H), plus R1 write_once_history and R2 chain.read_time_integrity. W11 is write-time only."
+    },
+    "disposition_status": {
+      "rule": "For a subject_kind and a package_digest P, let D(P) be the adjudications of that kind whose subject.package_digest = P, in chain order. Evaluated only when the kind passed read-time validation.",
+      "statuses": {
+        "NOT_ADJUDICATED": "D(P) empty. Not usable (STOP_NOT_CERTIFIED).",
+        "NEGATIVELY_ADJUDICATED": "D(P) contains only non-positive adjudications. Not usable (STOP_NOT_CERTIFIED).",
+        "REVOKED": "D(P) contains a positive adjudication and a LATER non-positive adjudication, and no positive adjudication follows the first non-positive one. Not usable (STOP_CERTIFICATION_REVOKED). Every positive adjudication for P is revoked regardless of its candidate SHA (owner v1.0.2).",
+        "CONTRADICTED": "D(P) contains a positive adjudication that FOLLOWS a non-positive adjudication. Not usable (STOP_CONTRADICTORY_CERTIFICATION). A later PASS never erases an earlier non-positive adjudication; no latest-wins, no filename or timestamp ordering, no silent reactivation.",
+        "CERTIFIED": "D(P) contains positive adjudications only."
+      },
+      "recovery_from_revoked_or_contradicted": "Only (1) a materially new package_digest independently adjudicated positive, or (2) a future owner adjudication made mechanical by a later certified amendment (owner v1.0.2). Neither is performed here."
+    },
+    "currency": {
+      "rule": "A CERTIFIED closure P is CURRENT at H when the V2 closure derived at H has package_digest P (so every COVERED, TOOLCHAIN, IMPORTED, RUNTIME_INPUT and GOVERNING blob is unchanged) and the governing-family rule of v1.0.3 SECTION_D9.currency (6) holds against the latest positive adjudication for P, with the declared layers below. SUBJECT_NOT_PRESENT when COVERED at H is empty. Otherwise STALE.",
+      "declared_non_invalidating_governing_layers": {
+        "rule": "As v1.0.3, extended with the layers introduced since. Only this artifact itself is declared with blob null; its integrity is read-time W3.",
+        "READONLY_CENSUS_AUTHORITY_RECERT": [
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+            "blob": "40c5cbba0f9e485cb022ffa0a733e1905e0aa88c",
+            "reason": "Recovery event-class posture; changes no census rule and no offline-primitive requirement (v1.0.3 SECTION_D9 declarations, carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+            "blob": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+            "reason": "Owner OD-3 event-class narrowing; OD-5/OD-6 unchanged (carried from v1.0.3)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "blob": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0",
+            "reason": "The superseded occurrence contract; its surviving clauses change no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+            "blob": "e4030e734b96ca8b0e68372a4e98111782e8f76e",
+            "reason": "Owner revocation-binding decision, co-introduced with this artifact; it cites this artifact by path only, so its blob can be pinned here without circularity. It governs adjudication consumption, not the subjects."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+            "blob": null,
+            "reason": "This artifact; integrity by read-time W3 (adjudication_contract.blob)."
+          }
+        ],
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": [
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+            "blob": "40c5cbba0f9e485cb022ffa0a733e1905e0aa88c",
+            "reason": "Recovery event-class posture; changes no census rule and no offline-primitive requirement (v1.0.3 SECTION_D9 declarations, carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+            "blob": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+            "reason": "Owner OD-3 event-class narrowing; OD-5/OD-6 unchanged (carried from v1.0.3)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "blob": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0",
+            "reason": "The superseded occurrence contract; its surviving clauses change no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+            "blob": "e4030e734b96ca8b0e68372a4e98111782e8f76e",
+            "reason": "Owner revocation-binding decision, co-introduced with this artifact; it cites this artifact by path only, so its blob can be pinned here without circularity. It governs adjudication consumption, not the subjects."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+            "blob": null,
+            "reason": "This artifact; integrity by read-time W3 (adjudication_contract.blob)."
+          }
+        ]
+      }
+    },
+    "consumer_rule": {
+      "rule": "A positive certification is USABLE by a consumer at head H only when it is CURRENT AND NOT_REVOKED AND NOT_CONTRADICTED (owner brief). Mechanically, for a subject_kind K at H, in order: (0) H is not a shallow clone (STOP_ADJUDICATION_HISTORY_UNVERIFIABLE); (1) no file exists under the retired occurrence root (STOP_RETIRED_OCCURRENCE_ROOT_USED); (2) store_integrity holds for the WHOLE root (STOP_ADJUDICATION_STORE_INVALID); (3) write_once_history holds for the whole root (STOP_ADJUDICATION_HISTORY_VIOLATED); (4) chain.read_time_integrity holds for K (STOP_CHAIN_INTEGRITY_VIOLATED); (5) every adjudication of EVERY kind passes read-time validation (STOP_ADJUDICATION_INVALID_AT_READ); (6) canonical_store.freshness_rule holds (STOP_ADJUDICATION_STORE_STALE); (7) the V2 closure of K at H exists (STOP_SUBJECT_NOT_PRESENT) with digest P; (8) disposition_status(K, P) is CERTIFIED (else its stop code); (9) currency is CURRENT against the LATEST positive adjudication for P (STOP_NOT_CURRENT). The result carries {usable, status, package_digest, scopes, scope_basis, canonical_tip}.",
+      "consumer_results": [
+        "USABLE",
+        "STOP_ADJUDICATION_HISTORY_UNVERIFIABLE",
+        "STOP_RETIRED_OCCURRENCE_ROOT_USED",
+        "STOP_ADJUDICATION_STORE_INVALID",
+        "STOP_ADJUDICATION_HISTORY_VIOLATED",
+        "STOP_CHAIN_INTEGRITY_VIOLATED",
+        "STOP_ADJUDICATION_INVALID_AT_READ",
+        "STOP_ADJUDICATION_STORE_STALE",
+        "STOP_SUBJECT_NOT_PRESENT",
+        "STOP_NOT_CERTIFIED",
+        "STOP_CERTIFICATION_REVOKED",
+        "STOP_CONTRADICTORY_CERTIFICATION",
+        "STOP_NOT_CURRENT"
+      ],
+      "scope": "The consumer result reports the scope of every positive adjudication for P and its scope_basis; a consumer that requires FULL_SUBJECT says so in its own authority. No consumer in this chain requires more than the scopes the owner accepted in practice (OF-RV-3)."
+    },
+    "record_schema": {
+      "top_level_keys_exact": [
+        "adjudication_contract",
+        "subject_kind",
+        "subject",
+        "verdict",
+        "blocking_findings",
+        "nonblocking_findings",
+        "closes_predecessor_findings",
+        "provenance",
+        "chain",
+        "authority_class",
+        "authorizes",
+        "meaning"
+      ],
+      "nested_keys_exact": {
+        "adjudication_contract": [
+          "blob",
+          "path",
+          "section"
+        ],
+        "subject": [
+          "candidate_sha",
+          "digest_algorithm",
+          "entries",
+          "governing_families",
+          "governing_family_members_at_candidate",
+          "package_digest",
+          "tree_sha"
+        ],
+        "subject.entries[]": [
+          "blob",
+          "path",
+          "role"
+        ],
+        "subject.governing_family_members_at_candidate[]": [
+          "blob",
+          "path"
+        ],
+        "verdict": [
+          "blocking_findings_count",
+          "nonblocking_findings_reported_count",
+          "verdict_class",
+          "verdict_literal"
+        ],
+        "blocking_findings[]": [
+          "id",
+          "summary"
+        ],
+        "nonblocking_findings[]": [
+          "id",
+          "status",
+          "summary"
+        ],
+        "provenance": [
+          "candidate_author",
+          "identity_facts_basis",
+          "independence_basis",
+          "independent_adjudicator",
+          "materializer",
+          "materializer_reproduced_adjudication_evidence",
+          "verdict_and_findings_basis"
+        ],
+        "provenance.candidate_author": [
+          "executor",
+          "lane_id"
+        ],
+        "provenance.independent_adjudicator": [
+          "adjudication_date",
+          "examined_candidate_sha",
+          "examined_tree_sha",
+          "executor",
+          "lane_id",
+          "report_reference",
+          "scope",
+          "scope_basis"
+        ],
+        "provenance.materializer": [
+          "executor",
+          "lane_id",
+          "materialization_date"
+        ],
+        "chain": [
+          "predecessor"
+        ],
+        "chain.predecessor (when not null)": [
+          "adjudication_digest",
+          "path"
+        ]
+      },
+      "entry_roles": [
+        "COVERED",
+        "TOOLCHAIN",
+        "IMPORTED",
+        "RUNTIME_INPUT",
+        "GOVERNING"
+      ],
+      "authority_class": "CERTIFICATION_ADJUDICATION_RECORD__NOT_EXECUTABLE_AUTHORITY",
+      "section": "SECTION_E3_ADJUDICATION_CONTRACT"
+    },
+    "validation_order": [
+      "W1 subject_kind in the closed enum (STOP_UNKNOWN_SUBJECT_KIND).",
+      "W2 keys exactly record_schema at every level, roles in entry_roles (STOP_ADJUDICATION_SHAPE).",
+      "W3 adjudication_contract names this artifact, record_schema.section and its blob (STOP_ADJUDICATION_CONTRACT_MISMATCH).",
+      "W4 authority_class, empty authorizes, exact meaning (STOP_ADJUDICATION_CLAIMS_AUTHORITY).",
+      "W5 candidate_sha 40 lowercase hex (STOP_CANDIDATE_SHA_MALFORMED); the path is adjudication_root/KIND_CODE/package_digest/adjudication_digest.json (STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH).",
+      "W6 COVERED entries non-empty and inside the kind prefixes (STOP_SUBJECT_KIND_MISMATCH).",
+      "W7 identity equals the V2 re-derivation at the candidate and, for a known subject, SECTION_E5 (entries, families and members compared in both cases): candidate and a distinct tree (STOP_CANDIDATE_SHA_MISMATCH), tree (STOP_TREE_SHA_MISMATCH), COVERED/TOOLCHAIN/IMPORTED/RUNTIME_INPUT lists and blobs (STOP_COVERED_SET_MISMATCH), GOVERNING, families and members (STOP_GOVERNING_PIN_MISMATCH), package_digest (STOP_PACKAGE_DIGEST_MISMATCH).",
+      "W8 literal_rule for the record class (STOP_VERDICT_LITERAL_MISMATCH); class consistency (STOP_VERDICT_CLASS_INCONSISTENT).",
+      "W9 findings complete (STOP_NONBLOCKING_FINDINGS_INCOMPLETE) and nonblocking OPEN (STOP_FINDING_NOT_OPEN).",
+      "W10 lane-id grammar (STOP_PROVENANCE_IDENTITY_MALFORMED), independence (STOP_PROVENANCE_NOT_INDEPENDENT), adjudicator binding (STOP_RECERT_SUBJECT_MISMATCH), scope and basis (STOP_RECERT_SCOPE_UNDECLARED), bases and PROCESS_GOVERNED (STOP_MATERIALIZER_REPRODUCTION_CLAIM).",
+      "W11 WRITE-TIME ONLY: path free (STOP_ADJUDICATION_PATH_EXISTS); predecessor is the tip with its digest, or null when the kind has none (STOP_CHAIN_PREDECESSOR_MISMATCH); closes_predecessor_findings valid (STOP_FINDING_CLOSURE_INVALID).",
+      "R1 READ-TIME ONLY: write_once_history (STOP_ADJUDICATION_HISTORY_VIOLATED). R2 READ-TIME ONLY: chain.read_time_integrity (STOP_CHAIN_INTEGRITY_VIOLATED)."
+    ],
+    "stop_codes": [
+      "STOP_UNKNOWN_SUBJECT_KIND",
+      "STOP_ADJUDICATION_SHAPE",
+      "STOP_ADJUDICATION_CONTRACT_MISMATCH",
+      "STOP_ADJUDICATION_CLAIMS_AUTHORITY",
+      "STOP_CANDIDATE_SHA_MALFORMED",
+      "STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH",
+      "STOP_SUBJECT_KIND_MISMATCH",
+      "STOP_CANDIDATE_SHA_MISMATCH",
+      "STOP_TREE_SHA_MISMATCH",
+      "STOP_COVERED_SET_MISMATCH",
+      "STOP_GOVERNING_PIN_MISMATCH",
+      "STOP_PACKAGE_DIGEST_MISMATCH",
+      "STOP_VERDICT_LITERAL_MISMATCH",
+      "STOP_VERDICT_CLASS_INCONSISTENT",
+      "STOP_NONBLOCKING_FINDINGS_INCOMPLETE",
+      "STOP_FINDING_NOT_OPEN",
+      "STOP_PROVENANCE_IDENTITY_MALFORMED",
+      "STOP_PROVENANCE_NOT_INDEPENDENT",
+      "STOP_RECERT_SUBJECT_MISMATCH",
+      "STOP_RECERT_SCOPE_UNDECLARED",
+      "STOP_MATERIALIZER_REPRODUCTION_CLAIM",
+      "STOP_ADJUDICATION_PATH_EXISTS",
+      "STOP_CHAIN_PREDECESSOR_MISMATCH",
+      "STOP_FINDING_CLOSURE_INVALID",
+      "STOP_ADJUDICATION_HISTORY_VIOLATED",
+      "STOP_CHAIN_INTEGRITY_VIOLATED"
+    ]
+  },
+  "SECTION_E4_CONSUMER_REGISTRY": {
+    "rule": "Derived MECHANICALLY, not hand-enumerated: every string leaf of v1.0.3 matching discovery_pattern_a AND discovery_pattern_b is a discovered locus, and every discovered locus is classified below. The companion test re-derives the set and fails on any locus added, removed or unclassified. No closed consumer registry existed in the repository before this section.",
+    "discovery_pattern_a": "occurrence|\\bKS-[AB]\\b (case-insensitive)",
+    "discovery_pattern_b": "\\bCURRENT\\b|\\bvalid\\b|\\bcurrency\\b (case-sensitive)",
+    "discovery_rule_2": "Review finding (bare certified consumers in older layers): every string leaf of v1.0.0, v1.0.1 and v1.0.2 matching \\bcertif(ied|ication)\\b (case-insensitive) AND \\b(census|offline|HX-[0-9]|authority)\\b (case-insensitive) is also discovered and classified (loci_older_layers).",
+    "classes": {
+      "CONSUMER": "Relies on a Recovery certification. From this artifact it is satisfied ONLY by SECTION_E3.consumer_rule returning USABLE (CURRENT AND NOT_REVOKED AND NOT_CONTRADICTED). Its v1.0.3 wording is superseded to that extent (SECTION_E11).",
+      "SUPERSEDED_RULE": "A v1.0.3 contract rule replaced by SECTION_E3.",
+      "NON_CONSUMER": "Mentions certification currency without relying on it for any gate.",
+      "PACKAGE_CONSUMER": "Relies on certification of the Recovery AUTHORITY PACKAGE itself, for which no subject kind exists (OF-RV-1). Satisfied only by an independent recertification of the package content at the consumer head; owner v1.0.2 applies by JUDGEMENT, not mechanically: the consumer lane cites every independent adjudication of that package content known to it and STOPS on any non-positive one or any contradiction. Not USABLE-checkable by SECTION_E3."
+    },
+    "loci": [
+      {
+        "locus": "$.SECTION_D4_POST_CENSUS_OWNER_BRIEF.POST_CENSUS_OWNER_REPORT.trigger",
+        "class": "NON_CONSUMER",
+        "reason": "Triggers the report whether or not a certification exists."
+      },
+      {
+        "locus": "$.SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.EA_F1_BINDING.certified_census_authority_means",
+        "class": "CONSUMER",
+        "consumer": "EA-F1"
+      },
+      {
+        "locus": "$.SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.freshness.certification_currency_is_not_observation_freshness",
+        "class": "NON_CONSUMER",
+        "reason": "States that certification currency never refreshes an observation; still true of adjudication currency."
+      },
+      {
+        "locus": "$.SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT.chain.no_silent_reuse",
+        "class": "SUPERSEDED_RULE",
+        "reason": "Replaced by SECTION_E3.disposition_status and consumer_rule (reuse is by closure, revocable)."
+      },
+      {
+        "locus": "$.SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT.currency.rule",
+        "class": "SUPERSEDED_RULE",
+        "reason": "Replaced by SECTION_E3.currency and consumer_rule."
+      },
+      {
+        "locus": "$.SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT.validation_order[10]",
+        "class": "SUPERSEDED_RULE",
+        "reason": "V11 replaced by W11."
+      },
+      {
+        "locus": "$.SECTION_D10_KNOWN_SUBJECTS.currency_at_this_lineage.KS-B",
+        "class": "NON_CONSUMER",
+        "reason": "A disclosure of the state at the v1.0.3 introducing tree."
+      },
+      {
+        "locus": "$.SECTION_D12_PR220_DISPOSITION.merge_prerequisites_conjunctive[1]",
+        "class": "CONSUMER",
+        "consumer": "M-2"
+      },
+      {
+        "locus": "$.SECTION_D12_PR220_DISPOSITION.merge_prerequisites_conjunctive[2]",
+        "class": "CONSUMER",
+        "consumer": "M-3"
+      },
+      {
+        "locus": "$.SECTION_D13_HOSTED_PREREQUISITE_READING.HX-2",
+        "class": "CONSUMER",
+        "consumer": "HX-2"
+      },
+      {
+        "locus": "$.SECTION_D13_HOSTED_PREREQUISITE_READING.HX-5_event_A",
+        "class": "CONSUMER",
+        "consumer": "HX-5A"
+      },
+      {
+        "locus": "$.SECTION_D16_SUPERSEDED_LOCI[7].extent",
+        "class": "CONSUMER",
+        "consumer": "HX-2 reading (its HX-1 half is the PACKAGE_CONSUMER of v1.0.2 HX-1 below)"
+      },
+      {
+        "locus": "$.SECTION_D16_SUPERSEDED_LOCI[8].extent",
+        "class": "CONSUMER",
+        "consumer": "HX-5 reading"
+      },
+      {
+        "locus": "$.RISKS_AND_OPEN_FINDINGS.non_blocking[6].finding",
+        "class": "NON_CONSUMER",
+        "reason": "Disclosure OF-IS-10; carried as OF-RV-4."
+      },
+      {
+        "locus": "$.required_independent_review",
+        "class": "NON_CONSUMER",
+        "reason": "Review instruction for v1.0.3."
+      }
+    ],
+    "loci_older_layers": [
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.PRESTATE.assertions[1].assertion",
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "PS-2 (authority package merged and certified)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "locus": "$.PRODUCTION_BOUNDARY.explicit_non_extension",
+        "class": "NON_CONSUMER",
+        "reason": "Concerns a future production authority."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C4_EVENT_CLASS_REGISTRY.classes.EVENT_A_INITIAL_CORPUS.required_facts[0].basis",
+        "class": "CONSUMER",
+        "consumer": "EA-F1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C5_EVENT_A_C3_CONTRACT.required_predicates_conjunctive[0]",
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (EA-P1 governed census)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C5_EVENT_A_C3_CONTRACT.MEASURED_CURRENT_REACHABILITY.consequence",
+        "class": "NON_CONSUMER",
+        "reason": "Reachability disclosure, superseded in part by v1.0.3 SECTION_D8."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C6_EVENT_B_OPERATING_POSTURE.PILOT_SESSION_PREDICATE.how_established",
+        "class": "NON_CONSUMER",
+        "reason": "Owner attestation, not a certification consumer."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION.QUIESCE_CHAIN_DISPOSITION.items[5].detail",
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (census certification blocks Event A)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION.QUIESCE_CHAIN_DISPOSITION.items[12].detail",
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (census certification gate preserved for Event A)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C12_SEQUENCING.EVENT_A_INITIAL_CORPUS[0]",
+        "class": "CONSUMER",
+        "consumer": "EA-F1 (A-0 certified census authority)"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.offline_implementation_lineage.status",
+        "class": "NON_CONSUMER",
+        "reason": "Status statement: not certified by that artifact."
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.hosted_execution_prerequisites_conjunctive[0]",
+        "class": "PACKAGE_CONSUMER",
+        "consumer": "HX-1"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.hosted_execution_prerequisites_conjunctive[1]",
+        "class": "CONSUMER",
+        "consumer": "HX-2"
+      },
+      {
+        "file": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "locus": "$.SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS.hosted_execution_prerequisites_conjunctive[4]",
+        "class": "CONSUMER",
+        "consumer": "HX-5A"
+      }
+    ]
+  },
+  "SECTION_E5_KNOWN_SUBJECTS_V2": {
+    "rule": "The two subjects this contract is designed to record first, re-derived under RCO_CLOSURE_DIGEST_V2 by this lane. KS-A is unchanged from v1.0.3 (a docs-only kind). KS-B gains 8 TOOLCHAIN and 1 RUNTIME_INPUT entries. A materializer re-derives and must obtain exactly these values (W7).",
+    "materialization_status": "NEITHER ADJUDICATION EXISTS. This artifact writes none and claims none.",
+    "subjects": [
+      {
+        "id": "KS-A",
+        "subject_kind": "READONLY_CENSUS_AUTHORITY_RECERT",
+        "candidate_sha": "ab7fb64b62d12e986f7b0d53b6f3e6de5c38fda6",
+        "tree_sha": "ad499f3b8f083874e99a3dca27a2baf7bd98d996",
+        "digest_algorithm": "RCO_CLOSURE_DIGEST_V2",
+        "package_digest": "6989dd26af4c0257335bd013d355432d8121778acd0494f6bdd23f765c1bb307",
+        "entries": [
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json",
+            "blob": "0dec3d2a8abdd15efad470f091c3bcb469756b0f"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.2.json",
+            "blob": "92a0558fe5b4d03fb3dfb814de8f8beb7ae7ea63"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+            "blob": "524188090a88d9b2b06890678348b6749564fdfe"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.1.json",
+            "blob": "4bcaf4882083578b04428e3773592cf127b98191"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.2.json",
+            "blob": "5acde6cd7454f84b3f51f8a43d49cca098233edf"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+            "blob": "3aa75f5f0fef8e24c723e01342622b2c07af48d2"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+            "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+            "blob": "f69e2e8141495e8715aba1a503cfa07f30e8dc08"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+            "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "1abcefc499172874433052db8a75f03ca35f3eba"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+            "blob": "633d4d68173e590d7980d9317cf47c8757d7e8fb"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+            "blob": "805b30c3c993b5a34bf0e140236c4edb683d4fa8"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+            "blob": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "governing_families": [
+          "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_",
+          "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_",
+          "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_",
+          "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_",
+          "docs/ops/release/RELEASE_GATE_LEDGER_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_",
+          "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_",
+          "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_"
+        ],
+        "governing_family_members_at_candidate": [
+          {
+            "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+            "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50"
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "path": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+            "blob": "f69e2e8141495e8715aba1a503cfa07f30e8dc08"
+          },
+          {
+            "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817"
+          },
+          {
+            "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+            "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "1abcefc499172874433052db8a75f03ca35f3eba"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+            "blob": "633d4d68173e590d7980d9317cf47c8757d7e8fb"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+            "blob": "805b30c3c993b5a34bf0e140236c4edb683d4fa8"
+          },
+          {
+            "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+            "blob": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "2df79a571dfe1ad9a24b4c1ad2cf9724b02b4030"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "adjudication_directory": "docs/ops/release/rca/CENSUS/6989dd26af4c0257335bd013d355432d8121778acd0494f6bdd23f765c1bb307/",
+        "pr": 209,
+        "supersedes_identity": "v1.0.3 SECTION_D10 KS-A (same package_digest)"
+      },
+      {
+        "id": "KS-B",
+        "subject_kind": "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT",
+        "candidate_sha": "8cf94dca3871cb087fe16afa47a3efa0a7cdafc6",
+        "tree_sha": "29ed409689aff5ecd92c72c3ef001ebc6d15718a",
+        "digest_algorithm": "RCO_CLOSURE_DIGEST_V2",
+        "package_digest": "2fb5db7dc11e368bade96466e374b7de7798c2076cfa4555802abb20166228f5",
+        "entries": [
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_MANIFEST_v1.0.0.json",
+            "blob": "1aeae4fe2e033e3277111bcc21b603884b129a16"
+          },
+          {
+            "role": "COVERED",
+            "path": "docs/ops/release/STAGING_RECOVERY_OFFLINE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+            "blob": "ac0022c513b14fc972cf0989bdb43547308906e6"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/artifact-integrity.ts",
+            "blob": "baad9e84b034cedd3825292cb74904bc66abbdb9"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/artifact-packet.ts",
+            "blob": "f0569e250e6191b8746c026a4b445eab19f384ac"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/capture.ts",
+            "blob": "216c5264ce86d9bb8b55a95e3db60e7c5f260f94"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/catalog-census.ts",
+            "blob": "68679126efef37c07a911f4c7351b1ad2963264b"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/evidence-privacy.ts",
+            "blob": "3068718f6085d0acff24be7a8a5059335b2d6a2d"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/mutation-battery.ts",
+            "blob": "e8f53edf7427f558d0e8aff3e0948ca90a69a391"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/mutation-verdict.ts",
+            "blob": "75322789ed859c5db24fa3509633e125d5959109"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/offline-rehearsal.ts",
+            "blob": "dbc4f514b72796be714b392d36e76a33c7b32768"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/post-restore-invariants.ts",
+            "blob": "6c1e79fe558551cf44689649027293ae4a58e90a"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/process.ts",
+            "blob": "466799d7a8748258e62154d2cc8a4059d604d85d"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/recovery-target.ts",
+            "blob": "c5fefe81916f0ea4936bb8d981b1525aaeaccb41"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/restore-proof.ts",
+            "blob": "96eb9505238d829c1b58f353d6715902489a96b8"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/restore-runner.ts",
+            "blob": "0c03b78018bdf0e4d693f682717495269505f944"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/substrate.ts",
+            "blob": "11c7f3040e21d9ba34569b61afd06be78961de92"
+          },
+          {
+            "role": "COVERED",
+            "path": "scripts/recovery/tool-pin.ts",
+            "blob": "8aac589c657be4bfb38bd72e6577ee16baf203e4"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/postgres/recovery-offline.pg.test.ts",
+            "blob": "faaeaca879ee5a7e196f82ae2786dcb68da7ef33"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/artifact-integrity.test.ts",
+            "blob": "73baa531c66c49440787c5878391deaeb7924a85"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/artifact-packet.test.ts",
+            "blob": "d15b6bc2175963ca723600726db17ba3973b3973"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/authority-packet-shape.test.ts",
+            "blob": "2f74488a77021c0f9b8c5ad4335888c6c74eb06f"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/capture.test.ts",
+            "blob": "357e0ba99d67932a12dc6825682e4ec7399047e3"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/event-class-neutrality.test.ts",
+            "blob": "cd995b1c5ee250d16d1933e108c2b4b18c9c7b3d"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/evidence-privacy.test.ts",
+            "blob": "f2a41b040b4fc456850d2f5f77b799700f95ae8d"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/fake-docker.ts",
+            "blob": "f0311b62dcae4282ee64c8866a8f104b6d3f0d1e"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/fixtures/recovery-fixture-roles.sql",
+            "blob": "7fd3d16d70013ac93417d3f4a2089c50efcc9cd5"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/fixtures/recovery-fixture-source.sql",
+            "blob": "6ba4fee38e4d967e52996c104eb818727b115874"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/mutation-verdict.test.ts",
+            "blob": "632cfcdd7e8f6c410c523f26918b10bae2cfb689"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/post-restore-invariants.test.ts",
+            "blob": "a81866fe5c228b4519110945f6682a756eb062d6"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/principal-reachability.pg.test.ts",
+            "blob": "09ce31e18f9a8f428743e46f65d9c39b64be20fa"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/recovery-target.test.ts",
+            "blob": "32be4c048ecc35c5a21220f32f11338e694f3ae5"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/restore-proof.test.ts",
+            "blob": "735e9f7be7aaee800fa3d71792de173ad1cd8359"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/restore-runner.test.ts",
+            "blob": "fed6822eee328d99d772e76f7e3f32192e7c89ff"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/sample-evidence.ts",
+            "blob": "b9cfc03e6ff2ede110d6c4502dd2432a50f4e9ca"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/scripted-world.ts",
+            "blob": "d0bdbc612d36ff08c11286a04414a4af54f78bf0"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/skipped-e2e-residue.test.ts",
+            "blob": "b1c2740c2bd64cd74e91dd0d0b366d55fdec8d55"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/streaming.test.ts",
+            "blob": "6a950870105aa1caf00ca0fbb505da844f26b05f"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/substrate.test.ts",
+            "blob": "3a043c7687ce3f39a0ebf05d5b714767d1700763"
+          },
+          {
+            "role": "COVERED",
+            "path": "tests/recovery/tool-pin.test.ts",
+            "blob": "835928e8e2c12965746e5a3cc30f6ea44313b510"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": ".gitattributes",
+            "blob": "394519ee59c5e571d3e3f8c759c22c11e065e660"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "package.json",
+            "blob": "fe4004ed093e062f02bcb05d0c00ff4d02a06f36"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "pnpm-lock.yaml",
+            "blob": "7ae04b486f6e212fd4c6db19fcba69e920cdf2d4"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "pnpm-workspace.yaml",
+            "blob": "f58b1ae26caff61f741b4d69e7683539ccca40ed"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "tsconfig.json",
+            "blob": "3a13f90a773b0facb675bf5b1a8239c8f33d36f5"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.config.ts",
+            "blob": "9d36f32d8b55b2b65828aeaf505e9dc7a2b78758"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.setup.network-guard.ts",
+            "blob": "e28eee5f095857dd85543298df8bf6baba308cbe"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.setup.ts",
+            "blob": "a9d0dd31aa6eae87f8689e99b802b92a020b30d9"
+          },
+          {
+            "role": "TOOLCHAIN",
+            "path": "vitest.shared.ts",
+            "blob": "d41654ce6cf9d925062b3e9f2867bd10ed39afdf"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/hosted/target-identity.ts",
+            "blob": "4b3e704b3ad93e21b6e6e048bac894458b927d19"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/database-access.ts",
+            "blob": "5d7597a0342a71683cf58121addbcc4e3cb00d95"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/database-target.ts",
+            "blob": "fea5ceaa56c9edbbbf3c70cdae51a0acc18da56c"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/disposable-audit-target.ts",
+            "blob": "9c4095698a199dfb1d4e4d619027ae89b55b4ace"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/local-stack.ts",
+            "blob": "0eaf084ea8d7c6a91bd3113fbfb4a5136cf4c145"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "db/safety/runtime-project-pins.ts",
+            "blob": "07ebb1290d701d1d970c8783c51658aeb0852923"
+          },
+          {
+            "role": "IMPORTED",
+            "path": "scripts/db-audit-disposable.ts",
+            "blob": "96d0b97ef9b61598a159f3344dee316ebbf671f6"
+          },
+          {
+            "role": "RUNTIME_INPUT",
+            "path": "db/baseline/stella_g2_post_restore.sql",
+            "blob": "1e9d3c05e23de5644b7f9f1bffa747819a90acc2"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "role": "GOVERNING",
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "governing_families": [
+          "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_",
+          "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_",
+          "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_"
+        ],
+        "governing_family_members_at_candidate": [
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+            "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+            "blob": "154c3d1d396784ae7189b8088669b0ef8231de67"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "blob": "2df79a571dfe1ad9a24b4c1ad2cf9724b02b4030"
+          },
+          {
+            "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+            "blob": "f17e238d8829cd1e624ae10a851e89344fc13037"
+          }
+        ],
+        "adjudication_directory": "docs/ops/release/rca/OFFLINE/2fb5db7dc11e368bade96466e374b7de7798c2076cfa4555802abb20166228f5/",
+        "pr": 220,
+        "supersedes_identity": "v1.0.3 SECTION_D10 KS-B (package_digest 05c1e556c2f8aa2f14cd9705e685684ab79517b2f462cb0571c24ec4d7121c1f under V1)"
+      }
+    ]
+  },
+  "SECTION_E6_PRECEDENCE_ANCHORS": {
+    "rule": "Every topic of v1.0.3 SECTION_D2.topic_allocation is anchored to the list of sections that hold its controlling text (anchors[topic] is a list of {path, section}; every listed section must exist and every listed path must be of the allocated domain). The domain of an anchor is determined by its FILE: STAGING_QUIESCE_READONLY_CENSUS_* = CENSUS, STAGING_QUIESCE_MECHANISM_* = QUIESCE, STAGING_RECOVERY_* and owner-ratifications/STAGING_RECOVERY_OWNER_* = RECOVERY. The allocated domain must equal the anchor domain and the anchored section must exist. This replaces the four hard-coded topic checks of the v1.0.3 test with a check over ALL topics. It proves domain and section existence, not full semantic fit inside a domain (OF-RV-8).",
+    "anchors": {
+      "RECOVERY_EFFECTIVE_PACKAGE_MAP_AND_NEXT_GATE": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C1_EFFECTIVE_PREDECESSOR_MAP"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D1_LINEAGE_INTEGRATION"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+          "section": "next_gate"
+        }
+      ],
+      "RECOVERY_POSTURE_AND_OD_3": [
+        {
+          "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+          "section": "OD_3_NARROW_REOPENING"
+        }
+      ],
+      "OD_Q5_AND_ANY_OWNER_READJUDICATION_OF_OD_3": [
+        {
+          "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+          "section": "OD_Q5_ANSWER"
+        }
+      ],
+      "OWNER_BRIEF_OBLIGATIONS_ABOUT_RECOVERY_DECISIONS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D4_POST_CENSUS_OWNER_BRIEF"
+        }
+      ],
+      "CENSUS_CF_1_DISPOSITION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D3_CENSUS_CF_1_DISPOSITION"
+        }
+      ],
+      "EVENT_CLASS_REGISTRY": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C4_EVENT_CLASS_REGISTRY"
+        }
+      ],
+      "EVENT_A_PREDICATES_AND_CONSUMPTION_OF_CENSUS_OUTPUT": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C5_EVENT_A_C3_CONTRACT"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+          "section": "SECTION_E9_CONSUMERS_RESTATED"
+        }
+      ],
+      "EVENT_A_INVALIDATORS_AND_WINDOW_SEMANTICS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D7_EVENT_A_WINDOW_SEMANTICS"
+        }
+      ],
+      "EVENT_A_POLICY_OPEN_DECISION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D8_EVENT_A_REACHABILITY_AND_POLICY"
+        }
+      ],
+      "EVENT_B_POSTURE_AND_EXPOSURE_CONTRACT": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C7_EVENT_B_BOUNDED_EXPOSURE_CONTRACT"
+        }
+      ],
+      "S8_AND_D1_INTERPRETATION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C9_S8_AND_D1"
+        }
+      ],
+      "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+          "section": "SECTION_E3_ADJUDICATION_CONTRACT"
+        }
+      ],
+      "CENSUS_READ_SET_AND_OBSERVATION_CONTRACTS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_E_AUTHORIZED_READ_SET"
+        }
+      ],
+      "CENSUS_CLASSIFICATION_PROCEDURE_G_N_A_G_U": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_G_C3_AVAILABILITY_DECISION_PROCEDURE"
+        }
+      ],
+      "CENSUS_EVIDENCE_CONTRACT_AND_FRESHNESS_OF_OBSERVATIONS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_H_EVIDENCE_CONTRACT"
+        }
+      ],
+      "CENSUS_EXECUTION_GATE_CERTIFICATION_AND_HCC_1": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_I_HUMAN_CONFIRMATION"
+        }
+      ],
+      "CENSUS_NON_AUTHORIZATIONS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_F_EXPLICIT_NON_AUTHORIZATIONS"
+        }
+      ],
+      "CENSUS_DEP_C1_OD_C1_OD_C2_OD_C3": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_D_CREDENTIAL_AND_CAPABILITY_ANALYSIS"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_M_OWNER_AND_CERTIFIER_DECISIONS_OPENED"
+        }
+      ],
+      "QUIESCE_WRITER_INVENTORY_W_1_TO_W_16": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_A_WRITER_INVENTORY"
+        }
+      ],
+      "QUIESCE_MECHANISM_CANDIDATES_AND_CAPABILITY_GAP_CG_Q4": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_C_CANDIDATE_MECHANISMS"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "section": "SECTION_B3_PREVENTION_MECHANISM_MATRIX"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "section": "SECTION_B7_CAPABILITY_GAP"
+        }
+      ],
+      "QUIESCE_IMPLEMENTATION_GAPS_IG_1_TO_IG_3_AS_FACTS": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS"
+        }
+      ],
+      "QUIESCE_MEASUREMENT_GAPS_MG_Q1_MG_Q2_DEFINITION": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_K_CAPABILITY_GAPS_AND_MEASUREMENT_GAPS"
+        }
+      ],
+      "MG_Q1_MG_Q2_CLOSURE_BY_OBSERVATION": [
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_B_MGQ1_DECOMPOSITION"
+        },
+        {
+          "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+          "section": "SECTION_C_MGQ2_DECOMPOSITION"
+        }
+      ],
+      "OD_Q1_OD_Q4_DEP_1_SCOPE_AND_ORDERING_DISPOSITION": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION"
+        }
+      ],
+      "QUIESCE_SECTION_G_RECOVERY_RELATIONSHIP_READING": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION"
+        }
+      ],
+      "RECOVERY_WINDOW_ANCHORS_W0_W1": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D7_EVENT_A_WINDOW_SEMANTICS"
+        }
+      ],
+      "STAGE_A_AND_S8_BLOCKING_STATUS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS"
+        }
+      ],
+      "RECOVERY_READING_OF_QUIESCE_GAPS_PER_EVENT_CLASS": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION"
+        }
+      ]
+    },
+    "c10_semantic_identifiers": {
+      "rule": "For the mapping v1.0.3 SECTION_D2.v1_0_2_C10_item_topics: the item text (v1.0.2 SECTION_C10...items[i].item) must contain, as a whole token, at least one identifier of its mapped topic and no identifier of any OTHER topic listed here. A swapped or mis-mapped item is RED by content, not by position.",
+      "OD_Q5_AND_ANY_OWNER_READJUDICATION_OF_OD_3": [
+        "OD-Q5",
+        "SECTION_B8",
+        "next_gate"
+      ],
+      "OD_Q1_OD_Q4_DEP_1_SCOPE_AND_ORDERING_DISPOSITION": [
+        "OD-Q1",
+        "OD-Q4",
+        "DEP-1"
+      ],
+      "RECOVERY_READING_OF_QUIESCE_GAPS_PER_EVENT_CLASS": [
+        "IG-1",
+        "IG-2",
+        "IG-3",
+        "CG-Q4"
+      ],
+      "STAGE_A_AND_S8_BLOCKING_STATUS": [
+        "S8",
+        "Stage-A"
+      ],
+      "CENSUS_DEP_C1_OD_C1_OD_C2_OD_C3": [
+        "DEP-C1"
+      ]
+    }
+  },
+  "SECTION_E7_MATERIALIZATION_WRITE_SET": {
+    "rule": "An adjudication materializer lane writes EXACTLY ONE file: the adjudication_path of SECTION_E3 for its record, ADDED, and nothing else; its ods:scope/ods:poststate --allow is exactly that literal path. Materializer lanes of one kind run one at a time and re-evaluate W11 against the target branch head immediately before merge.",
+    "authorized_path_pattern": "docs/ops/release/rca/<KIND_CODE>/<package_digest>/<adjudication_digest>.json",
+    "first_authorized_directories_after_recert_of_this_artifact": [
+      "docs/ops/release/rca/CENSUS/6989dd26af4c0257335bd013d355432d8121778acd0494f6bdd23f765c1bb307/",
+      "docs/ops/release/rca/OFFLINE/2fb5db7dc11e368bade96466e374b7de7798c2076cfa4555802abb20166228f5/"
+    ],
+    "retired_occurrence_root": "docs/ops/release/recovery-certification-occurrences/",
+    "retired_rule": "No file may ever be written under the retired occurrence root. v1.0.3 SECTION_D11 and its first_authorized_paths are SUPERSEDED; a file found there STOPS every consumer (STOP_RETIRED_OCCURRENCE_ROOT_USED).",
+    "protected_status": "No path here is a DEFAULT_PROTECTED_PATTERN of scripts/ods-scope.ts."
+  },
+  "SECTION_E8_PR220_DISPOSITION": {
+    "status": "NOT_MERGED_BY_THIS_LANE",
+    "merge_prerequisites_conjunctive": [
+      "M-1 This artifact (v1.0.4) with owner v1.0.2 independently recertified PASS-class with zero blocking findings.",
+      "M-2 A positive KS-B adjudication materialized under SECTION_E3 by a separate lane. At the head the merge lane opens on (where KS-B is not yet present, so currency cannot be CURRENT), every OFFLINE_RECOVERY_IMPLEMENTATION_RECERT adjudication passes read-time validation, R1 and R2, and disposition_status(KS-B package_digest) = CERTIFIED (not REVOKED, not CONTRADICTED).",
+      "M-3 The governed merge lane evaluates SECTION_E3.consumer_rule for OFFLINE_RECOVERY_IMPLEMENTATION_RECERT at the merged head and requires USABLE (CURRENT, NOT_REVOKED, NOT_CONTRADICTED)."
+    ],
+    "supersedes": "v1.0.3 SECTION_D12.merge_prerequisites_conjunctive[1] and [2]."
+  },
+  "SECTION_E9_CONSUMERS_RESTATED": {
+    "EA-F1": "census_governance = CERTIFIED_CENSUS_EXECUTION requires SECTION_E3.consumer_rule for READONLY_CENSUS_AUTHORITY_RECERT = USABLE at the census execution lane head at lane open AND at the head of the Recovery lane that consumes the census output, plus the v1.0.3 census_execution_binding (census evidence names the COVERED blobs of the certified closure). Anything else is census_governance = UNKNOWN (STOP_EVENT_A_CENSUS_UNKNOWN). Stop codes of the v1.0.2 registry unchanged.",
+    "HX-2": "The offline Recovery implementation is independently certified PASS only when SECTION_E3.consumer_rule for OFFLINE_RECOVERY_IMPLEMENTATION_RECERT = USABLE at the execution lane head. PASS-class as v1.0.3 SECTION_D9.verdict.PASS_CLASS.",
+    "HX-5A": "A certified census authority means SECTION_E3.consumer_rule for READONLY_CENSUS_AUTHORITY_RECERT = USABLE (as EA-F1), DEP-C1 resolved, and a fresh C3_AVAILABLE -- still structurally unreachable (v1.0.3 SECTION_D8).",
+    "M-2/M-3": "SECTION_E8.",
+    "HX-1 and PS-2": "PACKAGE_CONSUMERS (SECTION_E4): established by independent recertification of the Recovery authority package; owner v1.0.2 applied by judgement; not mechanical until a subject kind for the package exists (OF-RV-1).",
+    "restores": "For the two subject kinds (EA-F1, HX-2, HX-5A, M-2, M-3) a later independent non-positive adjudication now removes usability mechanically (REVOKED or CONTRADICTED), restoring the fail-closed STOP that v1.0.2's judgement wording gave and v1.0.3 removed (RB-1). For HX-1 and PS-2 the STOP is by judgement only (PACKAGE_CONSUMER)."
+  },
+  "SECTION_E10_EVENT_A_PRESERVATION": {
+    "CURRENT_EVENT_A_REACHABLE": "NO",
+    "EVENT_A_POLICY": "PENDING",
+    "unchanged": "v1.0.3 SECTION_D6..D8 unchanged except the EA-F1 basis restated in SECTION_E9. No option selected; no bounded write loss for Event A; G-N3/G-N4 untouched."
+  },
+  "SECTION_E11_SUPERSEDED_LOCI_RULE": "Each entry names the chain and the v1.0.3 SECTION_D2 topic; this Recovery amendment supersedes only loci on RECOVERY topics.",
+  "SECTION_E11_SUPERSEDED_LOCI": [
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.3 SECTION_D9_CERTIFICATION_OCCURRENCE_CONTRACT (as the unit of record, path_and_identity, read_time_validation R1, chain, currency (1), provenance.independence, verdict qualifiers, subject_identity_derivation)",
+      "extent": "SUPERSEDED by SECTION_E3. Its enum, verdict classes, literal grammar and findings rules survive as restated there."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.3 SECTION_D10_KNOWN_SUBJECTS",
+      "extent": "SUPERSEDED by SECTION_E5 (V2 identities)."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.3 SECTION_D11_MATERIALIZATION_WRITE_SET",
+      "extent": "SUPERSEDED by SECTION_E7; the occurrence root is retired."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "EVENT_A_PREDICATES_AND_CONSUMPTION_OF_CENSUS_OUTPUT",
+      "locus": "v1.0.3 SECTION_D6_EVENT_A_CONSUMPTION_FRESHNESS_AND_INVALIDATORS.EA_F1_BINDING.certified_census_authority_means",
+      "extent": "SUPERSEDED by SECTION_E9.EA-F1."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.3 SECTION_D12_PR220_DISPOSITION.merge_prerequisites_conjunctive[1] and [2]",
+      "extent": "SUPERSEDED by SECTION_E8."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.3 SECTION_D13_HOSTED_PREREQUISITE_READING.HX-2 and HX-5_event_A; v1.0.3 SECTION_D16_SUPERSEDED_LOCI[7] and [8]",
+      "extent": "SUPERSEDED by SECTION_E9."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.3 SECTION_D14_PRESERVATION.no_gate_weakened",
+      "extent": "CORRECTED: the statement was false for HX-2/EA-F1 (RB-1); with SECTION_E9 it holds again."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_EFFECTIVE_PACKAGE_MAP_AND_NEXT_GATE",
+      "locus": "v1.0.3 next_gate",
+      "extent": "SUPERSEDED by this artifact's next_gate."
+    }
+  ],
+  "SECTION_E12_CLOSURE_LIMITATIONS": {
+    "represented": "COVERED, TOOLCHAIN (package.json, pnpm-lock.yaml, pnpm-workspace.yaml, tsconfig.json, vitest.config.ts, its setup files and their imports), IMPORTED, RUNTIME_INPUT and GOVERNING, derived by SECTION_E3 rules.",
+    "package_manager": "pnpm-lock.yaml pins every resolved package version and integrity hash, so the DECLARED dependency graph is represented deterministically by its blob. Not represented: the installed node_modules bytes on a given machine (platform-specific optional dependencies and install scripts), the Node.js runtime version (not pinned in the repository; packageManager pins pnpm only), the operating system, and the Docker daemon. The Docker images the offline primitives use are pinned by image id inside COVERED code.",
+    "parser_limits": "Dynamically computed module paths, template-literal paths and files reached only through a computed path are not in the closure (OF-RV-2).",
+    "revocation_scope": "Revocation is bound to the EXACT closure digest (owner v1.0.2). Because TOOLCHAIN is in the closure, a non-positive adjudication of the same recovery code examined at a candidate with a different lockfile has a different package_digest and does not revoke this one (OF-RV-9).",
+    "path_length": "The repository-relative adjudication path is at most 170 characters; a checkout root longer than about 90 characters can exceed Windows MAX_PATH (OF-RV-10)."
+  },
+  "SECTION_E13_PRECEDENCE": {
+    "rule": "For the loci of SECTION_E11 THIS AMENDMENT CONTROLS to the stated extent. Everything else: v1.0.3, v1.0.2, v1.0.1, v1.0.0 as their own precedence rules state; owner v1.0.2 controls RECOVERY_CERT_REVOCATION_BINDING; owner v1.0.1 OD-3; owner v1.0.0 OD-5/OD-6.",
+    "conflict_rule": "A conflict on a locus not named in SECTION_E11 is a defect of this amendment: STOP."
+  },
+  "SECTION_E14_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "basis": "Write set under docs/ops/release/**, docs/ops/owner-ratifications/** and tests/release/**; none protected by scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS."
+  },
+  "SECTION_E15_WRITE_SET": [
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json (ADDED)",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.4.json (ADDED)",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json (ADDED)",
+    "tests/release/staging-recovery-cert-adjudication.test.ts (ADDED)",
+    "tests/release/staging-recovery-cert-adjudication.mutation-battery.mjs (ADDED)"
+  ],
+  "SECTION_E16_PRESERVATION": {
+    "unchanged": [
+      "Every historical artifact including v1.0.3, its manifest and its test (byte-identical; v1.0.3 is immutable).",
+      "The v1.0.2 event-class registry, Event A and Event B postures, C2 NOT_AUTHORIZED, OD-5/OD-6.",
+      "Every census G-N, A and G-U rule; G-N3 and G-N4.",
+      "v1.0.0 AUTHORIZED_OPERATIONS AO-1..AO-9."
+    ],
+    "AUTHORIZED_OPERATIONS_DELTA": {
+      "added": [],
+      "removed": [],
+      "modified": []
+    }
+  },
+  "SECTION_E17_SELF_CHECK": {
+    "note": "Structural, executed by the companion test and mutation battery; no string-absence self-checks.",
+    "checks": [
+      "Owner v1.0.2 verbatim and structured forms agree on the binding, the non-positive classes and PENDING.",
+      "positive_classes and non_positive_classes partition verdict_classes.",
+      "KS-A and KS-B recompute under V2 from git; KS-A equals its v1.0.3 digest.",
+      "The consumer registry equals the mechanically discovered loci of v1.0.3.",
+      "Every topic anchor names an existing section of a file of the allocated domain; every C10 item is semantically consistent with its topic.",
+      "write_once_history is proven on real git DAG fixtures, including add/add merge, delete, restart, rename and evil merge.",
+      "Revocation, contradiction, store integrity, history and freshness outcomes on real git fixtures match SECTION_E3; currency outcomes are checked on patched views of the introducing tree.",
+      "No file exists under either the adjudication root or the retired occurrence root in the introducing tree."
+    ]
+  },
+  "RISKS_AND_OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "OF-RV-1",
+        "finding": "The Recovery authority package itself (v1.0.0..v1.0.4 and owner records) has no subject kind; HX-1 certification is not mechanically consumable (RNB-1, OF-IS-3 carried).",
+        "disposition": "Disclosed; extending the closed enum requires a later certified amendment."
+      },
+      {
+        "id": "OF-RV-2",
+        "finding": "Closure V2 parser limits (computed paths) and package-manager limits (SECTION_E12).",
+        "disposition": "Disclosed, not pretended closed."
+      },
+      {
+        "id": "OF-RV-3b",
+        "finding": "HX-1 and PS-2 (the authority package) are PACKAGE_CONSUMERS: revocation applies by judgement only.",
+        "disposition": "See SECTION_E4 and SECTION_E9."
+      },
+      {
+        "id": "OF-RV-3",
+        "finding": "Scope semantics: consumers accept BOUNDED/FOCUSED adjudications that declare a scope_basis; the basis references prior rounds that are not themselves adjudication records.",
+        "disposition": "The result reports scope and basis; requiring FULL_SUBJECT would be a new owner policy."
+      },
+      {
+        "id": "OF-RV-4",
+        "finding": "An authority outside the recorded governing families does not make a closure stale; a later Recovery amendment must declare itself non-invalidating per kind or force re-adjudication (RNB-4, OF-IS-10 carried).",
+        "disposition": "Deliberate fail-closed coupling for layers inside the families; outside them, disclosed."
+      },
+      {
+        "id": "OF-RV-5",
+        "finding": "IC is retained as a qualifier (RNB-8).",
+        "disposition": "Justified in SECTION_E1; the certifier may reject."
+      },
+      {
+        "id": "OF-RV-6",
+        "finding": "Independence is PROCESS_GOVERNED only.",
+        "disposition": "Stated as such; no cryptographic identity is claimed."
+      },
+      {
+        "id": "OF-RV-8",
+        "finding": "SECTION_E6 anchors prove domain and section existence, not full semantic fit among the 22 RECOVERY topics.",
+        "disposition": "Disclosed."
+      },
+      {
+        "id": "OF-RV-9",
+        "finding": "Revocation is exact-closure (owner v1.0.2); a FAIL on the same code under a different toolchain closure does not revoke.",
+        "disposition": "Owner-bound; a consumer that needs the broader rule needs a new owner decision."
+      },
+      {
+        "id": "OF-RV-10",
+        "finding": "Adjudication path length and MAX_PATH on long checkout roots.",
+        "disposition": "Disclosed in SECTION_E12."
+      },
+      {
+        "id": "OF-RV-11",
+        "finding": "An integrity failure (invalid entry, fork, history violation) makes the store unusable with no in-contract repair; for a candidate that is NOT a known subject, read-time W7 needs the candidate commit to stay fetchable.",
+        "disposition": "Fail closed by design; a repair needs a later certified amendment and an owner record. Known subjects (SECTION_E5) are re-derived from their recorded identity and do not need the candidate commit."
+      },
+      {
+        "id": "OF-RV-12",
+        "finding": "Lane-id grammar folds case, separators and Unicode but not ASCII look-alikes (0/O, 1/I).",
+        "disposition": "Covered by PROCESS_GOVERNED; disclosed."
+      },
+      {
+        "id": "OF-RV-13",
+        "finding": "CANONICAL_ADJUDICATION_REF is transitional and branch-named.",
+        "disposition": "Moved only by a later certified amendment."
+      },
+      {
+        "id": "OF-RV-7",
+        "finding": "KS-B now includes shared toolchain files (pnpm-lock.yaml, tsconfig.json, vitest setup): any unrelated dependency bump makes a KS-B certification STALE.",
+        "disposition": "Intended: those inputs materially affect the certified tests. STALE is legitimate and requires re-adjudication of the new closure."
+      }
+    ]
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO adjudication or occurrence file is created; neither KS-A nor KS-B is claimed to exist.",
+    "NO merge of PR #220.",
+    "NO Event A policy option selected; NO bounded write loss for Event A.",
+    "NO census rule narrowed; NO census errata.",
+    "NO hosted Recovery act, database connection, provider read or provider mutation, DDL or DML.",
+    "NO operation added to AUTHORIZED_OPERATIONS.",
+    "NO historical artifact edited; v1.0.3 is immutable.",
+    "NO identity or authentication infrastructure."
+  ],
+  "required_independent_review": "SHORT independent recertification of this remediation: v1.0.4, owner v1.0.2, manifest v1.0.4, the new test and the mutation battery, read with v1.0.3 as superseded. The certifier should attack: revocation and contradiction by package_digest across candidate SHAs; write_once_history on its own git DAGs; the consumer registry discovery; the V2 closure (minimality and completeness); the anchors over all topics; the mutation battery kill set and its self-test.",
+  "final_state": "RECOVERY_CERT_CONTRACT_REVOCATION_REMEDIATED__READY_FOR_SHORT_INDEPENDENT_RECERT",
+  "next_gate": "SHORT independent recertification of v1.0.4 with owner v1.0.2. On PASS-class with zero blocking findings: separate, serialized materializer lanes may write the KS-A and KS-B adjudications under SECTION_E3/E7; then a governed lane may merge PR #220 under SECTION_E8. EVENT_A_POLICY remains PENDING. No hosted Recovery execution is authorized."
+}

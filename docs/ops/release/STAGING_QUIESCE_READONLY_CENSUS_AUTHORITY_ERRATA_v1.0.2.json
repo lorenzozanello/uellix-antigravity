@@ -1,0 +1,237 @@
+{
+  "package_id": "CV1-STAGING-QUIESCE-READONLY-CENSUS",
+  "version": "1.0.2",
+  "artifact_id": "STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.2",
+  "authority_class": "READ_ONLY_OBSERVATION_AUTHORITY_CANDIDATE",
+  "document_class": "ERRATA_AMENDMENT",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-QUIESCE-MGQ1-MGQ2-CENSUS-AUTHORITY-PIN-ERRATA-R3",
+  "lane": "CV1-STAGING-QUIESCE-MGQ1-MGQ2-CENSUS-AUTHORITY-PIN-ERRATA-R3",
+  "role": "AUTHOR / ADJUDICATOR",
+  "mode": "APPEND_ONLY_DOCS_ONLY_ERRATA",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 (Claude Code Desktop), HPO-ODS-01 primary development executor",
+  "repository": "lorenzozanello/uellix",
+
+  "BASE_LAYERS": {
+    "rule": "This errata sits ONE LEVEL ABOVE v1.0.1, which itself sits above v1.0.0. Neither lower layer is edited. Precedence is stated in SECTION_C11.",
+    "v1_0_0": {
+      "artifact": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+      "blob_sha": "524188090a88d9b2b06890678348b6749564fdfe",
+      "companion_manifest": {
+        "artifact": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+        "blob_sha": "3aa75f5f0fef8e24c723e01342622b2c07af48d2"
+      },
+      "byte_unchanged": true,
+      "pin_method": "git rev-parse HEAD:<path> at the errata lane's own HEAD, cross-checked against git rev-parse <introducing-commit>:<path> and against git hash-object <path> on the clean working tree. All three agree. See SECTION_C1 for why this triple derivation exists."
+    },
+    "v1_0_1": {
+      "artifact": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json",
+      "blob_sha": "0dec3d2a8abdd15efad470f091c3bcb469756b0f",
+      "companion_manifest": {
+        "artifact": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.1.json",
+        "blob_sha": "4bcaf4882083578b04428e3773592cf127b98191"
+      },
+      "byte_unchanged": true,
+      "pin_method": "Same triple derivation as v1.0.0 above, re-run in this lane before writing this file."
+    },
+    "no_lower_layer_is_edited": "This errata creates two new files and edits none. v1.0.0 and v1.0.1, and their manifests, are byte-unchanged; their blob SHAs above are re-derived, not carried forward from either predecessor's own claim about itself."
+  },
+
+  "CERTIFICATION_CONSUMED": {
+    "verdict": "CENSUS_V101_RECERT_FAIL",
+    "subject": "STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json as corrected by its v1.0.1 errata, and the companion manifests, as one package (PR #209 head 843723685f651512f5a463c2cf670c948f1e51af).",
+    "blocking_findings": 1,
+    "the_one_blocking_finding": {
+      "id": "BF-R1",
+      "finding": "Two of v1.0.1's own blob pins -- BASE_AUTHORITY.blob_sha and BASE_AUTHORITY.base_manifest.blob_sha -- name the PRE-COMMIT DRAFT blobs of v1.0.0's own two files (from the commit that existed before this lane's own amend), not the blobs actually stored at the committed path in the PR's real history. Both were asserted 'MANDATORY AND VERIFIED'. Twelve OTHER blob citations across the pair -- the external pins to the Quiesce amendment, PR #201, the owner-ratification record, and the pins v1.0.0 itself carries in its own CONTROLLING_AUTHORITY -- were independently re-checked by the certifier and are correct. The defect is confined to the two self-pins."
+    },
+    "nonblocking_findings_reported": 4,
+    "self_criticism_recorded_once": "The pattern here is the exact sibling of B-C1 from the prior round: a value was written once, early, and then carried forward as a label rather than re-derived at the point it was asserted 'VERIFIED'. The first time it was an arithmetic label; this time it is a git object identity. Both defects share the same shape -- an assertion of verification that was true of an EARLIER state of the artifact and stale by the time it was actually written down. SECTION_C1 below fixes the immediate defect and states a rule against the shape recurring a third time."
+    },
+  "PRESTATE": {
+    "PS-F1": {
+      "assertion": "The worktree is clean at HEAD 843723685f651512f5a463c2cf670c948f1e51af on branch codex/cv1-staging-quiesce-mgq1-mgq2-readonly-census-authority-r1, matching the CURRENT_HEAD this lane's brief names.",
+      "class": "MEASURED",
+      "method": "git rev-parse --abbrev-ref HEAD; git rev-parse HEAD; git rev-parse HEAD^{tree}; git status --porcelain --untracked-files=all (empty)."
+    },
+    "PS-F2": {
+      "assertion": "NO HOSTED MUTATION and NO LIVE CONTROL-PLANE READ against the governed project was performed by this lane. Every measurement in this errata is a git object read (rev-parse / hash-object against the local repository) or a re-read of repository-tracked text.",
+      "class": "MEASURED"
+    }
+  },
+
+  "SECTION_C1_PIN_CORRECTION": {
+    "closes": "BF-R1.",
+    "the_defect_explained": "v1.0.1 was authored across two commits: an initial commit, then a second correction (adding finding OF-C7) via git commit --amend, which REWRITES the commit and therefore changes every blob's parent tree even where the blob's own content is unchanged. Between those two commits, this lane captured the two v1.0.0 blob SHAs with `git ls-tree -r HEAD` -- true of the FIRST commit -- and then used that captured value as a pin inside v1.0.1's own text, which was written and committed only in the SECOND, amended commit. The pin therefore named a blob that was correct at the moment it was measured but stale by the moment it was written down, and it was never re-derived at the point of writing.",
+    "why_it_matters": "A pin that says 'MANDATORY AND VERIFIED' and is wrong teaches a certifier the wrong lesson twice: once by being wrong, and once by demonstrating that this chain's own verification language is not a reliable signal of verification having actually happened. The fix is not merely swapping in the right value; it is stating the METHOD precisely enough that the same failure mode is structurally harder to repeat.",
+    "the_correct_derivation": {
+      "rule": "A blob pin for 'the file as committed' is derived from the COMMITTED OBJECT, never from a working-tree hash taken at an earlier point in the lane and carried forward by memory or by copy-paste.",
+      "method": "git rev-parse <commit-or-HEAD>:<repo-relative-path>. Cross-checked against git hash-object <path> on a clean, unmodified working tree at the same commit, and against git rev-parse <the specific commit that introduced the file>:<path>. All three must agree; if they do not, the working tree has diverged from what is committed and the pin is not yet derivable.",
+      "when_to_re_derive": "At the MOMENT the pin is written into a new file, never earlier. A value captured during exploration, before the file containing the pin is itself finalized and committed, is a DRAFT value and must not be copied into committed prose without being re-checked at the point of commit."
+    },
+    "the_corrected_values": {
+      "STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json": "524188090a88d9b2b06890678348b6749564fdfe",
+      "STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json": "3aa75f5f0fef8e24c723e01342622b2c07af48d2",
+      "the_wrong_values_this_replaces": {
+        "authority": "2fb950f2b88fd174b06d98a99ab218d13ea0e0f7 -- this blob still exists in the repository's object store (it is reachable via reflog, from the pre-amend commit f96a3fd3) but is NOT what is stored at the canonical committed path in this branch's actual history.",
+        "manifest": "28393efb19695f2a9bcc0807a7c70d941bc723f2 -- same class of error, same pre-amend commit."
+      }
+    },
+    "the_two_loci_corrected": [
+      {
+        "clause": "v1.0.1 BASE_AUTHORITY.blob_sha.",
+        "old": "2fb950f2b88fd174b06d98a99ab218d13ea0e0f7",
+        "new": "524188090a88d9b2b06890678348b6749564fdfe"
+      },
+      {
+        "clause": "v1.0.1 BASE_AUTHORITY.base_manifest.blob_sha.",
+        "old": "28393efb19695f2a9bcc0807a7c70d941bc723f2",
+        "new": "3aa75f5f0fef8e24c723e01342622b2c07af48d2"
+      },
+      {
+        "clause": "v1.0.1 SECTION_B11_PRECEDENCE.byte_integrity.",
+        "old": "\"v1.0.0's authority blob 2fb950f2 and manifest blob 28393efb are unchanged by this lane, as are all seven blobs pinned in v1.0.0's CONTROLLING_AUTHORITY.\"",
+        "new": "\"v1.0.0's authority blob 524188090a and manifest blob 3aa75f5f0f are unchanged by this lane, as are all seven blobs pinned in v1.0.0's CONTROLLING_AUTHORITY, all re-verified in SECTION_C1 of the v1.0.2 errata that supersedes this locus.\""
+      }
+    ],
+    "required_proof_is_stated_explicitly": "The certifier's instruction is not satisfied by showing the OLD blobs exist -- they do, and existing was never the question. The required proof is that the PINNED SHA equals the blob stored at the canonical committed path, and that proof is discharged in SECTION_C1.the_corrected_values by the triple derivation above, independently re-run by this lane rather than trusted from v1.0.1's own text."
+  },
+
+  "SECTION_C2_AF_CONDENSATION_DISCLOSURE": {
+    "closes": "NBF-R1.",
+    "the_defect": "v1.0.1's manifest control PC-E6 required AF-1 through AF-4, as incorporated into CF-1's correction, to be 'byte-equal (under the errata's normalization)' to their sources. Re-measured in this lane: they are NOT byte-equal. Each is a faithful CONDENSATION -- it merges the source finding's `finding` field with material drawn from that SAME finding's `repository_half_re_derived` and/or `consequence` fields into one sentence -- not a verbatim quotation. PC-E6 demanded a proof its own subject could never pass.",
+    "why_condensation_was_the_right_choice_and_is_not_itself_corrected": "AF-1 through AF-4 in v1.0.1 SECTION_B3 are explicitly framed as 'consumed_audit_evidence_incorporated', not as a QUOTED_IN_FULL block in the style SECTION_A uses for MG-Q1, MG-Q2 and C-3. The condensation is deliberate and appropriate: each sentence folds the source's own re-derivation reasoning into the finding so a reader gets the finding AND why it matters in one place, exactly as CF-1's corrected reading needs. What was wrong was not the condensation -- it was the CONTROL that mis-described it as a verbatim quotation.",
+    "the_correction": {
+      "disclosure_added_at_the_source_locus": "v1.0.1 SECTION_B3.consumed_audit_evidence_incorporated gains one sentence, prefixed to AF-1: 'Each AF-N sentence below is a CONDENSATION -- it draws its claim from the source finding's own `finding` field and its added interpretive clause from that SAME finding's `repository_half_re_derived` or `consequence` field -- not a verbatim quotation. See SECTION_C2 of the v1.0.2 errata for the coverage test this replaces byte-equality with.'",
+      "PC_E6_corrected": "PC-E6 is superseded in full. Its replacement tests SOURCE COVERAGE, not byte equality: for each of AF-1 through AF-4, (a) the source finding's `class` is confirmed to be EXTERNAL_OBSERVATION_NOT_RE_DERIVED; (b) every factual claim in the errata's condensed sentence (the SHA, the READY state, the failure code, the absent variable name) is confirmed present, unaltered, somewhere in the UNION of that finding's `finding`, `repository_half_re_derived` and `consequence` fields; and (c) no factual claim appears in the condensed sentence that is NOT traceable to that union -- i.e. nothing is invented in the act of condensing. This is checked per-AF, not as one aggregate pass/fail."
+    }
+  },
+
+  "SECTION_C3_HOMONYM_ACCOUNTING": {
+    "closes": "NBF-R2.",
+    "the_gap": "v1.0.1's SECTION_B9.sweep_method described sweeping 'every locus in v1.0.0 containing the string fifteen', and SECTION_B1 correctly separated the count-bearing loci from everything else, but neither section named the loci it excluded as benign. A certifier re-running the sweep has no record of what was CONSIDERED and set aside, only of what was corrected -- the same gap this chain has been faulted for before under a different name (declaring zero residuals without showing the sweep, not merely the fix).",
+    "the_four_loci_re_enumerated_and_classified": [
+      {
+        "path": "SECTION_C_MGQ2_DECOMPOSITION.unknowns[4] (U2-5) .why_required",
+        "text": "'...and the status enumeration has fifteen values including PAUSING, RESTORING and RESIZING.'",
+        "classification": "BENIGN. Refers to the fifteen-member enum of GET /v1/projects/{ref} status values. Unrelated to the observation count."
+      },
+      {
+        "path": "SECTION_G_C3_AVAILABILITY_DECISION_PROCEDURE.C3_NOT_AVAILABLE.triggers_any_one_of_which_suffices[6] (G-N7) .ground",
+        "text": "'...and an active read-only override is a fifteen-minute window someone else opened.'",
+        "classification": "BENIGN. Refers to the duration of the provider's temporary-disable window (POST /readonly/temporary-disable). Unrelated to the observation count."
+      },
+      {
+        "path": "SECTION_J_MEASURED_PROVIDER_AND_TOOL_SURFACE.supabase_management_api.MEASURED_ABSENCES_over_the_complete_115_path_set[3]",
+        "text": "'...disables it for fifteen minutes.'",
+        "classification": "BENIGN. Same referent as the previous item, restated in SECTION_J's absence-of-an-enable-endpoint discussion. Unrelated to the observation count."
+      },
+      {
+        "path": "SECTION_J_MEASURED_PROVIDER_AND_TOOL_SURFACE.supabase_management_api.CAPABILITY_EVIDENCE_ONLY_NOT_AUTHORIZED_ACTS.endpoints[3]",
+        "text": "'Disables project readonly mode for the next 15 minutes' -- the NUMERAL form, quoted verbatim from the vendor's own endpoint summary.",
+        "classification": "BENIGN, AND THE ONE NON-WORD FORM. The only occurrence in this pair where the duration is spelled as the digit sequence '15' rather than the word 'fifteen'. It is quoted vendor text and is not altered by this correction; it is named here so the sweep account is complete over BOTH the spelled-word and the numeral form of the same underlying fact."
+      }
+    ],
+    "the_eight_count_bearing_loci_are_unchanged": "SECTION_B9's supersession list from v1.0.1 already corrected all eight count-bearing 'fifteen' loci (count_check, the two SECTION_H evidence-contract fields, HCC-1's three sub-fields, self_check.checks[7], and next_gate). This section adds the accounting for what was correctly left untouched; it does not reopen or restate those eight corrections."
+  },
+
+  "SECTION_C4_MANIFEST_CONTROL_SUPERSESSION": {
+    "closes": "NBF-R3.",
+    "the_gap": "v1.0.0's manifest carries four controls -- MC-C8, PC-C7, NC-C6, MC-C5 -- whose text is now STALE relative to v1.0.1's corrections, and none of them was superseded when v1.0.1 was written. Left as-is, a certifier running the FULL manifest set would be checking TWO simultaneous, partially-conflicting mechanical contracts for the same properties: the original 'fifteen means raw SECTION_E' contract and v1.0.1's 'fifteen means the effective set' contract.",
+    "the_four_dispositions": [
+      {
+        "id": "MC-C8",
+        "old_text": "Deleting the count_check on the authorized read set must be CAUGHT. It is the only mechanical bar against a sixteenth observation being added later without an amendment, and an exhaustive list whose exhaustiveness is not checked is a list.",
+        "disposition": "RETIRED, SUPERSEDED BY MC-E1.",
+        "why": "The locus MC-C8 protects -- v1.0.0's prose count_check -- is itself superseded by v1.0.1 SECTION_B1. MC-E1 already tests the stronger, mechanical replacement (re-adding OBS-V4, or any sixteenth id, to effective_observation_ids must be caught by length-and-membership). Keeping MC-C8 alive would ask a certifier to protect text that no longer governs anything."
+      },
+      {
+        "id": "PC-C7",
+        "old_text": "Every one of the fifteen authorized observations in SECTION_E is traceable to at least one unknown in SECTION_B or SECTION_C, and every unknown that the authority marks as closable is closed by at least one observation. The mapping is bijective in the closable direction and no observation is orphaned.",
+        "disposition": "REDEFINED REFERENT, NOT RETIRED.",
+        "why": "Traceability is a real property worth keeping, but 'the fifteen authorized observations in SECTION_E' now names SIXTEEN raw entries, one of which (OBS-V4) is superseded and traces to nothing under U1-5's corrected closed_by. The control is corrected in place by this errata: 'fifteen authorized observations in SECTION_E' is replaced by 'the fifteen ids in SECTION_B1.EFFECTIVE_READ_SET_v1_0_1.effective_observation_ids', and OBS-V4 is explicitly excluded from the bijection requirement rather than silently failing it."
+      },
+      {
+        "id": "NC-C6",
+        "old_text": "The authority authorizes NO POST, PATCH, PUT or DELETE against either provider. Every one of the fifteen observations is a read.",
+        "disposition": "REDEFINED REFERENT, NOT RETIRED.",
+        "why": "Same class of fix as PC-C7: 'the fifteen observations' is replaced by a reference to SECTION_B1's effective set. The substantive claim -- no mutating verb anywhere in the authorized set -- is unaffected and remains correctly checked against the corrected referent."
+      },
+      {
+        "id": "MC-C5",
+        "old_text": "Deleting OBS-V4's HARD_LIMITS must be CAUGHT. Without them the obvious way to learn a deployment's database identity is to sign in, and signing in writes auth.sessions.",
+        "disposition": "RETIRED, SUPERSEDED BY MC-E1 AND NC-E4.",
+        "why": "OBS-V4 is no longer authorized at all, so it has no HARD_LIMITS clause left to protect by deletion -- the entire observation is gone from the effective set. The property MC-C5 was actually guarding against (a census executor inventing an authenticated identity probe) is now guarded more directly by NC-E4 (OBS-V4 does not appear as authorized anywhere) and MC-E1 (it cannot be silently reintroduced). Retiring MC-C5 removes a control whose subject no longer exists rather than leaving it to pass vacuously forever."
+      }
+    ],
+    "the_resulting_rule": "Exactly ONE mechanical contract governs each of: the observation count, traceability, the read-only property, and the OBS-V4 boundary -- the v1.0.1/v1.0.2 effective-set contract in every case. No certifier is asked to satisfy two simultaneous, differently-scoped versions of the same control."
+  },
+
+  "SECTION_C5_EXPOSURE_VS_OCCUPANCY": {
+    "closes": "NBF-R4.",
+    "the_gap": "v1.0.1's corrected G-N3 ground text reads, in part: 'a reachable, healthy GoTrue is a client surface for token refresh... and nothing... disables the refresh-token grant for a session issued before, or through a channel outside, those flags.' This is written in a way that can be read as asserting that a write IS occurring -- that a session exists and IS refreshing -- when what this census actually measures is only that the SURFACE is open. Whether any session in fact exists to use it is exactly the OCCUPANCY question Tier 2 (pg_stat_activity) would answer, and Tier 2 is not conferred. G-N3 must stay fail-closed on the exposure fact alone; it must not be read as claiming the occupancy fact was measured.",
+    "the_distinction_stated_and_bound_to_G_N3": {
+      "EXPOSURE": "Whether the write SURFACE is reachable and enabled -- what OBS-S2/OBS-S3 actually measure. A healthy, internet-reachable Auth service is EXPOSURE. This is a TIER 1 fact and this census measures it directly.",
+      "OCCUPANCY": "Whether a WRITER -- a session, a scheduled job, an in-flight request -- actually exists right now to use that surface. This is a TIER 2 fact (pg_stat_activity, cron.job, the pg_net queue) and this census does NOT measure it, per DEP-C1.",
+      "why_G_N3_correctly_fires_on_exposure_alone": "The parent's own W-4 measurement establishes that NO ACT available to this chain can distinguish an exposed-but-unoccupied surface from an exposed-and-occupied one without a Tier 2 read, and that the cost of guessing wrong is a write inside the window whose emptiness is the whole question. Firing on exposure alone is therefore the FAIL-CLOSED choice given what is actually measurable at Tier 1 -- not a claim that occupancy was observed.",
+      "the_corrected_ground_text": "'A reachable, healthy GoTrue is a client surface a session COULD use for token refresh, independent of sign-up/sign-in configuration -- disable_signup and the external-provider flags govern whether a NEW client can authenticate, not whether an ALREADY-ISSUED token can be refreshed. This census does NOT measure whether such a session in fact exists (that is OCCUPANCY, a Tier 2 fact under DEP-C1); it measures only that the surface is EXPOSED. G-N3 fires on exposure alone because this chain has no Tier 1 way to rule occupancy out, and treating an unmeasured occupancy question as favourable would be reading a Tier 2 UNKNOWN as a negative, which SECTION_F already forbids by name.'",
+      "no_rule_changes": "G-N3's CONDITION (Auth reachable and healthy) is unchanged by this correction. Only the GROUND -- the prose justifying why that condition is the right one -- is corrected, to stop it reading as an occupancy claim this census never made."
+    },
+    "consequence_for_the_evidence_package": "Where G-N3 fires, the evidence package's per-observation `verdict` field (SECTION_H) records the classification as 'EXPOSED -- OCCUPANCY UNMEASURED', never as 'WRITER PRESENT' or any phrasing implying a session was actually observed. This is a wording requirement on the future execution lane's evidence output, stated here so it does not have to be improvised at that lane's own writing time."
+  },
+
+  "SECTION_C9_SUPERSEDED_CLAUSES": {
+    "sweep_method": "Every locus BF-R1 and NBF-R1 through NBF-R4 name, located by path in v1.0.1 (or, for BF-R1, also in the pin values themselves). This is exhaustive over the certifier's own directive list; nothing outside it is touched.",
+    "superseded_in_full": [
+      {"clause": "v1.0.1 BASE_AUTHORITY.blob_sha and BASE_AUTHORITY.base_manifest.blob_sha.", "superseded": "The two pre-commit-draft blob values.", "replaced_by": "SECTION_C1.the_corrected_values."},
+      {"clause": "v1.0.1 manifest control PC-E6, in its entirety.", "superseded": "The byte-equality requirement over AF-1..AF-4.", "replaced_by": "SECTION_C2's coverage-based replacement, restated in this errata's companion manifest as PC-F5."}
+    ],
+    "superseded_in_part": [
+      {"clause": "v1.0.1 SECTION_B11_PRECEDENCE.byte_integrity.", "superseded": "The two wrong blob values within the sentence.", "preserved": "The sentence's structure and its claim that all seven CONTROLLING_AUTHORITY blobs are unchanged, which was and remains true."},
+      {"clause": "v1.0.1 SECTION_B3.consumed_audit_evidence_incorporated.", "superseded": "Nothing removed; a disclosure sentence is prefixed.", "added": "SECTION_C2.the_correction.disclosure_added_at_the_source_locus."},
+      {"clause": "v1.0.1 SECTION_B7.the_correction.ground_v1_0_1.", "superseded": "The occupancy-implying phrasing.", "replaced_by": "SECTION_C5.the_corrected_ground_text. The CONDITION is unchanged; only the ground's wording is corrected."},
+      {"clause": "v1.0.0 manifest MC-C8, PC-C7, NC-C6, MC-C5.", "superseded": "See SECTION_C4 for each control's individual disposition (two retired, two redefined-in-place)."}
+    ],
+    "completeness_statement": "BF-R1 is closed by SECTION_C1. NBF-R1 through NBF-R4 are each closed by exactly one of SECTION_C2 through SECTION_C5. No directive from this errata's brief is left partially addressed."
+  },
+
+  "SECTION_C10_PRESERVED_UNCHANGED": {
+    "preserved": [
+      {"item": "Effective observation count = 15, and OBS-V4's removal from the effective set.", "checked": "UNTOUCHED. SECTION_C1 corrects only the SELF-PIN values, not the count or the array itself, which are re-verified against v1.0.1's own SECTION_B1 and found still correct."},
+      {"item": "The Tier 1 / Tier 2 split, and DEP-C1 in its entirety.", "checked": "Untouched."},
+      {"item": "ROUTE_R1's rejection of the SQL read-only endpoint.", "checked": "Untouched."},
+      {"item": "C3_AVAILABLE's unreachability under this authority (A-4 requires Tier 2).", "checked": "Untouched. SECTION_C5's exposure/occupancy correction reinforces this: G-N3's ground now says PLAINLY that occupancy is unmeasured, which is the same fact that makes A-4 unsatisfiable."},
+      {"item": "The production veto, the forbidden-substitution list, and every other EXPLICIT_NON_AUTHORIZATION.", "checked": "Untouched."},
+      {"item": "OD-3 is not adjudicated. KEEP/CHANGE and C-1/C-2/C-3 are not chosen. The all-writer scope is not narrowed.", "checked": "Untouched."},
+      {"item": "No census execution by this or either prior lane.", "checked": "Re-asserted in PS-F2."}
+    ]
+  },
+
+  "SECTION_C11_PRECEDENCE": {
+    "rule": "THREE-LAYER PRECEDENCE. Where this errata (v1.0.2) and v1.0.1 conflict, v1.0.2 CONTROLS. Where v1.0.2 is silent and v1.0.1 and v1.0.0 conflict, v1.0.1 CONTROLS. Where both errata layers are silent, v1.0.0 controls unamended.",
+    "no_reinterpretation_of_grandparents": "This errata, like v1.0.1, does not edit, reinterpret or narrow the Quiesce authority, its amendment, the Recovery authority, its amendment, the owner-ratification record, PR #201 or the D1 observation authority.",
+    "byte_integrity": "Restated with corrected values: v1.0.0's authority blob 524188090a and manifest blob 3aa75f5f0f are unchanged; v1.0.1's errata authority blob 0dec3d2a and its manifest blob 4bcaf488 are unchanged. All four re-derived in this lane, not carried forward from either predecessor's own text."
+  },
+
+  "self_check": {
+    "checks": [
+      "BF-R1's two corrected blob values are each independently re-derived by THREE methods (rev-parse at HEAD, rev-parse at the introducing commit, hash-object on the clean working tree) and all three agree for both files.",
+      "The wrong values are named explicitly as still-existing-but-uncommitted-at-this-path objects, not as garbage or as never having existed, so a certifier understands exactly what class of error occurred.",
+      "PC-E6's replacement tests source coverage per-AF rather than byte equality, and the disclosure that AF-1..AF-4 are condensations is added at the locus where they are first presented, not only in this errata.",
+      "All four benign 'fifteen' homonyms are enumerated by exact path, including the one NUMERAL-form occurrence the word-only sweep would have missed, and none is altered.",
+      "Each of the four stale manifest controls (MC-C8, PC-C7, NC-C6, MC-C5) receives an explicit, individually-argued disposition -- two retired with a named replacement, two redefined in place -- so no control is left ambiguously live.",
+      "G-N3's CONDITION is confirmed unchanged; only its GROUND prose is corrected, and the corrected prose states in terms that occupancy is unmeasured rather than implying a session was observed.",
+      "No hosted mutation and no live control-plane read was performed; every measurement in this lane is a git object read or a repository-text re-read.",
+      "No lower layer (v1.0.0 or v1.0.1) is edited; both are re-verified byte-unchanged by fresh derivation.",
+      "Every directive (BF-R1, NBF-R1 through NBF-R4) is closed by exactly one named SECTION_C clause."
+    ],
+    "self_check_is_not_certification": "These checks are the author's own and are not independent verification."
+  },
+
+  "required_independent_review": "SHORT, BOUNDED recertification of v1.0.2 only -- the pin correction, the PC-E6 replacement, the homonym accounting, the manifest-control supersession, and the exposure/occupancy wording -- not a re-litigation of v1.0.0 or v1.0.1's substance, both of which already passed or were separately corrected. The certifier should specifically re-derive the two corrected blob SHAs independently rather than trusting SECTION_C1's own arithmetic, and should confirm PC-F5 (SECTION_C2's replacement) actually passes against the real AF-1..AF-4 text rather than merely being better-worded than PC-E6.",
+
+  "final_state": "PIN_ERRATA_AUTHORED_AWAITING_SHORT_BOUNDED_RECERTIFICATION",
+
+  "next_gate": "SHORT BOUNDED INDEPENDENT RECERTIFICATION of v1.0.2 only. On PASS, a READ-ONLY CENSUS EXECUTION lane opens exactly as v1.0.1's next_gate described, executing at most the fifteen observations of v1.0.1 SECTION_B1.EFFECTIVE_READ_SET_v1_0_1, unaffected in substance by this errata. Until recertification returns PASS: no observation is authorized, MG-Q1 and MG-Q2 remain OPEN, DEP-C1 remains unresolved, IG-1 remains NOT_CLOSED_AND_NOT_CURRENTLY_CLOSABLE, and S8 remains unsatisfiable under the QUIESCE posture."
+}

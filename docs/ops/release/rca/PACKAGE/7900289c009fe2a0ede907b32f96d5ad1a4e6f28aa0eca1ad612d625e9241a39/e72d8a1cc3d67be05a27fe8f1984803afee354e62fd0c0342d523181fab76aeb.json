@@ -1,0 +1,526 @@
+{
+  "authority_class": "CERTIFICATION_ADJUDICATION_RECORD__NOT_EXECUTABLE_AUTHORITY",
+  "authorizes": [],
+  "blocking_findings": [],
+  "chain": {
+    "predecessor": {
+      "path": "docs/ops/release/rca/PACKAGE/7900289c009fe2a0ede907b32f96d5ad1a4e6f28aa0eca1ad612d625e9241a39/a-c7e4b52614cb649d27631e3b62a61f47afd606636d85fd95c0c550089bc8c769.json",
+      "record_digest": "c7e4b52614cb649d27631e3b62a61f47afd606636d85fd95c0c550089bc8c769"
+    }
+  },
+  "closes_predecessor_findings": [],
+  "contract": {
+    "blob": "bb8bcebc9203778304d65ed139dc88bf4e77ea21",
+    "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+    "section": "SECTION_G3_PACKAGE_SUBJECT_CONTRACT"
+  },
+  "meaning": "The cited package closure was independently adjudicated with the recorded verdict under its cited governing authority. Nothing else.",
+  "nonblocking_findings": [
+    {
+      "id": "NB-1",
+      "status": "OPEN",
+      "summary": "The v1.0.6 test manifest still cites the v1.0.5 companion test as 'blob 3fe737e1 NOT edited'; that statement became stale with the owner-authorized correction in d5e86b4d. No test asserts that pin."
+    },
+    {
+      "id": "NB-2",
+      "status": "OPEN",
+      "summary": "The owner authorization of the OF-PS-4 correction exists only in the d5e86b4d commit message, not in an owner record (deliberate: a new owner record would make KS-A/KS-B STALE); the v1.0.6 test verifies the text is carried by that commit."
+    },
+    {
+      "id": "NB-3",
+      "status": "OPEN",
+      "summary": "At HEAD the v1.0.6 live guard only checks that the PACKAGE consumer result belongs to an allowed set that includes USABLE; it does not require STOP_RECERT_ATTEMPT_OPEN exactly. The exact semantics are tested only in fixtures."
+    },
+    {
+      "id": "NB-4",
+      "status": "OPEN",
+      "summary": "The HEAD_EMPTY regression scanner recognizes only two exact textual forms."
+    },
+    {
+      "id": "NB-5",
+      "status": "OPEN",
+      "summary": "The v1.0.4 battery ignores --check-anchors (starts a full run) and does not record killed_by."
+    },
+    {
+      "id": "NB-6",
+      "status": "OPEN",
+      "summary": "The batteries are line-ending sensitive: a clone with core.autocrlf=true yields ANCHOR_ERROR (fails closed, never a false PASS)."
+    },
+    {
+      "id": "NB-7",
+      "status": "OPEN",
+      "summary": "Carried: the reservation landed by direct fast-forward push while SECTION_F7 says 'through a pull request'; the line_comment grammar does not fix its regex flags (both variants tested, digest unchanged)."
+    }
+  ],
+  "provenance": {
+    "candidate_author": {
+      "executor": "Claude Code (claude-opus-5-5)",
+      "lane_id": "CV1-RECOVERY-PACKAGE-CANDIDATE-AUTHOR-R1"
+    },
+    "identity_facts_basis": "MATERIALIZER_REDERIVED",
+    "independence_basis": "PROCESS_GOVERNED",
+    "independent_adjudicator": {
+      "adjudication_date": "2026-09-25",
+      "examined_candidate_sha": "d5e86b4dfcc02b324fa5b652deeabf8554bd3690",
+      "examined_tree_sha": "51f1732a43838fb4ac26e82ba933107d008f1abc",
+      "executor": "Claude Code (claude-opus-5-5)",
+      "lane_id": "CV1-RECOVERY-PACKAGE-RECERT-R1",
+      "report_reference": "External certifier evidence packet, schema UELLIX_INDEPENDENT_CERTIFICATION_EVIDENCE_PACKET_V1, repository_artifact=false, local path C:\\Users\\Lorenzo\\uellix-certification-evidence\\CV1-RECOVERY-PACKAGE-RECERT-R1.json, sha256 19cbe46c7f8559352831f2b8fcd35f9588bb5c13757bd7e51c8359d43dac5059, size 8848 bytes, evidence certification_date 2026-09-25.",
+      "scope": "FULL_SUBJECT",
+      "scope_basis": []
+    },
+    "materializer": {
+      "executor": "Claude Code (claude-sonnet-5)",
+      "lane_id": "CV1-RECOVERY-PACKAGE-RECERT-RESULT-MATERIALIZER-R1",
+      "materialization_date": "2026-09-26"
+    },
+    "materializer_reproduced_adjudication_evidence": false,
+    "verdict_and_findings_basis": "ADJUDICATOR_REPORTED_SECOND_HAND"
+  },
+  "record_type": "ADJUDICATION",
+  "resolves_attempt": {
+    "attempt_id": "CV1-RECOVERY-PACKAGE-RECERT-ATTEMPT-7900289C-1",
+    "path": "docs/ops/release/rca/PACKAGE/7900289c009fe2a0ede907b32f96d5ad1a4e6f28aa0eca1ad612d625e9241a39/a-c7e4b52614cb649d27631e3b62a61f47afd606636d85fd95c0c550089bc8c769.json",
+    "record_digest": "c7e4b52614cb649d27631e3b62a61f47afd606636d85fd95c0c550089bc8c769"
+  },
+  "subject": {
+    "candidate_sha": "d5e86b4dfcc02b324fa5b652deeabf8554bd3690",
+    "digest_algorithm": "RCO_CLOSURE_DIGEST_V3",
+    "entries": [
+      {
+        "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d",
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "e4030e734b96ca8b0e68372a4e98111782e8f76e",
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "111ed99dbd10cb108238aca37fedc7a5d6e64020",
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "e15c28c1396671aae1a24e0dc907ef4c137fb6bd",
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "40c5cbba0f9e485cb022ffa0a733e1905e0aa88c",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "85c76024aa1c52058a6f36953c4da743ba247293",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "1ab223ac31ec76a7541ea6c49385eed491a6cc9e",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "bb8bcebc9203778304d65ed139dc88bf4e77ea21",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "154c3d1d396784ae7189b8088669b0ef8231de67",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "7c0aa9d8d738d6474d38f3f4b87de245e2db9c33",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "c15ea3560b2a7694f0a9263679b40fed394f9c6c",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "9647d0f400c6f6dc4144e48f08391d3a8affd43d",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.3.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "d9cc1aa739c79e91570793a189f9a711457b619b",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.4.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "5c64b82313e693b58bf94489fb88cb5106ddc844",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.5.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "71f42956628ac8225c00112d3a655f1524a64fbb",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.6.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "4dfe95774529e65287e51456842f89a2f0a498f9",
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+        "role": "COVERED"
+      },
+      {
+        "blob": "0e164220003f4056c0e5788c1707451ab310bd52",
+        "path": "tests/release/staging-recovery-cert-adjudication.mutation-battery.mjs",
+        "role": "COVERED"
+      },
+      {
+        "blob": "e7e143805edccf8178a5538457c8f7662f37d353",
+        "path": "tests/release/staging-recovery-cert-adjudication.test.ts",
+        "role": "COVERED"
+      },
+      {
+        "blob": "230e7193c75e702fc460af17333560312d2977ec",
+        "path": "tests/release/staging-recovery-cert-store-durability.mutation-battery.mjs",
+        "role": "COVERED"
+      },
+      {
+        "blob": "5351d1e254c15e6e09b40c17ef4de86ce8fcd998",
+        "path": "tests/release/staging-recovery-cert-store-durability.test.ts",
+        "role": "COVERED"
+      },
+      {
+        "blob": "2850d6ff2c02e9bfe915262a303704fea440aa35",
+        "path": "tests/release/staging-recovery-event-class-authority.test.ts",
+        "role": "COVERED"
+      },
+      {
+        "blob": "0418070e665c778b6d3147b199c7e3514401fd18",
+        "path": "tests/release/staging-recovery-integration-successor.test.ts",
+        "role": "COVERED"
+      },
+      {
+        "blob": "02095687f00c7a400370c33105e03430e096361c",
+        "path": "tests/release/staging-recovery-package-subject.mutation-battery.mjs",
+        "role": "COVERED"
+      },
+      {
+        "blob": "f27dd23024599508234720231d0380402974ba0d",
+        "path": "tests/release/staging-recovery-package-subject.test.ts",
+        "role": "COVERED"
+      },
+      {
+        "blob": "394519ee59c5e571d3e3f8c759c22c11e065e660",
+        "path": ".gitattributes",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "fe4004ed093e062f02bcb05d0c00ff4d02a06f36",
+        "path": "package.json",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "7ae04b486f6e212fd4c6db19fcba69e920cdf2d4",
+        "path": "pnpm-lock.yaml",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "f58b1ae26caff61f741b4d69e7683539ccca40ed",
+        "path": "pnpm-workspace.yaml",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "3a13f90a773b0facb675bf5b1a8239c8f33d36f5",
+        "path": "tsconfig.json",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "9d36f32d8b55b2b65828aeaf505e9dc7a2b78758",
+        "path": "vitest.config.ts",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "e28eee5f095857dd85543298df8bf6baba308cbe",
+        "path": "vitest.setup.network-guard.ts",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "a9d0dd31aa6eae87f8689e99b802b92a020b30d9",
+        "path": "vitest.setup.ts",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "d41654ce6cf9d925062b3e9f2867bd10ed39afdf",
+        "path": "vitest.shared.ts",
+        "role": "TOOLCHAIN"
+      },
+      {
+        "blob": "1e9d3c05e23de5644b7f9f1bffa747819a90acc2",
+        "path": "db/baseline/stella_g2_post_restore.sql",
+        "role": "RUNTIME_INPUT"
+      },
+      {
+        "blob": "d0cc70e51b7e303067bb612c1f12471e9be4cf92",
+        "path": "db/baseline/stella_g2_schema.sql",
+        "role": "RUNTIME_INPUT"
+      },
+      {
+        "blob": "96d0b97ef9b61598a159f3344dee316ebbf671f6",
+        "path": "scripts/db-audit-disposable.ts",
+        "role": "RUNTIME_INPUT"
+      },
+      {
+        "blob": "9a99ece52b4354605b06443f90b654f906b9eba1",
+        "path": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50",
+        "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "be1c59c4cb4a220d86dc8d20ad0cbe746e22b152",
+        "path": "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "c59b30a965b3b8652046f2010faf5bf084ec0686",
+        "path": "docs/ops/owner-ratifications/FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "f69e2e8141495e8715aba1a503cfa07f30e8dc08",
+        "path": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817",
+        "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608",
+        "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "1abcefc499172874433052db8a75f03ca35f3eba",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "633d4d68173e590d7980d9317cf47c8757d7e8fb",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "805b30c3c993b5a34bf0e140236c4edb683d4fa8",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "0dec3d2a8abdd15efad470f091c3bcb469756b0f",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "92a0558fe5b4d03fb3dfb814de8f8beb7ae7ea63",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.2.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "524188090a88d9b2b06890678348b6749564fdfe",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "4bcaf4882083578b04428e3773592cf127b98191",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.1.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "5acde6cd7454f84b3f51f8a43d49cca098233edf",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.2.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "3aa75f5f0fef8e24c723e01342622b2c07af48d2",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "2df79a571dfe1ad9a24b4c1ad2cf9724b02b4030",
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "f17e238d8829cd1e624ae10a851e89344fc13037",
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "9753fe615f5c1b71fb58036fbb39990728a83ed5",
+        "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "4463a09b756710f88161c0f4927ba1867d141390",
+        "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "role": "GOVERNING"
+      },
+      {
+        "blob": "c7c92f901261ed0722da85e9e51edd7f072344ae",
+        "path": "docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json",
+        "role": "GOVERNING"
+      }
+    ],
+    "governing_families": [
+      "docs/ops/ods/ODS_V1_AUTHORITY_",
+      "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_",
+      "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_",
+      "docs/ops/owner-ratifications/FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_",
+      "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_",
+      "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_",
+      "docs/ops/release/RELEASE_GATE_LEDGER_",
+      "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_",
+      "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_",
+      "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_",
+      "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_",
+      "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_",
+      "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_",
+      "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_",
+      "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_",
+      "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_",
+      "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_",
+      "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_",
+      "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_",
+      "docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_"
+    ],
+    "governing_family_members_at_candidate": [
+      {
+        "blob": "9a99ece52b4354605b06443f90b654f906b9eba1",
+        "path": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"
+      },
+      {
+        "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50",
+        "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"
+      },
+      {
+        "blob": "be1c59c4cb4a220d86dc8d20ad0cbe746e22b152",
+        "path": "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json"
+      },
+      {
+        "blob": "c59b30a965b3b8652046f2010faf5bf084ec0686",
+        "path": "docs/ops/owner-ratifications/FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json"
+      },
+      {
+        "blob": "f69e2e8141495e8715aba1a503cfa07f30e8dc08",
+        "path": "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json"
+      },
+      {
+        "blob": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817",
+        "path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json"
+      },
+      {
+        "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608",
+        "path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json"
+      },
+      {
+        "blob": "1abcefc499172874433052db8a75f03ca35f3eba",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json"
+      },
+      {
+        "blob": "633d4d68173e590d7980d9317cf47c8757d7e8fb",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json"
+      },
+      {
+        "blob": "805b30c3c993b5a34bf0e140236c4edb683d4fa8",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+      },
+      {
+        "blob": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f",
+        "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json"
+      },
+      {
+        "blob": "0dec3d2a8abdd15efad470f091c3bcb469756b0f",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json"
+      },
+      {
+        "blob": "92a0558fe5b4d03fb3dfb814de8f8beb7ae7ea63",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.2.json"
+      },
+      {
+        "blob": "524188090a88d9b2b06890678348b6749564fdfe",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json"
+      },
+      {
+        "blob": "4bcaf4882083578b04428e3773592cf127b98191",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.1.json"
+      },
+      {
+        "blob": "5acde6cd7454f84b3f51f8a43d49cca098233edf",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_ERRATA_v1.0.2.json"
+      },
+      {
+        "blob": "3aa75f5f0fef8e24c723e01342622b2c07af48d2",
+        "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_v1.0.0.json"
+      },
+      {
+        "blob": "2df79a571dfe1ad9a24b4c1ad2cf9724b02b4030",
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json"
+      },
+      {
+        "blob": "f17e238d8829cd1e624ae10a851e89344fc13037",
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json"
+      },
+      {
+        "blob": "9753fe615f5c1b71fb58036fbb39990728a83ed5",
+        "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json"
+      },
+      {
+        "blob": "76a64ffc877e108bd496a0a6e992df61c13a819b",
+        "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json"
+      },
+      {
+        "blob": "4463a09b756710f88161c0f4927ba1867d141390",
+        "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+      },
+      {
+        "blob": "0feb99b3c53ab8531e988a69df788e4ef4043749",
+        "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.2.json"
+      },
+      {
+        "blob": "c7c92f901261ed0722da85e9e51edd7f072344ae",
+        "path": "docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json"
+      }
+    ],
+    "package_digest": "7900289c009fe2a0ede907b32f96d5ad1a4e6f28aa0eca1ad612d625e9241a39",
+    "tree_sha": "51f1732a43838fb4ac26e82ba933107d008f1abc"
+  },
+  "subject_kind": "RECOVERY_AUTHORITY_PACKAGE_RECERT",
+  "verdict": {
+    "blocking_findings_count": 0,
+    "nonblocking_findings_reported_count": 7,
+    "verdict_class": "PASS_WITH_NONBLOCKING_FINDINGS",
+    "verdict_literal": "RECOVERY_PACKAGE_RECERT_PASS_WITH_NONBLOCKING_FINDINGS"
+  }
+}

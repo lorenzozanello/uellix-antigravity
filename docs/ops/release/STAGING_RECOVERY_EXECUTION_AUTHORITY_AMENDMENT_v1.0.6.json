@@ -1,0 +1,1204 @@
+{
+  "package_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.6",
+  "artifact_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6",
+  "authority_class": "APPEND_ONLY_RECOVERY_PACKAGE_SUBJECT_BOOTSTRAP_FIX__NOT_EXECUTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT__CANONICAL_PROTECTED_CANDIDATE_BOUND_PACKAGE_SUBJECT__INTRODUCING_VIEW_PINNED_TO_GIT__NO_GATE_WEAKENED__NO_OPERATION_ADDED__EVENT_A_POLICY_PENDING",
+  "append_only": true,
+  "mission_id": "CV1-RECOVERY-CERT-CONTRACT-BOOTSTRAP-SUBJECT-FIX-R4",
+  "lane": "codex/cv1-recovery-integration-successor-r1",
+  "role": "RECOVERY_PACKAGE_SUBJECT_BOOTSTRAP_FIX_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-25",
+  "materialized_by": "Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "GRANT_ID": null,
+  "SECTION_G0_FRESHNESS": {
+    "BASE_SHA": "76a3d4c2f96444604434146e1e1d1a81ccf07aff",
+    "BASE_TREE": "a29369de6ef05ff39cd17e194fee7ec08e6624d0",
+    "branch": "codex/cv1-recovery-integration-successor-r1",
+    "pull_request": "https://github.com/lorenzozanello/uellix-antigravity/pull/221 (DRAFT, not merged)",
+    "measured": "2026-09-25: HEAD == provider tip 76a3d4c2 (ruleset 23975786 active), worktree clean, no file under the adjudication root or the retired occurrence root in any reachable commit."
+  },
+  "SECTION_G1_DEFECT_CONSUMED": {
+    "source": "Lane CV1-RECOVERY-RECERT-ATTEMPT-RESERVATION-R1 (2026-09-25), outcome STOP_ATTEMPT_SUBJECT_NOT_AUTHORIZED, nothing written.",
+    "findings": [
+      {
+        "id": "BS-1",
+        "finding": "v1.0.5 authorized the first package attempt only for the package digest of the commit introducing an amendment (ae958aa0, d200bdfe...). The protected tip 76a3d4c2 changes a COVERED test file (digest c038b9c6...), so it could not be reserved; reserving ae958aa0 instead is useless because the consumer matches the closure at its head.",
+        "closed_by": [
+          "SECTION_G3.package_subject",
+          "SECTION_G3.attempt_contract.reservation_authorization"
+        ]
+      },
+      {
+        "id": "BS-2",
+        "finding": "The v1.0.5 test helper introducingView (\"Fixed forever\") patched the base with LIVE worktree bytes of the write set, so after 76a3d4c2 it modelled the tree of 76a3d4c2 as the introducing tree.",
+        "closed_by": [
+          "SECTION_G5_INTRODUCING_VIEW_PIN"
+        ]
+      }
+    ]
+  },
+  "SECTION_G2_OWNER_DECISION_BINDING": {
+    "owner_record": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4.json",
+    "owner_record_blob": "e15c28c1396671aae1a24e0dc907ef4c137fb6bd",
+    "decisions": {
+      "RECOVERY_PACKAGE_SUBJECT_POLICY_V2": "CANONICAL_PROTECTED_CANDIDATE_BOUND (SIGNED)",
+      "INTRODUCING_VIEW_POLICY": "PIN_TO_ACTUAL_INTRODUCING_COMMIT (SIGNED)",
+      "carried": "Owner v1.0.3 (attempt reservation, provider-enforced canonical store), v1.0.2 (revocation by package_digest), v1.0.1 OD-3, v1.0.0 OD-5/OD-6.",
+      "EVENT_A_POLICY": "PENDING"
+    }
+  },
+  "SECTION_G3_DELTA": {
+    "rule": "SECTION_G3 equals v1.0.5 SECTION_F3 except at exactly these key paths (the companion test recomputes the difference).",
+    "changed_paths": [
+      "contract_id",
+      "supersedes",
+      "record_schema.section",
+      "subject_identity_derivation.self_referential_closure",
+      "subject_identity_derivation.path_encoding",
+      "subject_kinds.package_kind_note",
+      "package_subject",
+      "attempt_contract.validation_order",
+      "attempt_contract.reservation_authorization",
+      "validation_order",
+      "stop_codes",
+      "consumer_rule.rule",
+      "consumer_rule.consumer_results",
+      "currency.declared_non_invalidating_governing_layers",
+      "canonical_store.provider_protection.measured_2026_09_25"
+    ]
+  },
+  "SECTION_G3_PACKAGE_SUBJECT_CONTRACT": {
+    "contract_id": "STAGING_RECOVERY_CERTIFICATION_ADJUDICATION_CONTRACT_V3",
+    "supersedes": "v1.0.5 SECTION_F3_CERTIFICATION_STORE_CONTRACT (V2) as a whole. This section is the COMPLETE effective contract: F3 with exactly the changes listed in SECTION_G3_DELTA. No record was ever written under V2 (the reservation lane stopped before writing); a record citing SECTION_F3 is rejected by W3/A3.",
+    "meaning": "The cited package closure was independently adjudicated with the recorded verdict under its cited governing authority. Nothing else.",
+    "attempt_meaning": "An independent recertification of the cited package closure was reserved before its review began and must be resolved by exactly one materialized adjudication. Nothing else.",
+    "not_executable_authority": "A record of either type authorizes NO act. Its authorizes field is the empty list, always.",
+    "record_types": {
+      "rule": "CLOSED ENUM. Every record carries record_type.",
+      "ADJUDICATION": "The materialized outcome of one reserved attempt, of any verdict class.",
+      "RECERT_ATTEMPT": "A write-once reservation of one independent recertification, materialized BEFORE the review begins (owner v1.0.3)."
+    },
+    "subject_kinds": {
+      "rule": "CLOSED ENUM of three kinds. RECOVERY_AUTHORITY_PACKAGE_RECERT is added (v1.0.4 OF-RV-1): the Recovery authority package itself, so that M-1, PS-2, HX-1, the next_gate sequence and the materializer-lane opening (SECTION_F7) are mechanical and obey attempts, revocation and contradiction like the other kinds. No OTHER.",
+      "kinds": {
+        "READONLY_CENSUS_AUTHORITY_RECERT": {
+          "covered_path_prefixes": [
+            "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_",
+            "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_TEST_MANIFEST_"
+          ],
+          "toolchain_roots": [],
+          "absent_reference_policy": "STOP"
+        },
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": {
+          "covered_path_prefixes": [
+            "scripts/recovery/",
+            "tests/recovery/",
+            "tests/postgres/recovery-",
+            "docs/ops/release/STAGING_RECOVERY_OFFLINE_"
+          ],
+          "toolchain_roots": [
+            ".gitattributes",
+            "package.json",
+            "pnpm-lock.yaml",
+            "pnpm-workspace.yaml",
+            "tsconfig.json",
+            "vitest.config.ts"
+          ],
+          "absent_reference_policy": "STOP"
+        },
+        "RECOVERY_AUTHORITY_PACKAGE_RECERT": {
+          "covered_path_prefixes": [
+            "docs/ops/release/STAGING_RECOVERY_EXECUTION_",
+            "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_",
+            "tests/release/staging-recovery-"
+          ],
+          "toolchain_roots": [
+            ".gitattributes",
+            "package.json",
+            "pnpm-lock.yaml",
+            "pnpm-workspace.yaml",
+            "tsconfig.json",
+            "vitest.config.ts"
+          ],
+          "absent_reference_policy": "EXCLUDE"
+        }
+      },
+      "package_kind_note": "The package kind covers every Recovery authority layer, its manifests, the owner records and the Recovery release tests. Its records live under the adjudication root, which none of its prefixes covers (mechanically verified; a closure reaching a store path STOPS). Its subject is the protected canonical candidate at reservation (SECTION_G3.package_subject); the v1.0.5 introducing-commit bootstrap is superseded (SECTION_G3.attempt_contract.reservation_authorization).",
+      "absent_reference_policy": "STOP: a GOVERNING reference to a path absent at C fails the derivation (v1.0.4 behaviour). EXCLUDE: such a reference is not an input and is omitted; the Recovery tests name absent paths on purpose as negative fixtures. Excluding is fail-closed: if the path ever appears, it enters the closure and the package digest changes."
+    },
+    "subject_identity_derivation": {
+      "algorithm": "RCO_CLOSURE_DIGEST_V3",
+      "supersedes": "RCO_CLOSURE_DIGEST_V2 (v1.0.4). Differences, and nothing else: (1) the import grammar is anchored to import/export STATEMENTS, so an import-shaped string inside a test fixture is not an import (the v1.0.4 test holds such a string, which made the package kind underivable); (2) the runtime literal grammar admits one or more \"./\" or \"../\" segments (RNB-LIT); (3) absent_reference_policy per kind; (4) every file set is named by role (RNB-S4). KS-A and KS-B recompute to their v1.0.4 package digests.",
+      "steps": [
+        "S1 C must name a COMMIT object; tree_sha = C^{tree}; tree_sha never equals candidate_sha.",
+        "S2 COVERED = every path of the tree of C starting with a covered_path_prefix of the kind, byte-sorted, non-empty.",
+        "S3 IMPORTED = transitive closure over repository imports. Scanned files: the COVERED paths matching grammars.code_file, then every newly IMPORTED path matching grammars.code_file. In each scanned file (comments NOT removed) every match of grammars.import_specifier (flags g and m) yields the first non-empty capture group as the specifier. A specifier starting with \".\" resolves against the directory of the scanned file, one starting with \"@/\" against the repository root; others (packages, node: builtins) are not followed. Resolution tries import_resolution_suffixes in order; the first existing path wins; none existing fails the derivation.",
+        "S4 TOOLCHAIN = the kind's toolchain_roots (each must exist at C), plus every quoted string inside the brackets of each grammars.setup_files match in a toolchain root matching grammars.code_file (resolved against that root's directory; must exist), plus the S3 closure seeded with exactly those toolchain paths, labelled TOOLCHAIN. A path already assigned a role keeps it.",
+        "S5 RUNTIME_INPUT = for each COVERED path matching grammars.code_file (and ONLY those: not TOOLCHAIN, not IMPORTED), its text with grammars.block_comment matches removed and then grammars.line_comment matches replaced by their first group, scanned with grammars.runtime_literal (flag g); a capture starting with \".\" resolves against the file directory, any other against the repository root; the result is RUNTIME_INPUT if it exists at C, is not already assigned and does not match docs/ops/**.json. Captures that name no existing path are ignored (output paths, globs, identifiers). RUNTIME_INPUT files are never scanned further.",
+        "S6 GOVERNING = every distinct match of grammars.governing_reference in the full text (comments included) of every COVERED, TOOLCHAIN and IMPORTED path (not RUNTIME_INPUT), in byte order, not already assigned. An absent path follows the kind's absent_reference_policy.",
+        "S7 entries = COVERED, TOOLCHAIN, IMPORTED, RUNTIME_INPUT, GOVERNING, each byte-sorted by path, as {role, path, blob}.",
+        "S8 package_digest = lowercase hex sha256 over the UTF-8 concatenation of role TAB path TAB blob LF for each entry in order.",
+        "S9 governing_families = distinct prefixes of the GOVERNING paths up to and including the character before the first \"_v<digit>\" (the whole path when absent), byte-sorted; governing_family_members_at_candidate = every path of the tree of C starting with a family, byte-sorted, with its blob."
+      ],
+      "grammars": {
+        "import_specifier": "^[ \\t]*(?:import|export)\\b[^'\"`;]*?\\bfrom[ \\t]*['\"]([^'\"\\n]+)['\"]|^[ \\t]*import[ \\t]*['\"]([^'\"\\n]+)['\"]|\\b(?:require|import)[ \\t]*\\([ \\t]*['\"]([^'\"\\n]+)['\"][ \\t]*\\)",
+        "runtime_literal": "['\"`]((?:(?:\\.{1,2}\\/)+[A-Za-z0-9_@-][A-Za-z0-9_.@-]*(?:\\/[A-Za-z0-9_.@-]+)*|[A-Za-z0-9_@-][A-Za-z0-9_.@-]*(?:\\/[A-Za-z0-9_.@-]+)+)\\.[A-Za-z0-9]+)['\"`]",
+        "block_comment": "\\/\\*[\\s\\S]*?\\*\\/",
+        "line_comment": "(^|[^:\\\\])\\/\\/.*$",
+        "setup_files": "setupFiles\\s*:\\s*\\[([^\\]]*)\\]",
+        "governing_reference": "docs\\/ops\\/[A-Za-z0-9_./-]+\\.json",
+        "code_file": "\\.(ts|tsx|js|mjs|cjs)$"
+      },
+      "import_resolution_suffixes": [
+        "",
+        ".ts",
+        ".tsx",
+        ".js",
+        ".mjs",
+        ".cjs",
+        "/index.ts",
+        "/index.js"
+      ],
+      "v2_equivalence": "For KS-A and KS-B, V3 produces exactly the V2 entries, families, members and package_digest (companion test, from git).",
+      "path_encoding": "Pre-commit review B-2: the S8 digest line role TAB path TAB blob LF is injective only if no path contains TAB, LF or another control character; git accepts such paths (measured: git fsck --full rc 0). A derivation (at a candidate or at a consumer head) in which ANY entry path contains a character U+0000..U+001F or U+007F fails; the failure is a derivation failure (W7/A6: STOP_CANDIDATE_SHA_MISMATCH; consumer step 10: STOP_NOT_CURRENT). No existing known subject is affected (KS-A and KS-B recompute unchanged).",
+      "self_referential_closure": "STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE when a derivation (at a candidate or at a consumer head) assigns ANY role to a path under the adjudication root or the retired occurrence root. A record can then never change the closure of the subject it records (owner brief F)."
+    },
+    "verdict": {
+      "verdict_classes": [
+        "PASS",
+        "PASS_WITH_NONBLOCKING_FINDINGS",
+        "FAIL",
+        "BLOCKED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "positive_classes": [
+        "PASS",
+        "PASS_WITH_NONBLOCKING_FINDINGS"
+      ],
+      "non_positive_classes": [
+        "FAIL",
+        "BLOCKED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "non_positive_rule": "NON_POSITIVE = every verdict_class not in positive_classes (owner v1.0.2). PASS_WITH_NONBLOCKING_FINDINGS is POSITIVE (v1.0.3 SECTION_D9.verdict.PASS_CLASS, carried). The two lists partition verdict_classes exactly.",
+      "required_qualifier_tokens": [
+        "RECERT",
+        "RECERTIFICATION",
+        "CERT",
+        "CERTIFICATION",
+        "IC"
+      ],
+      "prefix_token_vocabulary": [
+        "STAGING",
+        "RECOVERY",
+        "OFFLINE",
+        "IMPLEMENTATION",
+        "FOCUSED",
+        "BOUNDED",
+        "SHORT",
+        "FULL",
+        "CENSUS",
+        "READONLY",
+        "QUIESCE",
+        "AUTHORITY",
+        "EVENT",
+        "CLASS",
+        "PACKAGE",
+        "INTEGRATION",
+        "SUCCESSOR",
+        "CONFORMANCE",
+        "CLEANROOM",
+        "INDEPENDENT",
+        "CONTRACT",
+        "REMEDIATION",
+        "REVOCATION",
+        "STORE",
+        "DURABILITY",
+        "RECERT",
+        "RECERTIFICATION",
+        "CERT",
+        "CERTIFICATION",
+        "IC"
+      ],
+      "vocabulary_delta": "REVOCATION, STORE and DURABILITY are added so that the literals of this chain's own package recertifications (for example RECOVERY_CERT_STORE_DURABILITY_RECERT_PASS) parse strictly. Nothing is removed.",
+      "version_token_pattern": "^V[0-9]+$",
+      "literal_rule": {
+        "positive": "A record whose verdict_class is POSITIVE must carry a literal that parses STRICTLY to that class: split on \"_\", the class is the longest verdict_class forming a proper suffix of the tokens, the prefix is non-empty, its LAST token is one of required_qualifier_tokens and EVERY prefix token is in the CLOSED prefix_token_vocabulary or matches version_token_pattern. Anything else STOPS (STOP_VERDICT_LITERAL_MISMATCH).",
+        "non_positive": "A record whose verdict_class is NON-POSITIVE carries the adjudicator literal VERBATIM as opaque evidence: a non-empty ASCII [A-Z0-9_]+ string whose tokens do NOT END with the tokens of any positive class. A positive-parsing literal on a non-positive record STOPS (STOP_VERDICT_LITERAL_MISMATCH). A literal outside the closed classes is mapped by the materializer to the non-positive class the adjudicator report states; never to a positive class."
+      },
+      "class_consistency": {
+        "PASS": "blocking_findings_count = 0, blocking_findings empty, nonblocking count 0",
+        "PASS_WITH_NONBLOCKING_FINDINGS": "blocking_findings_count = 0, blocking_findings empty, nonblocking count >= 1",
+        "FAIL": "blocking_findings_count >= 1 and equals the length of blocking_findings",
+        "BLOCKED": "blocking_findings_count equals the length of blocking_findings (may be 0)",
+        "INSUFFICIENT_EVIDENCE": "blocking_findings_count equals the length of blocking_findings (may be 0)",
+        "stop": "STOP_VERDICT_CLASS_INCONSISTENT"
+      }
+    },
+    "findings": {
+      "rule": "Every nonblocking finding reported is recorded OPEN (exact count, unique non-empty ids and summaries). Every blocking finding reported is recorded as {id, summary} (unique non-empty ids).",
+      "closure": "Only a later ADJUDICATION of the SAME kind may list, in closes_predecessor_findings, ids of nonblocking findings carried by the most recent earlier ADJUDICATION of that kind in chain order (attempts carry no findings)."
+    },
+    "provenance": {
+      "roles": [
+        "candidate_author",
+        "independent_adjudicator",
+        "materializer"
+      ],
+      "lane_id_grammar": "^[A-Z0-9]+(-[A-Z0-9]+)*$ (ASCII upper-case letters, digits and single hyphens). Anything else STOPS (STOP_PROVENANCE_IDENTITY_MALFORMED). The same grammar applies to attempt_id, reservation.reserved_by.lane_id and reservation.adjudicator_lane_id.",
+      "identity_key": "lane_id with every \"-\" removed. The three adjudication identity keys must be pairwise distinct (STOP_PROVENANCE_NOT_INDEPENDENT). It does not and cannot prove that distinct ids are distinct actors.",
+      "independence_basis": "PROCESS_GOVERNED (exactly this value).",
+      "recert_scope": {
+        "values": [
+          "FULL_SUBJECT",
+          "BOUNDED_DELTA_OVER_PRIOR_CERTIFIED_LAYERS",
+          "FOCUSED_REMEDIATION"
+        ],
+        "scope_basis_rule": "FULL_SUBJECT has an empty scope_basis; every other scope a non-empty list of non-empty strings (STOP_RECERT_SCOPE_UNDECLARED)."
+      },
+      "evidence_basis": {
+        "identity_facts_basis": "MATERIALIZER_REDERIVED",
+        "verdict_and_findings_basis": "ADJUDICATOR_REPORTED_SECOND_HAND",
+        "materializer_reproduced_adjudication_evidence": false
+      },
+      "adjudicator_subject_binding": "independent_adjudicator.examined_candidate_sha and examined_tree_sha equal subject.candidate_sha and subject.tree_sha (STOP_RECERT_SUBJECT_MISMATCH)."
+    },
+    "path_and_identity": {
+      "adjudication_root": "docs/ops/release/rca/",
+      "kind_path_codes": {
+        "READONLY_CENSUS_AUTHORITY_RECERT": "CENSUS",
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": "OFFLINE",
+        "RECOVERY_AUTHORITY_PACKAGE_RECERT": "PACKAGE"
+      },
+      "adjudication_path": "docs/ops/release/rca/<KIND_CODE>/<package_digest>/<record_digest>.json",
+      "attempt_path": "docs/ops/release/rca/<KIND_CODE>/<package_digest>/a-<record_digest>.json",
+      "record_digest": "lowercase hex sha256 over the canonical COMPACT JSON of the parsed record (object keys sorted recursively by code point, no insignificant whitespace, UTF-8). Content-addressed: the file name names the digest of its own content.",
+      "path_length_rule": "At most 170 characters repository-relative (Windows MAX_PATH, CLAUDE.md section 9): the longest form, an attempt of kind PACKAGE or OFFLINE, is 165.",
+      "stop": "STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH"
+    },
+    "store_integrity": {
+      "rule": "EVERY git entry under adjudication_root at H is a candidate record, whatever it claims to be. The store is VALID only if every entry: (1) is a regular file (mode 100644); (2) has the path shape adjudication_root/KIND_CODE/<64 hex>/<64 hex>.json (an ADJUDICATION) or adjudication_root/KIND_CODE/<64 hex>/a-<64 hex>.json (a RECERT_ATTEMPT) with KIND_CODE in kind_path_codes; (3) parses as JSON and its bytes are EXACTLY the canonical pretty serialization of the parsed value (keys sorted recursively by code point, two-space indentation, LF, one trailing LF); (4) has record_type equal to the type its file-name form names; (5) has a subject_kind whose kind_path_codes entry equals the KIND_CODE directory; (6) has subject.package_digest equal to its directory digest and record_digest equal to the 64 hex of its file name.",
+      "stop": "STOP_ADJUDICATION_STORE_INVALID for EVERY kind (root-wide).",
+      "repair": "None by this contract: entries are write-once. Only a later independently certified amendment with an owner record may define a repair."
+    },
+    "canonical_serialization": "File bytes = canonical pretty serialization; record_digest = sha256 of the canonical COMPACT serialization of the same parsed value.",
+    "chain": {
+      "rule": "All records of one subject_kind, of BOTH record types and every verdict class, form ONE chain. chain.predecessor is null for the first record of the kind, otherwise {path, record_digest} of the chain TIP at write time.",
+      "read_time_integrity": "For each kind: exactly one root; every predecessor names a record that EXISTS at H under the root whose recomputed record_digest equals the reference; exactly one tip; every record reachable from the tip (no orphan, fork or cycle). Otherwise STOP_CHAIN_INTEGRITY_VIOLATED.",
+      "order": "Chain position is the ONLY ordering of records. No timestamp, filename, author assertion or date orders them."
+    },
+    "git_read_environment": {
+      "rule": "EVERY git read whose result a consumer or materializer relies on (history, tree listing, blob bytes, ancestry, shallow and object-format checks) runs in the controlled environment below. A mechanism that cannot be neutralized is a STOP, never a warning (owner brief R3-2).",
+      "environment": {
+        "construction": "Built from NOTHING, never by copying and filtering the parent environment (a case-sensitive deny-list is bypassable on Windows). Copied from the parent: PATH, SystemRoot, TEMP, TMP (only what the platform needs to start git). Set: HOME, USERPROFILE and XDG_CONFIG_HOME to a fresh private directory; GIT_CONFIG_NOSYSTEM=1; GIT_CONFIG_GLOBAL=an empty file in that directory; GIT_NO_REPLACE_OBJECTS=1; GIT_GRAFT_FILE=a path inside a fresh private directory, checked ABSENT before every read; GIT_NO_LAZY_FETCH=1; GIT_TERMINAL_PROMPT=0; GIT_PAGER=cat; GIT_OPTIONAL_LOCKS=0. Nothing else: in particular no inherited GIT_DIR, GIT_WORK_TREE, GIT_OBJECT_DIRECTORY, GIT_ALTERNATE_OBJECT_DIRECTORIES, GIT_NAMESPACE, GIT_REPLACE_REF_BASE, GIT_SHALLOW_FILE, GIT_CONFIG_PARAMETERS, GIT_CONFIG_COUNT/KEY/VALUE or GIT_INDEX_FILE.",
+        "per_command_flags": [
+          "--no-replace-objects",
+          "-c core.commitGraph=false",
+          "-c core.useReplaceRefs=false",
+          "-c log.showRoot=true",
+          "-c log.follow=false",
+          "-c diff.renames=false",
+          "-c diff.relative=false",
+          "-c log.showSignature=false",
+          "-c core.quotePath=false",
+          "-c color.ui=false",
+          "-c core.fsmonitor=false"
+        ],
+        "output": "NUL-separated (-z) machine output only, parsed as bytes; --format with explicit fields; --no-abbrev."
+      },
+      "self_check": "Before relying on any read: (a) git config --list --show-scope under the environment lists no system or global scope entry; (b) for every pinned key, the effective value is the pinned value (command-line scope wins over repository and included configuration); (c) no fsck.* key is effective (defence in depth for object_integrity); (d) git rev-parse --show-object-format prints sha1; (e) the graft path is absent. Any failure: STOP_GIT_READ_ENVIRONMENT_UNCONTROLLED. A git read that errors at any step is a STOP of the consumer, never a skipped check.",
+      "object_integrity": {
+        "rule": "Pre-commit review B1. git does NOT re-hash an object on ordinary reads (parent walk, ls-tree, cat-file --batch): a loose object rewritten in place under its original id, a forged pack index or multi-pack-index, or an alternate object store can change what a commit, tree or blob says while every id stays the same. Therefore, before any other read, git fsck --full --no-dangling --no-progress runs under the controlled environment and must exit 0 (it re-hashes every loose and packed object, including alternates, and verifies pack indexes). Any error: STOP_GIT_OBJECT_STORE_CORRUPT.",
+        "measured": "A merge -s ours commit rewritten in place (same id, second parent removed) hides the side-branch add of a FAIL from the controlled log and from merge-base --is-ancestor; fsck reports \"hash mismatch\" (exit 3); an fsck.skipList naming the forged id does not suppress it, and an fsck.<id>=ignore naming hashMismatch is rejected by git (fatal). Cost on this repository (about 21 600 packed objects): 77 s, exit 0 (2026-09-24)."
+      },
+      "neutralized_mechanisms_measured": {
+        "replace_refs": "refs/replace/* rewrites log AND ls-tree/cat-file in a default read; neutralized by --no-replace-objects + GIT_NO_REPLACE_OBJECTS + core.useReplaceRefs=false (companion test: log and ls-tree).",
+        "grafts": "GIT_DIR/info/grafts hides parents in a default read; neutralized by GIT_GRAFT_FILE pointing at an absent path (companion test).",
+        "commit_graph": "A forged commit-graph (parent pointer patched in CDAT) hides a delete and re-add from default log; neutralized by core.commitGraph=false, which makes git read parents from the commit objects (companion test forges the file).",
+        "log_showRoot": "A repository log.showRoot=false hides the root commit add; neutralized by -c log.showRoot=true (companion test).",
+        "aliases": "An alias cannot shadow a built-in command (git ignores alias.log); the controlled reads call built-ins only (companion test).",
+        "repository_and_included_config": "Every semantics-affecting key the reads use is pinned with -c, which takes precedence over repository config and include/includeIf files (companion test: diff.renames, core.useReplaceRefs, log.showRoot via include.path).",
+        "inherited_environment": "GIT_CONFIG_PARAMETERS, GIT_CONFIG_COUNT/KEY/VALUE, GIT_DIR and GIT_NAMESPACE in the parent environment do not reach the controlled reads (companion test).",
+        "shallow": "A shallow repository hides history: git rev-parse --is-shallow-repository must print false (STOP_ADJUDICATION_HISTORY_UNVERIFIABLE).",
+        "partial_clone": "A missing object is an error, never fetched (GIT_NO_LAZY_FETCH=1): fail closed.",
+        "tampered_objects_and_alternates": "A loose object rewritten under its id, a forged pack index or multi-pack-index, and objects supplied through objects/info/alternates are NOT verified by ordinary reads (the v1.0.5 draft wrongly relied on collision resistance here); they are neutralized by object_integrity (git fsck --full), measured on a forged loose merge object (companion test)."
+      },
+      "not_neutralizable_found": "None among the mechanisms above once object_integrity is included. A future mechanism found not neutralizable is a STOP of every consumer until a certified amendment handles it."
+    },
+    "ever_added_history": {
+      "rule": "R3-1: let U be the union of every path under the adjudication root that was ever ADDED in the FULL reachable history of the consumer head H (which contains the canonical tip and the store genesis). EVERY path in U: (1) is present at H; (2) has at H the blob that its single ADD introduced; (3) has exactly ONE add entry, in a non-merge commit, with mode 100644; (4) has ZERO modify, delete, type-change, rename or copy entries; (5) has ZERO merge (combined) entries; and (6) passes store_integrity at H. Conversely every path under the root at H is in U. Violations are root-wide.",
+      "command": "git <controlled flags> log -z --full-history --no-renames --cc --raw --no-abbrev --format=%x01%H%x20%P <H> -- :(top,literal)<adjudication_root>",
+      "revision": "Pre-commit review B2: the walk names H explicitly (the draft walked the checkout HEAD, so a consumer evaluating H while its checkout stood on an older commit could miss a merge drop in H). The file listing is git ls-tree -r -z --full-tree <H> -- <adjudication_root>. History and listing therefore describe the same commit, independently of the checkout and of the working directory.",
+      "parse": "Records start with \\x01 followed by the commit and its parents; a non-merge entry is \":<src mode> <dst mode> <src oid> <dst oid> <status>\" NUL <path> NUL; a merge (combined) entry starts with \"::\" (one mode and oid per parent plus the result) NUL <path> NUL.",
+      "why": "v1.0.4 checked only paths PRESENT at H: a record dropped by a merge (-s ours, or a normal merge resolving it away) leaves no delete and no combined entry, so it vanished silently (RB-1). A path that was ever added is never allowed to be absent or different at H, whatever the merge did. --full-history walks every parent of every merge, so the side commit that added the dropped record is always listed.",
+      "proven_against": "companion test, real DAGs: merge -s ours drop, normal merge then git rm, evil merge, add/add on two branches, delete and restart, rename, modify, legitimate side-branch add merged normally, root-commit add, forged commit-graph, replace (log and ls-tree), info/grafts, shallow clone, local log.showRoot=false.",
+      "stop": "STOP_ADJUDICATION_HISTORY_VIOLATED (root-wide); shallow: STOP_ADJUDICATION_HISTORY_UNVERIFIABLE."
+    },
+    "canonical_store": {
+      "CANONICAL_ADJUDICATION_REF": "refs/heads/codex/cv1-recovery-integration-successor-r1",
+      "transitional": "Unchanged from v1.0.4: the ref is moved only by a later independently certified amendment; a deleted or renamed ref STOPS every consumer.",
+      "STORE_GENESIS": {
+        "commit": "c057ff71415f0545e95003321c88ea224f6c26f8",
+        "rule": "The pinned last governed tip: the adjudication root is empty at this commit (no record was ever written before this amendment)."
+      },
+      "monotonicity_rule": "R3-3. Immediately before evaluation the consumer obtains, from the PROVIDER (GitHub REST, read-only), the tip of CANONICAL_ADJUDICATION_REF (never from a local ref, which local history rewrites can move) and the protection facts of provider_protection. It then requires, with controlled reads: (a) the provider-observed ref name equals CANONICAL_ADJUDICATION_REF; (b) STORE_GENESIS is an ancestor of (or equal to) the provider tip; (c) for EVERY RECERT_ATTEMPT at H, its canonical_store.tip_observed_at_reservation is an ancestor of (or equal to) the provider tip, so the canonical history never moved backwards past a reservation; (d) the provider tip is an ancestor of (or equal to) H, so the canonical history, including any record ever added on it, is inside the history ever_added_history inspects; (e) provider_protection evaluates PASS; (f) the provider activity witness shows no force_push and no branch_deletion of the ref. (b) or (c) failing: STOP_CANONICAL_STORE_NOT_MONOTONIC. (d): STOP_ADJUDICATION_STORE_STALE. (e): STOP_PROVIDER_PROTECTION_REQUIRED. (f): STOP_CANONICAL_STORE_REWRITTEN. (a): STOP_CANONICAL_STORE_REF_MISMATCH.",
+      "containment_diagnostic": "Every entry under the root at the provider tip is present at H with the same blob (implied by (d) and ever_added_history; kept as a direct diagnostic with its own control; STOP_ADJUDICATION_STORE_STALE).",
+      "provider_protection": {
+        "rule": "PASS iff at least one form holds; anything else (including a provider read error) is STOP_PROVIDER_PROTECTION_REQUIRED.",
+        "form_ruleset": "GET repos/{o}/{r}/rules/branches/{branch} contains a rule of type non_fast_forward AND a rule of type deletion carrying the SAME ruleset_id, and GET repos/{o}/{r}/rulesets/{ruleset_id} has enforcement \"active\", target \"branch\", bypass_actors an empty array, and conditions.ref_name.include containing CANONICAL_ADJUDICATION_REF or \"~ALL\".",
+        "form_classic": "GET repos/{o}/{r}/branches/{branch}/protection returns allow_force_pushes.enabled false, allow_deletions.enabled false and enforce_admins.enabled true.",
+        "activity_witness": "GET repos/{o}/{r}/activity?ref=<CANONICAL_ADJUDICATION_REF>, read through EVERY page, lists no entry with activity_type force_push or branch_deletion and at most ONE branch_creation (a second creation means the ref was deleted or renamed away and recreated). A supplementary witness only: it is NOT sufficient without protection (its retention is the provider's), and it is necessary so that a rewrite that happened while protection was off is not ignored when it is still visible.",
+        "measured_2026_09_24": {
+          "classic_protection": "HTTP 404 \"Branch not protected\"",
+          "rules_for_branch": "[] (HTTP 200)",
+          "repository_rulesets": "[] (HTTP 200, includes_parents=true)",
+          "branch_protected_flag": false,
+          "provider_tip": "c057ff71415f0545e95003321c88ea224f6c26f8",
+          "activity": [
+            {
+              "activity_type": "push",
+              "before": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+              "after": "c057ff71415f0545e95003321c88ea224f6c26f8"
+            },
+            {
+              "activity_type": "branch_creation",
+              "before": "0000000000000000000000000000000000000000",
+              "after": "a9ddc4d2c217921b015d0895ad008659afa4d418"
+            }
+          ],
+          "repository": "public, owned by a User account; the viewer has admin (NOT used)",
+          "evaluation": "STOP_PROVIDER_PROTECTION_REQUIRED"
+        },
+        "measured_2026_09_25": {
+          "measured_at": "2026-09-25T12:01:34Z",
+          "provider_tip": "76a3d4c2f96444604434146e1e1d1a81ccf07aff",
+          "classic_protection": "HTTP 404 \"Branch not protected\"",
+          "rules_for_branch": [
+            {
+              "type": "deletion",
+              "ruleset_id": 23975786
+            },
+            {
+              "type": "non_fast_forward",
+              "ruleset_id": 23975786
+            }
+          ],
+          "ruleset": {
+            "id": 23975786,
+            "name": "Recovery certification store monotonicity",
+            "target": "branch",
+            "enforcement": "active",
+            "bypass_actors": [],
+            "current_user_can_bypass": "never",
+            "conditions": {
+              "ref_name": {
+                "exclude": [],
+                "include": [
+                  "refs/heads/codex/cv1-recovery-integration-successor-r1"
+                ]
+              }
+            },
+            "rules": [
+              {
+                "type": "deletion"
+              },
+              {
+                "type": "non_fast_forward"
+              }
+            ],
+            "created_at": "2026-09-24T21:45:56.716-05:00",
+            "updated_at": "2026-09-24T21:45:56.732-05:00"
+          },
+          "repository_rulesets": [
+            23975786
+          ],
+          "activity": [
+            {
+              "activity_type": "push",
+              "before": "ae958aa04f534be50a648bd1e43a069d0c2111c7",
+              "after": "76a3d4c2f96444604434146e1e1d1a81ccf07aff",
+              "timestamp": "2026-09-25T07:07:38Z"
+            },
+            {
+              "activity_type": "push",
+              "before": "c057ff71415f0545e95003321c88ea224f6c26f8",
+              "after": "ae958aa04f534be50a648bd1e43a069d0c2111c7",
+              "timestamp": "2026-09-25T02:52:06Z"
+            },
+            {
+              "activity_type": "push",
+              "before": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+              "after": "c057ff71415f0545e95003321c88ea224f6c26f8",
+              "timestamp": "2026-09-24T16:29:35Z"
+            },
+            {
+              "activity_type": "branch_creation",
+              "before": "0000000000000000000000000000000000000000",
+              "after": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+              "timestamp": "2026-09-24T12:30:51Z"
+            }
+          ],
+          "evaluation": "PROTECTION_PASS; rewriteWitnessed false"
+        }
+      },
+      "why_no_repository_only_substitute": [
+        "A pin of the \"last governed tip\" written into the repository lives inside the very ref it is meant to protect: a force-push replaces the pin together with the history it pins.",
+        "A FAIL materialized and then removed by a force-push between two observations leaves no reachable object: git content cannot prove that an unreachable commit never existed (owner v1.0.3), and no clone is obliged to have fetched it.",
+        "Attempt records carry tip_observed_at_reservation, but they are themselves in the rewritable ref; they detect a rewrite only when they survive it.",
+        "Local reflogs, other clones and CI caches are not governed, not complete and not shared; treating them as the store would make the result depend on which machine evaluates.",
+        "Therefore the only sound guarantee is the provider refusing the rewrite: a ruleset (or classic protection) on the canonical ref, read back read-only by every consumer."
+      ]
+    },
+    "attempt_contract": {
+      "rule": "Owner v1.0.3. Every governed independent recertification of any subject kind has exactly one RECERT_ATTEMPT, materialized on the canonical ref by a reservation lane BEFORE the review begins, and resolved by exactly one ADJUDICATION of any verdict class, materialized by a separate lane. An adjudication without an attempt is invalid. An independent report outside the repository is not consumable; while its attempt is unresolved every positive certification of that package_digest is suspended (STOP_RECERT_ATTEMPT_OPEN).",
+      "binding": "attempt_id; subject_kind; subject.{candidate_sha, tree_sha, package_digest, digest_algorithm}; prior_state.{state, disposition_status} (the state of that package_digest computed over the chain prefix before the attempt); chain.predecessor (the chain tip at reservation); canonical_store.{ref, tip_observed_at_reservation}; reservation.{reserved_by, adjudicator_lane_id, reservation_date}.",
+      "validation_order": [
+        "A1 subject_kind in the closed enum (STOP_UNKNOWN_SUBJECT_KIND).",
+        "A2 keys exactly record_schema.RECERT_ATTEMPT at every level, record_type RECERT_ATTEMPT, reservation_date YYYY-MM-DD (STOP_RECERT_ATTEMPT_SHAPE).",
+        "A3 contract names this artifact, record_schema.section and its blob (STOP_ADJUDICATION_CONTRACT_MISMATCH).",
+        "A4 authority_class, empty authorizes, exact attempt_meaning (STOP_ADJUDICATION_CLAIMS_AUTHORITY).",
+        "A5 candidate_sha 40 lowercase hex (STOP_CANDIDATE_SHA_MALFORMED); path is the attempt_path of its content (STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH); WRITE-TIME: the path is free (STOP_ADJUDICATION_PATH_EXISTS).",
+        "A6 subject equals the V3 re-derivation from the git objects of the candidate commit (candidate and a distinct tree: STOP_CANDIDATE_SHA_MISMATCH; tree = candidate^{tree}: STOP_TREE_SHA_MISMATCH; digest algorithm and package_digest: STOP_PACKAGE_DIGEST_MISMATCH; a closure containing a store path: STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE) and, for a known subject, v1.0.5 SECTION_F5.",
+        "A7 attempt_id, reserved_by.lane_id and adjudicator_lane_id match the lane-id grammar (STOP_PROVENANCE_IDENTITY_MALFORMED); the identity key of attempt_id (hyphens removed) is unique among the attempts of the store (STOP_RECERT_ATTEMPT_ID_DUPLICATE).",
+        "A8 canonical_store.ref equals CANONICAL_ADJUDICATION_REF and tip_observed_at_reservation is 40 lowercase hex (STOP_CANONICAL_STORE_REF_MISMATCH).",
+        "A11 PACKAGE kind only: subject.candidate_sha equals canonical_store.tip_observed_at_reservation (STOP_ATTEMPT_SUBJECT_NOT_CANONICAL).",
+        "A12 no other record of the kind names the same candidate_sha with a different tree_sha or package_digest (STOP_PACKAGE_SUBJECT_AMBIGUOUS).",
+        "R1 READ-TIME ONLY: ever_added_history (STOP_ADJUDICATION_HISTORY_VIOLATED). R2 READ-TIME ONLY: chain.read_time_integrity of the kind (STOP_CHAIN_INTEGRITY_VIOLATED). Both run before A9, which reads the chain.",
+        "A9 prior_state equals the state and disposition_status of subject.package_digest computed over the records of the kind that PRECEDE the attempt in chain order (STOP_RECERT_ATTEMPT_PRIOR_STATE_MISMATCH), and that state is not OPEN_ATTEMPT: one open attempt per package_digest at a time (STOP_RECERT_ATTEMPT_ALREADY_OPEN).",
+        "A10 WRITE-TIME ONLY: predecessor is the chain tip with its digest, or null when the kind has none (STOP_CHAIN_PREDECESSOR_MISMATCH); tip_observed_at_reservation equals the provider tip read at reservation and the reservation lane records that read."
+      ],
+      "resolution": "W12 (both times; a later attempt cannot be named: its record digest would depend on the adjudication that names it): an ADJUDICATION names resolves_attempt {path, record_digest, attempt_id} of a RECERT_ATTEMPT that exists at H, of the same kind, whose recomputed record_digest and attempt_id match, that PRECEDES the adjudication in chain order, whose subject candidate_sha, tree_sha and package_digest equal the adjudication subject, and whose adjudicator_lane_id has the same identity key as provenance.independent_adjudicator.lane_id, and whose reservation_date (YYYY-MM-DD) is not later than independent_adjudicator.adjudication_date (STOP_RECERT_ATTEMPT_RESOLUTION_INVALID). W13 (both times): no other ADJUDICATION at H resolves the same attempt (STOP_RECERT_ATTEMPT_DOUBLY_RESOLVED). One adjudication names one attempt by construction, so no outcome resolves two attempts and no attempt has two outcomes.",
+      "landing": "Attempts AND adjudications are added to the canonical ref (SECTION_F7); a record on any other ref is not in the store the consumer reads.",
+      "briefing": "Process rule (pre-commit review N1): the reservation lane hands the adjudicator the attempt_id before the review starts, and the adjudicator report cites it; W12 checks that the reservation date does not follow the adjudication date. Reservation after a known outcome remains a process breach that the record format cannot exclude (OF-SD-2).",
+      "materialization_obligation": "R3-5. The adjudicator may stay read-only; the outcome it reports is materialized by a separate lane, whatever its class. Until then the attempt is OPEN and every consumer of that package_digest STOPS (STOP_RECERT_ATTEMPT_OPEN): lack of materialization is a STOP, not an absence of evidence. A reservation lane may not reserve a second attempt for the same package_digest while one is open (A9). A recertification run without a reserved attempt is ungoverned: it cannot produce a record (W12), and its outcome, if known, is reported to the owner.",
+      "reservation_authorization": {
+        "rule": "Owner v1.0.4 C (verbatim in the owner record). A reservation lane may write ONE RECERT_ATTEMPT of kind RECOVERY_AUTHORITY_PACKAGE_RECERT when, at its prestate, after running consumer_rule steps (0)..(9) at its head (store valid, history clean, canonical monotonic): (C1) the candidate is the tip of CANONICAL_ADJUDICATION_REF read from the provider, and the provider-reported ref is that ref (STOP_ATTEMPT_SUBJECT_NOT_CANONICAL); (C2) provider_protection evaluates PASS (STOP_PROVIDER_PROTECTION_REQUIRED); (C3) the activity witness shows no rewrite (STOP_CANONICAL_STORE_REWRITTEN); (C4) candidate_sha, tree_sha and package_digest bind exactly by derivation from the candidate commit (A6); (C5) the subject is not already ambiguously represented and has no open attempt (A12, A9); (C6) adding the attempt file to the candidate tree leaves the package digest unchanged (STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE). No introducing-commit restriction applies: every protected canonical tip is a legitimate distinct subject.",
+        "c6_reachability": "C6 cannot fire for a well-formed record: to reach its own path a closure file would have to name rca/PACKAGE/<P>/a-<D>.json where P depends on that same file (a sha256 fixed point). C6 is kept as defence in depth and is exercised directly (the companion test checks the closure comparison on a crafted candidate); it is evaluated after C4/C5.",
+        "supersedes": "v1.0.5 SECTION_F7.bootstrap, SECTION_F7.first_authorized_directories[0], SECTION_F5.package_subject and next_gate step (2), which bound the first package attempt to the digest of the commit introducing an amendment."
+      }
+    },
+    "state": {
+      "rule": "For kind K and package_digest P, over the records of K whose subject.package_digest = P in chain order: attempts A(P), adjudications D(P); disposition_status(P) over D(P) as below. Then state(P) is the FIRST that applies: CONTRADICTED (disposition CONTRADICTED); RESOLVED_NON_POSITIVE (disposition REVOKED or NEGATIVELY_ADJUDICATED); OPEN_ATTEMPT (some attempt of A(P) is resolved by no adjudication); NO_ATTEMPT (A(P) empty); RESOLVED_PASS (otherwise: every attempt resolved and disposition CERTIFIED).",
+      "stops": {
+        "CONTRADICTED": "STOP_CONTRADICTORY_CERTIFICATION",
+        "RESOLVED_NON_POSITIVE": "STOP_CERTIFICATION_REVOKED when REVOKED, STOP_NOT_CERTIFIED when NEGATIVELY_ADJUDICATED",
+        "OPEN_ATTEMPT": "STOP_RECERT_ATTEMPT_OPEN",
+        "NO_ATTEMPT": "STOP_NOT_CERTIFIED",
+        "RESOLVED_PASS": "none (currency follows)"
+      },
+      "suspension": "OPEN_ATTEMPT suspends EVERY earlier positive adjudication of P, whatever its candidate SHA: PASS, then an attempt, then no result is STOP_RECERT_ATTEMPT_OPEN; PASS, attempt, FAIL / BLOCKED / INSUFFICIENT_EVIDENCE is REVOKED; PASS, attempt, PASS is usable only once the second attempt is resolved.",
+      "disposition_status": {
+        "NOT_ADJUDICATED": "D(P) empty.",
+        "NEGATIVELY_ADJUDICATED": "D(P) has only non-positive adjudications.",
+        "REVOKED": "D(P) has a positive adjudication and a LATER non-positive one, and no positive adjudication follows the first non-positive one (owner v1.0.2: every positive for P, any candidate SHA).",
+        "CONTRADICTED": "D(P) has a positive adjudication that FOLLOWS a non-positive one. No latest-wins.",
+        "CERTIFIED": "D(P) has positive adjudications only."
+      },
+      "recovery_from_revoked_or_contradicted": "Only a materially new package_digest independently adjudicated positive, or a future owner adjudication made mechanical by a later certified amendment (owner v1.0.2). Neither is performed here."
+    },
+    "currency": {
+      "rule": "A RESOLVED_PASS closure P is CURRENT at H when the V3 closure derived at H has package_digest P and the governing-family rule holds against the LATEST positive adjudication for P: every path at H in a recorded governing family either has its recorded blob, or is a declared layer of the kind with its declared blob (blob null: only this artifact itself), and every recorded member still exists. Otherwise STALE (STOP_NOT_CURRENT); SUBJECT_NOT_PRESENT when COVERED at H is empty.",
+      "declared_non_invalidating_governing_layers": {
+        "rule": "Mechanical: exactly the governing-family members present in the tree that introduces this artifact and not recorded at the known candidate, each with its blob and a reason. RECOVERY_AUTHORITY_PACKAGE_RECERT has none: its own layers are COVERED, so any new layer changes its package digest.",
+        "READONLY_CENSUS_AUTHORITY_RECERT": [
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+            "blob": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+            "reason": "Owner OD-3 event-class narrowing; OD-5/OD-6 unchanged (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+            "blob": "e4030e734b96ca8b0e68372a4e98111782e8f76e",
+            "reason": "Owner revocation-binding decision; governs adjudication consumption, not the subjects (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json",
+            "blob": "111ed99dbd10cb108238aca37fedc7a5d6e64020",
+            "reason": "Owner attempt-reservation and canonical-store decisions, co-introduced with this artifact; it cites this artifact by path only, so its blob is pinned here without circularity. It governs record consumption, not the subjects."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4.json",
+            "blob": "e15c28c1396671aae1a24e0dc907ef4c137fb6bd",
+            "reason": "Owner package-subject and introducing-view decisions, co-introduced with this artifact (cited by path only); they govern package-subject records, not the census or offline subjects."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+            "blob": "40c5cbba0f9e485cb022ffa0a733e1905e0aa88c",
+            "reason": "Recovery event-class posture; changes no census rule and no offline-primitive requirement (carried from v1.0.3/v1.0.4)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "blob": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0",
+            "reason": "The superseded occurrence contract; its surviving clauses change no census rule and no offline-primitive requirement (carried)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+            "blob": "85c76024aa1c52058a6f36953c4da743ba247293",
+            "reason": "The superseded adjudication contract SECTION_E3; its surviving clauses change no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+            "blob": "1ab223ac31ec76a7541ea6c49385eed491a6cc9e",
+            "reason": "The v1.0.5 store-durability contract; superseded as the contract by SECTION_G3 of this artifact; changes no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+            "blob": null,
+            "reason": "This artifact; integrity by read-time W3/A3 (contract.blob)."
+          }
+        ],
+        "OFFLINE_RECOVERY_IMPLEMENTATION_RECERT": [
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+            "blob": "4eea1f1e160771eebb77855c3d7f9d5bb8703086",
+            "reason": "Owner OD-3 event-class narrowing; OD-5/OD-6 unchanged (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+            "blob": "e4030e734b96ca8b0e68372a4e98111782e8f76e",
+            "reason": "Owner revocation-binding decision; governs adjudication consumption, not the subjects (carried)."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json",
+            "blob": "111ed99dbd10cb108238aca37fedc7a5d6e64020",
+            "reason": "Owner attempt-reservation and canonical-store decisions, co-introduced with this artifact; it cites this artifact by path only, so its blob is pinned here without circularity. It governs record consumption, not the subjects."
+          },
+          {
+            "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4.json",
+            "blob": "e15c28c1396671aae1a24e0dc907ef4c137fb6bd",
+            "reason": "Owner package-subject and introducing-view decisions, co-introduced with this artifact (cited by path only); they govern package-subject records, not the census or offline subjects."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+            "blob": "40c5cbba0f9e485cb022ffa0a733e1905e0aa88c",
+            "reason": "Recovery event-class posture; changes no census rule and no offline-primitive requirement (carried from v1.0.3/v1.0.4)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "blob": "c20cc4f123bce9659e09a6e3fb0878a7de2752b0",
+            "reason": "The superseded occurrence contract; its surviving clauses change no census rule and no offline-primitive requirement (carried)."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+            "blob": "85c76024aa1c52058a6f36953c4da743ba247293",
+            "reason": "The superseded adjudication contract SECTION_E3; its surviving clauses change no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+            "blob": "1ab223ac31ec76a7541ea6c49385eed491a6cc9e",
+            "reason": "The v1.0.5 store-durability contract; superseded as the contract by SECTION_G3 of this artifact; changes no census rule and no offline-primitive requirement."
+          },
+          {
+            "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+            "blob": null,
+            "reason": "This artifact; integrity by read-time W3/A3 (contract.blob)."
+          }
+        ],
+        "RECOVERY_AUTHORITY_PACKAGE_RECERT": []
+      }
+    },
+    "consumer_rule": {
+      "rule": "A positive certification of kind K is USABLE at head H only when, in order: (0) provider_protection PASS (STOP_PROVIDER_PROTECTION_REQUIRED) and the activity witness is clean (STOP_CANONICAL_STORE_REWRITTEN); (1) git_read_environment self_check holds (STOP_GIT_READ_ENVIRONMENT_UNCONTROLLED) and object_integrity holds (STOP_GIT_OBJECT_STORE_CORRUPT); (2) H is not shallow (STOP_ADJUDICATION_HISTORY_UNVERIFIABLE); (3) canonical monotonicity (a), (b), (d) (STOP_CANONICAL_STORE_REF_MISMATCH, STOP_CANONICAL_STORE_NOT_MONOTONIC, STOP_ADJUDICATION_STORE_STALE); (4) no file under the retired occurrence root (STOP_RETIRED_OCCURRENCE_ROOT_USED); (5) store_integrity for the WHOLE root (STOP_ADJUDICATION_STORE_INVALID); (6) ever_added_history for the whole root (STOP_ADJUDICATION_HISTORY_VIOLATED); (7) chain.read_time_integrity for K (STOP_CHAIN_INTEGRITY_VIOLATED); (8) every record of EVERY kind passes read-time validation, including W12/W13 and A1..A9 (STOP_ADJUDICATION_INVALID_AT_READ); (9) canonical monotonicity (c) for every attempt (STOP_CANONICAL_STORE_NOT_MONOTONIC) and the containment diagnostic (STOP_ADJUDICATION_STORE_STALE); (10) the V3 closure of K at H exists (STOP_SUBJECT_NOT_PRESENT; a closure containing a store path is STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE; any other derivation failure is STOP_NOT_CURRENT) with digest P; P is only MATCHED against recorded subjects, never used to re-identify a record; (11) state(K, P) is RESOLVED_PASS (else its stop); (12) currency is CURRENT against the LATEST positive adjudication for P (STOP_NOT_CURRENT). The result carries {usable, state, disposition_status, package_digest, scopes, scope_basis, provider_tip}.",
+      "consumer_results": [
+        "USABLE",
+        "STOP_PROVIDER_PROTECTION_REQUIRED",
+        "STOP_CANONICAL_STORE_REWRITTEN",
+        "STOP_GIT_READ_ENVIRONMENT_UNCONTROLLED",
+        "STOP_GIT_OBJECT_STORE_CORRUPT",
+        "STOP_ADJUDICATION_HISTORY_UNVERIFIABLE",
+        "STOP_CANONICAL_STORE_REF_MISMATCH",
+        "STOP_CANONICAL_STORE_NOT_MONOTONIC",
+        "STOP_ADJUDICATION_STORE_STALE",
+        "STOP_RETIRED_OCCURRENCE_ROOT_USED",
+        "STOP_ADJUDICATION_STORE_INVALID",
+        "STOP_ADJUDICATION_HISTORY_VIOLATED",
+        "STOP_CHAIN_INTEGRITY_VIOLATED",
+        "STOP_ADJUDICATION_INVALID_AT_READ",
+        "STOP_SUBJECT_NOT_PRESENT",
+        "STOP_NOT_CURRENT",
+        "STOP_CONTRADICTORY_CERTIFICATION",
+        "STOP_CERTIFICATION_REVOKED",
+        "STOP_NOT_CERTIFIED",
+        "STOP_RECERT_ATTEMPT_OPEN",
+        "STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE"
+      ],
+      "scope": "As v1.0.4: the result reports every positive adjudication's scope and scope_basis for P."
+    },
+    "record_schema": {
+      "section": "SECTION_G3_PACKAGE_SUBJECT_CONTRACT",
+      "ADJUDICATION": {
+        "top_level_keys_exact": [
+          "record_type",
+          "contract",
+          "subject_kind",
+          "subject",
+          "verdict",
+          "blocking_findings",
+          "nonblocking_findings",
+          "closes_predecessor_findings",
+          "provenance",
+          "resolves_attempt",
+          "chain",
+          "authority_class",
+          "authorizes",
+          "meaning"
+        ],
+        "nested_keys_exact": {
+          "contract": [
+            "blob",
+            "path",
+            "section"
+          ],
+          "subject": [
+            "candidate_sha",
+            "digest_algorithm",
+            "entries",
+            "governing_families",
+            "governing_family_members_at_candidate",
+            "package_digest",
+            "tree_sha"
+          ],
+          "subject.entries[]": [
+            "blob",
+            "path",
+            "role"
+          ],
+          "subject.governing_family_members_at_candidate[]": [
+            "blob",
+            "path"
+          ],
+          "verdict": [
+            "blocking_findings_count",
+            "nonblocking_findings_reported_count",
+            "verdict_class",
+            "verdict_literal"
+          ],
+          "blocking_findings[]": [
+            "id",
+            "summary"
+          ],
+          "nonblocking_findings[]": [
+            "id",
+            "status",
+            "summary"
+          ],
+          "provenance": [
+            "candidate_author",
+            "identity_facts_basis",
+            "independence_basis",
+            "independent_adjudicator",
+            "materializer",
+            "materializer_reproduced_adjudication_evidence",
+            "verdict_and_findings_basis"
+          ],
+          "provenance.candidate_author": [
+            "executor",
+            "lane_id"
+          ],
+          "provenance.independent_adjudicator": [
+            "adjudication_date",
+            "examined_candidate_sha",
+            "examined_tree_sha",
+            "executor",
+            "lane_id",
+            "report_reference",
+            "scope",
+            "scope_basis"
+          ],
+          "provenance.materializer": [
+            "executor",
+            "lane_id",
+            "materialization_date"
+          ],
+          "resolves_attempt": [
+            "attempt_id",
+            "path",
+            "record_digest"
+          ],
+          "chain": [
+            "predecessor"
+          ],
+          "chain.predecessor (when not null)": [
+            "path",
+            "record_digest"
+          ]
+        },
+        "record_type": "ADJUDICATION",
+        "authority_class": "CERTIFICATION_ADJUDICATION_RECORD__NOT_EXECUTABLE_AUTHORITY"
+      },
+      "RECERT_ATTEMPT": {
+        "top_level_keys_exact": [
+          "record_type",
+          "contract",
+          "attempt_id",
+          "subject_kind",
+          "subject",
+          "prior_state",
+          "canonical_store",
+          "reservation",
+          "chain",
+          "authority_class",
+          "authorizes",
+          "meaning"
+        ],
+        "nested_keys_exact": {
+          "contract": [
+            "blob",
+            "path",
+            "section"
+          ],
+          "subject": [
+            "candidate_sha",
+            "digest_algorithm",
+            "package_digest",
+            "tree_sha"
+          ],
+          "prior_state": [
+            "disposition_status",
+            "state"
+          ],
+          "canonical_store": [
+            "ref",
+            "tip_observed_at_reservation"
+          ],
+          "reservation": [
+            "adjudicator_lane_id",
+            "reservation_date",
+            "reserved_by"
+          ],
+          "reservation.reserved_by": [
+            "executor",
+            "lane_id"
+          ],
+          "chain": [
+            "predecessor"
+          ],
+          "chain.predecessor (when not null)": [
+            "path",
+            "record_digest"
+          ]
+        },
+        "record_type": "RECERT_ATTEMPT",
+        "authority_class": "RECERT_ATTEMPT_RESERVATION_RECORD__NOT_EXECUTABLE_AUTHORITY",
+        "states": [
+          "NO_ATTEMPT",
+          "OPEN_ATTEMPT",
+          "RESOLVED_PASS",
+          "RESOLVED_NON_POSITIVE",
+          "CONTRADICTED"
+        ],
+        "disposition_statuses": [
+          "NOT_ADJUDICATED",
+          "NEGATIVELY_ADJUDICATED",
+          "REVOKED",
+          "CONTRADICTED",
+          "CERTIFIED"
+        ]
+      },
+      "entry_roles": [
+        "COVERED",
+        "TOOLCHAIN",
+        "IMPORTED",
+        "RUNTIME_INPUT",
+        "GOVERNING"
+      ]
+    },
+    "validation_order": [
+      "W1 subject_kind in the closed enum (STOP_UNKNOWN_SUBJECT_KIND).",
+      "W2 keys exactly record_schema.ADJUDICATION at every level, record_type ADJUDICATION, roles in entry_roles (STOP_ADJUDICATION_SHAPE).",
+      "W3 contract names this artifact, record_schema.section and its blob (STOP_ADJUDICATION_CONTRACT_MISMATCH).",
+      "W4 authority_class, empty authorizes, exact meaning (STOP_ADJUDICATION_CLAIMS_AUTHORITY).",
+      "W5 candidate_sha 40 lowercase hex (STOP_CANDIDATE_SHA_MALFORMED); path is the adjudication_path of its content (STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH).",
+      "W6 COVERED entries non-empty and inside the kind prefixes (STOP_SUBJECT_KIND_MISMATCH).",
+      "W7 identity equals the V3 re-derivation from the git objects of the candidate commit and, for a known subject, v1.0.5 SECTION_F5 (STOP_CANDIDATE_SHA_MISMATCH, STOP_TREE_SHA_MISMATCH, STOP_COVERED_SET_MISMATCH, STOP_GOVERNING_PIN_MISMATCH, STOP_PACKAGE_DIGEST_MISMATCH, STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE).",
+      "W8 literal_rule (STOP_VERDICT_LITERAL_MISMATCH); class consistency (STOP_VERDICT_CLASS_INCONSISTENT).",
+      "W9 findings complete (STOP_NONBLOCKING_FINDINGS_INCOMPLETE) and nonblocking OPEN (STOP_FINDING_NOT_OPEN).",
+      "W10 lane-id grammar (STOP_PROVENANCE_IDENTITY_MALFORMED), independence (STOP_PROVENANCE_NOT_INDEPENDENT), adjudicator binding (STOP_RECERT_SUBJECT_MISMATCH), scope and basis (STOP_RECERT_SCOPE_UNDECLARED), bases and PROCESS_GOVERNED (STOP_MATERIALIZER_REPRODUCTION_CLAIM).",
+      "W11 WRITE-TIME ONLY: path free (STOP_ADJUDICATION_PATH_EXISTS); predecessor is the chain tip with its digest, or null (STOP_CHAIN_PREDECESSOR_MISMATCH); closes_predecessor_findings valid (STOP_FINDING_CLOSURE_INVALID).",
+      "R1 READ-TIME ONLY: ever_added_history (STOP_ADJUDICATION_HISTORY_VIOLATED). R2 READ-TIME ONLY: chain.read_time_integrity of the kind (STOP_CHAIN_INTEGRITY_VIOLATED). Both run before W12, which reads the chain.",
+      "W12 resolves exactly one earlier attempt of the same subject and adjudicator (STOP_RECERT_ATTEMPT_RESOLUTION_INVALID).",
+      "W13 the attempt is resolved by no other adjudication (STOP_RECERT_ATTEMPT_DOUBLY_RESOLVED)."
+    ],
+    "stop_codes": [
+      "STOP_UNKNOWN_SUBJECT_KIND",
+      "STOP_ADJUDICATION_SHAPE",
+      "STOP_RECERT_ATTEMPT_SHAPE",
+      "STOP_ADJUDICATION_CONTRACT_MISMATCH",
+      "STOP_ADJUDICATION_CLAIMS_AUTHORITY",
+      "STOP_CANDIDATE_SHA_MALFORMED",
+      "STOP_ADJUDICATION_PATH_IDENTITY_MISMATCH",
+      "STOP_SUBJECT_KIND_MISMATCH",
+      "STOP_CANDIDATE_SHA_MISMATCH",
+      "STOP_TREE_SHA_MISMATCH",
+      "STOP_COVERED_SET_MISMATCH",
+      "STOP_GOVERNING_PIN_MISMATCH",
+      "STOP_PACKAGE_DIGEST_MISMATCH",
+      "STOP_VERDICT_LITERAL_MISMATCH",
+      "STOP_VERDICT_CLASS_INCONSISTENT",
+      "STOP_NONBLOCKING_FINDINGS_INCOMPLETE",
+      "STOP_FINDING_NOT_OPEN",
+      "STOP_PROVENANCE_IDENTITY_MALFORMED",
+      "STOP_PROVENANCE_NOT_INDEPENDENT",
+      "STOP_RECERT_SUBJECT_MISMATCH",
+      "STOP_RECERT_SCOPE_UNDECLARED",
+      "STOP_MATERIALIZER_REPRODUCTION_CLAIM",
+      "STOP_ADJUDICATION_PATH_EXISTS",
+      "STOP_CHAIN_PREDECESSOR_MISMATCH",
+      "STOP_FINDING_CLOSURE_INVALID",
+      "STOP_RECERT_ATTEMPT_RESOLUTION_INVALID",
+      "STOP_RECERT_ATTEMPT_DOUBLY_RESOLVED",
+      "STOP_RECERT_ATTEMPT_ID_DUPLICATE",
+      "STOP_CANONICAL_STORE_REF_MISMATCH",
+      "STOP_RECERT_ATTEMPT_PRIOR_STATE_MISMATCH",
+      "STOP_RECERT_ATTEMPT_ALREADY_OPEN",
+      "STOP_ADJUDICATION_HISTORY_VIOLATED",
+      "STOP_CHAIN_INTEGRITY_VIOLATED",
+      "STOP_ATTEMPT_SUBJECT_NOT_CANONICAL",
+      "STOP_PACKAGE_SUBJECT_AMBIGUOUS",
+      "STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE"
+    ],
+    "package_subject": {
+      "rule": "Owner v1.0.4 (RECOVERY_PACKAGE_SUBJECT_POLICY_V2 = CANONICAL_PROTECTED_CANDIDATE_BOUND). A RECOVERY_AUTHORITY_PACKAGE_RECERT subject is the immutable tuple (subject.candidate_sha, subject.tree_sha, subject.package_digest).",
+      "candidate": "subject.candidate_sha is the protected canonical tip observed at the reservation prestate: it equals canonical_store.tip_observed_at_reservation (A11), which equals the provider tip read at reservation (A10) and is inside every later provider tip (canonical_store monotonicity).",
+      "derivation": "subject.tree_sha = candidate_sha^{tree} and subject.package_digest = RCO_CLOSURE_DIGEST_V3 derived from THAT tree, read from git objects of the candidate commit (A6/W7). It is never recomputed from the head that later reads the record, and never from worktree bytes.",
+      "consumer_matching": "A consumer at head H derives the closure of the package it CONSUMES at H and looks up the records whose recorded subject.package_digest equals it (consumer_rule step 10-11). This is matching, not re-identification: a record is always about its recorded tuple.",
+      "new_subject": "Any change of a COVERED, TOOLCHAIN, IMPORTED, RUNTIME_INPUT or GOVERNING input yields a new package_digest, i.e. a NEW subject with no attempt and no adjudication (NO_ATTEMPT, STOP_NOT_CERTIFIED). A positive adjudication of subject A never makes subject B usable.",
+      "unambiguous": "Record identity is the tuple; usability identity is the package_digest. A12: within one kind, every record naming a candidate_sha names the same tree_sha and package_digest (STOP_PACKAGE_SUBJECT_AMBIGUOUS) -- defence in depth, since A6/W7 already derive the tree and digest deterministically from the candidate. A9 keeps one open attempt per package_digest. Several candidate tuples may share one package_digest over time (for example a later protected tip that changes no closure input); they are distinct records about the same usability key, never ambiguous.",
+      "read_time_candidate": "At read time an attempt is accepted when its candidate equals its tip_observed_at_reservation (A11) and that tip is inside the provider tip (canonical monotonicity); whether it was the tip at the moment of reservation is a write-time fact (C1) that the reservation lane records. Accepting such an attempt is harmless: consumers match by package_digest.",
+      "other_kinds": "READONLY_CENSUS_AUTHORITY_RECERT and OFFLINE_RECOVERY_IMPLEMENTATION_RECERT keep the v1.0.5 known-subject binding (SECTION_F5): their candidates are commits of other lineages, not the canonical tip."
+    }
+  },
+  "SECTION_G4_CURRENT_AND_NEXT_SUBJECT": {
+    "subject_at_lane_start": {
+      "candidate_sha": "76a3d4c2f96444604434146e1e1d1a81ccf07aff",
+      "candidate_tree": "a29369de6ef05ff39cd17e194fee7ec08e6624d0",
+      "status": "NOT RESERVED. This lane reserves nothing, and does not reserve this subject retroactively."
+    },
+    "next_reservation_subject": "The protected canonical tip read at the prestate of the NEXT reservation lane. Committing this amendment moves the tip, so that subject is the final v1.0.6 candidate tuple (the commit that carries this artifact, or a later governed commit if one is pushed first), not 76a3d4c2. Its package_digest cannot be written inside this artifact (the artifact is COVERED); the reservation lane derives it and the writing lane reports it."
+  },
+  "SECTION_G5_INTRODUCING_VIEW_PIN": {
+    "policy": "Owner v1.0.4 INTRODUCING_VIEW_POLICY = PIN_TO_ACTUAL_INTRODUCING_COMMIT. The introducing view of an authority artifact is the tree of the unique commit of the canonical history that ADDS its path: in a repository that is NOT shallow (else STOP_ADJUDICATION_HISTORY_UNVERIFIABLE; a shallow boundary commit would look like the adder), git <controlled flags> log --full-history --diff-filter=A --format=%H <H> -- :(top,literal)<path> must print exactly one commit (a path added twice, e.g. deleted and re-added, STOPS). It is never built from worktree bytes or from the current head.",
+    "pins": [
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+        "introducing_commit": "afbf061659b4613ae6988a573ba35863a9d74e93",
+        "introducing_tree": "625fd4e96cfefcb84cc93918e2f6efd3139808e3"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "introducing_commit": "4df9e6d37de19a15560993f1d67331bfa498008b",
+        "introducing_tree": "2c606a43825623005d3ded38581da8431ac04f26"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "introducing_commit": "c22e611b930cc2ad482d804ee15c6093125256d2",
+        "introducing_tree": "903c4231c814ceead00128e8596250378d8e390e"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+        "introducing_commit": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+        "introducing_tree": "be69aece52565256f997e06f5812af36432f1d83"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "introducing_commit": "c057ff71415f0545e95003321c88ea224f6c26f8",
+        "introducing_tree": "e8c9df0cae4289d91200bc81fa507fb85801fd21"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.5.json",
+        "introducing_commit": "ae958aa04f534be50a648bd1e43a069d0c2111c7",
+        "introducing_tree": "1bf379faaad626a6da6f1cd5a60c7afb3fa1defb"
+      },
+      {
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json",
+        "introducing_commit": "334deb691389b8306ed4b81a9d793c30bf0f94a3",
+        "introducing_tree": "b269ae62b64e188ee30f9f6e85921e72e9d30b4e"
+      },
+      {
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json",
+        "introducing_commit": "c22e611b930cc2ad482d804ee15c6093125256d2",
+        "introducing_tree": "903c4231c814ceead00128e8596250378d8e390e"
+      },
+      {
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.2.json",
+        "introducing_commit": "c057ff71415f0545e95003321c88ea224f6c26f8",
+        "introducing_tree": "e8c9df0cae4289d91200bc81fa507fb85801fd21"
+      },
+      {
+        "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.3.json",
+        "introducing_commit": "ae958aa04f534be50a648bd1e43a069d0c2111c7",
+        "introducing_tree": "1bf379faaad626a6da6f1cd5a60c7afb3fa1defb"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+        "introducing_commit": "afbf061659b4613ae6988a573ba35863a9d74e93",
+        "introducing_tree": "625fd4e96cfefcb84cc93918e2f6efd3139808e3"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "introducing_commit": "4df9e6d37de19a15560993f1d67331bfa498008b",
+        "introducing_tree": "2c606a43825623005d3ded38581da8431ac04f26"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+        "introducing_commit": "c22e611b930cc2ad482d804ee15c6093125256d2",
+        "introducing_tree": "903c4231c814ceead00128e8596250378d8e390e"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.3.json",
+        "introducing_commit": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+        "introducing_tree": "be69aece52565256f997e06f5812af36432f1d83"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.4.json",
+        "introducing_commit": "c057ff71415f0545e95003321c88ea224f6c26f8",
+        "introducing_tree": "e8c9df0cae4289d91200bc81fa507fb85801fd21"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.5.json",
+        "introducing_commit": "ae958aa04f534be50a648bd1e43a069d0c2111c7",
+        "introducing_tree": "1bf379faaad626a6da6f1cd5a60c7afb3fa1defb"
+      }
+    ],
+    "this_artifact": "The introducing commit of THIS artifact cannot be written inside it; it is the unique commit that adds its path, found by the rule above (the companion test fails if there is none or more than one).",
+    "superseded_helper": "The v1.0.5 test helper introducingView (live worktree bytes) is superseded for any authority reading; the v1.0.5 test stays byte-identical as history."
+  },
+  "SECTION_G6_CONSUMER_SEMANTICS": {
+    "rule": "Owner brief E, made mechanical by SECTION_G3.",
+    "cases": [
+      {
+        "case": "PASS for digest A, later covered change producing digest B",
+        "outcome": "B is NO_ATTEMPT: STOP_NOT_CERTIFIED"
+      },
+      {
+        "case": "attempt for A, then a reservation-only commit moves the head",
+        "outcome": "the attempt stays about A (store paths are outside every closure); the head still derives A: OPEN_ATTEMPT"
+      },
+      {
+        "case": "result for A",
+        "outcome": "resolves only the attempt of A: W12 binds candidate, tree and digest, otherwise STOP_RECERT_ATTEMPT_RESOLUTION_INVALID"
+      },
+      {
+        "case": "result claiming A with a digest or tree that does not match the candidate",
+        "outcome": "STOP (W7/A6): STOP_ADJUDICATION_INVALID_AT_READ"
+      },
+      {
+        "case": "attempt for a noncanonical candidate",
+        "outcome": "STOP_ATTEMPT_SUBJECT_NOT_CANONICAL (A11) or STOP_CANONICAL_STORE_NOT_MONOTONIC"
+      },
+      {
+        "case": "attempt created after a provider rewrite witness",
+        "outcome": "STOP_CANONICAL_STORE_REWRITTEN (reservation C3 and consumer step 0)"
+      }
+    ]
+  },
+  "SECTION_G7_PACKAGE_CLOSURE_EXCLUSION": {
+    "rule": "Owner brief F, verified mechanically by the companion test, not assumed: (1) no covered_path_prefix of RECOVERY_AUTHORITY_PACKAGE_RECERT covers the adjudication root or the retired occurrence root; (2) at the introducing tree of this artifact no path under either root has any role; (3) adding an attempt or adjudication file under the root leaves the package digest unchanged; (4) a closure that would give a store path a role (for example a covered file naming a concrete record path that exists) STOPS with STOP_SELF_REFERENTIAL_PACKAGE_CLOSURE."
+  },
+  "SECTION_G8_PROVIDER_PROTECTION_PRESERVED": {
+    "rule": "v1.0.5 provider protection, canonical monotonicity and activity witness are carried unchanged in SECTION_G3 (non_fast_forward and deletion from one active ruleset targeting the exact branch with no bypass actors, or classic protection with enforce_admins; provider tip ancestry; no force_push, no branch_deletion, at most one branch_creation). Nothing is weakened.",
+    "measured_2026_09_25": {
+      "measured_at": "2026-09-25T12:01:34Z",
+      "provider_tip": "76a3d4c2f96444604434146e1e1d1a81ccf07aff",
+      "classic_protection": "HTTP 404 \"Branch not protected\"",
+      "rules_for_branch": [
+        {
+          "type": "deletion",
+          "ruleset_id": 23975786
+        },
+        {
+          "type": "non_fast_forward",
+          "ruleset_id": 23975786
+        }
+      ],
+      "ruleset": {
+        "id": 23975786,
+        "name": "Recovery certification store monotonicity",
+        "target": "branch",
+        "enforcement": "active",
+        "bypass_actors": [],
+        "current_user_can_bypass": "never",
+        "conditions": {
+          "ref_name": {
+            "exclude": [],
+            "include": [
+              "refs/heads/codex/cv1-recovery-integration-successor-r1"
+            ]
+          }
+        },
+        "rules": [
+          {
+            "type": "deletion"
+          },
+          {
+            "type": "non_fast_forward"
+          }
+        ],
+        "created_at": "2026-09-24T21:45:56.716-05:00",
+        "updated_at": "2026-09-24T21:45:56.732-05:00"
+      },
+      "repository_rulesets": [
+        23975786
+      ],
+      "activity": [
+        {
+          "activity_type": "push",
+          "before": "ae958aa04f534be50a648bd1e43a069d0c2111c7",
+          "after": "76a3d4c2f96444604434146e1e1d1a81ccf07aff",
+          "timestamp": "2026-09-25T07:07:38Z"
+        },
+        {
+          "activity_type": "push",
+          "before": "c057ff71415f0545e95003321c88ea224f6c26f8",
+          "after": "ae958aa04f534be50a648bd1e43a069d0c2111c7",
+          "timestamp": "2026-09-25T02:52:06Z"
+        },
+        {
+          "activity_type": "push",
+          "before": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "after": "c057ff71415f0545e95003321c88ea224f6c26f8",
+          "timestamp": "2026-09-24T16:29:35Z"
+        },
+        {
+          "activity_type": "branch_creation",
+          "before": "0000000000000000000000000000000000000000",
+          "after": "a9ddc4d2c217921b015d0895ad008659afa4d418",
+          "timestamp": "2026-09-24T12:30:51Z"
+        }
+      ],
+      "evaluation": "PROTECTION_PASS; rewriteWitnessed false"
+    }
+  },
+  "SECTION_G9_WRITE_SET_AND_RESERVATION": {
+    "reservation": "SECTION_G3.attempt_contract.reservation_authorization. Path: adjudication_root/PACKAGE/<package_digest of the candidate>/a-<record_digest>.json.",
+    "supersedes": "v1.0.5 SECTION_F7.bootstrap and SECTION_F7.first_authorized_directories[0]. SECTION_F7 otherwise stands (one file per lane, serialized, retired root)."
+  },
+  "SECTION_G10_PRECEDENCE_ANCHORS": {
+    "rule": "v1.0.5 SECTION_F6 with the contract and next-gate anchors moved to this artifact.",
+    "anchors_changed": {
+      "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+          "section": "SECTION_G3_PACKAGE_SUBJECT_CONTRACT"
+        }
+      ],
+      "RECOVERY_EFFECTIVE_PACKAGE_MAP_AND_NEXT_GATE": [
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+          "section": "SECTION_C1_EFFECTIVE_PREDECESSOR_MAP"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+          "section": "SECTION_D1_LINEAGE_INTEGRATION"
+        },
+        {
+          "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json",
+          "section": "next_gate"
+        }
+      ]
+    }
+  },
+  "SECTION_G11_SUPERSEDED_LOCI": [
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.5 SECTION_F3_CERTIFICATION_STORE_CONTRACT",
+      "extent": "SUPERSEDED as a whole by SECTION_G3 (restated with the SECTION_G3_DELTA changes)."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_CERTIFICATION_OCCURRENCE_CONTRACT",
+      "locus": "v1.0.5 SECTION_F7.bootstrap; SECTION_F7.first_authorized_directories[0]; SECTION_F5.package_subject",
+      "extent": "SUPERSEDED by SECTION_G3.attempt_contract.reservation_authorization."
+    },
+    {
+      "chain": "RECOVERY",
+      "topic": "RECOVERY_EFFECTIVE_PACKAGE_MAP_AND_NEXT_GATE",
+      "locus": "v1.0.5 next_gate",
+      "extent": "SUPERSEDED by this artifact's next_gate."
+    }
+  ],
+  "SECTION_G12_PRECEDENCE": {
+    "rule": "For the loci of SECTION_G11 THIS AMENDMENT CONTROLS. Everything else: v1.0.5 and earlier as their own precedence rules state; owner v1.0.4 controls the package subject and the introducing view.",
+    "conflict_rule": "A conflict on a locus not named in SECTION_G11 is a defect of this amendment: STOP."
+  },
+  "SECTION_G13_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "basis": "Write set under docs/ops/release/**, docs/ops/owner-ratifications/** and tests/release/**; none protected by scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS."
+  },
+  "SECTION_G14_WRITE_SET": [
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.6.json (ADDED)",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.6.json (ADDED)",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.4.json (ADDED)",
+    "tests/release/staging-recovery-package-subject.test.ts (ADDED)",
+    "tests/release/staging-recovery-package-subject.mutation-battery.mjs (ADDED)"
+  ],
+  "SECTION_G15_PRESERVATION": {
+    "unchanged": [
+      "v1.0.0..v1.0.5, their manifests and tests, owner v1.0.0..v1.0.3 (byte-identical; immutable).",
+      "The consumer registry (v1.0.5 SECTION_F4), known subjects (SECTION_F5), consumers restated (SECTION_F9) and the PR #220 disposition (SECTION_F8), read with SECTION_G3 as the contract.",
+      "Verdict classes, revocation by package_digest, the contradiction STOP, attempts, ever-added history, controlled reads with git fsck, provider protection."
+    ],
+    "AUTHORIZED_OPERATIONS_DELTA": {
+      "added": [],
+      "removed": [],
+      "modified": []
+    },
+    "no_gate_weakened": "Every v1.0.5 STOP is kept; three STOPs are added; the only widening is WHICH protected canonical tip may be reserved, which the owner decided."
+  },
+  "SECTION_G16_SELF_CHECK": {
+    "checks": [
+      "SECTION_G3 equals v1.0.5 SECTION_F3 except at SECTION_G3_DELTA.changed_paths.",
+      "Every introducing-commit pin is the unique adding commit found by the controlled read; the v1.0.6 introducing view is a git commit, never worktree bytes.",
+      "Real git repositories: introducing amendment vs later covered fix, PASS reuse after a covered change, digest recomputed from the head, noncanonical and stale candidates, wrong tree, wrong digest, result for another subject, reservation and outcome commits moving the head, live-disk mutation, rewrite witness, deleted record, open attempt suspending a PASS.",
+      "The package closure excludes the adjudication root mechanically."
+    ]
+  },
+  "RISKS_AND_OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "OF-PS-1",
+        "finding": "The next reservation subject is known only after this artifact is committed and pushed (the artifact is COVERED by its own package).",
+        "disposition": "By construction; the writing lane reports the final tuple and the reservation lane re-derives it."
+      },
+      {
+        "id": "OF-PS-2",
+        "finding": "Every later governed commit that changes a COVERED input creates a new subject; a certification of an earlier tip does not carry over.",
+        "disposition": "Intended (owner v1.0.4)."
+      },
+      {
+        "id": "OF-PS-3",
+        "finding": "A reservation lane racing another governed push: the candidate observed at prestate may no longer be the tip when the attempt lands.",
+        "disposition": "A10 re-reads the provider tip before merge; a reservation whose candidate is no longer the tip at landing is re-done (the attempt stays valid for its candidate but that candidate is not what later heads consume)."
+      },
+      {
+        "id": "OF-PS-4",
+        "finding": "Pre-commit review B-1: tests/release/staging-recovery-cert-store-durability.test.ts (v1.0.5, immutable under owner v1.0.4 C \"Preserve v1.0.3/v1.0.4/v1.0.5 byte-identically\") asserts lsTree(ROOT, HEAD, <adjudication root>) is empty and that the root has no history at HEAD. The first RECERT_ATTEMPT commit on the canonical ref makes that test RED, so no reservation can land with green gates. This artifact does not edit it.",
+        "disposition": "BLOCKING FOR THE NEXT GATE, not for this artifact: owner decision required (next_gate step 0). This artifact's own test evaluates emptiness at its introducing commit and treats HEAD as a live guard (whatever is added must stay valid)."
+      },
+      {
+        "id": "OF-PS-5",
+        "finding": "C6 is unreachable for well-formed records (sha256 fixed point); A12 is defence in depth under deterministic derivation.",
+        "disposition": "Declared in SECTION_G3; their battery mutants are EQUIVALENT where no well-formed input can reach them."
+      },
+      {
+        "id": "OF-SD-*",
+        "finding": "v1.0.5 risks OF-SD-1..OF-SD-13 carried.",
+        "disposition": "Carried."
+      }
+    ]
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO attempt is reserved; 76a3d4c2 is not reserved retroactively.",
+    "NO certification, adjudication or occurrence is written; KS-A and KS-B are not materialized.",
+    "NO merge of PR #220; NO hosted Recovery act; NO branch protection change; NO Event A policy option.",
+    "NO historical artifact edited."
+  ],
+  "required_independent_review": "Recertification of the Recovery package at the final v1.0.6 candidate, under its own reserved attempt. The writing lane does not certify its own output.",
+  "final_state": "RECOVERY_PACKAGE_SUBJECT_BOOTSTRAP_FIXED__RESERVATION_BLOCKED_BY_IMMUTABLE_V105_TEST_HEAD_STORE_ASSERTION",
+  "next_gate": "(0) OWNER DECISION on OF-PS-4: the immutable v1.0.5 companion test asserts an EMPTY store at the repository HEAD, so the first reservation commit turns it RED (CI and ods:poststate); the owner authorizes a disposition (for example a minimal correction evaluating that emptiness at its own introducing commit) in a governed lane, whose commit becomes the protected tip. (1) A reservation lane reads the protected canonical tip, derives its package subject tuple, checks SECTION_G3.attempt_contract.reservation_authorization C1..C6 and writes one RECERT_ATTEMPT. (2) Independent recertification under that attempt. (3) A separate lane materializes its outcome of ANY class. On RESOLVED_PASS: KS-A/KS-B reservation and materializer lanes, then the governed #220 merge lane (v1.0.5 SECTION_F8 with SECTION_G3). EVENT_A_POLICY remains PENDING. No hosted Recovery execution is authorized."
+}
