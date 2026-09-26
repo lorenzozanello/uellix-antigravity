@@ -1,0 +1,678 @@
+{
+ "package_id": "PILOT_BILLING_EXECUTION_AUTHORITY",
+ "version": "1.0.0",
+ "artifact_id": "PILOT_BILLING_EXECUTION_AUTHORITY_v1.0.0",
+ "authority_class": "PILOT_BILLING_EXECUTABLE_TECHNICAL_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_CERTIFICATION_AND_LINEAGE_ALLOCATION",
+ "document_class": "STAGE_SCOPED_BATCH_EXECUTION_AUTHORITY_DERIVED_FROM_FROZEN_PARENTS",
+ "append_only": true,
+ "mission_id": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R1",
+ "lane": "codex/cv1-pilot-billing-minimum-authority-r1",
+ "role": "PILOT_BILLING_MINIMUM_AUTHORITY_WRITER",
+ "materialization_mode": "DOCS_ONLY",
+ "materialization_date": "2026-09-25",
+ "revision": "SS-R1",
+ "ss_mission_id": "CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-WRITER-R1",
+ "ss_materialization_date": "2026-09-26",
+ "r3_mission_id": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R3",
+ "r3_materialization_date": "2026-09-26",
+ "r2_mission_id": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R2",
+ "r2_materialization_date": "2026-09-26",
+ "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "companion_owner_record": "docs/ops/owner-ratifications/PILOT_BILLING_OWNER_DECISIONS_v1.0.0.json",
+ "companion_manifest": "docs/ops/commercial/PILOT_BILLING_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+ "companion_release_amendment": "docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json",
+ "companion_ods_addendum": null,
+ "GRANT_ID": null,
+ "amends": "NOTHING DIRECTLY. No frozen artifact is edited by this file. Where a frozen parent must change, this authority FREEZES the exact append-only amendment content (SECTION_8) and assigns its materialization to act PB-A00, which opens only after this authority is independently certified and integrated. The ONE exception is the release gate ledger amendment of MC-P7, which this candidate materializes at R2 as the companion_release_amendment because PILOT_READY reachability is a certification prerequisite; PB-A00 is its act of record.",
+ "supersedes": null,
+ "AS_OF": {
+  "AS_OF_REF": "integration/commercial-v1",
+  "BASE_SHA": "20308b1121e3960361374f8eeabc8b100fdacad7",
+  "BASE_TREE": "8a950637cbe1f5e050471e464cf2953177f3d507",
+  "BRANCH": "codex/cv1-pilot-billing-minimum-authority-r1",
+  "PORCELAIN": "clean, --untracked-files=all, measured before any write",
+  "remeasurement_rule": "Every count, path, line number and quotation in this artifact is bound to BASE_SHA. A consuming act whose base differs MUST re-measure and MUST NOT inherit a number from this document."
+ },
+ "NAMING_DERIVATION": "Repo-native convention for an execution authority and its companion is <STEM>_EXECUTION_AUTHORITY_v<semver>.json plus <STEM>_IMPLEMENTATION_TEST_MANIFEST_v<semver>.json in the domain directory (measured precedents: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json + COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json; docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json + CUSTOMER_LIFECYCLE_L1_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json). The owner input is recorded separately under docs/ops/owner-ratifications/<STEM>_OWNER_DECISIONS_v1.0.0.json (measured precedent: FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json + its companion execution authority). The stem PILOT_BILLING_ is derived from the owner decision identifier PILOT-BILLING-01; a whole-tree search for PILOT_BILLING / PILOT-BILLING returned ZERO hits at BASE_SHA, so no path collides. docs/ops/commercial/** and docs/ops/owner-ratifications/** are NOT members of DEFAULT_PROTECTED_PATTERNS (scripts/ods-scope.ts:82-90), are not in the sealed corpus read by scripts/authority-seal-verify.ts, and no test under tests/** enumerates or counts either directory (tests/commercial/ce3-evaluator-consumer-census.test.ts treats docs/ as authority prose). The write set is therefore EXACTLY three files with ordinary allows only. R2 adds EXACTLY ONE file, docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json: measured ABSENT at BASE_SHA and in every local and remote-tracking ref; docs/ops/release/** is not a member of DEFAULT_PROTECTED_PATTERNS and is outside the sealed corpus of scripts/authority-seal-verify.ts; tests/golden/authority.ts reads RELEASE_GATE_LEDGER_v1.0.0.json by fixed path for the J1/J2/J3 rows only and is unaffected by a sibling file.",
+
+ "SECTION_1_AUTHORITY_PRECEDENCE": {
+  "rule": "CLAUDE.md section 2 hierarchy applies. A conflict between levels FAILS CLOSED. Product ratifications state intent and never override executable authority; where they require a change, a governed append-only successor is required (COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json#precedence_clarification). This authority is that successor for the PILOT stage, and it STAGE-SCOPES; it never weakens.",
+  "order": [
+   "L1 SEALED: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**. NOT ENGAGED: no act of this batch edits a sealed artifact; any act touching Stella runtime files re-measures FIB ownership of those files at its own base.",
+   "L2 PROCESS: docs/ops/ods/** (lineage, grants, Controller). Consumed only as the lineage rule for protected acts; nothing is allocated here.",
+   "L3 OWNER INTENT: HPO-A..HPO-G (docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json), HPO-G.1..G.8 included; CA-01..CA-08, MO-01..MO-12, SS-01..SS-03 (docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json); the COMBINED micro-ratification ledger, which neither file completes alone: docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json (12 ids) plus docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1.json (RAT-EV-04; combined 13), of which RAT-AO-01..03 and RAT-OP-01 are consumed and RAT-EV-04 (Evaluate template roles) is read and not engaged; ENV-01..ENV-14 (docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json, binding source of the release amendment v1.0.1; ENV-13 consumed as a constraint on the release successor); PILOT-BILLING-01 with its release_scope_confirmation RSC-1..RSC-8 (companion owner record, R2).",
+   "L4 FROZEN TIER-A EXECUTABLE PARENTS: COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0 (final_state FROZEN); COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0 + AMENDMENT_v1.0.1 + AMENDMENT_v1.0.2; COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY v1.0.0/v1.0.1/v1.0.2; COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY v1.0.0/v1.0.1/v1.0.2 + manifests; MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0; TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0; CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0; CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0. RELEASE AUTHORITY, controlling for PILOT_READY, as a SET read together: docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json (seven non-skippable stages, HPO-G bindings, FROZEN_RULES incl. RULE_NO_GATE_WEAKENING, stop lines); docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json (ENV-01..ENV-14, LEDGER_REDERIVATION_REQUIREMENT); docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json (canonical gate placement first_required_at_stage, NON_REGRESSION_RULE, closed state vocabulary); and its successor docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json (materialized by this candidate at R2, MC-P7). docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json is consumed as the source release gate LC0-PILOT cites (its commercial_activation stage is GATED_ON_LEGAL_INSTRUMENTS, not on payment); not amended.",
+   "L5 DRAFT SECURITY SEMANTICS: docs/ops/security/PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY_v1.0.0.json (status DRAFT_AUTHORITY_PENDING_INDEPENDENT_AUDIT). Consumed ONLY for assurance semantics (MA-01..MA-06) and the closed-world commercial-metadata principle (CM-00, CM-01, CM-06); none of its FUTURE_DDL is pulled into this batch.",
+   "L6 NON-CANONICAL CANDIDATE: PR #178 head ef1c5772869304cc1eb10e65e8feb3a7153c4239 (COMMERCIAL_CORE_EXECUTION_AUTHORITY_v1.0.0 + manifest). NOT consumed as authority. See SECTION_23.",
+   "L7 CODE, SCHEMA, TESTS at BASE_SHA: measured in SECTION_2 and never overriding L1..L5."
+  ],
+  "conflict_analysis": {
+   "r1_statement_corrected": "R1 stated that every inconsistency between L3 and L4 texts was technical and that none required an owner decision. IC-R1 measured that FALSE (blocking finding B-1).",
+   "owner_intent_vs_release_authority": "PILOT-BILLING-01.1 (L3: Stripe not required for PILOT_READY) conflicted with the release ledger (L4), which placed PV3 (payment provider in test mode) and SEC7 (billing webhook integrity) at FEATURE_COMPLETE_STAGING, inherited by RELEASE_CANDIDATE and PILOT_READY under NON_REGRESSION_RULE and the non-skippable stage rule, and with HPO-G.6 (L3) as materialized by that placement. PV3/SEC7 require the billing packages applied and a Preview replay test, i.e. CB-5 before CAP-03 (billing OF-4), which this authority defers and forbids. This lane could not resolve that conflict on its own authority. RESOLVED by the owner's release_scope_confirmation RSC-1..RSC-8 (owner record, R2) materialized as the append-only release successor RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1 (SECTION_8.MC-P7): PV3/SEC7 re-staged to PRODUCTION_READY and required earlier, per candidate SHA S, at every governed act that makes the payment provider operationally enabled for S (EPR, act-bound; test-mode preparation in an isolated evidence deployment is not enablement), HPO-G.6/G.7 read scope-aware, ladder and every other gate unchanged.",
+   "technical_contradictions": "MC-P1..MC-P6 remain TECHNICAL contradictions inside or between Tier-A executable authorities, resolvable by a narrow append-only amendment whose content is frozen in SECTION_8 (the class the billing authority itself used for MC-1..MC-5). None changes product intent.",
+   "outstanding_owner_decisions": 0
+  }
+ },
+
+ "SECTION_2_LIVE_STATE_MEASURED": {
+  "rule": "Measured at BASE_SHA by this lane from repository content, not from orchestration summaries. Every implementing act re-measures at its own base.",
+  "A_IMPLEMENTED_AND_CANONICAL": [
+   "CE-1: db/migrations/0068_commercial_account_ce1.sql + db/schema.ts:23-32. commercial_accounts(id, legal_name, billing_country, billing_contact_email, commercial_status DEFAULT 'active', created_at, updated_at); CHECK commercial_status IN ('active','past_due','suspended','closed') (0068:37); ENABLE + FORCE RLS with ZERO policies (0068:44-46); organizations.commercial_account_id nullable, no default, no backfill, FK ON DELETE RESTRICT, non-unique index (0068:40-42). ZERO runtime readers or writers of commercial_accounts / commercial_status in app, lib or db.",
+   "CE-3: db/migrations/0073_commercial_account_ce3_entitlement_grants.sql + db/schema.ts:1708-1787. source IN ('PLAN','PLATFORM_ADMIN','BOOTSTRAP_DEFAULT','COMMERCIAL_EXCEPTION') (0073:15); limit_kind IN ('UNMETERED','BLOCKED','CAPPED') (0073:16); CAPPED requires limit_value >= 0, UNMETERED/BLOCKED require NULL (0073:17-18); PLAN/COMMERCIAL_EXCEPTION require commercial_account_id, PLATFORM_ADMIN/BOOTSTRAP_DEFAULT forbid it (0073:19-20); effective_to IS NULL OR > effective_from (0073:21); partial unique live index (0073:28); append-only trigger: DELETE refused, the only UPDATE is effective_to NULL -> timestamp once (0073:302-359); single SELECT policy TO uellix_owner (0073:115-117). Evaluator public.entitlement_effective(uuid,varchar) SECURITY DEFINER STABLE: caller scope = current_user_org_ids() (U0113, no super_admin disjunct), catalogue literal (U0114), live = effective_to IS NULL AND effective_from <= transaction_timestamp(), NO_LIVE_GRANT answer. EXECUTE authenticated only; ownership by stella_hosted_0009; ACL hardened by stella_hosted_0010. TypeScript wrapper lib/capabilities/entitlement-evaluator.ts has ZERO runtime consumers, asserted by tests/commercial/ce3-evaluator-consumer-census.test.ts. NO grant-minting function exists; grant rows are written only by test fixtures.",
+   "CAPABILITY CATALOGUE: exactly one key, stella.grounded_query (lib/capabilities/entitlement-catalogue.ts:133-149; SQL literal 0073:219).",
+   "LEGAL ACCEPTANCE L0/L1: migrations 0070..0072. organization_commercial_acceptances (instrument_key, instrument_version_id, content_digest sha256, accepted_by_user_id, accepted_by_role, accepted_at, audit_log_id); SELECT policy TO uellix_app USING organization_id = ANY(current_user_org_ids()) with the explicit note 'No current_user_is_super_admin() disjunct: the authority names no platform read path for this relation and L1 does not invent one' (0072:70-77). ORGANIZATION_REQUIRED_INSTRUMENT_KEYS = ['commercial_terms'] (lib/auth/organization-commercial-acceptance.ts:44). Enforced at lib/auth/session.ts:329 (requireOrganizationAccess) and lib/auth/database-context.ts:1084-1094 (withOrganizationDatabaseContext).",
+   "TENANCY: S1, S2, S3 INTEGRATED (docs/ops/tenancy/MULTI_ORG_S1/S2/S3 implementation evidence). S4 authored and frozen, IMPLEMENTATION_AUTHORIZED false, not implemented (TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json). S5: NO execution authority and NO implementation at BASE_SHA. S6..S8 absent.",
+   "STELLA RUNTIME ORDER: canUseStella role ceiling (app/actions/stella/grounded-query.ts:1107) -> consumeStellaRateLimit (:1116) at ISSUANCE -> issueOperationTicket (db/stella/operation-tickets.ts:443; callers lib/stella/operation-ticket/issue-governed-ticket.ts:135 and app/actions/stella/grounded-query.ts:1139) -> bind_operation_ticket reservation under the per-organization advisory lock reading uellix_stella.stella_capacity, whose limit is organizations.stella_monthly_quota (db/prepared/stella_0016_reserved_quota_semantics.sql:375) over the UTC calendar month (:383-391), NULL = no cap. NO commercial-state or entitlement check exists anywhere on the path.",
+   "TICKET MINT EXPOSURE: EXECUTE on uellix_stella_ops ticket functions is granted to uellix_app only (stella_0015:635, stella_0016:1039, stella_0018:375); PostgREST exposes schemas public and graphql_public only (supabase/config.toml:20). The mint is not reachable by any tenant JWT role.",
+   "PLATFORM PRINCIPAL: requireAdminAccess reduces to user.isSuperAdmin (lib/auth/session.ts:351); SQL predicate public.current_user_is_super_admin() reads users.is_super_admin. The DB identity context sets claims {sub, role} ONLY (db/identity-context.ts:160-163); the super_admin claim is DB-confirmed (PI-10) and the tenant-route exemption '!check.is_super_admin' remains at db/identity-context.ts:217. ZERO AAL/MFA code in app, lib, db, tests, scripts or supabase (only the vendor auth.aal_level enum in db/baseline/stella_g2_schema.sql).",
+   "PLATFORM BIT INTEGRITY: the baseline grants SELECT, INSERT, UPDATE on public.users to authenticated with policy users_update_own USING/WITH CHECK id = auth.uid() (db/baseline/stella_g2_schema.sql:9811, :11378). The repair, db/prepared/stella_0012_super_admin_column_acl.sql, asserts that none of uellix_writer, uellix_app, authenticated, anon, uellix_auditor, uellix_cap%, uellix_stripe can UPDATE users.is_super_admin (:300-310), but stella_0012 is NOT a member of db/hosted/hosted-package-manifest.ts (members measured: stella_0005d, stella_0013..stella_0019). Hosted application state is UNKNOWN from the repository alone.",
+   "LEGACY ADMIN COMMERCIAL SURFACES: /admin/services and organization status call uellix_capability.admin_* definers of db/prepared/stella_0011_organization_column_acl.sql, which is NOT a HOSTED_CHAIN member; the billing authority records both raising 42883 (R-13).",
+   "STRIPE: app/api/webhooks/stripe/route.ts:58 WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false; no customers.create or checkout.sessions.create anywhere; lib/stripe/client.ts STRIPE_QUOTAS free 10. No Stripe code touches commercial_accounts or entitlement_grants.",
+   "AUDIT: only public.audit_logs (actor_user_id, entity_type, entity_id, action, before_json, after_json, reason, organization_id, created_at, ...). No commercial audit relation.",
+   "PRO BONO: ZERO case-insensitive hits for pro bono, pro_bono, probono, ProBonoPolicyVersion across the whole tree, docs included.",
+   "LINEAGE: migration ceiling 0073; ODS addendum tail v1.0.39, enumerated by the Controller (scripts/ods-controller.ts:100); registered protected grants tail HPO-ODS-W2-35 (scripts/ods-scope.ts:1105)."
+  ],
+  "B_TIER_A_AUTHORITY_ONLY": [
+   "Six-state commercial machine, 36-pair conjunctive closure, EC-1..EC-7, STELLA_RECONCILIATION L1/L2/L3, MANUAL_ACTIVATION, RLS D-6 pair, FUTURE_DDL D-1..D-8, CB-1..CB-9 (billing authority).",
+   "CE-2, CE-4..CE-9, PA-1..PA-7, SEC-1..SEC-12, BACKFILL B1..B4, TRANSFER_CONTRACT T-1..T-13 (entitlement authority).",
+   "S4 GUC weld, S5 SUPERADMIN_BOUNDARY / ADMIN_CONTROL_PLANE / SUSPENDED_ORG_BEHAVIOR, S6..S8 (tenancy authorities).",
+   "MA-*, CM-*, SC-*, RS-* platform-admin semantics (draft security authority)."
+  ],
+  "C_ONLY_IN_PR178": [
+   "A COMMERCIAL_CORE_USABLE conjunction U-1..U-8 and a sixteen-act decomposition CC-A00..CC-A15.",
+   "Role names uellix_cap_entitlement / uellix_cap_transfer / uellix_cap_cancellation, the entitlement_grants writer-admission map, the RESOLVER_BOUND amendment, the plan-catalogue mechanism, the gate-definer name commercial_gate_for_organization and the TypeScript refusal spellings ENTITLEMENT_ABSENT / ENTITLEMENT_BLOCKED / ENTITLEMENT_UNAVAILABLE."
+  ],
+  "D_GENUINELY_MISSING_FROM_EVERY_AUTHORITY": [
+   "A persistence carrier for the manual-activation authorization_reference (the frozen idempotency key), review horizon and commercial basis.",
+   "Enforcement of the review horizon without a scheduler (zero queue/cron substrate; HPO-C.1).",
+   "An atomic transaction shape for manual-basis transitions.",
+   "Gate behaviour for a live COMMERCIAL_EXCEPTION grant under BOOTSTRAP.",
+   "A governed path giving an Organization created after CE-4 and before CE-7 its first CommercialAccount.",
+   "Assurance (AAL) evidence at any database authorization point.",
+   "A commercial-basis / Pro Bono policy representation.",
+   "The PILOT-stage billing definition itself."
+  ]
+ },
+
+ "SECTION_3_STAGE_DEFINITIONS": {
+  "PILOT_BILLING_READY": {
+   "rule": "A CLOSED CONJUNCTION. PILOT_BILLING_READY holds when EVERY item below is IMPLEMENTED, independently certified and integrated. Partial satisfaction is NOT_READY.",
+   "items": [
+    "PBR-1 GOVERNANCE. Every Organization to be commercially served is governed by exactly one CommercialAccount with an opening history row: pre-existing Organizations through CE-4 over the CE-2 history relation, later Organizations through the governed first-association verb (MC-P6). The commercial_status vocabulary is the frozen six-state set with DEFAULT BOOTSTRAP (CB-1, D-1) and the D-6 capability role and policy pair exist.",
+    "PBR-2 SINGLE TRUTH. The live EntitlementGrant is the ONLY source of the Stella limit; organizations.stella_monthly_quota is its projection written by exactly one writer (CE-5). No second credits, balance, quota or entitlement store exists.",
+    "PBR-3 ONE STATE MACHINE. Every commercial state change passes through the canonical state verb enforcing the total 36-pair table (CB-2).",
+    "PBR-4 CONTROL PLANE. An authorized platform principal holding AAL2 performs, from /admin and without SQL, row editing or developer action, the closed Pilot verb set of SECTION_10 with preview, mandatory reason, idempotency and complete audit.",
+    "PBR-5 MANUAL BASIS. ACTIVE_WITHOUT_STRIPE is entered ONLY from BOOTSTRAP by the manual activation verb; capacity is carried by COMMERCIAL_EXCEPTION grants with explicit limits; every manual-basis transition is atomic (Shape M, MC-P1); the review horizon fails closed (MC-P3) and lapse is executable.",
+    "PBR-6 LEGAL. L0 and L1 remain preconditions at the entitlement evaluation boundary for every tenant request; ACTIVE_WITHOUT_STRIPE is never acceptance evidence and no platform path reads, writes, infers or records acceptance (SECTION_13).",
+    "PBR-7 RUNTIME. Stella issuance order is L0 role ceiling -> L1 technical rate limit -> L3 entitlement conjoined with the amended EC-4 gate -> ticket mint -> L2 reservation -> operation, at the single chokepoint, with three distinct refusal vocabularies (SECTION_16). ACTIVE_WITHOUT_STRIPE plus a live grant permits the capability with no Stripe dependency; BOOTSTRAP-with-commercial-grant, lapsed, SUSPENDED and CLOSED refuse.",
+    "PBR-8 PRO BONO. The commercial-basis catalogue mechanism with policy-version identity and digest is implemented and proven (SECTION_15). A Pro Bono activation is structurally impossible without a registered policy version and never implies UNMETERED.",
+    "PBR-9 NO STRIPE. No Stripe call, SDK import or Stripe column read exists on any Pilot path; CAP-03 remains disabled.",
+    "PBR-10 SECURITY. Every invariant of SECTION_18 is proven, on real PostgreSQL wherever it is a DB, RLS, ACL or state-machine claim; external prerequisites EP-P1 and EP-P2 are satisfied on the target environment before the first real activation.",
+    "PBR-11 GOLDEN. The Pilot Golden journey (PB-P-18) is green."
+   ],
+   "relation_to_PILOT_READY": "PILOT_READY is ordinal 5 of docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json#stages. PILOT_BILLING_READY is a NECESSARY input to it (that stage's required_legal_review names a 'commercial-activation condition') and is NEVER SUFFICIENT. PILOT_READY requires its WHOLE DERIVED gate set, not only its four new gates: every ledger gate whose first_required_at_stage is ordinal <= 5, read through the release successor RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1 (MC-P7) - 60 of the 78 ledger gates, which exclude exactly PV3 and SEC7 (re-staged to PRODUCTION_READY) and include every other provider, browser-journey and security gate of FEATURE_COMPLETE_STAGING and RELEASE_CANDIDATE unchanged. Every declaration up to and including PILOT_READY must also carry PAYMENT_PROVIDER_DARK_PROOF(S) for the declared SHA S under that successor's EPR rule; PBR-9 and PB-N-22 are this authority's code-level proof of that darkness. PILOT_READY additionally requires its own human gates (LC0-PILOT, G4, G10A, release gate PB-01) and its stop lines, including SSL-03 (single platform flag that is also a tenant role value: SEC2 closure or written owner acceptance), SSL-04 (MFA enforceable at the authorization point), LSL-02..LSL-05. This authority neither satisfies nor accepts any of them, and claims only that no gate on the path to PILOT_READY requires the payment provider (formal reachability without Stripe)."
+  },
+  "COMMERCIAL_CORE_USABLE": {
+   "status": "PRESERVED AS THE LATER FULL TARGET. Not redefined, not weakened, not narrowed by this authority.",
+   "canonical_content": "The complete lifecycle of the frozen parents: CE-1..CE-8 of the entitlement authority MIGRATION_DAG and CB-1..CB-9 of the billing authority IMPLEMENTATION_PACKAGES, with OD-1..OD-9 / HPO-B.1..B.9 in full, including first binding, checkout, webhook ordering, past_due, unpaid suspension, atomic cancellation, reactivation, CAP-03 enablement and Free=10 retirement. CE-9 remains governed by RETIREMENT_LAST_RULE.",
+   "candidate_elaboration": "A detailed usability conjunction (U-1..U-8) exists only in the non-canonical PR #178. It is neither adopted nor contradicted here; the NODE SET it relies on is exactly the one this authority lists as DEFERRED in SECTION_6 plus the nodes shared in SECTION_5.",
+   "irreversibility_guard": "Nothing in this batch removes, renames or narrows a Stripe-dependent node, state, transition, column, refusal cause or control of the frozen parents. SECTION_7 proves it per owner decision.",
+   "release_binding": "COMMERCIAL_CORE_USABLE is a programme target, not a release stage, and none is created. Its Stripe lifecycle eventually makes the payment provider operationally enabled. Under the release successor's steady-state EPR, operational enablement is evaluated per candidate SHA S (OE(S)); PV3 and SEC7 evidence for S is produced by bounded test-mode preparation PREP-1..PREP-4 in an isolated evidence deployment d_E (not enablement, and available while an older SHA stays live); every governed act that makes OE(S) true (first enablement, promotion, re-enable, payment-restoring rollback) cites PV3 == PASS @ S and SEC7 == PASS @ S, current, in that same act (EPR-1); no PASS is carried between SHAs; PRODUCTION_READY cites both regardless (EPR-3); the cumulative gate sets of PRODUCTION_READY and GO_LIVE are identical to those before the successor (RSC-3, RSC-6, RSC-7, OD-EPR-SS-9)."
+  }
+ },
+
+ "SECTION_4_BOUNDARY_MATRIX": {
+  "rule": "Each row is binding. A later implementing act that places a row marked DEFERRED into the Pilot critical path has exceeded this authority and MUST STOP. 'Now' means required for PILOT_BILLING_READY.",
+  "rows": [
+   {"capability": "CommercialAccount relation", "PILOT_BILLING_READY": "REQUIRED (done)", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "CE-1; 0068", "implementation_required_now": "NO (integrated)", "deferred": "NO", "why": "Carrier of the single commercial state."},
+   {"capability": "EntitlementGrant relation and explicit evaluator", "PILOT_BILLING_READY": "REQUIRED (done)", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "CE-3; 0073; CE-3 execution authority v1.0.0..v1.0.2", "implementation_required_now": "NO (integrated)", "deferred": "NO", "why": "Single source of capacity."},
+   {"capability": "Organization commercial acceptance (L1)", "PILOT_BILLING_READY": "REQUIRED (done)", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "HPO-A; RAT-AO-01..03; CUSTOMER_LIFECYCLE_L1; 0072", "implementation_required_now": "NO (integrated)", "deferred": "NO", "why": "Legal precondition at the evaluation boundary."},
+   {"capability": "Parent amendments of SECTION_8", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "PARTLY (MC-P2, MC-P5 also bind the full core)", "authority_source": "This authority SECTION_8", "implementation_required_now": "YES (PB-A00, docs only)", "deferred": "NO", "why": "Resolve measured technical contradictions before any writer lands."},
+   {"capability": "CE-2 history relation (CE-2.R)", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "Entitlement ORGANIZATION_RELATION; BACKFILL B3", "implementation_required_now": "YES (PB-A01)", "deferred": "NO", "why": "CE-4 must seed through the history contract."},
+   {"capability": "CE-2 transfer verb (CE-2.V), PA-2, transfer UI", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "TRANSFER_CONTRACT T-1..T-13; CA-06", "implementation_required_now": "NO", "deferred": "YES", "why": "Pilot is 1:1; re-homing is not a Pilot act."},
+   {"capability": "Six-state vocabulary + D-6 capability role (CB-1)", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "Billing MC-1, D-1, D-6, CB-1", "implementation_required_now": "YES (PB-A02)", "deferred": "NO", "why": "BOOTSTRAP and ACTIVE_WITHOUT_STRIPE do not exist under the four-value CHECK."},
+   {"capability": "Manual arrangement relation (D-9)", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED WHEN CB-8 LANDS", "authority_source": "MANUAL_ACTIVATION mandatory_inputs; MC-P3", "implementation_required_now": "YES (PB-A02)", "deferred": "NO", "why": "Idempotency key and review horizon need a carrier."},
+   {"capability": "Canonical state verb + total transition table + gate-read definer (CB-2)", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "Billing COMMERCIAL_STATE_MACHINE, CB-2, EC-4 (as amended MC-P2/MC-P3)", "implementation_required_now": "YES (PB-A03)", "deferred": "NO", "why": "One state machine (OD-1)."},
+   {"capability": "CE-4 backfill", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "Entitlement BACKFILL B1..B4; billing EC-6", "implementation_required_now": "YES (PB-A04)", "deferred": "NO", "why": "The evaluator may not enforce before CE-4 (EC-6)."},
+   {"capability": "CE-5 single writer + projection", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "Entitlement CE-5, USAGE_QUOTA_BOUNDARY; billing EC-1", "implementation_required_now": "YES (PB-A05)", "deferred": "NO", "why": "Capacity changes without touching the legacy column."},
+   {"capability": "Platform commercial control plane subset CE-8.P + CB-8 manual activation", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED (CE-8 whole)", "authority_source": "PA-1, PA-4, PA-5 (bounded); MANUAL_ACTIVATION; OD-7; PILOT-BILLING-01", "implementation_required_now": "YES (PB-A06)", "deferred": "NO", "why": "The owner decision's primary outcome."},
+   {"capability": "AAL2 at the Pilot authorization points", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED (HPO-D.2)", "authority_source": "HPO-D.2; MA-01..MA-06; SSL-04", "implementation_required_now": "YES (PB-A06)", "deferred": "NO", "why": "Platform admin actions require AAL2."},
+   {"capability": "Commercial-basis catalogue incl. Pro Bono policy versions", "PILOT_BILLING_READY": "REQUIRED (mechanism)", "COMMERCIAL_CORE_USABLE": "RETAINED", "authority_source": "PILOT-BILLING-01.3/.4/.7; SECTION_15", "implementation_required_now": "YES (PB-A06)", "deferred": "NO", "why": "Governed basis and policy identity without new grant vocabulary."},
+   {"capability": "L3 gate at the ticket chokepoint + three refusals + display consistency (CB-7)", "PILOT_BILLING_READY": "REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "Billing EC-4, STELLA_RECONCILIATION, CB-7", "implementation_required_now": "YES (PB-A07)", "deferred": "NO", "why": "Commercial state must actually gate Stella."},
+   {"capability": "Stripe first binding + D-2 (CB-3)", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "OD-2, OD-3; STRIPE_FIRST_BINDING", "implementation_required_now": "NO", "deferred": "YES", "why": "PILOT-BILLING-01.1."},
+   {"capability": "Checkout journey + portal replacement (CB-4)", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "CHECKOUT_BOUNDARY", "implementation_required_now": "NO", "deferred": "YES", "why": "PILOT-BILLING-01.1."},
+   {"capability": "Webhook ordering, D-3, D-7, invoice.* handling, CE-6 recomposition (CB-5)", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "OD-8; WEBHOOK_ORDERING; CE-6", "implementation_required_now": "NO", "deferred": "YES", "why": "PILOT-BILLING-01.1."},
+   {"capability": "Re-evaluation request relation D-4 + consumer (Shape A) and atomic cancellation D-8 (CB-6)", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "EC-3; CANCELLATION; D-4; D-8", "implementation_required_now": "NO", "deferred": "YES", "why": "Every Pilot transition is Shape M; no Stripe-caused transition can occur."},
+   {"capability": "CAP-03 enablement (webhook identity on)", "PILOT_BILLING_READY": "FORBIDDEN IN PILOT", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "Billing OF-4; release EPR", "implementation_required_now": "NO", "deferred": "YES", "why": "CAP-03 MUST NOT be enabled before CB-5 (OF-4). CAP-03 on in a product-serving deployment built from SHA S is operational enablement of S (EPR OE-2): the governed act that enables it must cite PV3 == PASS @ S and SEC7 == PASS @ S, current, in that same act."},
+   {"capability": "Release gates PV3 (payment provider in test mode) and SEC7 (billing webhook integrity)", "PILOT_BILLING_READY": "NOT REQUIRED (re-staged to PRODUCTION_READY; payment provider DARK through PILOT_READY)", "COMMERCIAL_CORE_USABLE": "REQUIRED (at PRODUCTION_READY, and cited PASS @ S by every governed act that makes the payment provider operationally enabled for a SHA S; test-mode preparation in an isolated evidence deployment is not enablement)", "authority_source": "RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1 RS-1, RS-2, EPR; RSC-1..RSC-6", "implementation_required_now": "NO (docs-only successor materialized at R2)", "deferred": "YES (re-staged, never waived)", "why": "MC-P7: resolves IC-R1 B-1 without deleting, waiving or satisfying either gate."},
+   {"capability": "Free=10 retirement (CB-9)", "PILOT_BILLING_READY": "NOT REQUIRED (unreachable from Pilot paths, asserted by PB-N-22)", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "EC-5; CB-9", "implementation_required_now": "NO", "deferred": "YES", "why": "Free=10 is reachable only through the disabled Stripe path."},
+   {"capability": "Self-service bootstrap successor + ALLOWLIST_EXIT (CE-7, tenancy S6)", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "SELF_SERVICE; CE-7; S6", "implementation_required_now": "NO", "deferred": "YES", "why": "Replaced for the Pilot by the governed first-association verb (MC-P6)."},
+   {"capability": "CE-8.R: PA-2 transfer, PA-3 PLATFORM_ADMIN grant exposure, PA-6 beyond the manual basis, account closure to CLOSED", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "REQUIRED", "authority_source": "PLATFORM_ADMIN_BOUNDARY; COMMERCIAL_STATE_MACHINE CLOSED", "implementation_required_now": "NO", "deferred": "YES", "why": "Not needed for Pilot activation; CLOSED is terminal and destructive-adjacent."},
+   {"capability": "Tenancy S4 / full S5 / S6 / S7 / S8", "PILOT_BILLING_READY": "NOT REQUIRED (S5P properties required instead, SECTION_9)", "COMMERCIAL_CORE_USABLE": "S5 REQUIRED before CE-8.R; S6 before CE-7", "authority_source": "MULTI_ORG_TENANT_SCOPE_AUTHORITY; TENANCY_S4 S4_TO_S5_ORDERING", "implementation_required_now": "NO", "deferred": "YES (tenancy lane)", "why": "MC-P4."},
+   {"capability": "Support capability, impersonation, 140-disjunct RLS successor, disjoint platform principal (FD-01..FD-07)", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "NOT REQUIRED", "authority_source": "PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY (draft); MO-09", "implementation_required_now": "NO", "deferred": "YES (platform-admin security lane; SSL-03 for PILOT_READY)", "why": "SECTION_10 closes the commercial boundary narrowly."},
+   {"capability": "CE-9 legacy column retirement", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "NOT REQUIRED", "authority_source": "RETIREMENT_LAST_RULE", "implementation_required_now": "NO", "deferred": "YES", "why": "The projection keeps every legacy reader correct."},
+   {"capability": "Pro Bono per-project eligibility relation", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "NOT DEFINED", "authority_source": "None at BASE_SHA", "implementation_required_now": "NO", "deferred": "YES (requires its own ratification and authority)", "why": "Grants are Organization-scoped (SC-2); no project capability key exists."},
+   {"capability": "Prices, list values, discounts, quotes, PriceBook, CRM, tax, invoices, dunning, refunds, reconciliation", "PILOT_BILLING_READY": "NOT REQUIRED", "COMMERCIAL_CORE_USABLE": "OUTSIDE (OD-9) or later", "authority_source": "HPO-B.9; OD-9; PAYMENT_SUSPENSION.grace_period", "implementation_required_now": "NO", "deferred": "YES", "why": "No price authority exists; Pilot charges nothing."}
+  ]
+ },
+
+ "SECTION_5_REQUIRED_NOW_NODE_SET": {
+  "exact_act_set": ["PB-A00", "PB-A01", "PB-A02", "PB-A03", "PB-A04", "PB-A05", "PB-A06", "PB-A07", "PB-A08"],
+  "exact_parent_node_set": ["CE-2.R (relation only)", "CB-1 (+ D-9)", "CB-2", "CE-4", "CE-5", "CE-8.P", "CB-8", "CB-7"],
+  "already_closed_consumed": ["CE-1", "CE-3", "L0/L1 legal acceptance", "tenancy S1, S2, S3"],
+  "ordering": "PB-A00 -> PB-A01 -> PB-A02 -> PB-A03 -> PB-A04 -> PB-A05 -> {PB-A06, PB-A07} -> PB-A08. PB-A06 and PB-A07 may run in either order but NOT concurrently while their write sets intersect a serial chokepoint of SECTION_21.",
+  "no_enforcement_before_CE4": "EC-6 preserved: no act that changes an enforcement decision (PB-A06 activation effects, PB-A07 gate) lands before PB-A04."
+ },
+
+ "SECTION_6_DEFERRED_NODE_SET": {
+  "DEFERRED_STRIPE_NODE_SET": ["CB-3 (+ D-2)", "CB-4", "CB-5 (+ D-3, D-7, invoice.* handling)", "CE-6 (Stripe recomposition of CAP-03)", "CB-6 (+ D-4 request relation and consumer, D-8 atomic cancellation capability)", "CAP-03 enablement", "CB-9"],
+  "DEFERRED_NON_STRIPE_NODE_SET": ["CE-2.V transfer verb / PA-2", "CE-7 composed bootstrap successor (+ tenancy S6 ALLOWLIST_EXIT)", "CE-8.R (PA-2, PA-3 exposure, PA-6 beyond the manual basis, closure to CLOSED)", "CE-9", "tenancy S4, S5 (full node), S6, S7, S8", "platform-admin security successor (support capability, impersonation, RLS successor, FD-04)", "Pro Bono per-project eligibility", "price/quote/CRM/tax/invoice/dunning/refund/reconciliation"],
+  "DEFERRED_RELEASE_GATES": ["PV3", "SEC7"],
+  "deferred_release_gates_rule": "Re-staged, not waived: first_required_at_stage PRODUCTION_READY by RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1, and required earlier, per candidate SHA S, at every governed act that makes OE(S) true (EPR-1, act-bound); bounded test-mode preparation in an isolated evidence deployment is not enablement. Criteria, enforcement, owner and current_state unchanged.",
+  "classification": "DEFERRED FROM PILOT_READY, NOT SUPERSEDED. Every node above keeps its frozen definition, dependencies, controls and refusal causes. PILOT_BILLING_READY does not depend on any of them, and no Pilot act may implement, partially implement or pre-empt them.",
+  "anti_pull_in_rule": "A Pilot act whose diff touches app/api/webhooks/stripe/**, lib/stripe/**, lib/capabilities/stripe-webhook.ts, db/capabilities/stripe-capability-executor.ts, stripe_webhook_events, or any stripe_* column is OUT OF SCOPE and MUST STOP (control PB-N-22)."
+ },
+
+ "SECTION_7_HPO_B_PRESERVATION": {
+  "rule": "PILOT-BILLING-01 STAGE-SCOPES HPO-B. It may not weaken any clause. Disposition per owner decision of the billing authority:",
+  "OD-1": "PRESERVED AND EXERCISED. Pilot transitions go through the one state verb over commercial_accounts.commercial_status.",
+  "OD-2": "PRESERVED, DEFERRED (CB-3). The Pilot never creates a Stripe customer.",
+  "OD-3": "PRESERVED. No Pilot path takes identity from a webhook or success_url; neither exists on the Pilot path.",
+  "OD-4": "PRESERVED, DEFERRED (CB-5). PAST_DUE is unreachable without Stripe.",
+  "OD-5": "PRESERVED. SUSPENDED gate BLOCKED is implemented in the Pilot gate (CB-2/CB-7); entry is Stripe-only and deferred.",
+  "OD-6": "PRESERVED, DEFERRED (CB-6). Cancellation is Stripe-caused; Shape B is unchanged.",
+  "OD-7": "PRESERVED AND STRENGTHENED. ACTIVE_WITHOUT_STRIPE only by explicitly authorized manual activation, from BOOTSTRAP, with person actor, reason, authorization_reference and review horizon; the Pilot adds AAL2 (HPO-D.2) and Shape M atomicity.",
+  "OD-8": "PRESERVED, DEFERRED (CB-5).",
+  "OD-9": "PRESERVED. No price, discount or list value is authored."
+ },
+
+ "SECTION_8_MEASURED_CONTRADICTIONS_AND_FROZEN_AMENDMENT_CONTENT": {
+  "rule": "Each item names the frozen text, the measured contradiction, and the EXACT append-only amendment content that act PB-A00 materializes. PB-A00 writes each amendment as <PARENT_STEM>_AMENDMENT_v<next>.json alongside its parent, <next> being the next patch version whose path is ABSENT at PB-A00's own base (VERSION_COLLISION_CHECK rule of COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json). Measured free at BASE_SHA: billing v1.0.1, entitlement v1.0.3, CE-3 execution v1.0.3, CE-3 manifest v1.0.3. The SYMMETRIC convergence rule of SECTION_23.amendment_file_collision governs every such write. An amendment diverging from the content below is a defect of whichever was written second, and the act STOPS. MC-P7 is the one exception to 'PB-A00 writes': its release amendment is materialized by this candidate at R2 and owned by PB-A00 (MC-P7.materialization).",
+  "MC-P1_MANUAL_BASIS_ATOMICITY": {
+   "frozen_text": [
+    "Billing FAILURE_AND_CONCURRENCY.transaction_boundaries: 'SHAPE A - SPLIT (the default, for suspension, reactivation and plan re-evaluation)' and 'SHAPE B - ATOMIC (CANCELLATION ONLY)'.",
+    "Billing COMMERCIAL_STATE_MACHINE.states[BOOTSTRAP].entitlement_result: 'Live grants of source BOOTSTRAP_DEFAULT only.'",
+    "Billing AUDIT.two_rows_never_one: separate audit rows 'in SEPARATE transactions', already re-read by CANCELLATION.effects_in_order step 7 as 'Separate ROWS, one transaction'."
+   ],
+   "contradiction": "ACTIVE_WITHOUT_STRIPE -> BOOTSTRAP (manual deactivation and lapse) is not cancellation, so it defaults to Shape A. T1 then commits BOOTSTRAP while the account's COMMERCIAL_EXCEPTION grants stay live until T2, and the frozen EC-4 BOOTSTRAP gate closes only a stale PLAN grant. The window fails OPEN and produces a state the BOOTSTRAP entitlement_result declares impossible - the exact defect class MC-5 corrected for cancellation. Activation under Shape A additionally requires the D-4 request relation and the CB-6 consumer, i.e. Stripe-package machinery, merely to open a grant a person decided explicitly.",
+   "amendment_target": "Billing authority amendment (PB-A00, AM-P1).",
+   "amendment_content": "Add SHAPE M - ATOMIC MANUAL BASIS. Manual activation, capacity adjustment, renewal, manual deactivation and lapse each commit, in ONE transaction for the affected CommercialAccount: the state write through the canonical state verb (when the verb changes state), the manual-arrangement write (D-9), every grant closure and opening through the CE-5 governed writer (EC-1 preserved: no other grant writer), the legacy projection, and every audit ROW. Commit together or roll back together. Lock order: account advisory lock, then organization locks (lock_ordering preserved). EC-2 is not engaged: no webhook participates and no grant is derived from a plan or billing fact; each opened grant is the explicit decision of a person holding AAL2. Shape A and Shape B are UNCHANGED for their own transitions. AUDIT.two_rows_never_one is read, for Shape M, as it is read for Shape B: separate rows, one transaction."
+  },
+  "MC-P2_BOOTSTRAP_GATE_FOR_COMMERCIAL_BASIS_GRANTS": {
+   "frozen_text": "Billing ENTITLEMENT_CONTRACT.EC-4_closing_conjunction.gate_values: 'BOOTSTRAP -> pass-through (grants of source BOOTSTRAP_DEFAULT are unaffected; a stale PLAN grant is gated to BLOCKED).'",
+   "contradiction": "BOOTSTRAP means no commercial relationship is live, yet the gate lets a live COMMERCIAL_EXCEPTION grant pass. The same gap reaches the full core: cancellation closes PLAN grants only, so a goodwill COMMERCIAL_EXCEPTION grant opened under ACTIVE_STRIPE survives into BOOTSTRAP. Meanwhile CE-4 BACKFILL B4 legitimately seeds PLATFORM_ADMIN grants for accounts that land in BOOTSTRAP, so the literal 'BOOTSTRAP_DEFAULT only' is itself too narrow.",
+   "amendment_target": "Billing authority amendment (PB-A00, AM-P1).",
+   "amendment_content": "EC-4 gate refinement G-1, keyed on COMMERCIAL BASIS, which CE-3's CHECK already makes structural (commercial_account_id NOT NULL iff source IN (PLAN, COMMERCIAL_EXCEPTION)): under BOOTSTRAP, a live grant of source PLAN or COMMERCIAL_EXCEPTION is gated BLOCKED; a live grant of source BOOTSTRAP_DEFAULT or PLATFORM_ADMIN passes through. BOOTSTRAP.entitlement_result is read accordingly: no commercial-basis grant is effective under BOOTSTRAP. The gate still only REDUCES. Every other gate value is UNCHANGED (ACTIVE_STRIPE, PAST_DUE pass-through; SUSPENDED, CLOSED BLOCKED; ungoverned Organization pass-through with only non-commercial sources able to exist)."
+  },
+  "MC-P3_REVIEW_HORIZON_HAS_NO_CARRIER": {
+   "frozen_text": "Billing MANUAL_ACTIVATION.mandatory_inputs (actor, reason, authorization_reference 'which is also the idempotency key', review horizon) and MANUAL_ACTIVATION.lapse; FUTURE_DDL D-1..D-8.",
+   "contradiction": "No FUTURE_DDL item persists the authorization_reference or the review horizon, so the idempotency key cannot be checked and the lapse cannot be enforced. The repository has zero scheduler substrate and HPO-C.1 requires none. Without a carrier and an evaluation-time rule, an expired arrangement keeps FULL capacity: fail OPEN.",
+   "amendment_target": "Billing authority amendment (PB-A00, AM-P1).",
+   "amendment_content": [
+    "FUTURE_DDL D-9 MANUAL ARRANGEMENT RELATION (name IMPLEMENTATION_DEFINED; shape BINDING): id; commercial_account_id NOT NULL FK; authorization_reference NOT NULL with UNIQUE (commercial_account_id, authorization_reference); basis_key, basis_version and basis_policy_digest NOT NULL (SECTION_15 snapshot, never a live FK); agreement_reference NULL (required when the basis entry requires it); package_ref NOT NULL; review_horizon timestamptz NOT NULL with review_horizon > effective_from; effective_from NOT NULL; effective_to NULL; closure_cause NULL within {deactivated, lapsed, renewed, adjusted}; actor_user_id NOT NULL; reason NOT NULL with a non-blank CHECK; audit_log_id. PARTIAL UNIQUE (commercial_account_id) WHERE effective_to IS NULL. Append-only exactly as entitlement_grants: INSERT and a single close (effective_to and closure_cause set once); no other UPDATE, no DELETE, enforced by trigger. ENABLE + FORCE RLS; no tenant policy; capability-role admission only.",
+    "EC-4 gate refinement G-2: under ACTIVE_WITHOUT_STRIPE, a live COMMERCIAL_EXCEPTION grant is gated BLOCKED when no live arrangement row exists for the account or when transaction_timestamp() >= its review_horizon. Reduce-only.",
+    "LAPSE VERB: a governed Shape M transition ACTIVE_WITHOUT_STRIPE -> BOOTSTRAP, valid only when transaction_timestamp() >= review_horizon, recorded with actor_user_id NULL and reason manual_activation_lapsed (MANUAL_ACTIVATION.lapse preserved), the executing principal recorded separately in after_json. Invokable from the control plane or by any future governed job; G-2 already fails closed before it runs, so no scheduler is a precondition of safety."
+   ]
+  },
+  "MC-P4_S5_EDGE_OVERSTATES_ITS_PURPOSE_FOR_THE_PILOT_SUBSET": {
+   "frozen_text": [
+    "Entitlement MIGRATION_DAG.nodes[CE-8]: depends_on [CE-2, CE-3, CE-5], external_depends_on ['tenancy S5']; MULTIORG_INTERSECTION[S5].ordering 'S5 BEFORE CE-8'.",
+    "Billing IMPLEMENTATION_PACKAGES[CB-8].depends_on 'CB-1, CB-2, CE-8' and .external_depends_on 'tenancy S5'; MANUAL_ACTIVATION.sole_locus 'manual activation is therefore NOT implementable before those close'.",
+    "Entitlement PLATFORM_ADMIN_BOUNDARY.multiorg_coordination: 'Where an operation above requires a superadmin predicate change, THAT change belongs to the tenancy package's S5' (CONDITIONAL).",
+    "Tenancy ADMIN_CONTROL_PLANE.boundary_rule.consequence_for_S5: 'Because /admin never constructs a tenant context, removing the :217 exemption does not break it.'",
+    "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json SUPERADMIN_COMPATIBILITY.F_AU_4_rederived: the :217 exemption is UNREACHABLE through the measured production caller set; S5 must report its removal as DEFENSE_IN_DEPTH. S4_TO_S5_ORDERING: 'S5 MUST NOT be implemented before S4.'"
+   ],
+   "contradiction": "The unconditional DAG edge pulls S5 - and through S4_TO_S5_ORDERING the whole S4 restrictive weld over 131 policies - into manual activation, although the entitlement authority's own coordination clause makes the S5 dependency CONDITIONAL on an operation needing a superadmin predicate change, and the Pilot operations need none: they use current_user_is_super_admin() unchanged, DB-confirmed (PI-10), from a platform context that never constructs a tenant scope and therefore never reaches the :217 exemption. CE-8's dependency on CE-2 exists because PA-2 (transfer) is a CE-8 operation; the Pilot needs only the CE-2 relation, through CE-4.",
+   "amendment_target": "Entitlement authority amendment (PB-A00, AM-P2) for CE-8; billing authority amendment (PB-A00, AM-P1) for CB-8 and MANUAL_ACTIVATION.sole_locus.",
+   "amendment_content": "Split CE-8 into CE-8.P and CE-8.R. CE-8.P delivers PA-1 bounded to SECTION_10 inspection, PA-4 restricted to closing COMMERCIAL_EXCEPTION grants of the manual basis, PA-5 restricted to the manual basis, the manual-basis verbs of CB-8, and the first-association verb of MC-P6. CE-8.P depends_on CE-2.R, CE-3, CE-4, CE-5, CB-1, CB-2. CE-8.P external_depends_on is EXACTLY the bounded Pilot integrity boundary this authority freezes, INSTEAD OF closure of the S5 node: (1) the S5P property set of SECTION_9, each property proven by the node's own controls; and (2) EP-P1 PLATFORM-BIT INTEGRITY (SECTION_22): on the catalogue where CE-8.P executes, no role of the db/prepared/stella_0012_super_admin_column_acl.sql postcondition set, or of its durable successor's re-measured set, holds UPDATE on users.is_super_admin. EP-P1 is a DAG prerequisite of CE-8.P, not only a runtime check: CE-8.P is NOT EXECUTABLE on any catalogue, the disposable harness included, on which EP-P1 does not hold; there every Pilot verb refuses PLATFORM_AUTHORITY_SELF_GRANTABLE (precondition 3), and neither CE-8.P closure nor PILOT_BILLING_READY may be claimed for a target on which EP-P1 is unproven. CE-8.R (PA-2, PA-3 exposure, PA-6 beyond the manual basis, account closure, and any operation requiring a superadmin predicate change) keeps depends_on CE-2 and external_depends_on tenancy S5 UNCHANGED, in full. MULTIORG_INTERSECTION[S5].ordering 'S5 BEFORE CE-8.' is read, after the split, as 'S5 BEFORE CE-8.R' (unchanged in strength), and for CE-8.P is replaced by 'S5P (SECTION_9) AND EP-P1 BEFORE CE-8.P'. CB-8.depends_on 'CB-1, CB-2, CE-8' becomes 'CB-1, CB-2, CE-8.P'; CB-8.external_depends_on 'tenancy S5' becomes the same S5P + EP-P1 set; MANUAL_ACTIVATION.sole_locus becomes 'CE-8.P'. Nothing in the tenancy authorities is amended: S5's definition, its deliverables and S4 -> S5 ordering are untouched."
+  },
+  "MC-P5_CE3_EXACT_ACL_ADMITS_NO_WRITER": {
+   "frozen_text": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json TABLE_ACL_CONTRACT.non_owner_direct_privileges_EXACT = {uellix_owner: [SELECT]; every other listed role: []} and any_other_non_owner_grantee 'REFUSED unless explicitly frozen by a later authority amendment'; deep-equal parent map at COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json TARGET_ACL_CONTRACT_AUTHORIZED.",
+   "contradiction": "CE-5 requires a single governed grant writer; the frozen exact ACL admits none.",
+   "amendment_target": "Entitlement authority amendment (PB-A00, AM-P2, parent map) and CE-3 execution authority + manifest amendments (PB-A00, AM-P3, node map and control retarget), deep-equal to each other.",
+   "amendment_content": "Admit EXACTLY ONE additional non-owner grantee on public.entitlement_grants: the CE-5 writer role (name IMPLEMENTATION_DEFINED; PR #178 candidate name uellix_cap_entitlement) with SELECT, INSERT, UPDATE(effective_to), under its OWN permissive + restrictive policy pair: INSERT WITH CHECK source IN the four frozen literals; UPDATE USING (effective_to IS NULL) WITH CHECK (effective_to IS NOT NULL). No DELETE, TRUNCATE or other privilege, no TO PUBLIC, no runtime or tenant grantee, ENABLE + FORCE and the append-only trigger preserved, evaluator EXECUTE map unchanged. The CE-3 exact-posture control is pre-authorized to retarget to this map, and hosted0010 is NOT edited."
+  },
+  "MC-P6_UNGOVERNED_ORGANIZATION_AFTER_CE4": {
+   "frozen_text": [
+    "Entitlement ORGANIZATION_RELATION.ungoverned_state: NULL commercial_account_id is a legitimate state that 'must not be forged'; consistency_rule: column and history row written 'in ONE transaction by a single governed verb'.",
+    "MANUAL_ACTIVATION.eligibility: 'ONLY from BOOTSTRAP' - an account must exist.",
+    "CE-7 (the only frozen creation path after CE-4) depends externally on tenancy S1 and S6."
+   ],
+   "contradiction": "An Organization founded after CE-4 by the current onboarding path has no CommercialAccount, and no governed path can give it one until CE-7, which waits on S6 and therefore on S4 and S5. The Pilot's own customers would be un-activatable.",
+   "amendment_target": "Entitlement authority amendment (PB-A00, AM-P2).",
+   "amendment_content": "Add to CE-8.P the governed FIRST-ASSOCIATION verb: a platform principal at AAL2 gives ONE ungoverned Organization ONE new CommercialAccount in BOOTSTRAP, setting organizations.commercial_account_id from NULL and appending the opening history row in ONE transaction (consistency_rule), with the same semantics as BACKFILL B1..B3 for one Organization: 1:1, never grouped by inference, never re-homing (a non-NULL current value is REFUSED; re-homing is CE-2.V), and writing NO grant. Audited by the creating verb as commercial.state.entered (BOOTSTRAP.audit_effect)."
+  },
+  "MC-P7_RELEASE_LEDGER_PLACES_STRIPE_GATES_BEFORE_PILOT_READY": {
+   "frozen_text": [
+    "Release ledger GATES[id=PV3].first_required_at_stage 'FEATURE_COMPLETE_STAGING' and GATES[id=SEC7].first_required_at_stage 'FEATURE_COMPLETE_STAGING' (docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json).",
+    "Ledger NON_REGRESSION_RULE: 'A gate required at stage N remains required at every later stage; a later stage inherits all earlier gates and may not be declared while an inherited gate has regressed.'",
+    "Companion CANONICAL_STAGES.rule: 'Stages are strictly ordered and non-skippable: a stage may not be declared while any gate required at it or at any earlier stage is unsatisfied or has regressed.'",
+    "Companion BINDING_HPO_RATIFICATIONS HPO-G-06: 'Then browser journeys and provider gates.', materialized_by 'stage FEATURE_COMPLETE_STAGING'.",
+    "Billing OF-4: 'CAP-03 MUST NOT be enabled before CB-5.'"
+   ],
+   "contradiction": "IC-R1 B-1. PV3 and SEC7 are inherited by PILOT_READY; both require the billing capability packages applied to the target (PV3 also a replay and duplicate-delivery test in Preview), i.e. CB-5 before CAP-03 per OF-4, while this authority defers CB-5 and forbids CAP-03 during the Pilot (SECTION_4, SECTION_6). PILOT_READY without Stripe was therefore not formally reachable, and R1 wrongly listed the release authority as not amended.",
+   "amendment_target": "Release gate ledger amendment (AM-P0).",
+   "materialization": "MATERIALIZED BY THIS CANDIDATE AT R2 as docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json, ahead of PB-A00, because PILOT_READY reachability is a certification prerequisite of this authority, not an implementation step. PB-A00 is its ACT OF RECORD: PB-A00 verifies the integrated blob byte-identical to the certified one, writes no other release file, and PB-A00 is not CLOSED unless that file is integrated; no later act may alter it except by its own reasoned successor.",
+   "amendment_content": "The successor file is the normative content. In substance: RS-1/RS-2 move ONLY first_required_at_stage of PV3 and SEC7 from FEATURE_COMPLETE_STAGING to PRODUCTION_READY, the earliest existing stage after PILOT_READY; EPR has one semantic, act-bound and per candidate SHA (OD-EPR-SS-1..OD-EPR-SS-9): OE(S) becomes true only through a governed enablement act (first enablement, promotion, re-enable, payment-restoring rollback) citing PV3 == PASS @ S and SEC7 == PASS @ S, bound to exactly S and current at the act; the evidence is produced by bounded test-mode preparation (PREP-1..PREP-4) in an isolated evidence deployment d_E, which is not enablement and does not require any other SHA to be dark; no PASS is carried between SHAs; provider_configuration_identity binds the evidence; every declaration below PRODUCTION_READY at S carries PAYMENT_PROVIDER_DARK_PROOF(S) or that PASS; a stale-evidence rollback is a DARK ROLLBACK (ODR-2); a retest_after event forces no outage and is cured by re-evidence before the next act (ODR-3); GO_LIVE payment-path re-evidence stays OPEN and fail-closed (ODR-1); HPO-G.6/G.7 are read scope-aware (RSC-5), HPO-G text unchanged; NON_REGRESSION_RULE and the seven-stage non-skippable ladder unchanged; no gate added, removed, retired or otherwise changed; cumulative sets at PRODUCTION_READY and GO_LIVE unchanged, at FEATURE_COMPLETE_STAGING, RELEASE_CANDIDATE and PILOT_READY reduced by exactly {PV3, SEC7}. Where this summary and the file differ, the act STOPS."
+  },
+  "not_amended": "Tenancy authorities (S1..S8, S4 execution authority), legal-acceptance authorities (L0, L1, RAT-AO-*), platform-admin security authority, CE-1 execution authority, the LC0 baseline and every product ratification are NOT amended. HPO-A..HPO-G text is NOT amended; HPO-G.6/G.7 carry the owner's scope-aware reading (RSC-5). The release authority IS amended, ONLY by RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1 (MC-P7) and only in the respects it states; RELEASE_GATE_LEDGER_v1.0.0, STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0 and STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1 stay byte-unchanged."
+ },
+
+ "SECTION_9_S5_MINIMUM": {
+  "disposition": "S5P - the minimum S5-derived property set required by the Pilot subset CE-8.P / CB-8 - REPLACES closure of the S5 NODE for that subset only (MC-P4). No S5 successor, S5 amendment or tenancy write is required. Full S5 remains the tenancy lane's node, after S4, and remains a dependency of CE-8.R.",
+  "S5P-1_PLATFORM_CONTEXT_ONLY": "Every Pilot commercial surface runs its database work with organizationId NULL: it never sets app.organization_id, never reads the selected-organization carrier, never calls requireOrganizationAccess or withOrganizationDatabaseContext, and never constructs a tenant request scope (ADMIN_CONTROL_PLANE.boundary_rule). Controls PB-N-4, PB-N-29.",
+  "S5P-2_NO_DEPENDENCE_ON_THE_217_EXEMPTION": "No Pilot surface depends on the '!check.is_super_admin' conjunct at db/identity-context.ts:217. Proven forward-compatibly: with that conjunct removed (the S5 target) every Pilot control still passes. Control PB-N-29.",
+  "S5P-3_PLATFORM_CLAIM_DB_CONFIRMED": "PI-9 and PI-10 preserved: an unconfirmed superadmin claim is rejected (DB_IDENTITY_SUPER_ADMIN_CLAIM_REJECTED) and every Pilot definer re-evaluates public.current_user_is_super_admin() itself. Control PB-N-1.",
+  "S5P-4_TENANT_SUSPENSION_UNTOUCHED": "No Pilot verb writes, or decides on, organizations.status; commercial withdrawal is never tenant suspension (PI-1). SUSPENDED_ORG_BEHAVIOR remains S5's. Control PB-N-13.",
+  "S5P-5_NO_TENANT_CONTENT": "The Pilot relation set and result shapes are closed (SECTION_10.closed_projection); no tenant-content relation is read. Control PB-N-5.",
+  "S5P-6_ENTRY_POINT_CLASSIFICATION": "The S5 ADMIN_CONTROL_PLANE.measurement_obligation is discharged for the NEW Pilot entry points only: each is enumerated and classified PLATFORM_CAPABILITY. Existing /admin entry points remain S5's obligation.",
+  "what_S5P_does_not_claim": "S5P does not remove the :217 exemption, does not close MO-07, does not reduce the 131 superadmin policy disjuncts and does not implement suspended-organization selection refusal. PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY AD-00/AD-04 apply: no Pilot evidence may be cited as MO-07 or platform-admin isolation closure."
+ },
+
+ "SECTION_10_CE8_MINIMUM_AND_PLATFORM_BOUNDARY": {
+  "answer_to_G": "Pilot Billing does NOT need the full platform roles / support / compliance architecture. The frozen entitlement PLATFORM_ADMIN_BOUNDARY already names the platform authority ('the platform super_admin predicate, exercised through a governed capability definer'). The Pilot closes the commercial boundary narrowly: that predicate, DB-confirmed, conjoined with server-derived AAL2 (SECTION_12), conjoined with the platform-bit integrity precondition (EP-P1, re-checked in every verb), over a CLOSED verb set with a CLOSED result shape and complete audit. No support capability, no impersonation, no new platform-principal representation and no RLS successor is required, and none is pre-empted.",
+  "closed_verb_set": {
+   "rule": "CM-00/CM-01 closed world: an operation not listed here does not exist in the Pilot plane. Every verb is a SECURITY DEFINER function in a schema NOT exposed by PostgREST, EXECUTE granted to uellix_app only (precedent: uellix_capability and uellix_stella_ops), owned by a Pilot capability role (SECTION_19).",
+   "verbs": [
+    {"id": "V-INSPECT", "maps_to": "PA-1 bounded", "effect": "Read-only closed projection for ONE Organization or ONE CommercialAccount: see closed_projection."},
+    {"id": "V-GOVERN", "maps_to": "MC-P6 first association", "effect": "Ungoverned Organization -> new CommercialAccount in BOOTSTRAP + opening history row. Writes no grant."},
+    {"id": "V-PREVIEW", "maps_to": "Preview of V-ACTIVATE / V-ADJUST / V-RENEW / V-DEACTIVATE / V-LAPSE", "effect": "Runs EVERY precondition and computes the exact before/after diff through the same code path as the write verb, then writes NOTHING. A preview is never a partial write."},
+    {"id": "V-ACTIVATE", "maps_to": "MANUAL_ACTIVATION; PA-5 manual basis", "effect": "BOOTSTRAP -> ACTIVE_WITHOUT_STRIPE, Shape M."},
+    {"id": "V-ADJUST", "maps_to": "PA-4/PA-5 manual basis", "effect": "ACTIVE_WITHOUT_STRIPE, before review_horizon: close and replace COMMERCIAL_EXCEPTION grants (capacity and/or package), no state change, Shape M."},
+    {"id": "V-RENEW", "maps_to": "commercial.manual_activation.renewed", "effect": "ACTIVE_WITHOUT_STRIPE, before review_horizon: close the live arrangement row and insert its successor (new authorization_reference, horizon, basis/agreement reference); grants unchanged unless the basis entry no longer admits them, in which case REFUSED."},
+    {"id": "V-DEACTIVATE", "maps_to": "ACTIVE_WITHOUT_STRIPE -> BOOTSTRAP 'authorized manual deactivation'", "effect": "Close every live COMMERCIAL_EXCEPTION grant of the account's Organizations and the live arrangement row; state BOOTSTRAP; Shape M. Opens NO grant of any source: the account returns to the non-commercial BOOTSTRAP posture with no live commercial-basis grant, and every grant V-ACTIVATE closed stays closed (CE-3 append_only_rule; PB-N-30). This IS the Pilot's commercial suspension (billing transition table: 'withdrawal of a manual arrangement is deactivation to BOOTSTRAP, not suspension')."},
+    {"id": "V-LAPSE", "maps_to": "MANUAL_ACTIVATION.lapse", "effect": "As V-DEACTIVATE but only when transaction_timestamp() >= review_horizon; actor_user_id NULL, reason manual_activation_lapsed."}
+   ],
+   "reactivation": "BOOTSTRAP -> ACTIVE_WITHOUT_STRIPE again is V-ACTIVATE with a NEW authorization_reference; prior closed rows are never reopened (CE-3 append_only_rule)."
+  },
+  "closed_projection": {
+   "may_return": ["Organization id, name, status (CM-04 existence/status only)", "CommercialAccount id, legal_name, billing_country, billing_contact_email, commercial_status", "live and closed EntitlementGrant rows of that Organization (all columns)", "arrangement rows (D-9) and history rows (CE-2.R) of that account", "the gate value the runtime would compute now"],
+   "must_not_return": ["organization_members rows or counts", "projects, evidence, reports, analytics, Stella interactions or any tenant content", "legal acceptance rows or acceptance status (SECTION_13)", "audit_logs before_json/after_json of tenant verbs (AG-02: treated as content)", "any users row other than the acting subject"],
+   "grant_rows_are_read_through_composition": "Grant rows are read through a definer owned by the CE-5 writer role (which already holds SELECT), so the Pilot adds NO further grantee on entitlement_grants beyond MC-P5."
+  },
+  "every_verb_preconditions_in_order": [
+   "1. auth.uid() NOT NULL and public.current_user_is_super_admin() TRUE (refuse PLATFORM_PRINCIPAL_REQUIRED).",
+   "2. AAL2 per SECTION_12 (refuse AAL_ABSENT or AAL_UNDETERMINABLE, distinguishable).",
+   "3. Platform-bit integrity (EP-P1): none of the role set asserted by db/prepared/stella_0012_super_admin_column_acl.sql:300-310 (or its durable successor's set, re-measured) holds UPDATE on users.is_super_admin; otherwise refuse PLATFORM_AUTHORITY_SELF_GRANTABLE.",
+   "4. For every write verb and V-PREVIEW: reason present and non-blank after trimming (refuse REASON_REQUIRED); authorization_reference present (V-LAPSE excepted).",
+   "5. Account advisory lock, then organization locks.",
+   "6. Verb-specific state and input checks (SECTION_11)."
+  ],
+  "SQLSTATE_and_spellings": "Refusal literals above are SEMANTIC identifiers; SQLSTATE values are DERIVED_NOT_ALLOCATED from the free U0 namespace at the implementing base, with fixed messages that echo no argument (0073 precedent)."
+ },
+
+ "SECTION_11_ADMIN_CONTROL_PLANE_CONTRACT": {
+  "surface": "A new platform route under app/admin (path IMPLEMENTATION_DEFINED) gated by requireAdminAccess PLUS the AAL2 step-up of SECTION_12. Server actions only (POST); no GET mutation (HPO-A.7 by analogy). The route never reads the selected-organization cookie and never renders tenant content.",
+  "outcomes": [
+   {"n": 1, "outcome": "Locate/select a CommercialAccount or its governed Organization", "verb": "V-INSPECT (by Organization id/slug or CommercialAccount id)"},
+   {"n": 2, "outcome": "Inspect non-content commercial metadata", "verb": "V-INSPECT closed_projection"},
+   {"n": 3, "outcome": "See current commercial status", "verb": "V-INSPECT commercial_status + current gate value"},
+   {"n": 4, "outcome": "See effective plan/entitlement", "verb": "V-INSPECT live grant (limit_kind, limit_value, plan_ref, effective period) + arrangement"},
+   {"n": 5, "outcome": "Choose a governed plan/package", "verb": "V-ACTIVATE / V-ADJUST: package_ref from the chosen basis entry's closed package list"},
+   {"n": 6, "outcome": "Choose a commercial basis", "verb": "V-ACTIVATE / V-RENEW: basis_key@version from the closed basis catalogue (SECTION_15); pro_bono is a property of the entry, never a free flag"},
+   {"n": 7, "outcome": "Assign Stella capacity CAPPED N / UNMETERED / BLOCKED", "verb": "V-ACTIVATE / V-ADJUST: explicit per-Organization limit for capability stella.grounded_query, restricted to the entry's admissible limit kinds (SECTION_14)"},
+   {"n": 8, "outcome": "Set effective period", "verb": "effective_from (now or future) and review_horizon (mandatory, > effective_from, bounded by the entry's max term if declared)"},
+   {"n": 9, "outcome": "Reference applicable agreement / policy / ProBonoPolicyVersion", "verb": "basis_policy_digest snapshot + agreement_reference when the entry requires it"},
+   {"n": 10, "outcome": "Preview mutation", "verb": "V-PREVIEW"},
+   {"n": 11, "outcome": "Provide mandatory reason", "verb": "precondition 4 on every write verb"},
+   {"n": 12, "outcome": "Activate explicitly into ACTIVE_WITHOUT_STRIPE", "verb": "V-ACTIVATE"},
+   {"n": 13, "outcome": "Adjust plan/capacity later without rewriting history", "verb": "V-ADJUST (close + replace; never UPDATE of a limit column)"},
+   {"n": 14, "outcome": "Suspend/reactivate for the Pilot lifecycle", "verb": "V-DEACTIVATE (commercial withdrawal) and V-ACTIVATE with a new authorization_reference; V-LAPSE for expiry. SUSPENDED is Stripe-only and is not a Pilot verb."},
+   {"n": 15, "outcome": "Inspect resulting audit metadata", "verb": "V-INSPECT returns the audit rows written by commercial and entitlement verbs for that account (actor, action, reason, before_json, after_json, created_at) - these verbs write commercial facts only"}
+  ],
+  "V_ACTIVATE_checks": ["state is BOOTSTRAP (refuse illegal_transition otherwise; the five frozen refusals of parent N-09 apply)", "stripe_subscription_id IS NULL (frozen eligibility; the column arrives with D-2 and is absent until then, which is equivalent)", "the governed Organization set of the account is NON-EMPTY, and the supplied per-Organization capacity map covers EXACTLY that set (no implicit inheritance, T-7)", "no live PLAN grant exists for any governed Organization (INV-STALE-GRANT asserted directly; Shape M creates no closure obligation)", "basis entry exists at the stated version with matching digest; package_ref and limit kinds admitted by it; agreement_reference present when required", "authorization_reference not yet used for the account; a replay with identical inputs returns the original outcome and writes nothing; a replay with different inputs is REFUSED", "effects: close any live BOOTSTRAP_DEFAULT or PLATFORM_ADMIN grant for the key, open the COMMERCIAL_EXCEPTION grant (commercial_account_id = the account, plan_ref = package_ref, reason, actor, effective_from), projection, arrangement row, state write, audit rows - Shape M"],
+  "V_DEACTIVATE_and_V_LAPSE_checks": ["state is ACTIVE_WITHOUT_STRIPE", "V-LAPSE only when transaction_timestamp() >= review_horizon", "effects: close every live COMMERCIAL_EXCEPTION grant of the governed Organizations, close the arrangement row with closure_cause, state BOOTSTRAP, audit rows - Shape M", "opens NO grant of any source: no BOOTSTRAP_DEFAULT or PLATFORM_ADMIN replacement is created, silently or by catalogue (opening either is PA-3 / PA-6-beyond-the-manual-basis territory, deferred as CE-8.R, and forbidden in the Pilot plane by PB-N-30); no grant closed by V-ACTIVATE is reopened (CE-3 append_only_rule)", "projection: stella_monthly_quota 0 for every governed Organization, the fail-closed value (the absence of a grant never projects NULL = unlimited: entitlement USAGE_QUOTA_BOUNDARY.null_semantic_prohibition)", "runtime result (NB-2): for every governed Organization the evaluator answers NO_LIVE_GRANT, so L3 refuses entitlement_absent before any ticket is minted; membership, role and organizations.status are intact (PB-P-10, PB-P-18); entitlement_blocked arises only where a commercial-basis grant is still live under BOOTSTRAP (G-1, the PB-N-12 sentinel case) or a BLOCKED grant exists", "organizations.status, organization_members and every tenant row untouched"],
+  "V_ADJUST_and_V_RENEW_checks": ["state is ACTIVE_WITHOUT_STRIPE and transaction_timestamp() < review_horizon (after the horizon the only lawful path is V-LAPSE then V-ACTIVATE)", "new authorization_reference", "adjust: per-Organization map equal to the governed set, admitted by the live basis entry", "renew: new horizon > now; new basis entry must admit every live grant"],
+  "idempotency": "The authorization_reference is the platform-admin decision identity (frozen). The control plane generates it ONCE per operator intent and reuses it across retry, double submit and double click (RAT-ASY-01 pattern by analogy); the database UNIQUE of D-9 is the backstop.",
+  "no_direct_db": "No verb or routine step requires SQL, Supabase table editing, a developer, or a write to a legacy quota column (PILOT-BILLING-01.5). Control PB-N-20 and the Golden journey prove it."
+ },
+
+ "SECTION_12_AAL2_BOUNDARY": {
+  "basis": "HPO-D.2 (AAL2 required for platform admin actions); PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY MA-01 (server-derived, never client-inferable), MA-04 (step-up refuses, never downgrades), MA-05 (ABSENT distinct from STALE), MA-06 (undeterminable refuses), MA-07 (assuming the platform principal is guarded); release SSL-04 (MFA is recorded satisfied only when enforceable at the authorization point).",
+  "authorization_point": "The Pilot definers themselves. The app-layer step-up is UX only and is never the control.",
+  "carrier": "The server derives the assurance level from the Supabase-signed access token it has verified server-side (the token's aal claim) and forwards it into request.jwt.claims, transaction-locally, in the same transaction as the definer call, alongside sub and role. It is NEVER taken from a header, form field, query parameter, cookie value the server did not verify, or any client-supplied argument. Locus IMPLEMENTATION_DEFINED; if db/identity-context.ts is edited, the edit is limited to carrying the verified aal and is a CP-5 serial chokepoint with the tenancy lanes; PI-9 and PI-10 checks are preserved.",
+  "rule": "Every Pilot verb, V-INSPECT and V-PREVIEW included, requires claims aal = 'aal2'. aal1 -> AAL_ABSENT; claim missing or malformed -> AAL_UNDETERMINABLE; both refuse, distinguishably. Freshness (MA-02) is NOT required because no Pilot verb is destructive; the account-closure verb, which would be, is deferred (CE-8.R).",
+  "audit": "Every Pilot write records assurance evidence (aal value and the verified token's authentication-method list where available) in after_json (CM-06).",
+  "external_prerequisite": "EP-P2: hosted MFA factor enrollment enabled and every platform operator enrolled. Provider state, out of band, not performed or authorized here.",
+  "not_claimed": "This satisfies SSL-04 for the Pilot verbs only. It does not implement FD-03 (AAL in RLS predicates) globally and does not satisfy SEC3 for any other surface."
+ },
+
+ "SECTION_13_LEGAL_ACCEPTANCE_BOUNDARY": {
+  "derived_precondition": "L0 and L1 are preconditions of ENTITLEMENT EVALUATION (CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY CANONICAL_JOURNEY / COMBINED_EVALUATION_ORDER: B0 -> L0 -> R1..R5 -> L1 -> ENT; CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY COMMERCIALACCOUNT_AND_ENTITLEMENT_BOUNDARY: 'L1 is a PRECONDITION of entitlement evaluation'). They are enforced today for every tenant request at lib/auth/session.ts:329 and lib/auth/database-context.ts:1084-1094, before any Stella ticket is issued. A capability opened by V-ACTIVATE is therefore INERT for every member of an Organization whose L1 is not current: no request of that Organization reaches L3. This is the exact Pilot precondition, and it is versioned (instrument, version, content digest, effective_at, reaccept_required), never a boolean.",
+  "why_activation_time_refusal_is_NOT_authorized": "An activation-time check would require a platform principal to READ organization_commercial_acceptances for an Organization it is not a member of. Frozen L1 authority forbids exactly that: RLS_AUTHORITY.required_posture.select 'visible to members of its own organization and to nobody else'; 0072:70-73 'the authority names no platform read path for this relation and L1 does not invent one'; X-L1-07 'No existing RLS policy may be widened'; and acceptance evidence is tenant data, which HPO-D.1 and MO-07 keep outside standing platform access. Inventing that read path would widen tenant-data access to satisfy a convenience check that the evaluation-boundary gate already makes unnecessary. It is therefore NOT taken, and the Pilot plane reads NO acceptance relation.",
+  "non_substitution": "RAT-AO-02 AO2_C1..C3 preserved: no Pilot verb records, infers, satisfies or displays acceptance; ACTIVE_WITHOUT_STRIPE and every arrangement field are never acceptance evidence; lib/auth/organization-commercial-acceptance.ts deriveOrganizationAcceptanceCurrent reads no commercial state and MUST keep reading none.",
+  "external_agreement": "A Pilot Agreement or other off-platform signed instrument may be REFERENCED by the arrangement (agreement_reference, and the basis entry's policy digest) as COMMERCIAL PROVENANCE ONLY. It is not acceptance evidence, is not recorded as acceptance by any operator, and does not discharge L0 or L1. Whether a signed out-of-band instrument can substitute for acceptance capture for pilot participants is an owner and counsel decision that the release authority (PILOT_READY required_legal_review) explicitly leaves open; this authority does not take it and does not need it, because L1 capture exists.",
+  "control_mapping": "The mission's 'no current commercial acceptance -> activation refused' is realized as PB-N-8: with L1 absent, superseded by a reaccept_required version, or pre-effective, an Organization under ACTIVE_WITHOUT_STRIPE with a live grant is refused before L3 on every path; plus a static and runtime proof that no Pilot verb reads any acceptance relation."
+ },
+
+ "SECTION_14_ENTITLEMENT_SINGLE_TRUTH_AND_CAPACITY": {
+  "single_truth": "Capacity lives ONLY in entitlement_grants (EC-1). The Stella ledger (uellix_stella.stella_capacity, operation tickets) stays where the prepared chain puts it and is not duplicated. organizations.stella_monthly_quota is a projection written only by the CE-5 writer (USAGE_QUOTA_BOUNDARY.limit_projection). No credits balance, wallet, counter or second grant store is created.",
+  "source_vocabulary": "REUSED UNCHANGED. Every Pilot-opened grant has source COMMERCIAL_EXCEPTION with commercial_account_id NOT NULL, exactly as ACTIVE_WITHOUT_STRIPE.entitlement_result and MANUAL_ACTIVATION.entitlement_source freeze. Pro Bono, pilot and contracted bases are distinguished by the arrangement's basis snapshot, NOT by a new source literal. No new source, limit_kind or capability key.",
+  "capability": "stella.grounded_query only, taken from the catalogue; any other key is refused (U0114 posture).",
+  "CAPPED_N": "limit_kind CAPPED, limit_value N, N an integer >= 1 at the Pilot input (CAPPED 0 is refused at the Pilot plane: it projects to the same 0 as BLOCKED but passes L3 and fails at L2, giving the tenant the wrong refusal; operators use BLOCKED to deny). Projection stella_monthly_quota = N. Meaning: at most N charged Stella units per Organization per UTC calendar month, enforced at bind under the per-organization lock as Limit - Consumed(month) - Reserved(live) (stella_0016:375-391), all ticket categories charging the one capability. Per Organization, never pooled (CA-08, EC-7).",
+  "UNMETERED": "limit_kind UNMETERED, limit_value NULL, projection NULL = no L2 cap (PI-2, Stella only). Only when the basis entry admits UNMETERED AND the operator selects it explicitly; never a default.",
+  "BLOCKED": "limit_kind BLOCKED, limit_value NULL, projection 0. L3 refuses ENTITLEMENT_BLOCKED before any ticket exists.",
+  "adjustment": "V-ADJUST closes the live row (effective_to set once) and inserts the replacement in the same transaction, both through the CE-5 writer; the CE-3 append-only trigger forbids any other UPDATE. History = the ordered set of rows; nothing is rewritten.",
+  "effective_period": "effective_from may be now or future (a future row occupies the key and evaluates NO_LIVE_GRANT until it starts - 0073 evaluator). The END of commercial validity is the arrangement's review_horizon, enforced by gate G-2 and executed by V-LAPSE; a grant row is never inserted with a pre-set effective_to (such a row is never live under the frozen evaluator)."
+ },
+
+ "SECTION_15_PRO_BONO_SEMANTICS": {
+  "canonical_authority_measured": "NONE at BASE_SHA (zero hits repository-wide). The representation below is DERIVED from PILOT-BILLING-01.3/.4/.7 and from existing frozen mechanisms only; it creates no new entitlement source, capability key, role or project-scoped grant.",
+  "principles": ["Pro Bono is a governed COMMERCIAL BASIS of an ACTIVE_WITHOUT_STRIPE arrangement.", "It is not a role and grants no membership or authorization (SC-1, SEC-3).", "It is not a Stripe payment and never touches Stripe.", "It is not an authorization bypass: L0 role ceiling, L1, L3 and L2 all apply unchanged.", "It is not automatically unlimited: capacity is always an explicit operator choice admitted by the policy entry."],
+  "basis_catalogue": {
+   "mechanism": "A closed, versioned, in-repository commercial-basis catalogue (module name IMPLEMENTATION_DEFINED; precedent lib/capabilities/entitlement-catalogue.ts). Each entry: basis_key, version, pro_bono (boolean), policy_document_digest (sha256 of the owner/counsel-supplied governing document, committed to the repository or published as a governed instrument version), requires_agreement_reference (boolean), admissible_limit_kinds, admissible package_refs, optional max_capped_value, optional max_term. Entries are added or versioned only by a reviewed repository change; an entry is never edited in place, a change is a new version.",
+   "snapshot_rule": "The arrangement row snapshots basis_key, version and policy digest (billing/entitlement plan_snapshot_rule applied to policy): editing or superseding an entry never rewrites what an account was granted.",
+   "empty_is_closed": "An empty catalogue, an unknown key, an unknown version or a digest mismatch REFUSES activation. The implementing act registers NO entry on its own authority; entries come from owner/counsel-supplied documents (EP-P3). Test fixtures use test-only entries that cannot load in production."
+  },
+  "ProBonoPolicyVersion": "Represented WITHOUT new database persistence as the triple (basis_key of an entry with pro_bono = true, version, policy_document_digest), snapshotted on the arrangement row. It is 'an existing governed plan/policy reference' by construction: in-repository closed catalogue plus snapshot, the same two mechanisms the repository already uses for capability keys and plan_ref.",
+  "minimum_representation": {
+   "policy_version_identity": "The triple above.",
+   "entitlement_package": "package_ref chosen from the entry's admissible list, snapshotted as the COMMERCIAL_EXCEPTION grant's plan_ref and on the arrangement.",
+   "usage_capacity": "Explicit CAPPED N / UNMETERED / BLOCKED per Organization within the entry's admissible kinds and max_capped_value.",
+   "term": "effective_from .. review_horizon, bounded by the entry's max_term when declared; enforced by G-2 and V-LAPSE.",
+   "project_limit": "NOT REPRESENTABLE and NOT REPRESENTED. entitlement_grants is Organization x capability (SC-2) and no project capability key exists. If Pro Bono eligibility must be per project, it requires a SEPARATE relation, its own ratification and its own authority, outside entitlement and outside the Pilot. entitlement_grants MUST NOT be made project-scoped.",
+   "list_value_reference": "NOT persisted. No price authority exists (OD-9). If the owner's policy document states a list value, it is covered by the policy digest and nothing more.",
+   "amount_charged": "Structurally zero in the Pilot: no charge, invoice or payment path exists on any Pilot surface. No monetary column is authorized.",
+   "audit_provenance": "Arrangement row + COMMERCIAL_EXCEPTION grant row + audit rows naming the basis snapshot, actor, reason and assurance evidence."
+  }
+ },
+
+ "SECTION_16_RUNTIME_GATE_CONTRACT": {
+  "verified_order": ["L0 role ceiling canUseStella (unchanged)", "L1 technical rate limit consumeStellaRateLimit (unchanged, at issuance)", "L3 NEW: evaluateEntitlement({organizationId, 'stella.grounded_query'}) CONJOINED with the amended EC-4 gate, inside issueOperationTicket (db/stella/operation-tickets.ts:443) BEFORE the SQL mint", "ticket mint uellix_stella_ops.issue_operation_ticket (unchanged)", "L2 reservation bind_operation_ticket under the per-organization lock against the projection (unchanged)", "operation, then charge (unchanged)"],
+  "matches_expected_shape": "YES: rate limit -> commercial-state + entitlement gate -> quota/capacity reservation -> operation, preceded by the pre-existing role ceiling and by L0/L1 at the request boundary.",
+  "gate_function": {
+   "ungoverned Organization": "PASS-THROUGH (only non-commercial sources can exist)",
+   "BOOTSTRAP": "PASS for BOOTSTRAP_DEFAULT and PLATFORM_ADMIN; BLOCKED for PLAN and COMMERCIAL_EXCEPTION (G-1)",
+   "ACTIVE_WITHOUT_STRIPE": "PASS, except COMMERCIAL_EXCEPTION BLOCKED when no live arrangement or now >= review_horizon (G-2)",
+   "ACTIVE_STRIPE, PAST_DUE": "PASS (frozen)",
+   "SUSPENDED, CLOSED": "BLOCKED (frozen)",
+   "unreadable state or grant": "REFUSE (fail closed)"
+  },
+  "gate_read": "Through a definer taking an EXPLICIT organization_id, returning a bounded gate value, never the raw state, with no tenant SELECT policy on commercial_accounts (billing OF-5). The runtime gate definer is scoped to members of that Organization; it carries NO superadmin disjunct (the platform plane uses V-INSPECT).",
+  "refusals": {"L1": "RATE_LIMITED, RATE_LIMIT_UNAVAILABLE (existing)", "L3": "entitlement_absent (no live grant), entitlement_blocked (grant BLOCKED or gate BLOCKED), entitlement_unavailable (evaluator or gate refused, threw or returned a shape fault)", "L2": "no_quota, quota_exceeded (existing)", "rule": "Three layers, three vocabularies, never collapsed (STELLA_RECONCILIATION). TypeScript spellings IMPLEMENTATION_DEFINED."},
+  "must_call": ["db/stella/operation-tickets.ts issueOperationTicket - the ONLY runtime consumer of the evaluator and the gate."],
+  "must_not_call": ["request principal, selected-organization carrier, requireOrganizationAccess / requireAuth / requireAdminAccess", "Measure (lib/pipeline/**, app/app/projects/**), Portfolio (lib/portfolios/**, app/app/portfolios/**), Evaluate (lib/evaluate/**), generic middleware, app/api/**", "the two issuance surfaces above the chokepoint (they keep L0/L1 and map results only)", "db/identity-context.ts", "lib/stella/quota.ts readStellaCapacity (informational only)", "the Stripe webhook and every lib/stripe module"],
+  "census": "tests/commercial/ce3-evaluator-consumer-census.test.ts retargets from zero runtime consumers to EXACTLY ONE (db/stella/operation-tickets.ts); it stays closed-world.",
+  "direct_sql_residual": "The SQL mint is callable only by uellix_app and its schema is not PostgREST-exposed, so no tenant JWT can bypass L3. A lapse not yet executed leaves the projection at its last value, so a server-side direct mint could pass L2 in that window; this is bounded to server code, closed by V-LAPSE, and asserted by the census that issueOperationTicket is the only mint caller (PB-N-27). A SQL-side L3 inside issue_operation_ticket is NOT authorized here (HOSTED_CHAIN member outside this authority's parents)."
+ },
+
+ "SECTION_17_ATOMICITY_AND_CONCURRENCY": {
+  "shape": "Shape M for every Pilot write verb (MC-P1). V-GOVERN is one transaction by the ORGANIZATION_RELATION consistency_rule.",
+  "locks": "Per-CommercialAccount advisory lock FIRST, then per-Organization locks in ascending id order (FAILURE_AND_CONCURRENCY.lock_ordering preserved).",
+  "failure": "Any refusal or error at any step - state verb, arrangement write, grant writer, projection, audit insert - rolls back the whole transaction. There is no committed state in which commercial_status and live grants disagree (PB-N-19).",
+  "concurrency": "Two operators acting on one account serialize on the account lock; the loser re-reads inside its own lock and is evaluated against the winner's committed result. Replays are absorbed by the D-9 UNIQUE and by CE-5 writer idempotency on cause_identity (the authorization_reference)."
+ },
+
+ "SECTION_18_SECURITY_INVARIANTS": {
+  "rule": "Each invariant holds at EVERY act boundary, not only at the end. DB, RLS, ACL and state-machine claims are proven on real PostgreSQL (disposable harness), never by mocks alone.",
+  "invariants": [
+   {"id": "SI-01", "invariant": "CommercialAccount != Organization.", "enforced_by": "CE-1 shape; SEC-2, SEC-7", "controls": ["PB-N-14"]},
+   {"id": "SI-02", "invariant": "commercial_status != entitlement.", "enforced_by": "Separate relations; the gate only reduces", "controls": ["PB-N-12", "PB-M-5"]},
+   {"id": "SI-03", "invariant": "Entitlement != role authorization.", "enforced_by": "SC-1; L0 evaluated independently", "controls": ["PB-N-4"]},
+   {"id": "SI-04", "invariant": "Payment != activation.", "enforced_by": "No Pilot path touches payment; release EPR requires PAYMENT_PROVIDER_DARK_PROOF(S), OE(S) false, at every SHA declared through PILOT_READY", "controls": ["PB-N-22", "PB-N-36", "PB-N-39", "PB-N-40", "PB-N-53"]},
+   {"id": "SI-05", "invariant": "Platform authority != tenant membership; platform commercial action != entering the tenant.", "enforced_by": "S5P-1; zero organization_members writes; no tenant GUC", "controls": ["PB-N-4", "PB-N-29", "PB-M-16"]},
+   {"id": "SI-06", "invariant": "organization_id explicit wherever tenant-scoped; no ambient fallback.", "enforced_by": "Evaluator and gate take explicit ids (SC-3)", "controls": ["PB-N-14", "PB-N-27"]},
+   {"id": "SI-07", "invariant": "No tenant GUC set for a commercial action.", "enforced_by": "S5P-1", "controls": ["PB-N-29"]},
+   {"id": "SI-08", "invariant": "Platform commercial authority grants no tenant-content access.", "enforced_by": "SECTION_10 closed projection and relation set", "controls": ["PB-N-5"]},
+   {"id": "SI-09", "invariant": "No platform self-grant of privilege.", "enforced_by": "EP-P1 as a DAG prerequisite of CE-8.P (MC-P4) and precondition 3 (EP-P1 re-checked per call); no verb writes users, organization_members or roles; no verb changes the platform principal set (MA-10)", "controls": ["PB-N-7", "PB-N-38", "PB-M-11"]},
+   {"id": "SI-10", "invariant": "Privileged Pilot mutation is permissioned (platform predicate + AAL2) and audited.", "enforced_by": "SECTION_10, SECTION_12, SECTION_20", "controls": ["PB-N-1", "PB-N-2", "PB-N-16"]},
+   {"id": "SI-11", "invariant": "AAL2 not weakened.", "enforced_by": "SECTION_12", "controls": ["PB-N-2", "PB-N-3", "PB-M-1", "PB-M-2"]},
+   {"id": "SI-12", "invariant": "Non-empty reason on every mutation.", "enforced_by": "Precondition 4; D-9 non-blank CHECK", "controls": ["PB-N-6", "PB-M-7"]},
+   {"id": "SI-13", "invariant": "Every commercial change preserves actor, timestamp, previous state, resulting state, reason and commercial/policy reference.", "enforced_by": "SECTION_20", "controls": ["PB-N-16", "PB-P-4"]},
+   {"id": "SI-14", "invariant": "No substantive UPDATE of a grant; credits changes preserve history.", "enforced_by": "CE-3 append-only trigger; V-ADJUST close + replace", "controls": ["PB-N-15", "PB-P-8", "PB-M-13"]},
+   {"id": "SI-15", "invariant": "Legacy stella_monthly_quota is never a source of truth and has one writer.", "enforced_by": "CE-5 single-writer rule", "controls": ["PB-N-23"]},
+   {"id": "SI-16", "invariant": "Commercial suspension/withdrawal is not tenant suspension and removes no membership or tenant-data authorization.", "enforced_by": "PI-1; S5P-4", "controls": ["PB-N-13", "PB-P-11"]},
+   {"id": "SI-17", "invariant": "Fail closed on partial transaction failure.", "enforced_by": "Shape M", "controls": ["PB-N-19", "PB-M-3", "PB-M-4"]},
+   {"id": "SI-18", "invariant": "No new capability key; no Stripe dependency.", "enforced_by": "Catalogue closed world; anti_pull_in_rule", "controls": ["PB-N-21", "PB-N-22", "PB-M-14", "PB-M-15"]}
+  ]
+ },
+
+ "SECTION_19_ROLES_AND_ACL": {
+  "rule": "Every capability role is NOLOGIN, NOBYPASSRLS, NOSUPERUSER, NOCREATEROLE, NOCREATEDB and has ZERO ROLE MEMBERS proved from pg_auth_members keyed on roleid on every apply (billing D-6 PC-1..PC-3 shape applied to every role). Composition is by SECURITY DEFINER function call, never by membership. No runtime, tenant JWT, platform or human role is granted into any of them.",
+  "closed_role_set": [
+   {"role": "uellix_cap_commercial", "status": "FROZEN (billing D-6)", "relations": "commercial_accounts SELECT/INSERT/UPDATE column-scoped under the P1/P2 pair bound to app.commercial_account_id; audit_logs INSERT. Owns the state verb and the gate-read definer."},
+   {"role": "CE-5 writer role (name IMPLEMENTATION_DEFINED)", "status": "ADMITTED by MC-P5", "relations": "entitlement_grants SELECT, INSERT, UPDATE(effective_to) under its own pair; organizations UPDATE(stella_monthly_quota, stella_plan_label, updated_at) bounded to ONE organization by a transaction-local GUC; audit_logs INSERT."},
+   {"role": "Pilot control-plane role (name IMPLEMENTATION_DEFINED)", "status": "DERIVED here", "relations": "D-9 relation SELECT/INSERT/UPDATE(effective_to, closure_cause) under its own pair; CE-2.R history relation INSERT of an opening row only; organizations SELECT(id, name, status, commercial_account_id) and UPDATE(commercial_account_id, updated_at) bounded to ONE organization with USING (commercial_account_id IS NULL) WITH CHECK (commercial_account_id IS NOT NULL); audit_logs INSERT; EXECUTE on the state verb and on the CE-5 writer verbs. NOTHING on organization_members, users, legal acceptance relations or any tenant-content relation."}
+  ],
+  "runtime_roles": "uellix_app, uellix_writer, uellix_auditor, authenticated, anon and service_role hold NO direct privilege on commercial_accounts, entitlement_grants, the history relation or D-9. uellix_app holds EXECUTE on the Pilot verbs only.",
+  "cross_lane": "Every new capability-role grant is classified by the runtime-ACL closed-world guard of the security ACL successor lane (docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and its durable successor). SERIAL on that surface."
+ },
+
+ "SECTION_20_AUDIT": {
+  "verbs_used": ["commercial.state.entered (every transition, incl. BOOTSTRAP entry by V-GOVERN)", "commercial.manual_activation (V-ACTIVATE)", "commercial.manual_activation.renewed (V-RENEW)", "commercial.manual_activation.lapsed (V-LAPSE)", "entitlement.grant.opened / entitlement.grant.closed (CE-5 writer)"],
+  "no_new_verb": "No audit verb beyond the frozen billing AUDIT vocabulary is introduced. V-DEACTIVATE is recorded as commercial.state.entered plus per-grant entitlement.grant.closed; V-ADJUST as entitlement.grant.closed/opened.",
+  "row_content": "actor_user_id (non-NULL person for every person-caused verb; NULL for V-LAPSE with the executor in after_json), created_at, entity_type/entity_id, before_json and after_json carrying prior and resulting state/limits, reason verbatim, and in after_json the authorization_reference, basis snapshot, agreement_reference, package_ref, review_horizon and assurance evidence. No Stripe payload, email body or tenant record in any field (verbatim_content_caution).",
+  "visibility": "organization_id NULL for account-level rows (PI-8: platform-visible only); per-Organization grant rows follow the CE-5 writer's audit posture.",
+  "written_by": "The governed definers inside the Shape M transaction, never by TypeScript logAuditAction with these verbs."
+ },
+
+ "SECTION_21_ACT_DECOMPOSITION": {
+  "rule": "Every act opens only after this authority is independently certified and integrated, carries its own lineage where PROTECTED_GRANT_REQUIRED is YES (ODS split shape: opening, lineage allocation, certification, grant registration by a separate mission, implementation, certification, merge), and re-measures at its own base. Every identifier below marked <...> is DERIVED_NOT_ALLOCATED.",
+  "acts": [
+   {"id": "PB-A00", "title": "Parent amendments AM-P0 (release gate ledger, materialized at R2), AM-P1 (billing), AM-P2 (entitlement), AM-P3 (CE-3 execution + manifest)", "depends_on": ["this authority certified and integrated"], "PROTECTED_GRANT_REQUIRED": "NO", "write_set_ceiling": ["docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_AMENDMENT_v<next>.json", "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v<next>.json", "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v<next>.json", "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v<next>.json"], "owned_release_amendment": {"path": "docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json", "status": "MATERIALIZED_AT_R2 by this candidate; PB-A00 is its act of record (MC-P7.materialization)", "pb_a00_obligation": "verify the integrated blob byte-identical to the certified one; write no other release file; STOP if it is absent, altered or superseded without a reasoned successor"}, "delivers": ["SECTION_8 MC-P1..MC-P6 content, verbatim in substance", "ownership of the SECTION_8 MC-P7 release amendment (AM-P0)"]},
+   {"id": "PB-A01", "title": "CE-2.R history relation", "depends_on": ["PB-A00", "CE-1"], "PROTECTED_GRANT_REQUIRED": "YES (db/migrations, journal, checkpoint observation)", "write_set_ceiling": ["db/migrations/**", "db/prepared/journal/**", "db/prepared/checkpoint-b0/observation.sql", "db/schema.ts", "db/hosted/baseline-manifest.ts", "artifacts/hosted-a1-status.json", "tests/commercial/**", "tests/postgres/**"], "delivers": ["commercial_account_organization_history per ORGANIZATION_RELATION, append-only guard, ENABLE + FORCE, zero tenant policies"]},
+   {"id": "PB-A02", "title": "CB-1 six-state vocabulary (D-1) + D-6 capability role and pair + D-9 manual arrangement relation", "depends_on": ["PB-A00", "CE-1"], "PROTECTED_GRANT_REQUIRED": "YES (migration globs + prepared package literals + rollback)", "write_set_ceiling": ["db/migrations/**", "db/prepared/journal/**", "db/prepared/checkpoint-b0/observation.sql", "db/prepared/stella_<NNNN>_commercial_account_capability.sql", "db/prepared/stella_<NNNN>_rollback.sql", "db/prepared/README.md", "db/schema.ts", "db/hosted/**", "artifacts/hosted-a1-status.json", "tests/commercial/**", "tests/postgres/**", "tests/prepared-stella-sql.test.ts"], "delivers": ["D-1 forward migration (lowercase and uppercase vocabularies never coexist; zero rows outside 'active' asserted)", "D-6 PC-1..PC-5", "D-9 per MC-P3"]},
+   {"id": "PB-A03", "title": "CB-2 state verb + total transition table + gate-read definer with G-1/G-2", "depends_on": ["PB-A02"], "PROTECTED_GRANT_REQUIRED": "YES (prepared package literals)", "write_set_ceiling": ["db/prepared/stella_<NNNN>_commercial_state_verb.sql", "db/prepared/stella_<NNNN>_rollback.sql", "db/prepared/README.md", "db/hosted/hosted-package-manifest.ts", "lib/capabilities/** (typed wrapper, no runtime consumer)", "tests/commercial/**", "tests/postgres/**", "tests/prepared-stella-sql.test.ts"], "delivers": ["36-pair executable closure", "gate function of SECTION_16"]},
+   {"id": "PB-A04", "title": "CE-4 backfill", "depends_on": ["PB-A01", "PB-A02", "CE-3"], "PROTECTED_GRANT_REQUIRED": "YES", "write_set_ceiling": ["db/migrations/**", "db/prepared/journal/**", "db/hosted/baseline-manifest.ts", "artifacts/hosted-a1-status.json", "tests/commercial/**", "tests/postgres/**"], "delivers": ["BACKFILL B1..B4 exactly; pre-assertion of how many Organizations carry Stripe identity, re-measured, with B1's deterministic state"]},
+   {"id": "PB-A05", "title": "CE-5 single governed writer + projection + single-writer hardening", "depends_on": ["PB-A04", "PB-A00 (MC-P5)"], "PROTECTED_GRANT_REQUIRED": "YES", "write_set_ceiling": ["db/prepared/stella_<NNNN>_entitlement_writer.sql", "db/prepared/stella_<NNNN>_rollback.sql", "db/prepared/stella_<NNNN>_quota_column_hardening.sql", "db/prepared/README.md", "db/hosted/**", "lib/capabilities/**", "lib/admin/** (legacy quota write path removed or repointed per the parent; never a second writer)", "app/admin/services/** (call-site only)", "tests/**"], "delivers": ["writer verbs open/close with cause_identity idempotency", "projection rule", "REVOKE of every other writer of stella_monthly_quota / stella_plan_label", "single-writer static census"]},
+   {"id": "PB-A06", "title": "CE-8.P + CB-8: Pilot platform commercial control plane", "depends_on": ["PB-A03", "PB-A04", "PB-A05"], "external_depends_on": ["S5P-1..S5P-6 (SECTION_9)", "EP-P1 (SECTION_22): DAG prerequisite of CE-8.P per MC-P4; the disposable harness used for every positive control applies the platform-bit column posture so EP-P1 holds there, and PB-N-7 alone uses a fixture that breaks it"], "PROTECTED_GRANT_REQUIRED": "YES (prepared package literals)", "write_set_ceiling": ["db/prepared/stella_<NNNN>_pilot_commercial_control_plane.sql", "db/prepared/stella_<NNNN>_rollback.sql", "db/prepared/README.md", "db/hosted/hosted-package-manifest.ts", "db/identity-context.ts (verified aal carriage only; CP-5)", "lib/admin/**", "lib/auth/** (server-side aal derivation only)", "lib/capabilities/** (basis catalogue)", "app/admin/** (new commercial route)", "tests/**"], "delivers": ["V-INSPECT, V-GOVERN, V-PREVIEW, V-ACTIVATE, V-ADJUST, V-RENEW, V-DEACTIVATE, V-LAPSE", "SECTION_12 AAL2", "SECTION_15 catalogue mechanism (no production entries)", "S5P-1..S5P-6"]},
+   {"id": "PB-A07", "title": "CB-7 runtime consumer: L3 at the ticket chokepoint, three refusals, census retarget, display consistency", "depends_on": ["PB-A03", "PB-A04", "PB-A05"], "PROTECTED_GRANT_REQUIRED": "NO", "write_set_ceiling": ["db/stella/operation-tickets.ts", "components/stella/**", "lib/stella/operation-ticket/issue-governed-ticket.ts (result mapping only)", "app/actions/stella/grounded-query.ts (result mapping only)", "lib/capabilities/**", "app/app/organization/billing/** (display consistency only; no Stripe change)", "tests/**"], "delivers": ["SECTION_16"]},
+   {"id": "PB-A08", "title": "Pilot Golden journey evidence", "depends_on": ["PB-A06", "PB-A07"], "PROTECTED_GRANT_REQUIRED": "NO", "write_set_ceiling": ["tests/e2e/**"], "delivers": ["PB-P-18"]}
+  ],
+  "serial_chokepoints": ["CP-1 db/migrations ordinal (PB-A01, PB-A02, PB-A04)", "CP-2 db/schema.ts (PB-A01, PB-A02)", "CP-4 db/prepared/stella_* inventory (PB-A02, PB-A03, PB-A05, PB-A06; SERIAL with the runtime-ACL successor lane)", "CP-5 db/identity-context.ts (PB-A06 only, aal carriage; SERIAL with tenancy S4/S5)", "CP-9 HOSTED_CHAIN manifest", "CP-10 corpus fan-out (journal, observation, baseline manifest)", "CP-11 evaluator consumer census (PB-A03, PB-A05, PB-A07)", "lib/admin/** (PB-A05, PB-A06; shared with the platform-admin lane)"],
+  "lineage": "Protected acts: PB-A01, PB-A02, PB-A03, PB-A04, PB-A05, PB-A06 (six). Measured at BASE_SHA: addendum tail v1.0.39 enumerated by the Controller; registered grant tail HPO-ODS-W2-35; W2-36 declared by v1.0.39 and not yet registered; other lanes hold expectations on the next addendum. Every Pilot lineage is DERIVED_NOT_ALLOCATED and is taken at the allocator's own base under the Controller-lag rule."
+ },
+
+ "SECTION_22_EXTERNAL_PREREQUISITES": {
+  "rule": "Facts this batch waits on but does not perform. None is an owner decision about this authority.",
+  "items": [
+   {"id": "EP-P1", "what": "Platform-bit integrity on the target environment: no role of the stella_0012 postcondition set (or its durable successor's) can UPDATE users.is_super_admin. Owned by the security ACL lane (stella_0012 / HPO-ODS-W2-36 successor).", "gates": "CE-8.P itself, as a DAG external dependency (MC-P4): CE-8.P is not executable on any catalogue where EP-P1 does not hold, and no CE-8.P closure or PILOT_BILLING_READY claim may be made for a target on which it is unproven; hence also the first real activation. Every Pilot verb additionally re-checks it at call time and refuses PLATFORM_AUTHORITY_SELF_GRANTABLE otherwise."},
+   {"id": "EP-P2", "what": "Hosted MFA factor enrollment enabled and every platform operator enrolled.", "gates": "Any Pilot verb on the target environment (AAL2 is otherwise unreachable and every verb refuses)."},
+   {"id": "EP-P3", "what": "Owner/counsel-supplied governing documents for each commercial basis to be offered (at least one non-pro-bono basis and one Pro Bono policy), whose digests become catalogue entries by a reviewed change.", "gates": "The first activation under that basis. Not PILOT_BILLING_READY itself, which is proven with test-only entries."},
+   {"id": "EP-P4", "what": "The commercial_terms instrument published with a real effective date (release LSL-03) so L1 can be current for pilot Organizations.", "gates": "Any pilot Organization using an activated capability."},
+   {"id": "EP-P5", "what": "ODS lineage for each protected act (Controller-lag rule).", "gates": "PB-A01..PB-A06."},
+   {"id": "EP-P6", "what": "Staging schema/code parity and forward-migration proof before any hosted application of this batch's DDL (release HPO-G.5 / ENV-08 posture).", "gates": "Hosted application only; no hosted APPLY is authorized here."}
+  ]
+ },
+
+ "SECTION_23_PR178_RELATIONSHIP": {
+  "PR178_DISPOSITION": "NON-CANONICAL CANDIDATE, NOT CONSUMED AS AUTHORITY, NOT EDITED. Its head ef1c5772 adds two docs files on a base (eafaaf57) that is an ancestor of BASE_SHA; neither file exists at BASE_SHA.",
+  "compatible_with": "Its nodes CC-A01..CC-A05 and CC-A10 are the SAME frozen-parent nodes this authority requires as PB-A01..PB-A05 and PB-A07. Whichever authority is certified first governs their implementation; the other re-derives at its own base (both documents carry that remeasurement rule). The Pilot deltas those nodes must additionally carry are G-1/G-2 in the gate, D-9 in CB-1's act, and SI-09/SECTION_12 on the admin surface.",
+  "manual_activation": "PR #178 SECTION_12 excludes manual activation because tenancy S5 was absent. That remains true of its own batch. This authority resolves the S5 edge for the Pilot subset only (MC-P4) and adds CE-8.P/CB-8 as PB-A06, which PR #178 does not contain.",
+  "amendment_file_collision": "PR #178 CC-A00 pre-names COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.3, COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_AMENDMENT_v1.0.1 and CE3 execution/manifest AMENDMENT_v1.0.3 files as literal paths with deep-equality content requirements (measured at ef1c5772). PB-A00 targets the same parents. PR #178 pre-names no release amendment, so MC-P7 does not collide. Content compatibility measured: PB-A00's writer admission (MC-P5) is exactly the uellix_cap_entitlement row of PR #178's proposed map; PB-A00 needs no RESOLVER_BOUND; PR #178's other roles (transfer, cancellation, bootstrap) are not admitted by PB-A00.",
+  "SYMMETRIC_CONVERGENCE_RULE": {
+   "id": "SVC",
+   "applies_to": "Every writer of an append-only amendment to the billing authority, the entitlement authority, the CE-3 execution authority or the CE-3 manifest, whichever lands first or second: PB-A00 always; any other writer from the moment PB-A00's amendments are integrated, because PB-A00 materializes this rule, verbatim in substance, INSIDE each amendment it writes, and a rule carried by a canonical parent amendment binds every later amender of that parent.",
+   "steps": [
+    "SVC-1 READ LATEST: at the writer's own base, enumerate every integrated amendment of the parent and read the LATEST canonical version as the effective parent; never write against a remembered or pre-named version.",
+    "SVC-2 NEVER OVERWRITE: a path that exists at the writer's base is frozen and is never rewritten, renamed or deleted (VERSION_COLLISION_CHECK of COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json).",
+    "SVC-3 NEXT VERSION: the writer takes the next patch version whose path is ABSENT at its base and cites the latest existing amendment in amends_amendment.",
+    "SVC-4 DEEP-EQUAL WHERE SHARED: every element both writers define (for MC-P5, the CE-5 writer role's privileges and policy pair) must be deep-equal in substance to the latest canonical version; if already present and equal it is cited, not re-admitted; if present and different, the second writer STOPS (fail closed) and escalates. Elements only one writer defines are additive and must not contradict the other's.",
+    "SVC-5 NO SILENT CONVERGENCE: a pre-named literal path found occupied is a STOP-and-re-derive condition for its writer, never an overwrite and never a silent rename by a third party."
+   ],
+   "cannot_be_imposed_from_here": "This authority cannot bind PR #178 before PB-A00's amendments are integrated, and it does not edit PR #178. The ordering precondition is recorded in PR178_ORDERING_PRECONDITION rather than pretending the conflict disappears."
+  },
+  "PR178_ORDERING_PRECONDITION": {
+   "if_PB_A00_integrates_first": "PR #178 CC-A00's literal target paths (billing v1.0.1, entitlement v1.0.3, CE-3 v1.0.3) will already be occupied by PB-A00's amendments. CC-A00 as written is then NOT EXECUTABLE: under SVC (carried by the now-canonical parent amendments) and PR #178's own re-derive-at-own-base rule, its lane must re-derive against the latest versions, take the next free versions, and deep-equal the shared uellix_cap_entitlement admission, which requires a successor revision of PR #178 by its own lane. Nothing in this authority performs or authorizes that revision.",
+   "if_PR178_integrates_first": "PB-A00 applies SVC-1..SVC-5 against PR #178's integrated amendments: it takes the next free versions, cites them in amends_amendment, cites (does not re-admit) an equal uellix_cap_entitlement row, and STOPS if the row differs or if any MC-P1..MC-P6 content contradicts PR #178's.",
+   "concurrent": "Two unintegrated candidates may not both claim the same version. The first to integrate holds it; the other re-derives before its own act opens.",
+   "residual": "The version-name conflict does NOT disappear; it is converted into an ordering precondition on whichever lane integrates second."
+  },
+  "legacy_admin_quota_path": "PR #178 repoints /admin/services to a PLATFORM_ADMIN grant path (PA-3). The Pilot neither requires nor forbids that repoint; it forbids only a second legacy-column writer and does not expose PA-3 in the Pilot plane.",
+  "COMMERCIAL_CORE_USABLE": "PR #178 U-1..U-8 is the only elaboration in any branch; it is not frozen here and is not contradicted."
+ },
+
+ "SECTION_24_REQUIRED_CONTROLS": {
+  "classification": "BINDING. The EXHAUSTIVE, CLOSED set of control ids the companion manifest MUST carry, in BOTH directions. Namespace PB-P-n / PB-N-n / PB-M-n, disjoint from P-0n/N-0n/M-0n (billing), P-n/N-n/M-n (entitlement), CE3-* and CC-* (PR #178). A control derived from a parent control names the parent id in its description.",
+  "positive": ["PB-P-1", "PB-P-2", "PB-P-3", "PB-P-4", "PB-P-5", "PB-P-6", "PB-P-7", "PB-P-8", "PB-P-9", "PB-P-10", "PB-P-11", "PB-P-12", "PB-P-13", "PB-P-14", "PB-P-15", "PB-P-16", "PB-P-17", "PB-P-18", "PB-P-19", "PB-P-20", "PB-P-21", "PB-P-22", "PB-P-23"],
+  "negative": ["PB-N-1", "PB-N-2", "PB-N-3", "PB-N-4", "PB-N-5", "PB-N-6", "PB-N-7", "PB-N-8", "PB-N-9", "PB-N-10", "PB-N-11", "PB-N-12", "PB-N-13", "PB-N-14", "PB-N-15", "PB-N-16", "PB-N-17", "PB-N-18", "PB-N-19", "PB-N-20", "PB-N-21", "PB-N-22", "PB-N-23", "PB-N-24", "PB-N-25", "PB-N-26", "PB-N-27", "PB-N-28", "PB-N-29", "PB-N-30", "PB-N-31", "PB-N-32", "PB-N-33", "PB-N-34", "PB-N-35", "PB-N-36", "PB-N-37", "PB-N-38", "PB-N-39", "PB-N-40", "PB-N-41", "PB-N-42", "PB-N-43", "PB-N-44", "PB-N-45", "PB-N-46", "PB-N-47", "PB-N-48", "PB-N-49", "PB-N-50", "PB-N-51", "PB-N-52", "PB-N-53", "PB-N-54", "PB-N-55", "PB-N-56", "PB-N-57"],
+  "mutation": ["PB-M-1", "PB-M-2", "PB-M-3", "PB-M-4", "PB-M-5", "PB-M-6", "PB-M-7", "PB-M-8", "PB-M-9", "PB-M-10", "PB-M-11", "PB-M-12", "PB-M-13", "PB-M-14", "PB-M-15", "PB-M-16", "PB-M-17", "PB-M-18"],
+  "counts_by_class": {"positive": 23, "negative": 57, "mutation": 18},
+  "count": 98,
+  "ss_delta": "SS-R1 adds 18 authority-level controls, one per steady-state control of the release amendment EPR block: C-SS-15 -> PB-P-23 and C-SS-1..C-SS-14, C-SS-16..C-SS-18 -> PB-N-41..PB-N-57 in order; it rewrites PB-P-22, PB-N-39 and PB-N-40 to the act-bound per-candidate-SHA semantic. The R3 set of 80 ids is preserved unchanged as a subset.",
+  "r3_delta": "R3 adds ONE authority-level control, PB-N-40 (EPR preparation is not operational enablement; no circularity; no preparation loophole), and rewrites PB-N-39 and PB-P-22 to the single EPR semantic. The R2 set of 79 ids is preserved unchanged as a subset.",
+  "r2_delta": "The R1 set of 68 ids is preserved unchanged as a subset (20/30/18). R2 adds 11 authority-level controls for the release successor and NB-4: PB-P-21, PB-P-22, PB-N-31..PB-N-39. Each is deterministic over repository JSON, executable now, and is first materialized as a test file by PB-A00.",
+  "mission_proof_coverage": {
+   "unauthorized actor refused": "PB-N-1",
+   "Platform Admin without required AAL2 refused": "PB-N-2",
+   "Platform Admin does not obtain tenant membership": "PB-N-4",
+   "Platform commercial action cannot read tenant content": "PB-N-5",
+   "NULL/empty reason refused": "PB-N-6",
+   "self-grant refused": "PB-N-7",
+   "no current commercial acceptance -> activation refused": "PB-N-8 (realized at the evaluation boundary per SECTION_13)",
+   "ACTIVE_WITHOUT_STRIPE only through explicit governed transition": "PB-N-9, PB-N-25",
+   "valid ACTIVE_WITHOUT_STRIPE + entitlement -> Stella allowed": "PB-P-5",
+   "missing entitlement -> refused": "PB-N-10",
+   "BLOCKED -> refused": "PB-N-11",
+   "CAPPED N -> N semantics": "PB-P-6, PB-N-24",
+   "commercial suspension -> capability refused": "PB-N-12",
+   "commercial suspension keeps membership/access": "PB-N-13, PB-P-11",
+   "cross-org grant isolation": "PB-N-14",
+   "credit/plan adjustment preserves append-only history": "PB-P-8, PB-N-15",
+   "audit includes actor/reason/before/after/reference": "PB-P-4, PB-N-16",
+   "Pro Bono uses governed policy/version": "PB-P-16, PB-N-17",
+   "Pro Bono does not imply unlimited": "PB-N-18",
+   "partial failure cannot diverge state and entitlement": "PB-N-19",
+   "direct SQL/app-role mint bypass refused": "PB-N-20",
+   "no new capability key": "PB-N-21",
+   "no Stripe call for the Pilot Golden Journey": "PB-N-22, PB-P-18",
+   "R1 PILOT_READY formally reachable without PV3/SEC7 under ACTIVE_WITHOUT_STRIPE": "PB-P-21",
+   "R2 PV3/SEC7 remain mandatory on the later full-commercial route": "PB-P-22",
+   "R3 removing the successor release amendment makes the authority fail": "PB-N-31",
+   "R4 marking PV3/SEC7 PASS during Pilot fails": "PB-N-32",
+   "R5 deleting PV3/SEC7 fails": "PB-N-33",
+   "R6 moving unrelated provider/security gates fails": "PB-N-34",
+   "R7 skipping RELEASE_CANDIDATE fails": "PB-N-35",
+   "R8 requiring CAP-03 in Pilot fails": "PB-N-36",
+   "R9 making full Commercial Core reachable without Stripe fails": "PB-N-37",
+   "R10 removing EP-P1 dependency from CE-8.P fails": "PB-N-38",
+   "Pilot payment provider remains OFF (EPR)": "PB-N-39",
+   "EPR preparation is not operational enablement (IC-R2 B-1)": "PB-N-40",
+   "C-SS-1 OE takes a candidate SHA": "PB-N-41",
+   "C-SS-2 PREP depends on d_E isolation, not global OE": "PB-N-42",
+   "C-SS-3 no continuous effective EPR invariant": "PB-N-43",
+   "C-SS-4 complete evidence binding": "PB-N-44",
+   "C-SS-5 evidence SHA == governed act SHA": "PB-N-45",
+   "C-SS-6 no automatic PASS carry-forward": "PB-N-46",
+   "C-SS-7 T_E not production and != promotion target": "PB-N-47",
+   "C-SS-8 isolation proof observed": "PB-N-48",
+   "C-SS-9 provider configuration identity congruent": "PB-N-49",
+   "C-SS-10 shared T_E mutation invalidates affected evidence": "PB-N-50",
+   "C-SS-11 old model-provider PROVIDER_DARK_PROOF is not payment proof": "PB-N-51",
+   "C-SS-12 rollback restoring payments is an enablement act": "PB-N-52",
+   "C-SS-13 Pilot darkness is SHA-scoped and fail-closed": "PB-N-53",
+   "C-SS-14 cumulative 76/78 preserved": "PB-N-54",
+   "C-SS-15 steady-state SHA1-live -> SHA2-PREP -> SHA2-PASS -> SHA2-promote is reachable": "PB-P-23",
+   "C-SS-16 GO_LIVE issue is explicitly open/fail-closed": "PB-N-55",
+   "C-SS-17 OD-EPR-SS present while RSC-1..8 unchanged": "PB-N-56",
+   "C-SS-18 premature OE(S) before PASS is refused": "PB-N-57"
+  },
+  "act_coverage_rule": "Every act PB-A01..PB-A08 is named by at least one positive and one negative control; PB-A00 is covered by PB-P-1 and PB-N-9 (the amended transition surface) and, for its owned release amendment, by PB-P-21, PB-P-22 and PB-N-31..PB-N-37."
+ },
+
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "NO implementation of any act. NO db/**, lib/**, app/**, components/**, scripts/**, tests/**, .github/**, supabase/** or vercel/** change.",
+  "NO migration, prepared SQL, hosted APPLY, Supabase mutation, Vercel mutation, environment or provider change.",
+  "NO Stripe action.",
+  "NO ODS addendum, HPO grant declaration or registration, Controller enumeration, migration ordinal, prepared ordinal, hosted ordinal, branch or SQLSTATE allocation.",
+  "NO edit of a frozen, sealed or certified artifact; the parent amendments of SECTION_8 are materialized only by PB-A00 after certification.",
+  "NO new entitlement capability key, grant source, limit_kind or audit verb.",
+  "NO price, discount or list value.",
+  "NO platform read, write, inference or recording of legal acceptance.",
+  "NO support capability, impersonation or platform-principal model change; NO claim of MO-07 closure.",
+  "NO acceptance of any PILOT_READY stop line.",
+  "NO modification of PR #178."
+ ],
+ "OWNER_DECISIONS_REQUIRED": {
+  "count": 0,
+  "r2_note": "Zero OUTSTANDING. R1 missed one owner-level question (IC-R1 B-1: whether PV3/SEC7 are prerequisites of PILOT_READY and how HPO-G.6/G.7 apply to a Stripe-OFF Pilot); the Product Owner answered it by launching R2, recorded as release_scope_confirmation RSC-1..RSC-8 in the owner record. SS-R1: the IC-R3-FINAL circuit breaker raised one owner-level question (how PV3/SEC7 are re-produced for a new SHA while an older SHA is live); the Product Owner answered it (OD-EPR-SS-1..OD-EPR-SS-9, ODR-1..ODR-3, owner record epr_steady_state_decisions). Zero remain outstanding; ODR-1 is recorded as an OPEN, fail-closed GO_LIVE question (OF-PB-9), not as a decision required by this authority.",
+  "candidates_examined_and_derived": [
+   {"candidate": "Is ACTIVE_WITHOUT_STRIPE semantically sufficient?", "disposition": "YES. HPO-B.7 / OD-7 plus the frozen state object; PILOT-BILLING-01 stage-scopes. Gaps are technical (MC-P1, MC-P2, MC-P3)."},
+   {"candidate": "Does the Pilot need S4 + full S5?", "disposition": "NO. MC-P4 technical amendment; tenancy authority untouched."},
+   {"candidate": "Does the Pilot need the full platform roles / support / compliance architecture?", "disposition": "NO. SECTION_10.answer_to_G."},
+   {"candidate": "New persistence for ProBonoPolicyVersion?", "disposition": "NO. Catalogue + snapshot (SECTION_15). The arrangement relation D-9 is needed for MANUAL_ACTIVATION's frozen inputs, not for Pro Bono."},
+   {"candidate": "New grant source or capability key?", "disposition": "NO. COMMERCIAL_EXCEPTION and stella.grounded_query suffice."},
+   {"candidate": "Commercial basis vocabulary", "disposition": "NOT FROZEN HERE. Mechanism only; entries come from owner/counsel documents (EP-P3). The only owner-named distinction, pro bono vs not, is an entry property."},
+   {"candidate": "Activation-time L1 check", "disposition": "NOT TAKEN; frozen L1 authority forbids the platform read and the evaluation-boundary gate already enforces the precondition (SECTION_13). An owner/security/legal ratification would be required to add a platform read path; it is not needed for PILOT_BILLING_READY."},
+   {"candidate": "Pro Bono per-project limits", "disposition": "DEFERRED with an explicit boundary; not needed for PILOT_BILLING_READY."},
+   {"candidate": "Conflict of interest (platform operator activating an Organization it is a member of)", "disposition": "No ratified separation-of-duties rule exists for non-destructive platform acts (HPO-D.4 covers destructive deletion only). Recorded, audited, not prohibited here; OF-PB-5."}
+  ]
+ },
+ "OPEN_FINDINGS": {
+  "blocking": [],
+  "unknown": [],
+  "non_blocking": [
+   {"id": "OF-PB-1", "class": "EXTERNAL_SECURITY_DEPENDENCY", "finding": "users.is_super_admin is self-writable under the baseline grant unless stella_0012 or its durable successor is applied; stella_0012 is not a HOSTED_CHAIN member and hosted state is UNKNOWN from the repository.", "disposition": "EP-P1 plus a per-call refusal inside every Pilot verb (PLATFORM_AUTHORITY_SELF_GRANTABLE). Owned by the security ACL lane."},
+   {"id": "OF-PB-2", "class": "STAGE_STOP_LINE_NOT_OWNED", "finding": "SSL-03 blocks PILOT_READY while the platform boundary is a single flag that is also a tenant role value.", "disposition": "Not resolved and not worsened: every Pilot verb requires flag AND AAL2 AND platform-bit integrity. PILOT_READY needs SEC2 closure or written owner acceptance, outside this authority."},
+   {"id": "OF-PB-3", "class": "MISSION_PROOF_REALIZED_DIFFERENTLY", "finding": "The requested proof 'no current commercial acceptance -> activation refused' cannot be realized as an activation-time refusal without a platform read of tenant acceptance evidence that frozen L1 authority forbids.", "disposition": "Realized at the evaluation boundary (SECTION_13, PB-N-8), which is where the frozen authority places L1. Adding an activation-time check would need a ratified platform read path plus security and legal review; not required for PILOT_BILLING_READY."},
+   {"id": "OF-PB-4", "class": "BOUNDED_RESIDUAL", "finding": "Between a review horizon passing and V-LAPSE executing, the projection keeps its last value; a server-side direct SQL mint could pass L2 in that window while L3 refuses.", "disposition": "Tenant-unreachable (uellix_app-only EXECUTE, schema not PostgREST-exposed); bounded by V-LAPSE and by the single-mint-caller census (PB-N-27)."},
+   {"id": "OF-PB-5", "class": "UNRATIFIED_POLICY_SPACE", "finding": "No ratified rule forbids a platform operator from activating an Organization in which the same person holds a membership.", "disposition": "Audited (actor recorded); a prohibition would be a new product/security ratification."},
+   {"id": "OF-PB-6", "class": "SIBLING_COLLISION", "finding": "PR #178 CC-A00 and PB-A00 target the same parent amendment files; PR #178 pre-names literal versions.", "disposition": "SECTION_23 SYMMETRIC_CONVERGENCE_RULE, carried into every PB-A00 amendment, plus PR178_ORDERING_PRECONDITION; not resolved by editing PR #178, and not claimed to disappear."},
+   {"id": "OF-PB-7", "class": "SELF_CERTIFICATION_LIMIT", "finding": "This authority is not self-certified; every derivation marked DERIVED is challengeable.", "disposition": "Independent certification is the next gate."},
+   {"id": "OF-PB-8", "class": "RELEASE_LEDGER_REDERIVATION_PENDING", "finding": "ENV-13 still requires the release ledger to be re-derived before STAGING_ALIGNED; that successor does not exist.", "disposition": "RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1 QC-4: the re-derived ledger must carry RS-1, RS-2 and EPR forward or supersede them by its own reasoned successor; restoring the v1.0.0 placement or dropping EPR silently is a defect of that successor."},
+   {"id": "OF-PB-9", "class": "GO_LIVE_PAYMENT_PATH_OPEN_FAIL_CLOSED", "finding": "ODR-1: the companion authority's GO_LIVE stage requires re-evidence against the PRODUCTION target of every gate evidenced against staging or Preview, while EPR admits PV3 and SEC7 evidence only from an isolated evidence deployment whose target is never a production identifier (ISO-4).", "disposition": "OPEN and FAIL-CLOSED by owner disposition ODR-1: no GO_LIVE payment-path readiness is claimed and no GO_LIVE declaration may cite PV3 or SEC7 as re-evidenced against production on d_E or Preview evidence; resolution needs a successor owner adjudication. Blocks neither PILOT_READY nor PRODUCTION_READY."},
+   {"id": "OF-PB-10", "class": "DIRECTION_TERM_INTERPRETED", "finding": "The steady-state direction's promotion check 'promotion target has required capacity packages' names no repository term: 'capacity package' occurs nowhere under docs/ops.", "disposition": "Read as the billing capability database packages of PV3/SEC7 ('the capability packages are applied to the target') observed on the promotion target (release amendment EPR promotion ACT-6). Challengeable at independent certification; if entitlement capacity was meant, ACT-6 needs a reasoned successor."}
+  ]
+ },
+ "SS_REMEDIATION": {
+  "trigger": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R3-FINAL = FAIL with one blocking finding: residual post-enablement circularity (preparation was defined only while every target-wide enablement member was false and PASS was bound to SHA and target, so after the first enablement no later SHA could produce PV3/SEC7 evidence without a global payment outage). Circuit breaker -> owner adjudication CV1-PILOT-BILLING-EPR-STEADY-STATE-OWNER-ADJUDICATION-R1, not R4.",
+  "owner_adjudication": "OD-EPR-SS-1..OD-EPR-SS-9 and ODR-1..ODR-3, appended to the companion owner record (ratifications[0].epr_steady_state_decisions). RSC-1..RSC-8 unchanged.",
+  "scope_rule": "SS-R1 changes EPR wording, its restatements and its controls only. No act, verb, readiness item, S5P property, invariant statement, external prerequisite, stage, gate or gate field changes. Preserved: RS-1/RS-2 (PV3 and SEC7 at PRODUCTION_READY), cumulative PRODUCTION_READY 76 and GO_LIVE 78, EPR-2, EPR-3, NB-1..NB-5, S5P + EP-P1 before CE-8.P, full S5 before CE-8.R, PR #178 convergence, CAP-03 FORBIDDEN IN PILOT, HPO-G.6 scope-aware, HPO-G.7 unchanged. The R3 80-control set is preserved as a subset; PB-P-23 and PB-N-41..PB-N-57 (C-SS-1..C-SS-18) are added; OF-PB-9 (ODR-1) and OF-PB-10 are added.",
+  "B-1": "RESOLVED BY ACT-BOUND PER-CANDIDATE-SHA SEMANTIC, pending CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-IC-R1: release amendment EPR block (scope PER_CANDIDATE_SHA, rule EPR-1..EPR-3, operational_enablement OE(S), governed_enablement_acts GEA-1..GEA-4, evidence_deployment d_E ISO-1..ISO-5, preparatory_activity PREP-1..PREP-4 conditioned on d_E only, evidence_binding, provider_configuration_identity, evidence_freshness FR-1..FR-6, payment_provider_dark_proof, promotion ACT-1..ACT-8, rollback, retest, go_live, steady_state_reachability, steady_state_controls, mutation_contract) and every restatement: release amendment what_this_amendment_does, RS-1 reason, HPO-G.6, SC-4, SC-6, SC-7, QC-1, QC-7, NON_WEAKENING_PROOF direction, self_check; this file SECTION_1 conflict analysis, SECTION_3 release_binding, SECTION_4 CAP-03 and PV3/SEC7 rows, SECTION_6 deferred_release_gates_rule, SECTION_8 MC-P7 amendment_content, SECTION_18 SI-04, SECTION_24; manifest PB-P-22, PB-N-39, PB-N-40, PB-P-23, PB-N-41..PB-N-57."
+ },
+ "R3_REMEDIATION": {
+  "trigger": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R2 = CERTIFICATION_FAIL with exactly one blocking finding (B-1): EPR carried two incompatible semantics, and PV3's own criterion counted as enablement, so the full commercial route to PRODUCTION_READY was formally unreachable.",
+  "owner_adjudication": "Supplied by the Product Owner in the R3 directing text and transcribed in substance at RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json#PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE.owner_adjudication_r3. No owner artifact or RSC id is added.",
+  "scope_rule": "R3 changes EPR wording and its controls only. No act, verb, readiness item, S5P property, invariant, external prerequisite, stage, gate or gate field changes; NB-1..NB-5 are untouched; the R2 79-control set is preserved as a subset and PB-N-40 is added.",
+  "B-1": "RESOLVED BY SINGLE SEMANTIC, pending IC-R3: release amendment EPR block (rule EPR-1..EPR-3, preparatory_activity PREP-1..PREP-4, operational_enablement_means_any_of OE-1..OE-5, fail_closed, reachability_proof) and every restatement: release amendment what_this_amendment_does, RS-1 reason, HPO-G.6, SC-4, QC-1, NON_WEAKENING_PROOF direction, self_check; this file SECTION_1 conflict analysis, SECTION_3 release_binding, SECTION_4 CAP-03 and PV3/SEC7 rows, SECTION_6 deferred_release_gates_rule, SECTION_8 MC-P7 amendment_content; manifest PB-P-22, PB-N-39, PB-N-40."
+ },
+ "R2_REMEDIATION": {
+  "trigger": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R1 = CERTIFICATION_FAIL with exactly one blocking finding (B-1); every deterministic gate otherwise passed.",
+  "scope_rule": "R2 corrects B-1 and NB-1..NB-5 and nothing else. No act, verb, readiness item, S5P property, invariant or external prerequisite is added or removed; the R1 68-control set is preserved as a subset.",
+  "B-1": "RESOLVED BY SUCCESSOR, pending IC-R2: SECTION_8.MC-P7 + companion_release_amendment; SECTION_1 precedence and conflict_analysis; SECTION_3.relation_to_PILOT_READY; SECTION_4 new row; SECTION_6.DEFERRED_RELEASE_GATES; SECTION_8.not_amended; PB-A00 ownership; owner record R2.",
+  "NB-1": "PB-P-18 now expects entitlement_absent after V-DEACTIVATE (no live grant remains; evaluator NO_LIVE_GRANT). The runtime semantic was not changed to fit the literal.",
+  "NB-2": "One semantic chosen: V-DEACTIVATE and V-LAPSE open NO grant of any source; the BOOTSTRAP_DEFAULT replacement clause is removed; projection 0; runtime entitlement_absent (SECTION_10 V-DEACTIVATE effect and SECTION_11.V_DEACTIVATE_and_V_LAPSE_checks; PB-P-10, PB-N-30). No grant source invented.",
+  "NB-3": "MC-P4 now rewrites 'S5 BEFORE CE-8.' as 'S5 BEFORE CE-8.R' and 'S5P AND EP-P1 BEFORE CE-8.P', and CB-8.depends_on CE-8 as CE-8.P; CE-8.R keeps tenancy S5 in full.",
+  "NB-4": "EP-P1 is an external_depends_on of CE-8.P in the MC-P4 amendment content and of PB-A06; CE-8.P is declared not executable on any catalogue where EP-P1 does not hold (SECTION_22, PB-N-38).",
+  "NB-5": "SECTION_23.SYMMETRIC_CONVERGENCE_RULE (carried into every PB-A00 amendment) plus PR178_ORDERING_PRECONDITION; PR #178 not edited; the conflict is recorded as an ordering precondition, not claimed to disappear.",
+  "NB-6_NB-8": "NOT REMEDIATED (non-mandatory per mission direction; no scope-neutral trivial fix was taken). The PB vocabulary is not renamed, MFA is not redesigned, Real-PG scope is not broadened. The IC-R1 report's own text controls their content; this lane does not restate it."
+ },
+ "self_check": {
+  "note": "Deterministic, test-free checks verifiable by a one-line node or python command over this file, its companion manifest and its companion release amendment.",
+  "expected_act_ids": ["PB-A00", "PB-A01", "PB-A02", "PB-A03", "PB-A04", "PB-A05", "PB-A06", "PB-A07", "PB-A08"],
+  "expected_acts_with_protected_grant": ["PB-A01", "PB-A02", "PB-A03", "PB-A04", "PB-A05", "PB-A06"],
+  "expected_contradiction_ids": ["MC-P1", "MC-P2", "MC-P3", "MC-P4", "MC-P5", "MC-P6", "MC-P7"],
+  "expected_readiness_items": 11,
+  "expected_matrix_rows": 29,
+  "expected_verbs": ["V-INSPECT", "V-GOVERN", "V-PREVIEW", "V-ACTIVATE", "V-ADJUST", "V-RENEW", "V-DEACTIVATE", "V-LAPSE"],
+  "expected_S5P_properties": 6,
+  "expected_security_invariants": 18,
+  "expected_control_counts": {"positive": 23, "negative": 57, "mutation": 18, "total": 98},
+  "expected_r3_control_subset_count": 80,
+  "expected_r1_control_subset_count": 68,
+  "expected_external_prerequisites": 6,
+  "expected_open_findings_non_blocking": 10,
+  "expected_owner_decisions": 0,
+  "checks": [
+   "SECTION_21.acts ids equal expected_act_ids in order; acts whose PROTECTED_GRANT_REQUIRED starts with 'YES' equal expected_acts_with_protected_grant",
+   "SECTION_8 carries exactly the seven MC-P ids plus not_amended and rule; MC-P7.materialization names companion_release_amendment and that path exists in the same commit",
+   "SECTION_3.PILOT_BILLING_READY.items.length == 11; SECTION_4.rows.length == 29",
+   "SECTION_10.closed_verb_set.verbs ids equal expected_verbs",
+   "SECTION_9 has exactly six S5P-n keys",
+   "SECTION_18.invariants.length == 18 and every control id they cite is in SECTION_24",
+   "SECTION_24 id lists have the declared counts, are unique, and equal (as sets) the companion manifest's control ids in BOTH directions",
+   "every value in SECTION_24.mission_proof_coverage names only ids present in SECTION_24",
+   "SECTION_22.items.length == 6; OPEN_FINDINGS.blocking and unknown are empty; non_blocking.length == 10; OWNER_DECISIONS_REQUIRED.count == 0",
+   "the R1 control ids PB-P-1..20, PB-N-1..30, PB-M-1..18 are all still present",
+   "SECTION_1.order names RELEASE_GATE_LEDGER_v1.0.0, STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1, COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1 and RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1; SECTION_8.not_amended does not list the release authority as not amended",
+   "SECTION_8.MC-P4.amendment_content names EP-P1 as an external dependency of CE-8.P and keeps tenancy S5 on CE-8.R",
+   "the companion release amendment's self_check checks all hold (PB-P-21, PB-P-22, PB-N-31..PB-N-37), and its EPR steady_state_controls C-SS-1..C-SS-18 map one-to-one onto PB-P-23 and PB-N-41..PB-N-57",
+   "no ODS addendum version, HPO id, migration ordinal, prepared ordinal, hosted ordinal, branch or SQLSTATE is stated as ALLOCATED anywhere; every such identifier appears only inside a measurement, a derivation or a prohibition",
+   "no new capability key, grant source literal, limit_kind literal or audit verb is introduced"
+  ]
+ },
+ "final_state": "PILOT_BILLING_EXECUTION_AUTHORITY_SS_R1_FROZEN_WAITING_FOR_INDEPENDENT_CERTIFICATION_AND_LINEAGE_ALLOCATION",
+ "READY_FOR_IMPLEMENTATION": "NO_UNTIL_CERTIFIED_AND_PB_A00_INTEGRATED_AND_EACH_PROTECTED_ACT_LINEAGE_GRANTED",
+ "next_gate": "CV1-PILOT-BILLING-EPR-STEADY-STATE-SUCCESSOR-IC-R1. This package is NOT self-certified and MUST NOT be merged before an independent lane certifies it, together with its owner record, manifest and companion release amendment, against the frozen parents named in SECTION_1, bounded to the IC-R3-FINAL blocking finding, the owner steady-state decisions and non-regression of R3."
+}
