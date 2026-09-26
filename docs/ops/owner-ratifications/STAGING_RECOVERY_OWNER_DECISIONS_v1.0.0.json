@@ -1,0 +1,215 @@
+{
+  "package_id": "STAGING_RECOVERY_OWNER_DECISIONS",
+  "version": "1.0.0",
+  "artifact_id": "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_BACKUP__NO_RESTORE__NO_DATABASE_MUTATION__NO_PROVIDER_CONFIGURATION_CHANGE__NO_STAGE_A_AUTHORIZATION",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-RECOVERY-OWNER-RATIFICATION-R1",
+  "lane": "codex/cv1-staging-recovery-authority-r1",
+  "role": "COMMERCIAL_V1_STAGING_RECOVERY_OWNER_RATIFICATION_MATERIALIZER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_MATERIALIZATION",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Code Desktop (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "candidate_branch": "codex/cv1-staging-recovery-authority-r1",
+    "CANDIDATE_HEAD_AT_MATERIALIZATION": "afbf061659b4613ae6988a573ba35863a9d74e93",
+    "CANDIDATE_TREE_AT_MATERIALIZATION": "625fd4e96cfefcb84cc93918e2f6efd3139808e3",
+    "pull_request": "https://github.com/lorenzozanello/uellix-antigravity/pull/205 (DRAFT, not merged)",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty).",
+    "integration_ref_unchanged": "origin/integration/commercial-v1 re-asserted at 537487ac7b102d51f553fcb8f5cfe19614e113d8 at the opening of this continuation lane, identical to the frozen base of the authoring lane."
+  },
+
+  "companion_authority": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+  "companion_manifest": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+
+  "authority_binding": {
+    "rule": "The decisions below are ratified against an EXACT artifact content, not against a title. Every identifier here was derived mechanically by git, never transcribed from prose.",
+    "AUTHORITY_BLOB_SHA": "154c3d1d396784ae7189b8088669b0ef8231de67",
+    "AUTHORITY_BLOB_SHA_derivation": "git rev-parse afbf061659b4613ae6988a573ba35863a9d74e93:docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+    "MANIFEST_BLOB_SHA": "4dfe95774529e65287e51456842f89a2f0a498f9",
+    "MANIFEST_BLOB_SHA_derivation": "git rev-parse afbf061659b4613ae6988a573ba35863a9d74e93:docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+    "AUTHORITY_INTRODUCING_COMMIT": "afbf061659b4613ae6988a573ba35863a9d74e93",
+    "AUTHORITY_INTRODUCING_COMMIT_derivation": "git log --format=%H -1 -- docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json",
+    "why_a_blob_sha_and_not_only_a_commit_sha": "A commit sha identifies a tree that later commits on the same branch will supersede. A blob sha identifies the EXACT BYTES the owner ratified against. If a successor lane amends the authority, the blob sha stops matching and this record is visibly scoped to the prior content rather than silently inherited by the new content.",
+    "binding_rule": "If the authority's blob sha changes, THIS RECORD DOES NOT AUTOMATICALLY CARRY FORWARD to the new content. A successor must re-verify that OD-3, OD-5 and OD-6 still say what they said here, and must record that re-verification. Silence is not carry-forward."
+  },
+
+  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_PRIOR_TO_THIS_MATERIALIZATION_LANE. The three decisions below were ratified by the product/mission owner and supplied verbatim to this lane as its directing text. THIS FILE IS NOT A VERBATIM TRANSCRIPT of any chat, and it is not a new adjudication. It is the canonical normalized ratification record so that successor lanes can cite a stable repository artifact instead of re-deriving, re-litigating or informally re-summarizing decisions the owner has already made. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout: a ratification is binding product intent; a measurement is a falsifiable claim about the codebase that any successor lane may and should re-measure. Nothing below is a measurement.",
+
+  "precedence_note": "This record is canonical for product-owner intent on OD-3, OD-5 and OD-6 of the companion authority ONLY. It does NOT override executable FIB/ODS/database/security authority, and it does NOT by itself amend the companion authority, docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json, docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json or its amendment v1.0.1. The repository hierarchy (CLAUDE.md section 2) places active release-process authority above an owner record of this class; a bare owner record therefore cannot by itself make an act execution-effective, which is exactly why Lane CV1-ENV-O2 failed closed, as recorded at docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json#precedence_note. Here, unlike the ENV case, NO companion amendment is required for OD-5 and OD-6: the companion authority already enumerates the decision space for each and already states what each unlocks, so this record SELECTS from an existing space rather than widening one. OD-3 is different and is treated separately — see ratification_is_not_implementation and recorded_implementation_gaps. Where this record and the companion authority are read together, the companion authority's normative definitions and predicates control.",
+
+  "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen or re-adjudicate OD-3, OD-5 or OD-6, and do NOT reopen, rewrite or weaken the companion authority's ADJUDICATIONS, its POST_RESTORE_INVARIANTS, its DATA_PROTECTION_IN_A_REHEARSAL_RESTORE postures, its RETENTION_AND_DISPOSAL rules, or ledger gates D1, D2, D3, D4, D5, S8 and P5. Absence of implementation is not a contradiction. A conflict between this record and active executable authority that the companion authority does not resolve fails closed (STOP_FOR_AUTHORITY_CONFLICT); it is not silently resolved in either direction.",
+
+  "why_this_record_exists": {
+    "problem": "The companion authority reached final_state AUTHORED_AWAITING_OWNER_RATIFICATION precisely because three of its owner decisions are marked blocking_for_stage_A. Its own PRESTATE assertion PS-5 requires that items marked BLOCKING are ratified before any execution lane may open, and fails closed under RULE_FAIL_CLOSED_ON_UNKNOWN otherwise.",
+    "what_was_missing": "Not a measurement and not an authority. What was missing was product-owner intent on three questions the authority deliberately refused to answer for the owner: whether to quiesce or accept write loss in the pre-DDL window (OD-3), whether to accept the residual privacy risk of duplicating staging data (OD-5), and whether backup artifacts are retained or destroyed by default (OD-6).",
+    "owner_choice": "The owner elected QUIESCE over ACCEPT, conditional acceptance of the rehearsal privacy risk under the full DP-1..DP-5 posture, and DESTROY-BY-DEFAULT with retention withheld absent a separately explicit authorization.",
+    "what_this_does_not_do": "It does not open an execution lane. The companion authority's next_gate still requires independent adversarial certification after ratification, and the execution lane still carries its own prestate, its own freshness gate and its own human confirmations."
+  },
+
+  "ratification_is_not_implementation": {
+    "rule": "A RATIFICATION settles what the owner wants. An IMPLEMENTATION AUTHORITY settles which acts are permitted to achieve it. These are different artifacts and this record is only the first.",
+    "why_this_distinction_is_load_bearing_here": "The companion authority's AUTHORIZED_OPERATIONS block is declared CONJUNCTIVE AND EXHAUSTIVE: 'An operation not named here is not authorized by implication, by necessity, or by convenience.' Ratifying a posture therefore does NOT authorize the acts that posture requires, unless those acts already appear in AO-1 through AO-9.",
+    "measured_consequence_for_OD_3": {
+      "measurement": "The companion authority's AUTHORIZED_OPERATIONS enumerates exactly nine operations, AO-1 through AO-9. None of them is a quiesce. The tokens 'quiesce', 'vercel', 'deployment', 'scale' and 'flag' are all ABSENT from that block at AUTHORITY_BLOB_SHA. The single occurrence of 'runtime' inside AUTHORIZED_OPERATIONS is in AO-3's note, and it is a PROHIBITION on the capture ('It must not take any lock that blocks the runtime'), not a permission to make the runtime non-writing.",
+      "consequence": "The owner's ratified QUIESCE posture is BINDING PRODUCT INTENT and is NOT SELF-EXECUTING. The mechanism by which the bound staging runtime is made non-writing for the window is not authorized by the companion authority, and this record does not authorize it either.",
+      "disposition": "RECORDED AS AN OPEN IMPLEMENTATION GAP for a future governed lane, not resolved here and not treated as a contradiction. This is the disposition the precedent prescribes at docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json#precedence_note: 'where a decision here has no corresponding executable authority yet ... that is an open implementation gap for a future governed lane, not a contradiction to resolve here.'",
+      "explicitly_not_done": "This record does NOT edit AUTHORIZED_OPERATIONS to add a quiesce operation. Editing an authority to insert the permission its own owner record implies is exactly the silent authority expansion the operating model forbids."
+    },
+    "OD_5_and_OD_6_require_no_such_gap": "Both select from a space the companion authority already defines and already bounds. OD-5's conditions are the authority's own DP-1 through DP-5. OD-6's destroy-by-default is already the authority's stated default disposition. Neither adds an act to AUTHORIZED_OPERATIONS, and AO-9 already carries the disposal act."
+  },
+
+  "ratifications": [
+    {
+      "id": "OD-3",
+      "domain": "PRE_DDL_RECOVERY_WINDOW_INTEGRITY",
+      "companion_authority_clause": "OWNER_DECISIONS.decisions[OD-3], and the posture space defined at ADJUDICATIONS.I_maximum_permitted_age.THE_LIVE_RUNTIME_COMPLICATION",
+      "decision": "QUIESCE",
+      "statement": "For the governed pre-DDL recovery window, staging writes must be quiesced so that the no-intervening-mutation predicate can be established positively. The owner does NOT accept intentional loss of writes in that window.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "selected_from": "The companion authority offered exactly two postures, QUIESCE or ACCEPT. The owner selected QUIESCE. No third posture is created by this record.",
+      "what_this_unlocks": "It resolves the OD-3 branch of PRESTATE assertion PS-5 and supplies the content of human confirmation HC-2, which the authority defines as 'Selection of the no-intervening-mutation posture, QUIESCE or ACCEPT, with the accepted data-loss exposure stated if ACCEPT'. Because QUIESCE was selected, no accepted data-loss exposure is stated, and none may be inferred.",
+      "what_this_does_NOT_unlock": "It does NOT authorize any act that makes the runtime non-writing. See ratification_is_not_implementation.measured_consequence_for_OD_3 and IG-1.",
+      "consequence_the_owner_accepts": "QUIESCE imposes a staging write outage for the duration of the window. The companion authority records this cost at OWNER_DECISIONS.decisions[OD-3].why_not_engineering, and the owner bears it in preference to data loss.",
+      "repository_binding": "The live-runtime complication this decision answers arises because PR #201 (commit 2947161e, merged at e3f6f075) bound a runtime to the staging target. Whether that runtime was in fact writing during any particular window remains UNKNOWN and measurable only at execution time, exactly as the companion authority records."
+    },
+    {
+      "id": "OD-5",
+      "domain": "REHEARSAL_DATA_PROTECTION",
+      "companion_authority_clause": "OWNER_DECISIONS.decisions[OD-5], and the postures at DATA_PROTECTION_IN_A_REHEARSAL_RESTORE.mandatory_postures DP-1 through DP-5",
+      "decision": "ACCEPT_CONDITIONAL_ON_FULL_DP_POSTURE",
+      "statement": "The owner accepts the residual privacy risk of the isolated restore rehearsal ONLY under the full DP-1 through DP-5 posture defined by the companion authority.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "conditions": [
+        {"clause": "OD-5.1", "binds_to": "DP-1", "text": "The restored substrate must have no network egress."},
+        {"clause": "OD-5.2", "binds_to": "DP-2", "text": "The restored substrate must expose no Auth service."},
+        {"clause": "OD-5.3", "binds_to": "DP-3", "text": "The restored substrate must permit no provider calls."},
+        {"clause": "OD-5.4", "binds_to": "DP-4", "text": "The restored substrate must be single-host, non-shared and temporary."},
+        {"clause": "OD-5.5", "binds_to": "DP-5", "text": "The restored substrate must export no personal or customer rows into evidence."},
+        {"clause": "OD-5.6", "binds_to": "DATA_PROTECTION_IN_A_REHEARSAL_RESTORE.what_staging_holds.fail_closed_posture and MEASUREMENT_GAPS_RECORDED.MG-5", "text": "Until a governed classification proves otherwise, restored staging data must be treated FAIL-CLOSED as CUSTOMER_DATA."}
+      ],
+      "acceptance_is_conditional_not_general": "The acceptance is VOID if any one of OD-5.1 through OD-5.6 is not satisfied. It is not a general acceptance of duplicating staging data, and it may not be cited to justify any other copy, export, extract or snapshot of staging data made under any other authority.",
+      "what_this_unlocks": "It resolves the OD-5 branch of PS-5. It permits the rehearsal the companion authority already scopes at AO-5 through AO-7, and it permits nothing else.",
+      "what_this_does_NOT_unlock": "It does NOT authorize authoring the STAGING_FIXTURE_MANIFEST, running a CLASSIFICATION_RUN, or reclassifying any staging row. OD-5.6 deliberately assumes the restrictive class instead.",
+      "repository_binding": "The fail-closed posture is required because the instrument that would classify staging rows, a CLASSIFICATION_RUN under a STAGING_FIXTURE_MANIFEST, is assigned by docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.STAGING_FIXTURE_MANIFEST to a future governed lane and does not exist at BASE_TREE."
+    },
+    {
+      "id": "OD-6",
+      "domain": "BACKUP_ARTIFACT_CUSTODY",
+      "companion_authority_clause": "OWNER_DECISIONS.decisions[OD-6], RETENTION_AND_DISPOSAL, HUMAN_CONFIRMATION.confirmations[HC-5], CLEANUP.steps[CL-2]",
+      "decision": "DESTROY_BY_DEFAULT",
+      "statement": "The default lifecycle for rehearsal backup artifacts and restored copies is destruction after successful verification. Retention is NOT authorized by default.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "retention_exception_requirements": {
+        "rule": "Any exception to destroy-by-default requires a separately explicit authorization carrying ALL FOUR of the following. Three of four is not an authorization.",
+        "required_elements": ["purpose", "storage class or location", "retention duration", "owner authorization"],
+        "binds_to": "HC-5, which the companion authority defines as 'Authorization to retain, rather than destroy, a backup artifact, with purpose and duration'. This ratification does NOT grant HC-5. It withholds it by default and states the shape any future grant must take.",
+        "additional_element_beyond_the_authority": "The companion authority's HC-5 names purpose and duration. The owner additionally requires storage class or location, and an explicit owner authorization per exception. This is a RESTRICTION on retention, never a relaxation, and it therefore does not weaken any gate."
+      },
+      "pre_DDL_artifact_destruction_conditions": {
+        "rule": "For the immediate pre-DDL recovery artifact, destruction may occur ONLY AFTER all three of the following. This is a CONSTRAINT ON DESTRUCTION, not a permission to retain.",
+        "conditions": [
+          "the governed DDL window has completed",
+          "the target has been positively observed healthy",
+          "the artifact is no longer required for rollback or recovery under the effective authority"
+        ],
+        "why_this_matters": "Destroying the pre-DDL recovery point before the DDL is confirmed healthy would destroy the only instrument capable of recovering from that DDL. The companion authority already carries the same shape at RETENTION_AND_DISPOSAL ('A backup retained to protect a DDL is disposed of once the DDL is complete and the target is observed healthy'); the owner adds the third condition explicitly.",
+        "interaction_with_CL_2": "CLEANUP step CL-2 requires disposal or a recorded authorized retention. Under this ratification the pre-DDL artifact's disposal is DEFERRED until the three conditions hold, and that deferral is itself recorded rather than treated as a retention exception."
+      },
+      "what_this_unlocks": "It resolves the OD-6 branch of PS-5 and supplies the default that CL-2 requires.",
+      "what_this_does_NOT_unlock": "It grants no retention, names no storage location, and authorizes no artifact to exist beyond the conditions above.",
+      "repository_binding": "Disposal must be EVIDENCED. The companion authority records the reason at RETENTION_AND_DISPOSAL: 'an undisposed copy and a disposed copy look identical in a report that merely claims disposal.'"
+    }
+  ],
+
+  "unresolved_nonblocking_decisions": {
+    "rule": "These remain OPEN and UNRESOLVED exactly as the companion authority left them. This record does not decide them, does not propose values for them, and does not convert any of them into a blocker.",
+    "decisions": [
+      {"id": "OD-1", "subject": "Declare the recovery POINT objective per environment.", "status": "OPEN_UNRESOLVED", "blocking_for_stage_A": false, "blocks": "Ledger gate D2, first required at PRODUCTION_READY.", "note": "No RPO figure is declared or proposed by this record. The companion authority's measured configuration exposure of approximately 24 hours remains an INPUT to this decision and is explicitly not the decision."},
+      {"id": "OD-2", "subject": "Declare the recovery TIME objective per environment.", "status": "OPEN_UNRESOLVED", "blocking_for_stage_A": false, "blocks": "Ledger gate D2.", "note": "No RTO figure is declared or proposed. None is measurable until a restore has actually been executed, per MEASUREMENT_GAPS_RECORDED.MG-1."},
+      {"id": "OD-4", "subject": "Whether to enable PITR on staging.", "status": "OPEN_UNRESOLVED", "blocking_for_stage_A": false, "note": "Not required for Stage-A, because the governed logical recovery point supplies an exact pre-DDL point without it. Enabling PITR remains PROHIBITED to every lane in this chain."}
+    ],
+    "fail_closed_note": "Leaving OD-1, OD-2 and OD-4 open is CORRECT and is not an omission. The companion authority marks them non-blocking for Stage-A, and PRESTATE assertion PS-5 states that items marked NON_BLOCKING_FOR_STAGE_A may remain open."
+  },
+
+  "recorded_implementation_gaps": {
+    "rule": "Recorded so a successor lane does not discover them at execution time. None is repaired here, and none is a contradiction.",
+    "gaps": [
+      {
+        "id": "IG-1",
+        "gap": "The QUIESCE mechanism is not an authorized operation anywhere in this chain.",
+        "measured": "The companion authority's AUTHORIZED_OPERATIONS is CONJUNCTIVE AND EXHAUSTIVE and enumerates AO-1 through AO-9. No quiesce operation appears. The tokens quiesce, vercel, deployment, scale and flag are absent from that block at AUTHORITY_BLOB_SHA 154c3d1d396784ae7189b8088669b0ef8231de67.",
+        "consequence": "OD-3 is ratified as binding intent but cannot be executed until a governed lane authorizes the specific act that makes the bound staging runtime non-writing. That act plausibly lives in the runtime and deployment domain rather than in the recovery domain, since the binding was established by PR #201.",
+        "disposition": "OPEN. RECORDED, NOT REPAIRED. A successor authority is required. This record does not name, scope or pre-approve that mechanism, because choosing between mechanisms is an engineering and authority question that a ratification record has no standing to settle.",
+        "fail_closed": "Until IG-1 is closed, S8 cannot be satisfied under the QUIESCE posture, and the companion authority's OD-3 fail_closed clause continues to govern: 'If neither is chosen, S8 cannot be satisfied.' A posture chosen but unexecutable is not an established predicate."
+      },
+      {
+        "id": "IG-2",
+        "gap": "Positive evidence that the quiesce actually held for the whole window is not specified by any artifact in this chain.",
+        "measured": "The companion authority requires the no-intervening-mutation predicate to be established POSITIVELY rather than assumed, but its EVIDENCE block does not define a quiesce-attestation shape, because at authoring time the posture had not been selected.",
+        "consequence": "A future execution lane must define what evidence proves the window was write-free, and that evidence must be independently verifiable rather than an executor assertion, per EVIDENCE.independent_verifiability_contract.",
+        "disposition": "OPEN. RECORDED, NOT REPAIRED. Not a defect of the companion authority: it could not specify evidence for a posture the owner had not yet chosen."
+      },
+      {
+        "id": "IG-3",
+        "gap": "OD-6 defers disposal of the pre-DDL artifact until after the DDL window, but this chain authorizes no DDL.",
+        "measured": "The companion authority states at EXPLICIT_NON_AUTHORIZATIONS that it authorizes no DDL, and HC-3 records that satisfying S8 does not authorize the apply.",
+        "consequence": "The three destruction conditions in OD-6 can only be evaluated by a lane that has authority over the DDL window. They are recorded here as binding intent for that future lane.",
+        "disposition": "OPEN BY CONSTRUCTION, not a gap in this record."
+      }
+    ]
+  },
+
+  "explicit_non_authorizations": [
+    "NO backup is taken or authorized to be taken by THIS record.",
+    "NO restore is performed or authorized to be performed by THIS record.",
+    "NO restore rehearsal is opened by THIS record; the companion authority's next gate is independent certification, which has not occurred.",
+    "NO PostgreSQL mutation, DDL or DML is performed or authorized.",
+    "NO Supabase configuration is read, changed or contacted by this lane, and no hosted call of any kind was made by this lane.",
+    "NO PITR is enabled, disabled or evaluated for change.",
+    "NO Supabase project is created or deleted.",
+    "NO database password is changed and no connection string is revealed.",
+    "NO access of any kind to production project ctaxtgujyyprgynmnvtq; its unconditional veto is untouched and SSL-09 is not weakened, parameterised or worked around.",
+    "NO Stage-A authorization, NO G2 authorization and NO production migration authorization.",
+    "NO quiesce mechanism is authorized, named or pre-approved; see IG-1.",
+    "NO retention of any backup artifact is granted; HC-5 is withheld by default.",
+    "NO edit to the companion authority, its companion manifest, or any historical authority clause. The companion authority is cited by blob sha and left byte-identical.",
+    "NO gate criterion is created, weakened, enlarged or declared satisfied. D1, D2, D3, D4, D5, S8 and P5 retain their parent criteria, scope, owner, enforcement and first_required_at_stage.",
+    "NO ODS grant id, addendum ordinal, Controller allocation, W2 identifier, migration ordinal or protected-surface grant is allocated, reserved or implied.",
+    "NO decision is recorded for OD-1, OD-2 or OD-4, and no RPO or RTO value is declared or proposed."
+  ],
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 3,
+    "expected_id_set": ["OD-3", "OD-5", "OD-6"],
+    "expected_unresolved_id_set": ["OD-1", "OD-2", "OD-4"],
+    "expected_implementation_gap_count": 3,
+    "checks": [
+      "ratifications.length == 3",
+      "the set of ids in ratifications equals expected_id_set exactly, and uses the companion authority's own OD identifiers rather than a parallel id space",
+      "the set of ids in unresolved_nonblocking_decisions.decisions equals expected_unresolved_id_set exactly",
+      "the two id sets are disjoint, and their union is exactly the companion authority's six OWNER_DECISIONS ids",
+      "every ratification carries id, domain, decision, statement and status",
+      "every ratification.status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "every ratification carries BOTH a what_this_unlocks and a what_this_does_NOT_unlock field — a ratification that states only what is permitted and never what is withheld is incomplete by construction",
+      "companion_authority and companion_manifest name paths that exist in the same commit",
+      "AUTHORITY_BLOB_SHA equals git rev-parse <commit>:<companion_authority path> for the commit named in AUTHORITY_INTRODUCING_COMMIT",
+      "OD-3's decision is exactly QUIESCE and no accepted data-loss exposure is stated anywhere",
+      "OD-6 does NOT grant HC-5",
+      "no ratification statement authorizes a backup, a restore, a DDL, a deployment, a provider configuration change or an allocation",
+      "IG-1 is present — a record that ratifies QUIESCE without recording that the quiesce act is unauthorized would be asserting an executable permission it does not have"
+    ]
+  },
+
+  "required_independent_review": "This record, the companion authority and the companion manifest require INDEPENDENT adversarial certification as ONE effective package before any execution lane opens. The writing lane does not certify its own output. The certifier should specifically test IG-1: whether ratifying QUIESCE has, anywhere in this chain, silently created a permission to quiesce.",
+
+  "final_state": "OWNER_RATIFICATION_MATERIALIZED",
+  "next_gate": "INDEPENDENT_ADVERSARIAL_CERTIFICATION of the effective package: STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0 + STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0 + STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0. No backup, restore, rehearsal, quiesce, database connection or evidence materialization is authorized until that certification returns PASS, IG-1 is closed by a successor authority, and a future execution lane opens with its own prestate, freshness gate and human confirmations."
+}

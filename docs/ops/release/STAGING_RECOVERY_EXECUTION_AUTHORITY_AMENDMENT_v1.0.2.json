@@ -1,0 +1,578 @@
+{
+  "package_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_EVENT_CLASS_RECOVERY_POSTURE_AMENDMENT_TO_A_FROZEN_EXECUTION_AUTHORITY_NOT_EXECUTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_REPLACES_ONE_GLOBAL_OD_3_POSTURE_WITH_A_CLOSED_EVENT_CLASS_REGISTRY__NO_GATE_WEAKENED__NO_OPERATION_ADDED",
+  "append_only": true,
+  "mission_id": "CV1-STAGING-RECOVERY-EVENT-CLASS-AUTHORITY-AMENDMENT-R1",
+  "lane": "codex/cv1-staging-recovery-authority-r1",
+  "role": "STAGING_RECOVERY_EVENT_CLASS_AUTHORITY_AMENDMENT_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-23",
+  "materialized_by": "Claude Opus 5.5 (HPO-ODS-01 authorized primary development executor)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "GRANT_ID": null,
+
+  "SECTION_C0_FRESHNESS": {
+    "BASE_REF": "origin/codex/cv1-staging-recovery-authority-r1",
+    "BASE_SHA": "4df9e6d37de19a15560993f1d67331bfa498008b",
+    "BASE_TREE": "2c606a43825623005d3ded38581da8431ac04f26",
+    "BRANCH": "codex/cv1-staging-recovery-authority-r1",
+    "PULL_REQUEST": "https://github.com/lorenzozanello/uellix-antigravity/pull/205 (DRAFT, not merged)",
+    "INTEGRATION_AT_THIS_BASE_FOR_FRESHNESS_ONLY": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "worktree_clean_before_mutation": true,
+    "drift_rule": "If origin/codex/cv1-staging-recovery-authority-r1 is not 4df9e6d37de19a15560993f1d67331bfa498008b immediately before commit, this lane STOPS with BASE_DRIFT and this artifact is not committed. Never silently reconciled.",
+    "IMPLEMENTATION_PERFORMED": "NONE. No database connection, backup, restore, rehearsal, census, provider read requiring new authority, provider mutation, deployment, PR #201 act, DDL or DML was performed by the lane that wrote this artifact."
+  },
+
+  "SECTION_C1_EFFECTIVE_PREDECESSOR_MAP": {
+    "rule": "Derived mechanically from git at BASE_SHA, never from conversation. Blob SHAs by `git rev-parse <BASE_SHA>:<path>`; introducing commits by `git log --format=%H -1 -- <path>`; lineage by `git diff --name-status 537487ac <BASE_SHA>`, which reports exactly five ADDED files and zero modified files.",
+    "effective_recovery_package_at_BASE_SHA": [
+      {"layer": 1, "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json", "blob": "154c3d1d396784ae7189b8088669b0ef8231de67", "introduced_by": "afbf061659b4613ae6988a573ba35863a9d74e93", "class": "HISTORICAL_AUTHORITY", "status": "CONTROLLING except where v1.0.1 or this amendment names a superseded locus"},
+      {"layer": 1, "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json", "blob": "4dfe95774529e65287e51456842f89a2f0a498f9", "introduced_by": "afbf061659b4613ae6988a573ba35863a9d74e93", "class": "HISTORICAL_MANIFEST", "status": "CONTROLLING for its own 56 controls"},
+      {"layer": 2, "path": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json", "blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d", "introduced_by": "334deb691389b8306ed4b81a9d793c30bf0f94a3", "class": "HISTORICAL_OWNER_DECISION", "status": "CONTROLLING for OD-5 and OD-6; OD-3 narrowly superseded by STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json"},
+      {"layer": 3, "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "25749aee095b56e01b7a1aaa0ad2d5d37d5961fc", "introduced_by": "4df9e6d37de19a15560993f1d67331bfa498008b", "class": "SUPERSEDING_AMENDMENT (factual correction F-IC-1)", "status": "CONTROLLING for DC-1..DC-4 and its clarifications, except the loci this amendment names in SECTION_C8 and SECTION_C11"},
+      {"layer": 3, "path": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "7c0aa9d8d738d6474d38f3f4b87de245e2db9c33", "introduced_by": "4df9e6d37de19a15560993f1d67331bfa498008b", "class": "HISTORICAL_MANIFEST_AMENDMENT", "status": "CONTROLLING for its own delta controls, except the NC-23 clause repaired in SECTION_C11"}
+    ],
+    "effective_predecessor": {
+      "value": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json over docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0.json, with docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0.json as the effective owner record.",
+      "why_unambiguous": "v1.0.1 names v1.0.0 as its BASE_AUTHORITY by path and blob; v1.0.1 is the only amendment present; its precedence rule (SECTION_A10) is total over its own named loci and defers to v1.0.0 elsewhere. The owner record binds to v1.0.0 by blob 154c3d1d and v1.0.1 re-asserts that blob as unchanged. No two effective artifacts conflict on a clause this amendment touches."
+    },
+    "cross_lineage_artifacts_consumed_by_reference_not_present_in_this_tree": {
+      "rule": "The quiesce and census chain is stacked ABOVE this branch (their merge-base with BASE_SHA is BASE_SHA itself). They are DESCENDANT DRAFT artifacts: they are not in this tree, they are not effective authority at this tree, and they are cited here by commit and blob only so that the owner's answer to the question they escalated can be recorded against their exact bytes. None is edited.",
+      "artifacts": [
+        {"pr": 208, "commit": "c6eabf20764ddc69b780ab763fbb870468e6b569", "commit_short": "c6eabf20", "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_v1.0.0.json", "blob": "633d4d68173e590d7980d9317cf47c8757d7e8fb"},
+        {"pr": 208, "commit_short": "c6eabf20", "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_AUTHORITY_AMENDMENT_v1.0.1.json", "blob": "1abcefc499172874433052db8a75f03ca35f3eba", "final_state_at_blob": "CAPABILITY_GAP__QUIESCE_NOT_EXECUTABLE__OWNER_READJUDICATION_OF_RECOVERY_OD_3_REQUIRED"},
+        {"pr": 208, "commit_short": "c6eabf20", "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_v1.0.0.json", "blob": "0478c7fa30c5344ecb228e69f5d56596c5c8d89f"},
+        {"pr": 208, "commit_short": "c6eabf20", "path": "docs/ops/release/STAGING_QUIESCE_MECHANISM_TEST_MANIFEST_AMENDMENT_v1.0.1.json", "blob": "805b30c3c993b5a34bf0e140236c4edb683d4fa8"},
+        {"pr": 209, "commit": "ab7fb64b62d12e986f7b0d53b6f3e6de5c38fda6", "commit_short": "ab7fb64b", "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_v1.0.0.json", "blob": "524188090a88d9b2b06890678348b6749564fdfe", "final_state_at_blob": "AUTHORED_AWAITING_INDEPENDENT_CERTIFICATION"},
+        {"pr": 209, "commit_short": "ab7fb64b", "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.1.json", "blob": "0dec3d2a8abdd15efad470f091c3bcb469756b0f"},
+        {"pr": 209, "commit_short": "ab7fb64b", "path": "docs/ops/release/STAGING_QUIESCE_READONLY_CENSUS_AUTHORITY_ERRATA_v1.0.2.json", "blob": "92a0558fe5b4d03fb3dfb814de8f8beb7ae7ea63", "final_state_at_blob": "PIN_ERRATA_AUTHORED_AWAITING_SHORT_BOUNDED_RECERTIFICATION"}
+      ],
+      "commit_identity_note": "Full commits c6eabf20764ddc69b780ab763fbb870468e6b569 (#208 head) and ab7fb64b62d12e986f7b0d53b6f3e6de5c38fda6 (#209 head) resolved by `git rev-parse` at authoring; the blob SHAs are the binding identifiers. A reader re-derives them with `git rev-parse <commit>:<path>`.",
+      "consequence": "This amendment records how the owner's answer disposes of the quiesce and census clauses (SECTION_C10). It does not make those DRAFT artifacts effective here, and a rebase of #208/#209 onto the new head of this branch is a separate act this lane does not perform."
+    },
+    "other_controlling_artifacts_read": [
+      {"path": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json", "blob": "93c5bd667ff6b321bb913ac4bf46855a969d8608", "clauses": ["GATES.S1", "GATES.S2", "GATES.S8", "GATES.D1"]},
+      {"path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json", "blob": "f17e238d8829cd1e624ae10a851e89344fc13037", "clauses": ["HOSTED_DDL_PRECONDITIONS.HDP-1..HDP-5", "FROZEN_RULES.RULE_OBSERVATION_FRESHNESS"]},
+      {"path": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json", "blob": "6549cd9c2f5a3f2097a489bd0f392cf9fa78c817", "clauses": ["DEPLOYMENT_AUTHORIZATION_BOUNDARY.authorized AUTH-1..AUTH-4", "D1_PROOF_CONTRACT D1-8", "final_state FIBDB053_RUNTIME_STAGING_BINDING_AUTHORITY_AUTHORED__NOT_EXECUTED"], "role": "PR #201 (merged at e3f6f075) authored this authority; its final_state at this blob declares NOT_EXECUTED."},
+      {"path": "docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json", "blob": "c7c92f901261ed0722da85e9e51edd7f072344ae", "clauses": ["PROTECTED_WRITE_SET.ordered_literals[0..3]", "RUNTIME_APPLY_COUPLING", "G2_BOUNDARY"]},
+      {"path": "docs/ops/owner-ratifications/FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json", "blob": "c59b30a965b3b8652046f2010faf5bf084ec0686", "clauses": ["ratifications[RC-09] runtime before SQL"]}
+    ]
+  },
+
+  "SECTION_C2_VERSION_AND_NAMING_DERIVATION": {
+    "rule": "Mechanical, from repository history, not from the lane brief.",
+    "existing_amendments_of_this_base": ["STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json"],
+    "next_legal_version": "1.0.2",
+    "naming": "Per v1.0.1 BASE_AUTHORITY.naming_derivation: <BASE_PACKAGE_ID>_AMENDMENT_v<next>.json in the same directory as its base, paired with <BASE_MANIFEST_ID>_AMENDMENT_v<next>.json.",
+    "owner_record_version": "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json. v1.0.0 is the only prior version. Patch increment because the record narrows one ratification (OD-3) and adds no new decision domain; OD-5 and OD-6 are re-verified, not changed.",
+    "not_a_replacement_authority": "No STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.1.json or v1.0.2.json exists or is authorized. The frozen parent stays controlling for every clause not named here."
+  },
+
+  "SECTION_C3_BLOCKER_CLOSED": {
+    "finding": "ONE_GLOBAL_OD_WHERE_TWO_EVENT_CLASS_DECISIONS_ARE_REQUIRED",
+    "source": "Clean-room recertification of the effective package at 4df9e6d3 (lane CV1-STAGING-RECOVERY-AUTHORITY-CLEANROOM-RECERT-R1, 2026-09-23), verdict STAGING_RECOVERY_CLEANROOM_RECERT_FAIL on exactly one blocker.",
+    "the_defect_restated_from_repository_text": "v1.0.0 models the recovery point PER WINDOW (FRESHNESS.one_window_only; S8.retest_after 'before every apply') but states the posture ONCE, at OWNER_DECISIONS[OD-3], with a posture space whose ground (ADJUDICATIONS.I.THE_LIVE_RUNTIME_COMPLICATION) presupposes that PR #201 has bound a runtime. The programme has two DDL events whose writer topology is opposite: the initial corpus alignment, which can occur before any runtime binding exists, and FIBDB-053 Stage-A, whose own owner decision RC-09 requires the runtime to be deployed BEFORE the SQL. One posture cannot be correct for both: an empty-window proof is structurally impossible for the second, and accepting write loss is unnecessary for the first.",
+    "closure_mechanism": "SECTION_C4 replaces the single posture with a CLOSED registry keyed by event class. The class is DERIVED from the units of the window's MIGRATION_CORPUS_PACKET, the posture is READ from the registry, and every precondition, invalidator, evidence item and STOP code is a field of the class entry. A future evaluator answers what event this is, what posture applies, what evidence is required, what invalidates it and what stops it, from this artifact alone.",
+    "TWO_EVENT_SEMANTICS": "RESOLVED"
+  },
+
+  "SECTION_C4_EVENT_CLASS_REGISTRY": {
+    "rule": "CLOSED ENUMERATION. Exactly two event classes carry a posture. Every other window is UNKNOWN and STOPS. The executor never chooses a posture; it derives a class and reads the posture.",
+    "registry_version": "1",
+    "classification": {
+      "input": "For every unit enumerated in the window's MIGRATION_CORPUS_PACKET (HDP-4): its unit_membership, derived from the exact release SHA the packet binds.",
+      "unit_membership_values": {
+        "FIBDB053_STAGE_A_UNIT": "The unit is one of the four FIBDB-053 Stage-A artifacts enumerated at docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json PROTECTED_WRITE_SET.ordered_literals[0..3] (stella_0017b in its prepared, rollback, hosted and governed forms), or any governed successor of that exact unit. This membership TAKES PRECEDENCE: a stella_0017b unit is FIBDB053_STAGE_A_UNIT even if the certified SHA's hosted chain also lists it.",
+        "S1_EXACT_CORPUS_UNIT": "Any other unit of the exact migration corpus that gate S1 compares the staging journal against at the certified SHA (the corpus of db/migrations/meta/_journal.json and the hosted package chain governed by gate S2), applied to bring the staging journal toward S1 parity."
+      },
+      "rules": [
+        {"id": "CLS-1", "when": "The unit list is non-empty and EVERY unit has unit_membership S1_EXACT_CORPUS_UNIT.", "class": "EVENT_A_INITIAL_CORPUS"},
+        {"id": "CLS-2", "when": "The unit list is non-empty and EVERY unit has unit_membership FIBDB053_STAGE_A_UNIT.", "class": "EVENT_B_STAGE_A"},
+        {"id": "CLS-3", "when": "Anything else: an empty list, a MIXED list, a unit with any other membership, or a unit whose membership is UNKNOWN.", "class": "UNKNOWN"}
+      ],
+      "class_by_membership": {"S1_EXACT_CORPUS_UNIT": "EVENT_A_INITIAL_CORPUS", "FIBDB053_STAGE_A_UNIT": "EVENT_B_STAGE_A"},
+      "mixed_windows_are_prohibited": "A window that would apply units of both classes is UNKNOWN and STOPS. The two classes carry different postures and one recovery point cannot be governed by two postures at once; the units must be split into separate windows, each with its own recovery point (v1.0.0 FRESHNESS.one_window_only).",
+      "declared_class_must_agree": "The execution lane ALSO declares the class in writing. The declaration and the derivation must be equal; a missing declaration or a disagreement STOPS with STOP_EVENT_CLASS_DECLARATION_MISMATCH. Neither alone is sufficient."
+    },
+    "postures": {
+      "C3_EMPTY_WINDOW_BY_CONSTRUCTION": {
+        "applies_to": ["EVENT_A_INITIAL_CORPUS"],
+        "origin": "Sub-option C-3 of quiesce OD-Q5 (blob 1abcefc4, SECTION_B8), selected by the owner for Event A in STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.",
+        "meaning": "The no-intervening-mutation predicate of v1.0.0 FRESHNESS is established POSITIVELY because no client or writer of any kind exists against the governed project for the whole window, and no act that could create one occurs inside it. It is NOT 'assume nobody is writing': it holds only on the governed census evidence of SECTION_C5, re-taken at the instants SECTION_C5 names.",
+        "accepted_lost_writes": "ZERO. The owner's refusal of intentional write loss (v1.0.0 OD-3 statement) is PRESERVED for Event A.",
+        "absence_of_evidence_is_not_evidence_of_absence": "A census that did not look, could not look, or returned UNKNOWN does not establish this posture."
+      },
+      "ACCEPT_BOUNDED_STAGING_WRITE_LOSS": {
+        "applies_to": ["EVENT_B_STAGE_A"],
+        "origin": "The parent's own ACCEPT posture (v1.0.0 ADJUDICATIONS.I_maximum_permitted_age.THE_LIVE_RUNTIME_COMPLICATION.consequence: 'writes in the window are accepted as lost on restore and that acceptance is recorded in writing with a bounded rationale'), which is sub-option C-1 of quiesce OD-Q5, selected by the owner for Event B only.",
+        "meaning": "Unexpected, non-intentional writes to the governed STAGING target inside a QUANTIFIED, bounded exposure interval are accepted as lost if a restore is performed. Nothing else is accepted.",
+        "what_it_is_not": [
+          "It is not normal operation during the window: SECTION_C6 requires a planned maintenance posture with no intentional traffic.",
+          "It is not an unbounded or undefined window: SECTION_C7 requires the interval to be quantified before the human confirmation that accepts it.",
+          "It is not permission to skip Recovery: every S8 requirement of SECTION_C9 still binds.",
+          "It is not QUIESCE and may not be labelled QUIESCE, partial QUIESCE or any prevention posture.",
+          "It is never applicable to production and creates no production precedent."
+        ]
+      },
+      "QUIESCE": {
+        "applies_to": [],
+        "status": "HISTORICAL. The v1.0.0 owner record's OD-3 = QUIESCE is preserved byte-identical as history and applies to NO event class under this registry. It was measured unexecutable over the effective writer set (quiesce amendment blob 1abcefc4, SECTION_B7 CG-Q4). Re-applying it to any class requires a NEW owner decision."
+      },
+      "C2_PARTIAL_QUIESCE": {
+        "applies_to": [],
+        "status": "NOT_AUTHORIZED",
+        "rule": "No window may quiesce only the PR #201-bound runtime and call the remaining exposure QUIESCE, and no evidence may carry a C2 label, explicitly or implicitly. Any posture claim of C2_PARTIAL_QUIESCE or an alias of it (PARTIAL_QUIESCE, QUIESCE_PR201_RUNTIME_ONLY, NARROW_QUIESCE) STOPS with STOP_C2_PARTIAL_QUIESCE_NOT_AUTHORIZED. A future wish to use C2 requires a new owner decision."
+      }
+    },
+    "not_authorized_posture_labels": ["C2_PARTIAL_QUIESCE", "PARTIAL_QUIESCE", "QUIESCE_PR201_RUNTIME_ONLY", "NARROW_QUIESCE"],
+    "no_fallback_between_postures": "A class that fails its own posture STOPS. Event A may not fall back to ACCEPT; Event B may not claim C3; neither may fall back to QUIESCE.",
+    "production_identity_source": "db/hosted/target-identity.ts KNOWN_STAGING_PROJECT_REF and KNOWN_PRODUCTION_IDENTIFIERS, restated in v1.0.0 TARGET. Restated here for machine evaluation only; v1.0.0 TARGET controls and is byte-unchanged.",
+    "staging_project_ref": "bvyzblhqymxruxdguaee",
+    "production_project_refs": ["ctaxtgujyyprgynmnvtq"],
+    "evaluation_order": [
+      "EV-1 PRODUCTION VETO FIRST over every project ref named anywhere in the window's evidence. Any match STOPS with STOP_PRODUCTION_TARGET, before any positive signal is considered.",
+      "EV-2 the common fact staging_target_identity.",
+      "EV-3 classification by CLS-1..CLS-3. UNKNOWN STOPS with STOP_UNKNOWN_EVENT_CLASS.",
+      "EV-4 declared class equals derived class.",
+      "EV-5 the event class of the posture evidence equals the derived class.",
+      "EV-6 the posture claimed by the evidence: a not-authorized label STOPS with STOP_C2_PARTIAL_QUIESCE_NOT_AUTHORIZED; any other value unequal to the registry posture STOPS with STOP_POSTURE_CLAIM_MISMATCH.",
+      "EV-7 the class's required_facts, in order.",
+      "EV-8 the common S8 required_facts of SECTION_C9, in order.",
+      "EV-9 result POSTURE_APPLICABLE. It is NOT an execution authorization; see SECTION_C14."
+    ],
+    "fact_semantics": "Each required fact is recorded by the execution lane as a string. A value equal to `required` passes. A missing value or a value in `unknown_values` STOPS with `stop_on_unknown`. Any other value STOPS with `stop_on_mismatch`. UNKNOWN never passes and never becomes the class's posture.",
+    "common_pre_class_facts": [
+      {"id": "CF-1", "fact": "staging_target_identity", "required": "VERIFIED_STAGING_PIN", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_STAGING_IDENTITY_UNKNOWN", "stop_on_mismatch": "STOP_STAGING_IDENTITY_NOT_VERIFIED", "basis": "v1.0.0 TARGET.TARGET_IDENTITY_ESTABLISHMENT: verifyStagingTarget, veto first, never by provider name."}
+    ],
+    "classes": {
+      "EVENT_A_INITIAL_CORPUS": {
+        "unit_membership": "S1_EXACT_CORPUS_UNIT",
+        "definition": "A governed hosted DDL window on the governed staging target that applies units of the exact migration corpus to bring the staging journal toward S1 parity (gate S1, first_required_at_stage STAGING_ALIGNED; HDP-4 MIGRATION_CORPUS_PACKET), contains no FIBDB-053 Stage-A unit, and requires no runtime binding or new runtime.",
+        "lifecycle_position": "BEFORE any PR #201 act. The empty-window model is available only while no client of any kind exists against the governed project; PR #201's AUTH-1/AUTH-2 create one.",
+        "posture": "C3_EMPTY_WINDOW_BY_CONSTRUCTION",
+        "required_facts": [
+          {"id": "EA-F1", "fact": "census_governance", "required": "CERTIFIED_CENSUS_EXECUTION", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_EVENT_A_CENSUS_UNKNOWN", "stop_on_mismatch": "STOP_EVENT_A_CENSUS_NOT_GOVERNED", "basis": "The census must be produced by an execution lane opened under an independently certified census authority. An informal or uncertified observation is not a governed census."},
+          {"id": "EA-F2", "fact": "census_classification", "required": "C3_AVAILABLE", "unknown_values": ["UNKNOWN", "C3_UNKNOWN"], "stop_on_unknown": "STOP_EVENT_A_CENSUS_UNKNOWN", "stop_on_mismatch": "STOP_EVENT_A_C3_NOT_ESTABLISHED", "basis": "Census authority blob 52418809 SECTION_G: exactly one of C3_AVAILABLE, C3_NOT_AVAILABLE, C3_UNKNOWN; C3_UNKNOWN is not a soft no."},
+          {"id": "EA-F3", "fact": "active_client_or_writer_evidence", "required": "NONE_FOUND", "unknown_values": ["UNKNOWN", "OCCUPANCY_UNMEASURED"], "stop_on_unknown": "STOP_EVENT_A_CENSUS_UNKNOWN", "stop_on_mismatch": "STOP_EVENT_A_CLIENT_OR_WRITER_PRESENT", "basis": "Owner condition: any evidence of an active writer or client STOPS. Includes EXPOSED surfaces (census errata v1.0.2 SECTION_C5): exposure without measured occupancy is not NONE_FOUND."},
+          {"id": "EA-F4", "fact": "pr201_execution_state", "required": "NOT_EXECUTED", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_EVENT_A_PR201_STATE_UNKNOWN", "stop_on_mismatch": "STOP_EVENT_A_PR201_EXECUTED", "basis": "Owner condition: PR #201 has not executed. Established by SECTION_C5.PR201_EXECUTION_STATE, never by branch state alone. PARTIALLY_EXECUTED is a mismatch."},
+          {"id": "EA-F5", "fact": "census_freshness", "required": "FRESH", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_EVENT_A_CENSUS_UNKNOWN", "stop_on_mismatch": "STOP_EVENT_A_STALE_CENSUS", "basis": "SECTION_C5.freshness. STALE and VOID are mismatches."},
+          {"id": "EA-F6", "fact": "deciding_observations_retaken_at_w1", "required": "RETAKEN_NEGATIVE", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_EVENT_A_CENSUS_UNKNOWN", "stop_on_mismatch": "STOP_EVENT_A_STALE_CENSUS", "basis": "Census SECTION_H.freshness.re_observation_before_reliance, anchored at W1 (immediately before the first DDL statement), the anchor preserved by quiesce amendment SECTION_B11."}
+        ],
+        "invalidators": "SECTION_C5.invalidators",
+        "evidence": "SECTION_C5.evidence",
+        "stop_codes": ["STOP_EVENT_A_CENSUS_UNKNOWN", "STOP_EVENT_A_CENSUS_NOT_GOVERNED", "STOP_EVENT_A_C3_NOT_ESTABLISHED", "STOP_EVENT_A_CLIENT_OR_WRITER_PRESENT", "STOP_EVENT_A_PR201_STATE_UNKNOWN", "STOP_EVENT_A_PR201_EXECUTED", "STOP_EVENT_A_STALE_CENSUS"]
+      },
+      "EVENT_B_STAGE_A": {
+        "unit_membership": "FIBDB053_STAGE_A_UNIT",
+        "definition": "The governed hosted DDL window on the governed staging target that applies the FIBDB-053 Stage-A unit stella_0017b (its governed hosted variant), under the FIBDB-053 Stage-A authority, the Wave 3 G2 boundary and runtime-companion decision RC-09 (runtime before SQL). Its lifecycle position REQUIRES a live bridge-carrying runtime bound to staging, which is why an empty-window proof is structurally unavailable to it.",
+        "lifecycle_position": "AFTER the runtime companion is deployed against staging, per RC-09 and the D-1 post-deploy criteria of the PR #201 authority. PR #201 absence is NOT a precondition of this class.",
+        "posture": "ACCEPT_BOUNDED_STAGING_WRITE_LOSS",
+        "required_facts": [
+          {"id": "EB-F1", "fact": "maintenance_window", "required": "SCHEDULED_AND_DECLARED", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_MAINTENANCE_WINDOW_UNKNOWN", "stop_on_mismatch": "STOP_MAINTENANCE_WINDOW_NOT_DECLARED", "basis": "Owner condition: scheduled maintenance window."},
+          {"id": "EB-F2", "fact": "exposure_bound", "required": "BOUNDED_AND_QUANTIFIED", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_UNBOUNDED_STAGING_WRITE_LOSS_EXPOSURE", "stop_on_mismatch": "STOP_UNBOUNDED_STAGING_WRITE_LOSS_EXPOSURE", "basis": "SECTION_C7. Derived by validating the exposure record, never asserted."},
+          {"id": "EB-F3", "fact": "exposure_quantified_before_confirmation", "required": "YES", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_EXPOSURE_NOT_QUANTIFIED_BEFORE_CONFIRMATION", "stop_on_mismatch": "STOP_EXPOSURE_NOT_QUANTIFIED_BEFORE_CONFIRMATION", "basis": "Owner condition: exposure quantified before human confirmation. SECTION_C13 HC-2-B."},
+          {"id": "EB-F4", "fact": "pilot_session_posture", "required": "NONE_INTENTIONALLY_ACTIVE", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_PILOT_SESSION_POSTURE_UNKNOWN", "stop_on_mismatch": "STOP_ACTIVE_PILOT_OR_USER_SESSION", "basis": "SECTION_C6.PILOT_SESSION_PREDICATE."},
+          {"id": "EB-F5", "fact": "traffic_posture", "required": "MAINTENANCE_NO_INTENTIONAL_TRAFFIC", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_TRAFFIC_POSTURE_UNKNOWN", "stop_on_mismatch": "STOP_INTENTIONAL_APPLICATION_TRAFFIC", "basis": "SECTION_C6.TRAFFIC_POSTURE."}
+        ],
+        "invalidators": "SECTION_C8.EVENT_B_INVALIDATORS",
+        "evidence": "SECTION_C7 plus SECTION_C6 plus SECTION_C9",
+        "stop_codes": ["STOP_MAINTENANCE_WINDOW_UNKNOWN", "STOP_MAINTENANCE_WINDOW_NOT_DECLARED", "STOP_UNBOUNDED_STAGING_WRITE_LOSS_EXPOSURE", "STOP_EXPOSURE_NOT_QUANTIFIED_BEFORE_CONFIRMATION", "STOP_PILOT_SESSION_POSTURE_UNKNOWN", "STOP_ACTIVE_PILOT_OR_USER_SESSION", "STOP_TRAFFIC_POSTURE_UNKNOWN", "STOP_INTENTIONAL_APPLICATION_TRAFFIC"],
+        "pr201_absence_is_not_carried": "EA-F4 is a field of EVENT_A_INITIAL_CORPUS only. It is deliberately absent from this class: RC-09 requires the runtime to exist before the Stage-A SQL, so requiring PR #201 absence here would make Event B unsatisfiable by construction. This difference in lifecycle position is one of the principal reasons the split exists."
+      }
+    },
+    "UNKNOWN": {"posture": null, "verdict": "STOP", "stop_code": "STOP_UNKNOWN_EVENT_CLASS", "rule": "No posture. No default. No nearest match. A window that is neither class requires a new owner decision before any posture can apply to it."},
+    "global_stop_codes": ["STOP_PRODUCTION_TARGET", "STOP_STAGING_IDENTITY_UNKNOWN", "STOP_STAGING_IDENTITY_NOT_VERIFIED", "STOP_UNKNOWN_EVENT_CLASS", "STOP_EVENT_CLASS_DECLARATION_MISMATCH", "STOP_WRONG_EVENT_CLASS_EVIDENCE", "STOP_C2_PARTIAL_QUIESCE_NOT_AUTHORIZED", "STOP_POSTURE_CLAIM_MISMATCH"]
+  },
+
+  "SECTION_C5_EVENT_A_C3_CONTRACT": {
+    "posture": "C3_EMPTY_WINDOW_BY_CONSTRUCTION",
+    "required_predicates_conjunctive": [
+      "EA-P1 A governed census (EA-F1) classifies the target C3_AVAILABLE (EA-F2) under the census authority's SECTION_G as then effective after its errata and certification.",
+      "EA-P2 No relevant client or writer is active and no write surface is exposed without measured occupancy (EA-F3). Any evidence of an active client or writer STOPS; UNKNOWN STOPS.",
+      "EA-P3 PR #201 has not executed, in whole or in part (EA-F4), established by PR201_EXECUTION_STATE below. UNKNOWN STOPS.",
+      "EA-P4 The census is FRESH (EA-F5) and its deciding observations are re-taken negative at W1 (EA-F6).",
+      "EA-P5 The recovery point and DDL sequencing satisfy every common S8 requirement of SECTION_C9.",
+      "EA-P6 Every other precondition the effective chain already imposes still holds unchanged: v1.0.0 PRESTATE PS-1..PS-6 and HOSTED_DDL_PRECONDITIONS HDP-1..HDP-5."
+    ],
+    "PR201_EXECUTION_STATE": {
+      "rule": "NOT_EXECUTED is established ONLY by the conjunction of both sources below at the execution lane's own head and instant. Branch state alone is never sufficient, and a merged PR is not an executed PR.",
+      "repository_source": "The PR #201 execution authority (docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json, blob 6549cd9c at this base) still declares final_state FIBDB053_RUNTIME_STAGING_BINDING_AUTHORITY_AUTHORED__NOT_EXECUTED, and no execution-lane record, evidence artifact or successor in the repository records any AUTH-1 or AUTH-2 act.",
+      "live_source": "The governed census's Tier 1 observations return no branch-scoped Preview row for any of the three PR #201 variables (census rule G-N1 not fired) and no DSN-bearing row with a READY deployment in scope (G-N2 not fired).",
+      "values": {"NOT_EXECUTED": "both sources negative", "PARTIALLY_EXECUTED": "any AUTH-1 binding exists without AUTH-2, or any other partial signature", "EXECUTED": "AUTH-1 and AUTH-2 signatures present", "UNKNOWN": "either source unavailable, errored, incomplete or contradictory"},
+      "contradiction_rule": "If the repository says NOT_EXECUTED and the live source shows an execution signature, the value is EXECUTED, not UNKNOWN: the live world controls over a declared state, and the declared state is then stale."
+    },
+    "freshness": {
+      "model": "EVENT-BASED, carried from RULE_OBSERVATION_FRESHNESS and census SECTION_H.freshness. No clock TTL is introduced: v1.0.0 J.explicitly_NOT_invalidating excludes the passage of time alone, and the census rule already requires the age to be STATED. Both are preserved.",
+      "one_window_only": "A C3 classification and its evidence are consumed by exactly ONE Event A window. They are not reusable for a second window, a second attempt, or any Event B window."
+    },
+    "invalidators": {
+      "rule": "The occurrence of ANY of these after the deciding census observation and before the window closes makes the C3 evidence VOID, not merely stale. Void evidence is never revived; a fresh census and a fresh recovery point are required. Vocabulary follows census SECTION_H.freshness.the_void_events, extended only to name its classes explicitly.",
+      "events": [
+        {"id": "EA-INV-1", "event": "PR #201 executes in whole or in part (any AUTH-1 binding or any AUTH-2 deployment)."},
+        {"id": "EA-INV-2", "event": "Any deployment is created, promoted or rebuilt on any project the census enumerates (deployment mutation)."},
+        {"id": "EA-INV-3", "event": "Any environment variable is created, edited or deleted on any enumerated project, in any scope (environment binding mutation)."},
+        {"id": "EA-INV-4", "event": "Any Supabase hosted configuration change on the governed project: Auth, Data API, Storage, Realtime, extensions, network restrictions, read-only mode or its override."},
+        {"id": "EA-INV-5", "event": "Any credential mutation that changes client capability: API key or publishable/secret key creation, rotation, enablement or disablement; JWT secret change; database password change; role, grant or membership change."},
+        {"id": "EA-INV-6", "event": "Any new runtime activation: a deployment, function, worker, cron, queue consumer, webhook or edge function that could reach the governed project."},
+        {"id": "EA-INV-7", "event": "Creation of a Supabase preview branch, or any change of the project's status."},
+        {"id": "EA-INV-8", "event": "Any other writer-enabling provider act, and any governed or ungoverned act that could create a client or writer (including an operator console session, W-12, W-15 or W-16 of the quiesce writer inventory)."},
+        {"id": "EA-INV-9", "event": "Any v1.0.0 ADJUDICATIONS.J invalidating event for the recovery point, unchanged: any mutation of the target after capture, a DDL not applied in the named window, target identity change, loss of artifact integrity or custody, a change of the corpus SHA, modification of the artifact, or a failed capture."}
+      ]
+    },
+    "evidence": [
+      {"id": "EA-E1", "item": "The census evidence package in the census authority's SECTION_H shape, with its output contract (classification, triggering_rule_ids, observation_ids_relied_on, observation_timestamp_utc, unknown_reasons, freshness_statement)."},
+      {"id": "EA-E2", "item": "The PR201_EXECUTION_STATE record naming both sources and their values."},
+      {"id": "EA-E3", "item": "The W1 re-observation of the deciding observations, with timestamps, and the statement that no EA-INV event occurred between the deciding census and W1."},
+      {"id": "EA-E4", "item": "The event_class declaration EVENT_A_INITIAL_CORPUS and the per-unit membership derivation of the MIGRATION_CORPUS_PACKET."},
+      {"id": "EA-E5", "item": "The common S8 evidence of SECTION_C9."}
+    ],
+    "C3_proves_only_the_empty_window": "C3 establishes the no-client, no-intervening-writer predicate. It does NOT prove backup integrity, restorability or restore capability; those remain SECTION_C9 and D1.",
+    "MEASURED_CURRENT_REACHABILITY": {
+      "statement": "Under the census authority as authored at blob 52418809 and its errata, C3_AVAILABLE is UNREACHABLE: its condition A-4 requires Tier 2 observations the census does not confer (DEP-C1), and the census states in terms that it 'CAN NEVER RETURN C3_AVAILABLE' as authorized. The census authority is also uncertified at its latest errata.",
+      "consequence": "EVENT_A_INITIAL_CORPUS is authorized as a posture but is CURRENTLY NOT SATISFIABLE: until DEP-C1 is resolved (census OD-C1, or the Tier 2 route via the FIBDB-053 D-1 observation authority) and the census authority is certified, every Event A evaluation STOPS at EA-F1 or EA-F2. This is disclosed here so it is not discovered at execution time, and it is NOT relaxed: reading C3_UNKNOWN as C3_AVAILABLE would convert absence of evidence into evidence of absence."
+    }
+  },
+
+  "SECTION_C6_EVENT_B_OPERATING_POSTURE": {
+    "posture": "ACCEPT_BOUNDED_STAGING_WRITE_LOSS",
+    "required_predicates_conjunctive": [
+      "EB-P1 Target is the governed staging ref bvyzblhqymxruxdguaee, structurally verified by verifyStagingTarget with the production veto evaluated first (CF-1, EV-1). Any production target STOPS. UNKNOWN staging identity STOPS.",
+      "EB-P2 Staging only, never production. The acceptance is void for any other target.",
+      "EB-P3 A scheduled maintenance window is declared in writing before HC-2-B (EB-F1).",
+      "EB-P4 The exposure is quantified under SECTION_C7 BEFORE the human confirmation that accepts it (EB-F2, EB-F3).",
+      "EB-P5 No commercial pilot or user session is intentionally active (EB-F4, PILOT_SESSION_PREDICATE).",
+      "EB-P6 No intentional application traffic during the exposure (EB-F5, TRAFFIC_POSTURE).",
+      "EB-P7 A governed recovery point is taken and verified immediately before the DDL, per every common S8 requirement of SECTION_C9.",
+      "EB-P8 Every precondition the effective chain and the Stage-A chain already impose still holds unchanged: v1.0.0 PRESTATE PS-1..PS-6, HDP-1..HDP-5, the FIBDB-053 Stage-A authority, the Wave 3 G2 boundary, RUNTIME_APPLY_COUPLING and RC-09. This amendment grants none of them and relaxes none of them."
+    ],
+    "PILOT_SESSION_PREDICATE": {
+      "predicate": "NONE_INTENTIONALLY_ACTIVE: for the whole exposure interval, no commercial pilot, customer, UAT or user session is intentionally operating against governed staging, no such session is scheduled to start, and no pilot participant has been invited or directed to use staging.",
+      "how_established": "By a WRITTEN attestation of the owner (or the owner-designated operator of the pilot programme), recorded before HC-2-B and bound by digest into the exposure record's maintenance_state_predicate.pilot_session_attestation_ref. Where a governed observation mechanism exists under a separately certified authority, its result is attached as well.",
+      "mechanism_status": "NO AUTOMATED OBSERVATION MECHANISM IS CURRENTLY AUTHORIZED. The predicate is therefore established by attestation and is recorded AS an attestation, never as a measurement. This artifact does not claim a mechanism exists.",
+      "UNKNOWN": "If the attestation cannot be given, is conditional, or names any active or scheduled session, the value is UNKNOWN or ACTIVE and the window STOPS.",
+      "distinction_from_global_quiescence": "This predicate is about INTENTIONALLY operated pilot and user sessions. It is NOT full global quiescence of every possible writer. Full global quiescence is explicitly NOT required for Event B (KEEP_FULL_SCOPE_QUIESCE_FOR_EVENT_B = NO)."
+    },
+    "TRAFFIC_POSTURE": {
+      "value_required": "MAINTENANCE_NO_INTENTIONAL_TRAFFIC",
+      "during_the_exposure_interval": [
+        "No intentionally generated application traffic against governed staging.",
+        "No intentionally started user or pilot session.",
+        "No deliberate test traffic that writes to governed staging, unless it is explicitly authorized by another exact authority named by path and clause in the exposure record.",
+        "Read-only observations required by an exact authority (for example the post-DDL health observation OD-6 requires) are permitted only under that authority and must be named in the exposure record."
+      ],
+      "unexpected_writes": "Unexpected external, provider or client writes that cannot be globally prevented fall within the explicitly accepted bounded staging exposure. They must never be intentionally generated. An intentionally generated write is not inside the acceptance and invalidates the window (EB-INV-1)."
+    },
+    "FULL_SCOPE_QUIESCE_NOT_REQUIRED": {
+      "KEEP_FULL_SCOPE_QUIESCE_FOR_EVENT_B": "NO",
+      "rule": "Event B is NOT blocked because the provider lacks a demonstrable mechanism to prevent every possible writer. That blocker (quiesce amendment SECTION_B7, CG-Q4) is superseded FOR EVENT B ONLY by the bounded ACCEPT posture.",
+      "scope_limit": "The relaxation applies only to Event B on the governed staging target. It does not apply to Event A, to any UNKNOWN class, or to production, and it creates no production precedent."
+    }
+  },
+
+  "SECTION_C7_EVENT_B_BOUNDED_EXPOSURE_CONTRACT": {
+    "rule": "ACCEPT_BOUNDED_STAGING_WRITE_LOSS is valid only against ONE exposure record that satisfies every field and every validation below. The duration is NOT set by this authority; it is quantified by the execution lane for its own window and accepted by a human who sees it.",
+    "window_semantics": {
+      "start": "window_start_utc is the capture snapshot instant of the governed recovery point (W0, the anchor preserved by the quiesce amendment SECTION_B11). Writes after W0 are not in the recovery point and are the exposure.",
+      "end": "The window closes at the FIRST of: (a) completion of the governed DDL followed by the positive health observation OD-6 condition 2 requires; (b) completion of a restore if recovery is invoked; (c) abort of the window before the first DDL statement.",
+      "bound": "window_end_utc, max_bounded_duration_seconds, or both. If both are given, the earlier bound governs."
+    },
+    "required_fields": [
+      {"field": "record_id", "rule": "non-empty string"},
+      {"field": "event_class", "rule": "equals EVENT_B_STAGE_A"},
+      {"field": "target_project_ref", "rule": "equals the staging_project_ref, structurally derived; a production ref STOPS with STOP_PRODUCTION_TARGET"},
+      {"field": "target_environment_class", "rule": "equals STAGING"},
+      {"field": "window_start_utc", "rule": "ISO-8601 UTC instant"},
+      {"field": "window_start_anchor", "rule": "equals RECOVERY_POINT_CAPTURE_SNAPSHOT_W0"},
+      {"field": "window_end_utc | max_bounded_duration_seconds", "rule": "at least one present; window_end_utc strictly after window_start_utc; max_bounded_duration_seconds a positive finite integer"},
+      {"field": "recovery_point.backup_identifier", "rule": "non-empty; content digest plus storage locator class per v1.0.0 H"},
+      {"field": "recovery_point.capture_started_at_utc", "rule": "ISO-8601 UTC instant"},
+      {"field": "recovery_point.capture_finished_at_utc", "rule": "ISO-8601 UTC instant, not before capture_started_at_utc"},
+      {"field": "ddl_operation.event_class", "rule": "equals EVENT_B_STAGE_A"},
+      {"field": "ddl_operation.unit_identities", "rule": "non-empty list; every unit FIBDB053_STAGE_A_UNIT"},
+      {"field": "ddl_operation.migration_corpus_packet_digest", "rule": "non-empty"},
+      {"field": "ddl_operation.release_sha", "rule": "non-empty"},
+      {"field": "maintenance_state_predicate.maintenance_window_declared_at_utc", "rule": "ISO-8601 UTC instant"},
+      {"field": "maintenance_state_predicate.traffic_posture", "rule": "equals MAINTENANCE_NO_INTENTIONAL_TRAFFIC"},
+      {"field": "maintenance_state_predicate.pilot_session_posture", "rule": "equals NONE_INTENTIONALLY_ACTIVE"},
+      {"field": "maintenance_state_predicate.pilot_session_attestation_ref", "rule": "non-empty"},
+      {"field": "exposure_basis", "rule": "non-empty statement of how the bound was derived from the planned sequence (capture, integrity, window-artifact rehearsal, confirmation, DDL, health observation), measured by the execution lane, never copied from this authority"},
+      {"field": "quantified_at_utc", "rule": "ISO-8601 UTC instant strictly BEFORE the HC-2-B confirmation instant"}
+    ],
+    "machine_required_paths": ["record_id", "event_class", "target_project_ref", "target_environment_class", "window_start_utc", "window_start_anchor", "recovery_point.backup_identifier", "recovery_point.capture_started_at_utc", "recovery_point.capture_finished_at_utc", "ddl_operation.event_class", "ddl_operation.unit_identities", "ddl_operation.migration_corpus_packet_digest", "ddl_operation.release_sha", "maintenance_state_predicate.maintenance_window_declared_at_utc", "maintenance_state_predicate.traffic_posture", "maintenance_state_predicate.pilot_session_posture", "maintenance_state_predicate.pilot_session_attestation_ref", "exposure_basis", "quantified_at_utc"],
+    "no_value_may_be_UNKNOWN": "Any field whose value is missing, empty or UNKNOWN makes the exposure unbounded for the purpose of this contract.",
+    "STOP": "STOP_UNBOUNDED_STAGING_WRITE_LOSS_EXPOSURE if the exposure cannot be bounded or quantified, or if any validation fails. STOP_EXPOSURE_NOT_QUANTIFIED_BEFORE_CONFIRMATION if quantified_at_utc is not strictly before the HC-2-B confirmation.",
+    "bound_enforcement": {
+      "before_the_first_DDL_statement": "If the remaining bound cannot cover the planned DDL and health observation, the window STOPS: the DDL is not started, the recovery point is treated as stale, and a new record, a new recovery point and a new HC-2-B are required.",
+      "after_the_first_DDL_statement": "If the bound is exceeded, the fact is recorded as EXPOSURE_BOUND_EXCEEDED, which is a FAILED GATE for the window and is reported to the owner. The acceptance does NOT extend itself; writes after the bound are outside what the owner accepted. The pre-DDL artifact remains under OD-6's destruction conditions.",
+      "no_automatic_extension": "A bound is never extended in flight. Extension means a new record and a new confirmation, possible only before the first DDL statement."
+    },
+    "closure_evidence": "After the window closes, the actual start, the actual end, whether the bound held, and which closure condition (a), (b) or (c) occurred are recorded against the record_id."
+  },
+
+  "SECTION_C8_EVENT_B_INVALIDATORS_AND_OD_3_READING_OF_FRESHNESS": {
+    "why_this_section_exists": "v1.0.0 FRESHNESS and ADJUDICATIONS.J were written before any posture was selected and read 'ANY mutation ... including application write' as invalidating. Under ACCEPT, which the parent itself defined, unexpected writes in the window are accepted as lost. The parent's own ACCEPT definition therefore requires those clauses to be read, FOR EVENT B ONLY, as follows. For Event A they are unchanged.",
+    "EVENT_B_INVALIDATORS": [
+      {"id": "EB-INV-1", "event": "Any INTENTIONAL mutation of the target after W0 other than the governed DDL itself: operator DDL or DML, an intentional application or test write, a migration, a restore on the target."},
+      {"id": "EB-INV-2", "event": "Any deployment, runtime, environment binding, Supabase configuration or client-capability credential change after W0. RC-09's runtime deployment happens BEFORE W0; a deployment after W0 invalidates the recovery point."},
+      {"id": "EB-INV-3", "event": "A pilot or user session starts, or intentional application traffic occurs, inside the exposure interval."},
+      {"id": "EB-INV-4", "event": "The exposure bound is exhausted before the first DDL statement."},
+      {"id": "EB-INV-5", "event": "Every v1.0.0 ADJUDICATIONS.J invalidating event OTHER THAN an unexpected, non-intentional write inside the quantified bound: DDL not applied in the named window, target identity change, loss of artifact integrity or custody, corpus SHA change, artifact modification, failed capture."}
+    ],
+    "accepted_not_invalidating_for_event_B_only": "An unexpected, non-intentional write to governed staging inside the quantified exposure interval. It is accepted as lost on restore and recorded in the closure evidence if observed; it does not invalidate the recovery point's identity.",
+    "FAILURE_CONDITIONS_reading": "v1.0.0 FAILURE_CONDITIONS.conditions[2] ('A mutation of the authorized target is detected between capture and the protected DDL') applies to Event B as: an INTENTIONAL mutation, or any mutation outside the quantified bound. It applies to Event A unchanged."
+  },
+
+  "SECTION_C9_S8_AND_D1": {
+    "name_collision_warning": "Ledger gate D1 ('backup and restore capability', RELEASE_GATE_LEDGER GATES.D1) is NOT the FIBDB-053 deployment verification D-1 (criteria D1-1..D1-8 of the PR #201 authority's D1_PROOF_CONTRACT). In this section 'D1' means the ledger gate only.",
+    "D1_RELATIONSHIP": {
+      "D1_is": "Procedure capability: a named, repeatable procedure produces a backup of a given target, AND a restore from an artifact produced by THAT procedure has been performed at least once (ledger D1.pass_criteria), evidenced by BACKUP_PACKET_PLUS_RESTORE_PROOF and v1.0.0 C.",
+      "D1_is_not": "D1 is not window evidence. A D1 proof protects no DDL, is not an S8 recovery point, and does not satisfy S8 for any window of either class.",
+      "procedure_identity": "The procedure identity of a D1 proof is the tuple (capture tool and pinned version, capture invocation class, declared scope, restore runner, post-restore corpus applied, invariant set). An S8 window may rely on a D1 proof only if its own capture has the SAME procedure identity. A D1 proof of a different procedure identity, or an unrelated historical rehearsal, is never substituted."
+    },
+    "S8_INTERPRETATION": {
+      "rule": "S8 applies to EACH governed DDL window, identically for both event classes. The event class changes ONLY the no-intervening-mutation predicate (C3 for A, bounded ACCEPT for B). It changes nothing else in S8.",
+      "requirements": [
+        {"id": "S8-1", "requirement": "A governed recovery point for THIS window: an RM-2 capture of the target, bound to exactly this window (RM-3), with a BACKUP_PACKET carrying the six frozen fields, citing the release SHA, the window's MIGRATION_CORPUS_PACKET and the derived event class."},
+        {"id": "S8-2", "requirement": "Integrity of THIS window's artifact: its digest is recomputed independently of the tool that wrote it, after capture and again immediately before the final human confirmation. A mismatch STOPS; an unperformed recomputation is UNKNOWN and STOPS."},
+        {"id": "S8-3", "requirement": "Restorability of THIS window's artifact: the window artifact itself is restored into the disposable substrate (RM-4, AO-5..AO-7, DP-1..DP-5) and passes POST_RESTORE_INVARIANTS PRI-1..PRI-7 before the final human confirmation. A D1 proof of another artifact, even from the same procedure, does not substitute for S8-3."},
+        {"id": "S8-4", "requirement": "The window capture's procedure identity equals the procedure identity of the D1 RESTORE_PROOF the programme relies on; D1 is satisfied for that procedure before the window opens."},
+        {"id": "S8-5", "requirement": "The class's no-intervening-mutation predicate: EVENT_A_INITIAL_CORPUS by SECTION_C5; EVENT_B_STAGE_A by SECTION_C6 and SECTION_C7."},
+        {"id": "S8-6", "requirement": "The recovery point is the LAST state-capturing event before the DDL, and the sequence of SECTION_C12 contains no unauthorized intervening act."}
+      ],
+      "why_S8_3_is_read_strictly": {
+        "grounds": [
+          "Ledger GATES.S8.pass_criteria: 'A backup of the staging target is taken and VERIFIED RESTORABLE within the window immediately preceding the DDL'. The object of VERIFIED RESTORABLE is the window's backup.",
+          "STAGING_RELEASE_PRODUCTION_AUTHORITY HDP-2.criterion: 'A backup of this target taken in the immediately preceding window, AND a demonstrated ability to restore it.' The pronoun is the window's backup.",
+          "v1.0.0 ADJUDICATIONS.C defines VERIFIED RESTORABLE with a restore 'FROM AN ARTIFACT PRODUCED BY THE SAME PROCEDURE'. Read alone, that admits a different artifact; read with the two parent clauses above, which v1.0.0 declares it does not change, it cannot relax them.",
+          "Reading S8-3 strictly satisfies ALL THREE texts at once; the looser reading satisfies only v1.0.0 C. Under CLAUDE.md section 5 an ambiguity is resolved by preserving the stricter controlling text, never by choosing the more permissive one."
+        ],
+        "not_a_gate_change": "No gate criterion, evidence class, packet field or first_required_at_stage is edited. S8-3 applies the parent's own words; it adds no field to BACKUP_PACKET or RESTORE_PROOF (the window rehearsal emits an ordinary RESTORE_PROOF under v1.0.1 SECTION_A7's five-field mapping).",
+        "contradiction_check": "No contradiction between D1 and S8 exists in the repository: D1 governs the procedure and S8 governs the window, and neither clause negates the other. The only tension found is between v1.0.0 STAGE_A_CONSUMPTION's shorthand '(2) a BACKUP_PACKET for THAT specific apply, satisfying S8' and the ledger's S8 literal; it is resolved toward the parent literal and flagged as OF-EC-2 for the certifier."
+      },
+      "EVENT_A_S8": "C3 establishes the empty-window predicate (S8-5). It does NOT establish S8-1..S8-4 or S8-6; all of them are required.",
+      "EVENT_B_S8": "ACCEPT removes ONLY the global no-write predicate, replacing it with the bounded exposure of SECTION_C7. It does NOT remove S8-1..S8-4 or S8-6, the rollback contract (v1.0.0 ROLLBACK, RESTORE_REQUIRED), or OD-6's destruction conditions. ACCEPT is never permission to skip Recovery.",
+      "common_required_facts": [
+        {"id": "S8-F1", "fact": "recovery_point_integrity", "required": "VERIFIED", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_RECOVERY_POINT_INTEGRITY_UNKNOWN", "stop_on_mismatch": "STOP_RECOVERY_POINT_INTEGRITY_FAILED", "basis": "S8-2"},
+        {"id": "S8-F2", "fact": "window_artifact_restorability", "required": "RESTORED_AND_PRI_PASS", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_S8_PREDICATE_UNKNOWN", "stop_on_mismatch": "STOP_S8_WINDOW_ARTIFACT_NOT_VERIFIED_RESTORABLE", "basis": "S8-3"},
+        {"id": "S8-F3", "fact": "procedure_identity_vs_d1", "required": "MATCH", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_S8_PREDICATE_UNKNOWN", "stop_on_mismatch": "STOP_S8_D1_PROCEDURE_MISMATCH", "basis": "S8-4"},
+        {"id": "S8-F4", "fact": "recovery_point_sequence", "required": "INTACT", "unknown_values": ["UNKNOWN"], "stop_on_unknown": "STOP_S8_PREDICATE_UNKNOWN", "stop_on_mismatch": "STOP_S8_SEQUENCE_BROKEN_RECOVERY_POINT_STALE", "basis": "S8-6"}
+      ]
+    },
+    "carried_nonblocking_finding_not_resolved_here": "The clean-room noted that v1.0.0 SUCCESS_CONDITIONS.backup_execution makes a D1 capability-proof capture inherit HC-2 and FRESHNESS although it protects no DDL. That is a question about D1, not about the event-class posture. It is NOT resolved here, because resolving it would relax a v1.0.0 condition the owner decision does not reach. Carried as OF-EC-3."
+  },
+
+  "SECTION_C10_OD_3_SUPERSESSION_AND_QUIESCE_CHAIN_DISPOSITION": {
+    "OD3_SUPERSESSION_SCOPE": {
+      "honest_history": "The v1.0.0 owner record ratified OD-3 = QUIESCE and stated: 'The owner does NOT accept intentional loss of writes in that window.' That was a single global decision. It did NOT mean an event-specific ACCEPT, and this amendment does not pretend it did.",
+      "what_changes": "The owner has reopened OD-3 NARROWLY (STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1): the posture is now event-class-specific. For EVENT_B_STAGE_A the refusal of write loss is REVERSED to ACCEPT_BOUNDED_STAGING_WRITE_LOSS. For EVENT_A_INITIAL_CORPUS the refusal is PRESERVED and delivered by C3 rather than by a prevention act. For every UNKNOWN class no posture applies and the window STOPS.",
+      "superseded_loci": [
+        {"locus": "owner v1.0.0 ratifications[OD-3]", "extent": "SUPERSEDED IN FULL as the effective posture; PRESERVED byte-identical as history (blob 876fc76c)."},
+        {"locus": "v1.0.0 OWNER_DECISIONS.decisions[OD-3].decision", "extent": "SUPERSEDED IN PART: the single choice becomes the per-class registry of SECTION_C4. blocking_for_stage_A = true and the fail_closed clause are PRESERVED and now bind per class."},
+        {"locus": "v1.0.0 ADJUDICATIONS.I_maximum_permitted_age.THE_LIVE_RUNTIME_COMPLICATION.consequence", "extent": "SUPERSEDED IN PART: the two-posture space. PRESERVED: the rule that the predicate is established POSITIVELY and never assumed, which now binds both classes; and the fail_closed clause."},
+        {"locus": "v1.0.0 HUMAN_CONFIRMATION.confirmations[HC-2].text", "extent": "SUPERSEDED IN PART by HC-2-A and HC-2-B of SECTION_C13. HC-2's position (it gates FRESHNESS, in writing, before the act) is PRESERVED."},
+        {"locus": "v1.0.0 FRESHNESS.criteria[1] and criteria[5]; ADJUDICATIONS.J.invalidating_events[0]; FAILURE_CONDITIONS.conditions[2]", "extent": "READ FOR EVENT B ONLY as SECTION_C8 states. UNCHANGED for Event A."},
+        {"locus": "v1.0.1 SECTION_A9_NO_OTHER_SEMANTIC_CHANGE.unchanged[0] ('QUIESCE as the ratified OD-3 posture ...') and unchanged[10] ('The requirement for a separate QUIESCE mechanism authority before S8 can be satisfied under the QUIESCE posture')", "extent": "SUPERSEDED as a statement of the effective posture. Both remain TRUE as history and as a conditional: no class uses QUIESCE, so the conditional no longer blocks S8."},
+        {"locus": "v1.0.1 next_gate ('...THEN__CV1_STAGING_QUIESCE_MECHANISM_AUTHORITY_R1')", "extent": "SUPERSEDED as the next gate of this lineage. See next_gate below."}
+      ],
+      "not_superseded": "OD-5 and OD-6 are UNCHANGED (SECTION_C15). No other ratification exists in the v1.0.0 record."
+    },
+    "QUIESCE_CHAIN_DISPOSITION": {
+      "rule": "Each disposition is scoped. 'NO_LONGER_BLOCKING' is stated per event class and is never generalised beyond what the owner decision answers.",
+      "items": [
+        {"item": "OD-Q5 (quiesce amendment SECTION_B8)", "disposition": "ANSWERED_BY_OWNER", "detail": "CHANGE RECOVERY POSTURE, per event class: EVENT_A = C-3; EVENT_B = C-1 ACCEPT with a bounded exposure; C-2 = NOT_AUTHORIZED; KEEP QUIESCE = not selected for either class. B8 reserved exactly this answer to the owner."},
+        {"item": "SECTION_B8.what_remains_blocked_until_answered ('Everything')", "disposition": "SUPERSEDED", "detail": "The question is answered. What remains blocked is listed item by item below and in SECTION_C14; nothing is unblocked merely by the answer."},
+        {"item": "OD-Q1 (scope: bound runtime only, or every writer)", "disposition": "RESOLVED_NEGATIVELY_AS_TO_OPTION_A", "detail": "Subsumed by B9 into sub-option C-2, which the owner declared NOT_AUTHORIZED. The all-writer scope of quiesce SECTION_B is PRESERVED for any future QUIESCE posture; no class currently uses one."},
+        {"item": "OD-Q4 (order: recovery window or PR #201 first)", "disposition": "PRESERVED_OPEN_AND_CONSTRAINED", "detail": "The owner did not choose the schedule. The decision fixes the consequence: if PR #201 executes before an Event A window closes, Event A STOPS (EA-F4) and requires a new owner decision. Event B's order is fixed by RC-09 and is unaffected."},
+        {"item": "IG-1 (no quiesce mechanism is authorized)", "disposition": "NOT_CLOSED__NO_LONGER_BLOCKING_FOR_EVENT_A_AND_EVENT_B", "detail": "Still TRUE: no quiesce act is authorized anywhere. It no longer blocks either class because neither uses QUIESCE. It STILL BLOCKS any window or future posture that requires QUIESCE, and is not declared globally solved."},
+        {"item": "IG-2 (no positive quiesce-attestation shape)", "disposition": "RESHAPED_PER_CLASS", "detail": "EVENT_B: MOOT, replaced by the SECTION_C7 exposure record and its closure evidence. EVENT_A: replaced by the C3 evidence of SECTION_C5 (census package plus W1 re-observation), which STILL BLOCKS until the census authority is certified and DEP-C1 is resolved. For any QUIESCE posture: unchanged and open."},
+        {"item": "IG-3 (disposal deferred until after a DDL this chain does not authorize)", "disposition": "PRESERVED_OPEN_BY_CONSTRUCTION", "detail": "Applies to both classes' pre-DDL artifacts."},
+        {"item": "CG-Q4 (QUIESCE capability gap)", "disposition": "PRESERVED_AS_MEASURED_FACT__NO_LONGER_BLOCKING_FOR_EVENT_B", "detail": "KEEP_FULL_SCOPE_QUIESCE_FOR_EVENT_B = NO. It is also not blocking for Event A, which does not need prevention; it remains a blocker for any QUIESCE posture."},
+        {"item": "DEP-1 (PR #201 before the window forecloses C-3)", "disposition": "PRESERVED_AND_BOUND_FOR_EVENT_A__NOT_APPLICABLE_TO_EVENT_B", "detail": "Encoded as EA-F4 and EA-INV-1."},
+        {"item": "S8", "disposition": "STILL_BLOCKING", "detail": "Not satisfied for any window. Now satisfiable IN PRINCIPLE per class under SECTION_C9, subject to every precondition of SECTION_C14. 'S8 remains unsatisfiable under the QUIESCE posture' remains true and no longer governs either class."},
+        {"item": "Stage-A (FIBDB-053)", "disposition": "STILL_BLOCKING", "detail": "The recovery-posture blocker to Stage-A (CG-Q4 under QUIESCE) is removed by the Event B posture. Stage-A remains blocked by G2, RUNTIME_APPLY_COUPLING, HDP-1..HDP-5, D1, S8 and the certifications of SECTION_C14. Nothing here authorizes Stage-A."},
+        {"item": "Census DEP-C1, OD-C1, OD-C2, OD-C3, MG-Q1, MG-Q2", "disposition": "PRESERVED_OPEN", "detail": "Unaffected by the owner decision. DEP-C1 now gates Event A satisfiability (SECTION_C5.MEASURED_CURRENT_REACHABILITY)."},
+        {"item": "Quiesce and census next_gate statements", "disposition": "SUPERSEDED_AS_TO_THE_OD_Q5_ESCALATION_ONLY", "detail": "Their demand for an owner re-adjudication is satisfied. Their certification and census-execution gates are PRESERVED for Event A."}
+      ],
+      "cross_lineage_note": "The disposed clauses live in DRAFT descendants (#208, #209) that are not in this tree. This table binds how the effective Recovery chain reads them. It does not edit them, and whether those lineages are rebased, amended or closed is a separate governed act."
+    }
+  },
+
+  "SECTION_C11_SELF_CHECK_DEFECT_REPAIR": {
+    "finding": "Clean-room non-blocking finding: an impossible, string-self-referential self-check.",
+    "reproduced": {
+      "locus_1": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (blob 25749aee) SECTION_A12_SELF_CHECK.checks[7], which asserts that the string 'AO-10' does not appear anywhere in that amendment.",
+      "locus_2": "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json (blob 7c0aa9d8) negative_controls[NC-23], whose parenthetical asserts the same identifier appears nowhere in the amendment pair.",
+      "measurement": "Counting that identifier in the v1.0.1 amendment returns 2 (SECTION_A9.unchanged[7] and the check itself); counting it in the manifest amendment returns 1 (NC-23 itself). Each control names the string it asserts absent, so it can never pass as written.",
+      "why_it_is_not_merely_cosmetic": "A control that cannot pass trains a certifier to waive it. The protected property (no operation added to AUTHORIZED_OPERATIONS) is real and must be checkable."
+    },
+    "repair_structural_not_string": [
+      {"id": "SC-OPS-1", "check": "Parse v1.0.0 AUTHORIZED_OPERATIONS.operations. Its id list is exactly [AO-1, AO-2, AO-3, AO-4, AO-5, AO-6, AO-7, AO-8, AO-9], count 9, in that order."},
+      {"id": "SC-OPS-2", "check": "This amendment's AUTHORIZED_OPERATIONS_DELTA is {added: [], removed: [], modified: []}."},
+      {"id": "SC-OPS-3", "check": "No artifact of this lineage other than v1.0.0 has a top-level key AUTHORIZED_OPERATIONS."},
+      {"id": "SC-OPS-4", "check": "Every object in this amendment whose `id` field matches the operation-id shape ^AO-[0-9]+$ is absent: operation ids are never DECLARED here, only cited in prose."}
+    ],
+    "supersedes": "v1.0.1 SECTION_A12_SELF_CHECK.checks[7] and the parenthetical clause of v1.0.1 manifest NC-23 ('no ... other new id appears anywhere in the amendment pair'). The remainder of NC-23 (no weakening of the restore prohibitions) is PRESERVED. Both historical files remain byte-identical.",
+    "AUTHORIZED_OPERATIONS_DELTA": {"added": [], "removed": [], "modified": []}
+  },
+
+  "SECTION_C12_SEQUENCING": {
+    "rule": "Ordered. Each step's evidence is recorded before the next begins. An act not listed, or listed out of order, between S-1 and S-8 is an unauthorized intervening act and STOPS the window (S8-F4).",
+    "EVENT_A_INITIAL_CORPUS": [
+      "A-0 governed census (certified census authority) -> C3_AVAILABLE, PR201_EXECUTION_STATE NOT_EXECUTED, fresh",
+      "A-1 HC-1 in writing",
+      "A-2 capture (AO-3) -> W0 recorded; BACKUP_PACKET (S8-1)",
+      "A-3 digest recomputation (S8-2)",
+      "A-4 window-artifact restore into the disposable substrate and PRI-1..PRI-7 (S8-3), substrate destroyed and evidenced (CL-1)",
+      "A-5 re-take of the census deciding observations; no EA-INV event since A-0",
+      "A-6 digest re-verification immediately before confirmation (S8-2)",
+      "A-7 HC-2-A in writing, then the DDL authorization the DDL's own authority requires (HC-3 is not granted by this chain)",
+      "A-8 W1: deciding observations re-taken negative (EA-F6); first DDL statement"
+    ],
+    "EVENT_B_STAGE_A": [
+      "B-0 RC-09 runtime deployment and the Stage-A chain's own preconditions, under their own authorities (NOT authorized here)",
+      "B-1 maintenance window declared; pilot-session attestation recorded; traffic posture declared",
+      "B-2 HC-1 in writing",
+      "B-3 capture (AO-3) -> W0 recorded; BACKUP_PACKET (S8-1)",
+      "B-4 digest recomputation (S8-2)",
+      "B-5 window-artifact restore into the disposable substrate and PRI-1..PRI-7 (S8-3), substrate destroyed and evidenced (CL-1)",
+      "B-6 exposure record quantified from the measured durations of B-3..B-5 and the planned remainder; quantified_at_utc recorded",
+      "B-7 digest re-verification immediately before confirmation (S8-2); remaining bound checked",
+      "B-8 HC-2-B in writing, naming the exposure record digest; then the DDL authorization the Stage-A authority requires",
+      "B-9 first DDL statement; window closes per SECTION_C7.window_semantics.end; closure evidence recorded"
+    ],
+    "invalidating_act_rule": "If an EA-INV or EB-INV event occurs, the recovery point and the posture evidence become stale or void and are repeated from A-0 or B-1 (Event A additionally requires a fresh census). No step is resumed from a later point."
+  },
+
+  "SECTION_C13_HUMAN_CONFIRMATION": {
+    "rule": "Recorded IN WRITING before the act each gates. Silence is not acceptance. This lane fabricates none of them and records that none has occurred.",
+    "HC-2-A": {"class": "EVENT_A_INITIAL_CORPUS", "text": "Confirmation that the window is Event A, that the posture is C3_EMPTY_WINDOW_BY_CONSTRUCTION, that the cited census classification is C3_AVAILABLE and fresh, that PR #201 is NOT_EXECUTED by both sources, and that no write loss is accepted.", "must_cite": ["census package digest", "PR201_EXECUTION_STATE record", "BACKUP_PACKET backup identifier"]},
+    "HC-2-B": {"class": "EVENT_B_STAGE_A", "text": "Acceptance of THIS exact bounded staging write-loss exposure for THIS window, on the governed staging target only.", "must_cite": ["exposure record_id and its digest", "window_start_utc and the bound", "BACKUP_PACKET backup identifier"], "ordering": "The exposure record must exist and be quantified BEFORE HC-2-B. A confirmation that names no record, names a template, or pre-dates quantified_at_utc is VOID.", "no_blanket_acceptance": "No standing, future or class-wide acceptance of unknown exposure is authorized. Each Event B window needs its own HC-2-B against its own record."},
+    "HC_1_HC_3_HC_4_HC_5": "UNCHANGED from v1.0.0. HC-3 remains NOT GRANTED by this chain. HC-5 remains withheld by default (OD-6).",
+    "status_at_authoring": "NO human confirmation for any window has been given. None is implied by the owner's ratification of the posture model."
+  },
+
+  "SECTION_C14_IMPLEMENTATION_AND_EXECUTION_STATUS": {
+    "offline_implementation_lineage": {
+      "pr": 220,
+      "head_at_authoring": "2b254ab898f6cc7e8440df377234b325f1afe0af",
+      "status": "The CURRENT OFFLINE Recovery implementation lineage ONLY. DRAFT, stacked on this branch, NOT certified by this artifact, NOT merged by this lane.",
+      "compatibility_note": "PR #220 carries an event_class field whose policy it declares NOT_CHOSEN_BY_THIS_MECHANISM and a behavioral neutrality test using placeholder class strings. Those strings have no authority. The ONLY authorized class identifiers are EVENT_A_INITIAL_CORPUS and EVENT_B_STAGE_A (SECTION_C4); any mapping from #220's field to this registry belongs to a future governed lane.",
+      "no_hosted_readiness_is_inferred": "Offline primitives that pass against disposable substrates are not hosted readiness."
+    },
+    "HOSTED_RECOVERY_EXECUTION": "PROHIBITED. Completing this authoring lane authorizes no hosted act.",
+    "hosted_execution_prerequisites_conjunctive": [
+      "HX-1 This event-class package (v1.0.0 + v1.0.1 + this v1.0.2 + both owner records + the three manifests) independently certified PASS as ONE effective package.",
+      "HX-2 The offline Recovery implementation independently certified PASS.",
+      "HX-3 A fresh governed prestate at the execution lane's own head (PS-1).",
+      "HX-4 Capture-principal and reachability proof authorized and satisfied, with the credential in the SSL-06 inventory (PS-6, v1.0.0 CAPABILITY).",
+      "HX-5 For Event A: a certified census authority, DEP-C1 resolved, and a fresh C3_AVAILABLE classification. For Event B: the Stage-A, G2, RUNTIME_APPLY_COUPLING and RC-09 preconditions under their own authorities.",
+      "HX-6 Every required human confirmation recorded in writing in order (SECTION_C13).",
+      "HX-7 Every S8 predicate of SECTION_C9 evaluated PASS for the window.",
+      "HX-8 Correct staging target identity, structurally verified, and the production veto evaluated first.",
+      "HX-9 Every other HDP and release gate the hosted DDL requires."
+    ],
+    "POSTURE_APPLICABLE_is_not_execution": "A registry evaluation returning POSTURE_APPLICABLE states only that the class's posture applies to the evidence presented. It is not HC-3, not a DDL authorization and not a hosted execution authorization."
+  },
+
+  "SECTION_C15_OD5_OD6_AND_OTHER_PRESERVATION": {
+    "OD5_STATUS": "UNCHANGED",
+    "OD6_STATUS": "UNCHANGED",
+    "pins": {
+      "rule": "sha256 over the canonical JSON (keys sorted recursively, no insignificant whitespace, UTF-8) of each object as it stands in the named blob. A successor that alters the object changes the digest.",
+      "owner_v1_0_0_OD_5": {"blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d", "canonical_sha256": "691325e7868e1e9dbac5bdf258ed7a1ec2afd6c73652240a59265a1b7d90ef64"},
+      "owner_v1_0_0_OD_6": {"blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d", "canonical_sha256": "7d027a584a95f086182ecaedd3590286de6662590d62765ed304dcd4a3276567"},
+      "owner_v1_0_0_OD_3_history": {"blob": "876fc76cedc3e83f44b7c76221f0bc812d35ee5d", "canonical_sha256": "432569e0a15dc7f991c216df081cb1729302a4871409d795de2980f768ba7196"},
+      "authority_v1_0_0_DATA_PROTECTION_IN_A_REHEARSAL_RESTORE": {"blob": "154c3d1d396784ae7189b8088669b0ef8231de67", "canonical_sha256": "2225e0d82d2dce830432b3a8b69073e075bd8d105f32b87abf856812535222d4"},
+      "authority_v1_0_0_RETENTION_AND_DISPOSAL": {"blob": "154c3d1d396784ae7189b8088669b0ef8231de67", "canonical_sha256": "cce3147faeee8f8de62e121fa808d3723205f287cbf61f2471879a27c462d482"},
+      "authority_v1_0_0_CLEANUP": {"blob": "154c3d1d396784ae7189b8088669b0ef8231de67", "canonical_sha256": "04e8ecbb3e6c6133665e3fdac58975d91a1d0da403d531dc09dd34b02a31c686"},
+      "authority_v1_0_0_TARGET": {"blob": "154c3d1d396784ae7189b8088669b0ef8231de67", "canonical_sha256": "251443f6e33e8487b3dbbe4800e503341c34d73f988334c96e97f1d3c27f70f2"}
+    },
+    "OD_5_applies_to_both_classes": "Every window-artifact rehearsal of S8-3 is a rehearsal of the class AO-5..AO-7 already scope. OD-5.1..OD-5.6 bind it in full: no network egress, no Auth exposure, no provider calls, single-host non-shared temporary substrate, no customer or personal row in evidence, and fail-closed CUSTOMER_DATA classification until a governed classification proves otherwise. Neither class weakens or broadens OD-5.",
+    "OD_6_applies_to_both_classes": "Destroy-by-default binds. No retention is authorized here; any exception still needs purpose, storage class or location, duration and owner authorization. Each class's pre-DDL recovery artifact may be destroyed only after the window has completed, the target is positively observed healthy, and the artifact is no longer required for rollback or recovery; its disposal is DEFERRED, not retained.",
+    "PRODUCTION_VETO_STATUS": "UNCHANGED AND ABSOLUTE. The production ref ctaxtgujyyprgynmnvtq is never a target, source or restore target. Provider display names are never identifiers; the vetoed ref carries the misleading display name 'uellix-staging' and a target selected by that name is non-conformant. ACCEPT_BOUNDED_STAGING_WRITE_LOSS applies only to the governed staging ref. Any production target STOPS (EV-1).",
+    "UNKNOWN_FAIL_CLOSED_STATUS": {
+      "rule": "UNKNOWN never silently becomes a posture.",
+      "EVENT_A": ["UNKNOWN writer, client or census state -> STOP (EA-F1..EA-F3)", "UNKNOWN PR #201 execution state -> STOP (EA-F4)", "UNKNOWN freshness -> STOP (EA-F5, EA-F6)"],
+      "EVENT_B": ["UNKNOWN exposure duration -> STOP (EB-F2)", "UNKNOWN staging identity -> STOP (CF-1)", "UNKNOWN pilot or session posture -> STOP (EB-F4)", "UNKNOWN traffic posture -> STOP (EB-F5)", "UNKNOWN recovery-point integrity -> STOP (S8-F1)", "UNKNOWN required S8 predicate -> STOP (S8-F2..S8-F4)"],
+      "CLASS": ["UNKNOWN event class -> STOP (EV-3)"]
+    },
+    "preserved_unchanged": [
+      "v1.0.0 AUTHORIZED_OPERATIONS AO-1..AO-9 and NOT_AUTHORIZED_EVEN_THOUGH_ADJACENT: no operation is added, removed or modified (SECTION_C11.AUTHORIZED_OPERATIONS_DELTA).",
+      "v1.0.0 EXPLICIT_NON_AUTHORIZATIONS in full, including 'Triggering a restore, of any artifact, by any mechanism, anywhere' as it applies to hosted targets and provider backups.",
+      "v1.0.0 RECOVERY_MODEL RM-1..RM-7, POST_RESTORE_INVARIANTS PRI-1..PRI-7, EVIDENCE, ROLLBACK, CLEANUP, SECRET_CUSTODY_CONTRACT, DATA_PROTECTION_IN_A_REHEARSAL_RESTORE, RETENTION_AND_DISPOSAL, TARGET, PRODUCTION_BOUNDARY, STAGE_A_CONSUMPTION's gate derivation (D1 and S8 only; D2..D5, P5, ENV-07 later).",
+      "BACKUP_PACKET's six fields and RESTORE_PROOF's five fields: nothing added, removed or reordered.",
+      "v1.0.1 DC-1..DC-4 corrections and SECTION_A7/A8 clarifications.",
+      "OD-1, OD-2 and OD-4: OPEN_UNRESOLVED and non-blocking for Stage-A. No RPO or RTO value is declared or proposed; no exposure duration is declared here."
+    ]
+  },
+
+  "SECTION_C16_PRECEDENCE": {
+    "rule": "For the loci named in SECTION_C10.OD3_SUPERSESSION_SCOPE.superseded_loci and SECTION_C11.supersedes, THIS AMENDMENT CONTROLS to the stated extent. For everything else v1.0.0 and v1.0.1 control verbatim, and the v1.0.0 owner record controls for OD-5 and OD-6.",
+    "conflict_rule": "A reader who finds this amendment in conflict with v1.0.0 or v1.0.1 on any clause not named here must treat it as a defect in this amendment and STOP, not choose (CLAUDE.md section 5).",
+    "relation_to_parents": "This amendment does not amend RELEASE_GATE_LEDGER_v1.0.0, STAGING_RELEASE_PRODUCTION_AUTHORITY v1.0.0 or its amendment, ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0, the FIBDB-053 authorities, or the quiesce and census chain."
+  },
+
+  "SECTION_C17_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "basis": "The write set (SECTION_C19) is four paths under docs/ops/release/**, docs/ops/owner-ratifications/** and tests/release/**, none of which is a DEFAULT_PROTECTED_PATTERN of scripts/ods-scope.ts. Measured by running pnpm ods:scope, not by eye.",
+    "explicit_non_allocation": ["NO ODS addendum ordinal", "NO HPO-ODS grant id", "NO W2 identifier", "NO migration ordinal", "NO Controller allocation change", "NO program-state registry entry", "NO package script registered", "NO evidence path created"]
+  },
+
+  "SECTION_C18_SELF_CHECK": {
+    "note": "Structural. Executed by tests/release/staging-recovery-event-class-authority.test.ts, which parses the artifacts rather than searching their text.",
+    "checks": [
+      "The registry's classes are exactly EVENT_A_INITIAL_CORPUS and EVENT_B_STAGE_A, and their postures equal the owner record v1.0.1's structured decisions.",
+      "The QUIESCE and C2_PARTIAL_QUIESCE postures apply to the empty class list.",
+      "EA-F4 (pr201_execution_state) is a required fact of Event A and of no other class.",
+      "Every stop code referenced by a required fact is listed in its class's stop_codes, in global_stop_codes, or among the S8 stop codes.",
+      "SC-OPS-1..SC-OPS-4 hold.",
+      "The five historical blobs of SECTION_C1 recompute byte-identically from the working tree.",
+      "The canonical digests of SECTION_C15.pins recompute from the historical files.",
+      "The exposure contract's machine_required_paths equal the field paths of required_fields that are not alternatives."
+    ]
+  },
+
+  "SECTION_C19_WRITE_SET": [
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json (this file, ADDED)",
+    "docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.2.json (ADDED)",
+    "docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json (ADDED)",
+    "tests/release/staging-recovery-event-class-authority.test.ts (ADDED)"
+  ],
+
+  "RISKS_AND_OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {"id": "OF-EC-1", "finding": "Event A is authorized but currently unsatisfiable: the census authority cannot return C3_AVAILABLE until DEP-C1 is resolved, and it is uncertified.", "disposition": "Disclosed in SECTION_C5.MEASURED_CURRENT_REACHABILITY. Not relaxed. If PR #201 executes before DEP-C1 is resolved, Event A is foreclosed and the initial corpus alignment has NO authorized posture (UNKNOWN -> STOP) until the owner decides again."},
+      {"id": "OF-EC-2", "finding": "S8-3 reads S8 strictly: the window artifact itself must be rehearsed before the final confirmation, rather than relying on a same-procedure D1 proof.", "disposition": "Grounded on the ledger S8 literal and HDP-2 in SECTION_C9.S8_INTERPRETATION.why_S8_3_is_read_strictly. A certifier who holds this to be an enlargement of S8 should say so; the looser reading would be the weakening, not the stricter one."},
+      {"id": "OF-EC-3", "finding": "D1 capability-proof capture inherits HC-2/FRESHNESS from v1.0.0 SUCCESS_CONDITIONS although it protects no DDL.", "disposition": "Carried from the clean-room, not resolved: resolving it relaxes a v1.0.0 condition the owner decision does not reach."},
+      {"id": "OF-EC-4", "finding": "The owner decision answers OD-Q5, which is defined in DRAFT descendant #208; #208 and #209 are stacked on the previous head of this branch and still state that everything is blocked until OD-Q5 is answered.", "disposition": "SECTION_C10 records the disposition by blob. Rebasing or amending those branches is a separate act; until then their text is history for the question it escalated."},
+      {"id": "OF-EC-5", "finding": "The pilot-session predicate has no authorized observation mechanism and rests on an owner attestation.", "disposition": "Stated as an attestation, never as a measurement (SECTION_C6.PILOT_SESSION_PREDICATE)."},
+      {"id": "OF-EC-6", "finding": "Unit membership (S1_EXACT_CORPUS_UNIT vs FIBDB053_STAGE_A_UNIT) is derived from the release SHA at execution time; no machine derivation of it exists yet.", "disposition": "The derivation is defined; building it belongs to a future implementation lane. A membership that cannot be derived is UNKNOWN and the window STOPS."}
+    ]
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO database connection, backup, restore, rehearsal or census was performed, and none is authorized by this artifact.",
+    "NO provider read requiring new execution authority, and NO provider, Supabase, Vercel or PITR mutation.",
+    "NO deployment and NO PR #201 act.",
+    "NO DDL and NO DML.",
+    "NO credential change.",
+    "NO hosted project creation or deletion.",
+    "NO Stage-A, NO G2, NO production migration.",
+    "NO exposure duration, RPO or RTO value is declared.",
+    "NO human confirmation is recorded or implied for any window.",
+    "NO quiesce act, and NO C2 partial quiesce, is authorized.",
+    "NO operation is added to AUTHORIZED_OPERATIONS.",
+    "NO historical artifact is edited: the five blobs of SECTION_C1 are byte-identical at commit.",
+    "NO access to ctaxtgujyyprgynmnvtq."
+  ],
+
+  "required_independent_review": "ONE independent clean-room recertification of the COMPLETE effective Recovery package: v1.0.0, v1.0.1, this v1.0.2, the owner records v1.0.0 and v1.0.1, the three manifests, and the quiesce and census chain as disposed in SECTION_C10. The certifier should specifically test: that the registry is closed and mechanical; that EA-F4 does not leak into Event B; that no UNKNOWN reaches a posture; that OD-5 and OD-6 are unchanged; that S8-3 is correctly grounded (OF-EC-2); that the production veto is evaluated first; and that nothing here expands authority. The writing lane does not certify its own output.",
+
+  "final_state": "STAGING_RECOVERY_EVENT_CLASS_AUTHORITY_AUTHORED__EVENT_A_C3__EVENT_B_BOUNDED_ACCEPT__GLOBAL_OD3_AMBIGUITY_CLOSED__READY_FOR_INDEPENDENT_RECERT",
+  "next_gate": "ONE independent clean-room recertification of the complete effective Recovery authority package. No hosted Recovery execution is authorized by the completion of this authoring lane; the prerequisites of SECTION_C14 remain conjunctive."
+}

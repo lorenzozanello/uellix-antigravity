@@ -1,0 +1,62 @@
+{
+  "manifest_id": "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.2",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json -- the event-class recovery posture amendment authored by mission CV1-STAGING-RECOVERY-EVENT-CLASS-AUTHORITY-AMENDMENT-R1 at BASE_SHA 4df9e6d37de19a15560993f1d67331bfa498008b / tree 2c606a43825623005d3ded38581da8431ac04f26, with its owner record docs/ops/owner-ratifications/STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1.json. || FORM: a SEPARATE COMPANION MANIFEST AMENDMENT carrying ONLY delta controls, following docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1.json. docs/ops/release/STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0.json (blob 4dfe9577, 56 controls) and the v1.0.1 manifest amendment (blob 7c0aa9d8, 8 controls) are BYTE-UNCHANGED and remain controlling for their own controls, except the parenthetical of v1.0.1 NC-23, whose string-absence clause is unsatisfiable as written and is replaced by the structural controls NC-33 and MUT-EC-5 (authority amendment SECTION_C11). || ID DISJOINTNESS: prior ids are PC-1..PC-20, NC-1..NC-25, MC-1..MC-17 and MUT-AM-1..MUT-AM-2. New ids are PC-21..PC-26, NC-26..NC-33 and MUT-EC-1..MUT-EC-6, derived as max+1 per series with a new MUT-EC- prefix for this amendment's own mutation controls; the intersection with the prior set is empty. || EXECUTABLE NOW: unlike v1.0.1, every control below names a real test file, tests/release/staging-recovery-event-class-authority.test.ts, which interprets the amendment's registry rather than restating it. Scenario letters A..P of the lane brief are cited in each control.",
+
+  "dependencies": [
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_v1.0.0 -- blob 154c3d1d396784ae7189b8088669b0ef8231de67. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_v1.0.0 -- blob 4dfe95774529e65287e51456842f89a2f0a498f9. NOT edited.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.0 -- blob 876fc76cedc3e83f44b7c76221f0bc812d35ee5d. NOT edited; OD-3 narrowly superseded by v1.0.1.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 -- blob 25749aee095b56e01b7a1aaa0ad2d5d37d5961fc. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_TEST_MANIFEST_AMENDMENT_v1.0.1 -- blob 7c0aa9d8d738d6474d38f3f4b87de245e2db9c33. NOT edited.",
+    "STAGING_RECOVERY_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2 -- this manifest's controlling authority, added by the same act.",
+    "STAGING_RECOVERY_OWNER_DECISIONS_v1.0.1 -- added by the same act."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+
+  "sentinels": [
+    {"id": "SENT-NO-SECRET-VALUE", "purpose": "No password, token, DSN or connection string value appears in the write set; the exposure-record fixture in the test uses placeholder digests only."},
+    {"id": "SENT-PRODUCTION-REF-IS-VETO-ONLY", "purpose": "Every occurrence of ctaxtgujyyprgynmnvtq in the write set is a veto, a finding, or a test input whose expected verdict is STOP_PRODUCTION_TARGET."},
+    {"id": "SENT-NO-EXPOSURE-DURATION-DECLARED", "purpose": "The authority declares no exposure duration, RPO or RTO. The only duration in the write set is a test fixture value, which is never cited as a bound."}
+  ],
+
+  "positive_controls": [
+    {"id": "PC-21", "description": "E: a valid, fresh Event A input (governed census C3_AVAILABLE, no writer, PR #201 NOT_EXECUTED, fresh, re-taken at W1, S8 green) evaluates to POSTURE_APPLICABLE with posture C3_EMPTY_WINDOW_BY_CONSTRUCTION and execution_authorized false.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "PC-22", "description": "K: a valid Event B input (bounded, quantified-before-confirmation exposure record on staging; maintenance window; no intentional pilot session; no intentional traffic; S8 green) evaluates to POSTURE_APPLICABLE with posture ACCEPT_BOUNDED_STAGING_WRITE_LOSS and execution_authorized false, for every PR #201 execution state, proving EA-F4 is not carried into Event B.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "PC-23", "description": "The registry has exactly the two classes, each class's posture equals the owner record v1.0.1 structured decision, no posture governs two classes, QUIESCE and C2 apply to no class, and the owner record carries the decision verbatim with an exact structured form.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "PC-24", "description": "OD-3, OD-5 and OD-6 of the v1.0.0 owner record recompute to the canonical digests pinned in both the amendment and the owner record v1.0.1; the v1.0.0 DATA_PROTECTION, RETENTION_AND_DISPOSAL, CLEANUP and TARGET blocks recompute to their pins.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "PC-25", "description": "The five historical artifacts recompute to their pinned git blob ids from the working tree, and the owner record v1.0.1 pins the same five; the four added paths of the write set exist together, which is how the path-only co-introduction of the amendment and the owner record is checked.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "PC-26", "description": "Every stop code a required fact can emit is declared by the registry, the exposure contract's machine paths equal its non-alternative fields, and the restated staging and production refs equal v1.0.0 TARGET.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"}
+  ],
+
+  "negative_controls": [
+    {"id": "NC-26", "description": "A and B: Event A with PR #201 EXECUTED or PARTIALLY_EXECUTED STOPS (STOP_EVENT_A_PR201_EXECUTED); UNKNOWN or absent state STOPS (STOP_EVENT_A_PR201_STATE_UNKNOWN); a census that is C3_UNKNOWN, UNKNOWN, absent or ungoverned STOPS.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "NC-27", "description": "C and D: Event A with a writer present, C3_NOT_AVAILABLE, an exposed surface of unmeasured occupancy, a STALE or VOID census, or a W1 re-observation not re-taken, STOPS.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "NC-28", "description": "F and P: Event A evidence reused for Event B (and the reverse) STOPS as wrong-class evidence; an empty, mixed, UNKNOWN or foreign unit membership STOPS as STOP_UNKNOWN_EVENT_CLASS; a missing or disagreeing class declaration STOPS.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "NC-29", "description": "G: Event B without an exposure record, without any bound, with an ill-formed bound, with any required field missing or UNKNOWN, or quantified at or after the HC-2-B confirmation STOPS; an asserted exposure fact cannot override the derivation.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "NC-30", "description": "H, I and J: a production ref named anywhere (including the exposure record, and even in an unclassifiable window) STOPS first with STOP_PRODUCTION_TARGET; an UNKNOWN staging identity STOPS; an active or UNKNOWN pilot-session posture STOPS; every not-authorized C2 label STOPS with STOP_C2_PARTIAL_QUIESCE_NOT_AUTHORIZED; relabelling ACCEPT as QUIESCE or claiming C3 for Event B STOPS.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "NC-31", "description": "ACCEPT is not permission to skip Recovery: with Event B, each S8 fact set UNKNOWN STOPS, and a window whose restorability rests only on a D1 proof of another artifact STOPS (S8-3). C3 likewise does not prove integrity: an Event A window with an UNKNOWN recovery point STOPS.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "NC-32", "description": "UNKNOWN never becomes a posture: every required fact of either class and of S8, set to UNKNOWN, yields STOP.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "NC-33", "description": "Structural replacement of the v1.0.1 string-absence check: v1.0.0 AUTHORIZED_OPERATIONS parses to exactly AO-1..AO-9; no successor artifact has a top-level AUTHORIZED_OPERATIONS key or declares an object with an operation id; the amendment's AUTHORIZED_OPERATIONS_DELTA is empty. The historical defect itself is reproduced (the check contains its own forbidden token) rather than silently skipped.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"}
+  ],
+
+  "mutation_controls": [
+    {"id": "MUT-EC-1", "description": "L: applying the historical global OD-3 posture (QUIESCE) unchanged to both classes, or any single posture to both, makes registryViolations RED.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "MUT-EC-2", "description": "M: dropping an OD-5 condition, or widening OD-5's decision, changes its canonical digest and is RED against both pins.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "MUT-EC-3", "description": "N: dropping an OD-6 retention element, or reversing destroy-by-default, changes its canonical digest and is RED against both pins.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "MUT-EC-4", "description": "O: appending one byte to any of the five historical artifacts changes its git blob id and is RED.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "MUT-EC-5", "description": "Adding an operation to v1.0.0 AUTHORIZED_OPERATIONS is RED under the parsed-set check, with no string search.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"},
+    {"id": "MUT-EC-6", "description": "The interpreter is artifact-driven: removing EA-F4 from the registry turns scenario A from STOP_EVENT_A_PR201_EXECUTED into POSTURE_APPLICABLE, and pushing EA-F4 into Event B makes registryViolations RED. A scenario suite that could not be moved by editing the authority would prove nothing about the authority.", "test_file": "tests/release/staging-recovery-event-class-authority.test.ts"}
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
