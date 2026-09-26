@@ -1113,6 +1113,24 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/checkpoint-a1/corroboration.sql',
     ],
   },
+  // HPO-ODS-W2-36 — registration of the grant DECLARED by
+  // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json for the future
+  // durable platform-authority ACL successor implementation node
+  // (stella_0022). This is a SEPARATE governed registration act, distinct
+  // from the allocation act that declared the grant: the allocation writer
+  // may never register its own grant, so that the later implementation
+  // writer can never grant itself authority. Registers exactly the row the
+  // allocation declared, byte-for-byte: authority id, branch, pattern order
+  // and pattern count. No stella_0022 rollback pattern is registered: the
+  // successor is forward-only, exactly as declared.
+  {
+    authorityId: 'HPO-ODS-W2-36',
+    branch: 'codex/cv1-staging-security-acl-durable-r1',
+    patterns: [
+      'db/prepared/stella_0022_platform_authority_acl_successor.sql',
+      'db/prepared/README.md',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
