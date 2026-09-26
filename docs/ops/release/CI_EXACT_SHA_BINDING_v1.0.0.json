@@ -1,0 +1,154 @@
+{
+  "package_id": "CI_EXACT_SHA_BINDING",
+  "version": "1.0.0",
+  "artifact_id": "CI_EXACT_SHA_BINDING_v1.0.0",
+  "authority_class": "RELEASE_CI_IMPLEMENTATION_AUTHORITY",
+  "document_class": "IMPLEMENTATION_MATERIALIZATION__BOUNDED_WRITE_SET",
+  "append_only": true,
+  "mission_id": "CV1-CI-EXACT-SHA-BINDING-R1",
+  "role": "BOUNDED_IMPLEMENTATION_WRITER_FIS_01A",
+  "materialization_date": "2026-09-26",
+
+  "amends": "NOTHING. This artifact materializes owner ratification for a bounded FIS-01a implementation. It does not amend, supersede, or relax the frozen FIB, PC-01B or IM-01B authority, the frozen ODS authority artifact, docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json, or docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json (which declared HPO-G-04). It does not edit the ledger and does not allocate an ODS ordinal.",
+  "supersedes": null,
+
+  "AS_OF_BASE": "20308b1121e3960361374f8eeabc8b100fdacad7",
+
+  "PURPOSE": "To freeze, as owner-ratified implementation authority, the minimum FIS-01a slice of the release-CI exact-SHA binding surface: a closed event-SHA resolver, a checkout pinned to that exact resolved SHA, a defense proving the PR synthetic merge ref is not what was tested, and a final SHA/tree-bound evidence artifact. This is the FIS-01a subset of the FIS-01 surface named by RELEASE_GATE_LEDGER_v1.0.0.json (gate M1, id 'FIS-01', line ~1686: 'exact-SHA CI binding, a trigger on pushes to the integration branch, step timeouts, run concurrency, and branch protection'). It confers NO authority over the remaining FIS-01 elements or any other release surface.",
+
+  "HPO_RATIFICATION": {
+    "HPO-G-04": {
+      "status": "OWNER_RATIFIED",
+      "binding_text": "Release CI binds the exact SHA and reconciles the files actually collected and executed.",
+      "declared_by": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json (BINDING_HPO_RATIFICATIONS.HPO-G.bindings, id HPO-G-04)",
+      "materialized_by_this_artifact": "The exact-SHA binding half only (RELEASE_GATE_LEDGER gate M1). The file-reconciliation half (gate M4) is explicitly OUT OF SCOPE for this writer — see NON_AUTHORIZATIONS."
+    }
+  },
+
+  "OWNER_RATIFICATION_ON_LAUNCH": {
+    "OD-1": "FIS-01a is authorized under HPO-G-04 as the minimum release-CI exact-SHA binding surface.",
+    "OD-2": "The single non-additive workflow change — on.push.branches from [main] to [main, integration/commercial-v1] — is authorized by Release/HPO-G-04. It is NOT claimed as covered by the narrower ODS ADDITIVE_ONLY surface.",
+    "OD-3": "Out of scope for this writer: real-PG forcing / FIS-01b; timeout changes; concurrency changes; branch protection/rulesets; M3 lint warning ratchet; M4 collected-vs-executed reconciliation; M10 env-validated build; M13 offline evals; M15 drift; PR #222."
+  },
+
+  "EXACT_WRITE_SET": [
+    ".github/workflows/ci.yml",
+    "scripts/ci-exact-sha-evidence.ts",
+    "tests/ci-exact-sha-binding.test.ts",
+    "docs/ops/release/CI_EXACT_SHA_BINDING_v1.0.0.json"
+  ],
+  "write_set_rule": "Exactly these four paths. No other path is authorized by this artifact. A need for any other path is a STOP condition for this mission, not a scope expansion to route around here.",
+
+  "OUTCOME": "A push to main or to integration/commercial-v1, and every pull request, executes ci.yml against the exact intended event SHA. Successful CI emits SHA-bound evidence (artifact exact-sha-evidence-<EVIDENCE_SHA>, content repeating EVIDENCE_SHA and TREE) proving what was actually tested.",
+
+  "EVENT_SHA_RESOLUTION": {
+    "rule": "Closed resolver. Every event branches explicitly; no branch may fall back to another event's source (no `a || b` expression). Implemented twice by necessity, not by choice: once in .github/workflows/ci.yml's 'Resolve exact event SHA' step (bash, runs BEFORE checkout — the repository, and therefore any tsx script, is not yet on disk), and once as resolveExpectedSha in scripts/ci-exact-sha-evidence.ts (the same semantics, made directly unit-testable by tests/ci-exact-sha-binding.test.ts). The two are checked for consistency by review, not by shared runtime code, because the ordering constraint (resolve before checkout) makes shared runtime code between them impossible.",
+    "pull_request": "expected SHA = github.event.pull_request.head.sha. Absent -> FAIL.",
+    "push": "expected SHA = github.sha, but only if GITHUB_REF is exactly refs/heads/main or refs/heads/integration/commercial-v1. Otherwise -> FAIL.",
+    "workflow_dispatch": "expected SHA = github.sha.",
+    "other_events": "FAIL. The resolver authorizes no event beyond these three."
+  },
+
+  "CHECKOUT": {
+    "action": "actions/checkout@v4 (the first and only checkout — no preliminary generic checkout precedes it)",
+    "ref": "the exact resolved SHA from the 'Resolve exact event SHA' step output, never the default trigger ref",
+    "fetch_depth": 0,
+    "post_checkout_verification": "a dedicated step runs `git rev-parse HEAD` and fails closed if it does not equal the resolved SHA"
+  },
+
+  "TREE_BINDING": {
+    "EVIDENCE_SHA": "git rev-parse HEAD, re-verified equal to the resolved EXPECTED_SHA immediately before evidence assembly",
+    "TREE": "derived as `<EVIDENCE_SHA>^{tree}`, never as a separately-computed `HEAD^{tree}` that could diverge if HEAD moved between calls",
+    "pre_emission_gate": "`git diff --quiet HEAD --` must pass before evidence is derived from the tree"
+  },
+
+  "PR_MERGE_REF_DEFENSE": {
+    "capture": "github.event.pull_request.merge_commit_sha, captured for pull_request events only",
+    "invariant": "if the resolved/tested SHA equals the captured merge-ref SHA, the run FAILS — the merge ref must never be the tested identity",
+    "evidence_statement": "MERGE_REF_SHA_NOT_TESTED in the evidence record states the merge-ref SHA when one was captured and distinct, or 'absent'/'not_applicable' otherwise"
+  },
+
+  "EVIDENCE_STEP": {
+    "position": "final meaningful step, after Test and Build",
+    "no_always": true,
+    "no_continue_on_error": true,
+    "artifact_name": "exact-sha-evidence-<EVIDENCE_SHA>",
+    "artifact_content": "repeats EVIDENCE_SHA and TREE, plus EVENT, REF, EXPECTED_SOURCE, MERGE_REF_SHA_NOT_TESTED, RUN_ID, RUN_ATTEMPT, WORKFLOW_REF"
+  },
+
+  "PRESERVED_CI_AUTHORITY": [
+    "authority seal verification (pnpm authority:seal:verify) unchanged in position and content",
+    "install ordering (pnpm install --frozen-lockfile before all other pnpm steps) unchanged",
+    "unit test step (pnpm test:unit) unchanged",
+    "build step (pnpm build) unchanged",
+    "the existing checkout fetch-depth: 0 requirement, preserved verbatim on the same (only) checkout step",
+    "tests/ods/ci-authority-integration.test.ts runs unchanged and continues to pass against the modified ci.yml"
+  ],
+
+  "NEGATIVE_CONTROLS": {
+    "count": 15,
+    "location": "tests/ci-exact-sha-binding.test.ts",
+    "ids": [
+      "NC1 remove checkout ref",
+      "NC2 remove integration branch from push",
+      "NC3 remove main from push",
+      "NC4 evidence SHA != HEAD",
+      "NC5 tree != SHA^{tree}",
+      "NC6 pull_request head SHA missing",
+      "NC7 fallback to github.sha from PR",
+      "NC8 push on unapproved ref",
+      "NC9 artifact name does not contain SHA",
+      "NC10 artifact content lacks SHA/tree",
+      "NC11 evidence step if: always()",
+      "NC12 evidence continue-on-error",
+      "NC13 evidence emitted before another required step",
+      "NC14 tested HEAD == merge-ref SHA",
+      "NC15 workflow reports head SHA while checkout uses another SHA"
+    ],
+    "mutation_self_test": "tests/ci-exact-sha-binding.test.ts, describe('mutation self-test — the NC1 check actually detects a real survivor'): proves the NC1 checkout-ref regex check is not vacuous by mutating an in-memory copy of ci.yml (checked-in file untouched) and asserting the check fails on that mutant."
+  },
+
+  "TEST_CONTRACT": {
+    "run": [
+      "tests/ci-exact-sha-binding.test.ts",
+      "tests/ods/ci-authority-integration.test.ts",
+      "pnpm typecheck",
+      "pnpm secrets:scan",
+      "pnpm authority:seal:verify",
+      "pnpm ods:scope -- --base 20308b1121e3960361374f8eeabc8b100fdacad7 --allow .github/workflows/ci.yml --allow scripts/ci-exact-sha-evidence.ts --allow tests/ci-exact-sha-binding.test.ts --allow docs/ops/release/CI_EXACT_SHA_BINDING_v1.0.0.json"
+    ],
+    "explicitly_not_run": [
+      "unrelated full PostgreSQL/RLS suites",
+      "pnpm test:integration",
+      "playwright golden journeys"
+    ]
+  },
+
+  "ODS_SCOPE_STATEMENT": {
+    "protected_authority_required": false,
+    "reason": "None of the four exact write-set paths matches any pattern in DEFAULT_PROTECTED_PATTERNS (scripts/ods-scope.ts): docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. Proven by running pnpm ods:scope with --allow covering exactly these four paths and no --protected-authority flag.",
+    "no_ods_ordinal_allocated": true,
+    "no_ods_addendum_created": true,
+    "release_gate_ledger_edited": false
+  },
+
+  "NON_AUTHORIZATIONS": [
+    "Real-PG forcing / FIS-01b",
+    "CI step timeout changes",
+    "CI run concurrency changes",
+    "Branch protection or ruleset configuration",
+    "M3 lint warning ratchet",
+    "M4 collected-vs-executed test reconciliation",
+    "M10 env-validated build",
+    "M13 offline evals",
+    "M15 drift detection",
+    "Any modification to, or reconciliation with, PR #222",
+    "Any edit to docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+    "Any ODS addendum or ordinal allocation"
+  ],
+
+  "NEXT_GATE": {
+    "on_success": "CV1-CI-EXACT-SHA-BINDING-IC-R1",
+    "status": "NOT STARTED by this artifact. This writer commits locally and does not push, open a PR, or begin independent certification."
+  }
+}
