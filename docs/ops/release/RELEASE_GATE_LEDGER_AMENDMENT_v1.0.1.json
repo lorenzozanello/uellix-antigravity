@@ -1,0 +1,208 @@
+{
+ "package_id": "RELEASE_GATE_LEDGER_AMENDMENT",
+ "version": "1.0.1",
+ "artifact_id": "RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1",
+ "authority_class": "APPEND_ONLY_CANONICAL_GATE_LEDGER_AMENDMENT",
+ "document_class": "AUTHORITY_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION__NO_PROVIDER_ACTION",
+ "append_only": true,
+ "status": "FROZEN_PENDING_INDEPENDENT_CERTIFICATION. Effective only once this file is integrated together with its consuming authority after an independent certification PASS. Until then it binds nothing and no stage declaration may cite it.",
+ "mission_id": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R2",
+ "lane": "codex/cv1-pilot-billing-minimum-authority-r1",
+ "role": "PILOT_BILLING_MINIMUM_AUTHORITY_WRITER (bounded release successor for independent-certification finding B-1)",
+ "mode": "DOCS_ONLY_TIER_A_RELEASE_LEDGER_AMENDMENT",
+ "materialization_date": "2026-09-26",
+ "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+ "repository": "lorenzozanello/uellix-antigravity",
+ "amends": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+ "companion_authority": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+ "companion_authority_amendments": ["docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json"],
+ "supersedes": null,
+ "binding_owner_ratification": "docs/ops/owner-ratifications/PILOT_BILLING_OWNER_DECISIONS_v1.0.0.json#ratifications[id=PILOT-BILLING-01].release_scope_confirmation (RSC-1..RSC-8)",
+ "consuming_authority": "docs/ops/commercial/PILOT_BILLING_EXECUTION_AUTHORITY_v1.0.0.json (SECTION_8.MC-P7; act of record PB-A00)",
+ "companion_manifest": "docs/ops/commercial/PILOT_BILLING_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json (controls PB-P-21, PB-P-22, PB-N-31..PB-N-39)",
+ "companion_ods_addendum": null,
+ "GRANT_ID": null,
+ "AS_OF": {
+  "BASE_SHA": "20308b1121e3960361374f8eeabc8b100fdacad7",
+  "BASE_TREE": "8a950637cbe1f5e050471e464cf2953177f3d507",
+  "CANDIDATE_PARENT_SHA": "6cc32fc18bc3d86eccba4b211dcbe879bbab88f5",
+  "CANDIDATE_PARENT_TREE": "23095dee334ed42e4b72318f34808103e7631739",
+  "BRANCH": "codex/cv1-pilot-billing-minimum-authority-r1",
+  "PRESTATE": "ODS_PRESTATE=PASS at CANDIDATE_PARENT_SHA, clean with --untracked-files=all",
+  "measurement_note": "Every ledger fact asserted here was measured at BASE_SHA, where RELEASE_GATE_LEDGER_v1.0.0.json, STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json and STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json are byte-identical to CANDIDATE_PARENT_SHA. The per-stage figures below are DERIVED from the ledger's first_required_at_stage field by rule, not observed readiness, and carry no evidentiary weight about any environment."
+ },
+ "NAMING_DERIVATION": "The ledger carries append_only=true and the keys amends/supersedes. The repository convention for amending a frozen authority without editing it is a sibling <PARENT_PACKAGE_ID>_AMENDMENT_v1.0.1.json in the parent's own directory (precedents: docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1.json). The parent package_id is RELEASE_GATE_LEDGER, so the path is docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json. Measured ABSENT at BASE_SHA and in every local and remote-tracking ref (git log --all over the path returned nothing). The ledger, not its companion authority, is amended because gate placement is NORMATIVE only in the ledger field first_required_at_stage (companion PRODUCTION_PATH step 8 normative_source: 'Where the two appear to disagree, the ledger governs'); the companion authority's per-stage lists restate derived content and are superseded here only in the respects listed under SUPERSEDED_CLAUSES. docs/ops/release/** is not a member of DEFAULT_PROTECTED_PATTERNS (scripts/ods-scope.ts) and is outside the sealed corpus of scripts/authority-seal-verify.ts, so no ODS grant is required.",
+ "TRIGGER": {
+  "finding": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R1, blocking finding B-1",
+  "statement": "PILOT_READY without Stripe was not formally reachable: PV3 (payment provider in test mode) and SEC7 (billing webhook integrity) were first required at FEATURE_COMPLETE_STAGING (ordinal 3) and, by NON_REGRESSION_RULE and the non-skippable stage rule, inherited by RELEASE_CANDIDATE and PILOT_READY; PV3 and SEC7 require the billing capability packages applied to the target and a replay test in Preview, which through billing OF-4 requires CB-5 before CAP-03, while PILOT-BILLING-01 defers CB-5 and forbids CAP-03 during the Pilot."
+ },
+ "AMENDMENT_SEMANTICS": {
+  "rule": "APPEND-ONLY. docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json, docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json and docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json are left BYTE-UNCHANGED and remain historical and canonical for everything they carry. This artifact changes ONE field of TWO gates and the companion restatements derived from that field, and nothing else.",
+  "how_to_read_the_four_together": "Where this amendment is silent, the ledger, the companion authority and its v1.0.1 amendment control verbatim. Where this amendment names a clause under SUPERSEDED_CLAUSES, that clause is superseded ONLY in the respect stated and every other word of it continues to control. Where it names a clause under QUALIFIED_CLAUSES_NOT_SUPERSEDED, the clause controls in full and this amendment records only how it is read alongside the re-staging.",
+  "what_this_amendment_does": [
+   "RE-STAGES PV3 and SEC7: first_required_at_stage FEATURE_COMPLETE_STAGING -> PRODUCTION_READY (GATE_RESTAGING RS-1, RS-2).",
+   "Adds the PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE rule (EPR), which makes PV3 and SEC7 required at the EARLIER of PRODUCTION_READY and the first enablement of the payment provider on any target, and which requires every stage declaration earlier than PRODUCTION_READY to carry a payment-provider-dark attestation.",
+   "Records the owner's scope-aware reading of HPO-G.6 and HPO-G.7 (RSC-5) and the disposition of HPO-G.5 and HPO-G.8.",
+   "Proves that the stage ladder, every other gate, and the cumulative gate sets of PRODUCTION_READY and GO_LIVE are unchanged."
+  ],
+  "what_this_amendment_is_not": [
+   "NOT a waiver, deletion, retirement, satisfaction or PASS of PV3 or SEC7. Both keep id, name, category, enforcement, owner, current_state (PV3 ABSENT, SEC7 PARTIAL), pass_criteria, evidence_class, dependencies, retest_after and source_of_truth byte-identical.",
+   "NOT a new, removed, renamed, reordered or skippable stage. The seven canonical stages, their ordinals, their entry preconditions and the non-skippable rule are untouched. No stage named COMMERCIAL_CORE_USABLE exists or is created; that term remains a programme target of the commercial authorities.",
+   "NOT a change to any gate other than PV3 and SEC7, in any field.",
+   "NOT the ledger re-derivation required by STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#LEDGER_REDERIVATION_REQUIREMENT (ENV-13). No corpus figure, readiness ratio or gate state is re-derived or pinned here.",
+   "NOT an authorization of any Stripe action, provider configuration, credential, hosted access, deployment or stage declaration.",
+   "NOT a claim that PILOT_READY is satisfied or near: gates in its derived set remain in their recorded states, including the open RELEASE_CANDIDATE tension between G1 and PV4 and the stop lines SSL-03, SSL-04, LSL-02..LSL-05."
+  ]
+ },
+ "CANONICAL_STAGE_LADDER_REFERENCE": {
+  "source": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json#CANONICAL_STAGES.stages",
+  "stages_in_order": ["DEVELOPMENT_COMPLETE", "STAGING_ALIGNED", "FEATURE_COMPLETE_STAGING", "RELEASE_CANDIDATE", "PILOT_READY", "PRODUCTION_READY", "GO_LIVE"],
+  "unchanged": "Recorded for machine checking only. This amendment adds, removes, renames and reorders nothing and alters no entry_preconditions: RELEASE_CANDIDATE still requires FEATURE_COMPLETE_STAGING declared at the same SHA; PILOT_READY still requires RELEASE_CANDIDATE declared and release gate PB-01 resolved or accepted in writing; PRODUCTION_READY still requires PILOT_READY declared with the pilot executed."
+ },
+ "GATE_RESTAGING": [
+  {
+   "id": "RS-1",
+   "gate": "PV3",
+   "field": "first_required_at_stage",
+   "from": "FEATURE_COMPLETE_STAGING",
+   "to": "PRODUCTION_READY",
+   "unchanged_fields": ["id", "name", "category", "enforcement", "owner", "current_state", "pass_criteria", "evidence_class", "dependencies", "cross_reference_not_a_dependency", "retest_after", "source_of_truth", "measured_at_base"],
+   "reason": "PV3 is the payment-provider configuration gate. Under PILOT-BILLING-01 the payment provider is deliberately OFF through PILOT_READY (RSC-1, RSC-5), so no Pilot-stage SHA has a payment provider to configure, and its criterion ('the capability packages are applied to the target, and a replay and duplicate-delivery test passes in Preview') is satisfiable only after CB-5, which the Pilot defers. Placed at the earliest EXISTING stage after PILOT_READY, and earlier on enablement by EPR."
+  },
+  {
+   "id": "RS-2",
+   "gate": "SEC7",
+   "field": "first_required_at_stage",
+   "from": "FEATURE_COMPLETE_STAGING",
+   "to": "PRODUCTION_READY",
+   "unchanged_fields": ["id", "name", "category", "enforcement", "owner", "current_state", "pass_criteria", "evidence_class", "dependencies", "retest_after", "source_of_truth", "measured_at_base"],
+   "reason": "SEC7 depends on PV3 and asserts integrity of a billing webhook that is disabled (CAP-03 off) throughout the Pilot; it cannot be required earlier than the gate it depends on without making the stage order unsatisfiable. Same placement and the same EPR precedence as PV3."
+  }
+ ],
+ "PLACEMENT_DERIVATION": {
+  "rule_applied": "Owner direction RSC-6: if a concrete first_required_at_stage is needed, take the earliest EXISTING post-PILOT_READY stage that preserves the full commercial/production invariant.",
+  "candidates": {
+   "PRODUCTION_READY": "ordinal 6, the first stage after PILOT_READY (ordinal 5). Production deployment is authorized there (HPO-G.8). Placing PV3 and SEC7 here keeps the cumulative gate set of PRODUCTION_READY IDENTICAL to the pre-amendment set, so no production authorization can be issued without them.",
+   "GO_LIVE": "REJECTED. It would let PRODUCTION_READY authorize production deployment without payment-provider proof, which changes the PRODUCTION_READY gate set and weakens HPO-G.8."
+  },
+  "chosen": "PRODUCTION_READY",
+  "dependency_consistency": "PV3 depends on S5 (STAGING_ALIGNED, ordinal 2 <= 6). SEC7 depends on PV3 (both ordinal 6). No gate first required at ordinal <= 5 depends on PV3 or SEC7: the only dependent of PV3 is SEC7, and SEC7 has no dependent (measured over every GATES[].dependencies). The ledger self_check property no_gate_depends_on_a_gate_first_required_at_a_later_stage therefore still holds."
+ },
+ "PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE": {
+  "id": "EPR",
+  "owner_source": "RSC-5 ('Stripe-specific provider gates are deferred WHEN Stripe is deliberately OFF'): the deferral is predicated on the provider being off, so it cannot survive the provider being switched on.",
+  "rule": "PV3 and SEC7 are required at the EARLIER of (a) PRODUCTION_READY and (b) the first ENABLEMENT of the payment provider on any target. Neither gate may be regressed after it has been required.",
+  "enablement_means_any_of": [
+    "a payment-provider credential NAME present in the environment scope of a target (names only; SSL-08)",
+    "the billing webhook capability CAP-03 switched on for a target, including app/api/webhooks/stripe/route.ts WEBHOOK_DATABASE_IDENTITY_AVAILABLE true at the deployed SHA",
+    "any path that creates a payment-provider customer, checkout session or subscription reachable at the deployed SHA",
+    "any Stripe-dependent node of the commercial authorities (CB-3, CB-4, CB-5, CB-6, CB-9, CE-6) applied to a target"
+  ],
+  "declaration_requirement": "Every declaration of FEATURE_COMPLETE_STAGING, RELEASE_CANDIDATE or PILOT_READY cites, alongside its gate evidence, a PAYMENT_PROVIDER_DARK attestation bound to the declared SHA and target: no member of enablement_means_any_of holds. A declaration below PRODUCTION_READY that cannot attest the provider dark MUST instead cite PASS evidence for PV3 and SEC7; with neither, it is not a declaration (declaration_rule of the companion authority). This is an additional requirement, never a substitute for any gate.",
+  "why_not_a_gate": "No gate id is allocated. The attestation is a declaration-content condition attached to an existing rule, so the ledger's closed gate list and its 78-gate count are unchanged.",
+  "consequence_for_the_pilot": "Under ACTIVE_WITHOUT_STRIPE the provider is dark by construction of the consuming authority (PBR-9, PB-N-22; CAP-03 FORBIDDEN IN PILOT), so clause (b) never fires before PRODUCTION_READY and the Pilot path requires neither PV3 nor SEC7.",
+  "consequence_for_the_full_commercial_route": "Full Stripe automation (COMMERCIAL_CORE_USABLE of the commercial authorities) enables the provider, so PV3 and SEC7 must PASS before that enablement on any target, and in every case before PRODUCTION_READY is declared at any SHA. Billing OF-4 (CAP-03 MUST NOT be enabled before CB-5) is untouched and composes with EPR."
+ },
+ "HPO_G_DISPOSITION": {
+  "source": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json#HPO-G; materialized by docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json#BINDING_HPO_RATIFICATIONS",
+  "rule": "HPO-G text is NOT amended and NOT reopened. The owner's own reading of HPO-G.6 and HPO-G.7 (RSC-5, recorded in the binding owner ratification) is materialized here.",
+  "HPO-G.5": "UNCHANGED. STAGING_ALIGNED still requires parity with provider capabilities dark (S7, S10). The payment provider stays dark for longer, which is compatible with and stricter than G.5.",
+  "HPO-G.6": "SCOPE-AWARE. 'Then browser/provider gates' is read as: every browser journey gate (M9, J1, J2, J3, J4, G13) and every provider gate APPLICABLE TO THE RELEASE CONFIGURATION (PV1, PV2, PV5, PV6; PV4 stays at RELEASE_CANDIDATE as before) is required at FEATURE_COMPLETE_STAGING, before RELEASE_CANDIDATE. The payment-provider gates PV3 and SEC7 are applicable only to a configuration in which the payment provider is enabled; with the provider deliberately OFF they are deferred to PRODUCTION_READY, and EPR pulls them forward the moment the provider is enabled.",
+  "HPO-G.7": "UNCHANGED. RELEASE_CANDIDATE may not be entered before FEATURE_COMPLETE_STAGING is declared at the same SHA; no RELEASE_CANDIDATE gate is added, removed or moved.",
+  "HPO-G.8": "UNCHANGED AND CARRIED. Production still requires recovery evidence, observability, security and legal signoff and normal lineage; the PRODUCTION_READY new-gate list gains PV3 and SEC7, and its cumulative set is unchanged."
+ },
+ "NON_REGRESSION_RULE_DISPOSITION": "UNCHANGED AND APPLIED. Each gate is still listed once, at its earliest required stage, and inherited by every later stage. After this amendment PV3 and SEC7 are listed at PRODUCTION_READY and inherited by GO_LIVE; per-stage sets remain DERIVED from first_required_at_stage (read through GATE_RESTAGING) and are never restated.",
+ "DERIVED_STAGE_SETS": {
+  "method": "cumulative set of stage N = every GATES[].id whose first_required_at_stage (after GATE_RESTAGING) has ordinal <= N; ledger gate count 78.",
+  "before": {"DEVELOPMENT_COMPLETE": 11, "STAGING_ALIGNED": 26, "FEATURE_COMPLETE_STAGING": 41, "RELEASE_CANDIDATE": 58, "PILOT_READY": 62, "PRODUCTION_READY": 76, "GO_LIVE": 78},
+  "after": {"DEVELOPMENT_COMPLETE": 11, "STAGING_ALIGNED": 26, "FEATURE_COMPLETE_STAGING": 39, "RELEASE_CANDIDATE": 56, "PILOT_READY": 60, "PRODUCTION_READY": 76, "GO_LIVE": 78},
+  "difference_by_stage": {"DEVELOPMENT_COMPLETE": [], "STAGING_ALIGNED": [], "FEATURE_COMPLETE_STAGING": ["PV3", "SEC7"], "RELEASE_CANDIDATE": ["PV3", "SEC7"], "PILOT_READY": ["PV3", "SEC7"], "PRODUCTION_READY": [], "GO_LIVE": []},
+  "new_at_FEATURE_COMPLETE_STAGING_after": ["G13", "J1", "J2", "J3", "J4", "M9", "PV1", "PV2", "PV5", "PV6", "SEC1", "SEC4", "SEC5"],
+  "new_at_PRODUCTION_READY_after": ["D2", "D3", "D4", "D5", "G10B", "G9", "LC0-PP", "P1", "P2", "P3", "P5", "P6", "P7", "P8", "PV3", "SEC7"]
+ },
+ "PILOT_READY_REACHABILITY": {
+  "claim": "FORMALLY REACHABLE WITHOUT STRIPE under ACTIVE_WITHOUT_STRIPE: the ladder DEVELOPMENT_COMPLETE -> STAGING_ALIGNED -> FEATURE_COMPLETE_STAGING -> RELEASE_CANDIDATE -> PILOT_READY contains no gate that requires the payment provider, CB-5 or CAP-03.",
+  "basis": "The derived PILOT_READY set (60 gates) excludes exactly PV3 and SEC7. A whole-ledger search of every gate's name, pass_criteria and source_of_truth for stripe, payment, billing and webhook matches only PV3 and SEC7 (the word 'checkout' additionally occurs in M1 and M8, where it is the git/CI checkout step, not a payment checkout). The LC0 baseline gates commercial_activation on legal instruments (HTF-11), not on payment (docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json), and LC0-PILOT's criterion is unchanged.",
+  "what_reachable_does_not_mean": "Reachable is a structural property: no gate on the path is unsatisfiable BECAUSE the provider is off. Every other gate on the path must still be satisfied with evidence at the declared SHA; none is satisfied, accepted or narrowed here."
+ },
+ "SUPERSEDED_CLAUSES": {
+  "rule": "Each entry names one clause, quotes it verbatim, and states the SINGLE respect in which it no longer controls.",
+  "entries": [
+   {"id": "SC-1", "artifact": "ledger", "location": "GATES[id=PV3].first_required_at_stage", "verbatim_text": "FEATURE_COMPLETE_STAGING", "respect_in_which_superseded": "Reads PRODUCTION_READY (RS-1), subject to EPR.", "everything_else_continues": "Every other field of PV3."},
+   {"id": "SC-2", "artifact": "ledger", "location": "GATES[id=SEC7].first_required_at_stage", "verbatim_text": "FEATURE_COMPLETE_STAGING", "respect_in_which_superseded": "Reads PRODUCTION_READY (RS-2), subject to EPR.", "everything_else_continues": "Every other field of SEC7."},
+   {"id": "SC-3", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3 FEATURE_COMPLETE_STAGING].new_machine_gates and .new_human_gates", "verbatim_text": "new_machine_gates [M9, PV1, J1, J2, J3, J4, SEC1, SEC4, SEC5, SEC7, G13]; new_human_gates [PV1, PV2, PV3, PV5, PV6, SEC1, SEC4, SEC5, SEC7, G13]", "respect_in_which_superseded": "SEC7 is removed from new_machine_gates and PV3 and SEC7 from new_human_gates.", "everything_else_continues": "Every other member of both lists."},
+   {"id": "SC-4", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].required_environment_evidence", "verbatim_text": "PV1, PV2, PV3, PV5 and PV6 each configured by NAME in the Preview scope and exercised at least once. The real model provider is explicitly NOT included: it remains dark until PV4 at RELEASE_CANDIDATE.", "respect_in_which_superseded": "PV3 is not in the list. The payment provider, like the real model provider, is not included and remains dark until PV3 is required (PRODUCTION_READY or earlier by EPR).", "everything_else_continues": "PV1, PV2, PV5, PV6 configured by NAME and exercised; the real model provider sentence."},
+   {"id": "SC-5", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].required_security_review", "verbatim_text": "SEC1 tenant isolation, including a read-only closed-world census of the live catalog; SEC4 public disclosure surface; SEC5 secret custody; SEC7 billing webhook integrity.", "respect_in_which_superseded": "SEC7 is not part of this stage's security review.", "everything_else_continues": "SEC1 (with its census), SEC4, SEC5."},
+   {"id": "SC-6", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=3].exit_declaration", "verbatim_text": "FEATURE_COMPLETE_STAGING at SHA <sha> against target <target id>, citing three green browser journeys with negative controls plus one configuration proof per provider.", "respect_in_which_superseded": "'one configuration proof per provider' means per provider whose gate is required at this stage (PV1, PV2, PV5, PV6), plus the EPR payment-provider-dark attestation.", "everything_else_continues": "SHA, target, three green browser journeys with negative controls."},
+   {"id": "SC-7", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=6 PRODUCTION_READY].new_machine_gates, .new_human_gates, .required_environment_evidence, .required_security_review", "verbatim_text": "new_machine_gates [D3, P1, P2, P6, P7]; new_human_gates [D2, D3, D4, D5, LC0-PP, G9, G10B, P1, P2, P3, P5, P7, P8]; required_environment_evidence 'P3 as the production environment-name inventory. Names only.'; required_security_review 'P8, which closes ...'", "respect_in_which_superseded": "SEC7 joins new_machine_gates; PV3 and SEC7 join new_human_gates; required_environment_evidence additionally requires PV3 configured by NAME in the Preview scope and its replay test passed; required_security_review additionally requires SEC7.", "everything_else_continues": "Every existing member and sentence."}
+  ]
+ },
+ "QUALIFIED_CLAUSES_NOT_SUPERSEDED": {
+  "rule": "These continue to control in full; each entry records only how it is read alongside this amendment.",
+  "entries": [
+   {"id": "QC-1", "artifact": "companion authority", "location": "PRODUCTION_PATH.ordered_path[step=7].gates and [step=8].gates", "reading": "Narrative ordering aids (step 8 normative_source: the ledger governs). PV3 (step 7) and SEC7 (step 8) are read at step 11 (PRODUCTION_READY), or earlier on enablement by EPR."},
+   {"id": "QC-2", "artifact": "companion authority", "location": "BINDING_HPO_RATIFICATIONS.HPO-G.bindings[id=HPO-G-06].materialized_by ('stage FEATURE_COMPLETE_STAGING')", "reading": "Still materialized by FEATURE_COMPLETE_STAGING, read scope-aware per HPO_G_DISPOSITION.HPO-G.6."},
+   {"id": "QC-3", "artifact": "ledger", "location": "GATES[id=PV3].cross_reference_not_a_dependency", "reading": "Still true: SEC7 depends on PV3, both now at PRODUCTION_READY."},
+   {"id": "QC-4", "artifact": "companion authority amendment v1.0.1", "location": "LEDGER_REDERIVATION_REQUIREMENT", "reading": "This amendment is NOT that re-derivation. Any successor ledger revision produced for ENV-13 MUST carry RS-1, RS-2 and EPR forward verbatim in substance, or supersede them by its own reasoned successor under RULE_NO_GATE_WEAKENING; silently restoring the v1.0.0 placement, or silently dropping EPR, is a defect of that successor."},
+   {"id": "QC-5", "artifact": "ledger", "location": "self_check.no_gate_depends_on_a_gate_first_required_at_a_later_stage", "reading": "Still true after RS-1 and RS-2 (PLACEMENT_DERIVATION.dependency_consistency)."},
+   {"id": "QC-6", "artifact": "companion authority", "location": "CANONICAL_STAGES.stages[ordinal=5 PILOT_READY].required_legal_review ('commercial-activation condition')", "reading": "Unchanged. The consuming authority's PILOT_BILLING_READY is a necessary, never sufficient, input to it."},
+   {"id": "QC-7", "artifact": "companion authority", "location": "FROZEN_RULES.RULE_NO_GATE_WEAKENING", "reading": "Controls this amendment. The re-staging is a correction through a successor with its reason recorded; no criterion is relaxed or narrowed; the placement is unconditional (PRODUCTION_READY) and EPR only ADDS an earlier requirement, so no gate is made conditional in order to obtain a pass."}
+  ]
+ },
+ "NON_WEAKENING_PROOF": {
+  "stages_added": 0,
+  "stages_removed": 0,
+  "stages_reordered": 0,
+  "stages_made_skippable": 0,
+  "stage_entry_preconditions_changed": 0,
+  "gates_added": 0,
+  "gates_removed": 0,
+  "gates_retired": 0,
+  "gate_ids_allocated": 0,
+  "gates_with_first_required_at_stage_changed": ["PV3", "SEC7"],
+  "direction_of_every_change": "LATER (ordinal 3 -> 6), bounded above by PRODUCTION_READY and pulled earlier by EPR",
+  "gates_with_any_other_field_changed": [],
+  "gate_states_changed": 0,
+  "pv3_or_sec7_recorded_as_PASS_waived_accepted_or_satisfied": false,
+  "cumulative_set_unchanged_at": ["DEVELOPMENT_COMPLETE", "STAGING_ALIGNED", "PRODUCTION_READY", "GO_LIVE"],
+  "cumulative_set_reduced_by_exactly_PV3_SEC7_at": ["FEATURE_COMPLETE_STAGING", "RELEASE_CANDIDATE", "PILOT_READY"],
+  "non_stripe_gate_moved": false,
+  "release_candidate_bypassable": false,
+  "full_commercial_route_bypasses_PV3_or_SEC7": false
+ },
+ "EXPLICIT_NON_AUTHORIZATIONS": [
+  "NO edit of RELEASE_GATE_LEDGER_v1.0.0.json, STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json or STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json.",
+  "NO stage declaration, and NO acceptance of any stop line.",
+  "NO Stripe action, payment-provider configuration, credential creation or webhook enablement.",
+  "NO hosted access, deployment, migration or environment change.",
+  "NO ODS addendum, HPO grant, gate id, stage id or SQLSTATE allocation."
+ ],
+ "self_check": {
+  "note": "Deterministic, test-free. Every check is computable by a one-line python or node command over this file, the ledger and the companion authority at the same commit.",
+  "expected_restaging_ids": ["RS-1", "RS-2"],
+  "expected_restaged_gates": ["PV3", "SEC7"],
+  "expected_target_stage": "PRODUCTION_READY",
+  "expected_ledger_gate_count": 78,
+  "expected_canonical_stage_count": 7,
+  "expected_superseded_clauses": 7,
+  "expected_qualified_clauses": 7,
+  "expected_cumulative_after": {"DEVELOPMENT_COMPLETE": 11, "STAGING_ALIGNED": 26, "FEATURE_COMPLETE_STAGING": 39, "RELEASE_CANDIDATE": 56, "PILOT_READY": 60, "PRODUCTION_READY": 76, "GO_LIVE": 78},
+  "checks": [
+   "stages_in_order equals the companion authority's CANONICAL_STAGES.stages[].stage in ordinal order",
+   "GATE_RESTAGING gates equal expected_restaged_gates; each 'from' equals the ledger's value and each 'to' is a canonical stage whose ordinal is strictly greater than PILOT_READY's and strictly less than GO_LIVE's",
+   "every gate listed in GATE_RESTAGING exists in the ledger; no other gate is named in GATE_RESTAGING",
+   "recomputing cumulative sets with GATE_RESTAGING applied yields expected_cumulative_after and DERIVED_STAGE_SETS.difference_by_stage",
+   "after re-staging, no gate depends on a gate first required at a later stage",
+   "the cumulative sets of PRODUCTION_READY and GO_LIVE equal the pre-amendment sets",
+   "no gate id in this file is absent from the ledger; no stage id in this file is absent from the ladder",
+   "no occurrence of PASS, WAIVED or ACCEPTED is asserted as a state of PV3 or SEC7",
+   "PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE.rule names both PV3 and SEC7 and both PRODUCTION_READY and enablement",
+   "the parent ledger and both companion authority files are byte-unchanged relative to BASE_SHA"
+  ],
+  "no_secret_value_present": true,
+  "no_hosted_access_performed": true,
+  "protected_surfaces_touched": 0
+ },
+ "final_state": "RELEASE_GATE_LEDGER_AMENDED_v1_0_1__PV3_SEC7_RESTAGED_TO_PRODUCTION_READY__EPR_ADDED__HPO_G6_G7_SCOPE_AWARE__NO_STAGE_ADDED_REMOVED_OR_SKIPPED__NO_OTHER_GATE_CHANGED__PRODUCTION_AND_GO_LIVE_SETS_UNCHANGED__FROZEN_PENDING_INDEPENDENT_CERTIFICATION",
+ "next_gate": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R2: independent, read-only certification of this amendment together with its consuming authority, owner record and manifest, bounded to B-1 and NB-1..NB-5."
+}

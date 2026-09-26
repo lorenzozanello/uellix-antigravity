@@ -22,7 +22,9 @@
  "companion_authority": "docs/ops/commercial/PILOT_BILLING_EXECUTION_AUTHORITY_v1.0.0.json",
  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_PRIOR_TO_THIS_MATERIALIZATION_LANE. The decision below was approved by the Product Owner and supplied to this lane as its binding directing text (OWNER DECISION — BINDING INPUT, identifier PILOT-BILLING-01, title 'ACTIVE_WITHOUT_STRIPE'). THIS FILE IS NOT A VERBATIM CHAT TRANSCRIPT and is not a new adjudication. It is the canonical normalized record so that successor lanes cite a stable repository artifact instead of re-deriving the decision. The precedent for doing so is COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json#OPEN_FINDINGS[OF-1], which recorded that HPO-B had NO repository source and that its first materialization was therefore its own only corroboration. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout.",
  "precedence_note": "This record is canonical for product-owner intent on PILOT-BILLING-01 only. It does NOT override executable FIB/ODS/database/security authority and it does NOT itself make anything implementable. The frozen Tier-A parents (docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json and its amendments) and the tenancy, legal-acceptance and release authorities they reference remain controlling. The companion execution authority is the artifact that makes this decision execution-effective, and it does so by STAGE-SCOPING existing authority, never by weakening it. Where the companion requires an amendment of a frozen parent, that amendment is an append-only act (PB-A00) whose content the companion freezes; this record does not perform it. The lesson of docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json#precedence_note applies: a bare owner record cannot by itself make a sequencing exception effective.",
- "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen HPO-A..HPO-G, CA-01..CA-08, MO-01..MO-12, SS-01..SS-03, RAT-AO-01..03, RAT-OP-01 or OD-1..OD-9. PILOT-BILLING-01 is a STAGE decision about PILOT_READY; it deletes, weakens and supersedes none of them. Absence of implementation is not a contradiction. A conflict between this record and active executable authority that the companion does not resolve fails closed (STOP_FOR_AUTHORITY_CONFLICT).",
+ "revision": "R2",
+ "r2_note": "R1 (commit 6cc32fc1) stated that PILOT-BILLING-01 conflicts with none of HPO-A..HPO-G. Independent certification CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R1 measured that statement FALSE for HPO-G (blocking finding B-1): HPO-G.6 is materialized by the release stage FEATURE_COMPLETE_STAGING, where the release gate ledger placed PV3 (payment provider in test mode) and SEC7 (billing webhook integrity), and both were inherited by PILOT_READY. R2 corrects the statement (reopening_rule below) and records the owner's release-scope confirmation (release_scope_confirmation). The ten R1 clauses are unchanged.",
+ "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen HPO-A..HPO-G, CA-01..CA-08, MO-01..MO-12, SS-01..SS-03, RAT-AO-01..03, RAT-OP-01 or OD-1..OD-9. PILOT-BILLING-01 is a STAGE decision about PILOT_READY; it deletes and weakens none of them. It DID conflict with one of them as materialized: HPO-G.6 ('Then browser/provider gates') was materialized as FEATURE_COMPLETE_STAGING carrying PV3 and SEC7, which PILOT_READY inherited (IC-R1 B-1). That conflict is resolved by the owner's release-scope confirmation below, which reads HPO-G.6/G.7 scope-aware without changing their text, and by the append-only release successor docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json; it is not resolved by this record alone. Absence of implementation is not a contradiction. A conflict between this record and active executable authority that the companion does not resolve fails closed (STOP_FOR_AUTHORITY_CONFLICT).",
  "definitional_intent": {
   "PILOT_BILLING_READY": "The billing-and-entitlement readiness the Commercial V1 stage PILOT_READY requires: a CommercialAccount can become commercially usable WITHOUT Stripe through the explicit, authorized, governed and audited ACTIVE_WITHOUT_STRIPE path, administered entirely from the Uellix platform control plane. It is a NECESSARY input to PILOT_READY, never sufficient for it. Normative closed-conjunction definition lives in the companion authority SECTION_3, not here.",
   "COMMERCIAL_CORE_USABLE": "The later, FULL commercial target: the complete Stripe lifecycle (first binding, checkout, webhook ordering, past_due, suspension, cancellation, reactivation, invoices, dunning and the rest contemplated by HPO-B and the frozen commercial parents). PILOT-BILLING-01 does not delete, weaken or supersede it; it only removes it from the PILOT_READY critical path.",
@@ -87,7 +89,22 @@
      "text": "No new customer-facing entitlement capability key is authorized merely by this decision; the known production catalogue is stella.grounded_query.",
      "repository_binding": "Measured: lib/capabilities/entitlement-catalogue.ts carries exactly one key and db/migrations/0073_commercial_account_ce3_entitlement_grants.sql re-validates it at the database boundary (U0114). Companion control PB-N-21."
     }
-   ]
+   ],
+   "release_scope_confirmation": {
+    "provenance": "OWNER_CONFIRMED_OUTSIDE_THE_REPOSITORY. The Product Owner confirmed the interpretation below by launching mission CV1-PILOT-BILLING-MINIMUM-AUTHORITY-R2 (2026-09-26), whose directing text states it as binding owner direction for the remediation of IC-R1 B-1. Normalized, not a verbatim transcript. It interprets PILOT-BILLING-01.1 at the release boundary; it is not a new HPO and changes no HPO text.",
+    "scope": "Commercial V1 Pilot using ACTIVE_WITHOUT_STRIPE.",
+    "items": [
+     {"id": "RSC-1", "text": "The Stripe-specific release gates PV3 and SEC7 are NOT prerequisites of PILOT_READY."},
+     {"id": "RSC-2", "text": "PV3 and SEC7 are NOT deleted, waived, marked PASS or weakened."},
+     {"id": "RSC-3", "text": "PV3 and SEC7 remain mandatory for the full COMMERCIAL_CORE_USABLE / production-commercial path."},
+     {"id": "RSC-4", "text": "No canonical release stage may be skipped or invented; no release stage named COMMERCIAL_CORE_USABLE is created."},
+     {"id": "RSC-5", "text": "HPO-G.6 and HPO-G.7 are scope-aware: browser and provider gates applicable to the actual Pilot configuration must be satisfied before its Release Candidate; Stripe-specific provider gates are deferred when Stripe is deliberately OFF."},
+     {"id": "RSC-6", "text": "The successor release authority preserves a route in which PV3 and SEC7 become mandatory after PILOT_READY, at the earliest EXISTING post-PILOT_READY stage that preserves the full commercial/production invariant."},
+     {"id": "RSC-7", "text": "Full Stripe automation remains part of Commercial V1 complete."},
+     {"id": "RSC-8", "text": "Payment, Activation, Entitlement and Authorization remain separate."}
+    ],
+    "repository_binding": "Materialized as release authority by docs/ops/release/RELEASE_GATE_LEDGER_AMENDMENT_v1.0.1.json (GATE_RESTAGING RS-1/RS-2 to PRODUCTION_READY, PAYMENT_PROVIDER_ENABLEMENT_PRECEDENCE, HPO_G_DISPOSITION) and consumed by the companion authority SECTION_8.MC-P7. RSC-8 restates PILOT-BILLING-01.6; RSC-7 restates PILOT-BILLING-01.8."
+   }
   }
  ],
  "explicit_non_authorizations": [
@@ -116,6 +133,7 @@
    "COMMERCIAL_CORE_USABLE",
    "PRO_BONO"
   ],
+  "expected_release_scope_confirmation_items": 8,
   "checks": [
    "ratifications.length == 1 and ratifications[0].id == 'PILOT-BILLING-01'",
    "ratifications[0].clauses.length == 10 with ids PILOT-BILLING-01.1 .. PILOT-BILLING-01.10, unique",
@@ -124,10 +142,12 @@
    "definitional_intent has exactly the three keys in expected_defined_terms",
    "companion_authority names a path that exists in the same commit",
    "no clause statement authorizes an apply, a deployment, an allocation or a Stripe action",
-   "clause PILOT-BILLING-01.8 is present: a stage record that states what it removes from the critical path and never what it preserves is incomplete by construction"
+   "clause PILOT-BILLING-01.8 is present: a stage record that states what it removes from the critical path and never what it preserves is incomplete by construction",
+   "ratifications[0].release_scope_confirmation.items has ids RSC-1 .. RSC-8, unique, and its repository_binding names a path that exists in the same commit",
+   "reopening_rule does not state that PILOT-BILLING-01 conflicts with none of HPO-A..HPO-G"
   ]
  },
  "required_independent_review": "This record and its companion authority require INDEPENDENT certification before any implementation act opens. The writing lane does not certify its own output.",
- "final_state": "PILOT_BILLING_OWNER_DECISIONS_v1_0_0_FROZEN",
- "next_gate": "PILOT_BILLING_AUTHORITY_READY_FOR_INDEPENDENT_CERTIFICATION"
+ "final_state": "PILOT_BILLING_OWNER_DECISIONS_v1_0_0_R2_FROZEN__RELEASE_SCOPE_CONFIRMATION_RSC_1_8_RECORDED",
+ "next_gate": "CV1-PILOT-BILLING-MINIMUM-AUTHORITY-IC-R2"
 }
