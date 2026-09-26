@@ -1,0 +1,445 @@
+{
+  "manifest_id": "FIBDB053-D1-AUDITOR-CAPABILITY-PROVISIONING",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "FIBDB053-D1-OLD-DB-OBSERVATION",
+    "FIBDB053-RUNTIME-STAGING-BINDING",
+    "FIBDB053-RUNTIME-COMPANION",
+    "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+    "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "postgres_requirements": "The AUTHORING arm requires none. The ENGINE-SEMANTICS arm requires a THROWAWAY PostgreSQL 17.x container, created for the measurement and destroyed after it, with positive absence verification; it must NOT be the canonical local Supabase development stack. The FUTURE-EXECUTION arm requires the hosted staging target and is NOT runnable until this pair is certified and OD-1..OD-6 are ratified.",
+  "sentinels": "uellix_bootstrap.staging_sentinel, read as exactly two columns (environment, project_ref) of exactly one row-set, and expected to declare environment='staging' and project_ref='bvyzblhqymxruxdguaee'.",
+  "known_conditions": [
+    "MG-1 carried: no package in this repository grants uellix_auditor USAGE ON SCHEMA uellix_stella_ops. Independently corroborated by a different query in MEASURED_REPOSITORY_STATE.MRS_5.",
+    "MG-2 carried: the hosted grant state is UNKNOWN in both directions, so REQ-2 is conditional on a hosted measurement and is never pre-authorized.",
+    "MG-3 carried: the session pooler cannot corroborate a project ref for a non-operator role, so the direct host is the only authorized mechanism.",
+    "MG-4 carried: direct-host REACHABILITY is UNKNOWN. The management-plane observation confirms the hostname exists for the ref and does NOT confirm a route.",
+    "KG-3: the MR-2 prestate is unobservable from the only identity this lane may hold (E-9), and is recorded as a declared UNKNOWN rather than measured.",
+    "KG-4: engine-semantics measured on PostgreSQL 17.10; the hosted target runs 17.6.1.155.",
+    "KG-5: the hosted pg_hba authentication method is UNKNOWN; E-9 assumes scram-sha-256, which is Supabase's documented default.",
+    "The predecessor lane CV1-D1-OLDDB-PRECHECK-EXEC-R1 stopped at DB_CAPABILITY_URL_MISSING before any connection.",
+    "The parent pair's CERTIFIED_PASS is an owner affirmation with no tracked evidence artifact at AS_OF_TREE (OF-2 / OD-6)."
+  ],
+  "positive_controls": [
+    {
+      "id": "P1",
+      "description": "AUTHORING ARM, assertable now. THE TWO CANONICAL LITERALS ARE TAKEN AND NEVER RECOMPOSED. Both the nine-argument and seven-argument literals appearing anywhere in the authority or this manifest must be byte-identical to FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json CANONICAL_SIGNATURE_CONTRACT, which itself re-derived them from the frozen amendment. Re-deriving must find NO place where this artifact composes, interpolates, normalizes or abbreviates either string. A control that merely checked the strings are present would pass against an artifact that copied them from a lane prompt.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P2",
+      "description": "AUTHORING ARM. THE MEASURED ABSENCE OF THE SCHEMA USAGE GRANT IS RE-DERIVED BY AN INDEPENDENT QUERY, NOT CARRIED. The parent measured MG-1 by intersecting a grep for uellix_stella_ops with uellix_auditor. This control requires the authority to have measured it the OTHER way — by enumerating every GRANT USAGE ON SCHEMA uellix_stella_ops statement in db/ and checking the grantee list of each — and to have reported the grantees it DID find. A citation nobody re-opens is a citation nobody checked, and this programme has already measured a frozen MEASURED-ABSENT claim turning out to be false.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P3",
+      "description": "AUTHORING ARM. THE MINIMUM DELTA IS EXACTLY TWO ITEMS AND EACH CARRIES A NECESSITY PROOF. MINIMUM_REQUIRED_DELTA must contain REQ-1 (credential) and REQ-2 (schema USAGE) and nothing else, and each must cite a NAMED measurement establishing necessity. A delta with a third item, or with an item whose necessity rests on prose rather than a measurement id, fails.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P4",
+      "description": "ENGINE ARM. EXECUTE IS NOT REQUIRED FOR RESOLUTION, AND THE MEASUREMENT IS NON-VACUOUS. On a throwaway substrate: grant USAGE on uellix_stella_ops, REVOKE ALL on the seven-argument function FROM PUBLIC, and ASSERT has_function_privilege returns FALSE for the probing role BEFORE probing. Then to_regprocedure over the seven-argument literal must return non-NULL and echo back byte-identical, and over the nine-argument literal must return NULL. NON-VACUITY IS MANDATORY: if has_function_privilege is not asserted false first, the control proves nothing, because PostgreSQL grants EXECUTE to PUBLIC by default on every new function and the probe would have had it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P5",
+      "description": "ENGINE ARM. THE ROLE THAT CAN RESOLVE THE VERB CANNOT UTTER IT. In the same session as P4, an actual CALL of the seven-argument function must FAIL with permission denied for function. This is the positive statement of the safety property: absence of EXECUTE is not a neutral omission, it is the control that makes the parent's procedural rule structural.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P6",
+      "description": "ENGINE ARM. CATALOG SELECT IS NOT REQUIRED, AND THE REVOKE ACTUALLY TOOK EFFECT. REVOKE SELECT ON pg_catalog.pg_proc and pg_catalog.pg_namespace FROM PUBLIC, then ASSERT has_table_privilege is false AND that a direct SELECT from pg_proc RAISES permission denied for table pg_proc, and only then show to_regprocedure still resolves byte-identically. NON-VACUITY IS MANDATORY: without the raising direct read, a failed revoke would look identical to a successful one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P7",
+      "description": "ENGINE ARM. CONNECT IS PUBLIC-DERIVED. has_database_privilege must return true for CONNECT for both the probing role and the pseudo-role public with no explicit grant; then REVOKE CONNECT FROM PUBLIC must cause the role's next connection to FAIL with permission denied for database. The second half is what makes it a measurement rather than an observation of a default.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P8",
+      "description": "ENGINE ARM. A PASSWORDLESS LOGIN ROLE CANNOT AUTHENTICATE, MEASURED UNDER SCRAM AND NOT UNDER TRUST. The control must be taken over a connection path subject to scram-sha-256, and must record that a loopback trust rule was present in the substrate and was deliberately avoided. Three results required: passwordless role fails, credentialed role succeeds, credentialed role with a wrong password fails WITH THE IDENTICAL MESSAGE. The third is the load-bearing one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P9",
+      "description": "ENGINE ARM. CP-3's HOLE IS REAL AND ITS ASYMMETRY IS THE POINT. has_schema_privilege over an ABSENT schema must RAISE SQLSTATE 3F000, while to_regprocedure over an ABSENT schema must return NULL without raising, and has_schema_privilege over a PRESENT schema without USAGE must return FALSE. All three in one control, because the finding is the asymmetry and no single result shows it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P10",
+      "description": "ENGINE ARM. A READ-ONLY TRANSACTION IS NOT AN ESCALATION CONTROL. Inside BEGIN READ ONLY with transaction_read_only asserted on: SET ROLE into a privileged role must SUCCEED and must reach a read that failed one statement earlier; GRANT must fail with 25006; CREATE TABLE and CREATE TEMP TABLE must fail. NON-VACUITY: the pre-SET read must actually be attempted and must actually fail, or the escalation proves nothing.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P11",
+      "description": "ENGINE ARM. NOINHERIT DOES NOT CLOSE A MEMBERSHIP. The probing role must be NOINHERIT and must hold membership WITH INHERIT FALSE, SET TRUE, and must still reach the privileged read via SET ROLE. A control run with an INHERIT role would prove the opposite of what is claimed and must be reported as a FAILED control rather than counted green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P12",
+      "description": "AUTHORING ARM. THE THROWAWAY SUBSTRATE IS POSITIVELY VERIFIED ABSENT. After teardown, a container listing filtered on the substrate name must return ZERO rows, and that verification must be recorded. Absence asserted from the fact that a delete command was issued does not satisfy this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P13",
+      "description": "AUTHORING ARM. THE ODS CLASSIFICATION WAS EXECUTED, NOT EYEBALLED, AND grantAuthorized IS EMPTY. classifyPaths must have been imported and called against DEFAULT_PROTECTED_PATTERNS, and the recorded result must show grantAuthorized as an EMPTY array. A result with a non-empty grantAuthorized and an empty protectedViolations would present an identical ok list and would mean the paths are protected-but-granted, which is a different and much heavier claim.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P14",
+      "description": "AUTHORING ARM. THE THREE QUESTIONS ARE STRUCTURALLY SEPARATE. ROLE_EXISTENCE_CONTRACT, LOGIN_CONTRACT and the authorization contracts must each carry their OWN poststate assertion, and POSTSTATE_VERIFICATION must assert rolcanlogin (PV-4) and an actually-opened session (PV-5) as SEPARATE rows. A manifest in which one assertion serves two questions fails.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P15",
+      "description": "AUTHORING ARM. EVERY MUTATION CARRIES ALL SIX REQUIRED FIELDS. Each of MR-1, MR-2, MR-3 must carry trigger, prestate, mutation, poststate, verification, rollback-or-compensating-action and failure token. MR-2's rollback must be explicitly declared IMPOSSIBLE with a named compensating action, not silently omitted and not disguised as a rollback.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P16",
+      "description": "AUTHORING ARM. THE FAIL-CLOSED TOKEN SET IS TOTAL OVER THE REACHABLE OUTCOMES. Every branch named in FUTURE_EXECUTION_PHASES, CAPABILITY_PREFLIGHT_CONTRACT and POSTSTATE_VERIFICATION must terminate in a token that exists in FAIL_CLOSED_TOKENS. A reachable state with no token fails this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P17",
+      "description": "AUTHORING ARM. THE PRE-EXISTING SURFACE IS PROTECTED FROM THIS ACT IN BOTH DIRECTIONS. POSTSTATE_VERIFICATION must contain at least one assertion requiring a PRE-EXISTING privilege to still be TRUE (PV-31, PV-32). A poststate that only asserted the absence of privileges could be satisfied by a lane that revoked everything.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P18",
+      "description": "FUTURE-EXECUTION ARM, not runnable until certified and ratified. The capability poststate must assert PV-1..PV-34 with expected values, and the evidence artifact must carry the full table with expected, actual and pass-or-fail per row.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N1",
+      "description": "WRONG PROJECT REF => STOP. Any target resolving to a ref other than bvyzblhqymxruxdguaee must be REFUSED at verifyStagingTarget before any act, with the project-mismatch verdict. A control that only checked internal consistency would pass on a perfectly self-consistent identity for the wrong database.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N2",
+      "description": "SELECTION BY NAME => STOP. A target selected by the management-plane NAME uellix-staging must resolve to ctaxtgujyyprgynmnvtq and must be REFUSED by the production veto. This control exists because the two names are measured to be misleading in exactly this way, and it must be driven by the ACTUAL names rather than by a synthetic pair.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N3",
+      "description": "PRODUCTION REF => STOP, EVEN FOR A READ. Any act, including a pure read and including a management-plane read, that resolves to ctaxtgujyyprgynmnvtq must be refused with STOP_PRODUCTION_TARGET_REFUSED. A control that only refused MUTATIONS against production would leave the read path open.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N4",
+      "description": "SESSION POOLER WITH THE AUDITOR ROLE => STOP. A qualified pooler username uellix_auditor.bvyzblhqymxruxdguaee must yield null from projectRefFromPoolerUser and must be refused with the pooler-user-invalid verdict, NOT silently accepted and NOT repaired by widening the parser.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N5",
+      "description": "ANY FORBIDDEN SUBSTITUTE CAPABILITY => STOP. UELLIX_RUNTIME_DATABASE_URL, UELLIX_MIGRATOR_DATABASE_URL and DATABASE_URL must each fail to satisfy the capability. The first two must fail with DB_CAPABILITY_URL_WRONG_ROLE via the real resolver; DATABASE_URL must fail with DB_CAPABILITY_URL_MISSING and must produce the IGNORED warning rather than being consulted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N6",
+      "description": "MISSING CAPABILITY VARIABLE => STOP BEFORE ANY SOCKET. With UELLIX_AUDITOR_DATABASE_URL absent, resolveAuditorDatabaseUrl must throw DB_CAPABILITY_URL_MISSING and NO network act may occur. This reproduces the predecessor stop and must be asserted as a refusal BEFORE connection rather than as a connection that failed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N7",
+      "description": "ROLE ABSENT => STOP_AUDITOR_ROLE_ABSENT, NOT CREATE ROLE. A hosted target without uellix_auditor must stop. A branch that created the role fails this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N8",
+      "description": "SCHEMA uellix_stella_ops ABSENT => STOP_STELLA_OPS_SCHEMA_ABSENT AT KP-3, BEFORE has_schema_privilege IS CALLED. If CP-3 is reached at all in this state it RAISES 3F000 (P9), so the control must assert that the existence check ran FIRST and that no GRANT was issued.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N9",
+      "description": "CP-3 ALREADY TRUE => NO GRANT IS ISSUED. If the hosted target already holds the USAGE, MR-3 must NOT fire, and the fact that a privilege exists which no package explains must be RECORDED as a finding rather than passed over as a relief.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N10",
+      "description": "UNEXPLAINED MEMBERSHIP => STOP, NOT REVOKE. A membership edge found on the hosted target must produce STOP_UNEXPLAINED_ROLE_MEMBERSHIP with the edge, its options and its grantor recorded. A branch that revoked it fails, because revoking destroys the evidence of how it got there.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N11",
+      "description": "DANGEROUS ATTRIBUTE => STOP, NOT NARROW. A role found with SUPERUSER, BYPASSRLS, CREATEDB, CREATEROLE or REPLICATION must produce STOP_DANGEROUS_ROLE_ATTRIBUTE. A branch that silently narrowed the attribute fails, for the same reason as N10.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N12",
+      "description": "OWNERSHIP FOUND => STOP, NOT REASSIGN. Any relation, schema, function or type owned by uellix_auditor must produce STOP_UNEXPECTED_AUDITOR_OWNERSHIP, with the assertion naming WHICH kind of object.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N13",
+      "description": "CONNECT ABSENT => STOP, NOT GRANT. PV-20 false must produce STOP_CONNECT_PRIVILEGE_ABSENT and must NOT trigger a GRANT CONNECT. The control must confirm no grant statement is reachable from this branch.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N14",
+      "description": "NO COMPLIANT DELIVERY MECHANISM => STOP, NOT A WORKAROUND. If no mechanism satisfies SECRET_DELIVERY_CONTRACT in full, the lane must stop with STOP_SECRET_DELIVERY_NONCOMPLIANT. A missed observation is a stop; a leaked credential is an incident.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N15",
+      "description": "REMOVAL NOT VERIFIED => STOP. If the positive absence verification after P4 does not return absent, the lane must stop with STOP_CREDENTIAL_REMOVAL_UNVERIFIED. A run that ends green on the observation and leaves the credential in place must be RED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N16",
+      "description": "OWNER DECISION UNRATIFIED => P1 DOES NOT OPEN. With any of OD-1..OD-6 unratified, the lane must stop with STOP_OWNER_DECISION_UNRATIFIED. A run that proceeded on the engineering recommendations fails.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N17",
+      "description": "MR-3 TRIGGERED WITHOUT A PROTECTED-SURFACE ALLOCATION => STOP. The grant must not be delivered by any other channel absent an explicit owner election of OD-5.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N18",
+      "description": "PRE-EXISTING SURFACE CHANGED => STOP. PV-31 or PV-32 false must produce STOP_PRE_EXISTING_SURFACE_CHANGED. The lane must not be able to complete after having removed a privilege it does not own.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N19",
+      "description": "AUTHENTICATION FAILURE IS NOT DIAGNOSED. On a failed connection the lane must record the SQLSTATE and message AND must record the explicit note that the message does not distinguish no-credential from wrong-credential. A run that concluded the credential is absent from a failed connection fails this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N20",
+      "description": "NO SECRET IN ANY OUTPUT. Across the whole authored package and any future evidence artifact, no credential, DSN, userinfo, token, key or password hash may appear, redacted or otherwise. Asserted by the repository's own secrets scan AND by an explicit read of the evidence field list against EVIDENCE_MATERIALIZATION.MUST_NEVER_CONTAIN.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N21",
+      "description": "NO CANONICAL LITERAL IS RESOLVED IN THE PROVISIONING LANE. The evidence artifact must carry the explicit statement that neither literal was resolved, and no to_regprocedure call over either literal may appear anywhere in the provisioning lane's authorized surface.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N22",
+      "description": "THE HOSTED CAPABILITY REPORT IS NOT CALLED. uellix_bootstrap.hosted_capability_report() must not be invoked at any phase, despite the auditor holding EXECUTE on it and despite it answering several poststate questions cheaply. A lane that called it because it was available and granted fails.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M1",
+      "description": "MUTANT — SUBSTITUTE postgres FOR uellix_auditor. Change the authorized role to the operator. Expected: N5 and P14 go RED, and the SSL-06 operator tripwire fires. If anything stays green, the lane has a path where the most privileged reading wins, which is the exact failure the capability split was built to end. This mutant matters most against the POSTSTATE, because a postgres session would satisfy every read assertion trivially while proving nothing about the auditor.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M2",
+      "description": "MUTANT — SUBSTITUTE uellix_app. Expected: N5 goes RED via DB_CAPABILITY_URL_WRONG_ROLE. This is the most dangerous substitution because it WOULD WORK: stella_0014:220 grants uellix_app the very USAGE that is missing, so the probe would resolve on the first attempt. A control that only rejects substitutions which fail is not a control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M3",
+      "description": "MUTANT — FALL BACK TO DATABASE_URL. Make the resolver consult the legacy shared variable when the capability variable is absent. Expected: N5 and N6 go RED. The real resolver refuses and emits an IGNORED warning; the mutant must be shown to change behaviour, not merely to change a comment.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M4",
+      "description": "MUTANT — GRANT USAGE BUT ALSO GRANT CREATE ON uellix_stella_ops. Expected: PV-26 goes RED. If the poststate only asserted that USAGE is present, a GRANT ALL typed in place of GRANT USAGE would satisfy it completely. This is the mutant that proves PV-26 is not decorative.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M5",
+      "description": "MUTANT — GRANT EXECUTE ON complete_operation_ticket. Expected: PV-24 and PV-25 go RED. The mutant must grant at a REAL arity and the assertion must be over the REAL canonical literals; a mutant that granted on a synthetic signature would leave the assertion untouched and prove nothing. P4 and P5 establish that the grant is unnecessary, so this mutant is pure widening with a plausible motive.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M6",
+      "description": "MUTANT — GRANT SELECT ON AN APPLICATION TABLE as part of the provisioning. Expected: the delta-size control P3 goes RED because MINIMUM_REQUIRED_DELTA gains a third item. NOTE THE SUBTLETY THIS MUTANT EXPOSES: the auditor ALREADY holds SELECT on roughly forty application tables, so a naive assertion that the auditor holds no application SELECT would be RED on the honest state and green on nothing. The control must therefore be over the DELTA, and PV-31/PV-32 must simultaneously prove the pre-existing surface was not touched.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M7",
+      "description": "MUTANT — GRANT MEMBERSHIP IN uellix_app OR uellix_migrator. Expected: PV-12, PV-13 and PV-14 all go RED. NON-VACUITY IS MANDATORY: the edge must actually be created and the escalation must actually be attempted under the inheriting role. Membership in uellix_migrator is the worst case, because stella_hosted_0000 grants the migrator SET on uellix_owner, putting object ownership two statements from an audit credential; the control must demonstrate that two-hop reach, not merely the first edge.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M8",
+      "description": "MUTANT — ALLOW SET ROLE ESCALATION. Grant a membership WITH SET TRUE while keeping the role NOINHERIT, so every attribute assertion still passes. Expected: PV-14 goes RED via pg_has_role. A manifest whose only membership check was a direct pg_auth_members count on the MEMBER side could still be green here if the edge were created in the other direction or transitively, which is why PV-14 exists alongside PV-12 and PV-13.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M9",
+      "description": "MUTANT — LEAVE BYPASSRLS TRUE. Expected: PV-7 goes RED. This mutant is the quietest one in the set: no statement in any session changes, and the role's existing forty-table SELECT silently becomes a whole-database read unbounded by any policy. A poststate that asserted grants but not attributes would be entirely green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M10",
+      "description": "MUTANT — LEAVE SUPERUSER TRUE. Expected: PV-6 goes RED, and the read-only proof collapses because a superuser bypasses every ACL the other assertions rest on. The control must verify that the failure is attributed to PV-6 specifically rather than absorbed as a general anomaly.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M11",
+      "description": "MUTANT — USE ONLY transaction_read_only AS PROOF OF LEAST PRIVILEGE. Replace READ_ONLY_PROOF's five layers with the single session check. Expected: M7, M8, M9, M10 and M12 all become UNDETECTABLE, and P10 goes RED. This is the mutant the whole of READ_ONLY_PROOF exists to catch, and it is the most likely one to be written by a competent, hurried lane, because the session check is true, cheap and feels like proof.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M12",
+      "description": "MUTANT — IGNORE PUBLIC-DERIVED PRIVILEGES. Remove PV-29 and PV-30 and probe only the role. Expected: P7 goes RED. The specific blindness: has_database_privilege for the role returns TRUE whether CONNECT is held directly or via PUBLIC, so the probe that looks like it answers the question does not answer it, and a future REVOKE CONNECT FROM PUBLIC would break the capability with a message pointing at the credential.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M13",
+      "description": "MUTANT — IGNORE INHERITED MEMBERSHIP. Assert the rolinherit attribute in place of the membership assertions. Expected: P11 and PV-14 go RED. E-8 measured that a NOINHERIT role with a SET-TRUE membership reaches the privileged read anyway, so the attribute assertion is green in exactly the state the membership assertion must catch.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M14",
+      "description": "MUTANT — STORE UELLIX_AUDITOR_DATABASE_URL IN .env.local OR .env.audit.local. Expected: N20 goes RED and the delivery contract is violated. This mutant is uniquely plausible because db/safety/resolve-capability-database-url.ts:18 NAMES .env.audit.local as the auditor's file, so an obedient executor following the code comment writes a live hosted credential into the worktree. The control must fire on BOTH filenames, not only on .env.local.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M15",
+      "description": "MUTANT — WRITE THE DSN TO TERMINAL OUTPUT. Echo the resolved URL at any verbosity, including as part of an error. Expected: N20 goes RED. The real resolver never interpolates the value even into its own error messages, and the mutant must be shown to defeat that, not merely to add a log line elsewhere.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M16",
+      "description": "MUTANT — PASTE THE SECRET INTO A PROMPT OR CHAT MESSAGE. Expected: the delivery contract's prohibition fires. This is untestable by a repository gate and is therefore a PROCEDURAL control: the manifest records it so that the certifier verifies the authority forbids it in terms and that no phase's procedure requires a human to supply the value conversationally.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M17",
+      "description": "MUTANT — USE vercel env pull INTO THE WORKTREE. Expected: N20 goes RED, because the command writes real values to .env.local inside the working tree. The control must fire even though the command is a normal, documented developer action.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M18",
+      "description": "MUTANT — RESET THE postgres PASSWORD AND REPURPOSE IT. Expected: M1's controls fire, plus the operator tripwire, plus the non-authorization against altering Supabase-internal roles. This mutant is attractive because it solves the credential problem in one dashboard click and it is the worst available answer: it mints an operator credential to run a read-only audit.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M19",
+      "description": "MUTANT — CONNECT TO PRODUCTION. Point any phase at ctaxtgujyyprgynmnvtq. Expected: N3 goes RED. TWO VARIANTS REQUIRED, because they fail at different layers. VARIANT A selects it by REF and must be refused by the production veto. VARIANT B selects it by the management-plane NAME uellix-staging and must ALSO be refused — this is the variant that matters, because the name is genuinely misleading and a by-name path would look correct to a reader.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M20",
+      "description": "MUTANT — PERFORM THE PRECHECK INSIDE THE PROVISIONING LANE. Add a to_regprocedure over either canonical literal to PHASE_P1 or PHASE_P3, on the reasoning that it is the cheapest proof the capability works. Expected: N21 goes RED. The mutant is seductive precisely because it produces a true and useful result; what it destroys is the observation's freshness binding, its own authority and its own human confirmation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M21",
+      "description": "MUTANT — TREAT ROLE EXISTENCE AS PROOF THAT AUTHENTICATION WORKS. Collapse PV-4 and PV-5 into a single existence assertion. Expected: P14 goes RED. E-9 measured that a LOGIN role with rolpassword NULL exists, reports rolcanlogin true, and cannot authenticate, so the collapsed assertion is green in exactly the state the repository's own design produces.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M22",
+      "description": "MUTANT — TREAT SUCCESSFUL AUTHENTICATION AS PROOF OF LEAST PRIVILEGE. Reduce the poststate to a successful connection plus an identity check. Expected: every one of M4 through M13 becomes undetectable. This is the companion to M11: M11 accepts the transaction as proof, M22 accepts the session as proof, and both stop looking at the moment something works.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M23",
+      "description": "MUTANT — TREAT REPOSITORY GRANT INTENT AS PROOF OF HOSTED POSTSTATE. Satisfy PV-21, PV-22 or PV-23 by citing the package that grants them rather than by reading the hosted catalog. Expected: the poststate becomes unfalsifiable and MG-2 is silently resolved in the convenient direction. The control must verify that each assertion's source is a SERVER read, not a repository citation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M24",
+      "description": "MUTANT — GRANT BEFORE MEASURING THE PRESTATE. Issue MR-3 unconditionally rather than on KP-5 false. Expected: N9 goes RED, and the MR-3 rollback becomes UNSAFE, because a REVOKE issued on the assumption that the prestate was false would remove a privilege that already existed and that this act did not create. The control must demonstrate that second consequence, not only the first.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M25",
+      "description": "MUTANT — OMIT THE ROLLBACK FOR A CREDENTIAL OR PRIVILEGE MUTATION. Expected: P15 goes RED. TWO VARIANTS. VARIANT A omits MR-3's REVOKE entirely. VARIANT B is the interesting one: it gives MR-2 a fictitious rollback — restore the previous credential — which is IMPOSSIBLE, since the prior secret was never known and its hash is not reversible. A manifest that accepted variant B would have a rollback story that is false for the one mutation that cannot be reversed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M26",
+      "description": "MUTANT — LEAVE THE CREDENTIAL EXPOSED PERMANENTLY. Complete the sequence without the removal step, or set a user-scope environment variable that survives reboot and never remove it. Expected: N15 goes RED. The mutant's ordinary form is not malice: it is a run that ended on a green observation and treated removal as a courtesy rather than a step.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M27",
+      "description": "MUTANT — INVENT AN ODS, HPO OR W2 IDENTIFIER. Add a plausible identifier to NEW_ODS_REQUIRED or to the grant-delivery adjudication. Expected: the explicit_non_allocation control goes RED. The manifest must check for an identifier that does not resolve in the Controller, not merely for the absence of the word.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M28",
+      "description": "MUTANT — CLAIM D1-8 IS SATISFIED AFTER CAPABILITY PROVISIONING. Expected: D1_RELATIONSHIP's controls go RED. The mutant is plausible because provisioning removes the last mechanical obstacle, and the distinction it erases is between being ABLE to observe and HAVING observed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M29",
+      "description": "MUTANT — USE THE SESSION POOLER WITH AN IDENTITY SHAPE INCOMPATIBLE WITH THE FROZEN TARGET-IDENTITY CONTRACT. Connect as uellix_auditor.<ref> through the regional pooler. Expected: N4 goes RED. SECOND VARIANT: widen projectRefFromPoolerUser so the auditor is accepted — expected to ALSO go RED, because the repair is a code change on the identity surface that weakens the pooler branch's only signal.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M30",
+      "description": "MUTANT — GRANT BROAD pg_catalog ACCESS. Add a catalog grant to the minimum delta on the reasoning that the probes read the catalog. Expected: P3 goes RED on delta size and P6 shows the grant buys nothing, because to_regprocedure resolves through the syscache even with SELECT on pg_proc revoked from PUBLIC.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M31",
+      "description": "MUTANT — DROP THE EXISTENCE CHECK BEFORE CP-3. Remove KP-3 and KP-4 so has_schema_privilege is called directly. Expected: N8 goes RED against a target with no uellix_stella_ops schema, because the call RAISES 3F000 (P9) and the designed diagnostic produces an unhandled error in precisely the state it was added to diagnose. This mutant restores the parent's exact ordering, which is why it must be shown to fail rather than assumed to.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M32",
+      "description": "MUTANT — PIN rolinherit INSTEAD OF PINNING ZERO MEMBERSHIPS. Replace PV-12..PV-14 with an assertion that rolinherit is false. Expected: P11 and M13's controls go RED, AND a second failure appears: the assertion contradicts the byte-pinned hosted identity package, which creates uellix_auditor WITH INHERIT. The mutant is thus wrong twice — it fails to catch the escalation and it demands a hosted change that would put the role out of conformance with its own pinned definition.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M33",
+      "description": "MUTANT — REVOKE THE PRE-EXISTING SURFACE AS HARDENING. Have the provisioning lane revoke the auditor's forty-table SELECT, on the entirely reasonable argument that the role is over-privileged for this purpose. Expected: PV-31 and PV-32 go RED and N18 fires. This mutant is the one an unusually security-minded lane would write, and it must fail: it breaks the postconditions of stella_hosted_0006, stella_hosted_0007 and stella_0021, and it is an authority expansion wearing the clothes of hardening.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M34",
+      "description": "MUTANT — COLLAPSE THE THREE HUMAN CONFIRMATIONS INTO ONE. Ask once, before P1, covering the whole sequence. Expected: the HC controls go RED. The specific defect: HC-2 is conditional on a MEASUREMENT that has not been taken when HC-1 is asked, so a single up-front confirmation is consent to an act whose necessity was unknown at the time of consent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M35",
+      "description": "MUTANT — CITE THE MANAGEMENT-PLANE OBSERVATION AS HOSTED DATABASE EVIDENCE. Use ACTIVE_HEALTHY, the reported host, or the reported engine version to satisfy a database-state assertion or a release gate. Expected: RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE fires and MG-4 is shown to remain open. A hostname in a control plane is not a route, and a project being healthy is not a statement about its catalog.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M36",
+      "description": "MUTANT — MAKE THE EXECUTE MEASUREMENT VACUOUS. Run P4 WITHOUT the preceding REVOKE ALL FROM PUBLIC, so the probing role holds EXECUTE by PostgreSQL's default and has_function_privilege is never asserted false. Expected: P4 must be reported as a FAILED control rather than counted green. This is the highest-value mutant in the set, because the vacuous version of P4 produces the identical observable result — the literal resolves — while proving the exact opposite of what is claimed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M37",
+      "description": "MUTANT — SMUGGLE OPERATOR ACCESS INTO THE PRESTATE READ. Connect as postgres or supabase_admin for PHASE_P1, on the reasoning that it is read-only and answers every UNKNOWN including HU-3. Expected: M1's controls fire, the SSL-06 operator tripwire fires, and the missing HC and custody entry for an operator credential are flagged. The mutant must be shown to fail EVEN THOUGH the session is read-only and EVEN THOUGH it produces strictly more information, because the objection is to holding the credential at all inside a lane authorized as a read-only audit.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M38",
+      "description": "MUTANT — DIAGNOSE THE CREDENTIAL FROM A FAILED CONNECTION. Branch on a failed authentication to conclude the credential is absent, and skip MR-2 or report HU-3 as resolved. Expected: N19 goes RED. E-9 measured that no-credential and wrong-credential produce the identical FATAL message, so the branch reads a message that carries none of the information it acts on.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M39",
+      "description": "MUTANT — REPLACE THE DELTA FRAMING WITH A TOTAL-PRIVILEGE CLAIM. Rewrite MINIMUM_PRIVILEGE_CONTRACT to assert that uellix_auditor holds only what D-1 needs. Expected: PV-32 goes RED immediately against the honest hosted state, because the auditor demonstrably reads public.users. The mutant is included because it is the shape of an artifact that SOUNDS more rigorous and is simply false, and the certifier should be able to tell the two framings apart mechanically.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M40",
+      "description": "MUTANT — PROMOTE AN ENGINEERING RECOMMENDATION INTO A CONTRACT CLAUSE. Move any of the four labelled recommendations — rotate-after-witness, secret manager over environment variable, VALID UNTIL, mandatory post-witness rotation — into a binding clause and remove its owner decision. Expected: N16 goes RED because the corresponding OD no longer blocks P1, and the FACT_VS_RECOMMENDATION_VS_DECISION control goes RED. This is the governance mutant: the artifact becomes MORE decisive and LESS legitimate, and nothing about its prose signals the change.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

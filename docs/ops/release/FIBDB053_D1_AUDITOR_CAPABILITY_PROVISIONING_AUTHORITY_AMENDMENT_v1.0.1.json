@@ -1,0 +1,349 @@
+{
+  "package_id": "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_DOCUMENTARY_AND_MANIFEST_DEFECT_CORRECTION_TO_A_DRAFT_NODE_AUTHORITY_NOT_IMPLEMENTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_SUPERSEDES_SIX_NON_BLOCKING_DEFECTS_OF_ITS_OWN_FROZEN_PARENT_PLUS_ONE_ADDITION_NONE_OF_WHICH_CHANGES_THE_MINIMUM_PRIVILEGE_MODEL_OR_ANY_OWNER_DECISION_SUBSTANCE",
+  "append_only": true,
+  "mission_id": "CV1-D1-AUDITOR-CAPABILITY-AMENDMENT-R2",
+  "lane": "CV1-D1-AUDITOR-CAPABILITY-AMENDMENT-R2",
+  "role": "APPEND_ONLY_DEFECT_CORRECTION_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "GRANT_ID": null,
+  "BASE_AUTHORITY": {
+    "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+    "blob_sha_at_this_base": "eb77f0954495625d110be3791053a6850ba2b590",
+    "commit_sha_that_introduced_it": "4eb302ddcc829d3b909a4e6b2681470ce38d3819",
+    "disposition": "HISTORICALLY_FROZEN_BYTE_FOR_BYTE_NOT_EDITED_BY_THIS_ACT",
+    "form": "This document is a SEPARATE COMPANION AUTHORITY AMENDMENT, following the repository-native precedent docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json and docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json. It is NOT a replacement authority. No FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.1.json exists or is authorized. The parent remains controlling for every clause this amendment does not name.",
+    "why_no_parent_edit": "The parent has already been read by an independent clean-room certification (CV1-D1-AUDITOR-CAPABILITY-IC-R1, 2026-09-21, CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS on PR #207 at this exact commit), and its nine non-blocking findings are now part of the evidentiary record that certification produced. Rewriting the parent in place would destroy the history of what was found and would be a prohibited historical-evidence rewrite (CLAUDE.md section 5: 'no historical evidence rewriting; no editing sealed/certified artifacts'). The six corrected here are adjudicated in place, in the open, by an append-only successor clause — exactly the mechanism this parent's own OF-4 and OF-5 anticipated a certifier might invoke.",
+    "naming_derivation": "Derived mechanically from repository precedent, not from the mission prompt. Every append-only authority correction in this repository is named <BASE_PACKAGE_ID>_AMENDMENT_v<next>.json and is placed in the SAME directory as its base, paired with a <BASE_MANIFEST_ID>_AMENDMENT_v<next>.json. The base is FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0 under docs/ops/release/, so this artifact is FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json under docs/ops/release/."
+  },
+  "COMPANION_MANIFEST_AMENDMENT": {
+    "path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "base_manifest_path": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json",
+    "base_manifest_blob_sha_at_this_base": "2790f3530ce44fd77e12ecdf49430d93ec7a4a70",
+    "base_manifest_disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT_REMAINS_CONTROLLING_FOR_ITS_OWN_80_CONTROLS (18 positive + 22 negative + 40 mutation)."
+  },
+  "CERTIFICATION_THIS_AMENDMENT_RESPONDS_TO": {
+    "lane": "CV1-D1-AUDITOR-CAPABILITY-IC-R1",
+    "verdict": "CERTIFIED_PASS_WITH_NONBLOCKING_FINDINGS",
+    "date": "2026-09-21",
+    "scope": "Clean-room re-derivation of E-1..E-11 and mutants M4/M5/M7/M8/M13/M36 on the hosted image public.ecr.aws/supabase/postgres:17.6.1.155 (server_version_num 170006, the EXACT build the staging target runs), closing this parent OF-3/KG-4. Repository privilege inventory independently re-derived and corroborated. Vercel/GitHub secrets surface independently observed (read-only, names only): UELLIX_AUDITOR_DATABASE_URL absent from both.",
+    "blocking_findings": 0,
+    "non_blocking_findings": 9,
+    "finding_disposition": "This amendment closes findings 1, 2, 3, 4, 5 and 6 of that certification (the ones with a concrete textual defect to correct). Findings 7, 8 and 9 are DESIGN OBSERVATIONS the certifier explicitly did not ask to be repaired — P1 vacuity by construction, the MR-2→MR-3 delivery window under a package route (already mitigated by OD-3), and pg_stat_activity as a partial non-privileged post-rotation detector the parent already excludes as a candidate — and are carried forward unchanged into RISKS_AND_OPEN_FINDINGS below rather than closed, because none of the three names a defective clause this amendment could supersede."
+  },
+  "SECTION_A0_FRESHNESS": {
+    "BASE_REF": "codex/cv1-d1-auditor-capability-adjudication-aw-r1",
+    "BASE_SHA": "4eb302ddcc829d3b909a4e6b2681470ce38d3819",
+    "BASE_TREE": "6b01c8fe6c92deb44a8bf8b86d89acfebeb9febb",
+    "INTEGRATION_AT_THIS_BASE_FOR_FRESHNESS_ONLY": "537487ac7b102d51f553fcb8f5cfe19614e113d8 (origin/integration/commercial-v1, re-fetched and re-checked at the start of this amendment mission; unchanged since the base authority’s own AS_OF_BASE)",
+    "integration_sync_disposition": "NOT PERFORMED AND NOT AUTHORIZED. This lane is correction-only, on the SAME open branch and the SAME open DRAFT PR (#207) as its base, not a new branch. No merge, no rebase, no sync.",
+    "worktree_clean_before_mutation": true,
+    "drift_rule": "If origin/integration/commercial-v1 had drifted from 537487ac7b102d51f553fcb8f5cfe19614e113d8, or if HEAD had drifted from 4eb302ddcc829d3b909a4e6b2681470ce38d3819, or if the worktree were not clean, the mission STOPS with BASE_DRIFT / STOP_WRONG_HEAD / STOP_DIRTY_WORKTREE and this artifact is not committed. Never silently reconciled.",
+    "IMPLEMENTATION_PERFORMED": "NONE. This artifact is not executable. No TypeScript, no SQL, no test, no registry entry, no ODS lineage identifier, no HPO id and no migration is created by it. No hosted PostgreSQL connection was opened. No credential was created, rotated, read or exposed. The capability this pair governs remains unprovisioned."
+  },
+  "SECTION_A1_DEFECT_ADJUDICATION": {
+    "RULE": "Six findings, six dispositions. Each names its exact locus, quotes the defective text byte-for-byte where one exists, states why it is defective, and names the section of this amendment (or of the companion manifest amendment) that closes it. An ADDITION (finding 3) has no OLD_verbatim to quote, because nothing existing was wrong — something reachable was simply missing a name.",
+    "FINDINGS": [
+      {
+        "FINDING_ID": "F-A2-1",
+        "SOURCE": "IC-R1 non-blocking finding 1.",
+        "KIND": "SUPERSESSION (shape)",
+        "locus": "MANIFEST docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json :: postgres_requirements",
+        "OLD_verbatim": "The AUTHORING arm requires none. The ENGINE-SEMANTICS arm requires a THROWAWAY PostgreSQL 17.x container, created for the measurement and destroyed after it, with positive absence verification; it must NOT be the canonical local Supabase development stack. The FUTURE-EXECUTION arm requires the hosted staging target and is NOT runnable until this pair is certified and OD-1..OD-6 are ratified.",
+        "defect": "TYPE VIOLATION. docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json requires postgres_requirements, when present, to be an object carrying required string properties probe_manifest and rationale (setup_manifest optional). The base manifest carries a bare string. The base PR body's own claim of 'manifest schema PASS' is not reproducible against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, because no gate in this repository actually validates a TEST_MANIFEST document against that schema — only its path, via ods-scope's protected-pattern check.",
+        "disposition": "SUPERSEDED by the companion manifest amendment’s own postgres_requirements field (docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json), which is schema-valid and controls for this field at this node. The base manifest’s own copy of this field must not be read for shape or content."
+      },
+      {
+        "FINDING_ID": "F-A2-2",
+        "SOURCE": "IC-R1 non-blocking finding 1.",
+        "KIND": "SUPERSESSION (shape)",
+        "locus": "MANIFEST docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_v1.0.0.json :: sentinels",
+        "OLD_verbatim": "uellix_bootstrap.staging_sentinel, read as exactly two columns (environment, project_ref) of exactly one row-set, and expected to declare environment='staging' and project_ref='bvyzblhqymxruxdguaee'.",
+        "defect": "TYPE VIOLATION, AND A SEPARATE CONCEPTUAL MISUSE. Schema requires sentinels, when present, to be an array of {id, purpose} objects naming SYNTHETIC marker values a node's OWN tests plant to prove a redaction/security property — 'never a real credential', per the schema's own description. The base manifest instead used the field to describe uellix_bootstrap.staging_sentinel, a REAL hosted infrastructure table the authority reads as part of TARGET_IDENTITY (AUTHORIZED_SQL_SURFACE SQ-8). That fact is true and belongs in the authority's own EVIDENCE_MATERIALIZATION / AUTHORIZED_SQL_SURFACE text, which already states it (unchanged, still controlling) — it is not itself a 'sentinel' in this schema's sense, and the base manifest's use of the field said nothing about any synthetic canary this node's own future tests would plant.",
+        "disposition": "SUPERSEDED by the companion manifest amendment’s own sentinels field, which replaces the misapplied description with genuine synthetic sentinels tied to SECRET_CUSTODY_CONTRACT / SECRET_DELIVERY_CONTRACT redaction properties (N14, N15, M14, M15, M16, M26 of the unchanged base manifest). The base manifest’s own copy of this field must not be read for shape or content."
+      },
+      {
+        "FINDING_ID": "F-A4",
+        "SOURCE": "IC-R1 non-blocking finding 2.",
+        "KIND": "SUPERSESSION (internal contradiction)",
+        "locus": "AUTHORITY docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: OWNER_DECISIONS.decisions[id=OD-4].consequence_if_unratified",
+        "OLD_verbatim": "NONE for P1..P5. Recorded so it is not lost.",
+        "defect": "CONTRADICTS THE ARTIFACT'S OWN STRICT RULE. OWNER_DECISIONS.rule states 'all six BLOCK PHASE_P1' without qualification; PHASE_P0_PREREQUISITE.gate names 'every owner decision OD-1..OD-6' without exception; FAIL_CLOSED_TOKENS.STOP_OWNER_DECISION_UNRATIFIED fires on 'any of OD-1..OD-6'; manifest N16 asserts the same. OD-4's own consequence field says 'NONE for P1..P5', which a reader can take as OD-4 being exempted from a rule that, three clauses away, says it is not. A strict reading resolves it (the rule controls), but the artifact itself does not say so anywhere near the contradiction, which is a drafting defect regardless of which reading is correct.",
+        "disposition": "SUPERSEDED by SECTION_A4 of this amendment."
+      },
+      {
+        "FINDING_ID": "F-A4B",
+        "SOURCE": "IC-R1 non-blocking finding 2.",
+        "KIND": "SUPERSESSION (internal contradiction)",
+        "locus": "AUTHORITY docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: OWNER_DECISIONS.decisions[id=OD-6].consequence_if_unratified",
+        "OLD_verbatim": "NONE for P1..P5. It is a governance improvement, not a blocker, and it is recorded rather than enforced.",
+        "defect": "IDENTICAL DEFECT TO F-A4, applied to OD-6.",
+        "disposition": "SUPERSEDED by SECTION_A4 of this amendment."
+      },
+      {
+        "FINDING_ID": "F-A5",
+        "SOURCE": "IC-R1 non-blocking finding 3.",
+        "KIND": "ADDITION (absence, not supersession)",
+        "locus": "AUTHORITY docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: FAIL_CLOSED_TOKENS.tokens (reachable branch with no terminal token)",
+        "OLD_verbatim": null,
+        "defect": "FAIL_CLOSED_TOKENS IS NOT TOTAL OVER ITS OWN DECLARED SCOPE. POSTSTATE_VERIFICATION.prohibited_privileges_absent (PV-24..PV-28) can go RED without MR-3 having fired or without MR-3's own verification having failed — i.e. a hosted target that already carries EXECUTE on a canonical literal, CREATE on either schema, or DML on the sentinel table, for reasons unconnected to this artifact's own mutations. Every OTHER PV group has a token for exactly this shape of finding (PV-6..10 → STOP_DANGEROUS_ROLE_ATTRIBUTE, PV-12..14 → STOP_UNEXPLAINED_ROLE_MEMBERSHIP, PV-15..19 → STOP_UNEXPECTED_AUDITOR_OWNERSHIP, PV-20 → STOP_CONNECT_PRIVILEGE_ABSENT, PV-31/32 → STOP_PRE_EXISTING_SURFACE_CHANGED); PV-24..28 alone had none. Manifest control P16 ('the token set is total over the reachable outcomes') was therefore FALSE against the base artifact as written.",
+        "disposition": "CLOSED by SECTION_A5 of this amendment, which ADDS the missing token to FAIL_CLOSED_TOKENS.tokens. Nothing existing is superseded; the list gains one member."
+      },
+      {
+        "FINDING_ID": "F-A6",
+        "SOURCE": "IC-R1 non-blocking finding 5.",
+        "KIND": "SUPERSESSION (imprecise wording, verdict unchanged)",
+        "locus": "AUTHORITY docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: SECRET_CUSTODY_CONTRACT.SSL_06_ADJUDICATION.IS_THIS_A_CONTRADICTION_OF_A_CERTIFIED_PARENT",
+        "OLD_verbatim": "NO, AND THE DISTINCTION IS EXACT. The parent's clause is scoped to THE GRANT IT MAKES — an observation permission that creates, mints and touches no credential, and whose lane never holds one. This artifact governs a DIFFERENT ACT that the parent explicitly declined to govern: its SECRET_CUSTODY_CONTRACT.provisioning states in terms that the artifact does not name, choose, create, rotate or compare an approved secure source. The custody question arises in THIS artifact's domain, not in the parent's, and the parent is not edited, amended or reinterpreted.",
+        "defect": "IMPRECISE CLAIM ABOUT WHO HOLDS THE CREDENTIAL. The clause reads 'an observation permission ... whose lane never holds one', describing the PARENT authority's grant. Read broadly, that phrase implies no lane ever holds the auditor credential — which is false: PRECHECK-R2, the future observation PROCESS the parent's own authority governs and gates behind a human confirmation, necessarily holds and uses the credential to open the one hosted session the parent authorizes. An authenticated database session is definitionally a process holding the credential that authenticated it. The SSL-06-ENGAGED verdict itself is not affected — the certifier's own confidentiality rationale for engaging it is independently sound and is preserved — but the one supporting sentence overstated a claim the parent never actually needed and the base text should not have made.",
+        "disposition": "SUPERSEDED by SECTION_A6 of this amendment. The verdict (SSL-06 ENGAGED) is UNCHANGED."
+      },
+      {
+        "FINDING_ID": "F-A7",
+        "SOURCE": "IC-R1 non-blocking finding 6.",
+        "KIND": "SUPERSESSION (ambiguity, not a substantive reversal)",
+        "locus": "AUTHORITY docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: SECRET_DELIVERY_CONTRACT.WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION.verdict",
+        "OLD_verbatim": "NOT AUTHORIZED AS A DEFAULT, AND NOT PROHIBITED OUTRIGHT. IT IS AN OWNER DECISION — OD-2 — AND THE SPECIFIC RISKS ARE NAMED SO THE OWNER DECIDES ON FACTS.",
+        "defect": "SELF-CONTRADICTORY AS WRITTEN. The verdict calls a Windows user-scope environment variable (what the QUESTION field literally names — 'setx or a user-scope environment variable') 'not prohibited outright' and an owner election under OD-2. But the same clause's own CONDITIONS_UNDER_WHICH_IT_BECOMES_ACCEPTABLE.conditions[0] requires 'PROCESS-SCOPED, NOT USER-SCOPED'. A USER-SCOPE PERSISTENT variable (setx's actual effect: it writes to the Windows registry HKCU\\\\Environment, which survives reboot and is readable by every process that user runs) cannot, by construction, ever be process-scoped. The verdict therefore offers the owner an 'election' that its own first condition makes structurally unelectable — which is not an owner choice, it is a drafting defect.",
+        "disposition": "SUPERSEDED by SECTION_A7 of this amendment. The safe direction (process-scoped only, under OD-2) is UNCHANGED and is now the ONLY thing OD-2 is asked to elect."
+      }
+    ]
+  },
+  "SECTION_A2_ROLE_CREATION_COUNT_CORRECTION": {
+    "supersedes": "F-A2 is NOT the id used above — see note.",
+    "note": "This section corrects a finding that F-A2-1/F-A2-2 above do not cover: MRS_1_role_creation.claim undercounted its own hits array. It is listed here rather than in SECTION_A1 because its locus is neither a manifest field nor an OWNER_DECISIONS field, and grouping every prose-count correction under one heading (this section and SECTION_A3) keeps the six IC-R1 findings legible as six, per the mission’s own numbering, rather than eight.",
+    "FINDING_SOURCE": "IC-R1 non-blocking finding 4 (role-creation count).",
+    "locus": "AUTHORITY docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: MEASURED_REPOSITORY_STATE.MRS_1_role_creation.claim",
+    "OLD_verbatim": "uellix_auditor is created by five packages across three lineages, all with LOGIN.",
+    "defect": "THE CLAIM COUNTED A PACKAGE ITS OWN EVIDENCE EXCLUDES. MRS_1's own hits array lists a fifth item, db/prepared/stella_0005b_admin_bootstrap.sql:126-128, annotated in that same array as 'session ALTERs only, no creation'. Re-read at this amendment's base (blob-identical to the base authority's own AS_OF_TREE, since no db/** file has changed since): the file issues exactly three statements for this role — ALTER ROLE uellix_auditor SET search_path = 'public'; ALTER ROLE uellix_auditor SET statement_timeout = '60s'; ALTER ROLE uellix_auditor SET idle_in_transaction_session_timeout = '60s' — all three presupposing a role that already exists, and issuing no CREATE ROLE and no LOGIN-bearing ALTER. 'Five packages' therefore counted a package the artifact's own hits list says does not create anything.",
+    "NEW_verbatim": "uellix_auditor is created — meaning CREATE ROLE uellix_auditor is issued — by FOUR packages across three lineages, all with LOGIN: db/baseline/stella_g2_roles.sql:86 (baseline/pg_dumpall lineage), db/prepared/stella_0001_role_topology_bootstrap.sql:72 (self-hosted topology lineage), db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:175 (the HOSTED lineage, byte-pinned by db/hosted/managed-role-identities.ts), and db/prepared/stella_local_0000_local_role_identity_bootstrap.sql:276 (local-stack lineage). A fifth package, db/prepared/stella_0005b_admin_bootstrap.sql:126-128, sets three session-level ALTER ROLE ... SET defaults (search_path, statement_timeout, idle_in_transaction_session_timeout) on the already-existing role and creates nothing — its own hits-array annotation already said so, and this correction now reflects that in the count the claim itself states.",
+    "independently_reverified_at_this_amendment_base": "git grep -n -i -E \"(CREATE|ALTER) ROLE[^;]*uellix_auditor\" over db/ at BASE_SHA 4eb302ddcc829d3b909a4e6b2681470ce38d3819 re-run for this amendment; the four CREATE ROLE hits and the three-statement-only content of stella_0005b_admin_bootstrap.sql:126-128 both re-confirmed byte-for-byte."
+  },
+  "SECTION_A3_GRANT_USAGE_OCCURRENCE_COUNT_CORRECTION": {
+    "FINDING_SOURCE": "IC-R1 non-blocking finding 4 (GRANT USAGE occurrence count).",
+    "locus": "AUTHORITY docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: MEASURED_REPOSITORY_STATE.MRS_5_auditor_object_grants_complete_inventory.the_measured_absence_that_is_the_whole_problem",
+    "OLD_verbatim": "NO GRANT USAGE ON SCHEMA uellix_stella_ops NAMES uellix_auditor. Independently re-measured here: git grep 'GRANT USAGE ON SCHEMA uellix_stella_ops' over db/ returns eight statements naming uellix_migrator, uellix_app, uellix_cap_stella_ticket and uellix_cap_stella_quota, and none naming the auditor. This CORROBORATES the parent's MG-1 by a different query than the parent used.",
+    "defect": "MISCOUNTED THE git grep RESULT SET, IN BOTH DIRECTIONS. Re-running git grep 'GRANT USAGE ON SCHEMA uellix_stella_ops' over db/ at this amendment's base returns ELEVEN lines, not eight: TEN are actual SQL GRANT statements and ONE is a TypeScript string literal that never executes as SQL. 'Eight statements' undercounted the SQL statements (ten, not eight) and mischaracterized the eleventh occurrence as absent rather than as a non-SQL prose hit.",
+    "NEW_verbatim": "NO GRANT USAGE ON SCHEMA uellix_stella_ops NAMES uellix_auditor. Independently re-measured here: git grep 'GRANT USAGE ON SCHEMA uellix_stella_ops' over db/ returns ELEVEN occurrences — TEN actual SQL GRANT statements, spread across three lineages of the same operation-tickets / reserved-quota packages (db/prepared/stella_0014_operation_tickets.sql:220-221; db/prepared/stella_0016_reserved_quota_semantics.sql:287; their .hosted.sql siblings db/prepared/hosted/stella_0014_operation_tickets.hosted.sql:281-282 and db/prepared/hosted/stella_0016_reserved_quota_semantics.hosted.sql:317; and their .governed.sql siblings db/prepared/hosted/governed/stella_0014_operation_tickets.governed.sql:295,300-301 and db/prepared/hosted/governed/stella_0016_reserved_quota_semantics.governed.sql:329), naming uellix_migrator, uellix_app, uellix_cap_stella_ticket and uellix_cap_stella_quota — PLUS ONE prose occurrence, a describedAs string literal inside db/hosted/authority/recovered-boundaries.ts:465 that narrates a historical remediation in prose and issues no SQL of its own. The set of four grantee roles named was correct in the base text and is unchanged; none of the eleven occurrences names the auditor, so the finding MG-1/MRS_5 exists to establish — the absence of any auditor grant — is unaffected by the miscount. This CORROBORATES the parent's MG-1 by a different query than the parent used.",
+    "independently_reverified_at_this_amendment_base": "git grep -n \"GRANT USAGE ON SCHEMA uellix_stella_ops\" over db/ at BASE_SHA 4eb302ddcc829d3b909a4e6b2681470ce38d3819 re-run for this amendment; 11 lines returned, 10 matching a literal GRANT statement and exactly 1 (db/hosted/authority/recovered-boundaries.ts:465) matching only inside a TypeScript describedAs: string."
+  },
+  "SECTION_A4_OD4_OD6_HARMONIZATION": {
+    "rule": "Both OD-4 and OD-6 are TRUE in one respect and were UNCLEAR in another. TRUE: neither has a direct technical dependency — no branch of MR-1, MR-2 or MR-3 reads either OD's answer, and no row of POSTSTATE_VERIFICATION is shaped by either. UNCLEAR: the base text's 'NONE for P1..P5' could be misread as exempting them from PHASE_P0_PREREQUISITE's gate, which it does not. This section restates both consequence fields to keep the true claim and remove the ambiguity, WITHOUT touching OWNER_DECISIONS.rule, PHASE_P0_PREREQUISITE.gate, FAIL_CLOSED_TOKENS.STOP_OWNER_DECISION_UNRATIFIED or manifest control N16 — all four already state the strict rule correctly and remain controlling, UNCHANGED, exactly as written in the base.",
+    "quoted_unchanged_controlling_clauses_for_cross_reference": {
+      "OWNER_DECISIONS.rule": "Each entry states the QUESTION, what the repository does and does not determine, the options, the engineering recommendation and the consequence of leaving it open. None is defaulted, and all six BLOCK PHASE_P1.",
+      "PHASE_P0_PREREQUISITE.gate": "This authority and its companion manifest must be INDEPENDENTLY CERTIFIED, and every owner decision OD-1..OD-6 must be RATIFIED, before P1 opens.",
+      "FAIL_CLOSED_TOKENS.STOP_OWNER_DECISION_UNRATIFIED.when": "Any of OD-1..OD-6 is unratified when P1 would open.",
+      "manifest N16": "OWNER DECISION UNRATIFIED => P1 DOES NOT OPEN. With any of OD-1..OD-6 unratified, the lane must stop with STOP_OWNER_DECISION_UNRATIFIED. A run that proceeded on the engineering recommendations fails."
+    },
+    "OD4_NEW_consequence_if_unratified": "NO DIRECT TECHNICAL DEPENDENCY: no branch of MR-1, MR-2 or MR-3 reads OD-4's answer, and no assertion in POSTSTATE_VERIFICATION is shaped by it — a lane could complete PHASE_P1 through PHASE_P5 with OD-4 answered either way and produce an identical hosted end state. THIS IS NOT AN EXEMPTION FROM THE GLOBAL GATE. OWNER_DECISIONS.rule states 'all six BLOCK PHASE_P1' without qualification, PHASE_P0_PREREQUISITE.gate names 'every owner decision OD-1..OD-6' without exception, and STOP_OWNER_DECISION_UNRATIFIED fires on 'any of OD-1..OD-6' — none of the three carves out OD-4, and this amendment does not weaken any of them. The sentence above explains WHY OD-4 is cheap to ratify (it requires no new infrastructure and decides nothing about the credential, the grant or their delivery), not a licence to leave it open. (Corrected by SECTION_A4 of FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1 — IC-R1 non-blocking finding 2.)",
+    "OD6_NEW_consequence_if_unratified": "NO DIRECT TECHNICAL DEPENDENCY: OD-6 governs whether FUTURE certification verdicts are materialized as tracked repository evidence — a governance question about artifacts this node does not itself produce, that no branch of MR-1, MR-2 or MR-3 reads and no assertion in POSTSTATE_VERIFICATION depends on. A lane could complete PHASE_P1 through PHASE_P5 with OD-6 answered either way and produce an identical hosted end state. THIS IS NOT AN EXEMPTION FROM THE GLOBAL GATE, for the identical reason given for OD-4 above: OWNER_DECISIONS.rule, PHASE_P0_PREREQUISITE.gate and STOP_OWNER_DECISION_UNRATIFIED name all six without exception, and this amendment does not weaken any of them. It is 'a governance improvement, not a blocker' IN THE SENSE that its answer changes no mutation and no assertion — never in the sense that PHASE_P0's own ratification requirement may skip it. (Corrected by SECTION_A4 of FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1 — IC-R1 non-blocking finding 2.)",
+    "why_this_is_a_harmonization_and_not_a_weakening": "The strict rule ('all six block P1') is not touched, relaxed, or made conditional anywhere in this section. What changes is that OD-4's and OD-6's own per-item text can no longer be read as an exception to it — the ambiguity is removed in the direction that PRESERVES the strict rule, never in the direction that would have relaxed it. RULE_NO_GATE_WEAKENING binds: a gate is never relaxed to obtain a pass, and this section produces no pass — OD-4 and OD-6 remain exactly as unratified as they were before this amendment, and PHASE_P1 remains exactly as blocked."
+  },
+  "SECTION_A5_NEW_FAIL_CLOSED_TOKEN": {
+    "rule": "ADDS ONE TOKEN to FAIL_CLOSED_TOKENS.tokens. Nothing existing in that array is edited, reordered or removed. All twenty-two base tokens remain, byte-identical, and this is the twenty-third.",
+    "ADDED_TOKEN": {
+      "token": "STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE",
+      "when": "PV-24, PV-25, PV-26, PV-27 or PV-28 is measured TRUE at PHASE_P3 or at any later re-observation (respectively: EXECUTE on the nine-argument canonical literal, EXECUTE on the seven-argument canonical literal, CREATE on uellix_stella_ops, CREATE on public, or any of INSERT/UPDATE/DELETE/TRUNCATE on uellix_bootstrap.staging_sentinel), AND that finding is not attributable to this artifact’s own MR-3 — i.e. MR-3 either did not fire (its trigger in MUTATION_ROLLBACK_CONTRACT.MR_3_SCHEMA_USAGE_GRANT was not met) or MR-3 fired and its own verification already separately confirmed the corresponding row false. In either case the prohibited privilege PRE-EXISTS on the hosted target and no mutation this artifact authorizes is its cause."
+    },
+    "canonical_form_derivation": "Named after the same pattern as the base artifact’s own STOP_UNEXPLAINED_ROLE_MEMBERSHIP and STOP_UNEXPECTED_AUDITOR_OWNERSHIP — STOP_<UNEXPLAINED|UNEXPECTED>_<what was found> — chosen over a narrower per-privilege name (e.g. one token per PV row) because PV-24..28 already share one disposition (stop and record, never silently revoke) and the base artifact’s own STOP_DANGEROUS_ROLE_ATTRIBUTE groups five distinct attributes (PV-6..10) under one token on the same reasoning.",
+    "why_the_gap_existed": "Every other PV group in the base POSTSTATE_VERIFICATION had a dedicated token BECAUSE its narrative section (ROLE_MEMBERSHIP_CONTRACT, OBJECT_OWNERSHIP_CONTRACT, ROLE_ATTRIBUTE_CONTRACT, PUBLIC_PRIVILEGE_CONTRACT) explicitly asked \"what happens if this is found unexpectedly present\" and answered it with a token. USAGE_IS_NOT_EXECUTE and MINIMUM_PRIVILEGE_CONTRACT.DANGEROUS_WIDENING_REGISTER (both unchanged, both still controlling) explain in detail WHY PV-24..28 must be false, but neither asked the \"what happens if it is found true anyway, for a reason this artifact did not cause\" question a token answers. This amendment asks and answers it.",
+    "disposition_of_a_finding_under_this_token": "STOP AND RECORD, NEVER SILENTLY REVOKE — consistent with STOP_UNEXPLAINED_ROLE_MEMBERSHIP and STOP_UNEXPECTED_AUDITOR_OWNERSHIP and for the identical reason: a hosted privilege this artifact did not create and cannot attribute is not this artifact’s to remove, and revoking it would destroy the evidence of how it arrived. The evidence artifact records the exact PV id, the exact boolean, and the exact SQLSTATE or absence of one.",
+    "closes": "IC-R1 non-blocking finding 3 (manifest control P16, token-set totality)."
+  },
+  "SECTION_A6_SSL06_WORDING_CORRECTION": {
+    "FINDING_SOURCE": "IC-R1 non-blocking finding 5.",
+    "NEW_verbatim": "NO, AND THE DISTINCTION IS EXACT — restated here without the imprecision IC-R1 identified. The parent's SECRET_CUSTODY_CONTRACT.provisioning clause is scoped to what THE PARENT'S OWN AUTHORING ACT does: it creates no credential, mints no credential, and its OWN AUTHORING LANE — the one that wrote FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json — never held one, because that lane opened no connection and resolved no literal. It is NOT a claim that no process EVER holds the auditor credential: PRECHECK-R2, the FUTURE OBSERVATION PROCESS the parent's own authority governs and gates behind a mandatory human confirmation, necessarily DOES hold and use the credential for the one hosted connection the parent authorizes — an authenticated database session is definitionally a process holding the credential that authenticated it. What the parent's clause actually establishes, precisely, is that it 'does not name, choose, create, rotate or compare an approved secure source' for that credential — a statement that the CUSTODY QUESTION IS LEFT OPEN by the parent, not a statement that no holder exists once the capability is exercised. THIS ARTIFACT governs that open custody question — minting, delivery, inventory, removal — which is a DIFFERENT ACT from the ACT OF CONNECTING that PRECHECK-R2 performs under the parent's own authority and that the parent's own human-confirmation clause already anticipates as holding the credential. The custody question arises in THIS artifact's domain because the parent explicitly left it open, not because the parent misdescribed who holds what. No parent clause is edited, amended or reinterpreted.",
+    "verdict_status": "UNCHANGED. SSL-06 remains adjudicated ENGAGED by the provisioning act, on confidentiality grounds, exactly as the base artifact’s OF-6 records. This correction changes only the wording of one supporting sentence within SSL_06_ADJUDICATION.IS_THIS_A_CONTRADICTION_OF_A_CERTIFIED_PARENT, not the verdict it supports, not the binding custody-inventory requirement the verdict imposes, and not any other clause of SECRET_CUSTODY_CONTRACT."
+  },
+  "SECTION_A7_WINDOWS_DELIVERY_CLARIFICATION": {
+    "FINDING_SOURCE": "IC-R1 non-blocking finding 6.",
+    "two_mechanisms_not_one": "The base clause's single verdict conflated two mechanically different delivery mechanisms that its OWN CONDITIONS_UNDER_WHICH_IT_BECOMES_ACCEPTABLE.conditions[0] already pulls apart: a PERSISTENT, USER-SCOPE environment variable (what setx actually produces — it writes to the Windows registry key HKCU\\\\Environment, which survives reboot and is readable by every process that user runs) versus a PROCESS-SCOPED environment variable (set only in the environment of the one consuming command, never persisted, never readable by any other process). This section separates them explicitly so neither reader nor implementer has to resolve the base text's tension unassisted.",
+    "MECHANISM_1_USER_SCOPE_PERSISTENT": {
+      "example": "setx UELLIX_AUDITOR_DATABASE_URL \"...\" (or the equivalent System Properties > Environment Variables UI action)",
+      "NEW_verdict": "NOT ACCEPTABLE. ABSOLUTE, AND NOT AN OWNER ELECTION.",
+      "why_absolute_rather_than_an_OD_2_election": "It cannot satisfy CONDITIONS_UNDER_WHICH_IT_BECOMES_ACCEPTABLE.conditions[0] (“PROCESS-SCOPED, NOT USER-SCOPED”) BY CONSTRUCTION — user-scope persistence and process-scoping are mutually exclusive properties of the SAME mechanism, not a dial an owner can turn one way or the other. An OD-2 election exists to choose among mechanisms that can genuinely satisfy the five conditions; offering a mechanism that cannot pass its own first condition is not a choice presented to the owner, it was a drafting defect in the base text, now closed.",
+      "what_it_fails_carried_unchanged_from_the_base_text": [
+        "PERSISTENCE. A user-scope variable set with setx survives every reboot until deliberately removed, so a mechanism chosen for a temporary need creates a permanent exposure by default. That is mutant M26 in its most ordinary form: the removal is a step someone has to remember.",
+        "SCOPE. It is readable by EVERY process that user runs, not only the intended one. On a developer workstation that includes editors, extensions, package postinstall scripts and any tooling with telemetry.",
+        "REGISTRY PERSISTENCE. It is stored in the user registry hive and is captured by ordinary profile backups and by some endpoint-management tooling, in plaintext.",
+        "SHELL HISTORY. The COMMAND THAT SETS IT carries the value as an argument, so the delivery act reintroduces exactly the command-line disclosure the mechanism was chosen to avoid. This is the decisive objection: the variable may be safe once set, and setting it is not."
+      ],
+      "grounds_mutant": "M26, carried unchanged from the base artifact."
+    },
+    "MECHANISM_2_PROCESS_SCOPED": {
+      "NEW_verdict": "REMAINS AN OWNER ELECTION UNDER OD-2, CONDITIONAL ON ALL FIVE CONDITIONS BELOW, UNCHANGED FROM THE BASE.",
+      "what_it_is": "An environment variable set ONLY in the environment of the single consuming process, never persisted to the user’s profile or the registry, never set by a command that carries the value as a command-line argument, removed immediately after the consuming process exits on both the success and the failure path, with positive absence verification recorded. This is a DIFFERENT MECHANISM FROM setx, not a restricted or careful use of it — setx specifically writes to the persistent user environment block, which is precisely why MECHANISM_1 can never satisfy condition 1 no matter how carefully it is otherwise used.",
+      "conditions_carried_unchanged_from_the_base_text": [
+        "PROCESS-SCOPED, NOT USER-SCOPED. The variable is set in the environment of the single command that consumes it and does not persist to a new shell.",
+        "NOT SET BY A COMMAND THAT CARRIES THE VALUE AS AN ARGUMENT. It is read from the secret store into the process environment, never typed or pasted into a command line.",
+        "SHELL HISTORY IS DISABLED FOR THE SESSION, or the session is a fresh non-persisting one.",
+        "REMOVED IMMEDIATELY after the consuming process exits, on BOTH the success and the failure path.",
+        "POSITIVE ABSENCE VERIFICATION after removal, recorded in the evidence artifact as a boolean. Absence is asserted from a check, never from the fact that a removal command was issued."
+      ],
+      "engineering_recommendation_carried_unchanged_from_the_base_text": "A dedicated secret manager or OS credential vault, read into the process environment at invocation, is preferable on every axis above and removes the removal step entirely by never persisting the value outside the vault. It is NOT mandated, because no such mechanism is established in this repository at AS_OF_TREE and mandating an absent tool would produce an authority nobody can satisfy."
+    },
+    "why_this_artifact_still_refuses_to_simply_decide_carried_unchanged_from_the_base_text": "The lane mandate is explicit that a Windows environment variable must not be mandated merely because it is convenient, and that a delivery path which is convenient but not demonstrably compliant must not be authorized. Neither MECHANISM_2 nor a dedicated secret manager is demonstrably compliant at AS_OF_TREE without an owner election: MECHANISM_2 requires the owner to accept its five conditions as binding rather than aspirational, and the secret-manager alternative does not exist in this repository yet. Choosing between them remains an owner’s call, exercised under OD-2. MECHANISM_1 is no longer part of that choice."
+  },
+  "SECTION_A8_NO_OTHER_SEMANTIC_CHANGE": {
+    "disposition": "BINDING. Every item below is carried from the frozen base UNCHANGED. This amendment names them explicitly so a certifier can check the negative claim by comparison rather than by re-reading the whole base.",
+    "unchanged": [
+      "MINIMUM_REQUIRED_DELTA — exactly REQ-1 (credential, unconditional) and REQ-2 (GRANT USAGE ON SCHEMA uellix_stella_ops, conditional on a hosted measurement finding it absent). No third item is added anywhere by this amendment.",
+      "EXPLICITLY_NOT_REQUIRED and DANGEROUS_WIDENING_REGISTER — the EXECUTE prohibition, the catalog-SELECT non-requirement, the membership prohibition, and every disproof (E-1..E-11) that grounds them.",
+      "GRANT_DELIVERY_CHANNEL_ADJUDICATION — the package-first default for MR-3, and the protected-surface-allocation gate it is bound behind.",
+      "MUTATION_ROLLBACK_CONTRACT MR-1, MR-2, MR-3 — every trigger, prestate, mutation statement, poststate assertion, rollback/compensating action and failure token, BYTE UNCHANGED except for the single addition in SECTION_A5 (a new token added to FAIL_CLOSED_TOKENS, not to any MR clause itself).",
+      "ROLE_EXISTENCE_CONTRACT, LOGIN_CONTRACT, ROLE_ATTRIBUTE_CONTRACT, ROLE_MEMBERSHIP_CONTRACT, OBJECT_OWNERSHIP_CONTRACT, PUBLIC_PRIVILEGE_CONTRACT, USAGE_IS_NOT_EXECUTE — all contracts and all their poststate assertions (PV-1..PV-34), except that PV-24..PV-28 now additionally route to the new token per SECTION_A5 when red and unattributable to MR-3; the assertions themselves are not reworded.",
+      "The HOSTED_STATE_UNKNOWN register (HU-1..HU-13) and MEASUREMENT_GAPS_RECORDED (MG-1..MG-6 carried, KG-1..KG-6) — no entry is resolved, added or removed by this amendment.",
+      "ENGINE_SEMANTICS_MEASURED in full — measurements E-1..E-11, the substrate disclosure, and the engine-version delta disclosure (OF-3/KG-4), which this amendment does not re-touch (it was already closed by IC-R1’s own independent re-measurement on the exact hosted build, cited in CERTIFICATION_THIS_AMENDMENT_RESPONDS_TO above, not by this amendment).",
+      "FAIL_CLOSED_TOKENS — all twenty-two base tokens, byte-identical, plus the one addition in SECTION_A5.",
+      "TARGET_IDENTITY, PRODUCTION_VETO, HUMAN_CONFIRMATION (HC-1, HC-2, HC-3), CAPABILITY_PREFLIGHT_CONTRACT (KP-1..KP-6), FUTURE_EXECUTION_PHASES (PHASE_P1 through PHASE_P5 including the ordering-problem resolution in PHASE_P1), READ_ONLY_PROOF, EVIDENCE_MATERIALIZATION, NON_AUTHORIZATIONS, D1_RELATIONSHIP, NEW_ODS_REQUIRED (verdict NO, re-derived for this amendment’s own write set in SECTION_A10 below rather than reused from the base).",
+      "OWNER_DECISIONS.rule, OWNER_DECISIONS.decisions[OD-1], [OD-2], [OD-3], [OD-5] in full, and the OD-4/OD-6 QUESTION, repository_position, options/why_it_is_raised_anyway, and engineering_recommendation fields — only consequence_if_unratified changes for OD-4 and OD-6, per SECTION_A4.",
+      "PHASE_P0_PREREQUISITE.gate, .why_the_owner_decisions_block_rather_than_default, .binds_to — byte-identical.",
+      "FACT_VS_RECOMMENDATION_VS_DECISION in full, including its OWNER_DECISION entry (“OD-1..OD-6. Unratified, they BLOCK P1 with STOP_OWNER_DECISION_UNRATIFIED.”) — byte-identical, and now additionally corroborated rather than contradicted by SECTION_A4.",
+      "SECRET_GENERATION_CONTRACT and SECRET_ROTATION_CONTRACT in full — rotate-not-recover, the ephemeral/persistent OD-1 framing, and every mutant they ground.",
+      "SECRET_CUSTODY_CONTRACT in full except the one sentence named in SECTION_A6 — the SSL-06 ENGAGED verdict, the who-may/may-not-know lists, and the binding custody-inventory requirement are unchanged.",
+      "SECRET_DELIVERY_CONTRACT in full except the WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION clause named in SECTION_A7 — the ABSOLUTELY_PROHIBITED_MECHANISMS list and the REMOVAL_AFTER_USE clause are unchanged.",
+      "All 40 mutation controls, all 22 negative controls and 16 of the 18 positive controls of the base manifest — UNCHANGED, all still controlling at their base ids, per COMPANION_MANIFEST_AMENDMENT.base_manifest_disposition. Only P1’s and P13’s own text is unaffected in content; the two shape corrections (postgres_requirements, sentinels) do not touch any control text.",
+      "OPEN_FINDINGS OF-1 through OF-10 of the base authority — none is resolved, closed, or reworded by this amendment. OF-3/OF-4/OF-6/OF-7/OF-8/OF-9 are the ones a certifier is most likely to re-press; this amendment answers none of them beyond the narrow wording fix in SECTION_A6."
+    ],
+    "no_ods_surface": "This amendment creates no ODS surface, allocates no ODS lineage, claims no protected authority and touches no protected path. Its entire write set is under docs/ops/release/**."
+  },
+  "SECTION_A9_PRECEDENCE": {
+    "rule": "For the loci named in SECTION_A1 (F-A2-1, F-A2-2, F-A4, F-A4B, F-A5, F-A6, F-A7) and materialized in SECTION_A2 through SECTION_A7, THIS AMENDMENT CONTROLS. For everything else — including every clause named in SECTION_A8 as unchanged, and including all 80 controls of the base manifest — the frozen base authority v1.0.0 and its frozen base manifest v1.0.0 control verbatim.",
+    "conflict_rule": "A reader who finds this amendment and the base in conflict on any clause NOT named in SECTION_A1 must treat that as a defect in THIS amendment and STOP, not choose. Under CLAUDE.md section 5 and the base authority’s own RULE_FAIL_CLOSED_ON_UNKNOWN, an unresolved conflict fails closed.",
+    "relation_to_the_grandparent_authorities": "Unchanged. The base authority refines docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json and this amendment refines the base. It does not amend the D-1 OLD_DB observation authority, does not amend STAGING_RELEASE_PRODUCTION_AUTHORITY, and does not amend any FIBDB-053 wave3 authority."
+  },
+  "SECTION_A10_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "confidence": "MECHANICALLY MEASURED, NOT ASSERTED.",
+    "method": "scripts/ods-scope.ts classifyPaths, imported and EXECUTED against its own DEFAULT_PROTECTED_PATTERNS, with this amendment's own two-file write set and the ordinary allow pattern docs/ops/release/**.",
+    "basis": "This amendment writes exactly two NEW files, both under docs/ops/release/**, which is not a DEFAULT_PROTECTED_PATTERN. It authorizes no implementation, no apply, no deployment, no certification and no allocation, and it does not modify either base v1.0.0 file.",
+    "ods_scope_expectation": "ods:scope over this write set must report 0 protected violations, 0 non-canonical protected paths, 0 unauthorized paths and an empty grantAuthorized array (proving ORDINARY, not protected-but-granted).",
+    "what_this_amendment_does_not_do": [
+      "It does not provision the capability.",
+      "It does not open a hosted PostgreSQL connection.",
+      "It does not create, rotate, read or expose any credential.",
+      "It does not GRANT or REVOKE anything hosted.",
+      "It does not certify itself. Independent review is still required, and now has a smaller, measured surface to re-derive (six findings, not the whole pair).",
+      "It does not mark PR #207 ready for review; PR #207 remains DRAFT.",
+      "It does not ratify any owner decision. OD-1 through OD-6 remain unratified after this amendment lands."
+    ]
+  },
+  "SECTION_A11_SELF_CHECK": {
+    "note": "Deterministic, test-free self-check for THIS amendment. It does not restate and does not replace the base authority’s own self_check, which remains true of the unedited base file.",
+    "expected_defective_clause_count_in_SECTION_A1": 7,
+    "expected_defective_clause_loci": [
+      "MANIFEST :: postgres_requirements",
+      "MANIFEST :: sentinels",
+      "AUTHORITY :: OWNER_DECISIONS.decisions[id=OD-4].consequence_if_unratified",
+      "AUTHORITY :: OWNER_DECISIONS.decisions[id=OD-6].consequence_if_unratified",
+      "AUTHORITY :: FAIL_CLOSED_TOKENS.tokens (addition)",
+      "AUTHORITY :: SECRET_CUSTODY_CONTRACT.SSL_06_ADJUDICATION.IS_THIS_A_CONTRADICTION_OF_A_CERTIFIED_PARENT",
+      "AUTHORITY :: SECRET_DELIVERY_CONTRACT.WINDOWS_USER_LEVEL_ENVIRONMENT_VARIABLE_ADJUDICATION.verdict"
+    ],
+    "expected_new_token_count": 1,
+    "expected_new_token_name": "STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE",
+    "expected_role_creation_package_count_after_correction": 4,
+    "expected_grant_usage_occurrence_count_after_correction": 11,
+    "expected_grant_usage_sql_statement_count_after_correction": 10,
+    "expected_grant_usage_prose_occurrence_count_after_correction": 1,
+    "expected_write_set_size": 2,
+    "checks": [
+      "SECTION_A1.FINDINGS.length == 7 and every non-null OLD_verbatim is byte-identical to the string at its stated locus in the base authority file at blob eb77f0954495625d110be3791053a6850ba2b590 or the base manifest file at blob 2790f3530ce44fd77e12ecdf49430d93ec7a4a70.",
+      "SECTION_A2.NEW_verbatim names exactly four CREATE-ROLE-issuing packages and explicitly excludes stella_0005b_admin_bootstrap.sql by name.",
+      "SECTION_A3.NEW_verbatim states eleven occurrences, ten SQL and one prose, and names all ten SQL loci plus the one prose locus.",
+      "SECTION_A4.OD4_NEW_consequence_if_unratified and .OD6_NEW_consequence_if_unratified each explicitly state “THIS IS NOT AN EXEMPTION FROM THE GLOBAL GATE” or materially equivalent language, and each cites at least two of {OWNER_DECISIONS.rule, PHASE_P0_PREREQUISITE.gate, STOP_OWNER_DECISION_UNRATIFIED, manifest N16} by name.",
+      "SECTION_A5.ADDED_TOKEN.token == \"STOP_UNEXPLAINED_PROHIBITED_PRIVILEGE\" and its .when clause names all five of PV-24, PV-25, PV-26, PV-27, PV-28.",
+      "SECTION_A6.NEW_verbatim explicitly states that PRECHECK-R2 (or the future observation process) DOES hold the credential, and SECTION_A6.verdict_status confirms SSL-06 remains ENGAGED.",
+      "SECTION_A7 contains two mechanisms, MECHANISM_1 verdict is exactly \"NOT ACCEPTABLE\" without a qualifying \"not prohibited outright\", and MECHANISM_2 carries all five conditions from the base text unchanged.",
+      "SECTION_A9.rule names precedence in favour of this amendment ONLY for the seven loci in SECTION_A1, and the base authority and base manifest control verbatim for everything else.",
+      "This amendment write set == exactly 2 new files, both under docs/ops/release/**, and the two base v1.0.0 files are byte-unchanged (git diff on both base files against BASE_SHA is empty)."
+    ]
+  },
+  "SECTION_A12_WRITE_SET": {
+    "files_created": [
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json (this document)",
+      "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+    ],
+    "files_modified": [],
+    "files_deleted": [],
+    "base_files_touched": "NONE. Both base v1.0.0 files remain byte-identical to their content at commit 4eb302ddcc829d3b909a4e6b2681470ce38d3819.",
+    "allowed_pattern_for_ods_scope": "docs/ops/release/**"
+  },
+  "RISKS_AND_OPEN_FINDINGS": [
+    {
+      "id": "OF-A1",
+      "severity": "NON_BLOCKING",
+      "finding": "IC-R1 non-blocking finding 7 (manifest control P1 is vacuous by construction — no canonical literal appears anywhere in this node’s write set) is CARRIED FORWARD, UNCHANGED. This amendment does not touch P1 and does not make it non-vacuous, because doing so would require embedding or deriving the canonical literal somewhere in this write set, which CANONICAL_SIGNATURE_CONTRACT and P1 itself both forbid.",
+      "disposition": "Recorded, not repaired. Unchanged from the base artifact’s own posture toward P1."
+    },
+    {
+      "id": "OF-A2",
+      "severity": "NON_BLOCKING",
+      "finding": "IC-R1 non-blocking finding 8 (the MR-2→MR-3 delivery window is unbounded if MR-3 travels by the package route) is CARRIED FORWARD, UNCHANGED. GRANT_DELIVERY_CHANNEL_ADJUDICATION and OD-3 (expiry policy) are the base artifact’s own mitigations; this amendment adds nothing to them.",
+      "disposition": "Recorded, not repaired. Mitigated but not closed by OD-3, exactly as the base artifact already states."
+    },
+    {
+      "id": "OF-A3",
+      "severity": "NON_BLOCKING",
+      "finding": "IC-R1 non-blocking finding 9 (pg_stat_activity is a partial, non-privileged, post-rotation detector of an unrecorded consumer, and this candidate excludes it) is CARRIED FORWARD, UNCHANGED. Coherent with the base artifact’s own AUTHORIZED_SQL_SURFACE, which does not include it.",
+      "disposition": "Recorded, not repaired."
+    },
+    {
+      "id": "OF-A4",
+      "severity": "NON_BLOCKING",
+      "finding": "This amendment itself creates a SEVENTH document in the FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING lineage (base authority, base manifest, this amendment, its companion manifest amendment — four files across two versions) governing a capability that remains, after this amendment, exactly as unprovisioned as before it. A certifier should confirm that the correction-only scope claimed throughout this document is actually correction-only and introduces no new obligation beyond the one new token in SECTION_A5.",
+      "disposition": "Self-flagged for the required independent review below."
+    }
+  ],
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment corrects the wording of an SSL-06 confidentiality rationale and the wording of a strict owner-ratification gate — both security-adjacent clauses — in an artifact that authorizes a hosted credential mutation and a hosted privilege grant. A correction to those clauses written by the same programme that wrote the clauses it is correcting deserves the same scrutiny the original clauses received, not less, because a wording fix is exactly the kind of change that can quietly narrow a gate while appearing only to clarify it.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Does SECTION_A4’s harmonized OD-4/OD-6 text actually strengthen the gate, or does restating “not an exemption” in prose let a hurried reader still skip OD-4/OD-6 in practice, precisely because the text now spends more words explaining why it is safe to do so? Press whether the four unchanged clauses (rule, gate, token, N16) were already sufficient and this section is redundant rather than corrective.",
+      "Does SECTION_A5’s new token actually make FAIL_CLOSED_TOKENS total, or does grouping five distinct prohibited privileges (EXECUTE×2, CREATE×2, DML×1-of-4) under one token hide a case where the correct response should differ by which PV row is red? Test whether a PV-24 finding (EXECUTE on the nine-argument literal) should be treated identically to a PV-28 finding (DML on the sentinel table) under one STOP token.",
+      "Does SECTION_A6’s wording correction genuinely leave the SSL-06 ENGAGED verdict untouched, or does explicitly naming PRECHECK-R2 as a credential-holder subtly widen what this artifact’s custody requirements are understood to cover? Press whether PRECHECK-R2’s own credential handling is now, by implication, governed by THIS artifact’s SECRET_CUSTODY_CONTRACT rather than by the parent’s human-confirmation clause alone.",
+      "Is SECTION_A2’s role-creation recount (five to four) actually correct, or does stella_0005b_admin_bootstrap.sql run in an order, against an environment, where the role might NOT already exist — making its three ALTER statements a latent bug in THAT package rather than confirmation that it never creates the role? Re-read stella_0005b’s own preconditions section before accepting the recount.",
+      "Is SECTION_A3’s eleven-occurrence recount actually exhaustive, or could a differently-spaced or differently-quoted GRANT USAGE statement exist that this git grep pattern would miss? Re-run with a looser pattern (e.g. case-insensitive, tolerant of extra whitespace) and confirm the count does not change.",
+      "Does SECTION_A7’s absolute prohibition on MECHANISM_1 foreclose a legitimate, narrower use case — for instance, a variable set and removed within the SAME shell session, never surviving to a NEW shell, which is a real usage pattern distinct from the “survives every reboot” framing this section relies on? Press whether the absolute verdict is calibrated to setx’s WORST case or its ONLY case.",
+      "Do the two manifest field corrections (postgres_requirements, sentinels) in the companion amendment actually validate against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, independently re-run, or does this amendment merely assert PASS the way the base PR body asserted “manifest schema PASS” without it being reproducible — the exact defect this amendment exists to fix?"
+    ],
+    "what_a_certifier_may_NOT_do": "It may not certify by re-deriving the same conclusions from the same reading. Every count in SECTION_A2 and SECTION_A3 is a re-runnable git grep; every schema claim in the companion manifest amendment is a re-runnable validator call. The certifier should re-run them, not re-read them."
+  },
+  "self_check": {
+    "write_set_is_exactly_two_new_files": true,
+    "base_authority_file_byte_unchanged": true,
+    "base_manifest_file_byte_unchanged": true,
+    "no_hosted_postgresql_connection_was_opened": true,
+    "no_hosted_sql_was_issued": true,
+    "no_credential_was_created_rotated_resolved_read_printed_or_requested": true,
+    "no_secret_value_is_present_anywhere_in_this_artifact": true,
+    "no_grant_or_revoke_was_executed_anywhere": true,
+    "no_role_was_created_altered_or_dropped_anywhere": true,
+    "no_vercel_or_supabase_configuration_touched": true,
+    "no_production_project_contacted_in_any_way": true,
+    "no_code_written": true,
+    "no_test_written": true,
+    "no_db_path_touched": true,
+    "no_ods_artifact_touched": true,
+    "no_protected_path_touched": true,
+    "no_ods_hpo_or_w2_identifier_invented": true,
+    "no_owner_decision_ratified_by_this_act": true,
+    "no_owner_decision_substance_changed_beyond_the_two_named_wording_harmonizations": true,
+    "delta_vs_total_privilege_model_unchanged": true,
+    "REQ1_and_conditional_REQ2_unchanged": true,
+    "EXECUTE_prohibition_unchanged": true,
+    "package_first_default_for_MR3_unchanged": true,
+    "hosted_state_unknown_register_unchanged": true,
+    "all_seven_defect_loci_independently_reverified_at_this_amendment_base": true,
+    "role_creation_count_reverified_by_direct_grep_at_this_base": true,
+    "grant_usage_count_reverified_by_direct_grep_at_this_base": true
+  },
+  "final_state": "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1_0_1_CORRECTED_IC_R1_NONBLOCKING_FINDINGS_1_THROUGH_6__AWAITING_INDEPENDENT_REVIEW_AND_OWNER_RATIFICATION",
+  "next_gate": "OPUS_FOCUSED_REVIEW_OF_THIS_AMENDMENT_PAIR__THEN_OWNER_RATIFICATION_OF_OD_1_THROUGH_OD_6. No hosted capability may be changed by this act, and none is changed by ratification of this amendment alone — ratification of OD-1..OD-6 and independent certification of the base pair remain the two gates PHASE_P0_PREREQUISITE names, unchanged."
+}

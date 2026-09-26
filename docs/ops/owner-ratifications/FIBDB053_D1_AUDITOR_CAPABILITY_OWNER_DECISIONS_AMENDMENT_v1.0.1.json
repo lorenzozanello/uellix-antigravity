@@ -1,0 +1,231 @@
+{
+  "package_id": "FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_AMENDMENT_v1.0.1",
+  "authority_class": "OWNER_RATIFICATION_RECORD_AMENDMENT",
+  "document_class": "OWNER_RATIFICATION_RECORD_AMENDMENT__CERTIFICATION_OCCURRENCE_NOTE__NO_IMPLEMENTATION__NO_HOSTED_POSTGRESQL_CONNECTION__NO_CREDENTIAL_GENERATION__NO_CREDENTIAL_ROTATION__NO_GRANT__NO_REVOKE__NO_SUPABASE_MUTATION__NO_CUSTODY_STORE_WRITE__NO_SECRET_VALUE__NO_PRECHECK_R2__NO_RETROACTIVE_VERDICT_ARTIFACT_RECONSTRUCTION__NO_OD_REOPENING",
+  "append_only": true,
+  "amends": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+  "supersedes": null,
+  "mission_id": "CV1-D1-AUDITOR-CERTIFICATION-OCCURRENCE-OWNER-RECORD-AW-R1",
+  "lane": "CV1-D1-AUDITOR-CERTIFICATION-OCCURRENCE-OWNER-RECORD-AW-R1",
+  "role": "FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "OWNER_RECORD_AUTHORING_ONLY",
+  "materialization_date": "2026-09-22",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "candidate_branch": "codex/cv1-d1-auditor-capability-adjudication-aw-r1",
+    "candidate_pr": "#207",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty)."
+  },
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. The parent ratification record docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json is left BYTE-UNCHANGED. It is historical evidence of what was authored at that time, including its own over-restrictive certification-status language, and is not edited to erase that record.",
+    "how_to_read_the_pair_together": "Where this amendment is silent, the parent controls verbatim: all six OD-1..OD-6 ratifications in full — their dispositions, their owner_selected_decision text, their repository_binding, their execution_not_authorized_by_this_ratification fields, and NONBLOCKING_EXECUTION_PRECONDITION_NOTES EXEC-NOTE-1 and EXEC-NOTE-2 — plus provenance_classification, precedence_note, reopening_rule, definitional_intent, FRESHNESS_CARRYOVER, and every explicit_non_authorizations item other than the two named below. This amendment does NOT reopen, reinterpret, or re-weigh any of OD-1 through OD-6. Where this amendment supersedes a clause by path (below), the parent’s text at that path is superseded IN FULL for the respect stated, and this amendment’s replacement text is the operative one.",
+    "why_an_amendment_rather_than_an_edit": "The parent's own text at OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD and at next_gate is now known, by owner confirmation, to have been counterfactual on its own stated time index at the moment it was written — v1.0.2's bounded recertification had already occurred. Editing it in place would erase the record of what this lane asserted, under what belief, and why a correction was later required — exactly the audit trail a certifier or a later reader needs to see was a deliberate, dated correction rather than a silent rewrite."
+  },
+  "CANDIDATE_BINDING": {
+    "rule": "This amendment corrects certification-status language in the parent ratification record ONLY, against the SAME authority-package candidate the parent bound to, and against the parent ratification record itself, pinned by exact blob hash. A consumer that finds either binding to differ from a fresh re-derivation MUST NOT apply this amendment to whatever the differing content is now.",
+    "authority_package_candidate_sha": "d21f9f18a26197d288542035bdb49f65b17d1203",
+    "authority_package_candidate_note": "Unchanged from the parent ratification. This amendment touches no file under docs/ops/release/; the six effective-package blob hashes the parent pinned (CANDIDATE_BINDING.effective_package) remain the correct pins and are not re-stated here to avoid a second, potentially-diverging copy of them. A consumer verifying this amendment's authority binding reads the parent's CANDIDATE_BINDING.effective_package, unchanged.",
+    "owner_ratification_parent_commit": "bee14e0a17fca6c6557b8e5e931fc32af789b49b",
+    "owner_ratification_parent_file": {
+      "path": "docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json",
+      "blob_sha": "fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f"
+    },
+    "STOP_RATIFICATION_BINDING_MISMATCH": "Triggered when a re-derivation of the parent ratification’s blob_sha, or of any of the six authority-package blob hashes the parent pinned, does not match the recorded value at the time this amendment is consumed. When triggered: this amendment does not apply to the differing artifact; a successor amendment or a fresh owner re-confirmation against the new candidate is required."
+  },
+  "companion_authority": "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json",
+  "companion_authority_amendments": [
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_AMENDMENT_v1.0.2.json"
+  ],
+  "GOVERNING_PRECEDENT": {
+    "rule": "The effective authority itself already adjudicates the IDENTICAL situation one level up, for its own parent (the D-1 OLD_DB observation authority, PR #202). This amendment applies that adjudication to itself rather than inventing a new one.",
+    "quoted_verbatim_from_the_effective_authority": {
+      "locus": "FIBDB053_D1_AUDITOR_CAPABILITY_PROVISIONING_AUTHORITY_v1.0.0.json :: CERTIFICATION_PREREQUISITE_OF_THE_PARENT.evidence_governance_limitation",
+      "what_this_is_NOT": "This is NOT a finding that certification did not occur, and NOT a ground to re-certify the parent, and NOT a ground to treat the parent as uncertified. RULE_FAIL_CLOSED_ON_UNKNOWN governs UNKNOWN facts, and this fact is not unknown: the owner affirmed it.",
+      "what_this_IS": "A governance limitation of the EVIDENCE CHAIN. A programme that records merges in git but certification verdicts only in conversation has a chain that a third party cannot walk without asking a human. Flagged as OF-2 for the certifier and recorded in OWNER_DECISIONS as OD-6."
+    },
+    "the_authority_foresaw_this_exact_recurrence": "OD-6's own why_it_belongs_here field, quoted verbatim IN FULL: “This artifact will itself require independent certification, and it will face the identical gap. A chain in which merges are auditable and verdicts are not is a chain a third party cannot walk.” It did: v1.0.2's own bounded recertification occurred and its verdict was reported by the owner, exactly as PR #202's was, with no tracked verdict artifact — the same shape, one level down.",
+    "applied_here": "A repository that (before this amendment) asserted the recertification 'has NOT yet occurred', and an owner who reports that it has, are not a genuine unresolved conflict of the kind RULE_FAIL_CLOSED_ON_UNKNOWN or STOP_FOR_AUTHORITY_CONFLICT governs. The owner affirmation moves the fact from UNKNOWN to KNOWN-OCCURRED; it does not, and cannot, move VERDICT_ARTIFACT from NOT_MATERIALIZED to MATERIALIZED — OD-6 forbids that motion permanently for this specific instance, because OD-6 itself was ratified in the same act that this correction now also touches."
+  },
+  "CERTIFICATION_OCCURRENCE_AND_VERDICT": {
+    "rule": "This section records OCCURRENCE and VERDICT only, exactly as GOVERNING_PRECEDENT requires and no further. It does not reconstruct findings, evidence, reasoning, a reviewer identity, or an exact timestamp beyond what is evidenced.",
+    "OWNER_CONFIRMATION": {
+      "confirmed_by": "The product owner, directly in the current conversation, at this amendment’s materialization.",
+      "confirms_occurrence": "The independent bounded recertification of the v1.0.2 residual-sweep amendment pair — whose scope is v1.0.2's five new clauses (SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3) and the residual-sweep completeness that grounds them, per v1.0.2's OWN next_gate — OCCURRED, and occurred BEFORE the parent owner-ratification record (commit bee14e0a) was materialized.",
+      "confirms_verdict": "BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS.",
+      "what_was_NOT_confirmed_and_is_therefore_NOT_recorded": [
+        "No specific reviewing lane identifier was supplied, and none is invented here.",
+        "No exact calendar timestamp beyond a date was supplied as owner testimony; the date below is recorded as EVIDENCED CORROBORATION, not as a direct owner statement, per the distinction drawn in the next field.",
+        "No enumeration of the recertification’s own non-blocking findings was supplied, and none is reconstructed here."
+      ]
+    },
+    "date_corroboration_not_independently_re_verified_beyond_this": "2026-09-21 is consistent with two independent, already-evidenced facts this lane read rather than invented: (a) the parent ratification record's own commit (bee14e0a) carries author/committer date 2026-09-21T19:46:29-05:00, and the owner's confirmation places the recertification BEFORE that commit; (b) PR #210's own OWNER_NOTE_DEPENDENCY block, materialized before this amendment, independently states the recertification 'is reported to have occurred 2026-09-21' as part of its own why_over_restrictive reasoning for ORS-1. Neither (a) nor (b) is this lane's own re-derivation of the recertification itself — both are corroborating context for a date the owner did not restate verbatim in this conversation, recorded here as corroboration rather than as fabrication.",
+    "CERTIFICATION_OCCURRED": true,
+    "VERDICT": "BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS",
+    "VERDICT_ARTIFACT": "NOT_RETROACTIVELY_MATERIALIZED",
+    "why_no_verdict_artifact_is_created_here_or_ever_for_this_instance": "OD-6 (ratified by the parent record, UNCHANGED and UNAMENDED by this amendment) selects MATERIALIZE_GOING_FORWARD and states explicitly: 'NOT retroactively: reconstructing a past verdict as a document would be writing history rather than recording it.' The v1.0.2 recertification predates OD-6's own ratification, which occurred in the very same parent record this amendment amends — so this instance falls permanently on the near side of OD-6's boundary. By the authority's own engineering_recommendation and OD-6's own ratified scope, this is the LAST certification in this lineage whose verdict will never be materialized as a tracked document, because every certification from OD-6 forward is bound to be.",
+    "what_this_section_does_NOT_do": [
+      "It does not reconstruct the recertification’s own findings, evidence, or reasoning.",
+      "It does not name a reviewer identity not already evidenced.",
+      "It does not assert an exact timestamp as owner testimony beyond the date corroboration recorded above, which is explicitly labelled as corroboration and not as a direct quotation of the owner.",
+      "It is not itself a certification-verdict artifact. It is an owner-level record of OCCURRENCE, exactly as CERTIFICATION_PREREQUISITE_OF_THE_PARENT is for its own precedent case one level up.",
+      "It does not reopen, re-derive, or re-weigh v1.0.2’s own five clauses (SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3), which remain exactly as v1.0.2 states them."
+    ]
+  },
+  "RELATIONSHIP_TO_PR210": {
+    "rule": "PR #210 (branch codex/cv1-d1-auditor-provisioning-dag-authority-r1, HEAD c2ddf764c8068e70c806cfd5cf238e09e382ae6a at the time this amendment was authored) independently performed the identical semantic sweep this amendment's SUPERSEDED_PARENT_CLAUSES section performs below, in its own OWNER_NOTE_DEPENDENCY.THE_FOUR_OVER_RESTRICTIVE_STATEMENTS block, and reached the SAME partition: four loci asserting non-occurrence (its ORS-1..4, matching this amendment's OSC-1..4 one-to-one by json_path) and two loci that are accurate as written and require no correction (its ORS-X1/X2, matching this amendment's PRESERVED_NOT_SUPERSEDED entries one-to-one). This is independent convergence from two directions — a fresh sweep performed for this amendment, and PR #210's own prior sweep — onto the identical four-and-two partition, and is recorded here as corroboration rather than as this amendment copying PR #210's work.",
+    "what_PR210_explicitly_asked_for": "PR #210's own THE_REQUIRED_RESOLUTION.form names exactly this artifact's shape: 'AN OWNER-LEVEL CERTIFICATION-OCCURRENCE NOTE, or any other mechanism a certified authority provides that resolves the same contradiction.' Its what_it_must_establish list is satisfied point-for-point by CERTIFICATION_OCCURRENCE_AND_VERDICT and SUPERSEDED_PARENT_CLAUSES above and below; its what_it_must_NOT_do list (no retroactive verdict reconstruction, no restated findings as though certified, no scope-widening beyond v1.0.2's five clauses, no relaxed fail-closed token, EXECUTE prohibition, or REQ-2 conditionality) is honoured in full by this amendment.",
+    "PR210_DAG_NODE_THIS_AMENDMENT_IS_INTENDED_TO_CLOSE": "N02, per PR #210’s own THE_REQUIRED_RESOLUTION section: “N02’s exit condition is THE CONTRADICTION RESOLVED BY A CERTIFIED MECHANISM, not THE PARTICULAR DOCUMENT THIS SECTION DESCRIBES.” Whether this specific artifact satisfies that exit condition is for PR #210’s own independent certification to determine — this amendment does not close N02 by asserting that it does.",
+    "THIS_AMENDMENT_DOES_NOT_MODIFY_PR210": "ABSOLUTE. No file under PR #210’s branch is read for write, touched, or referenced as anything other than read-only corroborating context (its already-materialized OWNER_NOTE_DEPENDENCY text, cited above by exact path and verbatim fragment). PR #210’s branch, its two authority files, and its own certification remain entirely PR #210’s own governed act."
+  },
+  "PROVISIONING_DAG_RECONCILIATION_REQUIREMENT": {
+    "rule": "PR #210's branch (codex/cv1-d1-auditor-provisioning-dag-authority-r1, HEAD c2ddf764c8068e70c806cfd5cf238e09e382ae6a) was forked from this PR's HEAD at commit bee14e0a17fca6c6557b8e5e931fc32af789b49b (confirmed: `git merge-base` of the two HEADs equals bee14e0a exactly). This amendment's own commit, landing on codex/cv1-d1-auditor-capability-adjudication-aw-r1 AFTER bee14e0a, is NOT an ancestor of PR #210's branch and PR #210's branch is NOT an ancestor of it.",
+    "what_this_means_concretely": "PR #210's own authority files (FIBDB053_D1_AUDITOR_PROVISIONING_DAG_AUTHORITY_v1.0.0.json and its manifest) currently cite the PARENT ratification record's over-restrictive text (ORS-1..4, quoted verbatim inside PR #210's own OWNER_NOTE_DEPENDENCY block) as a live, unresolved N02 dependency. This amendment exists specifically to resolve that dependency, but landing this amendment on PR #207's branch does NOT, by itself, update PR #210's own tree — PR #210's branch still points at c2ddf764c8068e70c806cfd5cf238e09e382ae6a, forked from bee14e0a, and does not contain this amendment's commit.",
+    "required_before_PR210_can_proceed": "Before PR #210's own independent certification treats N02 as closed by this amendment, PR #210's branch (or its own certification lane) must explicitly RECONCILE against this amendment — by rebasing, merging, or otherwise incorporating this commit, or by an equivalent explicit citation of this amendment's exact commit SHA and blob hash once it exists — rather than silently inheriting the stale premise from its current fork point. No such reconciliation is performed by this amendment; it is recorded here as an explicit requirement for a future act, on a branch this amendment does not touch.",
+    "no_silent_carry_forward": "A future certifier of PR #210 who finds PR #210’s own OWNER_NOTE_DEPENDENCY block still quoting ORS-1..4 as live, unresolved text, without an explicit citation of this amendment, must treat PR #210’s N02 as NOT closed by this amendment — the existence of this amendment on a sibling branch does not automatically resolve a dependency PR #210’s own tree does not yet reference."
+  },
+  "SUPERSEDED_PARENT_CLAUSES": {
+    "rule": "Each clause is superseded ONLY as to its assertion that the v1.0.2 recertification has not occurred or remains outstanding. Every other respect of the enclosing block, and every other item of any array touched, continues to control verbatim. None of OD-1 through OD-6 is touched.",
+    "method_note": "Found by a fresh recursive semantic sweep of the parent file for vocabulary describing the v1.0.2 recertification's status (outstanding, has NOT yet occurred, not yet, also passes, re-certification/recertification), performed independently for this amendment, then cross-checked against PR #210's own prior identical sweep (RELATIONSHIP_TO_PR210 above). Both converge on the same four-and-two partition. The four below assert or depend on the false premise of non-occurrence; two further loci (PRESERVED_NOT_SUPERSEDED, below) use the word 'outstanding' but assert nothing false and are explicitly NOT superseded.",
+    "clauses": [
+      {
+        "id": "OSC-1",
+        "parent_path": "OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD",
+        "parent_verbatim": "v1.0.2’s own FOCUSED INDEPENDENT RE-CERTIFICATION (the gate v1.0.2’s own next_gate names: bounded verification of its five new clauses SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3) has NOT yet occurred as of this record’s materialization. This ratification record TRANSCRIBES the owner’s selections against the candidate AS IT CURRENTLY READS; it does not assert, substitute for, or satisfy that outstanding certification. PHASE_P0_PREREQUISITE.gate (unchanged, still controlling) requires BOTH independent certification of the authority/manifest pair AND ratification of OD-1..OD-6 before PHASE_P1 opens — this record closes only the second half.",
+        "defect": "Asserts the recertification 'has NOT yet occurred as of this record's materialization' — now known, by owner confirmation, to be false: it occurred BEFORE the parent record's materializing commit. Also states the record closes 'only the second half' of PHASE_P0_PREREQUISITE.gate, which is superseded by PHASE_P0_EFFECT below: with occurrence confirmed, BOTH halves are now satisfied.",
+        "disposition": "SUPERSEDED by CERTIFICATION_OCCURRENCE_AND_VERDICT and PHASE_P0_EFFECT above/below.",
+        "replacement_field_name": "CERTIFICATION_STATUS_AS_OF_THIS_AMENDMENT (this amendment’s own field, not a rewrite of the parent field)",
+        "replacement_text": "v1.0.2's own focused independent re-certification OCCURRED before the parent ratification record was materialized, with verdict BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS, per OWNER CONFIRMATION — see CERTIFICATION_OCCURRENCE_AND_VERDICT above. Its verdict artifact is NOT retroactively materialized, per OD-6's own explicit prohibition on retroactive reconstruction — this is the governance-chain gap CERTIFICATION_PREREQUISITE_OF_THE_PARENT already names and accepts for the identical situation one level up, in GOVERNING_PRECEDENT above. PHASE_P0_PREREQUISITE.gate (unchanged, still controlling) requires BOTH independent certification of the authority/manifest pair AND ratification of OD-1..OD-6 before PHASE_P1 opens — BOTH halves are now satisfied: certification occurred (this section) and ratification occurred (the parent record's six ratifications, unchanged and unamended). This record and its parent together close PHASE_P0_PREREQUISITE's occurrence-and-ratification requirement; they do NOT thereby authorize PHASE_P1 itself, which remains separately gated — see next_gate below."
+      },
+      {
+        "id": "OSC-2",
+        "parent_path": "explicit_non_authorizations[16]",
+        "parent_verbatim": "NO execution DAG is derived or authorized by this record — that is explicitly named as the NEXT step, after independent verification of this record AND completion of v1.0.2’s own outstanding certification.",
+        "defect": "Treats the certification as pending 'completion', which forecloses the DAG derivation this very clause names as the next step, and is counterfactual: the certification has already occurred.",
+        "disposition": "SUPERSEDED.",
+        "replacement_text": "NO execution DAG is derived or authorized by this record or its parent — that remains the NEXT step, now gated on independent verification of the complete owner-record chain (parent plus this amendment) together with PR #210’s own independent certification of its DAG candidate, NOT on completion of the v1.0.2 recertification, which has already occurred per CERTIFICATION_OCCURRENCE_AND_VERDICT above."
+      },
+      {
+        "id": "OSC-3",
+        "parent_path": "required_independent_review.reason",
+        "parent_verbatim": "This record binds six owner decisions to a specific candidate and asserts they were transcribed rather than authored. Both claims deserve independent verification before any execution DAG treats them as settled — and v1.0.2’s own focused certification is still separately outstanding.",
+        "defect": "States the certification's outstanding status as a present fact to a certifier reviewing the ratification record itself — counterfactual for the same reason as OSC-1.",
+        "disposition": "SUPERSEDED.",
+        "replacement_text": "This record binds six owner decisions to a specific candidate and asserts they were transcribed rather than authored. Both claims deserve independent verification before any execution DAG treats them as settled. v1.0.2's own focused certification is NOT outstanding — it occurred, per CERTIFICATION_OCCURRENCE_AND_VERDICT above — and a certifier of this amendment should instead verify that THIS amendment's occurrence-and-verdict claim, and its four clause supersessions, are themselves accurate and complete."
+      },
+      {
+        "id": "OSC-4",
+        "parent_path": "next_gate",
+        "parent_verbatim": "Independent bounded verification of this owner-ratification artifact. Only after that review passes, AND ONLY AFTER v1.0.2's own outstanding focused independent re-certification (its own next_gate: bounded verification of SPC102-1, SPC102-2, SPC102-V101-1, SPC102-V101-2, SPC102-V101-3) also passes, may the provisioning DAG be derived: protected-surface allocation if OD-5's package route is triggered by measurement → custody/inventory readiness under OD-2's selected mechanism → HC-1 (with OD-3's exact UTC VALID UNTIL computed and shown) → MR-2 credential rotation/provisioning → poststate verification → conditional MR-3 if measurement proves it necessary → PRECHECK-R2. No hosted mutation occurs in this lane.",
+        "defect": "Conditions DAG derivation on a FUTURE passing of a certification that has already passed. Under the corrected fact pattern the stated condition is SATISFIED, not pending — the clause's own consequent should fire, not bar.",
+        "disposition": "SUPERSEDED.",
+        "replacement_text": "Independent bounded verification of the COMPLETE owner-record chain (parent v1.0.0 plus this v1.0.1 amendment) against GOVERNING_PRECEDENT, CERTIFICATION_OCCURRENCE_AND_VERDICT, and the four clause supersessions in SUPERSEDED_PARENT_CLAUSES. v1.0.2's own focused independent re-certification is NOT a pending condition of this gate — it has already occurred, with verdict BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS. Only after THIS amendment's own independent verification passes, AND separately after PR #210's own independent certification of its provisioning-DAG candidate passes (which itself requires the PROVISIONING_DAG_RECONCILIATION_REQUIREMENT above to be satisfied first), may the provisioning DAG be derived and traversed: protected-surface allocation if OD-5's package route is triggered by measurement → custody/inventory readiness under OD-2's selected mechanism → HC-1 (with OD-3's exact UTC VALID UNTIL computed and shown) → MR-2 credential rotation/provisioning → poststate verification → conditional MR-3 if measurement proves it necessary → PRECHECK-R2. No hosted mutation occurs in this lane."
+      }
+    ]
+  },
+  "PRESERVED_NOT_SUPERSEDED": {
+    "rule": "These two loci use the word 'outstanding' or reference the recertification's status but assert NOTHING false, even under the corrected fact pattern. They are explicitly preserved, quoted here for completeness of the record, and are NOT touched by SUPERSEDED_PARENT_CLAUSES.",
+    "entries": [
+      {
+        "id": "PRESERVED-X1",
+        "parent_path": "explicit_non_authorizations[15]",
+        "parent_verbatim": "NO claim is made that v1.0.2’s own outstanding focused independent re-certification is satisfied by this record — see OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD above.",
+        "why_accurate_as_written": "The ratification record genuinely does NOT, and cannot, itself satisfy or constitute a certification — ratification and certification are different acts under PHASE_P0_PREREQUISITE.gate's own two-condition structure, and that remains true whether or not the certification occurred elsewhere. Its only imprecision is the inherited adjective 'outstanding', which is corrected by OSC-1's replacement above, not by editing this clause."
+      },
+      {
+        "id": "PRESERVED-X2",
+        "parent_path": "required_independent_review.verification_criteria_for_the_next_gate[7]",
+        "parent_verbatim": "Confirm v1.0.2’s own outstanding focused independent re-certification is not mischaracterized anywhere in this record as complete or as satisfied by owner ratification.",
+        "why_accurate_as_written": "Its second limb ('or as satisfied by owner ratification') is correct and remains correct under any fact pattern: owner ratification never satisfies a certification. Its first limb, read after the certification's occurrence is known, is a verification instruction that remains sound to give a reviewer — confirming the record is not mischaracterized as claiming completeness it does not itself establish is still a useful check, even though the underlying fact (occurrence) has changed. NOT corrected here; this amendment's own required_independent_review below adds a criterion addressing the corrected fact pattern directly instead."
+      }
+    ]
+  },
+  "PHASE_P0_EFFECT": {
+    "rule": "PHASE_P0_PREREQUISITE.gate (unchanged, still controlling, quoted from the base authority): 'This authority and its companion manifest must be INDEPENDENTLY CERTIFIED, and every owner decision OD-1..OD-6 must be RATIFIED, before P1 opens.' Two conditions, both now addressed.",
+    "limbo_1_independent_certification": "SATISFIED. v1.0.2’s own focused independent re-certification OCCURRED, per CERTIFICATION_OCCURRENCE_AND_VERDICT above, with verdict BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS. Its verdict artifact remains NOT_RETROACTIVELY_MATERIALIZED, which is an evidence-governance limitation of the same species as CERTIFICATION_PREREQUISITE_OF_THE_PARENT’s own, not a ground to treat the certification as not having occurred.",
+    "limbo_2_owner_ratification": "SATISFIED. OD-1 through OD-6, ratified in full by the parent record, entirely unchanged and unamended by this amendment.",
+    "what_this_amendment_does_NOT_do": "It does NOT itself authorize PHASE_P1 hosted execution. PHASE_P0_PREREQUISITE.gate’s own two conditions are the ONLY two conditions it names; satisfying both removes the CONTRADICTION a future repository-only reader would otherwise draw (that limbo 1 remained open), but PHASE_P1’s own preflight (CAPABILITY_PREFLIGHT_CONTRACT KP-1..KP-6) and HUMAN_CONFIRMATION HC-1, HC-2, HC-3 remain separately required, unmodified, before any hosted act. Nor does closing PHASE_P0_PREREQUISITE close PR #210’s own N02, which requires its own independent certification per RELATIONSHIP_TO_PR210 above.",
+    "PROVISIONING_DAG_DERIVATION_MAY_OPEN": "CONDITIONALLY YES for PR #207’s own PHASE_P0_PREREQUISITE — subject to independent verification of this amendment together with its parent, not yet performed by this lane — and SEPARATELY subject to PR #210’s own reconciliation (PROVISIONING_DAG_RECONCILIATION_REQUIREMENT) and independent certification before PR #210’s own DAG candidate may be treated as traversable."
+  },
+  "UNCHANGED_PARENT_CONTENT_PRESERVED": {
+    "rule": "Recorded so a reader does not infer this amendment reopened the parent generally. Everything in the parent not named in SUPERSEDED_PARENT_CLAUSES or PRESERVED_NOT_SUPERSEDED above remains controlling exactly as the parent states it.",
+    "explicitly_unchanged": [
+      "All six OD-1..OD-6 ratifications in full: id, domain, authority_recommendation, technical_recommendation, owner_selected_decision, disposition, status, repository_binding, and every execution_not_authorized_by_this_ratification / what_this_ratification_does_not_authorize field.",
+      "CANDIDATE_BINDING.effective_package (the six docs/ops/release/** blob hashes) — not re-derived or re-stated here, per CANDIDATE_BINDING.authority_package_candidate_note above.",
+      "provenance_classification, precedence_note, reopening_rule, why_this_record_exists, AUTHORITY_RECOMMENDATION_VS_TECHNICAL_RECOMMENDATION_VS_OWNER_SELECTED_DECISION, definitional_intent (all six entries).",
+      "NONBLOCKING_EXECUTION_PRECONDITION_NOTES EXEC-NOTE-1 (OD-3’s exact-UTC materialization rule) and EXEC-NOTE-2 (OD-2’s five-condition confirmation rule) — both remain binding on the execution lane exactly as the parent states them.",
+      "FRESHNESS_CARRYOVER in full — every HOSTED_STATE_UNKNOWN entry remains exactly as unknown as before this amendment.",
+      "explicit_non_authorizations, in full, EXCEPT item [16] (OSC-2 above); item [15] is explicitly preserved (PRESERVED-X1).",
+      "self_check.checks[15] (“OUTSTANDING_CERTIFICATION_NOT_SATISFIED_BY_THIS_RECORD is present and non-empty”) — remains TRUE as a structural check of the unedited parent file: the field still exists and is still non-empty. Its CONTENT is superseded by OSC-1 above; its mere PRESENCE is not.",
+      "required_independent_review.verification_criteria_for_the_next_gate, items [0] through [6] — unchanged. Item [7] (the last) is preserved per PRESERVED-X2, not superseded.",
+      "final_state (“OWNER_RATIFICATION_RECORDED__PROVISIONING_NOT_AUTHORIZED”) — unchanged. This amendment does not authorize provisioning either; see final_state below, which restates it for this document."
+    ]
+  },
+  "explicit_non_authorizations": [
+    "NO hosted PostgreSQL connection is opened by this amendment.",
+    "NO credential is generated, minted, rotated, read, or exposed by this amendment.",
+    "NO VALID UNTIL value is computed, set, or mutated by this amendment.",
+    "NO GRANT is issued. NO REVOKE is issued. NO CREATE/ALTER/DROP ROLE is issued.",
+    "NO Supabase project configuration is contacted or mutated in any way.",
+    "NO Windows Credential Manager entry, custody-store write, or custody-inventory file is created or populated by this amendment.",
+    "NO secret value is present anywhere in this artifact.",
+    "NO PRECHECK-R2 is opened, executed, or authorized by this amendment.",
+    "NO certification-verdict artifact is retroactively materialized, reconstructed, or fabricated for v1.0.2’s recertification — OD-6 forbids it and none is created here.",
+    "NO certification findings, evidence, or reasoning are reconstructed for the v1.0.2 recertification — only OCCURRENCE and VERDICT are recorded.",
+    "NO reviewing-lane identity, exact timestamp beyond the corroborated date, or reviewer identity is invented for the v1.0.2 recertification.",
+    "NO OD-1 through OD-6 is reopened, reinterpreted, re-weighed, or substituted. All six remain exactly as the parent ratified them.",
+    "NO edit is made to the parent ratification record docs/ops/owner-ratifications/FIBDB053_D1_AUDITOR_CAPABILITY_OWNER_DECISIONS_v1.0.0.json — it remains byte-identical to CANDIDATE_BINDING.owner_ratification_parent_file.",
+    "NO edit, touch, or reference-as-write is made to any file under PR #210’s branch (codex/cv1-d1-auditor-provisioning-dag-authority-r1).",
+    "NO modification to any file under docs/ops/release/ — all six effective-package files remain byte-identical to CANDIDATE_BINDING.",
+    "NO execution DAG is derived or authorized by this amendment — that remains a future, separately governed act, for both PR #207 and PR #210.",
+    "NO ODS or W2 lineage identifier is allocated, reserved, or implied."
+  ],
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_superseded_clause_count": 4,
+    "expected_superseded_clause_ids": [
+      "OSC-1",
+      "OSC-2",
+      "OSC-3",
+      "OSC-4"
+    ],
+    "expected_preserved_not_superseded_count": 2,
+    "expected_preserved_ids": [
+      "PRESERVED-X1",
+      "PRESERVED-X2"
+    ],
+    "checks": [
+      "SUPERSEDED_PARENT_CLAUSES.clauses.length == 4, ids exactly expected_superseded_clause_ids.",
+      "Every clauses[].parent_verbatim is byte-identical to the string at its stated json_path in the parent file at blob fb0c9f5c5e935ebf43cf86ea2c73545acd2d8a7f.",
+      "PRESERVED_NOT_SUPERSEDED.entries.length == 2, ids exactly expected_preserved_ids, and neither entry appears in SUPERSEDED_PARENT_CLAUSES.",
+      "CERTIFICATION_OCCURRENCE_AND_VERDICT.CERTIFICATION_OCCURRED === true and .VERDICT === \"BOUNDED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS\" and .VERDICT_ARTIFACT === \"NOT_RETROACTIVELY_MATERIALIZED\".",
+      "No field anywhere in this document asserts an exact calendar timestamp as direct owner testimony; the one date present is explicitly labelled as corroboration, not owner testimony.",
+      "No OD-1..OD-6 ratification entry is present in this document at all — confirming none is reopened.",
+      "RELATIONSHIP_TO_PR210 and PROVISIONING_DAG_RECONCILIATION_REQUIREMENT both name PR #210’s exact branch, PR number, and HEAD SHA, and neither authorizes a write to it.",
+      "CANDIDATE_BINDING.owner_ratification_parent_file.blob_sha, re-derived via `git ls-tree` at owner_ratification_parent_commit, matches the recorded value exactly, or the consumer STOPs per STOP_RATIFICATION_BINDING_MISMATCH.",
+      "companion_authority and both companion_authority_amendments entries name paths that exist, unmodified, in the same commit as CANDIDATE_BINDING.authority_package_candidate_sha.",
+      "No secret-shaped string (connection string, password, token) appears anywhere in this document."
+    ]
+  },
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment corrects a factual claim in an owner-ratification record on the strength of an owner statement this lane did not itself re-verify against a certification artifact (because none exists, by OD-6's own design). That correction, and its four clause supersessions, deserve independent verification before PR #210 or any other consumer treats PHASE_P0_PREREQUISITE as closed on its strength.",
+    "verification_criteria_for_the_next_gate": [
+      "Confirm all four SUPERSEDED_PARENT_CLAUSES entries’ parent_verbatim strings are byte-identical to the parent file at the recorded blob hash, independently re-derived, not copied from this amendment’s own claim.",
+      "Confirm the two PRESERVED_NOT_SUPERSEDED entries are genuinely accurate as written and were correctly left untouched — do not accept this amendment’s own classification without re-reading both against the corrected fact pattern.",
+      "Confirm CERTIFICATION_OCCURRENCE_AND_VERDICT records occurrence and verdict ONLY, with no reconstructed finding, no invented reviewer identity, and no timestamp asserted as direct owner testimony beyond what is labelled as corroboration.",
+      "Confirm OD-6 is not violated: no verdict artifact for v1.0.2’s recertification is created, referenced as created, or implied to exist anywhere in this amendment.",
+      "Confirm none of OD-1 through OD-6 is reopened, reinterpreted, or substituted — this amendment should contain no ratifications array at all.",
+      "Confirm PR #210 is referenced read-only throughout, with no write, no branch touch, and no claim that this amendment by itself closes PR #210’s own N02.",
+      "Confirm the parent ratification record and all six docs/ops/release/** effective-package files remain byte-unchanged by this amendment.",
+      "Independently verify the GOVERNING_PRECEDENT citation against the live base authority file — confirm CERTIFICATION_PREREQUISITE_OF_THE_PARENT reads as quoted, and confirm OD-6’s why_it_belongs_here reads as quoted."
+    ]
+  },
+  "final_state": "CERTIFICATION_OCCURRENCE_RECORDED__PROVISIONING_EXECUTION_NOT_AUTHORIZED",
+  "next_gate": "Independent bounded verification of the COMPLETE owner-record chain (parent v1.0.0 plus this v1.0.1 amendment) against the criteria above. SEPARATELY, and not satisfied by this amendment: PR #210's own branch must be reconciled against this amendment per PROVISIONING_DAG_RECONCILIATION_REQUIREMENT, and PR #210's own provisioning-DAG candidate must then be independently certified, before that DAG may be traversed. No hosted mutation occurs in this lane or is authorized by it."
+}
