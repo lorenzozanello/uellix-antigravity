@@ -1,0 +1,198 @@
+{
+  "manifest_id": "CV1-INFRA-RELEASE-CONTROL-AMENDMENT-v1.0.1",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "dependencies": [
+    "CV1-INFRA-RELEASE-CONTROL (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_v1.0.0.json) — the parent manifest, left byte-unchanged",
+    "CV1_INFRA_RELEASE_CONTROL_AUTHORITY (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json) — the parent authority, left byte-unchanged",
+    "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY (docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json)",
+    "STAGING_RELEASE_PRODUCTION_AUTHORITY (docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json)"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+
+  "known_conditions": [
+    "THIS MANIFEST IS AN AMENDMENT, NOT A REPLACEMENT. The parent manifest docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_v1.0.0.json is left BYTE-UNCHANGED and continues to control every control it declares, EXCEPT those named under SUPERSEDED below. Where this manifest is silent, the parent controls verbatim.",
+    "SUPERSEDED PARENT CONTROLS, each replaced by a control here: P12 (deployment identity recorded before existence) -> AP1/AP2/AP3; SEN-4 (grant-identity sentinel keyed to a pre-existing dpl_ id) -> ASEN-1; MUT-3 (mutation that re-expressed K-1's impossible form) -> AMUT-1; N-1 (refusal keyed partly to vercel[bot] creator) -> AN-1, because the parent's creator test is false on the Vercel plane.",
+    "PARENT CONTROLS EXPLICITLY RETAINED AND NOT SUPERSEDED: N-2, N-3, N-4, N-5, N-7, N-9, N-10, N-11, N-12 and every positive control P1..P11 continue to govern. N-6 is RETAINED and is now SATISFIED for the present instant by the U-4 measurement recorded in the amendment's CM-7; it continues to govern any future reliance, which must re-measure rather than cite that measurement.",
+    "AUTHORING ARM vs EXECUTION ARM, as in the parent. An AUTHORING ARM control is assertable now against the amendment artifact. An EXECUTION ARM control binds the future lane that performs a governed deployment or a control-plane mutation and is marked test_file UNKNOWN deliberately.",
+    "NO VITEST FILE IS WRITTEN. The write set is two JSON documents; writing a test would be code, which AUTHORING_ONLY forbids.",
+    "ONE MECHANISM IS UNVERIFIABLE WITHOUT DEPLOYING. Whether a key passed via `vercel deploy -m` appears on the deployment record under that exact name could not be measured without creating a deployment. AP3 exists precisely to check it at the only moment it can be checked, and a control that reported PASS by assuming the round-trip would be vacuous."
+  ],
+
+  "sentinels": [
+    {
+      "id": "ASEN-1",
+      "purpose": "SUPERSEDES parent SEN-4. The governed act is identified by an ACT NONCE of at least 128 bits recorded BEFORE the deployment exists; the server-generated deployment id is bound to that nonce AFTER creation. If any future evidence asserts that a deployment id was known before its deployment, the contract has been misread back into the impossible form the amendment removed."
+    },
+    {
+      "id": "ASEN-2",
+      "purpose": "One nonce binds to exactly one deployment id, first-bound-wins. If two deployment records ever carry the same uellix_governed_act_nonce, that is a GOVERNANCE INCIDENT — measured to be reachable because meta is copied by a redeploy — and must be recorded as such rather than resolved by choosing the more convenient one."
+    },
+    {
+      "id": "ASEN-3",
+      "purpose": "Plane-sensitivity sentinel. The SAME deployment reports creator vercel[bot] on the GitHub Deployments API and creator.username lorenzozanello-5040 on the Vercel deployment record. Any control asserting something about a deployment's creator MUST name which plane it read, or it is asserting nothing checkable."
+    },
+    {
+      "id": "ASEN-4",
+      "purpose": "Pagination sentinel. Two wrong figures in this lane came from truncated platform listings — a production-deployment count frozen from a default page, and a 'current' production deployment taken from a truncated CLI listing. Any count or first-row claim about a platform listing must show that the pagination cursor was checked."
+    }
+  ],
+
+  "positive_controls": [
+    {
+      "id": "AP1",
+      "description": "EXECUTION ARM. SUPERSEDES parent P12. PRE-EXISTENCE ACT IDENTITY IS RECORDED. Before any governed deployment is created, an act record must exist containing an act nonce of at least 128 bits from a cryptographically secure source, the frozen exact SHA, the intended mechanism, a timestamp, and the human confirmation. The act record's timestamp must strictly precede the deployment's createdAt, read from the deployment record rather than from the act's own claim about when it ran.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP2",
+      "description": "EXECUTION ARM. POST-CREATION BINDING IS COMPLETED WITHIN THE SAME ACT. The deployment id returned by the create act must be captured and written into the act record against the nonce before the act closes. An act whose nonce was recorded but whose id was never bound is INCOMPLETE, and its deployment is inadmissible. This is satisfied by PR201 SB-4 as it already stands, plus the binding write.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP3",
+      "description": "EXECUTION ARM. THE METADATA ROUND-TRIP IS VERIFIED, NOT ASSUMED. Immediately after creation, the deployment record must be re-read and meta.uellix_governed_act_nonce asserted to equal the pre-recorded nonce EXACTLY. This control must FAIL, not warn, if the key is absent, renamed, truncated or case-folded. It exists because the authoring lane could not verify the `-m` round-trip without deploying and refused to assume it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP4",
+      "description": "EXECUTION ARM. CORROBORATORS ARE CHECKED AND DISAGREEMENT STOPS THE ACT. The governed deployment's record must be asserted to lack meta.githubDeployment and to carry a source value other than \"git\". If the nonce test passes while a corroborator contradicts it, the act STOPS and records a contradiction. A control that let the nonce override a contradicting corroborator would discard the only independent cross-check present.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP5",
+      "description": "AUTHORING ARM. THE IMPOSSIBLE FORM IS GONE FROM THE EFFECTIVE CONTRACT. Reading v1.0.0 as amended by v1.0.1 must find no effective clause requiring a deployment id to exist before its deployment. Every such clause must be either superseded by name under SUPERSEDED_PARENT_CLAUSES or replaced here. A residual clause left effective would reinstate the blocker while appearing to have fixed it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP6",
+      "description": "AUTHORING ARM. EVERY CORRECTED MEASUREMENT IS REPRODUCIBLE READ-ONLY. Re-executing the reads the amendment names — GET /v13/deployments/{id}, GET /v6/deployments?target=production, GET /v9/projects/{id}, GET /v10/projects/{id}/env?decrypt=false, GET /v4/aliases/{alias} — must reproduce the recorded values for source, target, meta keys, productionBranch, ssoProtection.deploymentType, env gitBranch pins, and the alias binding, or produce a divergence recorded as a STOP.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP7",
+      "description": "AUTHORING ARM. PR201 IS SATISFIABLE AS WRITTEN. For each PR201 clause touching the deployment act — AUTHORIZED_SHA_BINDING_RULE, SB-4, HUMAN_CONFIRMATION, the exactly-one-deployment bound — a lane executing PR201 verbatim must also be able to satisfy this amendment without reinterpreting PR201. A compatibility claim that required PR201 to be re-read differently would be an alteration of a frozen grant wearing an amendment's clothes.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP8",
+      "description": "AUTHORING ARM. NO GRANT WAS WIDENED. The amendment must add no deployment, no mutation, no authorization and no new permitted surface relative to v1.0.0. Re-deriving its write set and its EXPLICIT_NON_AUTHORIZATIONS inheritance must find the parent's non-authorizations intact and unextended.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "AN-1",
+      "description": "SUPERSEDES parent N-1. AN AUTOMATIC GIT DEPLOYMENT IS REFUSED, ON THE CORRECT PLANE. Offering a deployment that carries meta.githubDeployment, or whose GITHUB DEPLOYMENT OBJECT names creator vercel[bot], and for which no governed act record exists, must be REFUSED as staging evidence. The refusal must NOT be attempted via the Vercel record's creator field, which was MEASURED to name the human account for an automatic deployment and would therefore fail to exclude it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-2",
+      "description": "A SECOND DEPLOYMENT BEARING THE SAME NONCE IS REFUSED. Offering as governed evidence a deployment whose nonce matches the act record but whose deployment id differs from the first id bound must be REFUSED, and recorded as a governance incident. Measured to be reachable: meta is copied by a redeploy, so this is a real path and not a theoretical one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-3",
+      "description": "A NONCE MINTED AFTER THE FACT IS REFUSED. Offering an act record whose nonce was generated, or whose act record was written, at or after the deployment's createdAt must be REFUSED. The nonce's entire force is that it predates the deployment; a nonce recorded afterwards is a label, not an identity.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-4",
+      "description": "AN UNVERIFIED METADATA ROUND-TRIP IS REFUSED. Proceeding to cite a governed deployment without having asserted meta.uellix_governed_act_nonce on the re-read record must be REFUSED. Citing the intent to pass `-m` is not evidence that the platform recorded it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-5",
+      "description": "target === 'preview' IS REFUSED AS A TEST. Any control testing the API field `target` for the string 'preview' must be REFUSED as broken: MEASURED, the field is null for Preview deployments and the string only appears in the CLI's display output. A control written against the display string would be false for every Preview deployment it was meant to match.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-6",
+      "description": "A REDEPLOY OF THE GOVERNED DEPLOYMENT IS REFUSED. Redeploying the governed deployment must be REFUSED, independently of PR201's existing prohibition on redeploying the failed deployment. The ground here is different: a redeploy would manufacture a second deployment carrying the same nonce.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-7",
+      "description": "A PLATFORM COUNT FROM A TRUNCATED LISTING IS REFUSED. Offering a count or a 'most recent' row from a platform listing without showing that the pagination cursor was checked must be REFUSED. Measured necessity: this lane produced two wrong figures that way — a production-deployment count of six against an actual nineteen, and an older deployment misidentified as current.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-8",
+      "description": "AN EMPTY TOOL RESULT IS REFUSED AS AN ABSENCE IN THE WORLD. Offering an empty result from one tool as proof that a thing does not exist must be REFUSED where another read path exists. Measured necessity: `vercel alias ls` returned an empty table while the aliases API returned twenty aliases with their bindings.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-9",
+      "description": "AN ENVIRONMENT VARIABLE VALUE IS REFUSED IN EVIDENCE. Any evidence that would record an environment variable VALUE must be REFUSED and reduced to key, target, gitBranch, type and timestamps. The env endpoint must be read with decrypt=false. This extends the parent's N-9 to the specific endpoint this amendment used.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN-10",
+      "description": "THE U-4 MEASUREMENT IS REFUSED AS A STANDING FACT. Citing the amendment's CM-7 finding that the environment correction is NOT APPLIED, as though it remained true at some later moment, must be REFUSED. It is an observation with a timestamp about mutable hosted state, and the safe harbour it supports ends precisely when that state changes.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "AMUT-1",
+      "description": "SUPERSEDES parent MUT-3. Rewrite AIC-1 to require the deployment id — rather than a nonce — to be recorded before the deployment exists. The controls must REDDEN via AP5, naming the reinstated impossibility. This is the blocker itself re-introduced, and it is the mutation most likely to recur, because 'record the id first' reads as the stronger and more obvious rule.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-2",
+      "description": "Delete AIC-5 (one-to-one, first-bound-wins). The controls must REDDEN via AN-2, naming the redeploy copy path. If it stays green, the nonce mechanism is defeated by a single redeploy and the contract only appears to identify one deployment.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-3",
+      "description": "Promote AIC-6's corroborators to the primary test and demote the nonce to corroboration — i.e. define a governed deployment as one whose source is not 'git' and which lacks meta.githubDeployment. The controls must REDDEN. Both properties are platform-assigned and neither is pre-recorded, so the mutation reintroduces exactly the retroactive satisfiability K-1 existed to prevent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-4",
+      "description": "Restore parent K-2's creator test unqualified, so the refusal reads on the Vercel record's creator field. The control must REDDEN via AN-1, naming the measurement that the Vercel plane reports the human account for an automatic deployment.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-5",
+      "description": "Downgrade AP3 from a failing assertion to a warning, or delete it on the reasoning that `-m` is documented so the round-trip is safe to assume. The control must REDDEN, naming the fact that the authoring lane could not measure the round-trip and that a documented flag is not a measured record field.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-6",
+      "description": "Rewrite CM-7 to conclude that, because the correction is not applied, the H expiry no longer needs guarding. The controls must REDDEN via AN-10 and the parent's N-6. The measurement makes the safe harbour presently TRUE, which is the precise condition that makes the expiry live rather than moot.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-7",
+      "description": "Rewrite CM-2 so that correcting the 0b1fd126 deployment to a manual redeploy downgrades C-5's severity below HIGHEST. The control must REDDEN. U-1 resolving to productionBranch=main means automatic production deployment from Git is now measured certainty, so the corrected mechanism does not reduce the exposure — and a correction used to soften a finding is the most plausible way this amendment could quietly weaken the parent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-8",
+      "description": "Rewrite CM-1 so that golden-journey's exact-SHA checkout is generalized to the whole battery, retiring C-2. The control must REDDEN, naming the seven workflows measured to use a bare checkout that defaults to the merge-ref on a pull_request event.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-9",
+      "description": "Edit the parent v1.0.0 or its manifest in place to fix the blocker instead of amending. The control must REDDEN on the append-only self-checks. The parent's record of what the first pass got wrong is the part a re-certifier most needs, and an in-place fix destroys it while producing an artifact that looks cleaner.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT-10",
+      "description": "Add any new deployment, mutation or authorization to the amendment — for example authorizing the governed deployment itself on the grounds that the identity contract now makes it safe. The control must REDDEN via AP8 and the parent's EXPLICIT_NON_AUTHORIZATIONS. Fixing the identity contract is not the same act as exercising it.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

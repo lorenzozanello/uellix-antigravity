@@ -1,0 +1,330 @@
+{
+  "package_id": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "authority_class": "EXECUTION_AUTHORITY_AMENDMENT",
+  "document_class": "BOUNDED_CONTROL_PLANE_CONFIGURATION_GRANT_AMENDMENT",
+  "append_only": true,
+  "amends": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "mission_id": "CV1-INFRA-RELEASE-CONTROL-AW-AMENDMENT-R2",
+  "lane": "CV1-INFRA-RELEASE-CONTROL-AW-AMENDMENT-R2",
+  "role": "COMMERCIAL_V1_INFRASTRUCTURE_RELEASE_CONTROL_AUTHORITY_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+
+  "AS_OF_BRANCH": "codex/cv1-infra-release-control-authority-r1",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_PRE_AMENDMENT_HEAD": "fc6d4217408d8c519244965cc158dbc1c7b76e28",
+  "AS_OF_INTEGRATION_REF": "origin/integration/commercial-v1 = 537487ac7b102d51f553fcb8f5cfe19614e113d8, re-measured at the opening of this amendment lane.",
+  "as_of_measurement_note": "Every hosted fact added by this amendment was measured on 2026-09-21 with read-only GitHub REST and read-only `vercel api` (beta) GET operations. No setting was mutated, no deployment was created, and no environment variable VALUE was read or recorded.",
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "The repository's established convention for amending a frozen artifact without editing it, read from the directory: docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json is a sibling of its v1.0.0 parent, carries amends/supersedes, and leaves the parent byte-unchanged.",
+    "pairing": "AUTHORITY_AMENDMENT + TEST_MANIFEST_AMENDMENT, matching the parent pair and the precedent.",
+    "parent_is_not_edited": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json carries append_only=true and is left byte-unchanged. It remains the historical record of what was measured and adjudicated on first authoring, including the claims this amendment supersedes."
+  },
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. The parent and its companion manifest are left BYTE-UNCHANGED.",
+    "how_to_read_the_pair_together": "Where this amendment is silent, the parent controls verbatim. Where this amendment names a parent clause under SUPERSEDED_PARENT_CLAUSES, that clause is superseded ONLY in the respect stated and the rest of the parent clause continues to control. Where this amendment names a parent statement under CORRECTED_MEASUREMENTS, the corrected value replaces the parent's value as the operative fact while the parent's record of the original measurement remains historically valid.",
+    "why_an_amendment_rather_than_a_v2": "The parent's structure, adjudications and non-authorizations are overwhelmingly intact. One contract was mechanically unsatisfiable and a set of measurements were incomplete or wrong. Reissuing the whole artifact would destroy the audit trail of what the first pass got wrong, which is the part a certifier most needs to see."
+  },
+
+  "CERTIFICATION_CONSUMED": {
+    "result": "CERTIFICATION_FAIL",
+    "blocking_defects": 1,
+    "nonblocking_findings_incorporated": 10,
+    "rule": "The certification is consumed as EVIDENCE and as a statement of defect, never as authority. Each finding was RE-MEASURED by this lane before being acted on; where the certifier's proposed remedy did not survive measurement it was not adopted, and the divergence is recorded."
+  },
+
+  "BLOCKER_B1": {
+    "defect_as_certified": "The parent's K-1, ADJUDICATIONS.I, manifest P12 and manifest SEN-4 require the Vercel deployment id (dpl_...) to have been recorded BEFORE the deployment exists. Vercel assigns the deployment id server-side at creation and returns it from the create act; PR201 SB-4 correctly records it AFTER creation. The parent's contract therefore makes every future governed deployment inadmissible.",
+    "verdict": "DEFECT CONFIRMED BY MEASUREMENT. The parent's contract is not merely strict; it is unsatisfiable.",
+    "root_cause_analysis": "The parent correctly identified that CLASSIFICATION cannot distinguish a governed deployment from an automatic one, and correctly reached for IDENTITY instead. It then expressed identity in terms of the only identifier it had measured — the dpl_ id — without establishing whether that identifier could exist before the object it names. It could not.",
+    "the_invariant_that_must_survive": "THE ACT is identified before the deployment exists. THE SERVER-GENERATED DEPLOYMENT ID is bound to that act immediately after creation. What must NOT survive is the parent's stronger and impossible form: that the deployment id itself pre-exists its deployment.",
+    "what_was_NOT_weakened": "The requirement that a governed deployment be mechanically distinguishable from an automatic Git deployment is preserved in full, and is strengthened: this amendment adds two measured platform discriminators the parent did not have, and closes a copy hazard the certifier's proposed shape did not address."
+  },
+
+  "MEASURED_VERCEL_DEPLOYMENT_SEMANTICS": {
+    "rule": "Measured read-only on 2026-09-21 via `vercel api` (beta) GET against the live project. These are the facts the amended contract is derived FROM, rather than assumed.",
+    "method_note": "`vercel api <path>` requires a query string on the path for these endpoints and emits a banner line before the JSON body; the body was isolated from the first `{`. Values were never requested: the environment endpoint was read with decrypt=false and only key, target, gitBranch, type and timestamps were extracted.",
+
+    "deployment_record_fields": {
+      "observed_on": "dpl_FBJeJsC4aDsHT1Gw5he6GWWFJeHB — the automatic Preview of the frozen base merge SHA 537487ac.",
+      "id": "dpl_FBJeJsC4aDsHT1Gw5he6GWWFJeHB",
+      "source": "\"git\"",
+      "target": "null",
+      "readyState": "READY",
+      "creator": "{ uid: Bd6qebGFYr7dULnBQpyHvobb, username: lorenzozanello-5040 }",
+      "meta_keys_present": "githubCommitAuthorName, githubCommitAuthorEmail, githubCommitMessage, githubCommitOrg, githubCommitRef, githubCommitRepo, githubCommitSha, githubDeployment, githubOrg, githubRepo, githubRepoOwnerType, githubCommitRepoId, githubRepoId, githubRepoVisibility, githubHost, githubCommitAuthorLogin, githubCommitVerification, repoPushedAt, branchAlias, lambdaRuntimeStats, bundler",
+      "meta_githubCommitSha": "537487ac7b102d51f553fcb8f5cfe19614e113d8 — the exact merge SHA",
+      "meta_githubDeployment": "\"1\""
+    },
+
+    "the_target_field_is_not_the_cli_display_string": {
+      "measured": "For a Preview deployment the API field `target` is JSON null. For a production deployment it is the string \"production\".",
+      "why_it_matters": "`vercel inspect` PRINTS 'preview' for the same deployment whose API `target` is null. A control written against the CLI's display string would not match the API field, and a control that tested `target === 'preview'` would be false for every Preview deployment. Any successor control MUST test the API field it actually reads."
+    },
+
+    "the_source_field_and_its_observed_domain": {
+      "measured_values": "\"git\" and \"redeploy\" were both observed on this project. Vercel also defines other values, including \"cli\", which this lane did NOT observe on this project because no CLI deployment exists here.",
+      "git_integration_deployments": "Every deployment created by the GitHub integration that this lane inspected carries source=\"git\" AND meta.githubDeployment=\"1\".",
+      "honesty_about_the_domain": "The observed domain is NOT proven exhaustive. The contract below therefore does not rely on an enumeration of source values; it relies on the POSITIVE presence of a pre-recorded act nonce, with source and githubDeployment as CORROBORATION rather than as the primary test."
+    },
+
+    "THE_REDEPLOY_COPY_HAZARD": {
+      "measured": "Deployments with source=\"redeploy\" carry the github* meta of the deployment they were redeployed from — e.g. a 2026-08-15 redeploy carries meta.githubCommitRef=\"main\" and meta.githubCommitSha=dd36a4eca1 inherited from its source, not from any new Git event.",
+      "derived_consequence": "meta is COPIED by a redeploy. Therefore a nonce placed in meta does NOT uniquely identify one deployment: redeploying a governed deployment would produce a SECOND, differently-identified deployment carrying the SAME nonce.",
+      "why_this_matters_to_B1": "The certifier's proposed shape — nonce in meta, dpl_ id bound after creation — is correct in structure but incomplete. Without a one-to-one binding rule, a redeploy manufactures a second candidate that satisfies every nonce test. The amended contract closes this explicitly under ACT_IDENTITY_CONTRACT clause AIC-5.",
+      "status": "This hazard was found by measurement in this lane and was not named in the certification."
+    },
+
+    "cli_metadata_support": {
+      "measured": "`vercel deploy --help` documents `-m, --meta <KEY=VALUE>  Specify metadata for the deployment`, and `--target <TARGET>`.",
+      "what_is_therefore_established": "The CLI accepts arbitrary deployment metadata at creation time.",
+      "what_is_NOT_established_and_must_be_verified_at_execution": "That a key passed via `-m` appears on the deployment record as meta.<key> under that exact name. Verifying it would require CREATING a deployment, which this lane is forbidden to do. The contract therefore carries a mandatory execution-time verification step (AIC-4) with a fail-closed branch if the key does not appear as recorded.",
+      "no_inference_was_made": "This lane did not deploy, did not dry-run a deployment, and does not assert the round-trip it could not measure."
+    },
+
+    "creator_semantics_differ_between_the_two_planes": {
+      "github_plane": "The GitHub Deployment object for the same deployment names creator = vercel[bot], because the Vercel integration is what creates the GitHub Deployment record.",
+      "vercel_plane": "The Vercel deployment record for that SAME deployment names creator.username = lorenzozanello-5040 — the human account, NOT a bot.",
+      "consequence": "The parent's K-2, which excludes a deployment whose 'creator is vercel[bot]', is correct ONLY when evaluated against the GitHub Deployments API and is FALSE when evaluated against the Vercel deployment record, where an automatic deployment looks user-created. A control that read the Vercel record would fail to exclude exactly the deployments K-2 exists to exclude. K-2 is superseded to name its observation plane."
+    }
+  },
+
+  "ACT_IDENTITY_CONTRACT": {
+    "status": "SUPERSEDES the parent's K-1 and the first distinguishing property of ADJUDICATIONS.I.governed_cv1_staging_deployment.",
+    "core_invariant": "THE ACT is identified before the deployment exists. THE SERVER-GENERATED DEPLOYMENT ID is bound to that act immediately after creation. The deployment id is NEVER required to pre-exist its deployment.",
+
+    "AIC-1_pre_existence_act_identity": {
+      "rule": "Before any governed deployment is created, the governed act MUST record an ACT RECORD containing: (a) an ACT NONCE of at least 128 bits from a cryptographically secure random source, (b) the exact Git SHA frozen and re-verified per PR201 AUTHORIZED_SHA_BINDING_RULE, (c) the intended deployment mechanism, (d) the timestamp, and (e) the human confirmation obtained per PR201 HUMAN_CONFIRMATION.",
+      "why_a_nonce_rather_than_a_predicted_id": "A nonce is the one identifier that CAN exist before the deployment, because the governing party generates it rather than the platform. Its unforgeability comes from being recorded before the fact, not from any property of the platform.",
+      "the_property_that_actually_does_the_work": "An automatic Git deployment cannot carry a nonce that nobody had generated at the moment it was created. This is a TIMING property, and it is why the act record must be written and timestamped before creation rather than assembled afterwards."
+    },
+
+    "AIC-2_carrying_the_nonce_to_the_platform": {
+      "rule": "The governed deployment MUST be created with the act nonce and the frozen SHA passed as deployment metadata, using the CLI's documented -m/--meta mechanism, under the exact keys uellix_governed_act_nonce and uellix_governed_act_sha.",
+      "measured_basis": "`vercel deploy` documents -m/--meta, and the deployment record carries a populated meta object.",
+      "why_meta_and_not_a_naming_convention": "meta is part of the deployment record returned by the API, so the test is mechanical. A naming convention on a branch or a URL is not part of the record and is forgeable by anyone who can push."
+    },
+
+    "AIC-3_post_creation_binding": {
+      "rule": "The server-generated deployment id returned by the create act MUST be captured immediately, within the same governed act, and written into the act record against the nonce. This is exactly what PR201 SB-4 already requires and is not changed by this amendment.",
+      "ordering": "nonce recorded -> human confirmation -> deployment created -> id returned -> id bound to nonce. The binding step closes the act; an act whose id was never bound is INCOMPLETE and its deployment is INADMISSIBLE."
+    },
+
+    "AIC-4_execution_time_verification_of_the_mechanism": {
+      "rule": "Immediately after creation, the governed act MUST re-read the deployment record and assert that meta.uellix_governed_act_nonce equals the pre-recorded nonce EXACTLY.",
+      "fail_closed_branch": "If the key is absent, renamed, truncated, case-folded or otherwise altered by the platform, the act STOPS. The deployment is NOT cited, NOT promoted, NOT aliased, and NOT redeployed, and the mechanism is re-adjudicated by a successor authority.",
+      "why_this_step_is_mandatory": "This lane could not verify the -m round-trip without deploying. Rather than assume it, the assumption is converted into a checked precondition at the only moment it can be checked."
+    },
+
+    "AIC-5_one_to_one_binding_first_bound_wins": {
+      "rule": "An act nonce binds to EXACTLY ONE deployment id: the first id bound to it under AIC-3. Any later deployment bearing the same nonce with a different deployment id is INADMISSIBLE as governed evidence, and its existence is a GOVERNANCE INCIDENT to be recorded rather than resolved by choosing between them.",
+      "measured_necessity": "Required by THE_REDEPLOY_COPY_HAZARD: meta is copied by a redeploy, so a nonce alone does not identify one deployment. Without this clause the nonce mechanism is defeated by a single click.",
+      "corollary": "A governed deployment MUST NOT be redeployed. PR201 already forbids redeploying the failed deployment with build-cache semantics; this clause extends the prohibition to the governed deployment itself, for a different and independently measured reason."
+    },
+
+    "AIC-6_corroborating_platform_discriminators": {
+      "rule": "In addition to the nonce, the governed deployment's record SHOULD be asserted to lack meta.githubDeployment and to carry a source value other than \"git\". These are CORROBORATION, never the primary test.",
+      "why_they_are_secondary": "The observed domain of source is not proven exhaustive, and this lane did not observe a CLI deployment on this project. A contract resting on them would rest on an enumeration it has not closed. The nonce's pre-recording is the load-bearing property; these two are a cheap independent cross-check that would catch a nonce mechanism that silently failed.",
+      "fail_closed": "If the nonce test passes but a corroborator contradicts it — for example a deployment carrying both the nonce and meta.githubDeployment — the act STOPS and records a contradiction rather than accepting the nonce."
+    },
+
+    "AIC-7_what_remains_inadmissible": {
+      "rule": "Everything the parent's K-2..K-6 render inadmissible remains inadmissible, unchanged.",
+      "explicitly": "An automatic Git deployment is inadmissible as governed staging evidence whether or not it is Ready, whether or not its SHA is exact, whether or not its environment appears coherent, and whether or not the Vercel record shows a human as its creator."
+    }
+  },
+
+  "SUPERSEDED_PARENT_CLAUSES": {
+    "rule": "Each clause below is superseded ONLY in the respect stated. The remainder of each parent clause continues to control verbatim.",
+    "clauses": [
+      {
+        "id": "SPC-1",
+        "parent_clause": "ADJUDICATIONS.K_assertions_preventing_miscitation, assertion K-1 (IDENTITY BEFORE EXISTENCE), in its requirement that the deployment id have been recorded before the deployment existed.",
+        "respect_in_which_superseded": "The object required to pre-exist is the ACT, identified by a nonce, not the deployment id. Replaced in full by ACT_IDENTITY_CONTRACT AIC-1 through AIC-5.",
+        "what_is_preserved": "K-1's rationale — that identity must not be satisfiable retroactively — is preserved exactly, and is what AIC-1's timing property delivers."
+      },
+      {
+        "id": "SPC-2",
+        "parent_clause": "ADJUDICATIONS.I.governed_cv1_staging_deployment.distinguishing_properties, first bullet: 'its deployment id was FROZEN and recorded by the governed act BEFORE the deployment was created'.",
+        "respect_in_which_superseded": "Replaced by: 'its ACT NONCE was recorded by the governed act before the deployment was created, and the server-generated deployment id was bound to that nonce immediately after creation'. The remaining four bullets are unchanged.",
+        "additional_correction": "The same block's 'vercel_target: preview' is corrected: the API field `target` is null for Preview deployments. The block's surrounding point — that target does not distinguish governed from automatic — is strengthened, not weakened, by this correction."
+      },
+      {
+        "id": "SPC-3",
+        "parent_clause": "ADJUDICATIONS.K, assertion K-2 (CREATOR AND ACT).",
+        "respect_in_which_superseded": "K-2 must name its observation plane. Superseded form: 'A deployment whose GITHUB DEPLOYMENT OBJECT names creator vercel[bot], OR whose VERCEL record carries meta.githubDeployment, and for which no governed act record exists, is INELIGIBLE as staging evidence.'",
+        "grounds": "MEASURED: the same deployment is creator=vercel[bot] on the GitHub plane and creator.username=lorenzozanello-5040 on the Vercel plane. K-2 as written is false on the Vercel plane.",
+        "severity_note": "This is a second, independent way the parent's identity contract could have admitted the wrong deployment, and it was not part of the certified blocker."
+      },
+      {
+        "id": "SPC-4",
+        "parent_clause": "ADJUDICATIONS.O_controls_required_before_the_github_line_may_be_called_protected, control O-3.",
+        "respect_in_which_superseded": "O-3's wording conflated 'protected' with 'exact-SHA verified'. Superseded form: 'O-3 EXACT-SHA COVERAGE: the required checks must be checks the MERGE SHA itself received. This is a SEPARATE property from protection: a branch can be fully protected and still merge commits no check ever evaluated. Protection governs who may write; exact-SHA coverage governs what was verified. Neither implies the other.'"
+      },
+      {
+        "id": "SPC-5",
+        "parent_clause": "OWNER_DECISION_REQUIRED OD-1, its three enumerated options.",
+        "respect_in_which_superseded": "A fourth option is added and the set is no longer exhaustive as written: 'Introduce a dedicated release branch distinct from both the integration line and the development default, so that the production lineage terminates at a branch whose only purpose is release. This decouples the production boundary from the default-branch question entirely, and is the option that most directly addresses C-4 without forcing a choice among three branches that each carry unrelated history.'",
+        "what_is_preserved": "OD-1 remains an owner decision and is not decided here."
+      },
+      {
+        "id": "SPC-6",
+        "parent_clause": "OWNER_DECISION_REQUIRED OD-5.",
+        "respect_in_which_superseded": "OD-5 is anchored to a named stop line and its status is updated. Anchor: SECURITY_STOP_LINES SSL-06 of the frozen release authority — 'No privileged credential may be held without an inventory recording who and what holds it' — which a credential published in public Git history engages by construction, since its holder set is unbounded and uninventoried. SSL-08 separately governs the recording discipline this lane applied.",
+        "status_update": "MEASURED: open PR #206 ('docs(security): adjudicate secret-scanning alert 1 (google_api_key)') has taken up this adjudication in its own lane, which is exactly the separate track OD-5 required. This amendment records that the track exists and asserts NOTHING about its outcome: PR #206 is a draft in another lane and is not in this artifact's base.",
+        "note_on_the_certifier_s_identifier": "The certification referred to 'SEC5'. The frozen authority contains no such identifier; its stop lines are SSL-01 through SSL-09. The anchor is therefore recorded against the id that actually exists rather than the one proposed."
+      }
+    ]
+  },
+
+  "CORRECTED_MEASUREMENTS": {
+    "rule": "Facts the parent recorded incorrectly or incompletely. The corrected value is operative; the parent's record of its original measurement remains historically valid and is deliberately not erased.",
+    "corrections": [
+      {
+        "id": "CM-1",
+        "parent_statement": "CONTRADICTIONS C-2 and GITHUB_CI_BEHAVIOR, in treating the whole governed battery as merge-ref evidence.",
+        "corrected": "It is SEVEN of the eight governed checks, not eight. MEASURED: .github/workflows/golden-journey.yml pins `actions/checkout@v4` with `ref: ${{ github.event.pull_request.head.sha || github.sha }}`, so the Golden Journey contract battery runs against the PR HEAD SHA explicitly. The other seven use a bare `actions/checkout@v4`, which for a pull_request event defaults to the merge-ref.",
+        "effect_on_the_contradiction": "C-2 stands, narrowed. Seven of eight governed checks still produce the evidence shape the frozen TEST_EVIDENCE_MODEL refuses, and the one exception proves the fix is available and already in use in this repository — which strengthens rather than weakens the case for E."
+      },
+      {
+        "id": "CM-2",
+        "parent_statement": "CONTRADICTIONS C-5, in characterising the 2026-07-23 production deployment from the default branch head 0b1fd126 as created by an automatic Git-integration act.",
+        "corrected": "That deployment (dpl_8ppi9zB44ptTurz4Jdjnvhw4SWRG) carries source=\"redeploy\", i.e. it was a MANUAL redeploy, not an automatic push-deployment. The parent inferred 'automatic' from the GitHub Deployment object's creator being vercel[bot], which — per SPC-3 — names the integration, not the mechanism.",
+        "what_survives_unchanged": "The substance of C-5 survives in full and is now measured MORE precisely, not less: (a) a commit with ZERO check-runs was published to a public production custom domain; (b) automatic production deployment from Git is real and measured — the CURRENT production deployment dpl_6PVZKiADYktAsTuMLUu6RadntYbC (2026-08-15T15:21:46Z, sha 067e8c2f = main's head) carries source=\"git\"; and (c) U-1 is now resolved to productionBranch=main, so a push to main auto-deploys public production as a measured certainty rather than a possibility.",
+        "net_effect_on_severity": "C-5's severity is UNCHANGED at HIGHEST. The parent was right about the danger and wrong about one mechanism; resolving U-1 replaces a hedge with a certainty."
+      },
+      {
+        "id": "CM-3",
+        "parent_statement": "MEASURED_PRESTATE.VERCEL.production: 'Six production deployments were listed; every one names vercel[bot] as creator.'",
+        "corrected": "The parent's figure was PAGE-LIMITED, not a total. MEASURED: the project has NINETEEN production deployments (GET /v6/deployments?target=production&limit=20 returned count 19 with pagination.next null, so the enumeration is complete). Of these, the most recent is source=\"git\"; the others inspected are source=\"redeploy\". No count of production deployments may be frozen from a default page size.",
+        "generalization_recorded": "This is the second time in this lane that a truncated listing produced a wrong figure — the parent's 'six', and an intermediate misreading of `vercel ls --prod` output that named an older deployment as current. Any successor citing a platform listing MUST check the pagination cursor before treating a count or a first row as complete."
+      },
+      {
+        "id": "CM-4",
+        "parent_statement": "MEASURED_PRESTATE.VERCEL.branch_alias.managed_alias_listing: '`vercel alias ls` at this scope returns an EMPTY table', and the inference that the branch alias 'is not an owner-managed alias, and does not appear as one'.",
+        "corrected": "The emptiness was an artefact of the CLI surface, not a fact about the aliases. MEASURED: GET /v4/aliases?projectId=... returns aliases with their bound deployment ids and pagination. The branch alias IS enumerable through the API.",
+        "lesson_recorded": "An empty result from one tool was read as an absence in the world. It was an absence in the tool. The parent's own STALE_STATE_HANDLING demands re-measurement; this correction shows the same discipline is needed across TOOLS, not only across TIME."
+      },
+      {
+        "id": "CM-5",
+        "parent_statement": "UNKNOWNS U-2, which recorded the branch alias's current binding as unmeasurable behind Deployment Protection.",
+        "corrected": "U-2 IS RESOLVED, and it CONFIRMS the parent's moving-pointer claim by measurement rather than by platform documentation. MEASURED via GET /v4/aliases/uellix-antigravity-git-int-bb9db7-...: the alias is a single persistent object created 2026-09-02T15:44:09Z and UPDATED 2026-09-21T12:21:08Z, currently bound to dpl_FBJeJsC4aDsHT1Gw5he6GWWFJeHB — the frozen base merge SHA's deployment.",
+        "why_this_is_the_strongest_form": "One object, one creation date, a much later update date, and a current binding to the newest integration deployment is exactly the signature of a pointer that is REPOINTED rather than recreated. K-3's prohibition on citing the alias is therefore now measured, not assumed.",
+        "anonymous_resolution_remains_blocked": "The 302-to-SSO behaviour the parent measured is still true for anonymous HTTP; it simply was never the only available read path."
+      },
+      {
+        "id": "CM-6",
+        "parent_statement": "UNKNOWNS U-1 (the Vercel Production Branch setting).",
+        "corrected": "RESOLVED. MEASURED via GET /v9/projects/{id}: link.type=\"github\", link.repo=lorenzozanello/uellix-antigravity, and link.productionBranch=\"main\". There are zero deploy hooks.",
+        "consequence": "A push to main auto-deploys to public production at www.uellix.com. The parent's hedge ('must be treated as POSSIBLE') is replaced by a measured certainty, and the blocking precondition U-1 placed on M-4 and M-7 is SATISFIED. M-4's coupled-consequence warning becomes concrete: the default branch is feature/sprint-0-foundation while the production branch is main, so these are currently DECOUPLED — and a change to either could couple them."
+      },
+      {
+        "id": "CM-7",
+        "parent_statement": "UNKNOWNS U-4 (whether the PR201 environment correction has been applied).",
+        "corrected": "RESOLVED: NOT APPLIED. MEASURED via GET /v10/projects/{id}/env?decrypt=false, reading key, target, gitBranch, type and timestamps only, never values: the branch-scoped Preview entries for NEXT_PUBLIC_SUPABASE_URL, UELLIX_APP_ENV, UELLIX_RUNTIME_DATABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are pinned to gitBranch=\"codex/stella-staging\", NOT to integration/commercial-v1, and were last updated 2026-08-21 — a month before PR201 was authored. No environment entry scoped to integration/commercial-v1 exists.",
+        "consequence_for_the_H_adjudication": "The parent's ADJUDICATIONS.H was CONDITIONAL on U-4 and is now UNCONDITIONAL AS OF THIS MEASUREMENT: the safe harbour HOLDS TODAY, as a measured fact. Automatic Previews of the integration branch currently receive the unscoped project-level configuration and cannot satisfy PR201's coherence binding.",
+        "what_does_NOT_change": "The EXPIRY is untouched and remains the whole point. The safe harbour holds because the correction has not happened, which is precisely the condition that ends the moment it does. AIC-1..AIC-6 and the ordering constraint that M-6 precede the correction remain mandatory.",
+        "manifest_consequence": "The parent manifest's N-6, which refuses the H safe harbour while U-4 is unmeasured, is SATISFIED rather than superseded: the measurement it demanded has now been taken, and N-6 continues to govern any FUTURE reliance, which must re-measure rather than cite this one."
+      },
+      {
+        "id": "CM-8",
+        "parent_statement": "UNKNOWNS U-5 (the Vercel Git integration toggles and any Ignored Build Step).",
+        "corrected": "PARTIALLY RESOLVED. MEASURED on the project record: commandForIgnoringBuildStep is ABSENT (no Ignored Build Step is configured), gitForkProtection=true, autoAssignCustomDomains=true, gitLFS=false, autoExposeSystemEnvs=true, and zero deploy hooks.",
+        "consequence_for_M-6": "M-6's prestate is now partially captured, which materially improves its rollback: the 'no ignored build step' prestate is recorded, so applying one is a reversible act with a known inverse. M-6's mandatory prestate capture is RETAINED, because per-branch automatic-deployment toggles were not exposed by the endpoints this lane read, and a partial prestate is not a prestate."
+      },
+      {
+        "id": "CM-9",
+        "parent_statement": "MEASURED_PRESTATE.VERCEL.deployment_protection: 'Deployment Protection is ENABLED for Preview deployments.'",
+        "corrected": "The precise configuration is ssoProtection.deploymentType = \"all_except_custom_domains\"; passwordProtection and trustedIps are absent.",
+        "why_the_precision_matters": "It EXPLAINS the parent's two separate observations with one mechanism: Preview URLs answer 302 to SSO because they are not custom domains, and www.uellix.com answers 200 because it is. The parent recorded both facts and did not connect them. The protection posture is not 'previews are protected'; it is 'everything except custom domains is protected', which is a statement about production's exposure as much as about preview's."
+      }
+    ]
+  },
+
+  "UNCHANGED_AND_STILL_CONTROLLING": {
+    "rule": "Recorded so a reader does not infer that an amendment this size reopened the parent generally.",
+    "items": [
+      "Every EXPLICIT_NON_AUTHORIZATION in the parent, verbatim and in full.",
+      "PRODUCTION_BOUNDARY in full — and now on a firmer footing, since U-1 resolves to productionBranch=main.",
+      "CONTRADICTIONS C-1, C-3, C-4 and C-6 entirely; C-2 and C-5 as narrowed by CM-1 and CM-2.",
+      "ADJUDICATIONS A, C, D, E, F/G, J, L, M, N, P and Q.",
+      "K-3, K-4, K-5 and K-6 — K-3 now measured rather than assumed, per CM-5.",
+      "TREE_IDENTITY_CONTROL and its comparand discipline.",
+      "All seven FUTURE_MUTATIONS with their prestate/verification/rollback/confirmation structure, and EXECUTION_ORDERING including both load-bearing orderings.",
+      "NO_SECRET_POLICY, EVIDENCE_REQUIREMENTS, FAIL_CLOSED_BEHAVIOR and STALE_STATE_HANDLING.",
+      "OWNER_DECISION_REQUIRED OD-2, OD-3 and OD-4 unchanged; OD-1 extended by SPC-5; OD-5 anchored and status-updated by SPC-6.",
+      "NEW_ODS_REQUIRED = NO, re-measured for this amendment's own write set."
+    ]
+  },
+
+  "PR201_COMPATIBILITY": {
+    "rule": "PR201 remains controlling for its own act. This amendment alters none of its semantics.",
+    "exact_one_deployment_authority": "UNCHANGED. This amendment adds no deployment, authorizes none, and does not widen or narrow the count. AIC-5's prohibition on redeploying the governed deployment NARROWS nothing in PR201: it forbids creating a second deployment, which PR201 already does not authorize.",
+    "sha_binding": "UNCHANGED. AIC-1(b) cites PR201 AUTHORIZED_SHA_BINDING_RULE rather than restating it, and requires the same freeze-and-re-verify immediately before triggering.",
+    "SB_4_server_generated_id_capture": "PRESERVED AND RELIED UPON. AIC-3 is deliberately written to be satisfied BY SB-4 as it already stands: capture the returned deployment id immediately within the same act. The amendment adds only that the captured id is bound to the pre-recorded nonce. PR201 needs no change for this contract to be satisfiable.",
+    "human_confirmation": "UNCHANGED. AIC-1(e) cites PR201 HUMAN_CONFIRMATION and places the act nonce's recording before it, so the confirmation is still the last step before creation.",
+    "the_compatibility_test_applied": "For each PR201 clause touching the deployment act, the question asked was whether a lane executing PR201 EXACTLY AS WRITTEN could also satisfy this amendment. It can: the only additional obligations are to generate and record a nonce beforehand, pass two -m flags at creation, and re-read the record afterwards. None conflicts with any PR201 step, and none requires PR201 to be reinterpreted.",
+    "where_conflict_would_be_resolved": "If any reading of this amendment conflicted with PR201, PR201 controls and the consumer STOPS. This amendment creates no exception to the parent's RELATIONSHIP_TO_PR201."
+  },
+
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+    "method": "This amendment's two write-set paths were classified by EXECUTING pnpm ods:scope against the frozen base, not by reading the pattern list.",
+    "PROTECTED_AUTHORITY": "NONE",
+    "reversal_condition": "If a future measurement finds this write set requires any protected path, this verdict is void and the lane stops rather than widening an allowlist."
+  },
+
+  "self_check": {
+    "parent_left_byte_unchanged": true,
+    "parent_manifest_left_byte_unchanged": true,
+    "write_set_is_exactly_two_new_documents": true,
+    "no_code_written": true,
+    "no_test_written": true,
+    "no_workflow_file_touched": true,
+    "no_github_setting_changed": true,
+    "no_vercel_setting_changed": true,
+    "no_deployment_created_promoted_or_redeployed": true,
+    "no_environment_variable_value_read_or_recorded": true,
+    "env_endpoint_read_with_decrypt_false_and_only_metadata_extracted": true,
+    "no_alias_or_domain_touched": true,
+    "no_supabase_contact_of_any_kind": true,
+    "no_frozen_authority_edited": true,
+    "no_pr201_semantics_altered": true,
+    "no_ods_or_w2_lineage_allocated_or_implied": true,
+    "no_secret_value_present_anywhere_in_this_amendment": true,
+    "every_certification_finding_re_measured_before_being_acted_on": true,
+    "certifier_proposed_shape_not_copied_blindly_and_one_gap_in_it_closed": true,
+    "a_hazard_not_named_by_the_certification_was_found_and_recorded": true,
+    "the_one_mechanism_that_could_not_be_measured_was_converted_into_a_checked_precondition": true,
+    "no_gate_state_changed": true,
+    "no_stage_declared": true,
+    "D1_not_declared": true
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment supersedes the identity contract at the centre of the parent's design and corrects nine measurements, two of which change how a contradiction reads.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Is AIC-1's nonce genuinely unforgeable by the automatic path, or only unlikely to collide? Press specifically on whether any actor who can push to the integration branch could also cause a nonce of their choosing to appear in deployment meta.",
+      "Re-measure THE_REDEPLOY_COPY_HAZARD independently. Does a redeploy truly copy meta, and would AIC-5's first-bound-wins rule actually catch the second deployment?",
+      "AIC-4 rests on an unverified round-trip. Is converting it into an execution-time checked precondition with a fail-closed branch sufficient, or does the contract need a mechanism that can be proven without deploying?",
+      "Verify CM-2 independently: is dpl_8ppi9zB44ptTurz4Jdjnvhw4SWRG really source=redeploy, and is the current production deployment really source=git from main's head?",
+      "Verify CM-7 without reading any value: are the branch-scoped Preview entries truly pinned to codex/stella-staging, and does any entry scoped to integration/commercial-v1 exist?",
+      "Challenge whether SPC-3's superseded K-2 is now complete. Are there other planes on which the same deployment presents different creator semantics?",
+      "Ask whether CM-1 weakens C-2 enough to change any downstream adjudication — particularly D and E — or whether seven of eight leaves the contradiction materially intact.",
+      "Ask whether anything in this amendment has widened the parent's grant. The claim is that it has not: no new mutation, no new deployment, no new authorization."
+    ]
+  },
+
+  "final_state": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1_0_0_PLUS_v1_0_1_AUTHORED__AWAITING_OWNER_RATIFICATION",
+  "next_gate": "FOCUSED_INDEPENDENT_RE_CERTIFICATION of the EFFECTIVE authority (v1.0.0 as amended by v1.0.1) together with its manifest pair, and OWNER_RATIFICATION of OD-1 through OD-5. OD-5's adjudication now proceeds in its own lane. No GitHub setting, no Vercel setting, no deployment and no environment variable may be touched under either artifact until both gates are complete."
+}

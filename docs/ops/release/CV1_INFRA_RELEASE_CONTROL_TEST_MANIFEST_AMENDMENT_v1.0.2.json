@@ -1,0 +1,160 @@
+{
+  "manifest_id": "CV1-INFRA-RELEASE-CONTROL-AMENDMENT-v1.0.2",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "dependencies": [
+    "CV1-INFRA-RELEASE-CONTROL-AMENDMENT-v1.0.1 (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.1.json) — the immediate parent manifest, left byte-unchanged",
+    "CV1-INFRA-RELEASE-CONTROL (docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_v1.0.0.json) — the root manifest, left byte-unchanged",
+    "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1 and v1.0.0 (both left byte-unchanged)",
+    "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY (docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json) — source of BOUNDED_RETRY_RULE",
+    "RELEASE_GATE_LEDGER (docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json) — source of the SEC5 gate definition"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+
+  "known_conditions": [
+    "THIS MANIFEST AMENDS v1.0.1's MANIFEST, WHICH AMENDS v1.0.0's MANIFEST. All three are read together. Neither prior manifest is edited; this one supersedes named entries only.",
+    "SUPERSEDED v1.0.0 MANIFEST CONTROLS, already closed by v1.0.1's manifest and RE-CONFIRMED here rather than reopened: P12 -> AP1/AP2/AP3; SEN-4 -> ASEN-1; N-1 -> AN-1; MUT-3 -> AMUT-1.",
+    "SUPERSEDED v1.0.1 MANIFEST CONTROLS, closed by THIS manifest: none of v1.0.1's own controls (AP1..AP8, AN-1..AN-10, AMUT-1..AMUT-10, ASEN-1..ASEN-4) needed superseding — the focused re-certification found ACT_IDENTITY_CONTRACT itself sound. This manifest's new controls are ADDITIVE (retry identity) or verify the AUTHORITY-level residual sweep (v1.0.2's SUPERSEDED_PARENT_CLAUSES_V102 and SUPERSEDED_V101_CLAUSES), not replacements for anything the v1.0.1 manifest already tested correctly.",
+    "AUTHORING ARM vs EXECUTION ARM, as in both parents. An AUTHORING ARM control is assertable now against the three-file package. An EXECUTION ARM control binds a future governed deployment act, including a future bounded retry, and is marked test_file UNKNOWN deliberately.",
+    "NO VITEST FILE IS WRITTEN. The write set is two JSON documents; AUTHORING_ONLY forbids code.",
+    "THE SWEEP ITSELF IS A CONTROL. AP102-1 below is the actual execution of the AP5 promise v1.0.1's manifest made and did not carry out; it is written to be RE-RUNNABLE by a future reader with a different pattern set, not merely to assert that this lane's own run found what it found."
+  ],
+
+  "sentinels": [
+    {
+      "id": "ASEN102-1",
+      "purpose": "Residual-sweep completeness sentinel. If a future read of the effective three-file package finds a string matching the family in RESIDUAL_SWEEP_METHOD's six patterns that is not listed in either v1.0.1's or v1.0.2's superseded/qualified/demonstrated-not-obsolete inventories, the sweep this manifest certifies is INCOMPLETE and must be re-run and re-published, not patched ad hoc."
+    },
+    {
+      "id": "ASEN102-2",
+      "purpose": "Retry chain sentinel. A governed deployment act record's predecessor field, once populated, must never itself have a populated predecessor field. A two-hop chain is definitionally a request for a second retry and PR201 authorizes at most one."
+    },
+    {
+      "id": "ASEN102-3",
+      "purpose": "SEC5 namespace sentinel. 'SEC5' and 'SSL-06' are DIFFERENT identifiers in DIFFERENT namespaces (gate id vs. stop-line id) that happen to be linked by the frozen ledger's own \"gate\" field. Treating an SSL-* id as exhaustive of all security-relevant identifiers in this programme is the specific error this sentinel exists to catch a repeat of."
+    }
+  ],
+
+  "positive_controls": [
+    {
+      "id": "AP102-1",
+      "description": "AUTHORING ARM. THE SEMANTIC RESIDUAL SWEEP IS ACTUALLY RE-RUNNABLE AND REPRODUCIBLE. Re-executing a recursive string-leaf walk of v1.0.0, v1.0.1, v1.0.2 and their three manifests against the six patterns in RESIDUAL_SWEEP_METHOD must produce a hit set whose every member appears in one of v1.0.2's three classification lists (superseded_or_qualified, already_closed_by_v101, demonstrated_not_obsolete) or v1.0.1's SUPERSEDED_PARENT_CLAUSES. A hit outside all four lists means the sweep this control certifies is incomplete.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-2",
+      "description": "AUTHORING ARM. ALL FOUR NAMED RESIDUALS ARE ACTUALLY GONE FROM THE EFFECTIVE TEXT. Reading v1.0.0 as amended by v1.0.1 and v1.0.2 in order, at EVIDENCE_REQUIREMENTS[0], EVIDENCE_REQUIREMENTS[2], INTENDED_POSTSTATE.vercel[2] and ADJUDICATIONS.I...the_honest_weakness, the EFFECTIVE reading (parent text plus the latest superseding clause for that path) must contain no 'id ... before ... exist' phrasing and no unqualified 'not vercel[bot]' phrasing. Effective reading means applying the LATEST supersession for each path, not merely checking that a supersession clause exists somewhere in the document.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-3",
+      "description": "AUTHORING ARM. THE FIVE ADDITIONAL RESIDUALS ARE ALSO ACTUALLY GONE. The same effective-reading test as AP102-2 applied to RELATIONSHIP_TO_AUTOMATIC_PREVIEW_DEPLOYMENTS.the_remedy_chosen, ADJUDICATIONS.I.ordinary_preview.creator, ADJUDICATIONS.F_G...grounds[0], ADJUDICATIONS.I.production_deployment.measured_cause, and MEASURED_PRESTATE.VERCEL.production.all_production_deployments_measured_were_created_by_vercel_bot.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-4",
+      "description": "AUTHORING ARM. THE v1.0.1 BLANKET REAFFIRMATIONS ARE ACTUALLY NARROWED. UNCHANGED_AND_STILL_CONTROLLING.items[7] and items[3] in v1.0.1, read together with v1.0.2's SPC102-V101-1 and SPC102-V101-2, must no longer read as reaffirming EVIDENCE_REQUIREMENTS or ADJUDICATIONS.F_G IN FULL — the effective reading must carve out exactly the entries named superseded.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-5",
+      "description": "AUTHORING ARM. SEC5 IS VERIFIED BY DIRECT READ, NOT TAKEN ON THE TASK PROMPT'S ASSERTION. `git grep -n SEC5 docs/ops/release/` (or equivalent) against the frozen, checked-out authorities must return the RELEASE_GATE_LEDGER SEC5 gate definition and the two STAGING_RELEASE_PRODUCTION_AUTHORITY SSL-06/SSL-08 attachments quoted in SPC102-V101-3, byte-for-byte matching the quoted text. A control that accepted the correction without this independent read would repeat v1.0.1's own error of trusting an unverified claim about what identifiers exist.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-6",
+      "description": "EXECUTION ARM. A RETRY ACT MINTS A DISTINCT NONCE AND RECORDS ITS PREDECESSOR. When a lane exercises PR201's BOUNDED_RETRY_RULE, the retry's act record must show a nonce distinct from the first attempt's, a populated predecessor field naming the first attempt's nonce, and explicit evidence for each of BR-1 through BR-5 — not merely a restated intent to satisfy them.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-7",
+      "description": "EXECUTION ARM. THE CORRECTED EIGHT-STEP SEQUENCE IS FOLLOWED IN ORDER. A governed deployment act, first attempt or retry, must show its steps in the order CONFIRMATION_AND_SHA_REVERIFICATION_ORDER_CORRECTION specifies: SHA freeze, act-record open, ONE human confirmation covering the whole sequence, AUTH-1 (env binding, first attempt only), SB-3 re-verification immediately before trigger, AUTH-2 (deployment creation), id capture and binding, nonce round-trip verification. A retry's act record must show AUTH-1 was NOT repeated, consistent with BR-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AP102-8",
+      "description": "EXECUTION ARM. A THIRD NONCE IN ONE CHAIN IS REFUSED BEFORE ANY DEPLOYMENT IS TRIGGERED. If an act record's predecessor's predecessor field is populated (a two-hop chain), the act must be refused at record-open time, and no deployment may be created under it — the refusal must be checkable without evaluating BR-1..BR-5 at all.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "AN102-1",
+      "description": "A DEAD CLAUSE OFFERED AS CONTROLLING IS REFUSED. Citing EVIDENCE_REQUIREMENTS[0] or [2], INTENDED_POSTSTATE.vercel[2], or ADJUDICATIONS.I...the_honest_weakness in their v1.0.0 verbatim form, as though v1.0.2 had not superseded them, must be REFUSED. This is the exact failure mode the focused re-certification found: a clause superseded 'by id' elsewhere in the document was still being read literally at its own location.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN102-2",
+      "description": "A NONCE-ID TEST AGAINST THE VERCEL PLANE FOR CREATOR EXCLUSION IS REFUSED, EVEN WHERE THE SOURCE TEXT WAS PLANE-CORRECT. Using ADJUDICATIONS.I.ordinary_preview's 'creator: vercel[bot]' entry, or F_G's grounds[0], to exclude a deployment by testing the VERCEL deployment record's creator field must be REFUSED — both are qualified to the GitHub Deployments API plane by v1.0.2, and the Vercel-plane creator is measured to differ.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN102-3",
+      "description": "A RETRY REUSING THE FIRST ATTEMPT'S NONCE IS REFUSED. A deployment created under PR201 BOUNDED_RETRY_RULE that carries the SAME meta.uellix_governed_act_nonce as the failed first attempt, rather than a new nonce with a predecessor link, must be REFUSED as an AIC-5 violation — reuse collapses the very distinction AIC-8 exists to preserve.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN102-4",
+      "description": "A SECOND RETRY IS REFUSED REGARDLESS OF BR-1..BR-5. An act record chained two hops deep (retry-of-a-retry) must be REFUSED even when BR-1 through BR-5 all appear satisfied for the most recent failure. PR201's cap is on the NUMBER of retries, not on whether each individual retry looks justified in isolation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN102-5",
+      "description": "AN ATTEMPT THAT NEVER REACHED SB-3 IS REFUSED AS A 'FAILED ATTEMPT' ELIGIBLE FOR RETRY. If SB-3's re-verification finds a stale SHA and the lane STOPs before AUTH-2, that act is ABANDONED, not FAILED — BR-4 (byte-identical SHA between attempts) cannot be evaluated against an attempt whose SHA was never re-confirmed at trigger time, so it must not be cited as the predecessor of an AIC-8 retry.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN102-6",
+      "description": "SEC5 IS REFUSED AS NONEXISTENT. Any future artifact repeating v1.0.1's claim that no SEC5 identifier exists in the frozen authorities must be REFUSED — MEASURED, it exists as a named gate in RELEASE_GATE_LEDGER_v1.0.0.json and is the gate STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json attaches to both SSL-06 and SSL-08.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AN102-7",
+      "description": "A CLAUSE-ID-ONLY SWEEP IS REFUSED AS SUFFICIENT. A future amendment that claims to have closed an obsolete-semantic defect by superseding every clause carrying a named id (K-1, K-2, P12, etc.) without independently searching for SEMANTIC restatements elsewhere in the document must be REFUSED as incomplete — this is the exact mechanism by which v1.0.1 left nine residuals standing despite correctly superseding every clause it named.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "AMUT102-1",
+      "description": "Delete one of the nine SUPERSEDED_PARENT_CLAUSES_V102 entries, leaving its v1.0.0 path unsuperseded. The controls must REDDEN via AP102-2 or AP102-3 (whichever names that path) and AN102-1, naming the exact dead-clause text that becomes citable again.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT102-2",
+      "description": "Restore AIC-8 to allow a retry to reuse the first attempt's nonce instead of minting a new chained one. The controls must REDDEN via AN102-3, naming the exact collapse of AIC-5's distinction that results.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT102-3",
+      "description": "Delete AIC-9's count-ceiling check, leaving only BR-1..BR-5 as the gate on a retry. The controls must REDDEN via AN102-4, naming that a chain of any depth would then pass provided each individual hop's BR conditions look satisfied — exactly the unbounded-iteration hazard PR201's own BOUNDED_RETRY_RULE.why_the_exception_is_this_narrow warns against.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT102-4",
+      "description": "Revert SPC102-V101-3 to v1.0.1's original claim that SEC5 does not exist. The control must REDDEN via AP102-5 and AN102-6, which require an independent grep-verified read rather than acceptance of either version's assertion.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT102-5",
+      "description": "Narrow AP102-1's residual sweep to only the four named residuals, dropping AP102-3's five additional ones. The controls must REDDEN, naming that this reproduces exactly the failure mode this amendment exists to close: trusting a NAMED list instead of independently re-deriving the full hit set.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AMUT102-6",
+      "description": "Remove the AUTH-1-not-repeated requirement from AP102-7, so a retry's act record is not checked for whether it re-ran the environment-variable binding. The control must REDDEN, naming that this would silently permit a retry to violate BR-3 (no environment variable changed between attempts) without the manifest ever catching it.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate"
+  ]
+}

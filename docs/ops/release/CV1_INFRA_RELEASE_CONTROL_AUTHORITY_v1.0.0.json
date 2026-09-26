@@ -1,0 +1,963 @@
+{
+  "package_id": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "document_class": "BOUNDED_CONTROL_PLANE_CONFIGURATION_GRANT",
+  "append_only": true,
+  "mission_id": "CV1-INFRA-RELEASE-CONTROL-AW-R1",
+  "lane": "CV1-INFRA-RELEASE-CONTROL-AW-R1",
+  "role": "COMMERCIAL_V1_INFRASTRUCTURE_RELEASE_CONTROL_AUTHORITY_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/cv1-infra-release-control-authority-r1",
+  "AS_OF_BASE": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_HEAD": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+  "AS_OF_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+  "AS_OF_INTEGRATION_REF": "origin/integration/commercial-v1 = 537487ac7b102d51f553fcb8f5cfe19614e113d8, measured by git fetch origin --prune then git rev-parse origin/integration/commercial-v1 at the opening of this lane.",
+  "as_of_measurement_note": "Every hosted fact in MEASURED_PRESTATE was observed on 2026-09-21 using read-only GitHub REST and read-only Vercel CLI operations against the live control plane. Hosted state is mutable by construction: a consumer that acts on this artifact MUST re-measure under STALE_STATE_HANDLING rather than trust these values.",
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "The repository's established release-domain convention, read from the directory itself rather than recalled: docs/ops/release/ holds STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json, its v1.0.1 amendment, RELEASE_GATE_LEDGER_v1.0.0.json, and the two most recent paired authorities FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json and FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json, each with a sibling *_TEST_MANIFEST_v1.0.0.json.",
+    "prefix_rationale": "The prefix names the NODE, the directory names the DOMAIN — the same derivation FIBDB053_* records. This node is not FIBDB-053 scoped: it governs the Commercial V1 GitHub/Vercel control plane as a whole. CV1_INFRA_RELEASE_CONTROL is therefore the node name, and docs/ops/release/ remains the domain.",
+    "pairing": "AUTHORITY + TEST_MANIFEST, exactly two documents, matching both immediate predecessors.",
+    "no_parent_is_edited": "STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json and its v1.0.1 amendment both carry append_only=true. Neither is opened. This artifact is a NEW sibling that CONSUMES them; it amends nothing and supersedes nothing."
+  },
+
+  "PURPOSE": {
+    "statement": "To adjudicate, on measured evidence, the mismatch between Uellix's documented Commercial V1 release governance and the EFFECTIVE GitHub/Vercel control plane, and to author the bounded permission required to close that mismatch.",
+    "what_this_artifact_is_not": "It is not a settings change, not a deployment, not a promotion, not a protection rule, not a ruleset, not a workflow edit, and not an implementation of any decision recorded here. No GitHub repository setting and no Vercel project setting was mutated by the lane that authored it.",
+    "why_it_is_needed": "See CONTRADICTIONS. The frozen release authority records branch protection as an OPEN UNKNOWN (AT-U-03) and lists it under RULE_FAIL_CLOSED_ON_UNKNOWN. This lane RESOLVES that unknown by direct measurement, and the resolution is ABSENT — which converts a fail-closed-on-unknown into a fail-closed-on-measured-defect and makes the governing rule operative rather than pending."
+  },
+
+  "CONTROLLING_AUTHORITY": {
+    "precedence": "CLAUDE.md section 2. Nothing here supersedes a frozen artifact. Where this artifact and a frozen artifact conflict, the frozen artifact controls and this lane FAILS CLOSED.",
+    "consumed": [
+      "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json — the effective Commercial V1 release governance.",
+      "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json — checked clause-by-clause before any parent clause was cited.",
+      "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json — the bounded one-deployment staging grant whose semantics this artifact must not make ambiguous.",
+      "docs/ops/release/FIBDB053_D1_OLD_DB_OBSERVATION_AUTHORITY_v1.0.0.json — the D-1 OLD_DB observation authority merged at the frozen base.",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json and CLAUDE.md — workflow, fail-closed and scope discipline."
+    ],
+    "supersession_check_performed": {
+      "method": "STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json was read for SUPERSEDED_PARENT_CLAUSES before any parent clause was quoted, rather than assuming the parent is wholly live.",
+      "result": "The amendment supersedes exactly TWO parent clauses (SPC-1 and SPC-2), and both concern the normative meaning of 'a target holding data' under DEFINITIONS.RESET_INELIGIBLE_STAGING — i.e. staging database reset eligibility.",
+      "consequence": "NONE of the parent clauses this artifact relies on — AT-U-03, RULE_FAIL_CLOSED_ON_UNKNOWN, RULE_NO_GATE_WEAKENING, the no-merge-ref-substitution requirement, or the PRODUCTION_PATH P1 lineage clause — is superseded. All remain controlling verbatim.",
+      "why_recorded": "A cited clause that had been superseded would be false evidence dressed as authority. The check is recorded so a certifier can re-run it rather than take it on trust."
+    }
+  },
+
+  "MEASURED_PRESTATE": {
+    "rule": "Every value below was MEASURED on 2026-09-21 by a read-only operation. Nothing in this block is inferred, recalled, or carried over from the prior audit. Where a fact could not be measured by a safe read-only operation it appears in UNKNOWNS and NOT here.",
+
+    "GITHUB": {
+      "repository": "lorenzozanello/uellix-antigravity",
+      "owner_account_type": "User (NOT an organization) — measured via GET /users/lorenzozanello .type",
+      "visibility": "public",
+      "private": false,
+      "archived": false,
+      "fork": false,
+      "default_branch": "feature/sprint-0-foundation",
+      "merge_settings": {
+        "allow_merge_commit": true,
+        "allow_squash_merge": true,
+        "allow_rebase_merge": true,
+        "allow_auto_merge": false,
+        "allow_update_branch": false,
+        "delete_branch_on_merge": false,
+        "web_commit_signoff_required": false
+      },
+      "branch_heads": {
+        "feature/sprint-0-foundation": "0b1fd12685024593b5ba2dfc8015caac10ed4dc5",
+        "integration/commercial-v1": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+        "main": "067e8c2f3ac9b5e843de3a35575182907b4365d4"
+      },
+      "branch_protection": {
+        "method": "GET /repos/{owner}/{repo}/branches/{branch}/protection for each of the three branches.",
+        "feature/sprint-0-foundation": "ABSENT — HTTP 404 'Branch not protected'",
+        "integration/commercial-v1": "ABSENT — HTTP 404 'Branch not protected'",
+        "main": "ABSENT — HTTP 404 'Branch not protected'",
+        "branches_api_protected_flag": "protected=false on all three, measured independently of the protection endpoint."
+      },
+      "rulesets": {
+        "repository_rulesets": "EMPTY ARRAY — GET /repos/{owner}/{repo}/rulesets returned []",
+        "effective_rules_for_integration_ref": "EMPTY ARRAY — GET /repos/{owner}/{repo}/rules/branches/integration%2Fcommercial-v1 returned []",
+        "organization_rulesets": "NOT APPLICABLE — the owner is a User account, so no organization ruleset layer exists to inherit from.",
+        "significance": "Three independent read paths (protection endpoint, branches flag, effective rules-for-ref) agree. The absence is not an artefact of one endpoint's semantics."
+      },
+      "divergence": {
+        "method": "git rev-list --left-right --count against freshly fetched remote refs.",
+        "default_vs_integration": "feature/sprint-0-foundation is 19 commits AHEAD of and 1009 commits BEHIND integration/commercial-v1 — a genuine two-way divergence, not merely staleness.",
+        "main_vs_integration": "main is 0 AHEAD of and 992 BEHIND integration/commercial-v1 — main is a strict ANCESTOR of the integration line.",
+        "merge_base_default_integration": "f90de915c032d5c6563b0cab2d365dd345069350",
+        "correction_to_prior_audit": "The prior audit described main as 'far behind' and the default branch and integration as 'diverged'. Both hold, but they are DIFFERENT conditions and this artifact does not conflate them: main is recoverable by fast-forward; the default branch is NOT, because it carries 19 commits the integration line does not."
+      },
+      "actions_secrets": {
+        "total_count": 0,
+        "method": "GET /repos/{owner}/{repo}/actions/secrets .total_count",
+        "significance": "There are no repository Actions secrets. This materially bounds the exposure created by a public repository combined with pull_request-triggered workflows: there is no repository secret for an untrusted pull request to exfiltrate."
+      },
+      "secret_scanning": {
+        "method": "GET /repos/{owner}/{repo}/secret-scanning/alerts",
+        "alert_count": 4,
+        "no_secret_value_is_recorded_here": "Deliberate. The alert numbers are the single source. Copying a leaked value into a governance artifact would create a second public copy of it, in an append-only file, to solve a problem that rotation solves.",
+        "alerts": [
+          {
+            "alert": 1,
+            "secret_type": "google_api_key",
+            "state": "OPEN",
+            "publicly_leaked": true,
+            "first_detected": "2026-07-06",
+            "location_class": "a documentation file under docs/ (docs/AUDIT_2026-07-06.md)",
+            "measured_tree_status": "The value is ABSENT from the frozen base tree — a content search of the AS_OF_TREE returns zero matches.",
+            "measured_history_status": "The value IS still present in the historical blob at the commit the alert names, and that commit is reachable in the public repository. Removal from the tree did NOT end the exposure.",
+            "assessment": "This is the only one of the four alerts whose value does not have an obviously synthetic shape. It is treated as POTENTIALLY REAL and UNROTATED unless an owner adjudication says otherwise."
+          },
+          {
+            "alert": 2,
+            "secret_type": "supabase_personal_access_token",
+            "state": "RESOLVED (used_in_tests)",
+            "publicly_leaked": true,
+            "note": "Push protection was deliberately bypassed by the owner and the alert closed as a test fixture."
+          },
+          {
+            "alert": 3,
+            "secret_type": "google_api_key",
+            "state": "OPEN",
+            "publicly_leaked": true,
+            "location_class": "tests/fixtures/synthetic-credentials.ts — a file whose name and purpose declare it synthetic."
+          },
+          {
+            "alert": 4,
+            "secret_type": "google_api_key",
+            "state": "OPEN",
+            "publicly_leaked": true,
+            "location_class": "a test under tests/eval/ — the value has an evidently placeholder shape."
+          }
+        ]
+      }
+    },
+
+    "GITHUB_CI_BEHAVIOR": {
+      "workflow_triggers": {
+        "method": "Every file under .github/workflows/ was read for its `on:` block at the frozen base.",
+        "measured": [
+          "ci.yml — on: push.branches=[main], pull_request (unrestricted base), workflow_dispatch",
+          "golden-journey.yml — on: pull_request.branches=[integration/commercial-v1, main], workflow_dispatch",
+          "m2-real-pg-gate.yml — on: pull_request.branches=[integration/commercial-v1, main], workflow_dispatch",
+          "p1a-bootstrap-gate.yml — on: pull_request.branches=[integration/commercial-v1, main], workflow_dispatch",
+          "s3-refusal-real-pg-gate.yml — on: pull_request.branches=[integration/commercial-v1, main], workflow_dispatch",
+          "ce3-entitlement-grants-real-pg-gate.yml, cl1-legal-acceptance-real-pg-gate.yml, l1-organization-commercial-acceptance-real-pg-gate.yml — same pull_request base restriction",
+          "p1a-validation.yml — on: pull_request.branches=[main], workflow_dispatch"
+        ],
+        "derived_mechanism": "NO workflow in the repository carries a push trigger for integration/commercial-v1. The ONLY push trigger in the repository is ci.yml's push.branches=[main]. Therefore a merge into the integration line matches no push trigger and runs no governed workflow.",
+        "the_one_push_trigger_watches_a_branch_nobody_advances": "ci.yml's push trigger targets main, which is measured 992 commits behind the integration line. The single push-triggered gate in the repository is pointed at a branch that the Commercial V1 programme does not advance."
+      },
+      "exact_sha_check_coverage": {
+        "method": "GET /repos/{owner}/{repo}/commits/{sha}/check-runs for each SHA below.",
+        "pr_candidate_head_SHAs": {
+          "7b172836 (PR #202 head)": "9 check-runs — 8 governed checks plus 'Vercel Preview Comments', all success",
+          "2947161e (PR #201 head)": "9 check-runs — same battery, all success",
+          "2276d46f (PR #197 merged head)": "9 check-runs"
+        },
+        "integration_MERGE_SHAs": {
+          "537487ac (merge of PR #202 — the frozen base)": "1 check-run — 'Vercel Preview Comments' ONLY. ZERO governed checks.",
+          "e3f6f075 (merge of PR #201)": "1 check-run — 'Vercel Preview Comments' ONLY. ZERO governed checks."
+        },
+        "the_sharpest_form_of_the_finding": "The sole check present on the integration tip is a DEPLOYMENT notification, not a verification. The merge SHA's only green signal is the one signal that asserts nothing about correctness.",
+        "governed_check_names_measured_on_candidates": [
+          "Lint, typecheck, test, build",
+          "Golden Journey contract battery",
+          "Canonical LOCAL/CI clean bootstrap proof",
+          "Isolated M2 disposable PostgreSQL proof",
+          "Isolated CE-3 entitlement-grants disposable PostgreSQL proof",
+          "Isolated CL-1 legal-acceptance disposable PostgreSQL proof",
+          "Isolated L1 organization-commercial-acceptance disposable PostgreSQL proof",
+          "Isolated S3 refusal-audit disposable PostgreSQL proof"
+        ],
+        "excluded_by_measurement": "'Vercel Preview Comments' is present on BOTH verified candidates and unverified merge SHAs. It therefore discriminates nothing and is NOT a verification check."
+      },
+      "merge_tree_identity": {
+        "method": "For each recent integration merge, tree(merge commit) was compared to tree(the PR head GitHub records as merged).",
+        "measured": [
+          "537487ac merge tree 7228f833 == 7b172836 head tree 7228f833 — IDENTICAL",
+          "e3f6f075 merge tree 63ea28b3 == 2947161e head tree 63ea28b3 — IDENTICAL",
+          "96a87611 merge tree 36cb1064 == 2276d46f head tree 36cb1064 — IDENTICAL"
+        ],
+        "adjudication": "For all three recent merges the merge commit's CONTENT was covered by the candidate's governed battery even though the merge SHA itself carried no governed check. The exact-SHA gap is therefore currently LATENT, not currently MATERIAL.",
+        "why_this_is_not_reassuring": "Tree-identity here is a CONSEQUENCE of strictly serialized, single-PR, up-to-date merges. It is not produced by any control, is asserted by no gate, and is not a property anyone would be told had been lost. Two overlapping PRs merged in sequence would produce a merge tree that no CI run ever evaluated, and nothing in the repository or the control plane would raise a signal.",
+        "correction_recorded": "An earlier pass of this lane compared 96a87611 against the PRE-SYNC head b1d26b26 and obtained a tree MISMATCH. That comparison was wrong: GitHub records PR #197's merged head as 2276d46f. The finding was withdrawn on measurement rather than reported. It is recorded here so a certifier can see which comparand is correct and why."
+      }
+    },
+
+    "VERCEL": {
+      "account_scope": "lorenzozanello-5040s-projects (authenticated as lorenzozanello-5040)",
+      "project_name": "uellix-antigravity",
+      "project_id": "prj_3NplDjQAEU6nvFoRZEdnNOAT3ThJ",
+      "framework_preset": "Next.js",
+      "root_directory": ".",
+      "node_version": "24.x",
+      "repository_side_configuration": {
+        "vercel_json": "ABSENT at the frozen base",
+        "vercel_ts": "ABSENT at the frozen base",
+        "consequence": "There is NO repository-native Vercel configuration. Every deployment-affecting setting — production branch, Git integration behaviour, environment variables, protection — lives dashboard-side only. Repository governance, including every gate in this programme, is structurally incapable of constraining it. This is the structural root of the mismatch this artifact adjudicates, and it is why the remedies below are SETTINGS mutations rather than file edits."
+      },
+      "second_project_observed": "A separate project named uellix-production-web also exists in the same scope. Whether it has any Commercial V1 role is NOT established by this lane — see UNKNOWNS U-6.",
+      "automatic_preview_behavior": {
+        "measured": "Every recent PR head SHA and every recent integration merge SHA received a Vercel deployment with environment 'Preview', created by the actor vercel[bot], via the GitHub deployments API.",
+        "frozen_base_deployment": {
+          "github_deployment_id": 6568221226,
+          "ref_and_sha": "537487ac7b102d51f553fcb8f5cfe19614e113d8 — the exact integration merge SHA",
+          "environment": "Preview",
+          "creator": "vercel[bot]",
+          "created_at": "2026-09-21T12:21:09Z",
+          "status": "success / Ready",
+          "vercel_deployment_id": "dpl_FBJeJsC4aDsHT1Gw5he6GWWFJeHB",
+          "vercel_target": "preview"
+        },
+        "adjudicated_consequence": "A merge into integration/commercial-v1 DOES produce a Ready Vercel deployment of the exact merge SHA, automatically, with no governed deployment act and with zero governed CI on that SHA. The prior audit's claim is CONFIRMED at the exact frozen base."
+      },
+      "branch_alias": {
+        "measured": "The frozen-base Preview deployment carries an auto-generated branch alias of the form uellix-antigravity-git-int-<hash>-<scope>.vercel.app. The immediately preceding integration merge deployment (dpl_6CsgJF4D3n956CBfN7kPJMfEjcCi) reports the SAME alias string.",
+        "managed_alias_listing": "`vercel alias ls` at this scope returns an EMPTY table. The branch alias is a system-generated Git-integration address, not an owner-managed alias, and does not appear as one.",
+        "not_created_by_any_governed_act": "No governed act created this address. It exists because Git integration is enabled.",
+        "tension_with_PR201": "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json records custom_alias_required = NO and states that the grant does not authorize creating, assigning, changing or removing any alias. That clause is about a GOVERNED act and remains correct. The measurement here is that the platform had ALREADY produced a stable, branch-tracking address without any such act — which is not a violation of PR201, but does mean a stable staging-looking address exists outside the grant's contemplation.",
+        "current_resolution_is_UNKNOWN": "See UNKNOWNS U-2. Two deployments claim the same alias string, so at most one can serve it, and Deployment Protection prevents resolving which one by an anonymous request."
+      },
+      "deployment_protection": {
+        "measured": "An anonymous HTTPS request to the integration branch alias returns HTTP 302 with a Location of https://vercel.com/sso-api?url=... — i.e. Deployment Protection is ENABLED for Preview deployments.",
+        "significance": "Automatic Preview deployments of a PUBLIC repository's code are NOT anonymously reachable. This materially bounds the exposure created by automatic Previews and is a load-bearing input to the adjudication of question J."
+      },
+      "production": {
+        "custom_domain": "https://www.uellix.com",
+        "measured_liveness": "An anonymous HTTPS request to https://www.uellix.com returns HTTP 200 with X-Matched-Path: / . Production is LIVE and PUBLICLY reachable, with no protection interstitial.",
+        "latest_production_deployment": {
+          "github_deployment_id": 5921830419,
+          "environment": "Production",
+          "creator": "vercel[bot]",
+          "created_at": "2026-08-15T15:23:10Z",
+          "ref_and_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4"
+        },
+        "identity_of_the_live_production_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4 is EXACTLY the current head of the branch `main`. The live production commit is main's tip, 992 commits behind the integration line.",
+        "ci_coverage_of_the_live_production_sha": "2 check-runs: 'Lint, typecheck, test, build' and 'Vercel Preview Comments'. That is ONE of the eight governed checks. The seven Real-PG and Golden Journey gates never ran against the commit currently serving www.uellix.com.",
+        "an_earlier_production_deployment_came_from_the_default_branch": {
+          "github_deployment_id": 5579926317,
+          "created_at": "2026-07-23T21:13:48Z",
+          "creator": "vercel[bot]",
+          "ref_and_sha": "0b1fd12685024593b5ba2dfc8015caac10ed4dc5",
+          "identity": "0b1fd126 is EXACTLY the current head of the DEFAULT branch feature/sprint-0-foundation.",
+          "ci_coverage": "ZERO check-runs. GET /commits/0b1fd126.../check-runs returned total_count 0.",
+          "adjudicated_significance": "The control plane has ALREADY, in measured history, published to a public production custom domain a commit carrying no CI whatsoever, by an automatic Git-integration act with no governed deployment step. This is not a hypothetical risk being raised in the abstract; it is a thing that happened."
+        },
+        "all_production_deployments_measured_were_created_by_vercel_bot": "Six production deployments were listed; every one names vercel[bot] as creator, which is the signature of automatic Git-integration deployment rather than manual promotion."
+      }
+    }
+  },
+
+  "UNKNOWNS": {
+    "rule": "Each entry below is a fact this adjudication would have used and could NOT establish with a safe read-only operation. None is filled with an assumption. Any consumer requiring one of these MUST measure it under an authority that permits the necessary access, and MUST fail closed until it does.",
+    "unknowns": [
+      {
+        "id": "U-1",
+        "unknown": "The current Vercel 'Production Branch' setting for project uellix-antigravity.",
+        "why_unmeasured": "`vercel project inspect` returns General and Framework Settings only; the Git integration block is not exposed by the read-only CLI surface available to this lane.",
+        "what_IS_measured_instead": "BEHAVIOURAL evidence only: the most recent Production deployment was built from main's head, and an earlier one from the default branch's head, both by vercel[bot].",
+        "consequence": "Whether a push to main TODAY would auto-deploy production is NOT established. It must be treated as POSSIBLE and therefore as requiring the production-boundary controls below.",
+        "resolved_by": "An owner-side reading of the project's Git settings, or an authority permitting an authenticated settings read."
+      },
+      {
+        "id": "U-2",
+        "unknown": "Which deployment the integration branch alias currently resolves to.",
+        "why_unmeasured": "Deployment Protection returns 302 to the SSO endpoint for anonymous requests, and `vercel alias ls` does not list system-generated branch aliases.",
+        "consequence": "The alias must be treated as a MOVING pointer of indeterminate current binding. It is forbidden as an evidence target by EVIDENCE_REQUIREMENTS regardless of how it currently resolves."
+      },
+      {
+        "id": "U-3",
+        "unknown": "The GitHub plan tier of the owning User account.",
+        "why_unmeasured": "GET /user returned plan: null under the available token scopes.",
+        "why_it_matters": "Branch protection and rulesets are available on public repositories for free personal accounts, but their availability on a PRIVATE repository depends on the plan. A visibility change and a protection requirement are therefore COUPLED, and the coupling cannot be resolved from here.",
+        "consequence": "OD-2 (visibility) may not be executed before this is established, because making the repository private could REMOVE the ability to satisfy OD-4 (protection). Ordering is enforced in EXECUTION_ORDERING."
+      },
+      {
+        "id": "U-4",
+        "unknown": "Whether the Vercel environment-variable correction contemplated by FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json has already been applied.",
+        "why_unmeasured": "Reading environment configuration requires linking the project, which writes local state into the worktree and was therefore not performed; no safe read-only path to env NAMES and TARGETS was available to this lane.",
+        "why_it_matters": "It is the hinge of the AUTOMATIC_PREVIEW_ADJUDICATION. The finding that automatic Previews cannot currently consume the PR201 grant depends on those Previews having been built BEFORE the correction.",
+        "what_this_lane_refused_to_do": "Infer it from repository state. PR201's final_state reads AUTHORED__NOT_EXECUTED and no successor execution lane appears in the history, but that is an inference from the REPOSITORY about a HOSTED fact, and this programme has repeatedly measured such inferences to be exactly where a true literal supports a false conclusion.",
+        "consequence": "The adjudication of question H is recorded as CONDITIONAL, and a mandatory pre-execution re-measurement (PMV-2) is required before any actor relies on it."
+      },
+      {
+        "id": "U-5",
+        "unknown": "The Vercel Git integration toggles themselves — whether automatic deployments are enabled per-branch, and whether an Ignored Build Step is configured.",
+        "why_unmeasured": "Not exposed by the read-only CLI surface available to this lane.",
+        "consequence": "FUTURE_MUTATIONS M-6 records the SHAPE of the narrowing mutation but cannot record its exact prestate; M-6 therefore carries a mandatory prestate capture step before it may be executed."
+      },
+      {
+        "id": "U-6",
+        "unknown": "Whether the separate Vercel project uellix-production-web has any Commercial V1 role.",
+        "why_unmeasured": "Out of this lane's measurement scope; naming alone is not evidence of role.",
+        "consequence": "No control here is written against it. A successor that finds it serves any Commercial V1 surface must re-open the production boundary adjudication."
+      }
+    ]
+  },
+
+  "CONTRADICTIONS": {
+    "rule": "Each contradiction names the governing clause, the measured fact, and why the two cannot both stand. A contradiction is not a risk to be managed by note-taking; under RULE_FAIL_CLOSED_ON_UNKNOWN it is a stop.",
+    "contradictions": [
+      {
+        "id": "C-1",
+        "title": "The frozen authority's open UNKNOWN on branch protection is now measured, and the measurement is ABSENT.",
+        "governing_clause": "STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json AT-U-03: unknown = 'Whether branch protection is active on the default branch.'; resolved_by = 'a hosted repository-settings observation'; consequence = 'Until resolved, a green CI run is not proof that any merge was gated.'",
+        "measured_fact": "Branch protection is ABSENT on all three relevant branches, and the repository has zero rulesets, confirmed by three independent read paths.",
+        "adjudication": "AT-U-03 is RESOLVED by this lane, in the negative. Its stated consequence stops being conditional: a green CI run in this repository is NOT proof that any merge was gated, as a measured fact rather than as a pending caveat. RULE_FAIL_CLOSED_ON_UNKNOWN lists 'branch protection' among the open items that stop a release; that rule is now operative on a known defect."
+      },
+      {
+        "id": "C-2",
+        "title": "Governed CI evidences a merge-ref, which the frozen authority expressly forbids.",
+        "governing_clause": "STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json TEST_EVIDENCE_MODEL.required_of_every_release_test_run, first item: 'the exact SHA, with no merge-ref substitution'.",
+        "measured_fact": "Every governed workflow is triggered by pull_request and by nothing else for the integration line. A pull_request-triggered run executes against refs/pull/N/merge — a merge-ref — and its checks are reported against the PR HEAD SHA, which is a third SHA that is neither the ref tested nor the commit eventually merged.",
+        "adjudication": "The repository's governed battery, as currently wired, produces exactly the evidence shape the frozen authority refuses. This is not cured by the battery being green. It is a defect in what the green attests to.",
+        "severity": "Blocks any release authority that intends to cite the governed battery as exact-SHA evidence."
+      },
+      {
+        "id": "C-3",
+        "title": "The exact merge SHA on the integration line receives no governed verification at all.",
+        "governing_clause": "The same exact-SHA requirement, plus CANONICAL_STAGES' repeated 'exact_sha_evidence_identity' obligations.",
+        "measured_fact": "537487ac and e3f6f075 each carry exactly ONE check-run, and it is 'Vercel Preview Comments'. No workflow carries a push trigger for integration/commercial-v1.",
+        "adjudication": "The integration tip is unverified as a SHA. Content coverage currently survives only through the unenforced accident of merge-tree identity (see MEASURED_PRESTATE.GITHUB_CI_BEHAVIOR.merge_tree_identity). The gap is latent today and becomes material on the first non-trivial merge, with no signal at the moment it does."
+      },
+      {
+        "id": "C-4",
+        "title": "Three branches hold three different release roles, and the authority's production lineage names a branch that is not the one production is served from.",
+        "governing_clause": "PRODUCTION_PATH P1 exact_sha_evidence_identity: 'P1 requires a reviewed pull request from the integration branch to the default branch, with CI green on the EXACT SHA and a release tag on that SHA.' The same stage's hpo_g_binding requires 'a normal integration-to-default-branch lineage'.",
+        "measured_fact": "The DEFAULT branch is feature/sprint-0-foundation. The branch ci.yml treats as the production line by push trigger is main. The branch the live production deployment was actually built from is main. These are three different branches, and the frozen authority's production lineage terminates at the DEFAULT branch, which is not the one serving production.",
+        "adjudication": "The documented production lineage and the effective production source do not meet. This cannot be resolved by measurement because it is a question of intent, not of fact — see OWNER_DECISION_REQUIRED OD-1."
+      },
+      {
+        "id": "C-5",
+        "title": "A public production domain has been served from a commit with zero CI, by an automatic act.",
+        "governing_clause": "PRODUCTION_PATH P1 requires a reviewed pull request, CI green on the exact SHA, and a release tag; PRODUCTION_MIGRATION_AUTHORITY_PREREQUISITE and the P-stage gate set govern production entry.",
+        "measured_fact": "Production deployment 5579926317 was created by vercel[bot] on 2026-07-23 from 0b1fd126 — the default branch head — a commit with total_count 0 check-runs. The current production deployment 5921830419 was likewise created by vercel[bot], from main's head, with one of eight governed checks.",
+        "adjudication": "The effective control plane possesses, and has exercised, a path to public production that the documented governance does not authorize and cannot observe. Of every finding in this artifact this is the one with a live blast radius, because www.uellix.com answers 200 to anyone.",
+        "severity": "HIGHEST. Drives OD-1 and the production-boundary controls, and is the reason PRODUCTION_BOUNDARY is written as an absolute rather than as guidance."
+      },
+      {
+        "id": "C-6",
+        "title": "Release-affecting configuration is unreachable from the repository, so no repository gate can constrain it.",
+        "governing_clause": "The whole gate architecture of this programme — ods:prestate, ods:scope, ods:poststate, authority:seal:verify — operates on repository content.",
+        "measured_fact": "Neither vercel.json nor vercel.ts exists at the frozen base. Production branch, Git integration behaviour, environment variables and Deployment Protection are dashboard-side only.",
+        "adjudication": "Every machine gate this programme trusts is blind to the surface that actually decides what is deployed and where. This is why the remedies below take the form of SETTINGS mutations with recorded prestate and rollback, and why each one carries a verification step: there is no gate that would otherwise notice if it silently regressed."
+      }
+    ]
+  },
+
+  "ADJUDICATIONS": {
+    "rule": "One entry per question the mission posed. Where the answer is DERIVED it cites what it is derived from. Where it is NOT uniquely derivable it is routed to OWNER_DECISION_REQUIRED and is NOT silently decided here.",
+
+    "A_canonical_integration_branch": {
+      "question": "Which branch is the canonical Commercial V1 integration branch?",
+      "verdict": "integration/commercial-v1",
+      "status": "DERIVED — not an owner decision",
+      "derivation": [
+        "Seven of the nine workflows name integration/commercial-v1 explicitly as a pull_request base; of the remaining two, ci.yml carries an unrestricted pull_request trigger (so it also runs, without naming the branch) and p1a-validation.yml names main alone. No branch other than integration/commercial-v1 and main is named as a pull_request base anywhere in .github/workflows/, and no branch other than integration/commercial-v1 is named as an integration base.",
+        "PRODUCTION_PATH P1 speaks of 'the integration branch' as a distinct, existing thing feeding the default branch.",
+        "Every certified Commercial V1 PR measured in this lane (#197, #201, #202) targets integration/commercial-v1, and the frozen base is that branch's tip."
+      ]
+    },
+
+    "B_default_branch": {
+      "question": "What should the repository default branch be during the remaining Commercial V1 development phase?",
+      "verdict": "NOT DERIVABLE — routed to OD-1",
+      "why_not_derivable": "The frozen authority binds the default branch to the PRODUCTION lineage (P1: integration branch -> default branch, plus a release tag). Naming the integration line itself as default would collapse a lineage the authority keeps deliberately separate. Leaving it as feature/sprint-0-foundation keeps a branch that is 19 commits divergent, carries zero CI on its head, and has previously been deployed to public production. Both readings are defensible and they lead to materially different control planes.",
+      "what_this_artifact_does_instead": "Records the three candidate end-states, their measured consequences and their coupling to Vercel's production branch, and refuses to choose. See OD-1."
+    },
+
+    "C_branches_prohibiting_direct_push": {
+      "question": "Which branches must prohibit direct pushes?",
+      "verdict": "integration/commercial-v1, the repository default branch (whichever OD-1 settles on), and main — all three.",
+      "status": "DERIVED",
+      "derivation": [
+        "integration/commercial-v1 is the canonical integration line (A) and the base of every governed gate; an ungated direct push bypasses the entire battery.",
+        "The default branch is the terminus of the authority's production lineage (P1), and was measured to have been deployed to public production.",
+        "main is the measured SOURCE of the live production deployment and the only branch with a CI push trigger."
+      ],
+      "note": "This states the REQUIREMENT. The mutation that implements it is M-1..M-3 and requires owner confirmation; nothing is applied by this lane."
+    },
+
+    "D_required_checks_before_integration": {
+      "question": "Which exact checks must pass before integration?",
+      "verdict": "The eight governed checks measured on certified candidates, by exact name.",
+      "required_checks": [
+        "Lint, typecheck, test, build",
+        "Golden Journey contract battery",
+        "Canonical LOCAL/CI clean bootstrap proof",
+        "Isolated M2 disposable PostgreSQL proof",
+        "Isolated CE-3 entitlement-grants disposable PostgreSQL proof",
+        "Isolated CL-1 legal-acceptance disposable PostgreSQL proof",
+        "Isolated L1 organization-commercial-acceptance disposable PostgreSQL proof",
+        "Isolated S3 refusal-audit disposable PostgreSQL proof"
+      ],
+      "explicitly_excluded": "'Vercel Preview Comments' MUST NOT be a required check. It was measured present on unverified merge SHAs as well as on verified candidates, so it discriminates nothing; requiring it would add a green that carries no information and would make deployment availability a precondition of verification.",
+      "status": "DERIVED from measurement of the checks actually produced on certified candidates."
+    },
+
+    "E_post_merge_verification_of_the_merge_sha": {
+      "question": "What is required after merge so the exact MERGE SHA itself receives sufficient verification?",
+      "verdict": "The same eight-check battery must execute against the merge commit, triggered by push to integration/commercial-v1, with its checks reported on the merge SHA.",
+      "status": "DERIVED as a REQUIREMENT; its implementation is OUT OF SCOPE here.",
+      "scope_boundary": "Implementing it means editing .github/workflows/**, which this lane is expressly forbidden to do. The requirement is authored; a successor implementation lane must carry it out under its own authority and its own manifest.",
+      "interim_compensating_control": "Until that exists, no release authority may treat the integration tip as verified unless TREE_IDENTITY_CONTROL below has been evaluated and passed for the merge in question.",
+      "alternative_considered_and_not_chosen": "A GitHub merge queue would also close this, by testing the exact prospective merge commit before it lands. It is NOT recommended here over a push trigger, because a merge queue also changes merge mechanics and required-check semantics, and this lane has no authority to adjudicate that trade. Both are recorded so the successor lane can choose on evidence."
+    },
+
+    "F_G_semantic_status_of_an_automatic_preview": {
+      "question": "What is the semantic status of an automatic Vercel Preview created by Git integration? Build evidence, a governed staging deployment, or explicitly NOT one?",
+      "verdict": "EXPLICITLY NOT A GOVERNED COMMERCIAL V1 STAGING DEPLOYMENT. Its highest admissible status is BUILD_EVIDENCE_ONLY — evidence that the tree at that SHA compiles and deploys, and nothing else.",
+      "status": "DERIVED",
+      "grounds": [
+        "It is created by vercel[bot] as a consequence of a Git event, with no governed deployment act, no human confirmation, and no record binding it to any authority.",
+        "It is produced for SHAs carrying zero governed checks — measured on 537487ac and e3f6f075 — so it cannot inherit verification the SHA never received.",
+        "Every staging gate in the frozen authority requires the evidence to cite the exact SHA AND the exact target identifier, arising from a declared act. An artefact that simply appeared cannot satisfy an identity requirement whose purpose is to establish that a named party deployed a named thing on purpose.",
+        "BUILD_EVIDENCE_ONLY is a real and useful status and is deliberately not downgraded to nothing: a failed automatic Preview IS admissible as evidence that a SHA does not build."
+      ],
+      "what_this_does_not_say": "It does not say automatic Previews are harmful, forbidden, or to be removed. It says what they may be CITED as."
+    },
+
+    "H_does_an_automatic_preview_consume_the_PR201_grant": {
+      "question": "Does an automatic Preview consume the 'exactly one deployment/build' authority granted for the PR201 staging-binding sequence?",
+      "verdict": "NO — CONDITIONALLY, and the condition expires.",
+      "status": "CONDITIONAL ON U-4. Must be re-measured by PMV-2 before any actor relies on it.",
+      "the_mechanical_distinguisher": {
+        "derivation": "Taken from PR201's own frozen text, not from a definition invented here.",
+        "step_1": "PR201 BUILD_TIME_INVALIDATION records, as a repository measurement corroborated against Vercel's published documentation: NEXT_PUBLIC_SUPABASE_URL is inlined at BUILD time, and environment-variable changes do not apply to previous deployments, only to new ones.",
+        "step_2": "PR201 PUBLIC_AUTH_URL_CONTRACT records that the value currently configured is INCORRECT — it is the cause of the SUPABASE_AUTH_PROJECT_MISMATCH that made deployment dpl_96J3t4LxRYArRqAKWGxmBHE6gMNi a failure, and PR201 names that deployment for EXCLUSION.",
+        "step_3": "PR201's grant is therefore for exactly ONE build performed AFTER the authorized configuration correction.",
+        "conclusion": "Any automatic Preview built BEFORE the correction carries the incorrect inlined constant and is structurally incapable of satisfying PR201's coherence binding. It is not a competing candidate that happens to lose; it is in a different equivalence class and cannot be the grant's object. So it does not consume the grant."
+      },
+      "the_expiry_this_artifact_exists_to_name": {
+        "statement": "The distinguisher above is TEMPORAL, not structural. It holds only while the configuration remains uncorrected.",
+        "what_happens_at_the_moment_of_correction": "From the instant the authorized environment correction is applied, the NEXT automatic Preview — triggered by any push to the integration branch or any pull request, by an actor who need not know the correction happened — is built WITH the corrected configuration. It would then carry the same exact SHA, the same corrected environment, and the same target=preview classification as the deployment PR201 authorizes.",
+        "the_resulting_hazard": "At that point an automatic Preview is indistinguishable BY CONSTRUCTION from the governed one on every property an observer would naturally check, and could be cited as the D-1 target. That would make a bounded one-deployment grant meaningless not by contradicting it but by rendering its object unidentifiable.",
+        "therefore": "The grant must be protected by IDENTITY rather than by CLASSIFICATION. See I, K, and the ordering constraint in EXECUTION_ORDERING."
+      },
+      "what_this_verdict_is_not": "It is not a finding that automatic Previews are safe in general. It is a finding that they are not currently competing for the PR201 grant, together with the precise statement of when they would begin to."
+    },
+
+    "I_mechanical_distinction_between_the_three_layers": {
+      "question": "What mechanically distinguishes an ordinary Preview, a governed Commercial V1 staging deployment, and a production deployment?",
+      "ordinary_preview": {
+        "vercel_target": "preview",
+        "creator": "vercel[bot]",
+        "cause": "a Git push or pull request",
+        "addressing": "an immutable per-deployment URL, plus a MOVING branch alias for the branch's latest deployment",
+        "governed_act_record": "none exists",
+        "admissible_as": "BUILD_EVIDENCE_ONLY"
+      },
+      "governed_cv1_staging_deployment": {
+        "vercel_target": "preview — IDENTICAL to the ordinary case, and this is the crux",
+        "distinguishing_properties": [
+          "its deployment id was FROZEN and recorded by the governed act BEFORE the deployment was created",
+          "it is bound to one exact Git SHA re-verified immediately before triggering, per PR201 AUTHORIZED_SHA_BINDING_RULE",
+          "it was created AFTER the authorized environment correction, and its creation timestamp is strictly later than the correction's",
+          "it is never addressed through the moving branch alias",
+          "a human confirmation was obtained immediately before it, per PR201 HUMAN_CONFIRMATION"
+        ],
+        "the_honest_weakness": "target=preview does NOT distinguish this from an ordinary Preview. Nor does the SHA, nor the environment, nor Ready status. ONLY the pre-recorded deployment id and the act record distinguish them. Any control that leans on classification instead of identity will admit the wrong deployment, and this artifact says so rather than implying a cleaner separation than the platform provides."
+      },
+      "production_deployment": {
+        "vercel_target": "production",
+        "addressing": "aliased to the custom domain www.uellix.com, measured answering HTTP 200 anonymously",
+        "measured_cause": "automatic Git integration by vercel[bot], NOT manual promotion, on every production deployment this lane observed",
+        "note": "target=production IS a genuine mechanical distinction from both preview layers. The problem with production is not identification; it is that the act which creates it is automatic."
+      }
+    },
+
+    "J_may_automatic_previews_remain_enabled": {
+      "question": "Can automatic integration Preview deployments remain enabled safely?",
+      "verdict": "YES while the configuration remains uncorrected, PROVIDED the K assertions are in force. NOT ESTABLISHED as safe after the correction without either the K assertions being mechanically enforced or the L narrowing being applied.",
+      "status": "The pre-correction half is DERIVED. The post-correction half is routed to OD-3.",
+      "why_not_simply_forbidden": "The mission is right to refuse to prejudge this, and the measurements support the refusal. Automatic Previews are behind Deployment Protection (302 to SSO), consume no repository Actions secrets (total_count 0), and provide genuine value as build evidence and as PR review surface. Disabling them would remove a real signal to solve a citation problem that citation rules solve.",
+      "why_not_simply_permitted": "Because of the expiry recorded in H. Permitting them unconditionally past the correction would leave the PR201 grant's object unidentifiable."
+    },
+
+    "K_assertions_preventing_miscitation": {
+      "question": "If automatic Previews remain enabled, what assertions prevent them from being cited as D-1/M11/staging evidence incorrectly?",
+      "status": "DERIVED. These are the citation rules that make J's 'yes' safe.",
+      "assertions": [
+        {
+          "id": "K-1",
+          "assertion": "IDENTITY BEFORE EXISTENCE. Any deployment cited as governed Commercial V1 staging evidence MUST have had its deployment id recorded by the governed act BEFORE that deployment existed. A deployment id discovered afterwards and then declared to be the governed one is INADMISSIBLE, however well it matches.",
+          "why_it_is_the_load_bearing_one": "It is the only assertion that cannot be satisfied retroactively, and therefore the only one that survives the H expiry."
+        },
+        {
+          "id": "K-2",
+          "assertion": "CREATOR AND ACT. A deployment whose creator is vercel[bot] and for which no governed act record exists is INELIGIBLE as staging evidence, regardless of target, SHA, status or environment coherence."
+        },
+        {
+          "id": "K-3",
+          "assertion": "NO MOVING ADDRESS. The branch alias — and any other address that tracks 'the latest deployment of a branch' — MUST NOT be cited as an evidence target. Evidence cites the immutable deployment id. An evidence reference that silently re-points when the next merge lands is not evidence."
+        },
+        {
+          "id": "K-4",
+          "assertion": "TEMPORAL ORDERING. Governed staging evidence must record that the deployment's creation timestamp is strictly AFTER the timestamp of the authorized environment correction, both recorded independently."
+        },
+        {
+          "id": "K-5",
+          "assertion": "NO INHERITANCE OF VERIFICATION. A Preview of SHA X does not inherit any check that ran against SHA Y, including the candidate head whose content is identical. Where tree-identity is relied upon it must be ASSERTED explicitly under TREE_IDENTITY_CONTROL, never assumed."
+        },
+        {
+          "id": "K-6",
+          "assertion": "BUILD EVIDENCE STAYS BUILD EVIDENCE. An automatic Preview may be cited ONLY for the proposition that the SHA built and deployed. It may not be cited for D-1, M11, S4, S6, STAGING_ALIGNED, or any environment-coherence proposition."
+        }
+      ]
+    },
+
+    "L_if_narrowing_is_required": {
+      "question": "If automatic Previews must be disabled or narrowed, what exact future setting mutation is required?",
+      "status": "The SHAPE is recorded as M-6. Whether it is REQUIRED is OD-3.",
+      "candidate_mutations_in_increasing_severity": [
+        "Leave automatic Previews enabled and rely on K-1..K-6 as citation discipline. Zero platform mutation. Weakest mechanically, because nothing prevents a careless citation — it only makes it wrong.",
+        "Configure an Ignored Build Step for the integration branch so pushes to it do not build, leaving pull-request Previews intact. Preserves PR review value; removes the post-merge automatic Preview that most resembles a staging deployment.",
+        "Disable automatic Git deployments for the integration branch specifically.",
+        "Disable automatic Git deployments for the project. Recorded for completeness and NOT recommended: it would also remove PR build evidence, which is a genuine loss and solves nothing the narrower options do not."
+      ],
+      "why_this_is_not_decided_here": "The choice trades mechanical strength against losing a real signal, and it depends on U-5 (the current toggles) which this lane could not read. Deciding it silently would be exactly the kind of unratified semantic choice the mission forbids."
+    },
+
+    "M_integration_advancing_after_candidate_certification": {
+      "question": "What should happen when integration advances after candidate certification?",
+      "verdict": "The certification attaches to a TREE, not to a branch. If the merge commit's tree differs from the certified candidate's tree, the certification does NOT carry over and re-certification is required.",
+      "status": "DERIVED",
+      "TREE_IDENTITY_CONTROL": {
+        "rule": "Before an integration merge commit may be treated as covered by its candidate's certification, assert tree(merge commit) == tree(the head SHA GitHub records as merged for that PR).",
+        "on_equal": "The merge is CONTENT-COVERED by the candidate battery. This is a compensating control, explicitly NOT a substitute for E: the merge SHA still carries no check of its own, and this fact must be stated wherever the coverage is cited.",
+        "on_unequal": "FAIL CLOSED. The merge tree is a state no CI run evaluated. Re-certification against the merge SHA is required before any release authority may rely on it.",
+        "comparand_discipline": "The candidate head is the head GitHub records as merged for that pull request, obtained from the pull request itself — NOT a head recalled from an earlier lane. This lane made exactly that error against PR #197 and corrected it on measurement; the rule exists so the next reader does not repeat it.",
+        "known_limitation": "Tree-identity proves content coverage. It does NOT cure C-2: the candidate's own evidence came from a merge-ref run, which the frozen authority refuses. Tree-identity therefore raises the floor without reaching the bar."
+      }
+    },
+
+    "N_revalidating_the_exact_merged_sha": {
+      "question": "How is the exact merged SHA revalidated?",
+      "verdict": "Primary: a push-triggered execution of the eight-check battery on integration/commercial-v1, reporting on the merge SHA (E). Interim: TREE_IDENTITY_CONTROL (M), cited with its limitation stated.",
+      "prohibited_substitutes": [
+        "Citing the candidate's green checks as though they were the merge SHA's — they are reported on a different SHA and were produced against a merge-ref.",
+        "Citing the automatic Preview's Ready status — it is a deployment signal, not a verification signal (F/G).",
+        "Citing 'Vercel Preview Comments' as a check — it was measured on unverified SHAs and discriminates nothing (D)."
+      ]
+    },
+
+    "O_controls_required_before_the_github_line_may_be_called_protected": {
+      "question": "What controls must exist before any release authority can treat the GitHub line as protected?",
+      "verdict": "All four below, together. Until all four hold, any release authority asserting a protected GitHub line is asserting something measured false.",
+      "controls": [
+        "O-1 EXISTENCE: branch protection or a repository ruleset is in force on integration/commercial-v1, the default branch and main, prohibiting direct pushes and force pushes.",
+        "O-2 REQUIRED CHECKS: the eight checks of D are configured as required, by exact name, with 'Vercel Preview Comments' excluded.",
+        "O-3 EXACT-SHA COVERAGE: E is implemented, so that the required checks are checks the MERGE SHA actually received rather than checks a different SHA received.",
+        "O-4 RE-MEASUREMENT AT DECLARATION TIME: protection is re-measured at the moment of each release declaration, not once at setup. A setting measured months earlier is an assumption wearing a measurement's clothes, and AT-U-03's own phrasing — 'a hosted repository-settings observation' — is satisfied by an observation, not by a memory of one."
+      ],
+      "note_on_O-4": "This programme has repeatedly measured that a frozen count or a frozen status goes stale silently. Protection is hosted, mutable, and invisible to every repository gate (C-6). It is exactly the class of fact that must be re-observed rather than inherited."
+    },
+
+    "P_rollback_for_every_control_plane_mutation": {
+      "question": "What rollback exists for every future control-plane setting mutation?",
+      "verdict": "Every mutation in FUTURE_MUTATIONS carries a mandatory prestate capture and an exact inverse. A mutation whose prestate was not captured has no rollback and MUST NOT be executed.",
+      "general_rule": "Capture prestate -> confirm with owner -> mutate -> verify -> record. If verification fails, apply the recorded inverse immediately and STOP; do not attempt a second variant of the mutation in the same sitting.",
+      "the_one_that_has_no_clean_inverse": "Repository visibility. Making a public repository private does NOT retract what has already been fetched, forked, cached or indexed, and specifically does not un-leak secret-scanning alert 1. Its 'rollback' restores the setting, never the state. This is recorded here because treating it as reversible is the error that makes it dangerous."
+    },
+
+    "Q_human_confirmation_points": {
+      "question": "Which changes require explicit owner/human confirmation immediately before execution?",
+      "verdict": "EVERY mutation in FUTURE_MUTATIONS. There is no control-plane mutation in this artifact that a successor may perform on standing authority.",
+      "rationale": "C-6 established that no repository gate observes this surface. Where no machine gate can catch an error, the human confirmation is not ceremony — it is the only control present.",
+      "elevated_confirmations": "M-4 (default branch), M-5 (visibility) and M-7 (production branch) additionally require the owner to confirm they understand the SPECIFIC coupled consequence recorded with each, because each can change what is publicly served or what protection is available, and each has a measured precedent in this repository for doing so unexpectedly.",
+      "silence_is_not_consent": "An absent, ambiguous, or differently-scoped answer is NOT confirmation. Confirmation covers the one mutation it was asked about and does not transfer to a retry, a variant, or the next mutation in the sequence."
+    }
+  },
+
+  "REPOSITORY_VISIBILITY_ADJUDICATION": {
+    "measured": "public. Re-measured in this lane; the prior audit's observation is CONFIRMED.",
+    "does_existing_commercial_v1_governance_require_a_privacy_state": {
+      "verdict": "NO",
+      "method": "The ENTIRE frozen authority was searched, not only SECURITY_STOP_LINES. The literals 'visibility', 'public repository', 'private repo', 'repository private' and 'make private' each occur ZERO times in the document.",
+      "stated_limit_of_that_measurement": "A zero count over literals is evidence, not proof: the obligation could in principle be expressed in words none of those literals capture. The measurement is therefore paired with a READ of SECURITY_STOP_LINES for any clause that governs exposure, which found the one adjacent clause quoted below and no visibility obligation. A certifier should re-run both halves rather than accept either alone.",
+      "what_was_found_instead": "One adjacent clause: 'The public verification surface may not be exposed at PILOT_READY or beyond without a rate limit and an adjudicated disclosure decision.' That governs an exposed VERIFICATION SURFACE at a later stage. It is not a repository-visibility requirement and must not be stretched into one.",
+      "conclusion": "No frozen clause requires the repository to be private, and none permits it to be public either. The matter is simply unaddressed."
+    },
+    "does_secrets_or_history_exposure_exist": {
+      "verdict": "YES — one open item of genuine concern, and three of low concern.",
+      "genuine": "Secret-scanning alert 1 is OPEN, flagged publicly_leaked, and is the only one of the four whose value does not have an obviously synthetic shape. Measured: the value is ABSENT from the frozen base tree but STILL PRESENT in the historical blob at the commit the alert names, and that commit is reachable in the public repository.",
+      "the_finding_that_matters": "Removal from the tree already happened and did NOT end the exposure. In a public repository, tree-removal is not remediation. Only rotation is.",
+      "low_concern": "Alerts 3 and 4 sit in a declared synthetic-credentials fixture and an eval test with an evidently placeholder value; alert 2 was resolved by the owner as used_in_tests. None is treated as urgent here, and none is dismissed on shape alone — each remains an owner call.",
+      "a_bounding_measurement": "Repository Actions secrets total_count is 0, so the public-repository-plus-pull_request-workflow combination does not expose a repository secret to an untrusted pull request. This narrows the visibility question to history exposure, which is what the alert-1 finding is."
+    },
+    "classification_of_the_visibility_question": {
+      "release_control_requirement": "NO. No release gate, stage or clause in the frozen authority is blocked by the repository being public, and this artifact does not invent one.",
+      "owner_choice": "YES, as to visibility itself. It is a business and disclosure decision, routed to OD-2.",
+      "separate_security_adjudication": "YES, and independently of OD-2. Alert 1 requires a rotation decision that does NOT depend on, and must NOT wait for, the visibility decision.",
+      "the_distinction_that_must_not_collapse": "Making the repository private is NOT a remedy for alert 1 and must never be executed as though it were. The credential has been publicly retrievable since 2026-07-06. Changing visibility changes future access; it does not retract past access. If these two decisions are merged, the likely outcome is a visibility change that feels like remediation and a credential that is never rotated.",
+      "ordering_constraint": "OD-2 is additionally blocked by U-3: making the repository private could remove the availability of branch protection on a free personal account, which would defeat OD-4. Visibility must not be changed before the plan tier is established."
+    },
+    "owner_ratification_required": "YES — OD-2 for visibility, and a separate security adjudication for alert 1. Neither is decided by this artifact."
+  },
+
+  "INTENDED_POSTSTATE": {
+    "rule": "The end state this authority is written toward. It is NOT a description of any current state, and no part of it has been applied.",
+    "github": [
+      "integration/commercial-v1 prohibits direct pushes and force pushes and requires the eight named checks.",
+      "The default branch — whichever OD-1 settles on — prohibits direct pushes and force pushes.",
+      "main prohibits direct pushes and force pushes, and is either retired from its production role or confirmed in it by OD-1.",
+      "The merge SHA on the integration line receives the eight-check battery by push trigger (implemented by a successor lane, not here).",
+      "Repository visibility is whatever OD-2 ratifies, executed only after U-3 is resolved.",
+      "Secret-scanning alert 1 is adjudicated and, if the value is real, rotated."
+    ],
+    "vercel": [
+      "Production deployment is a governed act, not an automatic consequence of a Git push to any branch.",
+      "Automatic Preview behaviour is whatever OD-3 ratifies, with K-1..K-6 in force either way.",
+      "The governed Commercial V1 staging deployment, when it is created under PR201, is identified by a deployment id frozen before its creation, and is never addressed through the branch alias."
+    ],
+    "explicitly_not_in_the_poststate": [
+      "No claim that D-1 is verified.",
+      "No claim that STAGING_ALIGNED, M11, S4 or S6 is satisfied.",
+      "No new alias or custom domain.",
+      "No change to any environment variable — that surface belongs to PR201, not here.",
+      "No Supabase change of any kind."
+    ]
+  },
+
+  "FUTURE_MUTATIONS": {
+    "rule": "Each mutation is a SEPARATE authorized act with its own prestate capture, confirmation, verification and rollback. None is authorized to be executed by the lane that authored this artifact. None may be batched with another. A mutation whose prestate capture fails is NOT executed.",
+    "mutations": [
+      {
+        "id": "M-1",
+        "target": "GitHub branch protection or ruleset on integration/commercial-v1",
+        "change": "Prohibit direct pushes and force pushes; require a pull request; require the eight checks named in ADJUDICATIONS.D by exact name.",
+        "prestate_to_capture": "GET /repos/{owner}/{repo}/branches/integration%2Fcommercial-v1/protection and GET /repos/{owner}/{repo}/rulesets, recorded verbatim. Measured at authoring: protection ABSENT (404), rulesets [].",
+        "verification": "Re-read both endpoints; assert protection present, assert the required-checks set equals the eight names exactly with no extra and none missing, and assert 'Vercel Preview Comments' is NOT among them.",
+        "rollback": "Delete the protection rule or ruleset created, restoring the captured prestate — which at authoring time is the absence of any rule.",
+        "confirmation": "REQUIRED immediately before execution.",
+        "hazard_to_state_at_confirmation": "Requiring checks that a push-triggered run does not produce could block merges entirely. M-1 must be executed only after the successor lane implementing E has confirmed which checks actually report on which SHA, or with required checks limited to those measured to report on the PR head."
+      },
+      {
+        "id": "M-2",
+        "target": "GitHub branch protection or ruleset on the repository default branch",
+        "change": "Prohibit direct pushes and force pushes; require a pull request.",
+        "prestate_to_capture": "The same two endpoints for the default branch. Measured at authoring: ABSENT (404).",
+        "verification": "Re-read; assert present.",
+        "rollback": "Delete what was created.",
+        "confirmation": "REQUIRED. Must not be executed before OD-1 settles which branch is the default, or it will protect a branch that is about to stop being the one that matters."
+      },
+      {
+        "id": "M-3",
+        "target": "GitHub branch protection or ruleset on main",
+        "change": "Prohibit direct pushes and force pushes.",
+        "prestate_to_capture": "The same two endpoints for main. Measured at authoring: ABSENT (404).",
+        "verification": "Re-read; assert present.",
+        "rollback": "Delete what was created.",
+        "confirmation": "REQUIRED.",
+        "why_main_is_included": "main's head is the SHA currently served at www.uellix.com. An unprotected branch whose tip is live production is the shortest measured path from a direct push to a public production change."
+      },
+      {
+        "id": "M-4",
+        "target": "GitHub repository default branch",
+        "change": "Whatever OD-1 ratifies. NOT specified here.",
+        "prestate_to_capture": "default_branch = feature/sprint-0-foundation, measured at authoring.",
+        "verification": "Re-read the repository object; assert default_branch equals the ratified value. THEN re-read the Vercel production branch and assert it is unchanged.",
+        "rollback": "Set default_branch back to the captured value.",
+        "confirmation": "ELEVATED. The owner must confirm they understand the coupling below.",
+        "coupled_consequence_that_must_be_stated_at_confirmation": "A Vercel project's production branch commonly follows the repository default branch. U-1 means this lane could NOT read the current production branch setting. Changing the default branch could therefore change what is deployed to www.uellix.com. M-4 MUST be preceded by establishing U-1, and its verification step explicitly re-checks the production branch afterwards."
+      },
+      {
+        "id": "M-5",
+        "target": "GitHub repository visibility",
+        "change": "Whatever OD-2 ratifies. NOT specified here.",
+        "prestate_to_capture": "visibility = public, private = false, measured at authoring.",
+        "verification": "Re-read the repository object. If made private, ADDITIONALLY re-read branch protection and rulesets and assert they still exist and are still enforced.",
+        "rollback": "Restore the captured visibility — while recording that this restores the SETTING and not the STATE.",
+        "confirmation": "ELEVATED.",
+        "blocking_precondition": "U-3 MUST be resolved first. On a free personal account, making the repository private may remove the availability of branch protection and rulesets, which would silently defeat M-1..M-3. Executing M-5 before U-3 risks trading a measured protection for an unmeasured one.",
+        "must_be_stated_at_confirmation": "This mutation is NOT remediation for secret-scanning alert 1 and must not be presented or recorded as such."
+      },
+      {
+        "id": "M-6",
+        "target": "Vercel automatic Git deployments for the integration branch",
+        "change": "Whatever OD-3 ratifies, chosen from the ladder in ADJUDICATIONS.L. NOT specified here.",
+        "prestate_to_capture": "The project's Git integration settings and any Ignored Build Step, read in full before any change. UNMEASURED at authoring — see U-5. The capture is therefore MANDATORY and blocking: without it M-6 has no rollback and must not be executed.",
+        "verification": "Push a commit to a throwaway branch and assert the resulting deployment behaviour matches the intended setting; then assert the integration branch behaves as intended on its next legitimate advance.",
+        "rollback": "Restore the captured settings verbatim.",
+        "confirmation": "REQUIRED.",
+        "timing_constraint": "If OD-3 selects any narrowing, it MUST be applied BEFORE the PR201 environment correction, not after. Applying it afterwards leaves an open window in which an automatic Preview is built with corrected configuration and becomes indistinguishable from the governed deployment — the exact hazard named in ADJUDICATIONS.H."
+      },
+      {
+        "id": "M-7",
+        "target": "Vercel production branch / automatic production deployment",
+        "change": "Whatever OD-1 ratifies for the production boundary. NOT specified here.",
+        "prestate_to_capture": "The current production branch setting and automatic-deployment behaviour. UNMEASURED at authoring — see U-1. Capture is MANDATORY and blocking.",
+        "verification": "Assert that a push to the previously-auto-deploying branch no longer produces a production deployment, and that www.uellix.com continues to serve the intended deployment throughout.",
+        "rollback": "Restore the captured settings verbatim.",
+        "confirmation": "ELEVATED.",
+        "must_be_stated_at_confirmation": "www.uellix.com is LIVE and answers 200 anonymously. Any error in this mutation is publicly visible immediately. It is the only mutation in this artifact whose failure mode is a visible outage."
+      }
+    ]
+  },
+
+  "EXECUTION_ORDERING": {
+    "rule": "The order is load-bearing. Several mutations are safe in one order and harmful in another, for reasons recorded against each. A successor that reorders them must adjudicate the reorder explicitly.",
+    "ordered_sequence": [
+      "0. Re-run FRESHNESS and STALE_STATE_HANDLING. Every measurement in this artifact is a hosted observation with a timestamp, not a standing fact.",
+      "1. Resolve U-1 (Vercel production branch) and U-3 (GitHub plan tier). Both are blocking preconditions and neither requires a mutation.",
+      "2. Obtain OD-1 (branch roles and the production boundary). Nothing that protects or renames a branch may run before the branch roles are settled.",
+      "3. M-3 (protect main) and M-1 (protect integration), in that order. main first because its tip is live production.",
+      "4. M-7 (production boundary), once OD-1 has settled it and U-1 is known.",
+      "5. M-4 (default branch), if OD-1 calls for it — after U-1, so the production coupling is visible rather than discovered.",
+      "6. M-2 (protect the default branch), after M-4, so the protection lands on the branch that will actually be the default.",
+      "7. OD-3 and, if it selects narrowing, M-6 — BEFORE any PR201 environment correction.",
+      "8. The PR201 staging-binding sequence, under ITS OWN authority and not this one.",
+      "9. OD-2 and M-5 (visibility), last among the control-plane mutations and only after U-3, because it is the one mutation whose effect cannot be undone.",
+      "10. The alert-1 security adjudication, which runs on its own track and is NOT gated on any of the above."
+    ],
+    "the_two_orderings_that_matter_most": {
+      "narrowing_before_correction": "M-6 before the PR201 correction. Reversed, there is a window in which an automatic Preview built with corrected configuration is indistinguishable from the governed deployment (ADJUDICATIONS.H).",
+      "plan_tier_before_visibility": "U-3 before M-5. Reversed, protection secured by M-1..M-3 may be silently removed by the visibility change (U-3, M-5)."
+    }
+  },
+
+  "PRODUCTION_BOUNDARY": {
+    "rule": "ABSOLUTE. Nothing in this artifact authorizes any production act, and no reading of it may be construed to.",
+    "not_authorized": [
+      "Deploying to production.",
+      "Promoting any deployment to production.",
+      "Creating, changing or removing any alias or domain, including www.uellix.com.",
+      "Changing the production branch — M-7 records the SHAPE of that mutation and its rollback; it does not perform it and does not specify its value.",
+      "Changing any production environment variable.",
+      "Any Supabase contact or change whatsoever, in any environment.",
+      "Declaring any production stage, gate or readiness."
+    ],
+    "measured_state_that_makes_this_boundary_load_bearing": "www.uellix.com answers HTTP 200 anonymously and is served from main's head, a commit carrying one of eight governed checks. A previous production deployment was served from a commit with zero checks. The boundary is written as an absolute because the measured distance between an ordinary branch push and a public production change is currently zero governed acts."
+  },
+
+  "FAIL_CLOSED_BEHAVIOR": {
+    "general_rule": "Every branch below is a STOP, not a diagnosis to be worked around. No item here may be resolved by choosing the more convenient source, by treating a discrepancy as benign, or by narrowing a gate to obtain a pass — the latter being forbidden outright by the parent's RULE_NO_GATE_WEAKENING.",
+    "branches": [
+      "A measured value differs from MEASURED_PRESTATE -> STOP. Re-measure, record the delta, and re-adjudicate. Do NOT proceed on the authored value.",
+      "A prestate capture fails or is incomplete for any mutation -> STOP. That mutation has no rollback and must not be executed.",
+      "A verification step after a mutation fails -> apply the recorded inverse IMMEDIATELY, then STOP. Do not attempt a variant in the same sitting.",
+      "An UNKNOWN that a step depends on is still unresolved -> STOP. Specifically: U-1 blocks M-4 and M-7; U-3 blocks M-5; U-4 blocks reliance on the H adjudication; U-5 blocks M-6.",
+      "An owner decision is absent, ambiguous, or answers a differently-scoped question -> STOP. Silence is not consent.",
+      "A required check cannot be configured because no run reports it on the relevant SHA -> STOP and escalate to the successor lane implementing E. Do NOT drop the check to make the configuration succeed.",
+      "TREE_IDENTITY_CONTROL returns unequal -> STOP. The merge carries content no CI evaluated; re-certification is required.",
+      "Any step would require editing a frozen or sealed artifact -> STOP unconditionally."
+    ]
+  },
+
+  "STALE_STATE_HANDLING": {
+    "rule": "Every hosted fact in this artifact is an OBSERVATION WITH A DATE, never a standing property. Hosted control-plane state is mutable by parties and processes this repository cannot see (C-6).",
+    "required_of_any_consumer": [
+      "Re-measure branch protection, rulesets, default branch and visibility immediately before acting, and immediately before any release declaration (O-4).",
+      "Re-measure the integration head and re-run the freshness gate; MEASURED_PRESTATE is pinned to 537487ac / tree 7228f833 and says nothing about any later commit.",
+      "Re-measure the production deployment and the SHA it serves before relying on any statement in PRODUCTION_BOUNDARY's measured rationale.",
+      "Treat every check-run count in this artifact as observed on 2026-09-21 and re-derive it rather than cite it."
+    ],
+    "what_staleness_must_never_trigger": "A stale value is a STOP and a re-measurement. It is never grounds to relax a control on the reasoning that the control was written against an older state."
+  },
+
+  "NO_SECRET_POLICY": {
+    "rule": "No secret VALUE appears anywhere in this artifact or its companion manifest, and none may be added by any successor citing them.",
+    "specifically": [
+      "No environment variable value, in any environment.",
+      "No database URL, connection string, password or token.",
+      "No leaked credential value from any secret-scanning alert. Alert 1 is referenced by alert number and by the class of file it sits in. Its value, its line and its commit are deliberately NOT recorded: copying a leaked value into an append-only governance artifact creates a second durable public copy of it to solve a problem that only rotation solves.",
+      "No Vercel or GitHub token."
+    ],
+    "what_IS_recorded_and_why_it_is_not_secret": "Project id prj_3NplDjQAEU6nvFoRZEdnNOAT3ThJ, deployment ids, GitHub deployment ids, commit SHAs, branch names and public URLs. These are non-secret identifiers, and the exact-identity discipline this programme requires is impossible without them.",
+    "evidence_emission_rule": "Any evidence produced under this authority is subject to the same rule. An evidence packet that would have to contain a secret value to be complete is INCOMPLETE BY DESIGN and must cite the secret by name and location, never by value."
+  },
+
+  "EVIDENCE_REQUIREMENTS": {
+    "for_every_future_mutation": [
+      "The prestate, read from the live control plane and recorded verbatim before the change.",
+      "The exact operation performed, in a form a reader could repeat.",
+      "The owner confirmation: what was asked, and the answer, in the owner's own words.",
+      "The poststate, re-read from the live control plane after the change — never assumed from the operation having returned success.",
+      "The timestamp of each of the above.",
+      "The rollback that was available at the moment of execution."
+    ],
+    "for_any_deployment_cited_as_governed_staging_evidence": [
+      "The deployment id, recorded BEFORE the deployment existed (K-1).",
+      "The exact Git SHA, re-verified immediately before the act (PR201 AUTHORIZED_SHA_BINDING_RULE).",
+      "The creating act and actor, demonstrating it was not vercel[bot] acting on a Git event (K-2).",
+      "Creation timestamp strictly after the environment correction's timestamp (K-4).",
+      "The immutable per-deployment address — never the branch alias (K-3)."
+    ],
+    "prohibited_evidence_forms": [
+      "A branch name where a SHA is required.",
+      "A moving alias where an immutable deployment id is required.",
+      "A check-run on one SHA offered as evidence for another (K-5).",
+      "'Vercel Preview Comments' offered as a verification check.",
+      "An automatic Preview offered as staging, D-1, M11, S4, S6 or environment-coherence evidence (K-6)."
+    ]
+  },
+
+  "RELATIONSHIP_TO_PR201": {
+    "what_PR201_grants": "A bounded, non-transferable permission to correct three branch-scoped Preview environment variables and to create EXACTLY ONE new Preview deployment afterwards, bound to one exact SHA, solely so D-1 can be measured.",
+    "this_artifact_does_not_touch_that_grant": "No environment variable is named for change here, no deployment is authorized here, and the one-deployment bound is neither widened nor narrowed. PR201's EXPLICIT_NON_AUTHORIZATIONS remain in force verbatim.",
+    "what_this_artifact_adds": "The identity discipline that keeps PR201's grant MEANINGFUL once automatic Previews stop being distinguishable from it — K-1..K-6 and the ordering constraint that M-6 precede the correction.",
+    "the_precise_interaction": "PR201 correctly bounds the NUMBER of authorized deployments. It does not, and at its authoring time did not need to, bound the number of deployments the PLATFORM creates by itself. This artifact measures that the platform creates one for every push and every merge, and supplies the identification rule PR201 would otherwise depend on implicitly.",
+    "no_reinterpretation": "Nothing here reinterprets PR201's custom_alias_required = NO, its D1_PROOF_CONTRACT, its HOSTED_CATALOG_OBSERVATION_DISPOSITION, or its M11_S6_BOUNDARY. Where this artifact and PR201 could be read to conflict, PR201 controls and the consumer STOPS."
+  },
+
+  "RELATIONSHIP_TO_EXACT_SHA_CI": {
+    "summary": "The frozen authority requires exact-SHA evidence with no merge-ref substitution. The repository's governed battery is pull_request-triggered, therefore executes against a merge-ref and reports against the PR head — and the merge SHA that becomes the integration line receives no governed check at all.",
+    "three_distinct_SHAs_that_are_routinely_conflated": [
+      "The PR HEAD SHA — where the checks are REPORTED.",
+      "refs/pull/N/merge — what the checks actually RAN against.",
+      "The merge commit SHA — what actually BECOMES the integration line, and what Vercel deploys."
+    ],
+    "why_this_matters_more_than_it_looks": "All three are green-adjacent and all three are routinely called 'the SHA'. A release statement that does not say WHICH is not precise enough to be checked, and the frozen authority's insistence on exact-SHA identity is aimed at exactly this.",
+    "current_mitigation_and_its_ceiling": "TREE_IDENTITY_CONTROL establishes that the merge CONTENT was covered. It does not make the merge SHA verified, and it does not cure the merge-ref defect in the candidate's own evidence (C-2)."
+  },
+
+  "RELATIONSHIP_TO_AUTOMATIC_PREVIEW_DEPLOYMENTS": {
+    "summary": "Automatic Previews are real, useful, currently protected by Deployment Protection, and are NOT governed staging deployments. They are admissible as build evidence and inadmissible for every environment-coherence proposition.",
+    "the_finding_that_required_this_artifact": "They do not currently compete with PR201's grant, for a mechanical reason drawn from PR201's own text — and that reason expires at the moment the authorized environment correction is applied.",
+    "the_remedy_chosen": "Identity, not classification. A governed deployment is the one whose id was written down before it existed. Every other property an observer would check — target, SHA, environment, Ready status — is one an automatic Preview can also have.",
+    "what_was_deliberately_not_done": "Automatic Previews were NOT declared forbidden. The mission required measuring their behaviour rather than prejudging it, and the measurements — Deployment Protection enabled, zero repository Actions secrets, genuine build-evidence value — do not support a blanket prohibition."
+  },
+
+  "OWNER_DECISION_REQUIRED": {
+    "rule": "Each decision below is a SEMANTIC choice that cannot be uniquely derived from current authority plus measurement. None is decided here. This artifact's final state is AUTHORED_AWAITING_OWNER_RATIFICATION because these are open.",
+    "decisions": [
+      {
+        "id": "OD-1",
+        "decision": "The branch role model for the remainder of Commercial V1: which branch is the default, which branch is the production source, and what relationship main has to either.",
+        "why_it_cannot_be_derived": "The frozen authority's P1 binds production to 'the default branch' via an integration-to-default-branch lineage. Measurement finds the default branch is feature/sprint-0-foundation, 19 commits divergent with zero CI on its head, while production is actually served from main. Making the authority's text true and making the measured behaviour safe point at different branches, and only the owner can say which of the two is the mistake.",
+        "options_with_measured_consequences": [
+          "Keep feature/sprint-0-foundation as default and treat main as the production line. Preserves history; leaves the authority's P1 lineage pointing at a branch that does not serve production, so C-4 persists.",
+          "Make integration/commercial-v1 the default. Aligns the default with where work actually happens; collapses the integration/default distinction that P1 relies on, and risks coupling the integration line directly to Vercel's production branch (U-1).",
+          "Make main the default and keep integration/commercial-v1 feeding it. Matches the measured production source and P1's shape most closely; requires reconciling the 19 divergent commits on feature/sprint-0-foundation, which are not in the integration line and whose disposition is unknown."
+        ],
+        "blocking": "M-2, M-4, M-7 and step 2 of EXECUTION_ORDERING."
+      },
+      {
+        "id": "OD-2",
+        "decision": "Repository visibility for the remainder of Commercial V1.",
+        "why_it_cannot_be_derived": "No frozen clause requires either state. It is a business and disclosure judgement.",
+        "must_be_understood_before_deciding": [
+          "Visibility is NOT remediation for secret-scanning alert 1. The exposure is historical and rotation is the only remedy.",
+          "U-3 is unresolved: making the repository private may remove branch protection availability on a free personal account, defeating OD-4's controls.",
+          "Repository Actions secrets total_count is 0, so the public state does not currently expose a repository secret to untrusted pull requests."
+        ],
+        "blocking": "M-5, and blocked in turn by U-3."
+      },
+      {
+        "id": "OD-3",
+        "decision": "Whether automatic Vercel Preview deployments remain unchanged, are narrowed, or are disabled for the integration branch — selected from the ladder in ADJUDICATIONS.L.",
+        "why_it_cannot_be_derived": "It trades mechanical strength against the loss of a real build-evidence signal, and depends on U-5, which this lane could not read.",
+        "timing": "Must be decided BEFORE the PR201 environment correction, per EXECUTION_ORDERING step 7 — after it, the window described in ADJUDICATIONS.H is already open.",
+        "blocking": "M-6."
+      },
+      {
+        "id": "OD-4",
+        "decision": "Ratification that the four controls in ADJUDICATIONS.O are the bar the Commercial V1 GitHub line must clear before any release authority may describe it as protected.",
+        "why_it_is_put_to_the_owner": "This artifact DERIVES the four controls, but adopting them as the programme's bar is a governance commitment with cost, and AT-U-03's resolution is owner-visible enough that it should be ratified rather than assumed.",
+        "blocking": "Any future release authority that asserts a protected GitHub line."
+      },
+      {
+        "id": "OD-5",
+        "decision": "The security adjudication of secret-scanning alert 1: whether the value is real, and if so its rotation and any disclosure obligation.",
+        "why_it_is_separate": "It is a security decision, not a release-control one, and it is NOT gated on OD-1, OD-2, OD-3 or OD-4. Recorded here because this lane measured it, not because this lane owns it.",
+        "must_not_happen": "It must not be closed by making the repository private, and it must not be deferred behind the visibility decision."
+      }
+    ]
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Enumerated so no successor can read this artifact as conferring any of them. The list is exhaustive of what was considered and refused, and silence elsewhere is not a grant.",
+    "non_authorizations": [
+      "Changing repository visibility.",
+      "Changing the default branch.",
+      "Creating, editing or deleting any branch protection rule.",
+      "Creating, editing or deleting any repository ruleset.",
+      "Changing any GitHub Actions setting.",
+      "Changing any required check.",
+      "Changing any merge policy or merge setting.",
+      "Editing any file under .github/workflows/**.",
+      "Changing any Vercel project setting.",
+      "Changing the Vercel Git integration or any automatic-deployment toggle.",
+      "Changing any deployment setting.",
+      "Changing, adding or removing any environment variable in any environment.",
+      "Binding any branch to any environment.",
+      "Creating any deployment, in any environment.",
+      "Promoting any deployment.",
+      "Creating, changing or removing any alias or domain.",
+      "Contacting or mutating Supabase in any way.",
+      "Modifying any application code.",
+      "Modifying any existing historical or frozen authority.",
+      "Implementing any decision authored here.",
+      "Allocating, inventing or implying any ODS or W2 identifier or lineage version.",
+      "Declaring D-1, M11, S4, S6, STAGING_ALIGNED or any stage or gate state.",
+      "Treating any automatic Preview as a governed staging deployment.",
+      "Citing this artifact as evidence that the GitHub line is protected — it measures the opposite."
+    ],
+    "on_ods_lineage": "No ODS or W2 identifier is allocated, requested or implied. NEW_ODS_REQUIRED records the measured scope classification of this lane's write set; it does not reserve a lineage, and any future allocation belongs to the governed allocator alone."
+  },
+
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+    "method": "This lane's two write-set paths were classified by EXECUTING the repository's own scope gate (pnpm ods:scope) against the frozen base, rather than by reading DEFAULT_PROTECTED_PATTERNS and reasoning about it.",
+    "result": "Both paths are ORDINARY. The gate reported CHANGED_FILE_COUNT=2, PROTECTED_AUTHORITY=NONE, PROTECTED_PATH_VIOLATIONS=0, UNAUTHORIZED_PATHS=0, ODS_SCOPE=PASS under a single ordinary --allow of docs/ops/release/**.",
+  "corroborating_read_of_the_pattern_list": "DEFAULT_PROTECTED_PATTERNS carries exactly seven entries — docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. docs/ops/release/** matches none of them. This reading CORROBORATES the executed classification and does not replace it.",
+    "PROTECTED_AUTHORITY": "NONE",
+    "consistency_with_precedent": "The two immediately preceding authorities in this directory measured the same classification for the same reason.",
+    "reversal_condition": "If a future measurement finds this lane's write set requires ANY protected path, this verdict is void and the lane must stop and escalate rather than widen an allowlist."
+  },
+
+  "self_check": {
+    "write_set_is_exactly_two_documents": true,
+    "no_code_written": true,
+    "no_test_written": true,
+    "no_workflow_file_touched": true,
+    "no_github_setting_changed": true,
+    "no_vercel_setting_changed": true,
+    "no_deployment_created_or_promoted": true,
+    "no_alias_or_domain_touched": true,
+    "no_environment_variable_read_or_written": true,
+    "no_supabase_contact_of_any_kind": true,
+    "no_ods_artifact_touched": true,
+    "no_frozen_authority_edited": true,
+    "no_ods_or_w2_lineage_allocated_or_implied": true,
+    "no_secret_value_present_anywhere_in_this_lane": true,
+    "every_hosted_fact_measured_read_only_on_the_stated_date": true,
+    "every_quoted_parent_clause_re_read_at_AS_OF_TREE_not_recalled": true,
+    "amendment_checked_for_supersession_before_any_parent_clause_was_cited": true,
+    "unmeasurable_facts_recorded_as_UNKNOWN_not_assumed": true,
+    "one_incorrect_intermediate_finding_withdrawn_on_measurement_and_recorded": true,
+    "no_semantic_choice_made_silently_where_it_was_not_derivable": true,
+    "no_gate_state_changed": true,
+    "no_stage_declared": true,
+    "D1_not_declared": true
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This artifact resolves a frozen authority's open UNKNOWN in the negative, asserts six contradictions against frozen clauses, and authors a control-plane mutation permission covering a live public production domain. Each of those deserves an adversary.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Re-measure branch protection, rulesets and the effective rules-for-ref independently. Is ABSENT reproducible on all three read paths, or is one endpoint's 404 being over-read?",
+      "Re-measure the check-runs on 537487ac and on a certified candidate. Is the 1-versus-9 asymmetry real, and is 'Vercel Preview Comments' genuinely present on both?",
+      "Re-derive the merge-tree identity for all three recent merges using the head GitHub records as merged. Does the correction recorded in this artifact hold?",
+      "Press the H adjudication hardest. It is CONDITIONAL on U-4, which is unmeasured. If the environment correction has ALREADY been applied, is the safe-harbour claim false TODAY rather than at some future moment?",
+      "Test whether K-1 is actually sufficient. Is there a path by which an automatic Preview's id could be recorded 'before it existed' — for example by predicting or pre-registering an id — that would defeat identity-before-existence?",
+      "Challenge the claim that no frozen clause requires a privacy state. Search the frozen authority and the ledger independently for any visibility or disclosure obligation this lane's search missed.",
+      "Challenge the production finding: is 0b1fd126 truly the default branch head, did it truly carry zero check-runs, and was it truly deployed to the Production environment?",
+      "Ask whether any adjudication marked DERIVED is in fact a semantic choice that should have been routed to OWNER_DECISION_REQUIRED — particularly C (which branches prohibit direct pushes) and D (the required-check set)."
+    ]
+  },
+
+  "final_state": "CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AUTHORED__AWAITING_OWNER_RATIFICATION",
+  "next_gate": "INDEPENDENT_ADVERSARIAL_CERTIFICATION_OF_THIS_PAIR, and OWNER_RATIFICATION of OD-1 through OD-5. No GitHub setting, no Vercel setting, no deployment and no environment variable may be touched under this artifact until both are complete. OD-5 runs on its own track and is not gated on the others."
+}

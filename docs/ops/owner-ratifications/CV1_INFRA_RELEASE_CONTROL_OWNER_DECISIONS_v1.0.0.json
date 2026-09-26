@@ -1,0 +1,247 @@
+{
+  "package_id": "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS",
+  "version": "1.0.0",
+  "artifact_id": "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_HOSTED_MUTATION__NO_BRANCH_CREATION__NO_DEPLOYMENT__NO_VISIBILITY_CHANGE__NO_ALERT_CLOSURE",
+  "append_only": true,
+  "mission_id": "CV1-INFRA-RELEASE-CONTROL-OWNER-RATIFICATION-AW-R1",
+  "lane": "CV1-INFRA-RELEASE-CONTROL-OWNER-RATIFICATION-AW-R1",
+  "role": "CV1_INFRA_RELEASE_CONTROL_OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "OWNER_RATIFICATION_ARTIFACT_AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "candidate_branch": "codex/cv1-infra-release-control-authority-r1",
+    "candidate_pr": "#204",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty)."
+  },
+
+  "CANDIDATE_BINDING": {
+    "rule": "This record ratifies OD-1 through OD-5 as they read in the EXACT candidate below, and in no other. A consumer that finds any bound blob hash to differ from the value re-derived by `git ls-tree` at read time MUST NOT apply this ratification to whatever the differing content is now. The correct response is STOP_RATIFICATION_BINDING_MISMATCH, not a silent carry-forward.",
+    "candidate_sha": "42ed49a76f53518d451c06ca6d621d11654c4089",
+    "candidate_sha_re_derivation_note": "This is the commit whose tree the six effective_package blob hashes below were read FROM (`git ls-tree -r HEAD -- <paths>` at that commit). It is recorded for provenance; STOP_RATIFICATION_BINDING_MISMATCH is triggered by a BLOB HASH mismatch on any of the six paths, not by the candidate SHA alone becoming an ancestor of a later commit.",
+    "effective_package": [
+      {
+        "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+        "blob_sha": "f3236a1a26e2d868e14590c72f4a7752ffba801c"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_v1.0.0.json",
+        "blob_sha": "d92c6e7a4b1e83e1c345e3dec45d606a78c202c7"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "blob_sha": "65af13040b440987d3d08b1fafc295e270dc6f38"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+        "blob_sha": "a3bac1cfb1dc38c53062817b9b6069d9a278bace"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "blob_sha": "4192849f46c988afddf9fce548ec2db9d8df4be3"
+      },
+      {
+        "path": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+        "blob_sha": "ba3cde49496e4a80983a0c572846b5d2f680e838"
+      }
+    ],
+    "STOP_RATIFICATION_BINDING_MISMATCH": "Triggered when a re-derivation of any blob_sha above, at the time this record is consumed, does not match the value recorded here. When triggered: this record does not apply to the differing artifact; the owner's selections remain their selections as a matter of record, but their binding to a SPECIFIC effective package is broken, and a successor ratification record (or a re-confirmation from the owner against the new candidate) is required before any execution DAG may cite OD-1..OD-5 as settled."
+  },
+
+  "companion_authority": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+  "companion_authority_amendments": [
+    "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json"
+  ],
+  "companion_certifications_consumed": [
+    "CV1-INFRA-RELEASE-CONTROL-IC-R1 (CERTIFICATION_FAIL on v1.0.0, resolved by v1.0.1)",
+    "CV1-INFRA-RELEASE-CONTROL-FOCUSED-RECERT-R1 (FOCUSED_RECERT_FAIL on v1.0.0+v1.0.1, resolved by v1.0.2)",
+    "CV1-INFRA-RELEASE-CONTROL-V102-FOCUSED-RECERT-R1 (FOCUSED_RECERT_PASS_WITH_NONBLOCKING_FINDINGS on the v1.0.2 delta — the result this ratification is written against)"
+  ],
+
+  "provenance_classification": "OWNER_RATIFIED_IN_THE_CURRENT_CONVERSATION_AFTER_REVIEWING_CV1-INFRA-RELEASE-CONTROL-OWNER-DECISION-BRIEF-R1. The human owner supplied the selections below directly as directing text (OWNER_DECISION=SELECTED, per option) for OD-1 through OD-5. THIS FILE IS NOT A VERBATIM TRANSCRIPT of the conversation and it is not a new adjudication: no option was chosen, weighed, or substituted by this lane. It is the canonical normalized ratification record so that a successor execution lane can cite a stable repository artifact instead of re-deriving or informally re-summarizing a decision the owner has already made. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout: a ratification is binding product/governance intent about WHICH option to pursue; a measurement (U-1..U-6, O-1..O-4's live state) is a falsifiable, timestamped claim about the hosted control plane that any successor lane must re-derive rather than inherit.",
+
+  "precedence_note": "This record is canonical for owner intent on OD-1 through OD-5 ONLY. It does NOT override the effective authority (v1.0.0+v1.0.1+v1.0.2), which remains the source of the DERIVED adjudications (A through Q), the MEASURED_PRESTATE, the CONTRADICTIONS, the FUTURE_MUTATIONS and their prestate/verification/rollback structure, and PRODUCTION_BOUNDARY. Where this record and the effective authority could be read to conflict, the effective authority's derivations control the FACTS and MECHANISM; this record controls only WHICH branch of an owner-gated choice is pursued. A ratification does not relax a machine gate, a fail-closed rule, or PR201's own semantics — none of which this record touches.",
+
+  "reopening_rule": "THIS IS NOT A NEW ADJUDICATION AND NOT A NEW OD. Do NOT reopen or re-derive ADJUDICATIONS A through Q, MEASURED_PRESTATE, CONTRADICTIONS, or ACT_IDENTITY_CONTRACT. Do NOT treat OD-2's DEFER disposition as silent approval to leave the repository public indefinitely, and do NOT treat OD-5's routing-only disposition as any statement about alert-1's rotation, severity, or closure. Absence of a hosted mutation following this record is not a contradiction — none is authorized by it. A conflict between this record and the effective authority that neither resolves fails closed (STOP_FOR_AUTHORITY_CONFLICT); it is not silently resolved in either direction by a successor lane.",
+
+  "why_this_record_exists": {
+    "problem": "The effective authority (v1.0.0+v1.0.1+v1.0.2) correctly refused to make five semantic choices silently and routed them to OWNER_DECISION_REQUIRED (OD-1..OD-5). A focused re-certification found the v1.0.2 delta sound (PASS_WITH_NONBLOCKING_FINDINGS). The owner has now reviewed a decision brief and supplied explicit selections for all five.",
+    "what_changed": "Before this record, OD-1..OD-5 were open questions with candidate options and no binding answer. After this record, each has an owner-selected disposition. No hosted state, no repository file under docs/ops/release/, and no execution authority changes as a result.",
+    "owner_choice_summary": "Dedicated release branch (Option D) for OD-1; defer the repository-visibility decision pending U-3 for OD-2; the Ignored Build Step (L-1) for OD-3, sequenced before the PR201 environment correction; ratification of all four O-1..O-4 controls including the amended O-3, with an explicit execution-sequencing rider; and routing-only ratification of OD-5 to PR #206, expressly not deferred behind OD-2."
+  },
+
+  "definitional_intent": {
+    "RATIFIED_OPTION_D": "The owner has selected, from the four candidates SPC-5 (v1.0.1) added to OD-1's original three-option set, the fourth: a dedicated release branch distinct from both the integration line and the development default. The owner additionally proposes a NAME for that branch, release/commercial-v1, which is new content this record introduces — the effective authority's OD-1 text names the OPTION but not a specific name.",
+    "RATIFIED_DEFERRED_PENDING_U3": "The owner has selected to make NO visibility change now, and to treat the choice as blocked on U-3 (GitHub plan tier) being measured, consistent with the effective authority's own EXECUTION_ORDERING constraint ('plan tier before visibility'). DEFER is itself a ratified decision, not an absence of one — it forecloses a public-repository-is-obviously-fine reading and a private-repository-is-obviously-required reading alike, in favor of measuring first.",
+    "RATIFIED_L1": "The owner has selected, from ADJUDICATIONS.L's four-rung candidate ladder, the second rung: an Ignored Build Step for integration/commercial-v1, leaving pull-request Previews intact and removing the post-merge automatic Preview that most resembles a staging deployment. The owner accepts the effective authority's own sequencing constraint (EXECUTION_ORDERING step 7, and the ACT_IDENTITY_CONTRACT/CM-7 rationale) that this must be applied BEFORE the PR201 environment correction.",
+    "RATIFIED_ALL_FOUR_WITH_SEQUENCE_RIDER": "The owner ratifies O-1 (EXISTENCE), O-2 (REQUIRED CHECKS), O-3 as amended by v1.0.1 SPC-4 (EXACT-SHA COVERAGE, distinguished from mere protection), and O-4 (RE-MEASUREMENT AT DECLARATION TIME) as the bar the GitHub line must clear before any release authority may call it protected. The owner additionally accepts a SEQUENCING RIDER, binding on execution: O-2's configuration of required checks must not precede O-3 being implemented or otherwise ready in a way that would require a check on a SHA the current wiring cannot actually produce it on — this is the same hazard the effective authority's own M-1 FUTURE_MUTATIONS entry already flags (requiring checks a push-triggered run does not yet produce could block every merge).",
+    "RATIFIED_ROUTING_ONLY_TO_PR206": "The owner ratifies ONLY that SSL-06/SEC5 (as corrected by v1.0.2 SPC102-V101-3) is the relevant anchor, that PR #206 is the correct venue for the alert-1 adjudication, and that this routing is independent of the OD-2 visibility decision. The owner does NOT ratify, and this record does not assert, any position on rotation proof, severity, disclosure obligation, or alert closure — those remain PR #206's to adjudicate on its own evidence."
+  },
+
+  "ratifications": [
+    {
+      "id": "OD-1",
+      "domain": "BRANCH_ROLE_MODEL",
+      "authority_recommendation": "NONE. The effective authority explicitly refused to derive this choice, stating that making the authority's text true (P1's default-branch lineage) and making the measured behaviour safe (production actually served from main) point at different branches, and only the owner can say which reading governs. Three options were enumerated in v1.0.0; v1.0.1 SPC-5 added a fourth without recommending among them.",
+      "technical_recommendation": "NONE OFFERED by this lane. This record transcribes the owner's selection; it does not weigh the four options or argue for the one chosen.",
+      "owner_selected_decision": "OPTION D — introduce a dedicated release branch distinct from both integration/commercial-v1 and the development default branch, so the production lineage terminates at a branch whose only purpose is release. Proposed name: release/commercial-v1.",
+      "disposition": "RATIFIED_OPTION_D",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The option ratified is v1.0.1 SUPERSEDED_PARENT_CLAUSES.clauses[4] (SPC-5), which reads: 'Introduce a dedicated release branch distinct from both the integration line and the development default, so that the production lineage terminates at a branch whose only purpose is release. This decouples the production boundary from the default-branch question entirely, and is the option that most directly addresses C-4 without forcing a choice among three branches that each carry unrelated history.' The branch name release/commercial-v1 is owner-supplied content not present in any prior effective-package file.",
+      "execution_not_authorized_by_this_ratification": "Creating the release/commercial-v1 branch, retargeting any workflow, retargeting Vercel's production branch, or any repository setting change remains a SEPARATE governed act (FUTURE_MUTATIONS M-4 and, if the owner's chosen production boundary ultimately routes through it, M-7), each requiring its own prestate capture and explicit confirmation immediately before execution."
+    },
+    {
+      "id": "OD-2",
+      "domain": "REPOSITORY_VISIBILITY",
+      "authority_recommendation": "NONE binding. The effective authority found no frozen clause requires either visibility state, and recorded that U-3 (GitHub plan tier) blocks any visibility change because a personal-account repository going private may remove branch-protection availability, defeating O-1.",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "Make NO visibility change now. The repository remains PUBLIC for the present. The owner explicitly acknowledges, in the terms the effective authority itself states, that making the repository private is NOT remediation for secret-scanning alert #1 — that exposure is historical and only rotation closes it.",
+      "disposition": "RATIFIED_DEFERRED_PENDING_U3",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Consistent with v1.0.0 UNKNOWNS U-3 and EXECUTION_ORDERING's 'plan tier before visibility' constraint, and with v1.0.0 REPOSITORY_VISIBILITY_ADJUDICATION.ordering_constraint.",
+      "execution_not_authorized_by_this_ratification": "NO visibility mutation is authorized by DEFER. DEFER is a disposition, not dormant approval: the moment U-3 is measured, this OD is NOT thereby auto-resolved to any particular outcome — it remains blocked on U-3 and, per the effective authority's own text, is revisited by the owner if the measurement changes what is available (e.g., if a private repository would in fact retain branch protection on the measured plan, or would not).",
+      "must_not_happen": "This record must not be read, cited, or relied upon as authorizing 'keep the repository public indefinitely.' It authorizes nothing; it records that no change is being made NOW, for a stated and bounded reason."
+    },
+    {
+      "id": "OD-3",
+      "domain": "AUTOMATIC_PREVIEW_DISPOSITION",
+      "authority_recommendation": "NONE. v1.0.0 ADJUDICATIONS.L named four candidate mutations in increasing severity and explicitly declined to choose among them, citing dependence on U-5 (then unmeasured) and the mission's prohibition on silent semantic choices.",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "L-1 — configure an Ignored Build Step for the integration/commercial-v1 branch specifically, leaving pull-request-triggered Previews intact. The owner explicitly accepts the sequencing constraint that L-1 MUST be applied BEFORE the PR201 environment correction.",
+      "disposition": "RATIFIED_L1",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The rung ratified is v1.0.0 ADJUDICATIONS.L.candidate_mutations_in_increasing_severity[1]: 'Configure an Ignored Build Step for the integration branch so pushes to it do not build, leaving pull-request Previews intact. Preserves PR review value; removes the post-merge automatic Preview that most resembles a staging deployment.' The sequencing constraint the owner accepted matches v1.0.1 ACT_IDENTITY_CONTRACT's FUTURE_MUTATIONS M-6 timing_constraint and v1.0.1 EXECUTION_ORDERING step 7, both of which already required this ordering before any owner input — the owner's acceptance confirms rather than introduces it.",
+      "execution_not_authorized_by_this_ratification": "Applying the Vercel Ignored Build Step setting remains a separate governed act (FUTURE_MUTATIONS M-6), with its own mandatory prestate capture (U-5 was only PARTIALLY resolved by v1.0.1 CM-8 — no Ignored Build Step was configured at measurement time, but per-branch automatic-deployment toggles were not fully exposed), verification, and rollback, and its own confirmation immediately before execution."
+    },
+    {
+      "id": "OD-4",
+      "domain": "PROTECTED_LINE_BAR_RATIFICATION",
+      "authority_recommendation": "The effective authority DERIVED O-1 through O-4 as the bar and routed adopting them as a programme commitment to the owner, on the grounds that AT-U-03's resolution (branch protection measured ABSENT) is owner-visible enough to warrant ratification rather than assumption.",
+      "technical_recommendation": "NONE additional offered by this lane beyond what the effective authority already derived.",
+      "owner_selected_decision": "Ratify all four controls, O-1 (EXISTENCE), O-2 (REQUIRED CHECKS), O-3 as amended (EXACT-SHA COVERAGE, distinguished from protection), and O-4 (RE-MEASUREMENT AT DECLARATION TIME), together, as the bar the Commercial V1 GitHub line must clear before any release authority may describe it as protected. The owner additionally accepts a sequencing rider: O-2's execution must not precede O-3's implementation or readiness in a way that would require checks the relevant SHA cannot actually produce.",
+      "disposition": "RATIFIED_ALL_FOUR_WITH_SEQUENCE_RIDER",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "O-1, O-2 and O-4 ratified exactly as v1.0.0 ADJUDICATIONS.O states them. O-3 ratified in its v1.0.1 SPC-4 amended form: 'the required checks must be checks the MERGE SHA itself received... Protection governs who may write; exact-SHA coverage governs what was verified. Neither implies the other.' The sequencing rider is NEW content this ratification adds; it is not itself a change to O-1..O-4's text, and it does not alter the content of O-1 through O-4 in any respect.",
+      "execution_not_authorized_by_this_ratification": "None of O-1..O-4 becoming true is authorized here. Each requires its own governed mutation (M-1 branch protection/rulesets, and the still-unimplemented push-triggered exact-SHA battery that O-3/E describe, which is out of this artifact's scope entirely and belongs to a workflow-editing lane this authority is expressly forbidden from being)."
+    },
+    {
+      "id": "OD-5",
+      "domain": "SECURITY_ALERT_ROUTING",
+      "authority_recommendation": "The effective authority anchored OD-5 to SSL-06 (v1.0.1 SPC-6, corrected by v1.0.2 SPC102-V101-3 to also correctly acknowledge SEC5's existence) and recorded, as a measured fact rather than a recommendation, that PR #206 had already taken up the adjudication in its own lane.",
+      "technical_recommendation": "NONE OFFERED by this lane.",
+      "owner_selected_decision": "Ratify ROUTING ONLY: SSL-06/SEC5 is confirmed as the relevant anchor, PR #206 is confirmed as the governing adjudication venue, and this routing is confirmed independent of the OD-2 visibility decision. The owner explicitly states OD-5 is NOT deferred behind OD-2.",
+      "disposition": "RATIFIED_ROUTING_ONLY_TO_PR206",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "v1.0.1 SPC-6 as corrected by v1.0.2 SPC102-V101-3: SEC5 ('secret custody and hygiene', RELEASE_GATE_LEDGER_v1.0.0.json) is the gate STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json attaches to both SSL-06 and SSL-08; the SSL-06 anchor for the credential-inventory obligation was and remains correct. PR #206 ('docs(security): adjudicate secret-scanning alert 1 (google_api_key)') is the open lane taking up the substantive adjudication.",
+      "what_is_explicitly_not_ratified": "Rotation proof, severity classification, disclosure obligation, and alert closure. Every one of those is PR #206's to determine on its own evidence; this record makes no claim about any of them and none may be inferred from this ratification.",
+      "execution_not_authorized_by_this_ratification": "Nothing. This OD was never a hosted-mutation question; it is a routing confirmation, and remains one."
+    }
+  ],
+
+  "U3_MEASUREMENT_STATUS": {
+    "rule": "U-3 (the GitHub plan tier of the owning User account) is UNRESOLVED at the moment this ratification was recorded. A separate read-only lane is understood to be currently measuring it.",
+    "effect_on_OD-2": "OD-2's DEFERRED disposition remains NON-EXECUTABLE. No visibility mutation may proceed on the strength of this record, regardless of what a future U-3 measurement finds, until that measurement is complete AND, if the effective authority's own EXECUTION_ORDERING or REPOSITORY_VISIBILITY_ADJUDICATION requires it, the owner is asked to confirm OD-2 again against the newly measured fact.",
+    "no_inference_performed": "This record does NOT infer FREE, PRO, or TEAM for the account, and treats the absence of that measurement as a live blocking condition, not as a detail to be filled in later from context."
+  },
+
+  "U6_FAIL_CLOSED_BINDING": {
+    "rule": "U-6 (whether the separate Vercel project uellix-production-web has any Commercial V1 role) may also still be under read-only measurement and is UNRESOLVED at the moment this ratification was recorded.",
+    "binding": "IF a future measurement of U-6 establishes that another Vercel project serves an active Commercial V1 production surface, THEN: STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED. No production-boundary execution derived from this ratification (including anything touching OD-1's release-branch model or OD-4's protected-line bar as applied to a production path) may proceed until the production boundary is re-adjudicated against that finding.",
+    "why_recorded_here_rather_than_silently_assumed": "OD-1 and OD-4 both make claims that are implicitly scoped to a SINGLE production surface (www.uellix.com via the uellix-antigravity project). A second, currently-unmeasured production surface would not automatically invalidate the owner's selections, but it would mean this ratification's PRODUCTION_BOUNDARY assumptions were incomplete when made, which is exactly the class of fact this programme has repeatedly found must fail closed rather than be discovered downstream."
+  },
+
+  "NONBLOCKING_EXECUTION_PRECONDITION_NOTES": {
+    "rule": "Recorded as execution preconditions for a future lane to satisfy. NONE of these change, qualify, or condition any of the five owner selections above — they are downstream implementation notes, not ratification content.",
+    "notes": [
+      {
+        "id": "EXEC-NOTE-1",
+        "source": "CV1-INFRA-RELEASE-CONTROL-V102-FOCUSED-RECERT-R1, nonblocking finding.",
+        "note": "The retry predecessor metadata key meta.uellix_governed_act_supersedes_nonce (v1.0.2 AIC-8/AIC-9) has not had its platform round-trip independently verified, for the same reason the original nonce key's round-trip could not be verified without deploying (v1.0.1 AIC-4/AP3): doing so requires creating a deployment, which no authoring lane is permitted to do. Before any execution lane relies on the retry identity chain as EVIDENCE (rather than as an internal act-record discipline), it must perform the equivalent of AIC-4/AP3 for the predecessor key specifically — re-read the deployment record after creation and assert the key round-tripped exactly, with the same fail-closed branch on a mismatch.",
+        "does_not_affect": "This note does not touch OD-1 through OD-5. It is scoped entirely to a future PR201 execution lane's own evidence discipline, should that lane ever exercise the BOUNDED_RETRY_RULE."
+      }
+    ]
+  },
+
+  "AUTHORITY_RECOMMENDATION_VS_TECHNICAL_RECOMMENDATION_VS_OWNER_SELECTED_DECISION": {
+    "rule": "The three categories are kept distinct throughout the ratifications array above, per-decision. Restated once here for a reader who wants the general shape rather than five repetitions.",
+    "AUTHORITY_RECOMMENDATION": "What the effective authority (v1.0.0+v1.0.1+v1.0.2) itself derived, ranked, or routed — e.g. O-1..O-4's derivation, or the fact that OD-1/OD-2/OD-3 were explicitly left undecided with candidates enumerated. This is repository content that predates this record and that this record does not alter.",
+    "TECHNICAL_RECOMMENDATION": "Any recommendation this AUTHORING lane itself might have offered on top of the authority's derivation. NONE was offered for any of the five decisions — this record's role is transcription and binding, not advocacy.",
+    "OWNER_SELECTED_DECISION": "The only binding content in this artifact: the human owner's explicit selection for each OD, supplied in the current conversation after reviewing CV1-INFRA-RELEASE-CONTROL-OWNER-DECISION-BRIEF-R1. Distinguishing this from the two categories above is the entire purpose of this record — a successor lane citing 'the owner selected X' must be able to point here, not to an inference from either the authority's derivation or from anything this lane might otherwise have suggested."
+  },
+
+  "FRESHNESS_CARRYOVER": {
+    "rule": "Ratifying a CHOICE does not convert any timestamped, hosted MEASUREMENT into a standing fact. Every hosted fact the effective authority recorded (branch protection absence, productionBranch=main, the Preview environment scoping, Deployment Protection posture, and so on) remains subject to v1.0.0 STALE_STATE_HANDLING and must be re-measured immediately before any execution act that depends on it, exactly as if this ratification had not been recorded.",
+    "what_this_record_freezes": "Only the FIVE OWNER SELECTIONS themselves are frozen by this record (subject to CANDIDATE_BINDING). Everything else — U-1 through U-6, O-1 through O-4's live state, the Preview alias's current binding, the production deployment currently serving www.uellix.com — remains exactly as mutable and exactly as re-measurement-obligated as the effective authority already required."
+  },
+
+  "explicit_non_authorizations": [
+    "NO branch is created. release/commercial-v1 is a ratified NAME, not a created branch.",
+    "NO GitHub branch protection rule or ruleset is created, edited, or deleted.",
+    "NO GitHub required-check configuration is changed.",
+    "NO GitHub repository visibility is changed. The repository remains public.",
+    "NO Vercel Ignored Build Step or any other Vercel Git-integration setting is changed.",
+    "NO Vercel production branch setting is changed.",
+    "NO deployment of any kind, in any environment, is created, triggered, promoted, or redeployed.",
+    "NO environment variable, in any environment, is created, edited, deleted, or read for its value.",
+    "NO alias or custom domain is created, assigned, changed, or removed.",
+    "NO Supabase configuration is contacted or mutated in any way.",
+    "NO secret-scanning alert is closed, resolved, or dispositioned by this record. PR #206 remains the sole venue for that.",
+    "NO modification to any file under docs/ops/release/ — v1.0.0, v1.0.1, and v1.0.2 and their manifests remain byte-identical to the candidate.",
+    "NO new OD is introduced, and no OD-1..OD-5 content is reinterpreted, improved, or substituted beyond transcribing the owner's exact selection.",
+    "NO ODS or W2 lineage identifier is allocated, reserved, or implied.",
+    "NO execution DAG is derived or authorized by this record — that is explicitly named as the NEXT step, after independent verification of this record itself."
+  ],
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 5,
+    "expected_id_set": ["OD-1", "OD-2", "OD-3", "OD-4", "OD-5"],
+    "expected_disposition_set": [
+      "RATIFIED_OPTION_D",
+      "RATIFIED_DEFERRED_PENDING_U3",
+      "RATIFIED_L1",
+      "RATIFIED_ALL_FOUR_WITH_SEQUENCE_RIDER",
+      "RATIFIED_ROUTING_ONLY_TO_PR206"
+    ],
+    "expected_effective_package_file_count": 6,
+    "checks": [
+      "ratifications.length == 5",
+      "every id in ratifications is unique and equals expected_id_set exactly",
+      "every ratification carries all of id, domain, authority_recommendation, technical_recommendation, owner_selected_decision, disposition, status, repository_binding",
+      "every ratification.status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "the five disposition values are exactly expected_disposition_set, one per ratification, in order",
+      "no ratification statement authorizes a branch creation, a GitHub setting change, a Vercel setting change, a deployment, an env mutation, a visibility change, or an alert closure",
+      "OD-2's execution_not_authorized_by_this_ratification and must_not_happen fields are both present — a DEFER record that states only what was chosen and never what remains withheld is incomplete by construction",
+      "OD-5's what_is_explicitly_not_ratified field is present and non-empty",
+      "CANDIDATE_BINDING.effective_package.length == 6, matching expected_effective_package_file_count",
+      "CANDIDATE_BINDING.candidate_sha == '42ed49a76f53518d451c06ca6d621d11654c4089'",
+      "companion_authority and both companion_authority_amendments entries name paths that exist, unmodified, in the same commit as CANDIDATE_BINDING.candidate_sha",
+      "re-deriving each effective_package[].blob_sha via `git ls-tree` at CANDIDATE_BINDING.candidate_sha reproduces the recorded value exactly, or the consumer STOPs per STOP_RATIFICATION_BINDING_MISMATCH"
+    ]
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This record binds five owner decisions to a specific candidate and asserts they were transcribed rather than authored. Both claims deserve independent verification before any execution DAG treats them as settled.",
+    "verification_criteria_for_the_next_gate": [
+      "Confirm this record's five ratifications match the human selections exactly — no option, name, or sequencing rider was altered, softened, or extended beyond what was supplied.",
+      "Confirm no NEW decision was introduced under the guise of transcription (e.g., that the branch name release/commercial-v1 is correctly flagged as owner-supplied content, not as something this lane selected).",
+      "Confirm OD-2's DEFERRED disposition is preserved as non-executable and is not read anywhere as implicit approval to remain public indefinitely.",
+      "Confirm OD-5's routing-only scope is preserved and that no rotation/severity/disclosure/closure claim has leaked in.",
+      "Confirm the CANDIDATE_BINDING blob hashes are correct by independent `git ls-tree` re-derivation at the candidate SHA.",
+      "Confirm no hosted mutation of any kind was performed by this lane."
+    ]
+  },
+
+  "final_state": "OWNER_RATIFICATION_RECORDED__EXECUTION_NOT_AUTHORIZED",
+
+  "next_gate": "Independent bounded verification of this ratification record against the six criteria above. Only after that verification passes should the Commercial V1 infrastructure execution DAG (branch creation under OD-1, the OD-3 Ignored Build Step, the O-1..O-4 protection/check configuration under OD-4's sequence rider, and any OD-2 re-visit once U-3 resolves) be derived — as separate, individually governed acts, each with its own prestate capture, verification, rollback, and immediate pre-execution confirmation, exactly as FUTURE_MUTATIONS already requires."
+}

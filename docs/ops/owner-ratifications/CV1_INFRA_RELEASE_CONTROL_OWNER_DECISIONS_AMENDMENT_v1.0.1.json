@@ -1,0 +1,183 @@
+{
+  "package_id": "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_AMENDMENT_v1.0.1",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD_AMENDMENT__NO_IMPLEMENTATION__NO_HOSTED_MUTATION__NO_BRANCH_CREATION__NO_DEPLOYMENT__NO_VISIBILITY_CHANGE__NO_ALERT_CLOSURE",
+  "append_only": true,
+  "amends": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json",
+  "supersedes": null,
+  "mission_id": "CV1-INFRA-RELEASE-CONTROL-OWNER-RATIFICATION-AMENDMENT-R2",
+  "lane": "CV1-INFRA-RELEASE-CONTROL-OWNER-RATIFICATION-AMENDMENT-R2",
+  "role": "CV1_INFRA_RELEASE_CONTROL_OWNER_RATIFICATION_RECORD_KEEPER",
+  "mode": "OWNER_RATIFICATION_AMENDMENT_AUTHORING_ONLY",
+  "materialization_date": "2026-09-21",
+  "materialized_by": "Claude Sonnet 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "537487ac7b102d51f553fcb8f5cfe19614e113d8",
+    "BASE_TREE": "7228f833c57bfd37fe025546d939ecd46336159c",
+    "candidate_branch": "codex/cv1-infra-release-control-authority-r1",
+    "candidate_pr": "#204",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty)."
+  },
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. The parent ratification record docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json is left BYTE-UNCHANGED.",
+    "how_to_read_the_pair_together": "Where this amendment is silent, the parent controls verbatim: OD-1, OD-3, OD-4 and OD-5 as the parent states them, plus every parent block not named below (provenance_classification, precedence_note, reopening_rule, definitional_intent for the four unchanged decisions, explicit_non_authorizations, FRESHNESS_CARRYOVER). Where this amendment supersedes OD-2 by id, the parent's OD-2 entry is superseded IN FULL and this amendment's OD-2 entry is the operative one.",
+    "why_an_amendment_rather_than_an_edit": "The parent's own self_check pins OD-2's disposition to RATIFIED_DEFERRED_PENDING_U3 as part of a five-item exact set; editing it in place would erase the record of what was ratified under uncertainty and why, which is exactly the audit trail a later reader (or a certifier) needs to see was deliberate rather than assumed."
+  },
+
+  "CANDIDATE_BINDING": {
+    "rule": "This amendment ratifies a change to OD-2 ONLY, against the SAME authority-package candidate the parent ratification bound to, and against the parent ratification record itself, pinned by exact blob hash. A consumer that finds either binding to differ from a fresh re-derivation MUST NOT apply this amendment to whatever the differing content is now.",
+    "authority_package_candidate_sha": "42ed49a76f53518d451c06ca6d621d11654c4089",
+    "authority_package_candidate_note": "Unchanged from the parent ratification. This amendment touches no file under docs/ops/release/; the six effective-package blob hashes the parent pinned remain the correct pins and are not re-stated here to avoid a second, potentially-diverging copy of them. A consumer verifying this amendment's authority binding reads the parent's CANDIDATE_BINDING.effective_package, unchanged.",
+    "owner_ratification_parent_commit": "22d8189847a65d40a19e51cbbfb45f0e7e042818",
+    "owner_ratification_parent_file": {
+      "path": "docs/ops/owner-ratifications/CV1_INFRA_RELEASE_CONTROL_OWNER_DECISIONS_v1.0.0.json",
+      "blob_sha": "17c257b3b0b06b37601851ddf8fbc6aa4abdc6ae"
+    },
+    "STOP_RATIFICATION_BINDING_MISMATCH": "Triggered when a re-derivation of the parent ratification's blob_sha, or of any of the six authority-package blob hashes the parent pinned, does not match the recorded value at the time this amendment is consumed. When triggered: this amendment does not apply to the differing artifact; a successor amendment or a fresh owner re-confirmation against the new candidate is required."
+  },
+
+  "companion_authority": "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_v1.0.0.json",
+  "companion_authority_amendments": [
+    "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/release/CV1_INFRA_RELEASE_CONTROL_AUTHORITY_AMENDMENT_v1.0.2.json"
+  ],
+
+  "provenance_classification": "OWNER_RATIFIED_IN_THE_CURRENT_CONVERSATION_AFTER_A_READ_ONLY_U3_MEASUREMENT_WAS_REPORTED. The human owner supplied the OD-2 selection below directly as directing text after the U-3 measurement described in U3_MEASUREMENT_CONTEXT was reported in this conversation. As with the parent record: THIS FILE IS NOT A VERBATIM TRANSCRIPT and it is not a new adjudication of anything the effective authority already derived — no option was chosen, weighed, or substituted by this lane for OD-2; it was supplied. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories: the OD-2 disposition below is binding owner intent; the U-3/U-6 facts it responds to are timestamped, session-reported measurements that THIS lane did not independently re-verify (doing so would require attempting a visibility mutation, which is prohibited) and that a future execution lane must re-measure rather than inherit.",
+
+  "precedence_note": "Identical in force to the parent's precedence_note. This amendment is canonical for owner intent on OD-2 ONLY, as of this amendment. It does not override the effective authority's derived facts, gates, or PRODUCTION_BOUNDARY, and it does not relax O-1 through O-4, which remain binding exactly as OD-4 already ratified them. REMAIN PUBLIC is a visibility disposition; it is not, and must not be read as, any statement about branch protection, required checks, exact-SHA coverage, or re-measurement at declaration time.",
+
+  "reopening_rule": "THIS IS NOT A NEW ADJUDICATION. It supersedes OD-2's disposition only. Do NOT read it as reopening OD-1, OD-3, OD-4 or OD-5, and do NOT read a future PRIVATE transition as pre-authorized by anything here — REMAIN PUBLIC is itself the current, final selection for this phase, and any later move away from it is a NEW decision requiring the four preconditions OD-2 below states, not a resumption of something already approved.",
+
+  "why_this_amendment_exists": {
+    "problem": "The parent ratification recorded OD-2 as RATIFIED_DEFERRED_PENDING_U3 because U-3 (the GitHub plan tier) was unresolved at that time, and U-3 blocks any visibility change per the effective authority's own EXECUTION_ORDERING ('plan tier before visibility').",
+    "what_changed": "U-3 has since been measured (reported in this conversation, not independently re-verified by this lane): branch protection and rulesets are usable on the CURRENT public repository, and the current account capability returns an explicit GitHub-Pro upgrade requirement to get the same controls on a PRIVATE repository. On the strength of that measurement, the owner selected a final disposition for OD-2 for the current phase rather than continuing to defer.",
+    "owner_choice": "REMAIN PUBLIC for the current Commercial V1 phase, with the four preconditions for any future PRIVATE transition recorded explicitly rather than left implicit."
+  },
+
+  "U3_MEASUREMENT_CONTEXT": {
+    "rule": "Recorded as the measurement the owner's new OD-2 selection responds to. NOT independently re-verified by this lane, and NOT promoted to a standing fact — see FRESHNESS_CARRYOVER_REAFFIRMED below.",
+    "reported_findings": [
+      "Branch protection and rulesets are usable on the repository's CURRENT (public) state.",
+      "On the account's current capability, making the repository PRIVATE surfaces an explicit requirement to upgrade to a paid GitHub plan (GitHub Pro or equivalent) to retain the same branch-protection/ruleset controls."
+    ],
+    "why_not_independently_verified_here": "Confirming the private-repository behavior directly would require actually changing repository visibility, which this lane — and every lane in this chain — is expressly forbidden from doing. The finding is therefore recorded as REPORTED, not as MEASURED-BY-THIS-LANE, and is named as exactly that distinction in provenance_classification.",
+    "relationship_to_U-3s_original_unknown": "This resolves the specific gap v1.0.0 UNKNOWNS U-3 recorded ('the plan tier of the owning User account, unmeasurable by a safe read-only operation available to that lane'). It does not retroactively edit U-3's entry in the effective authority — that block remains byte-unchanged and historically accurate to what was true when it was written."
+  },
+
+  "ratifications": [
+    {
+      "id": "OD-2",
+      "domain": "REPOSITORY_VISIBILITY",
+      "supersedes_parent_disposition": "RATIFIED_DEFERRED_PENDING_U3",
+      "parent_entry_verbatim": {
+        "owner_selected_decision": "Make NO visibility change now. The repository remains PUBLIC for the present. The owner explicitly acknowledges, in the terms the effective authority itself states, that making the repository private is NOT remediation for secret-scanning alert #1 — that exposure is historical and only rotation closes it.",
+        "disposition": "RATIFIED_DEFERRED_PENDING_U3",
+        "execution_not_authorized_by_this_ratification": "NO visibility mutation is authorized by DEFER. DEFER is a disposition, not dormant approval: the moment U-3 is measured, this OD is NOT thereby auto-resolved to any particular outcome — it remains blocked on U-3 and, per the effective authority's own text, is revisited by the owner if the measurement changes what is available (e.g., if a private repository would in fact retain branch protection on the measured plan, or would not).",
+        "must_not_happen": "This record must not be read, cited, or relied upon as authorizing 'keep the repository public indefinitely.' It authorizes nothing; it records that no change is being made NOW, for a stated and bounded reason."
+      },
+      "authority_recommendation": "UNCHANGED FROM PARENT: NONE binding. The effective authority (v1.0.0+v1.0.1+v1.0.2, untouched by this amendment) still recommends neither visibility state; it only recorded the U-3 dependency, which is what has now been resolved by report rather than by this amendment relaxing anything the authority itself requires.",
+      "technical_recommendation": "NONE OFFERED by this lane, exactly as the parent.",
+      "owner_selected_decision": "REMAIN PUBLIC for the current Commercial V1 phase. The owner reaffirms, now as a final rather than a deferred position, that making the repository private is NOT remediation for secret-scanning alert #1 — that remains PR #206's separate, rotation-governed track. The owner additionally states four explicit preconditions for any FUTURE move to private, rather than leaving that path implicit.",
+      "disposition": "RATIFIED_REMAIN_PUBLIC_FOR_CURRENT_PHASE",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Consistent with the now-reported resolution of v1.0.0 UNKNOWNS U-3 and with EXECUTION_ORDERING's 'plan tier before visibility' constraint having been satisfied by report — the ordering constraint is what U-3's absence blocked, and its resolution is what makes a FINAL (rather than merely deferred) OD-2 selection possible at all.",
+      "future_private_transition_preconditions": [
+        "PRECOND-1 CAPABILITY PRESERVED: a private repository must be verified, at the time of that future decision, to retain the branch-protection/ruleset capability OD-4 already ratified as binding (O-1). If the then-current account capability would lose that capability on a private repository, the transition does not proceed under this precondition until that capability gap is closed (e.g., by plan upgrade) or a different protection mechanism is verified equivalent.",
+        "PRECOND-2 FRESHNESS RE-MEASUREMENT: the plan-tier and protection-availability facts must be RE-MEASURED at the time of that future decision, not inherited from the U3_MEASUREMENT_CONTEXT reported here. A finding from this conversation is a timestamped observation, not a standing fact.",
+        "PRECOND-3 SEPARATE AUTHORITY: the visibility change itself must be executed under its own governed authority artifact, with its own prestate capture, verification and rollback — exactly the shape v1.0.0 FUTURE_MUTATIONS M-5 already requires and which this amendment does not alter or shortcut.",
+        "PRECOND-4 SEPARATE HUMAN CONFIRMATION: a visibility mutation requires its own immediate pre-execution confirmation from the owner. This ratification's REMAIN PUBLIC selection does not stand in for, and does not pre-authorize, that future confirmation."
+      ],
+      "execution_not_authorized_by_this_ratification": "NO visibility mutation of any kind, in any direction, is authorized by this entry. The repository's public state is UNCHANGED by this amendment — it was public before this ratification and remains public after it, for the reason stated, not because this record performed or permits any act.",
+      "must_not_happen": "This record must not be cited as evidence that O-1 through O-4 (OD-4's ratified bar) are weakened, relaxed, or conditioned on visibility in any way. Public-repository branch protection remains subject to the SAME O-1..O-4 bar as any other state, with no exception introduced here.",
+      "what_is_explicitly_not_ratified": "No statement is made about whether the repository should EVER become private, only about the current phase. The four preconditions above are not a pre-approval of a future transition; they are the bar that transition would have to clear, to be decided when it is actually proposed."
+    }
+  ],
+
+  "UNCHANGED_RATIFICATIONS_RESTATED_FOR_CLARITY": {
+    "rule": "OD-1, OD-3, OD-4 and OD-5 are NOT touched by this amendment. Restated here verbatim from the parent, byte-for-byte, purely so a reader of this amendment alone sees the complete current disposition without needing to cross-reference — this restatement carries NO independent ratifying force; the parent remains the sole source of truth for these four.",
+    "OD-1": { "disposition": "RATIFIED_OPTION_D", "owner_selected_decision": "OPTION D — introduce a dedicated release branch distinct from both integration/commercial-v1 and the development default branch, so the production lineage terminates at a branch whose only purpose is release. Proposed name: release/commercial-v1." },
+    "OD-3": { "disposition": "RATIFIED_L1", "owner_selected_decision": "L-1 — configure an Ignored Build Step for the integration/commercial-v1 branch specifically, leaving pull-request-triggered Previews intact. The owner explicitly accepts the sequencing constraint that L-1 MUST be applied BEFORE the PR201 environment correction." },
+    "OD-4": { "disposition": "RATIFIED_ALL_FOUR_WITH_SEQUENCE_RIDER", "owner_selected_decision": "Ratify all four controls, O-1 (EXISTENCE), O-2 (REQUIRED CHECKS), O-3 as amended (EXACT-SHA COVERAGE, distinguished from protection), and O-4 (RE-MEASUREMENT AT DECLARATION TIME), together, as the bar the Commercial V1 GitHub line must clear before any release authority may describe it as protected. The owner additionally accepts a sequencing rider: O-2's execution must not precede O-3's implementation or readiness in a way that would require checks the relevant SHA cannot actually produce." },
+    "OD-5": { "disposition": "RATIFIED_ROUTING_ONLY_TO_PR206", "owner_selected_decision": "Ratify ROUTING ONLY: SSL-06/SEC5 is confirmed as the relevant anchor, PR #206 is confirmed as the governing adjudication venue, and this routing is confirmed independent of the OD-2 visibility decision. The owner explicitly states OD-5 is NOT deferred behind OD-2." }
+  },
+
+  "U6_FAIL_CLOSED_BINDING_STATUS": {
+    "rule": "Recorded status of the parent's U6_FAIL_CLOSED_BINDING. This amendment does NOT remove, close, or edit that binding — it remains a standing structural safeguard exactly as the parent states it, for ANY future re-measurement, not only the one reported now.",
+    "parent_binding_verbatim": "IF a future measurement of U-6 establishes that another Vercel project serves an active Commercial V1 production surface, THEN: STOP_PRODUCTION_BOUNDARY_REOPEN_REQUIRED. No production-boundary execution derived from this ratification (including anything touching OD-1's release-branch model or OD-4's protected-line bar as applied to a production path) may proceed until the production boundary is re-adjudicated against that finding.",
+    "reported_measurement": "U-6 is reported as U6_RESOLVED_NO_SECOND_ACTIVE_PROJECT — uellix-antigravity is the sole active project serving current Commercial V1 custom domains.",
+    "effect": "The reported measurement does NOT trigger the fail-closed condition (its IF-branch did not fire). This SATISFIES the binding for the present instant; it does not retire it. The binding continues to govern every future re-measurement of U-6, exactly as STALE_STATE_HANDLING already requires for every hosted fact in this chain — a satisfied-today finding is not a standing exemption from re-checking tomorrow.",
+    "not_independently_verified_here": "As with U-3, this lane did not itself query the Vercel account for a project inventory; the finding is recorded as REPORTED, consistent with U3_MEASUREMENT_CONTEXT's same caveat, and is subject to the same re-measurement obligation before any production-boundary execution relies on it."
+  },
+
+  "FRESHNESS_CARRYOVER_REAFFIRMED": {
+    "rule": "Identical in force to the parent's FRESHNESS_CARRYOVER. Resolving U-2 and U-6 by report does not convert either into a standing fact any more than the parent's ratification converted OD-1..OD-5 into anything but binding CHOICES. Every hosted fact — the plan tier, whether private-repo protection availability has since changed, whether a second Vercel project has since become an active production surface, branch protection's live state, productionBranch, and so on — remains subject to STALE_STATE_HANDLING and must be re-measured immediately before any execution act that depends on it.",
+    "what_this_amendment_freezes": "Only OD-2's disposition (RATIFIED_REMAIN_PUBLIC_FOR_CURRENT_PHASE) and the four future-transition preconditions are frozen by this record, subject to CANDIDATE_BINDING. The U-3/U-6 findings that motivated it are NOT frozen as facts — they are the stated REASON for the choice, re-measurable and re-checkable independently of whether the choice itself changes."
+  },
+
+  "explicit_non_authorizations": [
+    "NO GitHub repository visibility is changed. The repository remains public, as it was before this amendment.",
+    "NO GitHub branch protection rule or ruleset is created, edited, or deleted.",
+    "NO GitHub required-check configuration is changed.",
+    "NO Vercel setting of any kind is changed.",
+    "NO branch is created.",
+    "NO deployment of any kind is created, triggered, promoted, or redeployed.",
+    "NO environment variable is created, edited, deleted, or read for its value.",
+    "NO alias or custom domain is created, assigned, changed, or removed.",
+    "NO Supabase configuration is contacted or mutated in any way.",
+    "NO secret-scanning alert is closed, resolved, or dispositioned by this record. PR #206 remains the sole venue.",
+    "NO modification to the parent owner-ratification record, or to any file under docs/ops/release/ — all remain byte-identical to the candidate.",
+    "NO reopening of OD-1, OD-3, OD-4 or OD-5.",
+    "NO pre-authorization of any future visibility change — PRECOND-1..PRECOND-4 are a bar, not a grant.",
+    "NO ODS or W2 lineage identifier is allocated, reserved, or implied.",
+    "NO execution DAG is derived or authorized by this amendment."
+  ],
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 1,
+    "expected_id_set": ["OD-2"],
+    "expected_new_disposition": "RATIFIED_REMAIN_PUBLIC_FOR_CURRENT_PHASE",
+    "expected_superseded_disposition": "RATIFIED_DEFERRED_PENDING_U3",
+    "expected_unchanged_disposition_set": {
+      "OD-1": "RATIFIED_OPTION_D",
+      "OD-3": "RATIFIED_L1",
+      "OD-4": "RATIFIED_ALL_FOUR_WITH_SEQUENCE_RIDER",
+      "OD-5": "RATIFIED_ROUTING_ONLY_TO_PR206"
+    },
+    "checks": [
+      "ratifications.length == 1 and its id == 'OD-2'",
+      "ratifications[0].disposition == expected_new_disposition",
+      "ratifications[0].supersedes_parent_disposition == expected_superseded_disposition",
+      "ratifications[0].parent_entry_verbatim.disposition == expected_superseded_disposition, reproduced exactly from the parent file",
+      "UNCHANGED_RATIFICATIONS_RESTATED_FOR_CLARITY has exactly OD-1, OD-3, OD-4, OD-5 with dispositions matching expected_unchanged_disposition_set exactly",
+      "no ratification statement authorizes a visibility change, a branch creation, a GitHub setting change, a Vercel setting change, a deployment, or an env mutation",
+      "future_private_transition_preconditions.length == 4",
+      "U6_FAIL_CLOSED_BINDING_STATUS.parent_binding_verbatim matches the parent file's U6_FAIL_CLOSED_BINDING.binding field exactly",
+      "CANDIDATE_BINDING.owner_ratification_parent_file.blob_sha, re-derived via `git ls-tree` at the amendment's commit, matches the recorded value exactly, or the consumer STOPs per STOP_RATIFICATION_BINDING_MISMATCH",
+      "companion_authority and both companion_authority_amendments entries name paths that exist, unmodified, in the same commit"
+    ]
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This amendment converts a DEFERRED disposition into a FINAL one for the current phase, on the strength of a measurement this lane did not itself verify. Both the transcription accuracy and the measurement's provenance deserve independent scrutiny before any downstream lane treats OD-2 as settled.",
+    "verification_criteria_for_the_next_gate": [
+      "Confirm this amendment's OD-2 entry matches the human's new selection exactly, with no addition, softening, or extension.",
+      "Confirm OD-1, OD-3, OD-4 and OD-5 are genuinely untouched — both in the parent file (byte-identical) and in this amendment's restatement (matches the parent verbatim).",
+      "Confirm the U3_MEASUREMENT_CONTEXT and U6_FAIL_CLOSED_BINDING_STATUS sections are clearly marked as REPORTED, not as independently measured by this lane, and that no downstream text quietly treats them as verified.",
+      "Confirm the four future-transition preconditions do not, on close reading, function as a disguised pre-authorization.",
+      "Confirm the CANDIDATE_BINDING blob hashes (the parent ratification file, and by reference the six authority-package files) are correct by independent re-derivation.",
+      "Confirm no hosted mutation of any kind was performed by this lane."
+    ]
+  },
+
+  "final_state": "OWNER_RATIFICATION_COMPLETE__EXECUTION_NOT_AUTHORIZED",
+
+  "next_gate": "Independent bounded verification of the COMPLETE owner-ratification chain (parent v1.0.0 plus this v1.0.1 amendment) against the six criteria above. Only after that verification passes should the Commercial V1 infrastructure execution DAG be derived — as separate, individually governed acts (branch creation under OD-1, the OD-3 Ignored Build Step, the O-1..O-4 protection/check configuration under OD-4's sequence rider), each with its own prestate capture, verification, rollback, and immediate pre-execution confirmation. Any future move away from REMAIN PUBLIC additionally requires PRECOND-1 through PRECOND-4 to be satisfied at that time, not inherited from this record."
+}
